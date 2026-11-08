@@ -402,7 +402,7 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 
 | 拓扑 | 形态 | 承载的判据 | 边界 |
 |---|---|---|---|
-| **A(直连)** | `TrafficGenTLM → StubCacheEndpointTLM → ChiRnfProtocolEngine ⇄ ChiRnfProtocolEngine` | **全绿载体**:13 键全有值 + IC3 闸门绿 + 端到端响应完整 | — |
+| **A(直连)** | `TrafficGenTLM → StubCacheEndpointTLM → ChiRnfProtocolEngine ⇄ ChiRnfProtocolEngine` ⇄ **`CohIfResponderTLM`(完成者,D-0)** | **全绿载体**:13 键全有值 + IC3 闸门绿 + 端到端响应完整 | — |
 | **B(带延迟 + 投影登记)** | Stub↔引擎 与 引擎↔完成者 均走**带 `latency` 的 ChStream `connections`**;三个 CohIf 端点**共挂一个** `cohif_noc` bridge entry(同一**投影语境**) | **互联可达**(经带延迟的连接,⛔ **不经**桥)+ **桥投影**(测试级 `pack`/`unpack` 断言) | ⛔ **有损投影**(flow_id 5→3)⇒ ⛔ **不承载** canonical 10 流的完整语义 ⇒ ⛔ **不承载全绿**;⚠️ **如实命名**:「网络」= ChStream 连接延迟,**非** Router/flit 路径(仓内不存在)⇒ ⛔ **不得**宣称 flit 级路径 |
 
 ### ④-a 「完成者」角色的裁决(用户裁定,2026-11-08)与**拓扑准入判据**
@@ -431,7 +431,7 @@ stub 是 RN ⇒ miss 时发起 `request` 并**挂起等 `completion`**;而**全�
 - [ ] 本段 SU 已追加,且本 ADR 正文与**全部**既有 SU **逐字未变**
 - [ ] 决策 9 的**四条理由**逐条核对已登记(① 仍成立⇒改显式 MODIFIES;② 部分解除;③ **刻意保全**;④ **已闭合**)
 - [ ] 决策 9 的**延期项状态**已由「显式延期」更新为「**进入实施态**」;具名 change **收编**(不改名)
-- [ ] 冻结 main spec 的 **2 条** MODIFIES 预告已登记(:56 / :71)且 `:63` **不动**;⚠️ spec 改动**另立 Entry + 两步授权**(本段**不**预授权)
+- [ ] 冻结 main spec 的 **1 条** MODIFIES 预告已登记(`:56`);`:71` **已撤销**(勘误);`:63` **不动**;⚠️ spec 改动**另立 Entry + 两步授权**(本段**不**预授权)
 - [ ] 两个拓扑(A 直连 / B 经网络)的形态与**承载边界**已登记;⛔ B **不承载全绿**
 - [ ] ⑤ 的计数纪律禁令句已逐字登记;`test/cep_b3b2_deferrals.json` **零 diff**
 - [ ] ⚠️ **实施前**的文档面**无**任何「已具备端到端可测能力」类宣称(⛔ 决策登记 ≠ 落地)

@@ -2140,12 +2140,12 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 | D-3 | 引擎可观测面的扩展边界 | wrapper 暴露**公开观测 API**;违例类在不适用场景 ⇒ `not-collected` + **显式登记降格**;第一批目标族 = **CHI RN-F**(有回响应 + 有并发写) |
 | D-4 | 「接收器」的角色 | **不新建 Sink**(后置为 `ab_compare` 的 baseline 侧)+ wrapper **单一模块双角色** |
 | D-5 | 拓扑形态 | **两个拓扑并存**:**A(直连)** = 全绿载体;**B(经网络)** = 互联可达 + 桥投影验证,⛔ **不承载全绿**(桥的 flow_id 5→3 是**有损**投影) |
-| D-6 | 冻结 spec MODIFIES | `openspec/specs/cep-stub-cache-core/spec.md` 改 **2 条**(`:56` / `:71`);⛔ `:63` **不动** ⇒ 连带 `ADR-CEP-19` 决策 9 的**延期依据变更** |
+| D-6 | 冻结 spec MODIFIES | `openspec/specs/cep-stub-cache-core/spec.md` 改 **`:56` 单条**;⛔ **`:71` 已撤销**(2026-11-08 勘误:其 WHEN 限定在**命中**路径,与拓扑 B 的 miss/request flit 路径**不冲突**);⛔ `:63` **不动** ⇒ 连带 `ADR-CEP-19` 决策 9 的**延期依据变更** |
 | D-7 | 流量模式与可复现性 | `SEQUENTIAL`(基线)+ `RANDOM`(**固定种子并入 config 快照**;因需真实并发写以使 `memory_violations = 0` 有意义);⛔ `TRACE` 本轮不做。⚠️ **漂移登记**:纪要原为「`SEQUENTIAL` + `hotspot`」,最终采用 `RANDOM` ⇒ `hotspot` **移除**;⚠️ **机制缺口**:`TrafficGenTLM` **无** seed / 地址段 setter(`rng_(42)` 硬编码)⇒ 「种子入 config 快照」**今无落点** ⇒ 须新增 setter;⚠️ `uniform_int_distribution` 跨 stdlib 非位精确 ⇒ config 快照须记工具链 |
 | D-8 | 判据清单 | 8 条(J-1 装配 · J-2 事务抵达 · J-3 端到端响应完整 · J-4 **IC3 绿 + run-validity 绿**(⛔ **不是**「13 键全部有值」——保留 `not-collected` 合法出口)· J-5 **决定性变异** · J-6 指标自洽 · J-7 桥投影对称 · J-8 B 不承载全绿)。⚠️ **待补**:① run 的 `hypothesis_id` **绑定 `H3`**(唯一双违例类均须实测的已登记行)⇒ 否则 J-4 在机器闸下不可计算;② 三键(`coherence_stalls` / `collective_stalls` / `directory_misses`)的**测量归属与「真实 0」口径**待定 |
 | D-9 | 实验产物规范 | `experimental/run-<ts>-cep-e2e-{A\|B}/` + 4 件套;⛔ 产物不入库 ⇒ **入台账的是元数据**(run id · config 快照 sha256 · 13 键结论 · IC3 verdict · 拓扑标记);`preregistration.json` **不动** |
 | D-10 | 计数纪律 | 见 ③ |
-| **D-0** | **「完成者」角色**(拓扑 A/B 的「全绿」前置) | ✅ **已裁**(2026-11-08,用户)—— 角色 = **home 应答端的协议中立替身**(消费 CohIf `Request`/`Writeback`、经参数化延迟回 `Completion`、可配发 `Snoop`);⛔ **不**产生协议语义声明、⛔ **不**计入 B3b。**拓扑准入判据(治理纪律,逐字)**:「**JSON 拓扑代表真实物理存在的**;…**只为测试而创建**的元素 ⇒ **不进 JSON 拓扑**;否则 ⇒ **要进**」⇒ ⇒ home **物理存在** ⇒ ⇒ **进 JSON 拓扑** ⇒ ⇒ 落 **契约面**(`include/tlm/cep/`,可注册的协议中立 ChStream 模块)⇒ ⇒ **⛔ 不进** `protocol_instances.json` ⇒ ⇒ **装配闸不判红**(闸只要求模块**存在于拓扑**)⇒ ⇒ ⚠️ **命名 + 拓扑 B 的桥挂载结构(B-1/B-2)待裁** |
+| **D-0** | **「完成者」角色**(拓扑 A/B 的「全绿」前置) | ✅ **已裁**(2026-11-08,用户)—— 角色 = **home 应答端的协议中立替身**(消费 CohIf `Request`/`Writeback`、经参数化延迟回 `Completion`、可配发 `Snoop`);⛔ **不**产生协议语义声明、⛔ **不**计入 B3b。**拓扑准入判据(治理纪律,逐字)**:「**JSON 拓扑代表真实物理存在的**;…**只为测试而创建**的元素 ⇒ **不进 JSON 拓扑**;否则 ⇒ **要进**」⇒ ⇒ home **物理存在** ⇒ ⇒ **进 JSON 拓扑** ⇒ ⇒ 落 **契约面**(`include/tlm/cep/`,可注册的协议中立 ChStream 模块)⇒ ⇒ **⛔ 不进** `protocol_instances.json` ⇒ ⇒ **装配闸不判红**(闸只要求模块**存在于拓扑**)⇒ ⇒ ⚠️ **命名**待裁(见 ①-b 的命名裁定);桥挂载结构**已裁 = B-1 + 语义降级**(见 ①-c) |
 
 ### ①-b ⚠️ 「经网络」的**定义钉死**(metis P0 —— 否则验收会**假绿**)
 
@@ -2178,7 +2178,7 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 | `docs/architecture/07-*.md`(本文件) | 追加本段 SU(决策登记) | **同上**(同 commit) |
 | `openspec/specs/cep-stub-cache-core/spec.md` | **`:56` 单条 MODIFIES**(⛔ `:71` 经实测**撤销** —— 其 WHEN 限定在**命中**路径,与拓扑 B 的 miss/request flit 路径**不冲突**) | ⛔ **不在本轮** ⇒ 属**实施期**动作 ⇒ 须 **builder 在其 change 内**执行 + **另立台账 Entry** 走两步授权(per `ADR-CEP-19` 决策 9 理由 ①)⇒ ⇒ **本段不预授权** |
 
-⚠️ **新增契约面元素(实施期)**:「完成者」模块(落 `include/tlm/cep/`)+ 其注册(`include/chstream_register.hh`)⇒ ⇒ **两者均不在 M1 冻结集** ⇒ ⇒ **零冻结面增量** ⇒ ⇒ 但其**契约面**(delta spec)须随 change 落盘。
+⚠️ **新增契约面元素(实施期)**:**两个** —— ① 「完成者」模块 `CohIfResponderTLM`(落 `include/tlm/cep/`)+ ② wrapper `StubCacheEndpointTLM`(落 `include/tlm/cep/`);两者的**注册**均在 `include/chstream_register.hh`(⛔ 该文件**不在** M1 冻结集 ⇒ **零冻结面增量**)⇒ ⇒ **两者均不在 M1 冻结集** ⇒ ⇒ **零冻结面增量** ⇒ ⇒ 但其**契约面**(delta spec)须随 change 落盘。
 
 ⚠️ **拓扑准入判据(治理纪律,逐字,2026-11-08 用户裁定)**:
 

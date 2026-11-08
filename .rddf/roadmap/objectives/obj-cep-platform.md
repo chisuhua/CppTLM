@@ -16227,6 +16227,44 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑤ 与既有路径的关系**:本推荐**替换** Entry #274 §④ 的「批 1/批 2/批 3」表述中的批 1(L1/L2 已于 Entry #275 完成)⇒ 现状:**批 1 ✅ 完成 · 批 2 = N-2(裁决已就绪,待实施)· 批 3 = N-3/N-4(条件/周期触发)**。
 
 **⑥ 关联**:**#286**(F-4′/F-5′ 精确化)· **#285**(审查 + 评分 · F-2/F-3 的来源)· **#282**(4 条裁决 · N-2 的前置)· **#278**(E1 cadence 脚本 · N-4 的就绪面)· **#274**(盘点 + 路径 · 本推荐接续)
+
+### Entry #288 — 2026-11-08 [go-decision](**「CEP 端到端可测框架」的 12 条决策统一** —— 架构文档 + 决策文档落盘)
+
+**主题**:用户复核 CEP 架构定位 ⇒ 主张「构建完备的有流量发生器和接收器的端到端仿真框架」⇒ 倾向**甲**(收敛为「CEP 端到端可测」)⇒ **逐条讨论 12 条决策**(讨论纪要 `.rddf/reviews/cep-ualink-e2e-framework-discussion.md`)⇒ 全部统一 ⇒ 落架构文档 + 决策文档。
+**角色**:architect(决策 + oracle→metis→critic 三方复核 + 落文档)· planner(讨论编排)· builder(待实施)。
+
+**① 决策清单(12 条,统一)**:D-1 可观测面与 13 键来源(latency 测发起端;wrapper **只暴露原始事实**,聚合由 harness)· D-2 双向映射对侧语义(**命中也回 CPU 侧响应**;响应侧归 wrapper;⚠️「承载层回 NoD 响应 ≠ 协议引擎发射」)· D-3 扩展边界(公开观测 API;不适用 ⇒ `not-collected` + 显式登记降格;第一批 = **CHI RN-F**)· D-4 不新建 Sink + wrapper 单一模块双角色 · D-5 **两拓扑并存**(A 直连=全绿载体;B=互联可达+桥投影,⛔ 不承载全绿)· D-6 冻结 spec **`:56` 单条** MODIFIES(⛔ `:71` 勘误撤销)· D-7 `SEQUENTIAL`+`RANDOM`(固定种子入 config 快照)· D-8 判据 8 条(J-1~J-8)· D-9 产物规范(入台账的是**元数据**;`preregistration.json` 不动)· D-10 计数纪律禁令句 · **D-0 完成者角色**(`CohIfResponderTLM`:独立 `ChStreamModuleBase` 派生、⛔ 非 `ProtocolEngineBase`、对称 CohIfBundle 端口、`REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED`、**进 JSON 拓扑**)· **D-11「经网络」定义钉死**。
+
+**② ⚠️ 三方复核的实质发现(改变了设计)**:
+- **oracle(致命盲点)**:全仓**无任何模块**回 `Completion` / 发 `Snoop`(各引擎 `on_request` **只记账**)⇒ stub 的 miss 请求**无回流** ⇒ `deadlock_violations > 0` ⇒ **J-3 / J-4 结构性不可达** ⇒ ⇒ 催生 **D-0 完成者角色**;
+- **metis(P0 · 假绿)**:桥是**无状态投影器**且 `src/` **零调用点** ⇒ **不在数据路径上** ⇒ ⇒ 「事务穿过桥抵达对端」是**假绿表述** ⇒ ⇒ 「经网络」定义钉死 = **ChStream `connections` 的延迟属性**;桥 = **装配期投影登记器** ⇒ ⇒ 「互联可达」与「桥投影」**拆成两条独立判据**(后者 = **测试级** `pack`/`unpack` 断言);
+- **metis(P0)**:拓扑 A **必须省略** `cep.bridges` 键(⛔ **空数组 = FAIL `[IAG-01]`**,非 SKIP)⇒ ⇒ **J-1 按拓扑分档**;拓扑 A 判据 ⛔ 不得含 `unconsumed_bridges().empty()`;
+- **metis(P0)**:`ProtocolEngineBase::bridge_` **单槽** + `set_bridge()` **赋值** ⇒ 跨 entry 重叠 ⇒ **桥被静默覆盖**而 `instantiateAll` 仍 true ⇒ ⇒ **跨 entry 模块互斥**为硬纪律(重挂检测登记为独立 backlog);
+- **两处事实勘误**:`CacheRespBundle` **实有** `is_hit` / `error_code`(⇒ E-2 的解法);TrafficGen **实发** `fragment_total = 0`(⇒ D-2 ④ 前提改为「`≤ 1`」)。
+
+**③ 拓扑准入判据(用户裁定,逐字,治理纪律)**:
+
+> 「**JSON 拓扑代表真实物理存在的**;如果响应者元素是**物理上不存在**、只是为了测试而创建 ⇒ 那就**不进 JSON 拓扑**;否则 ⇒ **就要进 JSON 拓扑**。」
+
+⇒ ⇒ 完成者代表**真实存在的 home** ⇒ ⇒ **进 JSON 拓扑** ⇒ ⇒ 落**契约面**(`include/tlm/cep/`)⇒ ⇒ ⛔ 不进 `protocol_instances.json` ⇒ ⇒ 由此**自然**不产生协议语义声明 ⇒ ⇒ **装配闸不判红**(闸只要求模块**存在于拓扑**)。
+
+**④ 桥挂载结构裁定 = B-1 + 显式语义降级**(用户裁定,综合 oracle / metis):**一个** bridge entry,`modules:[StubCacheEndpointTLM, ChiRnfProtocolEngine, CohIfResponderTLM]` ⇒ ⇒ **零代码、零新机制**;语义降级 = 「**一个 entry 多模块 = 同一 CohIf 投影语境**;端点间链路关系由 `connections[]` **独立**表达 ⇒ ⇒ ⛔ 桥**不建模**星型 / 两两互联,⛔ 桥**不产连通性**」⇒ ⇒ **J-7** 改为「测试级 `pack`/`unpack` 断言 + 逐模块 `bridge()->bridge_id()` 指向**同一投影语境**」。
+
+**⑤ 审查闭环(3 方)**:oracle(10 条决策独立复核 + 5 项勘误)→ metis(实施期 gap 分析 + P0 假绿 + 文件级缺口)→ critic(两份 SU,arch 档,**APPROVE_WITH_CONDITIONS / 0 BLOCKER**)⇒ 5 SHOULD_FIX(同文档内陈旧行 vs 已勘误段并存:D-6 行 / D-0 行 / Verification 项 / ④ 契约面清单漏列 wrapper / 拓扑 A 格缺完成者)+ 3 NIT ⇒ **全部落**。
+
+**⑥ 冻结面改动面(3 处 + 2 链分离)**:
+| 冻结面成员 | 改动 | 授权链 |
+|---|---|---|
+| `docs/adr/ADR-CEP-19-*.md` | 追加 SU(决策 9 延期项状态 + 实施形态 + MODIFIES 预告 + D-0/D-11) | **本轮**:Entry #288 ⇒ 产物 commit → `--update --authorized-by "Entry #288"` → 清单**单独** commit → 无参复验 |
+| `docs/architecture/07-*.md` | 追加 SU·十一(12 条决策登记) | **同上**(同 commit) |
+| `openspec/specs/cep-stub-cache-core/spec.md` | **`:56` 单条** MODIFIES | ⛔ **不在本轮** ⇒ 属**实施期** ⇒ 须 **builder 在其 change 内**执行 + **另立台账 Entry** 走两步授权 ⇒ ⇒ **本段不预授权** |
+| **新增契约面元素**(实施期) | `StubCacheEndpointTLM` + `CohIfResponderTLM` + `include/chstream_register.hh` 注册行 | ⛔ 三者**均不在** M1 冻结集 ⇒ ⇒ **零冻结面增量** |
+
+**⑦ 计数纪律(禁令句,逐字)**:本框架**只**提升**可实验性**;⛔ **不**构成 `B3b-2` 的解除证据(计数依据 = **规范条款级** T1–T4,per `07 号` SU · 四 D-1)⇒ ⇒ **`B3b-2` 维持 0/4**;⛔ `test/cep_b3b2_deferrals.json` **零 diff**。
+
+**⑧ 后续路径**:① **builder** 新建 change `cpptlm-cep-stub-cache-chstream-surface` 的范围**扩展**(收编 scope = G1 端口面 + G2 两拓扑 + G3 判据 + G4' metric 产出)+ 两新增契约面元素 + 注册 + 拓扑 A/B + 判据 + harness 接入 ⇒ ⇒ **实施期另立 Entry** 授权 `:56` MODIFIES;② ⏳ E1/E2 季度项不变;③ **N-1**(F-2 闸)与 **N-3**(F-3 分批签发)仍待排。
+
+**⑨ 关联**:**#287**(下一步任务推荐)· **#285**(架构文档审查)· **#282**(4 条 architect 裁决)· **#280**/**#269**(`07 号` SU · 七 / `ADR-CEP-19` 决策 9)· `.rddf/reviews/cep-ualink-e2e-framework-discussion.md`(讨论纪要 · 12 条逐条依据)· `openspec/specs/cep-stub-cache-core/spec.md`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

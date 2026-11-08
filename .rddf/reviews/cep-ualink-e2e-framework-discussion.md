@@ -87,6 +87,8 @@
 ④ stub hit 路径   :cpu_read 返回 AccessResult{hit,data,txn_id,pending} ⇒ **hit 时无 net-side request**(INV-SC6 零网络流量)
 ```
 
+> ⚠️ **勘误(2026-11-08 critic NIT)**:§五 ④「TrafficGen 默认 `fragment_total=1`」**有误** —— `issueRequest()` **从不写** fragment 字段,`ch_uint` 存储默认 `value_ = 0` ⇒ **实发 `fragment_total = 0`** ⇒ ⇒ D-2 ④ 的「透传」前提为「**`fragment_total ≤ 1`**」(⛔ 不依赖 =1)。
+
 ## 五、D-2 结论(用户已裁 · 第 3 轮 · 四点全同意)
 
 | # | 裁定 | 关键边界 |
