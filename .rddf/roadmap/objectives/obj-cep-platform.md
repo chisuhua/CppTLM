@@ -17046,6 +17046,8 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 **⑥ 未完成(⛔ 不静默)**:`A9.2`(`07 号` / ADR 的**实施后** SU)= **architect 域 + 冻结面两步授权** ⇒ builder ⛔ 不代改;`A9.3/T9`(合并 delta + 归档 + KPI 1/3 → 0/3)待 A9.2 后再执行。
 
 **⑦ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#302**(A7)· **#301**(A6+W4)· **#300**(A4+A5)· **#299 / #295**(retention 丙 + 7 字段)· `ADR-CEP-06` SU 2026-11-08 · 二
+**⑧ 追加(同批次)**:`./test.sh --mode off` 的 `OFF-CATCH2-FULL` 判据**误判** —— 原 `grep -q "failed"` 命中 ordering point checker 的正常输出「`[PASS] … 0 failed`」(实测 25 处**全部**是 `0 failed`)⇒ 改为**正向**断言「汇总行必须是 `All tests passed`」⇒ 复跑 **21 passed / 0 failed**。⚠️ 该缺陷**先于本 change 存在**(属判据自身的「0 与失败同形」缺陷),只为满足 T9.2 的验收口径而修。
+
 
 
 

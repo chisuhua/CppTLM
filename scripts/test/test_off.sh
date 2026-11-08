@@ -113,10 +113,14 @@ else
     # tee 同时保留日志，pipefail 保证失败能被捕获
     if run_with_timeout 600 "$TEST_BIN" -r compact 2>&1 | tee "$BUILD_DIR/test_output.txt"; then
         # 额外检查：即使 tee 成功，也要确认没有隐藏的失败（grep -q failed 需安全处理）
-        if [[ -f "$BUILD_DIR/test_output.txt" ]] && grep -q "failed" "$BUILD_DIR/test_output.txt" 2>/dev/null; then
-            fail_result "OFF-CATCH2-FULL"
-        else
+        # ⚠️ 2026-11-09(per 台账 Entry #303 ⑤):原 `grep -q "failed"` 会命中
+        #    `[PASS] … 0 failed`(ordering point checker 的正常输出)⇒ **恒红误判**。
+        #    判据改为**正向**断言:Catch2 汇总行必须显式是 `All tests passed`。
+        if [[ -f "$BUILD_DIR/test_output.txt" ]] && \
+            tail -n 5 "$BUILD_DIR/test_output.txt" | grep -q "All tests passed"; then
             pass_result "OFF-CATCH2-FULL"
+        else
+            fail_result "OFF-CATCH2-FULL"
         fi
     else
         fail_result "OFF-CATCH2-FULL"
