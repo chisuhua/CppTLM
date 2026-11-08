@@ -1,0 +1,17 @@
+schema: spec-driven
+created: 2026-11-08
+goal: 真实业务流量可进入 CEP 互联面(G1 端口面 + G2 两拓扑 + G3 判据 J-1~J-9 + G4′ 7 字段元数据/对账);B3b-2 计数不变(0/4)
+affected_areas:
+  - include/tlm/cep/stub_cache_endpoint.hh
+  - include/tlm/cep/cohif_responder.hh
+  - include/chstream_register.hh
+  - include/tlm/traffic_gen_tlm.hh
+  - configs/cep_chi_rnf_e2e_a.json
+  - configs/cep_chi_rnf_e2e_b.json
+  - test/test_cep_stub_cache_e2e.cc
+  - test/cep_e2e_runs.jsonl
+  - .gitignore
+  - openspec/specs/cep-stub-cache-core/spec.md
+  - openspec/changes/cpptlm-cep-stub-cache-chstream-surface/specs/
+# 零条款级协议语义;声明面 = 甲(不进 protocol_instances.json);retention = 丙;冻结面 :56 单条走两步授权。
+skip_specs: false

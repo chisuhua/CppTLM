@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-08T09:40:00Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-08T10:30:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-06T13:50:17Z",
-      "by": "user",
-      "reason": "落 07 号 SU·五(D-1 机器可判回填)+ 台账 Entry #257 冻结面授权;oracle 1 轮 + critic APPROVE_WITH_CONDITIONS"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-06T13:53:20Z",
-      "by": "user",
-      "reason": "实施 P2(UALink 实例级装配):plane 绑定 + 拓扑挂载 + 装配闸(含反控)+ 计数修正 + 文档同步"
-    },
     {
       "role": "verifier",
       "at": "2026-11-06T14:41:07Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-08T09:40:00Z",
       "by": "user",
       "reason": "用户口令「切 planner 梳理后续任务与实施路径」=> planner 域:全量盘点 + 路径"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-08T10:05:00Z",
+      "by": "user",
+      "reason": "用户口令「按你建议进入下一步」=> A0 前置:为 cpptlm-cep-stub-cache-chstream-surface 立 improvement(add-improve HARD-GATE)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-08T10:30:00Z",
+      "by": "user",
+      "reason": "用户口令「按你建议进入下一步」=> 内置流程:创建 change cpptlm-cep-stub-cache-chstream-surface(P0)"
     }
   ],
   "auto_switch_window": null
