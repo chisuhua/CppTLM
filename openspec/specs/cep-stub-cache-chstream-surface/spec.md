@@ -1,6 +1,9 @@
-# cep-stub-cache-chstream-surface Specification (delta)
+# cep-stub-cache-chstream-surface Specification
 
-## ADDED Requirements
+## Purpose
+TBD - created by archiving change cpptlm-cep-stub-cache-chstream-surface. Update Purpose after archive.
+
+## Requirements
 
 ### Requirement: cep-stub-cache-chstream-surface
 
@@ -71,7 +74,6 @@
 - **AND** ⛔ 台账条目 SHALL **NOT** 被表述为「实验可复算 / 可重放」
 
 > **锚点**:`test/test_cep_stub_cache_e2e.cc` + 双向闸脚本的负例
-
 
 #### Scenario: home 简化模型 SHALL 以 **豁免登记** 表达声明面缺失(⛔ 不静默)
 

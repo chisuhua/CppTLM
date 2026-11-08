@@ -57,8 +57,9 @@ public:
         unsigned snoop_interval_cycles = 8;
         /// 是否**回发** `Completion`(默认开 = 模块级默认行为)
         /// ⚠️ 拓扑 A/B 把它**关掉**:dual-port 适配器的**入向路由恒落 PE 侧**
-        ///    (`include/framework/bidirectional_port_adapter.hh` 的 `process_request_input`
-        ///    只填 `pe_req_in()`)⇒ 回程 `Completion` 会被当成业务请求读进 PE 侧
+        ///    (`include/framework/dual_port_stream_adapter.hh` 的 `DualPortStreamAdapter`
+        ///    只 override **单参** `process_request_input` ⇒ 只填 `pe_req_in()`)⇒ 回程
+        ///    `Completion` 会被当成业务请求读进 PE 侧
         ///    ⇒ **产生垃圾请求**。⛔ 框架红线(`include/framework/` 零改动)⇒ 用本开关
         ///    把回程腿**留在模块级判据**(SCE-03 / SCE-04)闭合,拓扑级只闭合**出向腿**。
         bool emit_completions = true;

@@ -731,3 +731,9 @@ add_test(NAME cep_tilelink_engine_failclosed
 # ⇒ 台账结论首次**可对账**(`metrics_sha256` ↔ 仓内文件);零 orphan + sha256 相等。
 add_test(NAME cep_e2e_reconcile_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_e2e_reconcile_check.sh)
+
+# ── 2026-11-09(per 台账 Entry #305 / Entry #295 F-08 残余):**索引位置闸** ──
+# 「索引永久置于文末」纪律(新增段落 SHALL 插在索引之前 ⇒ 既有 path:line 锚点零位移)
+# 的**机器可判**载体:索引之后零个 `## ` + 索引计数自述与实际逐个相等。
+add_test(NAME cep_index_position_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_index_position_check.sh)
