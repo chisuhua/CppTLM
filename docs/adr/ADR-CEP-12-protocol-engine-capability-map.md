@@ -904,3 +904,37 @@ CXL / MOESI-GPU / MESIF 走**软件一致性 / 无 collective 能力** ⇒ 强�
 - [ ] 冻结面两步授权已执行:台账 **Entry #269** 授权 → **commit 本 SU 与 `07 号` 精确化** → `cep_freeze_check.sh --update --authorized-by "Entry #269"` → **清单单独 commit** → 无参复验 provenance 通过
 
 **关联**:台账 **Entry #269**(授权 + oracle 咨询落点)· **#268**(立项 + 三选项)· **#265**(来源检索 + ⚠️ 合规登记 + 两条硬边界)· **#258**(`ADR-CEP-12` SU 追加先例 · 装配面)· **#261**(SU 追加先例 · 契约对齐)· `docs/research/2026-11-07-cep-ualink-flow-semantics-anchor-summary.md` · `include/tlm/cep/mesif_protocol_engine.hh`(`gate()` 范式先例)· `include/tlm/cep/moesi_gpu_protocol_engine.hh`(M-6 对照)· `openspec/changes/cpptlm-cep-ualink-coherence-engine/`
+
+---
+
+## Status Update(2026-11-08,per 台账 Entry #292)—— 「home 简化模型」的应答行为**不**作为能力映射 basis 分档的输入(边界句)
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文 §1 ~ §13 与**任何**既有 SU(尤其 **SU 2026-11-07**(Entry #269)的强度裁决 / 三分法 / 4 条不变量 / 鉴别力边界 —— **逐字保留不回改**);⛔ 不改任何家族实例的 13 键取值(⛔ `ualink_4` / `chi_rnf` 等**零改动**);⛔ **零**计数变化。
+> **触发**:台账 **Entry #291**(用户裁决:完成者 = **真实 home 的简化模型**,承载**最小协议语义**)· `07 号` **SU · 十二** ② 的定位改写。
+> **审查**:`oracle`(本边界句是否与本 ADR 的 basis 定义自洽)→ `critic`(本段 + `07 号` SU · 十二 + `ADR-CEP-19` SU · 二 的架构审稿),顺序不可颠倒。
+
+### ① 边界句(逐字)
+
+> `CohIfResponderTLM`(契约面独立类目 = **home 简化模型**,承载第一族 **CHI RN-F** 的**最小应答语义**)⇒ ⛔ **不**作为本 ADR 能力映射 / basis 分档的**输入**;⛔ **不**计入任何家族的 **T1–T4**;⛔ **不得**据其存在推出任何家族的协议语义达成 ⇒ ⇒ **`B3b-2` 维持 0/4**。
+
+⇒ **落点性质**:本段是**审查包 U-5**(可后置项)的 **home 模型半边**的**首次落地**;同源纪律 = 本 ADR **决策 6**(`mapping ≠ support`)+ `07 号` **SU · 四 D-1**(计数依据 = 规范条款级)。
+⚠️ **范围边界**:⛔ 本段**不**夹带 U-5 的 **wrapper 半边**(那超出 Entry #292 的授权面 ⇒ 须**另立 Entry**)。
+
+### ② 理由(为什么它不能进 basis)
+
+- 本 ADR 的 **basis = 公开来源档位 + `protocol_instances.json` 的 13 键声明**(id / family / adapter / status / `protocol_version` / `flow_support` / `perm` / `atomic` / `consistency_labels` / `ordering_assumption` / `vc_binding` / `sharer_tracker` / `combination_capabilities`)⇒ ⇒ **分档的输入是「声明」,不是「实现」**。
+- home 简化模型 ⛔ **不在** `protocol_instances.json`(它**不是**协议实例)⇒ ⇒ **无 basis 声明** ⇒ ⇒ 若允许它进入分档,会破坏「**声明 ↔ 能力档位**」的双向对齐(实现侧元素倒灌进声明侧判据)⇒ ⇒ 与本 ADR **决策 6** 同源的纪律问题。
+- ⇒ ⇒ 故:它**可以**在契约面承载**最小应答语义**,但**不得**出现在能力映射的输入侧 ⇒ 两个面**互不越界**。
+
+### ③ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,且本 ADR 正文与**全部**既有 SU **逐字未变**
+- [ ] ① 的边界句已**逐字**登记;并已登记「落实 **U-5** 的 home 模型半边 + 与 **决策 6** / SU · 四 D-1 同源」的说明
+- [ ] ① 的**范围边界**已登记(⛔ 未夹带 U-5 的 wrapper 半边)
+- [ ] ② 的理由已登记(basis = 声明面 13 键,⛔ 非实现侧元素)
+- [ ] ⛔ 契约面 delta 与台账中**均**含 ① 的**逐字**句(防误读)—— ⚠️ **本条随实施期 change 复验**(delta 是实施期产物 ⇒ 本次授权链复验时**不可**勾选)
+- [ ] ⛔ `protocol_instances.json` **零 diff**;**`B3b-2` 维持 0/4**;`test/cep_b3b2_deferrals.json` **零 diff**
+- [ ] 冻结面两步授权已执行:台账 **Entry #292** 授权 → **commit 本段 + `07 号` SU · 十二 + `ADR-CEP-19` SU · 二** → `cep_freeze_check.sh --update --authorized-by "Entry #292"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #292**(授权)· **#291**(两条用户裁决 + 落地义务清单)· **#269**(Entry #269 强度裁决)· **#285**(架构文档审查 · U-5 的来源)· `07 号` **SU · 十二** · `ADR-CEP-19` SU 2026-11-08 · 二 · `include/tlm/cep/protocol_instances.json` · `include/tlm/cep/protocol_instance.schema.json`
+

@@ -1042,6 +1042,39 @@ Stage 4+ 进入维护态后,objective 归档条件:
 ⚠️ **A9 的状态更新**须**实施 + verifier 验收后**才做(⛔ 实施前**不得**宣称「已具备端到端可测能力」,per `07 号` SU · 十一 ②)⇒ ⇒ **不要**在 M1/M2 之后提前改 §5.1.1 状态列。
 ⚠️ 轨 B 与轨 A **不共享 KPI slot**(B1/B2 不建 change 目录 ⇒ 不占)⇒ ⇒ 可与轨 A **并行**。
 
+### 2026-11-08 路径图修订 ①(per 台账 **Entry #291** —— 两条用户裁决回填 + planner 域缺陷修正)
+
+> **性质**:§10 **追加段**(append-only)。⛔ **不回改**上方「2026-11-08 任务路径图」(Entry #289)原文 ⇒ ⇒ **凡与本段冲突的行,以本段为准**(逐条取代关系见 ①)。
+> **触发**:① 第二轮审查(`.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`)的 **F-02 / F-06**;② 用户对 **F-05**(D-0 定位)与 **F-11**(拓扑 B 去留)的裁决(per Entry #291)。
+
+#### ① 逐条取代关系(被取代的原文行 → 修订后)
+
+| 行 | Entry #289 原文 | 修订后 | 依据 |
+|---|---|---|---|
+| **A2** | 「`CohIfResponderTLM`(完成者):对称 CohIf 端口 + **参数化延迟**回 `Completion` + 可配发 `Snoop` + `attach_protocol_bridge` override」 | 追加:**承载第一族(CHI RN-F)的最小应答语义**;⛔ **不**承载家族级 / 条款级语义(credit · retry · ordering point · 多拍聚合 · Perm 规则)⇒ **不**构成任何家族的 T1–T4 条款级证据;⛔ 「协议中立替身」措辞**作废**(改称「**真实 home 的简化模型**」) | **F-05 裁决** |
+| **A5** | 「拓扑 A(省略 `cep.bridges` 键)+ 拓扑 B(三端点共挂一桥 + 显式 `bridge_id` + 带 `latency` 的 connections)」 | 追加**拓扑分档硬约束**(两拓扑**不重叠**):**A** = `cep.bridges` 键**缺省** ∧ 所有 connection **latency = 0**;**B** = `cep.bridges` **恰好 1 条** ∧ `modules` **恰好 3** ∧ **至少 1 条** connection **latency > 0** ⇒ ⇒ B 的独立价值 = ① 带连接延迟时事务仍抵达对端 ② 三端点共挂一 entry 的装配面 ③ 桥的**测试级**投影断言 | **F-11 裁决** |
+| **A6** | 「判据 **J-1 ~ J-8**」 | 追加 **J-9 拓扑分档判据**(机器判):**A** ⇒ 闸 `SKIP` ∧ 无 `cep.bridges` ∧ 无 `latency > 0`;**B** ⇒ 闸 `PASS` ∧ 1 entry / 3 modules / ≥1 条 latency>0 ∧ 三模块 `bridge()->bridge_id()` **逐个相等** | F-11 + `07 号` ①-c |
+| **A7** | 「**13 键全有值** + `audit_balanced()` 真 + 双违例类真实 0」 | **「13 键各有结论」** = 每键为**实测值** **或** `not-collected` + **预登记降格登记**(⛔ 不得为凑「全有值」给未测键填值 ⇒ 防 `ADR-CEP-06` SU#1 ③「实测 0 与未测量同形」)+ `audit_balanced()` 真 + 双违例类真实 0 | **F-02** |
+| **M2** | 「第一件全绿 run(**13 键全有值** + IC3 绿 + run-validity 绿 + 4 件套 + 台账元数据)」 | 「第一件全绿 run(**13 键各有结论** + IC3 绿 + run-validity 绿 + 4 件套 + 台账元数据)」 | **F-02** |
+| **A9** | 「契约面收敛:`:56` MODIFIES 合并 + 新 capability(delta)+ …」 | 追加:delta SHALL 含 **home 简化模型的最小应答语义边界**(实现清单 / 不实现清单)+ **「⛔ 不作为任何家族的 T1–T4 条款级证据」** 声明句 | **F-05** |
+| **A0** | 「另立台账 Entry 授权 `cep-stub-cache-core` 的 `:56` 单条 MODIFIES」 | 追加 **A0b**:若 home 简化模型要落**声明面**(`protocol_instances.json` 新键)⇒ 触及 **M1 冻结件** `include/tlm/cep/protocol_instance.schema.json`(`additionalProperties: false`)⇒ 须**另立 Entry + 两步授权**;走「**不落声明面 + 契约面 delta 登记明示豁免**」路线则**零冻结面增量** | Entry #291 §② A-4 |
+| **B1** | 「每份留核对证据;⛔ 不可批量签发」 | 追加**冻结面两步授权链**(22 份 ADR **全在** M1 冻结集内 ⇒ 转签发必改 hash ⇒ 不更新清单即 `cep_freeze_check` 判红):新台账 Entry 授权 → 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #N"` → 清单**单独** commit → 无参复验 | **F-06** |
+
+#### ② 未被取代、但随裁决**新增**的前置
+
+| # | 事项 | 归属 |
+|---|---|---|
+| **A0b** | home 简化模型的**声明面落点**二选一:甲 = **不进** `protocol_instances.json`(它不是协议实例)+ 契约面 delta 登记明示豁免(零冻结面增量);乙 = 加第 14 键 ⇒ **冻结 schema MODIFIES** ⇒ 两步授权 | architect 裁 + builder 执行 |
+| **A2-b** | 「协议中立」措辞在 **4 处**落点的**逐字更正清单**(per Entry #291 §② A-1)⇒ ⛔ 不得只在新段写新措辞而**留旧措辞**(读者按旧措辞读) | architect |
+
+#### ③ 保留不动(两条裁决**明确维持**的部分)
+
+- **D-5 两拓扑并存** ⇒ **维持**(用户裁决 F-11);⚠️ 维持的代价 = 两套 config + 两套判据分档 ⇒ 用 **J-9** 把分档变成**机器判**来对冲;
+- **D-0 ⛔ 不进 `protocol_instances.json`** ⇒ **维持**(它**不是**协议实例 ⇒ 自然不产生协议语义声明 ⇒ 装配闸不判红,`[IAG-06]` 只校验模块在拓扑内);
+- **B3b-2 维持 0/4** ⇒ **维持**(裁决 1 ⛔ **不**改任何计数;home 模型的最小应答语义 ⛔ 不是条款级证据 ⇒ 计数依据仍 = 规范条款级 T1–T4)。
+
+**关联**:台账 **Entry #291** · **#289**(本段修订其路径图)· **#288**(12 条决策)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(第二轮审查发现)· `ADR-CEP-19` SU 2026-11-08 · `07 号` SU · 十一
+
 ---
 
 ## §11 决策台账(append-only,per `rdd-planner/SKILL.md:158`)
@@ -16373,6 +16406,97 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **④ 关联**:**#242**(T3 实施回执)· **#241**(二分支预登记)· **#240**(B3a 收口)· `.rddf/reviews/b3b-t3-verify.md`(verifier,V 1-4 判据 + F1/F2)·
 `docs/architecture/07-coherence-exploration-platform.md` SU 2026-11-06 §⑤ · `openspec/changes/cpptlm-cep-tilelink-runtime-engine/` ·
 `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) · `include/tlm/cep/chi_rnf_protocol_engine.hh`(引擎模板先例)· `§6.2 B3b` · `.openspec.yaml`(not-skip)
+
+### Entry #291 — 2026-11-08 [plan](**两条用户裁决的回填**(F-05 home 简化模型 / F-11 拓扑 B 独立)+ 路径图修订 ① + 落地义务清单)
+
+**主题**:第二轮审查(`.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`)报出 **F-05 / F-11** 两项**须用户裁决**的决策面问题 ⇒ 用户裁决 ⇒ planner 回填台账 + 追加 §10 路径图修订 ①,并给出 architect / builder 的**落地义务清单**。
+**角色**:planner(记录 + 路径图修订 + 纪要 / 材料包更正)· architect(裁决落文档 = 追加 SU)· builder(待实施)。
+**KPI**:不变(0/3;本 Entry 不建 change 目录 ⇒ 不占 slot)。
+
+**① 两条裁决(判定 + 逐字要点)**:
+- **裁决 A(对 F-05)**:`CohIfResponderTLM` = 「**真实 home 的简化模型**(**承载最小协议语义**)」⇒ ⇒ **弃用**「协议中立替身」措辞;⇒ 落 `include/tlm/cep/` 契约面 + **进** JSON 拓扑(与用户自裁的拓扑准入判据**字面一致**:该元素**代表真实存在的 home** ⇒ 「否则 ⇒ **就要进**」)⇒ ⇒ **不进** `protocol_instances.json`(它**不是**协议实例)。
+- **裁决 B(对 F-11)**:**拓扑 B 保留为独立拓扑**(⛔ 不降为 A 的变体)⇒ ⇒ 代价 = 两套 config + 两套判据分档 ⇒ 须用**机器可判的分档判据**对冲(新增 **J-9**)。
+
+**② 裁决 A 的连带义务(6 条 · 精确到落点)**:
+
+| # | 义务 | 落点 / 归属 |
+|---|---|---|
+| **A-1** | 「协议中立替身」措辞**逐字更正**(4 处) | `07 号:2148`(D-0 行)· `ADR-CEP-19:414`(④-a)· 本台账 Entry #288 ① · 路径图 A2(见 §10 修订 ①)⇒ **architect**(追加 SU,⛔ 不回改原文) |
+| **A-2** | 「承载最小协议语义」的**边界清单**:**实现** = 对收到的 Request 生成 Completion + 按读请求发 Snoop(**仅第一族 CHI RN-F 子集**);⛔ **不实现** = credit · retry · ordering point · 多拍(`CompData`/`DataSepResp`)聚合 · Perm 规则 · 容量与队列模型 | 新 SU 段(architect) |
+| **A-3** | **防误读句**必须同时进契约面 delta 与台账:「home 简化模型承载最小应答语义 ⛔ **不**构成任何家族的 **T1–T4 条款级**证据 ⇒ ⇒ **B3b-2 维持 0/4**」(与 `07 号` SU · 四 D-1 口径对齐) | architect + builder(落地进 delta) |
+| **A-4** | **声明面落点二选一**(⚠️ 实测约束):`include/tlm/cep/protocol_instances.json` **不在** M1 冻结清单(可改),但 `include/tlm/cep/protocol_instance.schema.json` **在**冻结集内且 **`additionalProperties: false`** ⇒ **加第 14 键 = 冻结 schema MODIFIES** ⇒ **甲**(不落声明面 + delta 登记明示豁免,**零冻结面增量**)/ **乙**(加键 + 两步授权)⇒ **须 architect 裁** | architect 裁 + builder 执行 |
+| **A-5** | 与 `ADR-CEP-12` 的**边界句**同款:home 模型的应答行为 ⛔ **不**作为**能力映射 basis 分档**的输入(= U-5 边界句的同族扩写) | `ADR-CEP-12` 追加 SU(architect) |
+| **A-6** | 与既有 per-family 引擎的**角色对偶**须写明:引擎 = RN 侧发起 / 记账;home 模型 = HN 侧应答 ⇒ **不是**第二个引擎、**不是** adapter、**不是** protocol instance ⇒ 契约面出现**第四类模块**(adapter / engine / bridge / **home 模型**)⇒ 命名与类目归属须登记 | 新 SU 段(architect) |
+
+**③ 裁决 B 的连带义务(3 条)**:
+
+| # | 义务 | 归属 |
+|---|---|---|
+| **B-1** | **A 必须零延迟**的**判据级理由**(否则 A / B 同形 ⇒ B 无独立价值)—— 建议口径:「A 是**全绿载体**,其 latency 断言必须**只**反映模块 / 协议处理延迟,⛔ 不混入**连接延迟** ⇒ 故 A 的 connection `latency` 必须为 0;B 专门承载『带连接延迟时仍可达』」 | **architect 拍板** |
+| **B-2** | **J-9 拓扑分档判据**(机器判):**A** ⇒ 闸 `SKIP` ∧ 无 `cep.bridges` ∧ 无 `latency > 0`;**B** ⇒ 闸 `PASS` ∧ `cep.bridges` 恰好 1 条 ∧ `modules` 恰好 3 ∧ ≥1 条 connection `latency > 0` ∧ 三模块 `bridge()->bridge_id()` **逐个相等** | builder(实施)+ architect(落判据) |
+| **B-3** | 「B 的独立价值」须在 SU 里写成 **3 条可判项**(见 §10 修订 ① A-5 行)⇒ ⛔ **不得**写成「事务穿过桥」(per D-11 的假绿禁令) | architect |
+
+**④ planner 域已就地修正(3 项)**:
+- **路径图修订 ①**(§10 追加段)⇒ 落 A2 / A5 / A6(+J-9) / A7 / A9 / A0(+A0b) / B1 的修订;
+- **讨论纪要 §八 回填**(追加段)⇒ 更正 §一 状态列(D-3 / D-4 / D-8 / D-9 / D-10 已裁)· §五 ④ 的 `fragment_total` 勘误未回灌 · §六 D-5「flit 路径验证」(与 D-11 矛盾)· §六 D-6「改 2 条」(实为 `:56` 单条)· §六 D-7「`hotspot`」(实为 `RANDOM`)· §七「尚未落任何架构文档」⇒ 并回填 **D-0 / D-8~D-11** 的最终状态 + **诚实登记「本文件仅覆盖 7/12 条依据」**;
+- **审查材料包行号更正**(F-09 / F-10)⇒ 4 处行号定位修正 + append-only 期望值修正(实为 **1 处经 Entry #269 授权的 §5.1.1 UALink 行就地改写**)⇒ ⚠️ 本台账 **Entry #290 ② 载有同款错误行号**,因 §11 append-only ⇒ ⛔ 不回改,**在本 Entry 登记更正**。
+
+**⑤ 剩余待办(按面归属)**:
+
+| 面 | 事项 | 归属 |
+|---|---|---|
+| **决策** | **F-01**(`ADR-CEP-19:416/419`「待裁」→ 实际已裁 B-1)· **F-04**(`:71` 撤销理由改为「仓内无 flit 路径」)· **F-05 落地**(A-1~A-6)· **F-08**(`07 号` §末索引重生成 + 移至文末)· **F-11 落地**(B-1~B-3)· **F-12**(D-9 增记 `metrics.json` sha256) | **architect**(追加 SU,⛔ 不回改已签发段) |
+| **执行** | **F-07**(F-2 闸**现场扫描** + 排除 `ADR-CEP-NUMBER-MAP.md`;实测「缺 `Verification`」= **13/22** 非 14)· U-4 兜底(装配闸加 `[IAG-08]`:同一模块属多个 bridge entry ⇒ FAIL)· **F-14**(签名 `DEFERRRAL` typo,可选) | **builder** |
+| **计划** | **F-13**(路径图 A0~A9 补估时;Entry #287 已有 ~2-3d)· 本 Entry 的 §10 修订 ① | **planner** |
+
+**⑥ 复验命令**:
+
+```bash
+ctest --test-dir build -j4                                     # 期望 164/164
+for g in cep_freeze_check cep_decl_alignment_check cep_doc_ref_check cep_docs_sync_check; do bash scripts/test/$g.sh >/dev/null || echo "$g FAIL"; done
+git diff 5f744d16..HEAD -- test/cep_b3b2_deferrals.json | wc -l   # 期望 0
+ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KPI 0/3)
+```
+
+**⑦ 关联**:**#290**(审查材料包 · 行号已更正)· **#289**(任务路径图 · 本 Entry 追加其修订 ①)· **#288**(12 条决策)· **#287**(下一步任务推荐)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(第二轮审查)· `.rddf/reviews/cep-arch-planner-review-package.md`(材料包)· `.rddf/reviews/cep-ualink-e2e-framework-discussion.md`(纪要 §八 回填)· `ADR-CEP-19` SU 2026-11-08 · `07 号` SU · 十一
+
+### Entry #292 — 2026-11-08 [go-decision](**4 项决策面勘误与补充落盘**(F-01 / F-04 / F-05 / F-11)+ 冻结面授权 + oracle→critic 双审闭环)
+
+**主题**:第二轮审查报出的 4 项**决策面**问题(F-01 状态矛盾 / F-04 理由错误 / F-05 定位与准入判据的滑移 / F-11 拓扑 B 独立缺理由与判据)⇒ 用户 2026-11-08 已就 F-05 / F-11 裁决 ⇒ architect 起草并落盘 **3 份追加 SU**(⛔ 不回改任何已签发段)。
+**角色**:architect(起草 + 双审 + 冻结面授权)· planner(上游 Entry #291 的义务清单)· builder(待实施)。
+**KPI**:不变(0/3;本 Entry 不建 change 目录)。
+
+**① 授权范围(4 项,全部为**追加 SU**,零回改)**:
+
+| # | 勘误 / 补充 | 落点 | 结论是否变 |
+|---|---|---|---|
+| **F-01** | **状态追认**:`ADR-CEP-19` Entry #288 SU §④-a 的两处「**待裁**」= 已过时 ⇒ 现行状态 = **D-0 已裁** + **桥挂载结构 = B-1 + 显式语义降级**;并把「零代码」精确化为「**不新增桥 / 拓扑机制**」(两处 override 属已排期 A1 / A2 范围) | `ADR-CEP-19` SU · 二 ① | **不变**(仅状态追认) |
+| **F-04** | **`:71` 撤销理由勘误**:前台理由 = 「**命中路径限定 + 命中路径下 stub 行为与 net_side 驱动者无关**」⇒ `:71` **保持且今日有牙**(`INV-SC6` 计数断言);⛔ 原措辞中「**拓扑 B 的 flit 路径**」这一**命名**作废(仓内无 Router+flit 路径) | `ADR-CEP-19` SU · 二 ② | **不变**(`:71` 仍不动;`:56` 仍是唯一 MODIFIES;冻结授权面仍 = 1 条) |
+| **F-05** | **定位改写** = **真实 home 的简化模型**(承载**最小协议语义**:Request→Completion · 按读可配发 Snoop · Writeback 接收即消费)⇒ ⛔「协议中立」措辞与「不产生任何协议语义声明」旧推理半句**被取代** ⇒ 归入**与 adapter / engine / bridge 并列的独立类目:home 模型** | `ADR-CEP-19` SU · 二 ③ · `07 号` SU · 十二 ② · `ADR-CEP-12` SU(边界句) | **四项落点结论不变**(进 JSON / 不进 `protocol_instances.json` / 装配闸不判红 / 不计入 B3b) |
+| **F-11** | **拓扑 B 独立保留** + 「**A 必须零延迟**」的判据级理由(**判别力为主 / 断言纯度为次**)+ **J-9 拓扑分档判据** + 2 条实施契约(`[IAG-02]` 的 `protocol_instance` 必填 / 新模块自存桥指针并暴露只读访问器) | `ADR-CEP-19` SU · 二 ④ · `07 号` SU · 十二 ③ | **不变**(D-5 两拓扑并存维持) |
+
+**② 审查闭环(oracle → critic,顺序不可颠倒)**:
+- **`oracle`(1 轮)**:6 条建议**全部吸收**;其中**最重的一条是事实纠错** —— 本轮初稿写「`:71` **恒不被触发**」,而 oracle 实测 `:71` 今日**有牙**(`INV-SC6` 计数断言在 `test/test_cep_stub_cache_core.cc`;`ctest` 164/164 绿)⇒ ⇒ 初稿该理由**作废**,按 oracle 的事实改写为「命中路径限定 + 驱动者无关性」;另纠正 1 处**幻影引证**(初稿称 `ADR-CEP-12` SU 已登记「wrapper 观测面 ≠ basis 分档」边界句 ⇒ 实测该文 `wrapper` **0 命中**,该句实为审查包 **U-5**)⇒ 改写为「落实 U-5 的 **home 模型半边** + 与 ADR-CEP-12 **决策 6** / `07 号` SU · 四 D-1 同源」,⛔ **不**夹带 U-5 的 wrapper 半边(超出授权面)。
+- **`critic`(1 轮)**:**APPROVE_WITH_CONDITIONS / 0 BLOCKER / `mergeable: yes` / `scope_exceeded: false`**;2 SHOULD_FIX(「判别力」主理由按现写法会**高估退化面** ⇒ 收窄为仅「互联可达」面退化 · 「仅『协议中立』限定词被取代」**低估**变化面 ⇒ 改为同时点名「不产生任何协议语义声明」旧推理半句)+ 3 NIT(D-11 编号锚点 · delta 复验时点 · 台账 shorthand 收窄)⇒ **全部在提交前吸收**。
+- ⚠️ **预算**:本轮 oracle 1 轮 + critic 1 轮,**未用复审额度**;因 0 BLOCKER ⇒ **不触发复审**。
+
+**③ 冻结面改动面(3 份)+ 授权链**:
+
+| 冻结面成员 | 本轮改动 | 授权链 |
+|---|---|---|
+| `docs/adr/ADR-CEP-19-*.md` | 追加 **SU 2026-11-08 · 二**(F-01 / F-04 / F-05 / F-11) | **本轮**:本 Entry 授权 → 3 份文档**同 commit** → `cep_freeze_check.sh --update --authorized-by "Entry #292"` → 清单**单独** commit → 无参复验 |
+| `docs/architecture/07-coherence-exploration-platform.md` | 追加 **SU · 十二** + **§末索引 v2 重生成**(脚本,零手抄;44 节 / 16 SU;并登记「索引不在文末」的位置说明) | **同上**(同 commit) |
+| `docs/adr/ADR-CEP-12-*.md` | 追加 **SU 2026-11-08**(home 模型 ⛔ 不作 basis 分档输入的边界句) | **同上**(同 commit) |
+
+⚠️ **两条授权链分离**:① 冻结 main spec `openspec/specs/cep-stub-cache-core/spec.md` 的 `:56` MODIFIES ⇒ ⛔ **不在本轮** ⇒ 属**实施期**(builder 在其 change 内执行 + 另立 Entry 走两步授权,per Entry #291 §② A-4);② 声明面落点**甲 / 乙** ⇒ ⛔ **未预裁**,仍为 architect 待裁项(甲 = 不进 `protocol_instances.json` + delta 明示豁免,零冻结面;乙 = 加第 14 键 ⇒ 触及 M1 冻结件 `protocol_instance.schema.json`(`additionalProperties: false`)⇒ 须另立 Entry)。
+
+**④ F-04 口径收窄登记(防后人按 planner shorthand 执行)**:Entry #291 ⑤ 把 F-04 记作「`:71` 撤销理由改为『**仓内无 flit 路径**』」⇒ ⇒ **本轮更严的口径为**:「仓内无 flit 数据路径」只支撑 `:71` 行的**后半句**(桥 flit 路径入规范须走 ADDED Scenario)⇒ ⛔ **不得**用作 `:71` 不动的**前台理由**;前台理由 = **命中路径限定 + 命中路径下 stub 行为与 net_side 驱动者无关** ⇒ ⇒ `:71` **保持且今日有牙**。⇒ 本口径**取代** Entry #291 的 shorthand。
+
+**⑤ 计数纪律**:本轮**零**计数变化 —— `B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` **零 diff**;⛔ 三份 SU 均**无**落地宣称(⛔ 决策登记 ≠ 落地);⛔ 未新增任何 `INV-CEP-*` 定义。
+
+**⑥ architect 域剩余待办**:**F-12**(D-9 增记 `metrics.json` sha256)· **F-08 残余**(§末索引的**位置**问题:索引位于 SU · 十 ~ 十二 **之前** ⇒ 已加位置说明,但**未移至文末**(移动 = 删改既有段 ⇒ 需单独裁决))· 声明面**甲 / 乙**待裁。
+
+**⑦ 关联**:**#291**(两条用户裁决 + 落地义务清单)· **#290**(审查材料包)· **#289**(任务路径图 + §10 修订 ①)· **#288**(12 条决策)· **#285**(架构文档审查 · U-5 的来源)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(第二轮审查)· `ADR-CEP-19` SU 2026-11-08 · 二 · `ADR-CEP-12` SU 2026-11-08 · `07 号` SU · 十一 / SU · 十二 · `openspec/specs/cep-stub-cache-core/spec.md`(`:56` / `:63` / `:71`)· `test/test_cep_stub_cache_core.cc`(`INV-SC6`)· `include/tlm/cep/instance_assembly_gate.hh`(`[IAG-01]`~`[IAG-07]`)· `include/tlm/cep/protocol_instance.schema.json`
 
 ---
 ---
