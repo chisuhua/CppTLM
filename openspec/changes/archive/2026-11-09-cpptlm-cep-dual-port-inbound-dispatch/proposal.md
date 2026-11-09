@@ -6,40 +6,11 @@
 
 ## Why
 
-### 根因(代码级,非推断)
+**根因(代码级)**:双端口适配器只 override **单参** `process_request_input`,而框架的**唯一**入向入口 `ChStreamTargetPort::recvReq` 调的是**双参**版 ⇒ 基类双参版回退单参 ⇒ `port_idx` 丢失 ⇒ 入向包**恒落 PE 侧** ⇒ `net_resp_in()` 永不可达 ⇒ CEP 拓扑的**回程腿不可达** ⇒ 延迟族 5 键 `not-collected` + IC3 `⚪ 不适用` ⇒ **「全绿 run」无法评估**(per `07 号` SU · 十五 ① 的残余缺口登记)。
 
-`DualPortStreamAdapter` **只 override 单参版** `process_request_input(Packet*)`,而框架的**唯一入向入口**是**双参版**:
+⇒ `include/framework/` 是**共享框架层**(影响 ≥ 2 个模块 / 公共行为)⇒ per AGENTS.md 反模式「架构性变更未走 OpenSpec」必须先提案;且 per 台账 Entry #305 ③ R-2「另立 change」。
 
-| 环节 | 位置 | 事实 |
-|---|---|---|
-| 框架入口 | `include/core/chstream_port.hh:70` | `ChStreamTargetPort::recvReq` 调 `adapter_->process_request_input(pkt, port_idx_)` —— **只有双参版** |
-| 基类回退 | `include/core/stream_adapter_base.hh:82-84` | 双参版默认**回退到单参版** ⇒ 端口下标信息**在此丢失** |
-| 适配器 | `include/framework/dual_port_stream_adapter.hh:189-199` | 只 override 单参版 ⇒ 恒调 `process_pe_request_input()` ⇒ **只填 `pe_req_in()`** |
-| 旁证 | `include/framework/dual_port_stream_adapter.hh:204` | `process_net_response_input()` **零调用点**(全仓仅定义处)⇒ `net_resp_in()` 永不可达 |
-
-⇒ **双端口模块的 net 侧入向恒落 PE 侧**。
-
-### 后果链(CEP 拓扑级)
-
-1. 拓扑 A/B 的 `home` 侧到期 `Completion` 从 `resp_out[0]` 发出 ⇒ 经 CohIf 的 egress 通道(`req_out`,per `include/tlm/cep/cohif_direction_traits.hh:45-56`)⇒ 抵达 **`w` 的 net 组 `req_in[1]`**;
-2. 该包被当作**业务请求**读进 `w` 的 `pe_req_in()` ⇒ **产生垃圾请求**(原注释亦如实记载此现象);
-3. ⇒ `w` 的 `net_resp_in()` 收不到 `Completion` ⇒ **回程腿在拓扑级不可达**;
-4. ⇒ 延迟族 5 键 `not-collected` + `IC3 = ⚪ 不适用` ⇒ **「全绿 run」目标无法评估**(SU 十五 ① 已登记)。
-
-### 为什么必须另立 change
-
-`include/framework/` 是**共享框架层**(`DualPortStreamAdapter` 同时服务 `NICTLM` 与 `StubCacheEndpointTLM`)⇒ 影响面 ≥ 2 个模块 / 公共行为 ⇒ per AGENTS.md 反模式「架构性变更未走 OpenSpec」必须先提案;且 per Entry #305 ③ R-2 明确「另立 change」。
-
-### ⚠️ 「双条件」不完整 —— 实测需**第三条**(实施期发现)
-
-`07 号` **SU · 十五 ①** 登记的触发条件是**双条件**:① 修适配器的入向路由 + ② 改 config `emit_completions: true` 并重跑。
-**实测**:只做 ①+② 时 `home->counters().completions_sent > 0` 但 `w->counters().net_completions_in == 0` ⇒ **回程仍不可达** ⇒ 双条件**不充分**。
-
-**缺的那一条(③)**:CohIf 的 egress 走 **`req_out`**(`include/tlm/cep/cohif_direction_traits.hh` 的 `egress_channel()` = `EgressChannel::Req`)⇒ `home` 的回程 `Completion` 从 **`home.req_out[0]`** 发出;而原拓扑只有 `w.1 → home.0` 一条连接 ⇒ 其正向 pair 是 `w.req_out[1] ↔ home.req_in[0]` ⇒ **`home.req_out[0]` 未被任何连接绑定** ⇒ `send()` 返回 false ⇒ 回程**根本发不出去**。
-
-⇒ 须在拓扑里补 **`home.0 → w.1`**(每个方向一条**显式**连接 —— 这正是 CohIf「断链即断达」模型的直接推论:断掉这条连接 ⇒ 回程不可达 ⇒ 判据有牙)。
-
-⚠️ 这条**不改** `07 号` 的原文(SU · 十五 的「双条件」是**当时**的登记)⇒ 以本 change + `07 号` **SU · 十六** 追加闭合登记。
+⚠️ **实施期实测发现:原登记的「双条件」不完整** —— 还需**第三条**:拓扑补 **`home.0 → w.1`** 回程连接(因 CohIf 的 egress 走 `req_out` ⇒ `home.req_out[0]` 原拓扑**未连接** ⇒ 回程根本发不出去)。逐条推导(端口组 ↔ 物理端口 / 连接如何落到通道 / 路由表)见 **`design.md` §1~§3**;实施期证据见台账 **Entry #308 ③ F-1**。
 
 ## What Changes
 

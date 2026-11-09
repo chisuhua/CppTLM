@@ -469,7 +469,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**(2026-11-09 实测,per `openspec list --json`;唯一 active = `cpptlm-cep-dual-port-inbound-dispatch`,per 台账 Entry #308)⇒ **当前 Proposed 并发 = 1/3**。
+`openspec/changes/` 当前 **0 个 active**(2026-11-09 实测,per `openspec list --json`;唯一 active `cpptlm-cep-dual-port-inbound-dispatch` 已于本日归档 ⇒ slot 已释放,per 台账 Entry #311)⇒ **当前 Proposed 并发 = 0/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -17311,6 +17311,30 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 **③ 边界**:⛔ 不改任何 ADR;⛔ 不动 `B3b-2` 计数(仍 **0/4**);⛔ 不把「回程腿闭合」写成「全绿」/「协议语义达成」(**IC3 仍 ⚪ 不适用**);⛔ 不顺手把 R-5 在本 change 内修(影响面 ≫ 回程腿 ⇒ 另立 change)。
 
 **④ 关联**:change **`cpptlm-cep-dual-port-inbound-dispatch`** · **#309**(T1 + E1)· **#308**(R-2 实施)· **#307**(4 项裁决)· **#305 ③ R-2** · **#304**(SU 十五 授权先例)· **#295**(索引移文末纪律)
+
+### Entry #311 — 2026-11-09 [build](**归档** `cpptlm-cep-dual-port-inbound-dispatch`(✅ 已完成归档语义 · 零 delta)+ **KPI 1/3 → 0/3**)
+
+**主题**:change `cpptlm-cep-dual-port-inbound-dispatch` 的归档(✅ 已完成归档语义)—— 归档件入 `openspec/changes/archive/2026-11-09-cpptlm-cep-dual-port-inbound-dispatch/`;KPI slot 释放 ⇒ 活口径 **1/3 → 0/3**。
+
+**角色**:builder(归档 + 同步)· architect(裁决与冻结面授权已在 #307 / #310 落定)· planner(台账)。
+**KPI**:Proposed **1/3 → 0/3**(`openspec list` 实测 **0 active**)。
+
+**① 归档链(✅ 已完成归档语义)**:
+| 步 | 内容 | 证据 |
+|---|---|---|
+| 1 | 归档 | `openspec archive cpptlm-cep-dual-port-inbound-dispatch --skip-specs --yes` ⇒ 归档件 `openspec/changes/archive/2026-11-09-cpptlm-cep-dual-port-inbound-dispatch/`;tasks **30/30** |
+| 2 | **零 delta spec** | 本 change 的 `.openspec.yaml` 声明 `skip_specs: true`(**不改任何 main spec 的契约面**)⇒ 归档**不合并**任何 delta ⇒ ⛔ **不是**「⏸ 暂存归档」语义(那是「实现未启动」);本条是「**实现已完成 + 零 delta**」⇒ main specs **零 diff** |
+| 3 | proposal 的 Why 段收敛 | 归档 CLI 告警「Why section should not exceed 1000 characters」(实测 2072)⇒ 已收敛至 **657** 字(逐条推导留在 `design.md` §1~§3)⇒ 告警消除 |
+| 4 | KPI 活口径同步 | **6 处**:obj §5.2 · phase-10 · umbrella · nvlink-sharp ×2 · roadmap.md · AGENTS.md ⇒ **1/3 → 0/3**;AGENTS.md 的已归档 change 计数 **132 → 133** |
+| 5 | improvement 登记 | 新建 `.rddf/improvements/cpptlm-cep-dual-port-inbound-dispatch.md`(状态 = ✅ 已归档)⇒ improvements 目录与 change 一一对应不断链 |
+
+**② 归档不改任何结论**:⛔ `B3b-2` **仍 0/4**;⛔ IC3 **仍 ⚪ 不适用** ⇒ 拓扑 A/B **仍不承载「全绿 run」**;⛔ 五项冻结件(`cep_b3b2_deferrals.json` / `protocol_instances.json` / `protocol_instance.schema.json` / `stub_cache_core.hh` / `cohif_noc_bridge.hh`)**零 diff**;⛔ 本次归档**未触碰** M1 冻结集 ⇒ **无需**再走 `--update` 授权链。
+
+**③ 验证(实测)**:`ctest` **167/167** · `./test.sh --mode off` **21/21** · `openspec list` ⇒ **No active changes** · `cep_docs_sync_check --strict` ⇒ **KPI baseline 数字一致(实测 0/3)** · `cep_freeze_check` 无参复验 rc=0(provenance 41 产物一致)。
+
+**④ 剩余 backlog(不在本轮)**:**T4** 14 份起草 ADR 的签发批次 · **R-5 / R-6** `BidirectionalPortAdapter` 2 参 override 签名不匹配(另立 change)· **R-8** `NUMBER-MAP` 状态列 ✅ 三义(冻结面内 ⇒ 需授权)· **T2** `cep-stub-cache-chstream-surface` 纳入 M1 冻结集(需五步授权链)。
+
+**⑤ 关联**:**#310**(SU · 十六 授权 + 五步链)· **#309**(T1 + E1)· **#308**(R-2 实施)· **#307**(4 项裁决 + 实施顺序)· **#305 ③ R-2**(残余登记)· 归档件 `openspec/changes/archive/2026-11-09-cpptlm-cep-dual-port-inbound-dispatch/`
 
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 
