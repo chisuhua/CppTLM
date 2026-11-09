@@ -17391,6 +17391,41 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑥ 关联**:**#312**(T2 授权 + spec 达标化)· **#311**(归档 + KPI 0/3)· **#307**(4 项裁决:C-2.2 registry / C-2.3 反向校验 / C-2.4 纳入冻结集)· **#305 ③ R-1**(残余登记:新 spec 未纳入 M1 冻结集 ⇒ 治理不对等)· `test/cep_freeze_scope_registry.json` · `scripts/test/cep_freeze_check.sh`
 
+### Entry #314 — 2026-11-09 [architect](**T4 签发批次第 1 批**:04 / 05 / 06 / 07 —— 补顶层 Verification 章 + **签发 v1.0**)
+
+**主题**:per oracle 裁决 **C-3**(「签发」的合法动作 + 可签署集)执行 **T4 批次第 1 批** —— 4 份起草中 ADR(`ADR-CEP-04` / `-05` / `-06` / `-07`)补**顶层 Verification 章**并**签发 v1.0**。本 Entry 是**冻结面授权记录**(改 `docs/adr/ADR-CEP-*.md` ⇒ 走**五步授权链**)。
+
+**角色**:architect(裁决 + 双审)· builder(实施)· planner(台账)。**KPI**:Proposed **0/3**(不变;本 Entry 不建 change ⇒ 不占 slot)。
+**批次划分**:按 `ADR-CEP-NUMBER-MAP` 的**起草顺序**分批 —— 第 1 批 = **04 / 05 / 06 / 07**(本 Entry)· 第 2 批 = 07A / 08 / 09 / 17 · 第 3 批 = 12 / 13 / 14 / 15 / 16 / 18(⚠️ 07A 归第 2 批,⛔ 不与 -07 同批)。
+
+**① 签发的合法动作(per oracle C-3.2 两步)**:
+
+| 步 | 动作 | 说明 |
+|---|---|---|
+| ① | **补顶层 Verification 章**(签发前置,per C-3.3) | 位置 = **正文**(首个 `## Status Update` 之前);形态 = `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` + 表(判据 / 载体 / 反向 fixture(毒化 ⇒ 必红 + 归因 id)) |
+| ② | **追加签发 Status Update 段 + 原地更新 header 的 `> **状态**:` 元数据行** | header 元数据行是**唯一**豁免行(5/5 已签发先例一致:01/02/03/11/19 **既**回过 header **又**有 SU);**决策正文一字不动仍是红线** |
+
+**② oracle 复核(2026-11-09,1 轮 · 批次档位)**:判定 **PASS-WITH-NOTES**(0 BLOCKER)· **4 处 must-fix + 若干 note**,逐条处置:
+
+| # | finding | 处置 |
+|---|---|---|
+| **MF-1** | ADR-05 **V-05-5 绑错 id**:`INV-SC5` 的真实语义 = writeback **载荷**(dirty 带 data / clean 不带),**不**断言 E→M 状态迁移 ⇒ 允许静默升级**不会**让它变红;且与 §7 判据 2 的自身依据(`INV-CEP-05-IC1`)矛盾 | ✅ **重绑 `INV-CEP-05-IC1`**(Stub 侧稳定态白名单的穷举断言)· `INV-SC5` 降为**相邻证据**并注明其真实语义 |
+| **MF-2** | ADR-06 **V-06-6 绑定失真 + 「必填」事实错误**:该断言面**无 `INV-CARRIER` 标记**(不在 id 表内);且 `verification_mode` 在 schema 的 `properties` 内、**不在** 13 必纳 `required` 内 ⇒ 「必填」表述与事实相反 | ✅ 删「必填」表述,改为「`properties` 声明 + enum **恰 3 档**锁定(⛔ 不在 13 必纳 `required` 内)」;载体点名 `test/test_cep_simulation_mode_lock.cc` 的 `verification_mode` 用例;归因改标「**id 待建立**」;「禁止表述」明示为**报告层**义务 ⇒ **禁**当机器判据;**并**修该用例的陈旧标题「四档」→「恰三档」(实测断言恰 3 档) |
+| **MF-3** | 三处「id 待建立」的**登记承诺不可核验**(全仓 grep 无对应登记)⇒ 正是「纯承诺 = 测试给缺口盖章」 | ✅ 新增 `test/cep_adr_structural_deferrals.json` 的 **`pending_invariant_ids`**(3 笔)· 3 章改指该锚点;**并**给结构闸加 **④b 机检**(ADR 文件存在 + 章节锚点真在 ADR 内 + id 命名空间合规 + 台账 Entry 存在)⇒ 登记**本身**可机检 ⇒ **不是纯承诺** |
+| **MF-4** | ADR-05 **V-05-2 家族绑定覆盖不足**:`CEN-Ib*` 语义 = ProtocolEngine 回调**形状**契约族,**没有一条**执行「折叠映射表逐字对齐 ⇒ 零 diff」;且 **`CEN-Ib8` 在 id 表内无载体** | ✅ 措辞收敛到**形状族**实际语义(`Ib1~7` · `Ib9~11`)+ **显式标注 `CEN-Ib8` 无载体**;「逐字 diff 审计」单列为**id 待建立** |
+| **N-1** | ADR-05 **V-05-4 漏绑最贴切 id**:`CEN-Ib6` 才是「completion 无来源判别位」的直接机器锁;原毒化措辞超出静态 trait 的判别力 | ✅ 加挂 **`CEN-Ib6`**;毒化改为「**给 completion 加来源判别位** ⇒ 必红」 |
+| **N-2** | ADR-04 **V-04-7**「断言面已存在」半真:`PARTIAL` 分支**零断言**(且当前无 `PARTIAL` tracker 实现) | ✅ 改**分侧**表述(CONSERVATIVE 侧已存在 / `PARTIAL` 侧待建) |
+| **N-3** | ADR-06 **V-06-7** 载体列**低估**实际覆盖 | ✅ 补 `tools/run_sweep.py` / `ab_compare.py` / `tools/render_report.py` 的 `preregistration_problems()`(run 级「not-collected ⊆ 预登记」执行面) |
+| **N-4** | 节号碰撞(ADR-04 `## 12.` 接 `## 10. Status Update`;ADR-07 两个 `## 9.`) | ✅ 4 份**统一**为**未编号** `## Verification`(与 ADR-05 同款干净范式) |
+
+**③ 锚点逐条实证(签发前置③)**:每条判据的载体文件与断言位置已对 `test/cep_invariant_assertion_map.json` **逐条核对**(04:`IC1/2/3/5/6/7` · 05:`IC1` + `INV-SC1~6` + `CEN-Ib*` · 06:`IC1~IC5` · 07:`IC1~IC7`)⇒ **零臆造**。
+
+**④ 五步授权链**:① 本 Entry 授权 → ② **产物 commit**(4 份 ADR 的 Verification 章 + header 元数据行 + 签发 SU 段 + 登记表 + 闸)→ ③ `cep_freeze_check.sh --update --authorized-by "Entry #314"` → ④ **清单单独 commit** → ⑤ **无参复验**。
+
+**⑤ 边界**:⛔ **决策正文零改动**(只补 Verification 章 + header 元数据行 + 追加 SU);⛔ **不**宣称判据**已达成**(Verification 是**前瞻判据**,非实测日志);⛔ `B3b-2` **维持 0/4**;⛔ 其余 10 份起草中 ADR **不在本批**(留第 2/3 批);⛔ `ADR-CEP-11` / `-19` 的**永久豁免**不变(签发早于结构闸立项 ⇒ ADR 不可变 ⇒ 正文永远补不了)。
+
+**⑥ 关联**:**#313**(T3 冻结范围登记表 + 反向校验)· **#312**(T2 新 spec 入冻结集 + spec 达标化)· **#307**(4 项裁决:C-3.2 签发两步 / C-3.3 签发前置 / C-1 分区与豁免)· **#305 ③ R-1** · **#310**(SU · 十六 授权)· `test/cep_adr_structural_deferrals.json` · `scripts/test/cep_adr_structural_check.sh`
+
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 
 **主题**:按修订 ④ 的关键路径推进 **A6(G2 可达门)** 与 **W4**;判据落到「**有区分力**」形态(每条附变异体)。

@@ -1,7 +1,7 @@
 # ADR-CEP-05: Stub Cache Core 接口(RN 侧投影 + 折叠映射表)
 
-> **状态**: 🟡 起草中(v0.6)
-> **日期**: 2026-10-19(初版)/ 2026-10-20(v0.5 修订)
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-19(初版)/ 2026-10-20(v0.5 修订) / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **关联真源**:
 > - 真源 1:`06-inter-module-network.md` v0.4 §2.1 L1-L6 仿真层(正交,非 Stub Cache 真源)
@@ -283,6 +283,25 @@ endinterface
 ## 12. v0.2 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #307 裁决 C-3.3)—— 签发前必须有**顶层** Verification 章(⛔ 不接受把判据埋在 `## Status Update` 段内)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**;归因 id **一律复用**既有体系(`INV-SC1~6` 属本 ADR · `CEN-Ib*` 属 `ADR-CEP-02` 的**跨 ADR 不变量集合**(per `ADR-CEP-02 §2` 的显式定义,跨 ADR 引用即设计用法)· `INV-CEP-05-IC1` 属本 ADR)⇒ ⛔ **禁**新造平行 id 体系。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-05-1** | **Stub 只暴露稳定状态**:协议的**瞬态**(`T` / `O` / `F`)与**协议私有状态**(token 等)一律住在 **Protocol Engine 插件内部**,**不泄漏**到 Stub 的 4 值 `perm` 枚举 | `include/tlm/cep/stub_cache_core.hh` · `test/test_cep_canonical_flow_contract.cc` | 归因 id **`INV-CEP-05-IC1`** · 毒化:Stub 侧出现瞬态取值 / 瞬态有 `perm` 投影 ⇒ 必红 |
+| **V-05-2** | **折叠映射表**(§2 决策 3 —— α 方案正确性的**唯一审计点**)所锁的 **canonical 10 流形状**在两侧**一致**:ProtocolEngine 回调形状族(`CEN-Ib1` ~ `Ib7` · `Ib9` ~ `Ib11`)与 Stub 侧稳定态白名单(`INV-CEP-05-IC1`)同时成立 | `include/tlm/cep/stub_cache_core.hh` 的映射表 · `test/test_cep_canonical_flow_contract.cc`(`CEN-Ib*` 族)· `test/test_cep_stub_cache_core.cc` | 归因 id **`CEN-Ib1` ~ `CEN-Ib7` · `CEN-Ib9` ~ `CEN-Ib11`**(canonical 流形状族;⚠️ **`CEN-Ib8` 在既有 id 表内无载体**)+ **`INV-CEP-05-IC1`**(Stub 侧白名单)· 毒化:映射表任一格破坏形状契约 ⇒ **按对应 `CEN-Ib` 条**必红 · ⚠️ **「折叠映射表逐字对齐 canonical 10 流 ⇒ 零 diff」的字面审计本体尚无机器载体**(现有检查为**单向形态** + 5 隐藏流齐备)⇒ 该审计判据 **id 待建立**(登记于 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`)⇒ **禁**在本章新造 id |
+| **V-05-3** | **6 条接口不变量**(§4.3)逐条有牙载体:`INV-SC1` 同 addr 最多 1 个 outstanding · `INV-SC2` evict 不选取 outstanding line · `INV-SC3` snoop 响应在参数化固定延迟后返回 · `INV-SC4` completion 与 request 严格配对(无 unsolicited)· `INV-SC5` dirty writeback 带 data / clean 不带 · `INV-SC6` hit 路径不产生网络流量 | `include/tlm/cep/stub_cache_core.hh` · `test/test_cep_stub_cache_core.cc` | 归因 id **`INV-SC1` ~ `INV-SC6`** · 毒化:破坏任一条 ⇒ **按该条**必红 |
+| **V-05-4** | **α 失效判据 1**(`forward_data` → `completion` 不可分辨性,§7):stub 收到的 completion **不携带来源判别位** ⇒ 无论来自 memory 还是 peer 转发,状态迁移与数据落位**逐位一致** | `test/test_cep_stub_cache_core.cc` · `test/test_cep_canonical_flow_contract.cc` | 归因 id **`CEN-Ib6`**(completion 无来源判别位 + 其反向 fixture)+ **`INV-SC4`**(配对性)+ **`INV-SC6`**(hit 路径零网络流量)· 毒化:**给 completion 加来源判别位** ⇒ 必红 |
+| **V-05-5** | **α 失效判据 2**(E 态静默升级,§7)不得发生:Stub 的状态取值**穷举**于稳定态白名单 ⇒ **不存在**「未声明路径上的 E → M 静默升级通道」 | `include/tlm/cep/stub_cache_core.hh` · `test/test_cep_canonical_flow_contract.cc` | 归因 id **`INV-CEP-05-IC1`**(Stub 侧稳定态白名单的**穷举**断言;与 §7 判据 2 的自身依据一致)· 相邻证据:`INV-SC5`(writeback **载荷**语义 = dirty 带 data / clean 不带;⚠️ **其断言面不含 E→M 状态迁移策略**)· 毒化:允许 E → M 静默升级 ⇒ 必红 |
+| **V-05-6** | **三明治挂载形态**(§2 决策 2)与 **bypass 模式**(§2 决策 4)作为**配置选项**存在,⛔ **不得**改变 §4 的状态机语义 | `configs/cep_chi_rnf_e2e_a.json` / `configs/cep_chi_rnf_e2e_b.json` · `test/test_cep_stub_cache_e2e.cc` | ⚠️ **该断言面在既有 id 体系内无对应条目** ⇒ 归因 id **待建立**(登记于 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`)⇒ ⛔ 本章不新造;触发条件:建立 `INV-CEP-05-ICx` 时**必须**同时交付其反向 fixture |
+
+**载体状态汇总**:V-05-1 ~ V-05-5 的载体**均已存在且逐条实证** ⇒ **可执行**;V-05-2 的**字面 diff 审计**与 V-05-6 的**配置面判据**的归因 id **待建立** ⇒ 在 id 建立前**不得**计入「有牙载体」。
+
+**签发前置自检**:① 本章**位于正文**(首个 `## Status Update` 之前)✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture**(待建 id 已**登记在机器可查的登记表** `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`,⛔ 不是纯承诺)✅ ③ 归因 id **全部复用**既有体系(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
+
+---
+
 ## 13. Status Update(2026-10-22,per 台账 Entry #12 → #18)
 
 > **授权**:Entry #12(R-13 登记 `moesi_gpu` / `mesif`)→ #13(判据 (b) 成立)→ **#18(§7 正文刷新)**。
@@ -361,3 +380,29 @@ endinterface
 > **§14.1 引述的「11 个 change,串行 11 季度」**:该算术已由 **Entry #71** 扩至 **13**(见 `ADR-CEP-00 §2 Decision 3` 的 2026-10-26 增补);**§14.1 正文保留为历史快照不回改**(其作废理由的逻辑不因算术扩增而失效 —— 拆成 2 个 change 会破算术这一点仍成立)。
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #71**
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #71)。
+
+---
+
+## Status Update(2026-11-09,per 台账 Entry #314)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #314**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 每条判据的**载体 + 归因 id 逐条实证** | 载体文件与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;**判据非空谈**:毒化实测 1 例(`PcieEndpointTLM` 的 `[[deprecated]]` 移除 ⇒ 载体 `test_cep_engine_and_numbering_contract.cc:233` 按**正确原因**变红;恢复后绿 —— per Entry #314 ③) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(4 must-fix 全处置)· critic **APPROVE_WITH_CONDITIONS**(0 BLOCKER · 1 SHOULD_FIX 已闭合)· 处置明细 = Entry #314 ② |
+| ④ 台账授权 | **Entry #314** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #314"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文(§1 ~ 末个编号节)与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据已达成**:Verification 章是**前瞻判据**(签发后随 ADR 冻结),**不是**实测日志;每条载体状态以该章「载体状态汇总」为准;`test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids` 所登记项**仍是缺口**。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #314**(授权 + 双审处置)· **#307**(4 项裁决:C-3.2 / C-3.3 / C-1)· **#313**(T3 登记表)· **#312**(T2 新 spec 入冻结集)· `test/cep_adr_structural_deferrals.json` · `scripts/test/cep_adr_structural_check.sh`

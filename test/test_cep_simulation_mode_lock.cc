@@ -181,7 +181,7 @@ TEST_CASE("[cep][simulation-mode] ADR-CEP-06 决策 5 三分支在 ADR 正文可
     REQUIRE(adr.find("决策 5 裁决") != std::string::npos);
 }
 
-TEST_CASE("[cep][simulation-mode] verification_mode 四档且契约文本齐备", "[cep][simulation-mode]") {
+TEST_CASE("[cep][simulation-mode] verification_mode 恰三档(exhaustive/bounded_random/sampled)且契约文本齐备", "[cep][simulation-mode]") {
     const json s = load_metrics_schema();
     const auto& props = s.at("properties");
     REQUIRE(props.contains("verification_mode"));

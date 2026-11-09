@@ -1,7 +1,7 @@
 # ADR-CEP-04: Sharer Tracker 抽象重构(D-5 重构 + caps descriptor)
 
-> **状态**: 🟡 起草中(v0.6)
-> **日期**: 2026-10-19(初版)/ 2026-10-20(v0.5 修订)
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-19(初版)/ 2026-10-20(v0.5 修订) / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **关联真源**:
 > - 真源 1:`06-inter-module-network.md` v0.4 §15.4 P2.0-P5(per `ADR-CEP-00A §3.1` 实证 — **无 P6**,per oracle v0.3 B3-7 修订)Coherence 演进 seam
@@ -311,6 +311,24 @@ interface SharerTrackerIf {
 - 本地定义:可裸名,但建议统一加 `INV-`
 - `CEN-Ib1~10` / `INV-SC1~6` 保留原命名(分别属 ADR-CEP-02 / ADR-CEP-05)
 - `INV-CEP-NN-ICx`:跨 ADR 引用 canonical 形式(per `NUMBER-MAP §2 Decision 2`)
+
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #307 裁决 C-3.3)—— 签发前必须有**顶层** Verification 章(⛔ 不接受把判据埋在 `## Status Update` 段内)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**;归因 id **一律复用**既有体系(§11 命名空间统一 + `test/cep_invariant_assertion_map.json`)⇒ ⛔ **禁**在本章新造平行 id 体系。**载体状态**逐条标注:✅ 已存在(可执行)/ ⚠️ 尚不存在 ⇒ 落地前**不可执行**(per `ADR-CEP-01 §7 V6-a` 同款纪律)。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-04-1** | **caps descriptor struct**(§2 决策 3 —— **取代** bool flag、从第一天就位):caps 的 4 字段为 **enum 类型**且取值 ∈ 枚举子集 | `include/tlm/cep/sharer_tracker.hh`(`kTrackerTraits`)· `test/test_cep_sharer_tracker_base.cc` | 归因 id **`INV-CEP-04-IC1`** · 毒化:把某字段改回 `bool` ⇒ 必红 |
+| **V-04-2** | **幂等**:同一 addr 的重复 lookup **不改变** tracker 状态(§2 决策 1 的 α′ 正确性前提) | `test/test_cep_sharer_tracker_base.cc` | 归因 id **`INV-CEP-04-IC2`** · 毒化:某实现破坏幂等 ⇒ 必红 |
+| **V-04-3** | **5 个生命周期事件名来自唯一一张表**(§6 防 peer 漂移)+ 事件方法签名**跨 6 实现**一致 | `include/tlm/cep/sharer_tracker.hh`(`kLifecycleEventNames`)· `test/test_cep_sharer_tracker_base.cc` | 归因 id **`INV-CEP-04-IC3`** · 毒化:某实现**自带**一份名字表 ⇒ 必红 |
+| **V-04-4** | **hazard 行为契约**(§4)在 6 实现间**全字面收敛**(`NONE` / `STALL` / `CHAIN`)⇒ 同地址并发 lookup 的第 2 次**必返** `STALL` / `CHAIN` | `include/tlm/cep/sharer_tracker.hh` · `test/test_cep_sharer_tracker_base.cc` | 归因 id **`INV-CEP-04-IC6`** · 毒化:某实现返回 `NONE` ⇒ 必红 |
+| **V-04-5** | `fabric_ingress_classify` 的「table 命中 + epoch invalid」窗口 = **正常服务放行**(非 fail-stop) | `test/test_cep_collective_plane_invariants.cc` | 归因 id **`INV-CEP-04-IC5`** · 毒化:改成 fail-stop ⇒ 必红 |
+| **V-04-6** | **token 类协议不跟踪 sharer set**(§11 `INV-CEP-04-IC7`):`BroadcastNull` **不**维护 sharer set · 声明侧 lookup **恒广播** · **无**本地视图 | `include/tlm/cep/broadcast_null_tracker.hh` · `test/test_cep_instance_declaration_contract.cc` | 归因 id **`INV-CEP-04-IC7`** · 毒化:`BroadcastNull` 开始维护 sharer set ⇒ 必红 |
+| **V-04-7** | **DCOH 完备性契约**(§2 决策 2)钉死:`CONSERVATIVE` **绝不漏 sharer** · `PARTIAL` **必须** broadcast fallback · **禁止**无 fallback 的 `PARTIAL` | `include/tlm/cep/cxl_dcoh_tracker.hh` · `test/test_cep_cxl_dcoh_tracker.cc`(**CONSERVATIVE 侧断言面已存在**:caps / `broadcast_fallback` / 宁多探不漏探;⚠️ **`PARTIAL` 分支当前无实现 ⇒ 其断言面待建**) | ⚠️ **该断言面在既有 id 体系内无对应条目** ⇒ 归因 id **待建立**(登记于 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`)⇒ ⛔ 本章**不**新造 id;触发条件:`PARTIAL` tracker 实现落地 **或** 建立 `INV-CEP-04-ICx` 时**必须**同时交付其反向 fixture |
+
+**载体状态汇总**:V-04-1 ~ V-04-6 的载体**均已存在且逐条实证**(文件与断言位置已对 `test/cep_invariant_assertion_map.json` 核对)⇒ **可执行**;V-04-7 的 `CONSERVATIVE` 侧断言面**已存在**、`PARTIAL` 侧**待建**,且其**归因 id 待建立** ⇒ 在 id 建立前**不得**计入「有牙载体」。
+
+**签发前置自检**:① 本章**位于正文**(首个 `## Status Update` 之前)✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture**(待建 id 已**登记在机器可查的登记表** `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`,⛔ 不是纯承诺)✅ ③ 归因 id **全部复用**既有体系(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
 
 ---
 
@@ -982,3 +1000,29 @@ R11 是「**声明超前于实现**」(声明了 `SparseSnoopFilter` 却无行�
 - ⚠️ **流语义未闭环**:`ualink_4` 的 `request` / `completion` **专用承载引擎**仍缺(拓扑层现由 Null 实现承载)⇒ 本 SU 只闭合「装配」;
 - ⚠️ `perm` 仍只支持 `NONE`(UALink 走**软件一致性** ⇒ 无 snoop 类流量,per 本 ADR **SU 2026-11-06**);
 - ⚠️ **不得**据此改写「UALink 无实例声明」的旧句为「UALink 已完整」—— 声明已齐、装配已闭合、**流语义未闭合** 三件事必须分开读。
+
+---
+
+## Status Update(2026-11-09,per 台账 Entry #314)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #314**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 每条判据的**载体 + 归因 id 逐条实证** | 载体文件与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;**判据非空谈**:毒化实测 1 例(`PcieEndpointTLM` 的 `[[deprecated]]` 移除 ⇒ 载体 `test_cep_engine_and_numbering_contract.cc:233` 按**正确原因**变红;恢复后绿 —— per Entry #314 ③) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(4 must-fix 全处置)· critic **APPROVE_WITH_CONDITIONS**(0 BLOCKER · 1 SHOULD_FIX 已闭合)· 处置明细 = Entry #314 ② |
+| ④ 台账授权 | **Entry #314** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #314"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文(§1 ~ 末个编号节)与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据已达成**:Verification 章是**前瞻判据**(签发后随 ADR 冻结),**不是**实测日志;每条载体状态以该章「载体状态汇总」为准;`test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids` 所登记项**仍是缺口**。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #314**(授权 + 双审处置)· **#307**(4 项裁决:C-3.2 / C-3.3 / C-1)· **#313**(T3 登记表)· **#312**(T2 新 spec 入冻结集)· `test/cep_adr_structural_deferrals.json` · `scripts/test/cep_adr_structural_check.sh`

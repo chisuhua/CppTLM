@@ -1,7 +1,7 @@
 # ADR-CEP-06: Coherence Exploration Platform 实验输出协议
 
-> **状态**: 🟡 起草中(v0.6)
-> **日期**: 2026-10-20(v0.5 修订)
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-20(v0.5 修订) / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **作用域**: **CEP 实验输出 / metric / sweep / A-B 对比报表**,解 metis G1 "探索平台没有探索"盲点
 > **关联真源**:
@@ -204,6 +204,27 @@ per oracle 评审建议,任何必纳 metric 不可获得时(`experimental/` 工�
 ## 9. v0.1 修订记录(本 ADR 初版)
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #307 裁决 C-3.3)—— 签发前必须有**顶层** Verification 章(⛔ 不接受把判据埋在 `## Status Update` 段内)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**;归因 id **一律复用**既有体系(`INV-CEP-06-IC1` ~ `IC5`)⇒ ⛔ **禁**新造平行 id 体系。
+> ⚠️ **retention 口径**:本 ADR 决策 1 的「4 件套」= **运行期产出**;**入库**按现行 retention **丙**(只入库 `metrics.json` + `simulation_config.json`,per 台账 Entry #295 / #303)⇒ 本章的判据**按运行期口径**表述。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-06-1** | 每次 CEP 实验 = **1 个 run**,**运行期**产出 4 件套(`simulation_config.json` + `trace.h5` + `metrics.json` + `report.html`),缺一件 = 实验 fail | `scripts/test/cep_experiment_run.sh` · `experimental/metrics.schema.json` | 归因 id **`INV-CEP-06-IC1`** · 毒化:缺一件 ⇒ 必红 |
+| **V-06-2** | `metrics.json` 含 **13 个必纳字段** + 可选字段;缺必纳字段 = 实验 fail | `experimental/metrics.schema.json` · `test/test_cep_simulation_mode_lock.cc` | 归因 id **`INV-CEP-06-IC2`** · 毒化:删一个必纳键 ⇒ 必红 |
+| **V-06-3** | 不可观测 metric 标 **`not-collected` + reason**,⛔ 禁止省略 / 写 `0` / 写 `-1`(「实测 0」与「未测量」在数据层同形) | `test/test_cep_simulation_mode_lock.cc` · `experimental/metrics.schema.json` | 归因 id **`INV-CEP-06-IC4`** · 毒化:把未采集写成 `0` ⇒ 必红 |
+| **V-06-4** | **`memory_violations` 须覆盖 SWMR + data-value 双不变量**,且报告**能区分**违例类型 | `test/test_cep_simulation_mode_lock.cc` | 归因 id **`INV-CEP-06-IC5`** · 毒化:只判 data-value 不判 SWMR ⇒ 必红 |
+| **V-06-5** | **一致性闸门真的生效**:`deadlock_violations == 0` ∧ `memory_violations == 0` 为**硬性** ⇒ 违例 ⇒ 实验 fail | `test/test_cep_tools_contract.cc` | 归因 id **`INV-CEP-06-IC3`** · 毒化:让闸门对违例放行 ⇒ 必红 |
+| **V-06-6** | **规模上限契约**:实验元数据**声明** `verification_mode` ∈ {`exhaustive`, `bounded_random`, `sampled`}(**恰 3 档**)与 `verification_scope`;⛔ **禁止**把 `bounded_random` / `sampled` 的结果表述为「已证明无死锁 / 无违例」(`deadlock_violations == 0` 只代表「在声明的 `verification_scope` 内**未观测到**」) | `test/test_cep_simulation_mode_lock.cc` 的 `verification_mode` 用例(两键存在 + enum **恰 3 档**锁定)· `experimental/metrics.schema.json` 的 `properties`(⚠️ 该两键在 `properties` 内,**不在** 13 必纳 `required` 内) | ⚠️ **该断言面在既有 id 体系内无对应条目**(该用例无 `INV-CARRIER` 标记)⇒ 归因 id **待建立**(登记于 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`)⇒ ⛔ 本章不新造 · ⚠️ 「禁止表述」是**报告层**义务,机器侧只承载「键存在 + 档位恰 3」⇒ **禁**把「禁止表述」当作机器判据 |
+| **V-06-7** | **预登记 out-of-scope 集合**为**评审过的设计面**(真源 = objective §9.1 ② 表),⛔ **禁**事后自由扩张 ⇒ `not-collected ⊆` 预登记集 | `experimental/preregistration.json`(机器投影)· `scripts/test/cep_prereg_drift_check.sh`(真源 ↔ 投影 drift 闸)· `tools/run_sweep.py` / `tools/ab_compare.py` / `tools/render_report.py` 的 `preregistration_problems()`(run 级「not-collected ⊆ 预登记」执行面,per **本文件** SU#1 §④ 的 run-validity 判据④) | 归因 id **待建立**(既有族无对应条目)⇒ ⛔ 本章不新造;登记于 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`;触发条件:建立 `INV-CEP-06-ICx` 时**必须**同时交付其反向 fixture |
+
+**载体状态汇总**:V-06-1 ~ V-06-5 的载体**均已存在且逐条实证** ⇒ **可执行**;V-06-6 的断言面(键存在 + 档位恰 3)与 V-06-7 的闸 / tools **均已存在**,但两者的**归因 id 待建立** ⇒ 在 id 建立前**不得**计入「有牙载体」。
+
+**签发前置自检**:① 本章**位于正文**(首个 `## Status Update` 之前)✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture**(待建 id 已**登记在机器可查的登记表** `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`,⛔ 不是纯承诺)✅ ③ 归因 id **全部复用**既有体系(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
+
+---
 
 ## Status Update 2026-11-04(#1)—— 决策 4 / 决策 5 的**可执行化**裁决(载体 + 两级 verdict + 预登记闸)
 
@@ -1022,3 +1043,29 @@ per `ADR-CEP-01 §6.2` 代价 3「分类错误 = 静默死锁」,这是 H4 假�
 - [ ] 冻结面两步授权已执行:台账 **Entry #304** 授权 → **commit 本段 + `07 号` SU · 十五 + `ADR-CEP-19` SU** → `cep_freeze_check.sh --update --authorized-by "Entry #304"` → **清单单独 commit** → 无参复验 provenance 通过
 
 **关联**:台账 **Entry #304**(授权)· **#303**(首批 run 入库 + 双向闸 + 7 字段台账)· **#302**(A7 三键归属 + IC3 三态产出者)· **#295**(retention 丙)· **#293**(台账 7 字段裁定)· `07 号` **SU · 十五** · `ADR-CEP-19` SU 2026-11-09 · 一 · `test/cep_e2e_runs.jsonl` · `scripts/test/cep_e2e_reconcile_check.sh` · `test/cep_experiment_harness.hh`
+
+---
+
+## Status Update(2026-11-09,per 台账 Entry #314)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #314**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 每条判据的**载体 + 归因 id 逐条实证** | 载体文件与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;**判据非空谈**:毒化实测 1 例(`PcieEndpointTLM` 的 `[[deprecated]]` 移除 ⇒ 载体 `test_cep_engine_and_numbering_contract.cc:233` 按**正确原因**变红;恢复后绿 —— per Entry #314 ③) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(4 must-fix 全处置)· critic **APPROVE_WITH_CONDITIONS**(0 BLOCKER · 1 SHOULD_FIX 已闭合)· 处置明细 = Entry #314 ② |
+| ④ 台账授权 | **Entry #314** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #314"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文(§1 ~ 末个编号节)与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据已达成**:Verification 章是**前瞻判据**(签发后随 ADR 冻结),**不是**实测日志;每条载体状态以该章「载体状态汇总」为准;`test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids` 所登记项**仍是缺口**。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #314**(授权 + 双审处置)· **#307**(4 项裁决:C-3.2 / C-3.3 / C-1)· **#313**(T3 登记表)· **#312**(T2 新 spec 入冻结集)· `test/cep_adr_structural_deferrals.json` · `scripts/test/cep_adr_structural_check.sh`

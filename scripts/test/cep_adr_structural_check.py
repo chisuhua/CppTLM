@@ -198,6 +198,38 @@ def main():
     if pending:
         ok(f"待补条目 {len(pending)} 份字段齐备")
 
+    # ── ④b 归因 id 债务登记机检(per oracle 2026-11-09 must-fix #3)──────────
+    #   「判据存在但机器载体无对应 id 条目」这类债务必须**登记在机器可查处**,
+    #   且登记本身**可机检** ⇒ 否则它只是「纯承诺」(给缺口盖章)。
+    print("\n[4b/4] 归因 id 债务登记(pending_invariant_ids)机检")
+    ledger_path = os.path.join(ROOT, ".rddf", "roadmap", "objectives", "obj-cep-platform.md")
+    ledger_text = ""
+    if os.path.isfile(ledger_path):
+        ledger_text = open(ledger_path, encoding="utf-8").read()
+    id_debts = reg.get("pending_invariant_ids", [])
+    if not id_debts:
+        info("无归因 id 债务登记")
+    for d in id_debts:
+        miss = [k for k in ("adr", "chapter", "target_id", "scope", "trigger_condition", "owner", "ledger_entry")
+                if not d.get(k)]
+        if miss:
+            errors += fail("id 债务条目字段缺失 %s: %s" % (d.get("adr"), ", ".join(miss)))
+            continue
+        apath = os.path.join(ROOT, reg["adr_dir"], d["adr"])
+        if not os.path.isfile(apath):
+            errors += fail("id 债务条目指向不存在的 ADR:%s" % d["adr"])
+            continue
+        atext = open(apath, encoding="utf-8").read()
+        for chap in [c.strip() for c in str(d["chapter"]).split("/")]:
+            if chap and chap not in atext:
+                errors += fail("id 债务条目的章节锚点 %s §%s 在 ADR 内不存在" % (d["adr"], chap))
+        if not re.fullmatch(r"INV-CEP-[0-9A-Z]+-ICx", str(d["target_id"])):
+            errors += fail("id 债务条目的 target_id 命名空间不合规 %s(须形如 INV-CEP-NN-ICx)" % d["target_id"])
+        if ledger_text and ("### %s" % d["ledger_entry"]) not in ledger_text:
+            errors += fail("id 债务条目的台账凭据不存在:%s" % d["ledger_entry"])
+    if id_debts:
+        ok("归因 id 债务登记 %d 笔逐条机检通过(ADR 存在 + 章节锚点 + id 命名空间 + 台账 Entry)" % len(id_debts))
+
     # ── 报告(不判红) ───────────────────────────────────────────────
     if pending:
         print("\n── 待补清单(起草中 ADR 缺顶层 Verification 章 · 签发前必须补)──")

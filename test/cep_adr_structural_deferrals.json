@@ -1,6 +1,6 @@
 {
   "schema": "cep-adr-structural-deferrals/v1",
-  "note": "ADR 结构闸的**登记表**(per oracle 2026-11-09 裁决 C-1)。本文件**登记**闸的两类例外(永久豁免 / 待补)与三真源漂移;闸脚本 `scripts/test/cep_adr_structural_check.sh` 逐条校验。⛔ 本表**不改**任何 ADR 的正文 —— 缺口靠**补章**收敛,豁免靠**锚点**受限。⚠️ 命名与 `test/cep_b3b2_deferrals.json`(冻结件)**无关**且**不得**混用。",
+  "note": "ADR 结构闸的**登记表**(per oracle 2026-11-09 裁决 C-1)。本文件**登记**闸的两类例外(永久豁免 / 待补)与三真源漂移;闸脚本 `scripts/test/cep_adr_structural_check.sh` 逐条校验。⛔ 本表**不改**任何 ADR 的正文 —— 缺口靠**补章**收敛,豁免靠**锚点**受限。⚠️ 命名与 `test/cep_b3b2_deferrals.json`(冻结件)**无关**且**不得**混用。 ⚠️ **待补条目是活清单**(非历史流水):某份 ADR 补齐顶层 Verification 章并签发后,**必须**从 `pending_signing` 移除(否则结构闸按「登记过期」判红)—— 2026-11-09 批次:04/05/06/07 已补章 ⇒ 已移除(per 台账 Entry #314)。 ⚠️ `pending_invariant_ids` = **归因 id 债务登记**(判据存在但机器载体无对应 id 条目)⇒ 由结构闸**逐条机检**(ADR 文件存在 + 章节号真在 ADR 内 + id 命名空间合规 + 台账 Entry 存在)⇒ **不是纯承诺**。",
   "compliance_rule": {
     "chapter_pattern": "^##\\s+.*(Verif|验证|验收判据)",
     "position_rule": "必须位于首个 `## Status Update` 段之前(正文章)⇒ Status Update 段内的嵌套 `###` 不算",
@@ -68,38 +68,6 @@
     }
   ],
   "pending_signing": [
-    {
-      "adr": "ADR-CEP-04-sharer-tracker-abstraction-redesign.md",
-      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
-      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
-      "owner": "architect",
-      "batch": "T4",
-      "ledger_entry": "Entry #307"
-    },
-    {
-      "adr": "ADR-CEP-05-stub-cache-core-interface.md",
-      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
-      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
-      "owner": "architect",
-      "batch": "T4",
-      "ledger_entry": "Entry #307"
-    },
-    {
-      "adr": "ADR-CEP-06-experiment-protocol.md",
-      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
-      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
-      "owner": "architect",
-      "batch": "T4",
-      "ledger_entry": "Entry #307"
-    },
-    {
-      "adr": "ADR-CEP-07-simulation-and-integration-semantics.md",
-      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
-      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
-      "owner": "architect",
-      "batch": "T4",
-      "ledger_entry": "Entry #307"
-    },
     {
       "adr": "ADR-CEP-07A-06bis-artifact-disposition.md",
       "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
@@ -331,6 +299,44 @@
       "map_state": "✅ **v0.1 起草 2026-10-21**",
       "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
       "ledger_entry": "Entry #307"
+    }
+  ],
+  "pending_invariant_ids": [
+    {
+      "adr": "ADR-CEP-04-sharer-tracker-abstraction-redesign.md",
+      "chapter": "V-04-7",
+      "target_id": "INV-CEP-04-ICx",
+      "scope": "DCOH 完备性契约的断言面 —— CONSERVATIVE 侧已存在(caps / broadcast_fallback / 宁多探不漏探);PARTIAL 分支当前**无实现** ⇒ 其断言面待建",
+      "trigger_condition": "`PARTIAL` tracker 实现落地 **或** 建立 `INV-CEP-04-ICx` 时,必须**同时**交付该 id 的反向 fixture(毒化 ⇒ 必红)并从本表移除",
+      "owner": "architect",
+      "ledger_entry": "Entry #314"
+    },
+    {
+      "adr": "ADR-CEP-05-stub-cache-core-interface.md",
+      "chapter": "V-05-2 / V-05-6",
+      "target_id": "INV-CEP-05-ICx",
+      "scope": "① 折叠映射表「逐字对齐 canonical 10 流 ⇒ 零 diff」的**字面审计**(现有检查仅为单向形态 + 5 隐藏流齐备);② 三明治挂载形态 + bypass 模式的**配置面**判据",
+      "trigger_condition": "建立 `INV-CEP-05-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ 必红)并从本表移除",
+      "owner": "architect",
+      "ledger_entry": "Entry #314"
+    },
+    {
+      "adr": "ADR-CEP-06-experiment-protocol.md",
+      "chapter": "V-06-6 / V-06-7",
+      "target_id": "INV-CEP-06-ICx",
+      "scope": "① `verification_mode` 两键存在 + enum 恰 3 档的断言面(该用例无 INV-CARRIER 标记、不在 id 表内);② 「not-collected ⊆ 预登记集」的 run 级执行面(tools 判据④)",
+      "trigger_condition": "建立 `INV-CEP-06-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ 必红)并从本表移除",
+      "owner": "architect",
+      "ledger_entry": "Entry #314"
+    },
+    {
+      "adr": "ADR-CEP-07-simulation-and-integration-semantics.md",
+      "chapter": "V-07-6",
+      "target_id": "INV-CEP-07-ICx",
+      "scope": "延迟族**其余 4 键**(`p50_latency_cycles` / `p95_latency_cycles` / `p99_latency_cycles` / `max_latency_cycles`)在 **functional 模式**下的 mode-specific 正值断言 —— 现有 `functional_latency_problems()` 只覆盖 `avg_latency_cycles` 单键(schema 的 `minimum: 0` 只挡负数,不挡「functional 写正数」)",
+      "trigger_condition": "建立 `INV-CEP-07-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ functional 模式产出正数 p50/p95/p99/max 必红)并从本表移除",
+      "owner": "architect",
+      "ledger_entry": "Entry #314"
     }
   ]
 }

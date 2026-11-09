@@ -1,7 +1,7 @@
 # ADR-CEP-07: Coherence Exploration Platform 仿真语义与集成 Seam
 
-> **状态**: 🟡 起草中(v0.7)
-> **日期**: 2026-10-21(v0.7 修订)
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-21(v0.7 修订) / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **作用域**: **CEP 仿真语义(functional/timing 推进)+ 集成 seam(ModuleFactory 注册方式)+ NullProtocolEngine**,解 metis G4 战略盲点
 > **关联真源**:
@@ -244,6 +244,27 @@ tick():
 ---
 
 
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #307 裁决 C-3.3)—— 签发前必须有**顶层** Verification 章(⛔ 不接受把判据埋在 `## Status Update` 段内)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**;归因 id **一律复用**既有体系(`INV-CEP-07-IC1` ~ `IC7`)⇒ ⛔ **禁**新造平行 id 体系。
+> ⚠️ **逐条对应**:本章 V-07-1 ~ V-07-7 与 §3 的 **7 条不变量**(`INV-CEP-07-IC1` ~ `IC7`)**一一对应** ⇒ 本章**不新增**任何不变量,只把它们落成「判据 + 载体 + 反向 fixture」的可执行形态。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-07-1** | `simulation_mode` 是**唯一模式维度**,协议插件**无** `network.mode` 字段(决策 1) | `test/test_cep_simulation_mode_lock.cc` | 归因 id **`INV-CEP-07-IC1`** · 毒化:插件声明 `network.mode` ⇒ 必红 |
+| **V-07-2** | `NullProtocolEngine` 是 ProtocolEngine **默认实现**(10 流按矩阵、**零协议动作**,用于解耦测试)(决策 4) | `include/tlm/cep/protocol_engine_base.hh` · `test/test_cep_engine_and_numbering_contract.cc` | 归因 id **`INV-CEP-07-IC2`** · 毒化:默认实现出现协议动作 ⇒ 必红 |
+| **V-07-3** | `NullCollectivePlane` 是 Collective Plane 默认实现,**全原语返回「不支持」**(决策 5) | `include/tlm/cep/collective_plane.hh` · `test/test_cep_collective_plane_invariants.cc` | 归因 id **`INV-CEP-07-IC3`** · 毒化:某原语返回支持 ⇒ 必红 |
+| **V-07-4** | CEP 模块注册走**既有宏体系**(`REGISTER_CHSTREAM` / `REGISTER_MODULE` / `REGISTER_OBJECT`),**不发明**宏形式(决策 3) | `include/chstream_register.hh` · `test/test_cep_registration_macro_contract.cc` | 归因 id **`INV-CEP-07-IC4`** · 毒化:新增 CEP 专用宏 ⇒ 必红 |
+| **V-07-5** | CEP **不破** 23 ABI / frozen headers(`PcieEndpointTLM` 保持 `[[deprecated]]`)(决策 6) | `include/tlm/gpu/pcie_endpoint_tlm.h` · `test/test_cep_engine_and_numbering_contract.cc` | 归因 id **`INV-CEP-07-IC5`** · 毒化:去掉 `[[deprecated]]` 标注 ⇒ 必红 |
+| **V-07-6** | **functional 模式下 `avg_latency_cycles` 不得为正数**(决策 2;§3 `INV-CEP-07-IC6` 的**原始口径即本单键** ⇒ 延迟族要么为 0、要么合规标 `not-collected`) | `test/test_cep_engine_and_numbering_contract.cc`(`functional_latency_problems()` 只覆盖 `avg_latency_cycles` **单键**) | 归因 id **`INV-CEP-07-IC6`** · 毒化:functional 模式产出正数 `avg_latency_cycles` ⇒ 必红 · ⚠️ **延迟族其余 4 键**(`p50` / `p95` / `p99` / `max`)在 functional 模式下**无 mode-specific 正值断言**(schema 的 `minimum: 0` 只挡负数)⇒ 该缺口已登记于 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids` ⇒ ⛔ 本章不新造 id |
+| **V-07-7** | **插件只声明**排序假设与 VC 绑定,**组合逻辑不在插件内**(决策 9 的可组合性接缝) | `include/tlm/cep/protocol_engine_base.hh` · `test/test_cep_canonical_flow_contract.cc` | 归因 id **`INV-CEP-07-IC7`** · 毒化:插件内实现跨域 / 跨层组合逻辑 ⇒ 必红 |
+
+**载体状态汇总**:V-07-1 ~ V-07-7 的载体**均已存在且逐条实证**(文件与断言位置已对 `test/cep_invariant_assertion_map.json` 核对)⇒ **全部可执行**;⛔ 本章**零**「id 待建立」条目。
+
+**签发前置自检**:① 本章**位于正文**(首个 `## Status Update` 之前)✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture** ✅ ③ 归因 id **全部复用**既有体系(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
+
+---
+
 ## Status Update 2026-10-27 —— 决策 3 的 ProtocolEngine 基类**落地排期**登记(队列 #7 `cpptlm-cep-cohif-carrier`)
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §9 正文一律不改**,仅登记状态变化。
@@ -284,3 +305,29 @@ tick():
 ## 9. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+
+---
+
+## Status Update(2026-11-09,per 台账 Entry #314)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #314**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 每条判据的**载体 + 归因 id 逐条实证** | 载体文件与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;**判据非空谈**:毒化实测 1 例(`PcieEndpointTLM` 的 `[[deprecated]]` 移除 ⇒ 载体 `test_cep_engine_and_numbering_contract.cc:233` 按**正确原因**变红;恢复后绿 —— per Entry #314 ③) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(4 must-fix 全处置)· critic **APPROVE_WITH_CONDITIONS**(0 BLOCKER · 1 SHOULD_FIX 已闭合)· 处置明细 = Entry #314 ② |
+| ④ 台账授权 | **Entry #314** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #314"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文(§1 ~ 末个编号节)与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据已达成**:Verification 章是**前瞻判据**(签发后随 ADR 冻结),**不是**实测日志;每条载体状态以该章「载体状态汇总」为准;`test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids` 所登记项**仍是缺口**。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #314**(授权 + 双审处置)· **#307**(4 项裁决:C-3.2 / C-3.3 / C-1)· **#313**(T3 登记表)· **#312**(T2 新 spec 入冻结集)· `test/cep_adr_structural_deferrals.json` · `scripts/test/cep_adr_structural_check.sh`
