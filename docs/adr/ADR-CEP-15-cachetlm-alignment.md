@@ -1,7 +1,7 @@
 # ADR-CEP-15: CppTLM CacheTLM 与 CEP Stub Cache 的对齐边界
 
-> **状态**: 🟡 起草中(v0.1)
-> **日期**: 2026-10-21
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-21 / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **作用域**: **既有 `CacheTLM` 与 CEP Stub Cache Core 的关系 / 冻结面 / 未来"真实缓存 + CEP 协议"的路径**
 > **关联真源**:
@@ -160,6 +160,22 @@ CacheTLM(性能模型) ──adapter──> Coherence Interface(10 流)
 
 ---
 
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #316 · oracle C-3.3)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**;归因 id **一律复用**既有体系 ⇒ ⛔ **禁**新造平行 id 体系。**载体状态**逐条标注:✅ 可执行 / **⏭-unmodelled**(既有登记,禁当鉴别力判据)/ **id 待建立**(机检登记)/ **文档层**(人工评审)。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-15-1** | `include/tlm/cache_tlm.hh` 与 `src/tlm/cache_tlm.cc` 在 **CEP 生命周期内 0 diff**(相对 `kCepBaselineCommit`;⛔ **不能**用 `git diff HEAD` —— HEAD 已含改动 ⇒ 恒空)(§3 `IC1` · 抓取点 1) | `test/test_cep_module_factory_seam.cc`(4 个 frozen headers 零 diff + **守门机制自证**用例) | 归因 id **`INV-CEP-15-IC1`** · 毒化:对 `cache_tlm.hh` 做真实改动并提交 ⇒ 必红(自证用例证明守门**非恒绿**) |
+| **V-15-2** | CEP **不得**定义 `CacheTLM` 的派生类或副本;CEP 的缓存侧实现**只有** Stub Cache Core 一个(§3 `IC2` · 抓取点 2) | `test/test_cep_module_factory_seam.cc`(CEP 侧只有一个缓存实现) | 归因 id **`INV-CEP-15-IC2`** · 毒化:在 `include/tlm/cep/` 下新增 `CacheTLM` 派生 ⇒ 必红 |
+| **V-15-3** | `CacheTLM` **不得**实现 canonical 10 流的任何一条(无协议知识);CEP 与它之间**只允许**经 adapter 交互(§3 `IC3` · 抓取点 3) | `test/test_cep_module_factory_seam.cc`(`CacheTLM` 零协议知识) | 归因 id **`INV-CEP-15-IC3`** · 毒化:在 `cache_tlm` 源码里加 `snoop` / `coherence` / `MESI` / `directory` 标识符 ⇒ 必红 |
+| **V-15-4** | `07 号 §3.3`「缓存核心协议无关性」段**必须**说明与 `CacheTLM` 的边界(抓取点 4) | ⚠️ **文档层判据**(无机器载体)⇒ 人工评审 | 归因 id **待建立** ⇒ 登记于 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`;反向 fixture **无** ⇒ ⛔ **禁**当作鉴别力判据 |
+
+**载体状态汇总**:V-15-1 ~ V-15-3 的载体**已存在且逐条实证** ⇒ **可执行**;V-15-4 为**文档层判据**(人工评审)⇒ 不计入「有牙载体」。
+
+**签发前置自检**:① 本章位于**正文**(首个 `## Status Update` 之前)✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture**(文档层项已显式标注)✅ ③ 归因 id **全部复用**(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
+
+---
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
@@ -191,3 +207,29 @@ CacheTLM(性能模型) ──adapter──> Coherence Interface(10 流)
 > **不在本 ADR 的处置范围**:`ADR-CEP-19` 决策 9 明确**不动** `StubCacheCore`(stub 侧端点延期到 `cpptlm-cep-stub-cache-chstream-surface`,需 MODIFIES 冻结 main spec)⇒ **本漂移的修复不在队列 #7 范围内**,仅登记备查。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #74**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #74)。
+
+---
+
+## Status Update(2026-11-09,per 台账 Entry #316)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #316**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 判据的**载体 + 归因 id 逐条实证** | 载体与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;⏭ 项对 `test/cep_invariant_deferrals.json`;id 债务对 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`(闸 ④b **机检**:ADR 存在 + 章节锚点 + id 命名空间 + 台账 Entry) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(2 项必修已落:N1 签发凭据显式声明「零可执行」· N2 双闸实跑)· critic **APPROVE**(0 BLOCKER · 0 SHOULD_FIX · 1 NIT 记录) |
+| ④ 台账授权 | **Entry #316** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #316"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据全部可执行**:可执行 / **⏭-unmodelled** / **归因 id 待建立** / **文档层(人工评审)** 四类在本文件 Verification 章的「载体状态汇总」中**逐条标注**。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #316**(授权 + 双审处置)· **#315 / #314**(第 2/1 批)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`

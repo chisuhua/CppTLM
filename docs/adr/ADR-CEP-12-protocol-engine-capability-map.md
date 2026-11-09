@@ -1,7 +1,7 @@
 # ADR-CEP-12: ProtocolEngine 插件能力映射表 Schema
 
-> **状态**: 🟡 起草中(v0.1)
-> **日期**: 2026-10-21
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-21 / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **作用域**: **协议实例的能力 / 前提假设 / 组合能力的结构化声明 schema**
 > **关联真源**:
@@ -209,6 +209,24 @@ protocol_instance:
 
 ---
 
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #316 · oracle C-3.3)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**;归因 id **一律复用**既有体系 ⇒ ⛔ **禁**新造平行 id 体系。**载体状态**逐条标注:✅ 可执行 / **⏭-unmodelled**(既有登记,禁当鉴别力判据)/ **id 待建立**(机检登记)/ **文档层**(人工评审)。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-12-1** | 每条协议实例记录含 **7 个字段组 / 13 个顶层属性**(缺组 = fail)(§3 `IC1` · 抓取点 1) | `test/test_cep_schema.cc`(schema 字段组完整性 7 组 / 13 属性)· `test/test_cep_instance_declaration_contract.cc` | 归因 id **`INV-CEP-12-IC1`** · 毒化:从 schema 的 `required` 删一个顶层属性 ⇒ 必红 |
+| **V-12-2** | `ordering_assumption` / `vc_binding` 的 key 为 **per-network 嵌套形态**:每 `vc_id` 落在该网络槽位上界内 · 5 类非法输入必须 fail(§3 `IC2` ⚠️ **现行口径以 SU §8 的 per-network 形态为准** —— v0.1 的扁平「唯一 `vc_id`」谓词已被取代,⛔ 不得复用)(抓取点 2) | `test/test_cep_schema.cc`(正向路径 + **反向路径 5 类非法输入**)· `test/test_cep_mesif_instance_decl.cc` | 归因 id **`INV-CEP-12-IC2`** · 毒化:某 `vc_id` 越出该网络槽位上界 ⇒ 必红 |
+| **V-12-3** | `status` 变更时 **adapter 计数口径**同步:**只有 `implemented` 计入**(§3 `IC3` · 抓取点 5) | `test/test_cep_schema.cc`(IC3 用例)· `docs/architecture/07-coherence-exploration-platform.md §5.1.1` | 归因 id **`INV-CEP-12-IC3`** · 毒化:把 `planned` 实例也计入 adapter 计数 ⇒ 必红 |
+| **V-12-4** | `perm` **只允许 4 个字面值**(抓取点 3) | `test/test_cep_canonical_flow_contract.cc` | 归因 id **`CEN-Ib11`**(owner `ADR-CEP-02`)· 毒化:给 `perm` 加第 5 个值 ⇒ 必红 |
+| **V-12-5** | `flow_support` 覆盖矩阵与 `NullProtocolEngine` 的 **10 流**对齐(抓取点 4) | `test/test_cep_engine_and_numbering_contract.cc`(NullProtocolEngine 10 流按矩阵) | 归因 id **`INV-CEP-07-IC2`**(owner `ADR-CEP-07`)· 毒化:默认引擎对某流做了协议动作 / 矩阵缺一流 ⇒ 必红 |
+| **V-12-6** | `sharer_tracker` 一致性:**自失效类协议不得填 `SparseSnoopFilter`**(§2 决策 7 · 抓取点 6) | `test/test_cep_instance_declaration_contract.cc` + `include/tlm/cep/protocol_instances.json` | 归因 id **待建立**(既有 id 表内无该一致性条目)⇒ 登记于 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`;毒化:自失效族实例填 `SparseSnoopFilter` ⇒ 该半需 id 建立后才有牙 |
+
+**载体状态汇总**:V-12-1 ~ V-12-5 的载体**已存在且逐条实证** ⇒ **可执行**;V-12-6 的**归因 id 待建立** ⇒ 在 id 建立前**不得**计入「有牙载体」。
+
+**签发前置自检**:① 本章位于**正文**(首个 `## Status Update` 之前)✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture**(待建项已**机检登记**)✅ ③ 归因 id **全部复用**(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
+
+---
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
@@ -938,3 +956,28 @@ CXL / MOESI-GPU / MESIF 走**软件一致性 / 无 collective 能力** ⇒ 强�
 
 **关联**:台账 **Entry #292**(授权)· **#291**(两条用户裁决 + 落地义务清单)· **#269**(Entry #269 强度裁决)· **#285**(架构文档审查 · U-5 的来源)· `07 号` **SU · 十二** · `ADR-CEP-19` SU 2026-11-08 · 二 · `include/tlm/cep/protocol_instances.json` · `include/tlm/cep/protocol_instance.schema.json`
 
+---
+
+## Status Update(2026-11-09,per 台账 Entry #316)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #316**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 判据的**载体 + 归因 id 逐条实证** | 载体与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;⏭ 项对 `test/cep_invariant_deferrals.json`;id 债务对 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`(闸 ④b **机检**:ADR 存在 + 章节锚点 + id 命名空间 + 台账 Entry) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(2 项必修已落:N1 签发凭据显式声明「零可执行」· N2 双闸实跑)· critic **APPROVE**(0 BLOCKER · 0 SHOULD_FIX · 1 NIT 记录) |
+| ④ 台账授权 | **Entry #316** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #316"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据全部可执行**:可执行 / **⏭-unmodelled** / **归因 id 待建立** / **文档层(人工评审)** 四类在本文件 Verification 章的「载体状态汇总」中**逐条标注**。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #316**(授权 + 双审处置)· **#315 / #314**(第 2/1 批)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`

@@ -1,7 +1,7 @@
 # ADR-CEP-16: 06 §15.4 Coherence 演进路线 → CEP Stage 映射
 
-> **状态**: 🟡 起草中(v0.1)
-> **日期**: 2026-10-21
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-21 / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **作用域**: **`06 §15.4` 的 P2.0~P5 演进路线与 CEP Stage 0~3 的逐项对应 + 显式排除 P6**
 > **关联真源**:
@@ -123,6 +123,21 @@
 
 ---
 
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #316 · oracle C-3.3)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**;归因 id **一律复用**既有体系 ⇒ ⛔ **禁**新造平行 id 体系。**载体状态**逐条标注:✅ 可执行 / **⏭-unmodelled**(既有登记,禁当鉴别力判据)/ **id 待建立**(机检登记)/ **文档层**(人工评审)。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-16-1** | CEP 文档引用的 06 **P 编号**必须落在 `06 §15.4` 口径内(P2.0 / P2.1 / P3 / P3.5 / P4 / P5);⛔ **不得**出现 **P6**(§3 `IC1` · 抓取点 1) | `scripts/test/cep_docs_sync_check.sh`(P 编号闸 + **闸自检** `SELFTEST`) | 归因 id **`INV-CEP-16-IC1`** · 毒化:在 CEP 文档写一个 `P6` ⇒ 必红;**闸自检失败**同样判红(⇒ 不是「恒绿」闸) |
+| **V-16-2** | CEP 的每个 Stage **必须**能指出其承接的 `06 §15.4` 条目(或**显式声明「不承接」**)(§3 `IC2` · 抓取点 2) | `test/test_cep_engine_and_numbering_contract.cc`(每个 §15.4 条目都有处置或显式不引入) | 归因 id **`INV-CEP-16-IC2`** · 毒化:某 Stage 既不承接也不声明「不承接」⇒ 必红 |
+| **V-16-3** | `06 §15.4` 的**协议语义建模项**(`MesiGpuProtocol` / `MesiThreeLevelProtocol` / `translate_snoop`)**必须**由 **ArchForge** 承接;CppTLM 侧**不得**出现其实现(§3 `IC3` · 抓取点 3) | `test/test_cep_engine_and_numbering_contract.cc`(CppTLM 侧不得实现协议语义项) | 归因 id **`INV-CEP-16-IC3`** · 毒化:在 CppTLM 仓内定义 `MesiGpuProtocol` / `translate_snoop` ⇒ 必红 |
+
+**载体状态汇总**:V-16-1 ~ V-16-3 的载体**已存在且逐条实证** ⇒ **全部可执行**;⛔ 本章**零**待建项。
+
+**签发前置自检**:① 本章位于**正文**(首个 `## Status Update` 之前)✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture** ✅ ③ 归因 id **全部复用**(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
+
+---
 ## 6. 决策汇总
 
 | 决策项 | 决策 | 状态 |
@@ -150,3 +165,29 @@
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+
+---
+
+## Status Update(2026-11-09,per 台账 Entry #316)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #316**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 判据的**载体 + 归因 id 逐条实证** | 载体与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;⏭ 项对 `test/cep_invariant_deferrals.json`;id 债务对 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`(闸 ④b **机检**:ADR 存在 + 章节锚点 + id 命名空间 + 台账 Entry) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(2 项必修已落:N1 签发凭据显式声明「零可执行」· N2 双闸实跑)· critic **APPROVE**(0 BLOCKER · 0 SHOULD_FIX · 1 NIT 记录) |
+| ④ 台账授权 | **Entry #316** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #316"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据全部可执行**:可执行 / **⏭-unmodelled** / **归因 id 待建立** / **文档层(人工评审)** 四类在本文件 Verification 章的「载体状态汇总」中**逐条标注**。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #316**(授权 + 双审处置)· **#315 / #314**(第 2/1 批)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`

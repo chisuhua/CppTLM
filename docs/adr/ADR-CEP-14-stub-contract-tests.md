@@ -1,7 +1,7 @@
 # ADR-CEP-14: Stub 可验证性合同测试
 
-> **状态**: 🟡 起草中(v0.1)
-> **日期**: 2026-10-21
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-21 / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **作用域**: **Stub Cache Core 的合同测试边界 + 10 条合同测试 + 组合接缝检查项的落地位置**
 > **关联真源**:
@@ -150,6 +150,23 @@
 
 ---
 
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #316 · oracle C-3.3)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**;归因 id **一律复用**既有体系 ⇒ ⛔ **禁**新造平行 id 体系。**载体状态**逐条标注:✅ 可执行 / **⏭-unmodelled**(既有登记,禁当鉴别力判据)/ **id 待建立**(机检登记)/ **文档层**(人工评审)。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-14-1** | 每条合同测试 **C1~C10** 必须可定位到至少一条 `INV-SC*` / `INV-CEP-05-IC1` / `CEN-Ib*` / `INV-CEP-07-IC7` / `INV-CEP-08-IC2`;⛔ **不得**存在无锚点的合同测试(§3 `IC1` · 抓取点 1) | `test/test_cep_dummy_signals.cc`(C1~C10 清单齐备) | 归因 id **`INV-CEP-14-IC1`** · 毒化:某条合同测试的锚点 id 被删 / 改成不存在的 id ⇒ 必红 |
+| **V-14-2** | 合同测试集**必须**含**至少一条负向断言**(**C9**:Stub 不泄漏协议信息),且该断言**有鉴别力**(§3 `IC2` · 抓取点 2) | `test/test_cep_dummy_signals.cc`(C9 负向断言 + 鉴别力) | 归因 id **`INV-CEP-14-IC2`** · 毒化:把 C9 的负向断言改成恒真(如 `REQUIRE(true)`)⇒ 必红 |
+| **V-14-3** | 组合接缝检查项**缺失**时,组合检查结果**必须**判 fail(⛔ 不得静默跳过)(§3 `IC3` · 抓取点 3) | `test/test_cep_instance_declaration_contract.cc`(接缝缺失 ⇒ fail) | 归因 id **`INV-CEP-14-IC3`** · 毒化:让缺项时静默 PASS ⇒ 必红 |
+| **V-14-4** | **测试替身不入产品目录**:`include/tlm/cep/` **不含**测试替身(抓取点 4) | `include/tlm/cep/`(目录清单)· `test/test_cep_dummy_signals.cc`(信号形态) | 归因 id **待建立**(既有 id 表内无「产品目录洁净」条目)⇒ 登记于 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids` |
+| **V-14-5** | 与 `ADR-CEP-05 §7` 的两条 α 失效判据**对齐**:C2 覆盖判据 1 的具体点 · C9 覆盖判据 1 的一般化 · 判据 2 由 C10 的 E 态项覆盖(抓取点 5) | `test/test_cep_stub_cache_core.cc` + `test/test_cep_canonical_flow_contract.cc` | 归因 id **`INV-CEP-05-IC1`**(owner ADR-05)+ **`CEN-Ib6`**(completion 无来源判别位)· 毒化:给 completion 加来源判别位 ⇒ 必红 |
+
+**载体状态汇总**:V-14-1 ~ V-14-3 / V-14-5 的载体**已存在且逐条实证** ⇒ **可执行**;V-14-4 的**归因 id 待建立** ⇒ 在 id 建立前**不得**计入「有牙载体」。
+
+**签发前置自检**:① 本章位于**正文**(首个 `## Status Update` 之前)✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture**(待建项已**机检登记**)✅ ③ 归因 id **全部复用**(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
+
+---
 ## 6. 决策汇总
 
 | 决策项 | 决策 | 状态 |
@@ -201,3 +218,29 @@
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+
+---
+
+## Status Update(2026-11-09,per 台账 Entry #316)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #316**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 判据的**载体 + 归因 id 逐条实证** | 载体与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;⏭ 项对 `test/cep_invariant_deferrals.json`;id 债务对 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`(闸 ④b **机检**:ADR 存在 + 章节锚点 + id 命名空间 + 台账 Entry) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(2 项必修已落:N1 签发凭据显式声明「零可执行」· N2 双闸实跑)· critic **APPROVE**(0 BLOCKER · 0 SHOULD_FIX · 1 NIT 记录) |
+| ④ 台账授权 | **Entry #316** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #316"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据全部可执行**:可执行 / **⏭-unmodelled** / **归因 id 待建立** / **文档层(人工评审)** 四类在本文件 Verification 章的「载体状态汇总」中**逐条标注**。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #316**(授权 + 双审处置)· **#315 / #314**(第 2/1 批)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`

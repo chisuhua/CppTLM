@@ -15,7 +15,8 @@
 # + **3 个决定性变异**(⛔ 在**影子树**上运行,⛔ 不动真实仓)—— 证明闸**有牙**:
 #   变异① 出现**未归类**的 ADR 文件        ⇒ ① 必须红
 #   变异② 豁免的 `evidence_anchor` 指向死行 ⇒ ③ 必须红(豁免不得成为后门)
-#   变异③ 把一份不合规 ADR 的登记删掉        ⇒ ② 必须红(未登记即红)
+#   变异③ 注入一份已归类但不合规且未登记的 ADR ⇒ ② 必须红(未登记即红;
+#           ⚠️ 不依赖 `pending_signing` 非空 —— 该表可被合法清空)
 #
 # ⚠️ **本闸不改任何 ADR**:它只**登记 + 锁住**例外 ⇒ 缺口靠**补章**收敛(per 台账 T4 签发批次)
 # ⚠️ **登记表** = `test/cep_adr_structural_deferrals.json`
@@ -88,15 +89,26 @@ else
     echo "$out" | sed 's/^/    /'
 fi
 
-# 变异③:删掉一份不合规 ADR 的登记 ⇒ ② 未登记即红必须红
+# 变异③:注入一份**已归类(decision_adrs)但不合规且未登记**的 ADR ⇒ ② 未登记即红必须红
+# ⚠️ 本变异**不依赖** `pending_signing` 非空(2026-11-09 起该表可被合法清空 ⇒ 旧版
+#    「删一条待补登记」的变异在空表上退化为**空变异**,闸自检会假红)。
 shadow_reset
-python3 - "$SHADOW/test/cep_adr_structural_deferrals.json" <<'PYEOF'
-import json, sys
-p = sys.argv[1]
-reg = json.load(open(p, encoding='utf-8'))
-reg['pending_signing'] = reg['pending_signing'][1:]   # 少登记一份 ⇒ 该 ADR 变成「未登记」
-json.dump(reg, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
-PYEOF
+python3 - "$SHADOW" <<'PYMUT'
+import json, os, re, sys
+shadow = sys.argv[1]
+adr_dir = os.path.join(shadow, "docs", "adr")
+src = os.path.join(adr_dir, "ADR-CEP-04-sharer-tracker-abstraction-redesign.md")
+txt = open(src, encoding="utf-8").read()
+# 去掉顶层 Verification 章(=> 变成不合规),保留其余内容
+txt = re.sub(r"^## Verification\(.*?(?=^## )", "", txt, flags=re.M | re.S)
+name = "ADR-CEP-97-mutation-unregistered.md"
+open(os.path.join(adr_dir, name), "w", encoding="utf-8").write(txt)
+reg_path = os.path.join(shadow, "test", "cep_adr_structural_deferrals.json")
+reg = json.load(open(reg_path, encoding="utf-8"))
+reg["decision_adrs"].append(name)          # 已归类(=> 分区完整性 ① 通过)
+# 故意**不**进 waivers / pending_signing => ② 未登记即红
+json.dump(reg, open(reg_path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+PYMUT
 out="$(python3 "$CHECK" --root "$SHADOW" 2>&1)"
 rc=$?
 if [[ $rc -ne 0 ]] && grep -q "未登记例外" <<< "$out"; then

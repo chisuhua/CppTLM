@@ -17453,6 +17453,37 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑤ 关联**:**#314**(第 1 批)· **#313**(T3 登记表)· **#312**(T2 新 spec 入冻结集)· **#307**(4 项裁决)· **#305 ③ R-1** · `test/cep_adr_structural_deferrals.json` · `scripts/test/cep_adr_structural_check.sh` · `test/cep_invariant_deferrals.json`(⏭-unmodelled 的登记真源)
 
+### Entry #316 — 2026-11-09 [architect](**T4 签发批次第 3 批(收尾)**:12 / 13 / 14 / 15 / 16 / 18 —— 补顶层 Verification 章 + **签发 v1.0** ⇒ **可签署集清零**)
+
+**主题**:per oracle 裁决 **C-3** 执行 **T4 批次第 3 批**(综合批)—— 6 份起草中 ADR 补**顶层 Verification 章**并**签发 v1.0**。本 Entry 是**冻结面授权记录**(五步链)。**本批完成后 `pending_signing` = 0 ⇒ 可签署集清零**。
+
+**角色**:architect(裁决 + 双审)· builder(实施)· planner(台账)。**KPI**:Proposed **0/3**(不变;不建 change)。
+
+**① 本批 6 章(共 6 + 5 + 5 + 4 + 3 + 4 = 27 条判据)**:
+
+| ADR | 判据 | 如实分层 |
+|---|---|---|
+| `ADR-CEP-12` 协议引擎能力映射 | 6(V-12-1~6) | 5 可执行 · 1 id 待建(`sharer_tracker` 一致性) |
+| `ADR-CEP-13` 一致性域归属 | 5(V-13-1~5) | 3 可执行 · **2 ⏭-unmodelled**(`IC1` 复合公理 / `IC3` bridge 粒度) |
+| `ADR-CEP-14` Stub 合同测试 | 5(V-14-1~5) | 4 可执行 · 1 id 待建(替身不入产品目录) |
+| `ADR-CEP-15` CacheTLM 对齐 | 4(V-15-1~4) | 3 可执行 · 1 文档层(§3.3 边界段) |
+| `ADR-CEP-16` 06 演进路线映射 | 3(V-16-1~3) | **3 可执行**(零待建) |
+| `ADR-CEP-18` 协议生成范围 | 4(V-18-1~4) | ⛔ **0 可执行** —— 纯 trade-off ADR,4 条**全部**文档层/条件触发型 |
+
+**② 本批的诚实边界(逐条)**:
+- **`ADR-CEP-13` 的 3 条不变量里 2 条是 ⏭-unmodelled**(`IC1`「采用复合公理为判据」是**选择事实**、无机器可检声明项;`IC3` schema 13 顶层属性**无**「adapter 提前 ack 行为」声明项)⇒ 章内**显式标注**「⛔ 禁当鉴别力判据」,⛔ 不伪装。
+- **`ADR-CEP-18` 的 4 条判据全部无机器载体** ⇒ 章内**显式声明「本章 0 条可执行」**,价值 = **边界声明**(防 Stage 1~3 偷引入生成器),由**评审 + 台账裁决**守护;⛔ 不写成有牙。
+- **`ADR-CEP-12` V-12-2 的口径**:§3 `IC2` 的字面仍是「解析到唯一 vc_id」,但 **SU §8(2026-10-22)已升 per-network 嵌套形态** ⇒ 章内按**现行**形态表述并标注「⛔ 不得复用扁平谓词」(与 `ADR-CEP-08` V-08-4 同款处置)。
+- **`ADR-CEP-15` V-15-1 的守门语义**:⛔ **不能**用 `git diff HEAD`(HEAD 已含改动 ⇒ 恒空)⇒ 相对 `kCepBaselineCommit`,且载体带**守门机制自证**用例(证明**非恒绿**)。
+
+**③ id 债务累计 11 笔**(本批 +4:`INV-CEP-12/14/15/18-ICx`)⇒ 全部机检登记(`pending_invariant_ids`;闸 ④b:ADR 存在 + 章节锚点真在 ADR 内 + id 命名空间 + 台账 Entry)。
+
+**③b ⚠️ 签发凭据的显式声明(per oracle N1)**:**`ADR-CEP-18` 的 Verification 章 0 条机器可执行**(4 条全部为 id 债务 / 文档层 / 条件触发型)⇒ 其约束力 = **评审 + 台账裁决**,⛔ **非机器闸**。⚠️ 此声明固化进**签发凭据**本身,防未来读者把已签发的章误读为「有牙」;⚠️ 若日后仓内出现 `*Gen` 族 / 生成器代码 ⇒ 按 V-18-3 重评。
+
+**④ 边界**:⛔ **决策正文零改动**(只补 Verification 章 + header 元数据行 + 追加 SU);⛔ 不宣称判据已达成;⛔ `B3b-2` **维持 0/4**;⛔ `ADR-CEP-11` / `-19` 的永久豁免不变。
+
+**⑤ 关联**:**#315**(第 2 批)· **#314**(第 1 批)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`
+
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 
 **主题**:按修订 ④ 的关键路径推进 **A6(G2 可达门)** 与 **W4**;判据落到「**有区分力**」形态(每条附变异体)。

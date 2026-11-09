@@ -1,7 +1,7 @@
 # ADR-CEP-13: 一致性域归属与跨域组合判据
 
-> **状态**: 🟡 起草中(v0.1)
-> **日期**: 2026-10-21
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-21 / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **作用域**: **一致性域的划界 + 跨域组合的可判定判据 + 组合承诺边界**
 > **关联真源**:
@@ -194,6 +194,23 @@ acyclic( ppo_com ∪ rfe ∪ fr ∪ ws )
 
 ---
 
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #316 · oracle C-3.3)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**;归因 id **一律复用**既有体系 ⇒ ⛔ **禁**新造平行 id 体系。**载体状态**逐条标注:✅ 可执行 / **⏭-unmodelled**(既有登记,禁当鉴别力判据)/ **id 待建立**(机检登记)/ **文档层**(人工评审)。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-13-1** | 跨域写传播**必须**由「域可见写」判据 **(a)+(b) 共同触发**;⛔ 不得以「所有写都传播」或「任何写都不传播」简化(§3 `IC2` · 抓取点 2) | `test/test_cep_instance_declaration_contract.cc`(跨域写传播由 (a)+(b) 触发,非全传播 / 非全不传播) | 归因 id **`INV-CEP-13-IC2`** · 毒化:只评估 (a) 缺 (b) ⇒ 必红(会把 RC 的读请求误判为写) |
+| **V-13-2** | `ADR-CEP-08` 的 **E 态静默升级检查**是跨域组合的**必查项**,与本 ADR 判据**并列**(抓取点 4) | `test/test_cep_ordering_point_checker.cc` | 归因 id **`INV-CEP-08-IC2`**(owner `ADR-CEP-08`)· 毒化:跨域组合检查器缺该检查项 ⇒ 必红 |
+| **V-13-3** | ⛔ 任何文档 / 输出**不得**把 `deadlock_violations == 0` / `memory_violations == 0` 表述为「已证明」(抓取点 5) | `test/test_cep_tools_contract.cc`(一致性闸门 + 禁述)· `tools/render_report.py`(报告层) | 归因 id **`INV-CEP-06-IC3`**(owner `ADR-CEP-06`)· 毒化:报告把 `== 0` 渲染成「已证明无违例」⇒ 必红 |
+| **V-13-4** | 复合一致性模型 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 的**可判定性**(§3 `IC1` · 抓取点 1) | ⚠️ **机器载体不可得** —— 该条已登记为 **⏭-unmodelled**(`test/cep_invariant_deferrals.json`:「采用该公理为判据」是**选择事实**,无机器可检声明项;输入侧 vocabulary 与 `INV-CEP-12-IC1` 共享,不计专属证据) | 归因 id **`INV-CEP-13-IC1`**(**⏭-unmodelled**)· 反向 fixture **无** ⇒ ⛔ **禁**当作鉴别力判据(per `ADR-CEP-01 §7 V6-a` 同款纪律) |
+| **V-13-5** | 跨域桥接的**并发粒度**由「对端协议是否允许提前 ack」决定(保守全串行 / 激进同地址串行)(§3 `IC3` · 抓取点 3) | ⚠️ **机器载体不可得** —— 该条已登记为 **⏭-unmodelled**(schema 13 顶层属性**无**「adapter 提前 ack 行为」声明项 ⇒ 判据未转写成结构化声明项) | 归因 id **`INV-CEP-13-IC3`**(**⏭-unmodelled**)· 反向 fixture **无** ⇒ ⛔ **禁**当作鉴别力判据;触发条件:schema 增该声明项时 |
+
+**载体状态汇总**:V-13-1 ~ V-13-3 的载体**已存在且逐条实证**(其中 V-13-2 / V-13-3 复用 owner 为 `ADR-CEP-08` / `-06` 的 id)⇒ **可执行**;V-13-4 / V-13-5 属 **⏭-unmodelled**(已登记)⇒ **禁**当鉴别力判据。⚠️ **3 条不变量中 2 条 ⏭** —— 这是本 ADR 的真实覆盖现状,⛔ 不得读成「已具备判别力」。
+
+**签发前置自检**:① 本章位于**正文** ✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture**(⏭ 项已显式标注)✅ ③ 归因 id **全部复用**(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
+
+---
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
@@ -240,3 +257,29 @@ ArchForge 的评估过程(答复回执 `cep-interface-alignment-response-2026-10
 > **未变更项(明示)**:§2 决策 1 ~ 5 的正文 · §3 `INV-CEP-13-IC1` ~ `IC3` 的**编号与定义** · §8.4 的既有所列 —— **全部零改动**。
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #71**
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #71)。
+
+---
+
+## Status Update(2026-11-09,per 台账 Entry #316)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #316**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 判据的**载体 + 归因 id 逐条实证** | 载体与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;⏭ 项对 `test/cep_invariant_deferrals.json`;id 债务对 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`(闸 ④b **机检**:ADR 存在 + 章节锚点 + id 命名空间 + 台账 Entry) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(2 项必修已落:N1 签发凭据显式声明「零可执行」· N2 双闸实跑)· critic **APPROVE**(0 BLOCKER · 0 SHOULD_FIX · 1 NIT 记录) |
+| ④ 台账授权 | **Entry #316** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #316"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据全部可执行**:可执行 / **⏭-unmodelled** / **归因 id 待建立** / **文档层(人工评审)** 四类在本文件 Verification 章的「载体状态汇总」中**逐条标注**。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #316**(授权 + 双审处置)· **#315 / #314**(第 2/1 批)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`
