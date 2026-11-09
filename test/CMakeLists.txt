@@ -266,6 +266,15 @@ add_test(NAME cep_all COMMAND cpptlm_tests "[cep]" -r compact)
 add_test(NAME cep_docs_sync_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_docs_sync_check.sh --strict)
 
+# ADR **结构闸**(per oracle 2026-11-09 裁决 C-1 / 台账 Entry #307 §③ T1)
+# —— 把「ADR 正文缺顶层 Verification 章」从暗变可见,并**锁住**例外登记:
+#    ① 分区完整性(新 ADR 必须显式归类)② 未登记即红 ③ 豁免锚点存活(反后门)
+#    ④ 登记表健康。附 **3 个决定性变异**(影子树 ⇒ 不动真实仓)证明闸有牙。
+add_test(NAME cep_adr_structural_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_adr_structural_check.sh)
+set_tests_properties(cep_adr_structural_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # CohIf 载体契约的**反向验证**(per change `cpptlm-cep-cohif-carrier` task 1.5~1.7)
 # —— 4 类毒化副本(第 6 个 flow_id / 混入网络层字段 / 字段宽度 +1 / 加虚函数)
 #    分别必须让「静态扫描」报红 / 让「编译期锁」编译失败。

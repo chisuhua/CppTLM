@@ -59,6 +59,7 @@
 | 脚本 | 作用 |
 |------|------|
 | `cep_b3b2_d4_quarterly_review.sh` | `B3b-2` 的 **D-4 触发探测**季度复审(2026-11-07,per 台账 Entry #277 / #278):① run-record schema(key 白名单 + outcome 三态 + incident 长度上限 ⇒ **正文无落点**)② **cadence**(最近一次真实执行距今 ≤ 100 天)③ **覆盖**(每次执行须覆盖 8 槽位)④ 计数纪律(⛔ 「B3b-2 已达成」形态) + **3 个决定性变异**。⚠️ **刻意 NOT 注册 ctest** —— cadence 断言若进 ctest ⇒ 100 天后**所有无关 PR 都红** ⇒ 只放本脚本 |
+| `cep_adr_structural_check.sh` | **ADR 结构闸**(2026-11-09,per oracle 裁决 C-1 / 台账 Entry #307 §③ T1):把「ADR 正文缺顶层 `Verification` 章」从暗变可见。4 组判定 —— ① **分区完整性**(磁盘 `ADR-CEP-*.md` == `decision_adrs` ∪ `excluded` ⇒ 新 ADR 必须显式归类)② **未登记即红**(不合规者必须落在 `waivers`(永久豁免,带 `evidence_anchor` 行号锚点,闸校验锚点存活 ⇒ 反后门)/ `pending_signing`(起草中待补章))③ **豁免锚点存活** ④ **登记表健康**(reason / trigger_condition / owner / ledger_entry 齐备)+ **3 个决定性变异**(影子树 ⇒ 不动真实仓)。登记表 = `test/cep_adr_structural_deferrals.json`(⛔ 与 `test/cep_b3b2_deferrals.json` 无关)。✅ **注册 ctest**(`cep_adr_structural_check`) |
 
 ### 实验运行器（非守门 —— `cep_experiment_run.sh` 以 **`--selftest` 模式**注册 ctest（`cep_experiment_run_selftest`）;`cep_h8_ab_runs.sh` **不**注册）
 

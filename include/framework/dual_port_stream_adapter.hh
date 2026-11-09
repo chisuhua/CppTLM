@@ -184,10 +184,43 @@ public:
     }
 
     /**
-     * @brief 处理 PE 侧请求输入（从 Core 来的 CacheReq）
+     * @brief 处理入向包 —— **框架唯一入口**（`ChStreamTargetPort::recvReq` 只调双参版）
+     *
+     * ## 为什么必须 override **双参**版
+     *
+     * 框架的入向路径固定为 `ChStreamTargetPort::recvReq`
+     * (`include/core/chstream_port.hh:70`) ⇒ 调 `process_request_input(pkt, port_idx_)`;
+     * 基类双参版(`include/core/stream_adapter_base.hh:82-84`)**默认回退单参版**
+     * ⇒ 只 override 单参版会让 `port_idx` **丢失** ⇒ 入向包**恒落 PE 侧**
+     * ⇒ `net_resp_in()` 永不可达(per 台账 Entry #305 ③ R-2)。
+     *
+     * ## 路由规则：**按端口组**，⛔ **不按 `pkt->type`**
+     *
+     * 端口组下标 = 物理端口下标（组 0 = PE 侧 · 组 1 = Network 侧，
+     * 见 `src/core/module_factory.cc` Step 7 的 `bind_pe_ports` / `bind_net_ports`）
+     * ⇒ 下标直接给出「来自 PE 还是 Net」—— 这是模块 API
+     * (`pe_req_in` / `pe_resp_out` / `net_req_out` / `net_resp_in`)唯一表达的信息。
+     *
+     * ⛔ **不能按 `pkt->type` 反推组**：`req_in[i]` 与 `resp_in[i]` **共享同一
+     * `port_idx_`** ⇒ type 与组**不是**一一对应；且 CohIf 的 egress 走 `req_out`
+     * (`include/tlm/cep/cohif_direction_traits.hh` 的 `egress_channel()`)
+     * ⇒ 回程 `Completion` 以 `PKT_RESP` 打在**对端的 `req_in`** 上
+     * ⇒ 按 type 分流会把「响应」投到「请求」通道，**反而更错**。
+     */
+    void process_request_input(Packet* pkt, unsigned port_idx) override {
+        if (!pkt || !pkt->payload) return;
+        if (port_idx == kNetGroupIdx) {
+            process_net_response_input(pkt);  // Network 侧入向
+        } else {
+            process_pe_request_input(pkt);    // PE 侧入向
+        }
+    }
+
+    /**
+     * @brief 单参入口（兼容既有直接调用者）—— **保持 PE 组语义**（历史行为）
      */
     void process_request_input(Packet* pkt) override {
-        process_pe_request_input(pkt);
+        process_request_input(pkt, kPeGroupIdx);
     }
 
     void process_pe_request_input(Packet* pkt) {
@@ -221,6 +254,12 @@ public:
      * @brief 端口数量标识（2 个逻辑端口组）
      */
     static constexpr unsigned logical_port_groups() { return 2; }
+
+    /// **端口组下标**（与 `ModuleFactory` Step 7 的双端口绑定一致：组 0 = PE 侧 · 组 1 = Network 侧）
+    /// ⚠️ `static constexpr` ⇒ **不进对象布局** ⇒ 不影响
+    /// `src/core/module_factory.cc` 里跨模板实例化的 `static_cast`（其要求两实例布局逐字节相同）。
+    static constexpr unsigned kPeGroupIdx = 0;
+    static constexpr unsigned kNetGroupIdx = 1;
 
     ModuleT* module() const { return module_; }
 };

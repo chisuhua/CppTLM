@@ -1,0 +1,336 @@
+{
+  "schema": "cep-adr-structural-deferrals/v1",
+  "note": "ADR 结构闸的**登记表**(per oracle 2026-11-09 裁决 C-1)。本文件**登记**闸的两类例外(永久豁免 / 待补)与三真源漂移;闸脚本 `scripts/test/cep_adr_structural_check.sh` 逐条校验。⛔ 本表**不改**任何 ADR 的正文 —— 缺口靠**补章**收敛,豁免靠**锚点**受限。⚠️ 命名与 `test/cep_b3b2_deferrals.json`(冻结件)**无关**且**不得**混用。",
+  "compliance_rule": {
+    "chapter_pattern": "^##\\s+.*(Verif|验证|验收判据)",
+    "position_rule": "必须位于首个 `## Status Update` 段之前(正文章)⇒ Status Update 段内的嵌套 `###` 不算",
+    "rationale": "治理契约要求 ADR 正文含「Verification(可勾选验收判据)」章;把判据埋进 append-only 日志会让审查者无处着力"
+  },
+  "adr_dir": "docs/adr",
+  "adr_glob": "ADR-CEP-*.md",
+  "decision_adrs": [
+    "ADR-CEP-01-fabric-collective-plane.md",
+    "ADR-CEP-02-coherence-barrier-semantics-clarification.md",
+    "ADR-CEP-03-fabric-collective-plane-internals.md",
+    "ADR-CEP-04-sharer-tracker-abstraction-redesign.md",
+    "ADR-CEP-05-stub-cache-core-interface.md",
+    "ADR-CEP-06-experiment-protocol.md",
+    "ADR-CEP-07-simulation-and-integration-semantics.md",
+    "ADR-CEP-07A-06bis-artifact-disposition.md",
+    "ADR-CEP-08-ordering-point-portability.md",
+    "ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md",
+    "ADR-CEP-11-protocol-version-locking.md",
+    "ADR-CEP-12-protocol-engine-capability-map.md",
+    "ADR-CEP-13-coherence-domain-ownership.md",
+    "ADR-CEP-14-stub-contract-tests.md",
+    "ADR-CEP-15-cachetlm-alignment.md",
+    "ADR-CEP-16-06-evolution-route-mapping.md",
+    "ADR-CEP-17-ruby-slicc-protocol-family.md",
+    "ADR-CEP-18-protocol-generation-scope.md",
+    "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md"
+  ],
+  "excluded": [
+    {
+      "file": "ADR-CEP-00-platform-charter-and-governance.md",
+      "reason": "治理宪章(跨仓归口 + 准入门槛)—— 不是「决策文档」,其正文结构由宪章自身定义 ⇒ 不入 ADR 结构分母"
+    },
+    {
+      "file": "ADR-CEP-00A-real-source-anchor-map.md",
+      "reason": "真源章节锚点表(映射表)—— 非决策文档 ⇒ 不入分母"
+    },
+    {
+      "file": "ADR-CEP-NUMBER-MAP.md",
+      "reason": "编号空间表 —— 非决策文档(per 07 号 SU 十五 ② 的口径裁决)⇒ 不入分母"
+    }
+  ],
+  "waivers": [
+    {
+      "adr": "ADR-CEP-11-protocol-version-locking.md",
+      "disposition": "waived-permanent",
+      "reason": "签发早于本结构闸立项;ADR 不可变(只追加 Status Update)⇒ 正文永远无法补顶层 Verification 章;判据以嵌套形态存在于 Status Update 段内",
+      "evidence_anchor": [
+        365,
+        417
+      ],
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md",
+      "disposition": "waived-permanent",
+      "reason": "签发早于本结构闸立项;ADR 不可变(只追加 Status Update)⇒ 正文永远无法补顶层 Verification 章;判据以嵌套形态存在于 Status Update 段内",
+      "evidence_anchor": [
+        429,
+        515,
+        566,
+        608
+      ],
+      "ledger_entry": "Entry #307"
+    }
+  ],
+  "pending_signing": [
+    {
+      "adr": "ADR-CEP-04-sharer-tracker-abstraction-redesign.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-05-stub-cache-core-interface.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-06-experiment-protocol.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-07-simulation-and-integration-semantics.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-07A-06bis-artifact-disposition.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-08-ordering-point-portability.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-12-protocol-engine-capability-map.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-13-coherence-domain-ownership.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-14-stub-contract-tests.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-15-cachetlm-alignment.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-16-06-evolution-route-mapping.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-17-ruby-slicc-protocol-family.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-18-protocol-generation-scope.md",
+      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
+      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
+      "owner": "architect",
+      "batch": "T4",
+      "ledger_entry": "Entry #307"
+    }
+  ],
+  "status_drift": [
+    {
+      "adr": "ADR-CEP-01-fabric-collective-plane.md",
+      "header_state": "signed",
+      "map_state": "✅ v0.3",
+      "reason": "NUMBER-MAP 的 ✅ 图例**三义**(已签发 / 版本号 / 起草)且未随签发更新 ⇒ 该行不可判读;修法在 NUMBER-MAP(在 M1 冻结集内 ⇒ 须授权)⇒ 登记为已知漂移",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-02-coherence-barrier-semantics-clarification.md",
+      "header_state": "signed",
+      "map_state": "✅ v0.3",
+      "reason": "NUMBER-MAP 的 ✅ 图例**三义**(已签发 / 版本号 / 起草)且未随签发更新 ⇒ 该行不可判读;修法在 NUMBER-MAP(在 M1 冻结集内 ⇒ 须授权)⇒ 登记为已知漂移",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-03-fabric-collective-plane-internals.md",
+      "header_state": "signed",
+      "map_state": "✅ v0.3",
+      "reason": "NUMBER-MAP 的 ✅ 图例**三义**(已签发 / 版本号 / 起草)且未随签发更新 ⇒ 该行不可判读;修法在 NUMBER-MAP(在 M1 冻结集内 ⇒ 须授权)⇒ 登记为已知漂移",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "adr": "ADR-CEP-11-protocol-version-locking.md",
+      "header_state": "signed",
+      "map_state": "✅ **v0.1 起草 2026-10-21**",
+      "reason": "NUMBER-MAP 的 ✅ 图例**三义**(已签发 / 版本号 / 起草)且未随签发更新 ⇒ 该行不可判读;修法在 NUMBER-MAP(在 M1 冻结集内 ⇒ 须授权)⇒ 登记为已知漂移",
+      "ledger_entry": "Entry #307"
+    }
+  ],
+  "map_status_ambiguity": [
+    {
+      "cep_id": "CEP-00",
+      "map_state": "✅ v0.3",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-00A",
+      "map_state": "✅ v0.1",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-01",
+      "map_state": "✅ v0.3",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-02",
+      "map_state": "✅ v0.3",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-03",
+      "map_state": "✅ v0.3",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-04",
+      "map_state": "✅ v0.3",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-05",
+      "map_state": "✅ v0.3",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-06",
+      "map_state": "✅ v0.1",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-07",
+      "map_state": "✅ v0.1",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-07A",
+      "map_state": "✅ **v0.1 起草 2026-10-21**",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-08",
+      "map_state": "✅ **v0.1 起草 2026-10-21**",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-09",
+      "map_state": "✅ **v0.1 起草 2026-10-21**(依赖表已补 CEP-12)",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-11",
+      "map_state": "✅ **v0.1 起草 2026-10-21**",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-12",
+      "map_state": "✅ **v0.1 起草 2026-10-21**(已采纳 `ADR-CEP-17 §3.4` 草案)",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-13",
+      "map_state": "✅ **v0.1 起草 2026-10-21**",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-14",
+      "map_state": "✅ **v0.1 起草 2026-10-21**",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-15",
+      "map_state": "✅ **v0.1 起草 2026-10-21**",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-16",
+      "map_state": "✅ **v0.1 起草 2026-10-21**",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-17",
+      "map_state": "✅ **v0.3 起草 2026-10-21**(超出预分配;§3.4 schema 草案已转由 `ADR-CEP-12` 承接)",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    },
+    {
+      "cep_id": "CEP-18",
+      "map_state": "✅ **v0.1 起草 2026-10-21**",
+      "reason": "NUMBER-MAP 状态列的 ✅ **三义**(已签发 / 版本号 / 起草)⇒ 该格**不可判读** ⇒ per oracle C-3「生命周期状态真源 = ADR 文件自身」,NUMBER-MAP **降级为状态镜像**,其状态列不参与判定(仅登记以示可见)",
+      "ledger_entry": "Entry #307"
+    }
+  ]
+}

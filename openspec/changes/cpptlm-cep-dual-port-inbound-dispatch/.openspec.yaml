@@ -1,0 +1,19 @@
+schema: spec-driven
+created: 2026-11-09
+goal: 修 `include/framework/dual_port_stream_adapter.hh` 的入向路由(按**端口组**)⇒ CEP 拓扑的**回程腿在拓扑级闭合**(延迟族 5 键出实测值);B3b-2 计数不变(0/4);⛔ 不改任何 main spec
+affected_areas:
+  - include/framework/dual_port_stream_adapter.hh
+  - include/tlm/cep/cohif_responder.hh
+  - configs/cep_chi_rnf_e2e_a.json
+  - configs/cep_chi_rnf_e2e_b.json
+  - test/test_dual_port_inbound_dispatch.cc
+  - test/test_cep_stub_cache_e2e.cc
+  - test/test_cep_stub_cache_emit.cc
+  - test/cep_e2e_runs.jsonl
+  - experimental/run-2026-11-09-cep-e2e-b/
+# ⛔ **零 delta spec**:本 change 是**框架行为修复 + 配置 + 判据**,**不改任何 main spec 的契约面**
+#    (CEP 的 5 流语义 / 协议引擎契约 / 实例声明均**零 diff**)。
+#    ⇒ 按 openspec 的口径声明 `skip_specs: true`(纯 tooling / 行为修复,无 delta 可写)。
+#    ⚠️ 若后续有人想在本 change 里**顺带**改 main spec ⇒ 必须先去掉本行并补 delta spec
+#       (且 main spec 的改动须走 M1 冻结面五步授权链)。
+skip_specs: true

@@ -1,0 +1,11 @@
+{
+  "simulation_mode": "functional",
+  "verification_mode": "sampled",
+  "verification_scope": "CEP E2E 装置 · 拓扑 A(configs/cep_chi_rnf_e2e_a.json) · 300 cycles",
+  "hypothesis_id": "framework-e2e",
+  "topology_tag": "A",
+  "run_class": "framework-verification",
+  "not_an_experiment_run": true,
+  "evidence_scope": "可对账(台账 metrics_sha256 ↔ 仓内 metrics.json);⛔ 非 B4 证据;⛔ 非一致性安全断言(IC3=⚪ 不适用)",
+  "provenance": {"seed": 20261108, "git_rev": "03732b74da3eb0a272f82944de1f508b1675e1ee", "toolchain": "gcc 14.2/c++202302/libstdc++14"}
+}

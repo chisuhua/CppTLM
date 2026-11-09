@@ -15,7 +15,15 @@
 
 // ============================================================
 // Mock dual-port module for testing
+//
+// ⚠️ **必须在匿名命名空间内**(2026-11-09,per change `cpptlm-cep-dual-port-inbound-dispatch`)——
+//    此前它定义在**全局命名空间** ⇒ 与 `test/test_dual_port_inbound_dispatch.cc` 的
+//    同名 mock 构成 **ODR 违反** ⇒ 链接期取决于 TU 顺序 ⇒ 适配器可能写进**另一份**成员
+//    布局 ⇒ 表现为「适配器说有效、测试读到无效」的**静默内存错位**(实测:两侧
+//    `net_resp_in()` 取到相差 0x48 字节的不同地址)。⇒ 一律匿名命名空间隔离。
 // ============================================================
+namespace {
+
 class MockDualPortModule : public ChStreamModuleBase {
 private:
     cpptlm::InputStreamAdapter<bundles::CacheReqBundle> pe_req_in_;
@@ -77,6 +85,8 @@ using TestDualAdapter =
     cpptlm::DualPortStreamAdapter<MockDualPortModule, bundles::CacheReqBundle,
                                   bundles::CacheRespBundle, bundles::CacheReqBundle,
                                   bundles::CacheRespBundle>;
+
+} // namespace
 
 TEST_CASE("DualPortStreamAdapter can be instantiated", "[dualport][adapter]") {
     EventQueue eq;

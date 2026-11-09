@@ -469,7 +469,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**(2026-11-09 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
+`openspec/changes/` 当前 **1 个 active**(2026-11-09 实测,per `openspec list --json`;唯一 active = `cpptlm-cep-dual-port-inbound-dispatch`,per 台账 Entry #308)⇒ **当前 Proposed 并发 = 1/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -17168,6 +17168,124 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 **⑥ 边界**:⛔ 不改任何已签发结论 · ⛔ 不动 `B3b-2` 计数 · ⛔ 不建 change(本 Entry 不占 KPI slot)· ⛔ 交接件的「粘贴式 prompt」**不得**被读成授权(它只是上下文,执行仍需用户口令)。
 
 **⑦ 关联**:**#305**(归档 + KPI)· **#304**(A9.2)· **#297 ~ #303**(实施流水)· `.rddf/reviews/cep-next-session-handover-2026-11-09.md`
+
+### Entry #307 — 2026-11-09 [plan](**4 项架构裁决落台账**(oracle 咨询 1 轮)+ 交接件勘误 + 执行通道定死 + 剩余任务实施顺序)
+
+**主题**:交接件 `.rddf/reviews/cep-next-session-handover-2026-11-09.md` 留下的 4 个待裁决点(ADR 结构 schema / M1 冻结集目的 / 「签发」合法动作 / 本轮执行通道)由 **oracle** 给出裁决 ⇒ 本 Entry 落台账 + 交接件勘误 + 定死实施顺序;随后按序进入 builder/architect 实施。
+
+**角色**:architect(裁决)· planner(盘点/勘误/登记)· builder(实施)· verifier(待验收)。
+**KPI**:Proposed **0/3**(不变;本 Entry 本身不建 change ⇒ 不占 slot)。
+**触发**:用户口令「请 oracle 对上述裁决的 4 点给出建议,然后按建议顺序用对应的角色实施任务」(2026-11-09)。
+
+**① 4 项裁决(oracle 2026-11-09 咨询,1 轮;逐条落台账)**:
+
+| # | 裁决 | 关键要点 |
+|---|---|---|
+| **C-1** | **ADR 结构 schema** | 合规形态 = **口径 A**(顶层 `##` 章含 Verification,**且在首个 `## Status Update` 之前**)⇒ 拒口径 B(把判据埋进 append-only 日志,审查者无处着力)。**分母 = 19 份决策 ADR**(22 − NUMBER-MAP − 00 宪章 − 00A 锚点表);其中 01/02/03 已合规 · **11/19 走永久豁免**(`waived-permanent` + `evidence_anchor` 指向 SU 内嵌 Verification 行号,闸校验锚点存活 ⇒ 豁免不得成为后门)· **04/05/06/07/07A/08/09/12/13/14/15/16/17/18 共 14 份 = 真实缺口**(起草中,来得及改正文 ⇒ ⛔ 不许进 deferrals)。`ADR-CEP-10` 文件不存在 ⇒ 占位登记,**不占分母**。闸的「有牙」三件套 = ①**分区完整性**(新 ADR 文件出现必须显式归类)②**位置敏感检测**(只认首个 SU 之前的顶层章)③**豁免反向验证**(锚点存活) |
+| **C-2** | **M1 冻结集目的** | 裁定为「**已签发能力的契约面基线**」(枚举式)—— 依据 = manifest 自身结构(ADR 侧用 glob、spec 侧用 9 条显式路径 ⇒ 若为全局基线,一行 `openspec/specs/cep-*/spec.md` 即可)。⇒ 新建 `test/cep_freeze_scope_registry.json` 登记 **27 份未冻结 spec**(`disposition: unfrozen-active` + `reason` + `ledger_entry`);**frozen 名单不在 registry 复制**(闸从 manifest 单点读,杜绝双真源)· 配套**反向校验**(`ls openspec/specs/cep-*/spec.md` == manifest 内 ∪ registry.unfrozen,新 spec 未登记 ⇒ 红)。**`cep-stub-cache-chstream-surface` 纳入冻结集**(轨 A 已归档 = 已交付能力的契约面;同类 `cep-stub-cache-core` 已冻 ⇒ 不纳入则不对等永久化)⇒ 走五步授权链,⛔ 不顺手扩 `FROZEN_GLOBS` |
+| **C-3** | **「签发」合法动作 + 可签署集** | 可签署集 = **14 份**(04/05/06/07/07A/08/09/12/13/14/15/16/17/18;逐一核对 header `:3` 行 = 🟡 起草中)。⚠️ **订正**:oracle 实测 14 份 ⇒ 先前「≈13」系**多减了不在 22 份清单内的 `ADR-CEP-10`** ⇒ 以 **14** 为准。「签发」= **两步**:① 追加 `## Status Update … —— 签发(vX.Y)` 段(判据达成声明 + 台账 Entry 引用)② **原地更新 header 的 `> **状态**:` 元数据行**(仅此一行豁免 —— 5/5 已签发先例一致:01/02/03/11/19 全部既回过 header 又有 SU);**决策正文一字不动仍是红线**。签发前置 = 顶层 Verification 章存在 + 真源锚点逐条实证 + oracle→critic 双审 + 台账 Entry + 冻结面五步授权。**生命周期状态真源 = ADR 文件自身**(header 元数据行 + SU 链);**NUMBER-MAP 降级为「编号分配真源 + 状态镜像」**(其 ✅ 图例已实证三义漂移:CEP-01 行记 `✅ v0.3` 实际已 v1.0 签发 / CEP-14 行记 `✅ v0.1 起草` 而 header 记 🟡);台账 = 过程凭据不作状态声明 |
+| **C-4** | **本轮执行通道** | **走内置手工流程**,⛔ **不重生 `.arch-handoff.json`**(重生 = 伪造 arch stage 退出信号,比陈旧更糟;preconditions 是质量门不是仪式)。**产物形态 = 台账 Entry + commit + 闸无参 exit 0 证据 + `ctest -R cep` 无回归**;顺序约定 = **先立闸让它红,再补数据让它绿**。交接件登记 **arch-handoff 废弃** + 恢复条件(下一个 Stage 4+ 协议能力立项时由 rdd-arch 重建) |
+
+**② 交接件勘误(append 式,不改写原记录)**:8 处实测订正已追加到 `.rddf/reviews/cep-next-session-handover-2026-11-09.md` §七(勘误段)—— ① HEAD 实际 `03732b74`(原记 `96c17efa`,快照测于本文件提交**之前**)② 「缺 Verification 实测 20/22」**无任何口径可复现** ⇒ 订正为 **口径 A 19/22 缺(含 3 份非决策文档)/ 决策分母 16 缺 + 11·19 豁免 + 14 份待补** ③ `cep_adr_structural_check.sh` **不存在** ⇒ B2 是「从零建闸 + 定 schema」不是「修正已有闸的口径漂移」④ M1 冻结集只含 **10 条显式** spec 路径 / 仓内 **37** 份 ⇒ 未冻结 **27** 份(非 1 份)⑤ §五.1 的 `openspec/specs/*` **无此通配** ⑥ §五.3「红线零 diff」6 项中**只有 `protocol_instance.schema.json` 在冻结集** ⇒ 冻结面(manifest 驱动)与语义红线(change scope 约束)是**两套机制** ⑦ ⚠️ **R-2 的措辞订正**:交接件原文「入向按端口路由」**正确** —— 缺陷是**未按端口组路由**(基类双参版回退 ⇒ 端口下标丢失);**不是**「不按包类型分流」(按 type 反而更错:`req_in[i]` 与 `resp_in[i]` 共享同一 `port_idx_`,且 CohIf egress 走 `req_out` ⇒ 回程 `Completion` 以 `PKT_RESP` 打在**对端 `req_in`** 上)⑧ O-2/O-5 **已完成**非剩余任务;另 E1 的第 2 路径是**仓内扫描**(`docs/research/*cep-*-clause-excerpt*.md`,今日 0 命中)非外部检索;⑨ ⚠️ **R-2 的「双条件」不完整** —— 实测需**第三条**:拓扑须补 **`home.0 → w.1`** 回程连接(CohIf egress 走 `req_out` ⇒ home 的 `req_out[0]` 原拓扑**未连接** ⇒ 回程发不出去)。
+
+**③ 实施顺序(合并 oracle 建议序 + 能力轨,按依赖)**:
+
+| 序 | 任务 | 角色 | 依赖 / 判据 |
+|---|---|---|---|
+| **T0** | 本 Entry + 交接件勘误段 | planner | ✅ 本 Entry |
+| **R-2** | 双端口适配器入向**按包类型**分流(修 `include/framework/dual_port_stream_adapter.hh`)+ 拓扑 `emit_completions: true` + 反向 fixture | builder | **建 openspec change**(capability 变更:影响框架层全部双端口用户 ≥2 模块 ⇒ per AGENTS.md 反模式「架构性变更未走 OpenSpec」+ per Entry #305 ③ R-2「另立 change」);⚠️ **oracle 4.3「本轮全部任务不建 change」仅适用于治理轨**(T1~T5 工具/文档性质),不覆盖 R-2 |
+| **E1** | D-4 首次真实探测(4 external + 4 internal,8 槽位全覆盖) | planner | cadence 闸 `RUN-COVERAGE-GAP` 要求 8 槽全覆盖;任一 real outcome 即转 `CADENCE-OK` ⇒ 全 unknown 亦算完成但须带 `unknown_reasons` |
+| **T1** | ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` + `test/cep_adr_structural_deferrals.json` + 三源一致性检查并入 | builder | 按 C-1 分区;⛔ deferrals 命名不得撞 `cep_b3b2_deferrals.json`(冻结件) |
+| **T2** | `cep-stub-cache-chstream-surface` 纳入 M1 冻结集 | architect(授权)+ builder(机制) | 五步链:台账 Entry 授权 → 产物 commit → `--update --authorized-by "Entry #N"` → 清单单独 commit → 无参复验 |
+| **T3** | `test/cep_freeze_scope_registry.json` + 完整性反向校验 | builder | 依赖 T2 完成后 frozen 侧落定 |
+| **T4** | 签发批次(14 份,按 NUMBER-MAP 起草顺序分 4 批;每批先补顶层 Verification 章) | architect + builder | 每批 oracle→critic 双审(01/02/03 定稿先例) |
+| **T5** | 交接件追加 arch-handoff 废弃 + 恢复条件 | planner | 已并入本 Entry ② 的勘误段 |
+| **R-3** | `ModuleFactory` Step 7.5 重挂检测 | planner(可达性举证)→ builder | 先证「同一模块两 bridge entry」能否由 JSON 拓扑表达;不能 ⇒ 不动 `module_factory.cc` |
+
+**④ 边界**:`B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` 零 diff;`protocol_instances.json` / `protocol_instance.schema.json` 零 diff;⛔ 不改任何**已签发 ADR 的决策内容**;⛔ 不用「框架跑通」冒充「协议语义达成」;⛔ 不为 `B3b-2` 造内部替代品。
+
+**⑤ 关联**:**#306**(盘点 + 交接件)· **#305**(归档 + 残余登记 R-1/R-2/R-3)· **#304**(A9.2 SU 授权)· `.rddf/reviews/cep-next-session-handover-2026-11-09.md`(§七 勘误段)· oracle 咨询(2026-11-09,4 裁决)
+
+### Entry #308 — 2026-11-09 [build](**R-2 实施**:双端口适配器入向**按端口组**路由 + 拓扑回程连接 + `emit_completions: true` ⇒ 拓扑级回程腿闭合)
+
+**主题**:台账 **Entry #305 ③ R-2** 的实施(change **`cpptlm-cep-dual-port-inbound-dispatch`**)—— 修 `include/framework/dual_port_stream_adapter.hh` 的入向路由,使 CEP 拓扑的**回程腿在拓扑级闭合**。
+
+**角色**:builder(实施)· architect(裁决已在 **Entry #307** 落定)· planner(台账/勘误)· verifier(待验收)。
+**KPI**:Proposed **0/3 → 1/3**(本 change 占用 1 slot)⇒ **6 处活文档 KPI 基线同步 0/3 → 1/3**(obj §5.2 / phase-10 / umbrella / nvlink-sharp ×2 / roadmap.md / AGENTS.md)。
+
+**① 根因(代码级,实测)**:框架入向路径固定为 `ChStreamTargetPort::recvReq`(`include/core/chstream_port.hh:70`)⇒ 只调**双参** `process_request_input(pkt, port_idx_)`;基类双参版(`include/core/stream_adapter_base.hh:82-84`)**默认回退单参版** ⇒ `DualPortStreamAdapter` 只 override 单参版 ⇒ **端口下标丢失** ⇒ 入向包**恒落 PE 侧** ⇒ `net_resp_in()` 永不可达(`process_net_response_input()` 原**零调用点**)。
+
+**② 修复(4 处改动)**:
+| # | 改动 | 文件 |
+|---|---|---|
+| **C1** | override **双参** `process_request_input(Packet*, unsigned port_idx)` ⇒ **按端口组**路由(组 0 = PE ⇒ `pe_req_in()` · 组 1 = Net ⇒ `net_resp_in()`);单参版改为委托给组 0(既有直接调用者行为不变);⛔ **不新增成员变量**(per `src/core/module_factory.cc:733` 的跨模板实例化 `static_cast` ⇒ 两实例布局须逐字节相同) | `include/framework/dual_port_stream_adapter.hh` |
+| **C2** | `emit_completions: false` ⇒ `true`(A / B 两份)+ `description` 同步 | `configs/cep_chi_rnf_e2e_{a,b}.json` |
+| **C2b** | ⚠️ **补回程连接 `home.0 → w.1`**(A / B 两份)—— **实施期实测发现的第三条条件**(见 ③) | `configs/cep_chi_rnf_e2e_{a,b}.json` |
+| **C3** | 新增入向路由判据(**正控 + 反向 fixture**,走**框架真实入口** `ChStreamTargetPort::recvReq`)+ SCE-09 断言翻转 + 回程腿闭合判据 | `test/test_dual_port_inbound_dispatch.cc`(新)· `test/test_cep_stub_cache_e2e.cc` |
+
+**③ ⚠️ 实施期发现(2 条,如实登记)**:
+- **F-1 ·「双条件」不完整**:`07 号` SU 十五 ① 登记的触发条件是**双条件**(① 修适配器 + ② 改 config)。**实测**:只做 ①+② 时 `home->counters().completions_sent > 0` 但 `w->counters().net_completions_in == 0` ⇒ **回程仍不可达** ⇒ 双条件**不充分**。**缺的第三条**:CohIf 的 egress 走 **`req_out`**(`include/tlm/cep/cohif_direction_traits.hh` 的 `egress_channel()` = `EgressChannel::Req`)⇒ `home` 的回程从 **`home.req_out[0]`** 发出;而原拓扑只有 `w.1 → home.0` ⇒ 其正向 pair 是 `w.req_out[1] ↔ home.req_in[0]` ⇒ **`home.req_out[0]` 未被任何连接绑定** ⇒ `send()` 失败 ⇒ 回程**根本发不出去** ⇒ 须补 **`home.0 → w.1`**(每个方向一条**显式**连接 = CohIf「断链即断达」模型的直接推论)。⚠️ **不改** `07 号` 原文(SU · 十五 是**当时**登记)⇒ 以 **SU · 十六** 追加闭合。
+- **F-2 · 措辞订正**:交接件原文「入向按**端口**路由」**正确** —— 缺陷是**未按端口组路由**;**不是**「不按**包类型**分流」(按 type 反而更错:`req_in[i]` 与 `resp_in[i]` **共享同一 `port_idx_`** ⇒ type 与组**不是**一一对应;且 CohIf 的 `Completion` 以 `PKT_RESP` 打在**对端的 `req_in`** 上)。⇒ 交接件 §七 E-7 与本 Entry #307 ② ⑦ 已同步订正。
+
+**④ 验证(实测)**:
+- 构建 rc=0;`[dualport]` **9 cases / 34 assertions** 绿(含新判据 5 cases);`[cep]` **504 cases / 11479 assertions** 绿;`ctest` **165/166**(唯一红 = `cep_doc_ref_check` 引用了**尚未创建**的 ADR 结构闸脚本 ⇒ 由 **T1** 落地后转绿,⛔ 非本 change 引入的回归);`./test.sh --mode off` **21/21** 绿(Catch2 全量 **2286 cases / 881925 assertions** 绿;含 `OFF-E2E-mesh-2x2` / `mesh-4x4` / `mesh-4x4-tlm` / `NIC-Router-NIC` ⇒ **NICTLM 行为变化无回归**);
+- **AC-4 拓扑级回程闭合(实测)**:SCE-09 ⇒ `home.completions_sent > 0` ∧ `home.completions_suppressed == 0` ∧ `w.net_completions_in > 0` ∧ `w.cpu_responses > 0` ✅;
+- **AC-6 边界**:`B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` / `protocol_instances.json` / `protocol_instance.schema.json` / `stub_cache_core.hh` / `cohif_noc_bridge.hh` **零 diff**;⛔ **不**把「回程腿闭合」写成「协议语义达成」——IC3 仍 **⚪ 不适用**(违例类 `memory_violations` 无样本)⇒ 拓扑 A/B **仍不承载「全绿 run」**。
+
+**⑤ 残余登记**:
+| # | 残余 | 证据 | 归属 |
+|---|---|---|---|
+| **R-5** | **`BidirectionalPortAdapter` 的同类缺陷**:`include/framework/bidirectional_port_adapter.hh:335` 的 `process_request_input(Packet*, std::size_t)` 与基类 `process_request_input(Packet*, unsigned)` **签名不匹配** ⇒ **不是 override**(该处亦无 `override` 关键字)⇒ 基类双参版回退单参 ⇒ 该适配器**恒用端口下标 0** ⇒ `RouterTLM`(5 端口)与全部 CEP 引擎(2 端口)的**多端口入向路由失效** | 代码级(签名比对);`std::size_t`(64-bit)≠ `unsigned`(32-bit) | **另立 change**(影响面 ≫ R-2:全部 router + 全部引擎)· 本 change **不修** |
+| **R-6** | 拓扑 B 的 `chi.0 → home.1` ⇒ 因 R-5 ⇒ chi 侧流量落 `home` 的 `req_in[0]`(与业务请求同桶) | 同上 | 随 R-5 一并处置 |
+| **R-7** | `07 号` **SU · 十六**(残余缺口闭合登记)+ 新残余 R-5/R-6 登记 —— `docs/architecture/07-*.md` 在 **M1 冻结集**内 ⇒ 须走**五步授权链** | 冻结清单 globs | **待 commit 轮次**执行(⛔ 未提交前不写) |
+
+**⑥ 关联**:change **`cpptlm-cep-dual-port-inbound-dispatch`**(proposal + design + tasks)· **#307**(4 项裁决 + 实施顺序 + E-7 订正)· **#305 ③ R-2**(残余登记)· **#304**(A9.2 SU)· `docs/architecture/07-coherence-exploration-platform.md` **SU · 十五 ①** · `.rddf/reviews/cep-next-session-handover-2026-11-09.md` §七.1 **E-7 / E-8b**
+
+### Entry #309 — 2026-11-09 [build](**T1 ADR 结构闸** + **E1 D-4 首次真实探测** + R-2 产物重算)
+
+**主题**:按 **Entry #307 ③** 的实施顺序,完成 **T1**(ADR 结构闸 · oracle 裁决 C-1)与 **E1**(D-4 触发探测的**首次真实执行**),并把 R-2 修复后的 E2E 产物按修正后的判据**重算**入库。
+
+**角色**:builder(T1 + 产物)· planner(E1)· architect(裁决已落 #307)· verifier(待验收)。
+**KPI**:Proposed **1/3**(不变;本 Entry 不建 change ⇒ 不占 slot)。
+
+**① T1 · ADR 结构闸(per oracle 裁决 C-1)**:
+| 件 | 内容 |
+|---|---|
+| 闸脚本 | `scripts/test/cep_adr_structural_check.sh`(+ `scripts/test/cep_adr_structural_check.py`) |
+| 登记表 | `test/cep_adr_structural_deferrals.json`(⛔ 与 `test/cep_b3b2_deferrals.json` —— B3b-2 的**冻结件** —— **无关**) |
+| ctest | `cep_adr_structural_check`(**注册**;ctest 总数 166 → **167**) |
+| 判定 4 组 | ① **分区完整性**(磁盘 22 份 == `decision_adrs` **19** + `excluded` **3**)② **未登记即红** ③ **豁免锚点存活**(反后门)④ **登记表健康** |
+| 分区实测 | 决策分母 **19** 份(排除 `NUMBER-MAP` / `00` 宪章 / `00A` 锚点表)· 合规 **3**(01/02/03)· **永久豁免 2**(11 锚点 `[365,417]` · 19 锚点 `[429,515,566,608]`)· **待补 14**(04/05/06/07/07A/08/09/12/13/14/15/16/17/18) |
+| 决定性变异 | **3 个**(影子树 ⇒ 不动真实仓):① 出现**未归类** ADR ⇒ ① 红 ② 豁免 `evidence_anchor` 指向死行 ⇒ ③ 红 ③ 删掉一份不合规 ADR 的登记 ⇒ ② 红 |
+| 报告面(不判红) | `status_drift` **4** 条(NUMBER-MAP 与 header 的**可判定**矛盾)+ `map_status_ambiguity` **20** 条(状态列 ✅ **三义** ⇒ 已降级为镜像) |
+
+**② E1 · D-4 触发探测的**首次真实执行**(per #307 ③ E1)**:run-record `d4-probe-2026-11-09-a` 落 `test/cep_b3b2_d4_probe_runs.jsonl` ⇒ **8/8 槽位全覆盖** ⇒ cadence 闸由 **`CADENCE-NEVER-RUN` → `CADENCE-OK`**;3 个决定性变异仍按签名变红。
+| 路径 | 槽位 | 结果 | 证据 |
+|---|---|---|---|
+| external | CXL 2.0 / CXL 3.0(共享 source event) | **miss** ×2 | `computeexpresslink.org/download-the-specification/` 明示「**Download an Evaluation Copy** of the CXL® 4.0 Specification」+「EVALUATION COPY AGREEMENT – as of February 12, 2026」⇒ `evaluation_copy == true` ⇒ `must_all(evaluation_copy==false)` **不满足** |
+| external | NVLink | **miss** | `docs.nvidia.com` 索引页 + 定向检索 ⇒ NVLink 相关文档只有 NVML API 参考 / NVAPI 参考 / Ampere 调优指南(明示「No contractual obligations」)/ 运维段 / 博客 ⇒ **无** `document_type ∈ {specification, architecture_manual}` 的条款级文档 |
+| external | UALink | **miss** | `ualinkconsortium.org/specification/ualink-200g-1-0-specification/` 明示「EVALUATION COPY AGREEMENT – as of April 7, 2025」+「Download an Evaluation Copy」⇒ `evaluation_copy == true` ⇒ 不满足 |
+| internal | 4 族 | **miss** ×4 | 4 个 glob(`docs/research/*cep-{cxl_2_0,cxl_3_0_symmetric,nvlink,ualink}-clause-excerpt*.md`)**各 0 命中** ⇒ 仓内只有 `anchor-summary`(非条款摘录,无 signer 字段) |
+⇒ **D-4 未对任何族触发** ⇒ 受限族 T1-T4 维持未达成 ⇒ **`B3b-2` 维持 0/4**;⚠️ 本行**不**改计数,只登记「已按授权路径真实执行过一次」这一事实。⛔ **合规**:未下载 / 未读取任何规范正文(PDF);只取**页面元数据**(CXL ECA §3 的 AI 条款进一步约束 AI 处理规范正文)。
+⇒ 副作用:improvement `cpptlm-cep-b3b2-d4-trigger-probe` 状态 **🟡 提案 → ✅ 已实施**(O-3 闭合)。
+
+**③ R-2 产物重算(延迟族 5 键 `not-collected` → **实测值**)**:emit 用例(`test/test_cep_stub_cache_emit.cc`)此前**硬编码**「延迟族未采集(框架层回程不可达)」⇒ 现改为由 wrapper 的 **per-txn 周期戳**实测(⚠️ 只喂**网络往返**样本 `hit==false && !rejected && completed` —— 命中 / 拒绝路径在 issue **当期**本地完成 ⇒ 恒 0 延迟,计入会污染分位)。
+⇒ 新 run `cep-e2e-2026-11-09-b`(`experimental/run-2026-11-09-cep-e2e-b/`,2 件):延迟族 5 键 = **5 cycles**(avg/p50/p95/p99/max);`coherence_stalls` 86;`memory_violations` 仍 `not-collected` ⇒ **IC3 = ⚪ 不适用** ⇒ ⛔ 本 run **仍不承载「全绿 run」**。
+⇒ `test/cep_e2e_runs.jsonl` 追加该条目(7 字段 + `metrics_13` + `metrics_13_reasons` + `ic3_verdict` 三态词表);双向闸 `cep_e2e_reconcile_check.sh` ⇒ **台账 2 条 ↔ 仓内 2 run,0 问题** ✅。⚠️ 旧条目 `cep-e2e-2026-11-09-a` **保留不动**(历史事实:当时的延迟族确实未采集)。
+⚠️ **反向 fixture(SCE-22)**:config 回退 `emit_completions: false` ⇒ `completions_sent == 0` ∧ `net_completions_in == 0` ∧ **网络往返样本数 == 0** ⇒ 必红 ⇒ AC-4 有牙。
+
+**④ 验证(实测)**:`ctest` **167/167** 全绿(新增 `cep_adr_structural_check`)· `[cep]` **505 cases / 11487 assertions** 绿(新增 SCE-22)· `[dualport]` **14 cases / 59 assertions** 绿(含新判据 5 cases)· `./test.sh --mode off` **21/21** 绿(Catch2 全量 **2287 cases**)· `cep_e2e_reconcile_check.sh` rc=0 · `cep_b3b2_d4_quarterly_review.sh` rc=0(1 WARN = cadence 已转 OK)· `openspec validate <change> --strict` **valid**(`skip_specs: true` ⇒ 零 delta 声明合规)。
+
+**⑤ 残余 / 待办**:| # | 项 | 状态 |
+|---|---|---|
+| **R-5** | `BidirectionalPortAdapter` 的 2 参 override **签名不匹配**(`std::size_t` vs 基类 `unsigned`)⇒ 恒用端口下标 0 ⇒ `RouterTLM`(5 端口)与全部 CEP 引擎(2 端口)的多端口入向路由失效 | **已登记**(见 #308 ⑤)· 另立 change |
+| **R-6** | 拓扑 B 的 `chi.0 → home.1` 因 R-5 落 `home` 的 `req_in[0]` | 同上 |
+| **R-7** | `07 号` **SU · 十六**(残余缺口闭合 + R-5/R-6 登记)—— 冻结面 ⇒ **五步授权链** | **待 commit 轮次** |
+| **R-8** | `NUMBER-MAP` 状态列 ✅ **三义** ⇒ 已降级为镜像(per C-3)· 其**自身**的镜像腐化(4 条可判定矛盾)待修 | **待授权**(在冻结集内) |
+| **T4** | 14 份起草中 ADR 的**签发批次**(每批:补顶层 Verification 章 + 签发 + oracle→critic 双审) | **待办**(本轮未启动) |
+| **R-9** | **测试 mock 的 ODR 隐患**:`test/test_dual_port_adapter.cc` 与 `test/test_dual_port_inbound_dispatch.cc` 曾各自在**全局命名空间**定义同名 `MockDualPortModule` ⇒ **ODR 违反** ⇒ 链接期取决于 TU 顺序 ⇒ 适配器可能写进**另一份**成员布局 ⇒ 表现为「适配器内 `valid()`=1、测试侧读 `valid()`=0」的**静默内存错位**(实测两侧 `net_resp_in()` 地址相差 **0x48** 字节)| ✅ **已修**(两处 mock 均移入匿名命名空间,并加注释说明);⇒ 附注:仓内**其它**测试文件若新增同名全局 mock 会复发 ⇒ 建议后续统一纪律(⛔ 本轮不批量重构) |
+
+**⑥ 关联**:**#308**(R-2 实施)· **#307**(4 项裁决 + 实施顺序)· **#305 ③ R-2** · **#277**(D-4 探测协议 + 闸)· change **`cpptlm-cep-dual-port-inbound-dispatch`** · `scripts/test/cep_adr_structural_check.sh` · `test/cep_adr_structural_deferrals.json` · `test/cep_b3b2_d4_probe_runs.jsonl` · `experimental/run-2026-11-09-cep-e2e-b/`
 
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 

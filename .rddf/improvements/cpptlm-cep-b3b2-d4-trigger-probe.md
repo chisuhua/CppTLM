@@ -5,7 +5,7 @@ phase: phase-10
 依赖:
   - ADR-CEP-12
   - ADR-CEP-04
-状态: 🟡 **提案**(2026-11-07,per 台账 Entry #274 §④ E1 —— **已按 metis gap 分析改写**,待实施)
+状态: ✅ **已实施**(2026-11-09,per 台账 Entry #309 —— 探测协议 + 闸 per Entry #277;**首次真实执行** 2026-11-09:8/8 槽位全覆盖,**4 条 external + 4 条 internal 全部 `miss`** ⇒ **D-4 未对任何族触发** ⇒ 受限族 T1-T4 维持未达成 ⇒ **`B3b-2` 维持 0/4**;cadence 闸由 `CADENCE-NEVER-RUN` 转 `CADENCE-OK`。历史:🟡 **提案**(2026-11-07,per 台账 Entry #274 §④ E1 —— **已按 metis gap 分析改写**,待实施))
 created: 2026-11-07
 ---
 

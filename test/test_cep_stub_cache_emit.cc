@@ -15,10 +15,13 @@
 //     **不得**作任何一致性安全断言的证据;
 //   · ✅ 它的用途 = **可对账**(台账 `metrics_sha256` ↔ 仓内 `metrics.json`)。
 //
-// ⚠️ **延迟族未采集的原因**(框架限制,非装置缺陷):dual-port 适配器的**入向路由恒落 PE 侧**
-//   (`include/framework/bidirectional_port_adapter.hh` 的 `process_request_input` 只填
-//   `pe_req_in()`)⇒ **回程不可达** ⇒ 本装置**没有已完成往返** ⇒ 延迟族无可测样本。
-//   回程腿在**模块级**判据(`test_cep_stub_cache_e2e.cc` SCE-03/SCE-14)闭合。
+// ⚠️ **延迟族自 2026-11-09 起为**实测值**(per change `cpptlm-cep-dual-port-inbound-dispatch`):
+//   此前 dual-port 适配器的**入向路由恒落 PE 侧** ⇒ 回程不可达 ⇒ 延迟族只能记
+//   `not-collected`(硬编码 reason)。⇒ 现双端口适配器的入向改为**按端口组**路由
+//   (组 1 = Net ⇒ `net_resp_in()`)+ 拓扑补回程连接 ⇒ **已有完成往返**
+//   ⇒ 延迟族由 wrapper 的 per-txn 周期戳(issue → complete)**实测**得出。
+//   ⚠️ `memory_violations` 仍**无样本**(本 run 无内存操作)⇒ IC3 仍 **⚪ 不适用**
+//   ⇒ 本 run **仍不承载「全绿 run」**。
 //
 // 作者: builder  日期: 2026-11-09
 #include "catch_amalgamated.hpp"
@@ -108,19 +111,36 @@ TEST_CASE("E2E-01: E2E 装置产出 `metrics.json` + `simulation_config.json`(�
     m.verification_mode = "sampled";
     m.verification_scope = "CEP E2E 装置 · 拓扑 A(configs/cep_chi_rnf_e2e_a.json) · 300 cycles";
 
+    // ── 延迟族:由 wrapper 的 **per-txn 周期戳**实测(issue → complete)──
+    //   ⚠️ 只喂**网络往返**样本(`hit == false && !rejected && completed`):
+    //      命中 / 拒绝路径在 issue **当期**本地完成(`record_stamp` 置 completed 且
+    //      complete_cycle == issue_cycle)⇒ 它们的「延迟」恒 0 ⇒ 计入会污染分位。
+    std::size_t completed_pairs = 0;
+    for (const auto& s : w->txn_stamps()) {
+        if (s.hit || s.rejected || !s.completed)
+            continue;
+        m.latency.note_issue();
+        if (m.latency.note_complete(s.issue_cycle, s.complete_cycle))
+            ++completed_pairs;
+    }
+    REQUIRE(completed_pairs > 0u);          // 回程可达 ⇒ 必有完成往返 ⇒ 延迟族非空真
+    REQUIRE(m.latency.sample_count() == completed_pairs);
+    REQUIRE(m.latency.audit_balanced());   // 一发一收闭合
+    REQUIRE(m.latency.underflow() == 0u);
+    REQUIRE(m.latency.p50() > 0u);         // ⛔ 非 0 值空真
+
     // 实测 5 键
     m.measured.insert("total_cycles");
     m.measured.insert("total_transactions");
     m.measured.insert("transactions_per_cycle");
     m.measured.insert("coherence_stalls");
     m.measured.insert("deadlock_violations");
-
-    // 未采集 8 键(逐键 reason;⛔ 不填 0)
-    const char* kLatencyReason =
-        "框架层回程不可达(dual-port 适配器入向路由恒落 PE 侧)⇒ 本装置无已完成往返 ⇒ 延迟族无样本";
+    // 延迟族 5 键 = **实测**(回程可达 ⇒ 有完成往返)
     for (const char* k : {"avg_latency_cycles", "p50_latency_cycles", "p95_latency_cycles",
                           "p99_latency_cycles", "max_latency_cycles"})
-        m.not_collected[k] = kLatencyReason;
+        m.measured.insert(k);
+
+    // 未采集 3 键(逐键 reason;⛔ 不填 0)
     m.not_collected["collective_stalls"] = "本装置无 collective plane 绑定 ⇒ 无产出者";
     m.not_collected["directory_misses"] = "本装置无 directory / sharer tracker ⇒ 无产出者";
     m.not_collected["memory_violations"] = "本 run 无内存操作样本 ⇒ 无可检样本";

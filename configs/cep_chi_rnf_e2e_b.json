@@ -1,6 +1,6 @@
 {
   "name": "cep_chi_rnf_e2e_b",
-  "description": "拓扑 B(带延迟 + 桥投影语境)—— G2 两拓扑之一。① `cep.bridges` **恰好 1 条**;② `modules` **恰好 3**(RN 端点 `w` + 协议引擎 `chi` + home 端点 `home`);③ **至少 1 条** connection `latency > 0`(事务路径);④ bridge 条目**显式** `bridge_id` 且引用**已声明**实例 `chi_rnf` ⇒ 装配闸 `PASS`。⚠️ `chi` 走**装配面**(与 `w` / `home` 共挂同一 bridge 条目 ⇒ 三者 `bridge_id` 相同);RN-F **不服务** request ⇒ 业务事务走 `w → home` 这条带延迟的连接。",
+  "description": "拓扑 B(带延迟 + 桥投影语境)—— G2 两拓扑之一。① `cep.bridges` **恰好 1 条**;② `modules` **恰好 3**(RN 端点 `w` + 协议引擎 `chi` + home 端点 `home`);③ **至少 1 条** connection `latency > 0`(事务路径);④ bridge 条目**显式** `bridge_id` 且引用**已声明**实例 `chi_rnf` ⇒ 装配闸 `PASS`。⑤ home 侧 `emit_completions = true` ⇒ **回程腿在拓扑级闭合**(per change `cpptlm-cep-dual-port-inbound-dispatch`:双端口适配器的入向改为**按端口组**路由)。⚠️ `chi` 走**装配面**(与 `w` / `home` 共挂同一 bridge 条目 ⇒ 三者 `bridge_id` 相同);RN-F **不服务** request ⇒ 业务事务走 `w → home` 这条带延迟的连接。",
   "modules": [
     {
       "name": "w",
@@ -14,7 +14,7 @@
       "name": "home",
       "type": "CohIfResponderTLM",
       "params": {
-        "emit_completions": false
+        "emit_completions": true
       }
     }
   ],
@@ -22,6 +22,12 @@
     {
       "src": "w.1",
       "dst": "home.0",
+      "latency": 3,
+      "bandwidth": 100
+    },
+    {
+      "src": "home.0",
+      "dst": "w.1",
       "latency": 3,
       "bandwidth": 100
     },

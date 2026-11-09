@@ -330,10 +330,14 @@ TEST_CASE("SCE-09: 拓扑 A 装配 + **出向事务腿**(⛔ 判据不止 instan
     REQUIRE(w->counters().net_requests_out > 0u);     // wrapper 发出 net Request
     REQUIRE(home->counters().requests_consumed > 0u); // 事务抵达对端 home
 
-    // ⚠️ 拓扑内**回程被抑制**(dual-port 适配器入向路由恒落 PE 侧 ⇒ 框架限制;
-    //    `include/framework/` 红线 ⇒ 零改动;回程腿在**模块级** SCE-03 / SCE-04 闭合)。
-    REQUIRE(home->counters().completions_sent == 0u);
-    REQUIRE(home->counters().completions_suppressed > 0u);
+    // ── 回程腿在**拓扑级**闭合(per change `cpptlm-cep-dual-port-inbound-dispatch`)──
+    //   双端口适配器的入向改为**按端口组**路由(组 0 = PE ⇒ `pe_req_in()`;
+    //   组 1 = Net ⇒ `net_resp_in()`)⇒ home 的回程 `Completion` 不再被当成业务请求
+    //   读进 PE 侧 ⇒ 真正抵达 wrapper 的 net 侧入向通道。
+    REQUIRE(home->counters().completions_sent > 0u);
+    REQUIRE(home->counters().completions_suppressed == 0u);
+    REQUIRE(w->counters().net_completions_in > 0u);  // 回程 Completion 抵达 wrapper
+    REQUIRE(w->counters().cpu_responses > 0u);       // 业务响应回到 PE 侧(闭环)
 }
 
 TEST_CASE("SCE-10: 拓扑 B 装配 + 桥挂载(三模块同 `bridge_id`)+ 带延迟事务仍抵达对端",
@@ -782,4 +786,45 @@ TEST_CASE("SCE-21: A7 三键测量归属 —— `coherence_stalls` **实测**;"
         REQUIRE(js.find("\"_not_collected\"") != std::string::npos);
         REQUIRE(js.find("\"coherence_stalls\": 3") != std::string::npos);
     }
+}
+
+// ── SCE-22 · 反向 fixture —— config 回退 `emit_completions: false` ⇒ 回程不可达 ──
+//   (per change `cpptlm-cep-dual-port-inbound-dispatch` tasks T4.3)
+//   ⇒ AC-4 的判据**有牙**:把 home 侧的回程开关关掉 ⇒ 回程腿重新不可达 ⇒
+//      延迟族**无完成往返** ⇒ SCE-09 的 `net_completions_in > 0` 必红。
+TEST_CASE("SCE-22: 反向 fixture —— `emit_completions=false` ⇒ 回程不可达(延迟族无样本)",
+          "[cep][e2e][sce-22][r2][reverse]") {
+    REGISTER_ALL;
+    auto cfg = load_topology("cep_chi_rnf_e2e_a.json");
+    // ⚠️ 反向 fixture:把 home 的回程开关关掉(回退到修复前的配置形态)
+    for (auto& m : cfg["modules"]) {
+        if (m.value("type", "") == "CohIfResponderTLM") {
+            m["params"]["emit_completions"] = false;
+        }
+    }
+    EventQueue eq;
+    ModuleFactory f(&eq);
+    REQUIRE(f.instantiateAll(cfg));
+    f.startAllTicks();
+    eq.run(300);
+
+    auto* w = dynamic_cast<tlm::cep::StubCacheEndpointTLM*>(f.getInstance("w"));
+    auto* home = dynamic_cast<tlm::cep::CohIfResponderTLM*>(f.getInstance("home"));
+    REQUIRE(w != nullptr);
+    REQUIRE(home != nullptr);
+
+    // ① 回程被抑制(与修复前的行为同形)⇒ home 发不出 Completion
+    REQUIRE(home->counters().completions_sent == 0u);
+    REQUIRE(home->counters().completions_suppressed > 0u);
+    // ② 回程**不可达** ⇒ wrapper 的 net 侧入向收不到 Completion
+    REQUIRE(w->counters().net_completions_in == 0u);
+    // ③ ⇒ **无网络往返** ⇒ 延迟族无样本(SCE-09 的 `net_completions_in > 0` 必红)
+    //    ⚠️ 只看**miss 路径**的 stamp(`hit == false`):命中 / 拒绝路径在 issue 当期完成
+    //    (本地完成)⇒ 它们的 `completed == true` 与「往返可达」无关。
+    std::size_t network_round_trips = 0;
+    for (const auto& s : w->txn_stamps()) {
+        if (!s.hit && !s.rejected && s.completed)
+            ++network_round_trips;
+    }
+    REQUIRE(network_round_trips == 0u);
 }

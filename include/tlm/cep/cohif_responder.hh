@@ -56,12 +56,13 @@ public:
         /// 发 `Snoop` 的周期间隔(仅 `emit_snoops = true` 时生效)
         unsigned snoop_interval_cycles = 8;
         /// 是否**回发** `Completion`(默认开 = 模块级默认行为)
-        /// ⚠️ 拓扑 A/B 把它**关掉**:dual-port 适配器的**入向路由恒落 PE 侧**
-        ///    (`include/framework/dual_port_stream_adapter.hh` 的 `DualPortStreamAdapter`
-        ///    只 override **单参** `process_request_input` ⇒ 只填 `pe_req_in()`)⇒ 回程
-        ///    `Completion` 会被当成业务请求读进 PE 侧
-        ///    ⇒ **产生垃圾请求**。⛔ 框架红线(`include/framework/` 零改动)⇒ 用本开关
-        ///    把回程腿**留在模块级判据**(SCE-03 / SCE-04)闭合,拓扑级只闭合**出向腿**。
+        /// ⚠️ **该开关的用途已变**(2026-11-09,per change `cpptlm-cep-dual-port-inbound-dispatch`):
+        ///    此前它是为了**规避**双端口适配器的入向路由缺陷(入向恒落 PE 侧 ⇒ 回程
+        ///    `Completion` 会被当成业务请求读进 PE 侧 ⇒ 产生垃圾请求)⇒ 拓扑 A/B 把它
+        ///    置 `false`,把回程腿**留在模块级判据**(SCE-03 / SCE-04)闭合。
+        ///    ⇒ 现双端口适配器的入向已改为**按端口组**路由(net 组 ⇒ `net_resp_in()`)
+        ///    ⇒ 该缺陷已解除 ⇒ 拓扑 A/B 置 `true`(回程腿在**拓扑级**闭合)。
+        ///    ⛔ 本开关**仍保留**:可用来把回程腿**有意**留在模块级判据(而不去改变拓扑语义)。
         bool emit_completions = true;
     };
 
@@ -72,7 +73,7 @@ public:
         std::uint64_t writebacks_consumed = 0;  ///< 消费的 `Writeback`(零响应)
         std::uint64_t snoop_resps_consumed = 0; ///< 消费的 `SnoopResp`(零响应)
         std::uint64_t foreign_consumed = 0;     ///< 其余流(零响应;如实记账)
-        std::uint64_t completions_suppressed = 0; ///< 因 `emit_completions=false` 被抑制的回程
+        std::uint64_t completions_suppressed = 0; ///< 因 `emit_completions=false` 被抑制的回程(2026-11-09 起拓扑 A/B **不再**抑制)
     };
 
     CohIfResponderTLM(const std::string& name, EventQueue* eq) : ChStreamModuleBase(name, eq) {}
