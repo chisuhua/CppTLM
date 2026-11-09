@@ -218,6 +218,34 @@ if missing or changed or drift:
     print(f"  \033[0;31m✗\033[0m M1 冻结校验失败:{len(missing)} 缺失 / {len(changed)} 被改 / {len(drift)} 未登记")
     sys.exit(1)
 
+# ── 冻结范围登记完整性(反向校验,per oracle 2026-11-09 C-2.3 / 台账 Entry #313)──
+#   `openspec/specs/cep-*/spec.md` 全体 == 已冻结(manifest) ∪ 登记表 `unfrozen`
+#   ⇒ 新增 main spec 若**未在登记表登记** ⇒ 红:「未冻结」必须是**知情决定**,
+#     而非静默缺口(⛔ 本登记**不**等于该契约面已受冻结保护)。
+#   ⚠️ frozen 名单**不在**登记表重复维护(唯一真源 = manifest)⇒ 杜绝双真源。
+import glob as _glob
+REG_REL = "test/cep_freeze_scope_registry.json"
+_reg_path = os.path.join(root, REG_REL)
+if os.path.exists(_reg_path):
+    with open(_reg_path, encoding="utf-8") as f:
+        reg = json.load(f)
+    registered = {e["path"] for e in reg.get("unfrozen", [])}
+    spec_paths = sorted(_glob.glob(os.path.join(root, "openspec/specs/cep-*/spec.md")))
+    spec_rels = {os.path.relpath(p, root) for p in spec_paths}
+    frozen_specs = {p for p in arts if p.startswith("openspec/specs/")}
+    unregistered = sorted(spec_rels - frozen_specs - registered)
+    stale = sorted(registered - spec_rels)
+    if unregistered or stale:
+        for p in unregistered:
+            print(f"  \033[0;31m✗\033[0m 新 main spec **未在冻结范围登记表**登记: {p}")
+        for p in stale:
+            print(f"  \033[0;31m✗\033[0m 登记表的条目指向**不存在**的 spec: {p}")
+        print(f"  \033[0;31m✗\033[0m 冻结范围登记完整性校验失败({len(unregistered)} 未登记 / {len(stale)} 失效)")
+        sys.exit(1)
+    print(f"  \033[0;32m✓\033[0m 冻结范围登记完整性:已冻结 {len(frozen_specs)} + 登记未冻结 {len(registered)} == 全部 {len(spec_rels)} 份 `cep-*` main spec")
+else:
+    print(f"  \033[1;33m!\033[0m 冻结范围登记表不存在({REG_REL})⇒ 「未冻结」侧**无登记**(未纳入治理)")
+
 # ── provenance 自检(2026-10-22 代码复审 B4)──────────────────────────────
 # 清单的 hash 与工作区一致 **不等于** 「这批产物 = frozen_at_commit 的内容」。
 # 后者才是 provenance 的真命题 —— 逐个比对,不一致即**响亮报出**(不阻断:

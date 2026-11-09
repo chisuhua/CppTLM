@@ -17359,6 +17359,38 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑤ 关联**:**#311**(归档 + KPI 0/3)· **#310**(SU · 十六 授权)· **#308**(R-2 实施)· **#307**(4 项裁决:C-2.4 纳入冻结集 / C-2.2 registry 归 T3)· **#305 ③ R-1**(残余登记:新 spec 未纳入 M1 冻结集)· **#295**(索引纪律)
 
+### Entry #313 — 2026-11-09 [build](**T3** 冻结范围登记表 + 反向校验 —— 「未冻结」从**静默缺口**升级为**知情决定**)
+
+**主题**:per oracle 裁决 **C-2.2 / C-2.3** —— 新建 `test/cep_freeze_scope_registry.json` 登记**全部未纳入 M1 冻结集的 `cep-*` main spec**,并在 `cep_freeze_check.sh` 内加**完整性反向校验** ⇒ 治理不对等(交接件 R-1 的根因)由**静默**变**可见 + 有牙**。
+
+**角色**:builder(实施)· architect(裁决 C-2 已在 **Entry #307** 落定)· planner(台账)。**KPI**:Proposed **0/3**(不变)。
+**依赖**:**T2**(#312:新 spec 已入冻结集 ⇒ frozen 侧已落定)⇒ **T3 紧随其后**,两者共同闭合 R-1。
+
+**① 实测口径(⚠️ 订正 oracle 的计数)**:冻结集内 `openspec/specs/**` 的 main spec = **10** 份(T2 后新增 `cep-stub-cache-chstream-surface`);仓内 `cep-*` main spec 全体 = **37** 份 ⇒ **未冻结 = 27 份**。
+⚠️ **oracle C-2.2 的「27 份」是在 T2 之前算的**(当时 frozen = 9 ⇒ 未冻结 = **28**)⇒ 本轮以**现场实测**为准(37 / 10 / 27),不沿用旧数。
+
+**② 登记表设计(per C-2.2:「frozen 名单不重复维护」)**:`test/cep_freeze_scope_registry.json`
+| 字段 | 语义 |
+|---|---|
+| `frozen_source` | 已冻结侧的唯一真源 = manifest 的 `artifacts` + `globs` ⇒ **本表不复制 frozen 名单**(杜绝双真源) |
+| `unfrozen[].path` / `.capability` | 未冻结的 main spec 路径与 capability 名 |
+| `unfrozen[].disposition` | **`unfrozen-delivered`** —— 该 capability 的 delta **已在归档 change 中**(实测:**27/27 全部已交付**)⇒ 全部是**冻结候选** |
+| `unfrozen[].reason` | 「能力已交付 ⇒ 属冻结候选;但契约面**未经 oracle 逐份核对** ⇒ 本轮**知情未冻结**」+ ⛔ 明写「**本登记不代表该契约面已受冻结保护** —— 它仍可被无授权改动」 |
+| `unfrozen[].candidate_for_freeze` / `.trigger_condition` | **可执行性**:由后续冻结批次(与 T4 签发批次并行)逐份核对后授权纳入 `FROZEN_GLOBS` |
+| `unfrozen[].ledger_entry` | 登记台账凭据(本 Entry) |
+
+**③ 反向校验(per C-2.3,落在 `cep_freeze_check.sh` 的验证路径 ⇒ **自动进 ctest**(`cep_freeze_check`))**:
+- 判据:`openspec/specs/cep-*/spec.md` 全体 == **已冻结(manifest)** ∪ **登记表 `unfrozen`**;
+- ⇒ 新增 main spec 若**未登记** ⇒ **红**;登记表的条目指向**不存在**的 spec ⇒ **红**;
+- ⇒ **实测**:基线 **已冻结 10 + 登记未冻结 27 == 全部 37** ✅;**反向 fixture**(临时新增一份未登记的 `cep-mutation-unregistered/spec.md`)⇒ **按签名变红**「新 main spec **未在冻结范围登记表**登记」✅(已还原,工作区干净)。
+- ⚠️ 登记表**不存在**时 ⇒ 只 **WARN**(不阻断)⇒ 闸不会因缺文件而红,但会提示「未冻结侧无登记」。
+
+**④ 与 T2 的分工(⛔ 边界)**:**T2 = 纳入 1 份**(新 spec 真正受冻结保护);**T3 = 登记其余 27 份 + 反向校验**(让「未纳入」成为**有据可查的知情决定**,并让**下一个**新 spec 无法再静默溜过)。⛔ **T3 不纳入任何新冻结成员**(纳入需逐份核对 + 授权 ⇒ 属后续冻结批次)。
+
+**⑤ 验证(实测)**:`cep_freeze_check` 无参 rc=0(provenance **42** 产物一致 + **登记完整性 10+27==37**)· `cep_docs_sync_check --strict` ✅ · `ctest` **167/167** · `./test.sh --mode off` **21/21** · ⛔ `B3b-2` **0/4**;⛔ 冻结集内**既有**产物零改动(仅新增 1 成员,per #312)。
+
+**⑥ 关联**:**#312**(T2 授权 + spec 达标化)· **#311**(归档 + KPI 0/3)· **#307**(4 项裁决:C-2.2 registry / C-2.3 反向校验 / C-2.4 纳入冻结集)· **#305 ③ R-1**(残余登记:新 spec 未纳入 M1 冻结集 ⇒ 治理不对等)· `test/cep_freeze_scope_registry.json` · `scripts/test/cep_freeze_check.sh`
+
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 
 **主题**:按修订 ④ 的关键路径推进 **A6(G2 可达门)** 与 **W4**;判据落到「**有区分力**」形态(每条附变异体)。
