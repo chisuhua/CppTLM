@@ -53,6 +53,6 @@
 
 ## T8 · 冻结面 SU · 十六(随 commit 轮次)
 
-- [ ] T8.1 `docs/architecture/07-coherence-exploration-platform.md` 追加 **SU · 十六**(残余缺口闭合登记 + 新残余 R-5)
-- [ ] T8.2 **五步授权链**:台账 Entry 授权 → 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #N"` → 清单单独 commit → 无参复验
-- [ ] T8.3 ⛔ 不改写 SU · 一 ~ 十五 的任何一段(append-only)
+- [x] T8.1 `docs/architecture/07-coherence-exploration-platform.md` 追加 **SU · 十六**(残余缺口闭合登记 + 新残余 R-5)
+- [x] T8.2 **五步授权链**:台账 Entry 授权 → 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #N"` → 清单单独 commit → 无参复验
+- [x] T8.3 ⛔ 不改写 SU · 一 ~ 十五 的任何一段(append-only)
