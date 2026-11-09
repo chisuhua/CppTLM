@@ -17287,6 +17287,31 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑥ 关联**:**#308**(R-2 实施)· **#307**(4 项裁决 + 实施顺序)· **#305 ③ R-2** · **#277**(D-4 探测协议 + 闸)· change **`cpptlm-cep-dual-port-inbound-dispatch`** · `scripts/test/cep_adr_structural_check.sh` · `test/cep_adr_structural_deferrals.json` · `test/cep_b3b2_d4_probe_runs.jsonl` · `experimental/run-2026-11-09-cep-e2e-b/`
 
+### Entry #310 — 2026-11-09 [architect](**冻结面授权**:`07 号` **SU · 十六** 追加 —— 残余缺口 ① 闭合登记 + R-5/R-6 新残余)
+
+**主题**:授权 `docs/architecture/07-coherence-exploration-platform.md` 追加 **SU · 十六**(**M1 冻结集**成员)⇒ 走**五步授权链**:本 Entry 授权 → **产物 commit**(SU 十六 + 索引同步)→ `cep_freeze_check.sh --update --authorized-by "Entry #310"` → **清单单独 commit** → **无参复验**。
+
+**角色**:architect(授权 + 审查)· builder(机制)。**KPI**:Proposed **1/3**(不变;本 Entry 不建 change)。
+**触发**:change **`cpptlm-cep-dual-port-inbound-dispatch`** 闭环(Entry #307 裁决 / #308 实施 / #309 T1+E1)⇒ 须把「残余缺口 ①」的**实施后状态**登记进架构真源(⛔ 不回改 SU · 一 ~ 十五)。
+
+**① 授权范围(⚠️ 严格限定,⛔ 不得扩)**:**仅** `docs/architecture/07-coherence-exploration-platform.md` 的**追加**:
+- 新增 **`## Status Update(2026-11-09 · 十六,…)`** 一段(插在 `## §末 文档索引` **之前**,per SU · 十四 的「新增段落 SHALL 插在索引之前」纪律);
+- 同步 `## §末 文档索引` 的**头部自述**(47 → **48** 个一级节 / 19 → **20** 则 SU)+ **索引 B 加一行**;
+- ⛔ **零改** §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十五 的任何一段(⛔ 含 ⛔ 不回改 SU · 十五 的「注」—— 订正以 SU 十六 内的 ⚠️ 订正行落地)。
+
+**② oracle 复核(2026-11-09,1 轮 · 档位 = 「只同步实施态 / 改措辞」⇒ 单审)**:判定 **PASS-WITH-NOTES**(0 BLOCKER)· **1 条 must-fix + 4 条 note**,逐条处置:
+| # | finding | 处置 |
+|---|---|---|
+| **MF-1** | SU · 十五 ② ①(a) 的「注」称 `BidirectionalPortAdapter` 双参路由「**是对的…不是本次受限点**」—— 与 R-5 的实测**矛盾**(其双参函数因签名不匹配从未被 `recvReq` 调用 ⇒ 多端口入向路由**实际失效**)⇒ 同一文档并存两个未调和的相反陈述 | ✅ **以 SU 十六 的 ⚠️ 订正行落地**(⛔ 不回改原文);首段「**一处**不完整的订正」改「**两处**」 |
+| N-2 | 标题的 `per 台账 Entry #N` 应为**冻结面授权** Entry(先例:SU 十四 per #295 / SU 十五 per #304) | ✅ 标题改为 **per 台账 Entry #310**(本 Entry = 授权) |
+| N-3 | R-5 缺**显式触发条件**;R-6 缺归属指针 | ✅ R-5 补触发条件;R-6 指向 Entry #308 ⑤ |
+| N-4 | ② 标题把 **R-9(✅ 已修)** 混进「新残余」 | ✅ 改题 = 「残余登记(R-5 / R-6)+ 同批已修(R-9)」 |
+| N-5 | ④ 应为展开的 `- [ ]` 清单(SU · 十五 先例) | ✅ 展开 |
+
+**③ 边界**:⛔ 不改任何 ADR;⛔ 不动 `B3b-2` 计数(仍 **0/4**);⛔ 不把「回程腿闭合」写成「全绿」/「协议语义达成」(**IC3 仍 ⚪ 不适用**);⛔ 不顺手把 R-5 在本 change 内修(影响面 ≫ 回程腿 ⇒ 另立 change)。
+
+**④ 关联**:change **`cpptlm-cep-dual-port-inbound-dispatch`** · **#309**(T1 + E1)· **#308**(R-2 实施)· **#307**(4 项裁决)· **#305 ③ R-2** · **#304**(SU 十五 授权先例)· **#295**(索引移文末纪律)
+
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 
 **主题**:按修订 ④ 的关键路径推进 **A6(G2 可达门)** 与 **W4**;判据落到「**有区分力**」形态(每条附变异体)。

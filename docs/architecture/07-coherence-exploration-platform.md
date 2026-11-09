@@ -2359,9 +2359,59 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 
 ---
 
+## Status Update(2026-11-09 · 十六,per 台账 Entry #310)—— **残余缺口 ①「回程腿」已闭合**(双端口适配器入向**按端口组**路由)+ **残余登记(R-5 / R-6)+ 同批已修(R-9)**
+
+> **性质**:末尾追加 SU(append-only)。⛔ 不改 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十五 的任何一段(⛔ **SU · 十五 ① 的「双条件」与 ② ①(a) 的「注」原文均逐字保留** —— 本段只登记其**实施后状态**与**两处不完整的订正**)。
+> **触发**:change `cpptlm-cep-dual-port-inbound-dispatch` 的闭环(台账 Entry #307 立项裁决 / #308 实施 / #309 T1+E1)。
+> **审查**:oracle(本段属「只同步实施态 / 改措辞」⇒ **单审 oracle**,⛔ 不启 critic 双审)· 判定 **PASS-WITH-NOTES**(0 BLOCKER · 1 must-fix + 4 note,逐条处置见台账 **Entry #310 ②**)。
+
+### ① 残余缺口 ①「回程腿在拓扑级不可达」——**已闭合**(逐条对照 SU · 十五 ① 的 (a)/(b)/双条件)
+
+| SU · 十五 ① 的登记 | 实施后状态 | 落点 / 证据 |
+|---|---|---|
+| **(a) 框架层路由缺陷**:`DualPortStreamAdapter` 只 override **单参** `process_request_input` ⇒ 基类双参版回退单参 ⇒ `port_idx` 丢失 ⇒ 入向**恒落 PE 侧** | ✅ **已修** | `include/framework/dual_port_stream_adapter.hh:210` **override 双参版** ⇒ **按端口组**路由(组 0 = PE ⇒ `pe_req_in()` · 组 1 = Net ⇒ `net_resp_in()`);`:222` 单参版委托组 0(既有直接调用者行为不变);`process_net_response_input()` 由**零调用点**变活。⚠️ `src/core/module_factory.cc:733` 的跨实例 `static_cast` 要求布局逐字节相同 ⇒ ⛔ **未新增成员** |
+| **(b) 本 change 的主动设计选择**:拓扑 A/B 的 home 配 `emit_completions: false` | ✅ **已改** | `configs/cep_chi_rnf_e2e_{a,b}.json` ⇒ `true`;`Config::emit_completions` **保留**(可用于把回程腿**有意**留在模块级判据) |
+| **双条件 ①** 修适配器(+ 冻结面授权) | ✅ **已执行** | `include/framework/` **不在** M1 冻结集(`cep_freeze_check.sh` 的 `FROZEN_GLOBS` 无此条)⇒ **无需** `--update` 授权;但属**共享框架层**(影响 ≥ 2 模块 ⇒ AGENTS.md 反模式)⇒ 已**立 change** |
+| **双条件 ②** 拓扑 config 改 `true` 并重跑 | ✅ **已执行** | 新 run `cep-e2e-2026-11-09-b`(延迟族 5 键 **`not-collected` → 实测 5 cycles**;`memory_violations` 仍 `not-collected` ⇒ `ic3_verdict = ⚪ 不适用`) |
+| ⚠️ **订正一:双条件不完整 —— 实需第三条** | ✅ **已补** | CohIf 的 egress 走 `req_out` ⇒ 回程从 **`home.req_out[0]`** 发出;原拓扑只有 `w.1 → home.0` ⇒ 其正向 pair 是 `w.req_out[1] ↔ home.req_in[0]` ⇒ **`home.req_out[0]` 未被任何连接绑定** ⇒ `send()` 失败 ⇒ 回程**根本发不出去** ⇒ 须补 **`home.0 → w.1`**(每方向一条**显式**连接 = CohIf「断链即断达」模型的直接推论)。**实测证据**:仅做 ①② 时 `completions_sent > 0` 而 `net_completions_in == 0` |
+| ⚠️ **订正二:SU · 十五 ② ①(a) 的「注」**(原文称 `BidirectionalPortAdapter` 的双参路由「**是对的**…**不是**本次受限点」) | ⚠️ **以本行调和** | 实测(**R-5**):其双参函数 `bidirectional_port_adapter.hh:335` 因 **签名不匹配**(`std::size_t` ≠ 基类 `unsigned`,且无 `override`)⇒ **从未作为 override 被 `ChStreamTargetPort::recvReq` 调用** ⇒ 单参版 `:331` 硬编码 `port_idx = 0` ⇒ **多端口入向路由实际失效**。⇒ 原文「不是本次受限点」**仅对「本轮回程腿」成立**(回程腿走的是 **dual** 适配器),⛔ 不成立于「该适配器无缺陷」 |
+
+**⚠️ 拓扑级闭合的准确表述**(⛔ 不越界):**延迟族 5 键出实测值** ∧ **`net_completions_in > 0`** ∧ **`cpu_responses > 0`**;
+⛔ **仍不承载「全绿 run」** —— IC3 仍 **⚪ 不适用**(违例类 `memory_violations` 无样本,**自 SU · 十五 至今未变**)⇒ **SU · 十五 ① 的「全绿未达成」结论不变**。
+
+### ② 残余登记(**R-5 / R-6**)+ 同批已修(**R-9**)
+
+- **R-5**`include/framework/bidirectional_port_adapter.hh` 的 `process_request_input(Packet*, std::size_t)` 与基类 `process_request_input(Packet*, unsigned)` **签名不匹配**(64-bit `std::size_t` ≠ 32-bit `unsigned`,且该处**无 `override` 关键字**)⇒ **不是 override** ⇒ 基类双参版回退单参 ⇒ 该适配器**恒用端口下标 0** ⇒ `RouterTLM`(5 端口)与全部 CEP 引擎(2 端口)的**多端口入向路由失效**。
+  - **归属**:另立 change(影响面 ≫ 回程腿;⛔ 不在 `cpptlm-cep-dual-port-inbound-dispatch` 内修)。
+  - **触发条件(可判定)**:任一**多端口** bidirectional 模块的入向按端口分流判据须成立 —— 即「从端口 N 进的包必须落 `req_in()[N]`」;`RouterTLM` 的 mesh E2E 在「路由器 → NIC 分端口投递」上须有**地址/端口一致**断言。
+  - **完成判据**:`RouterTLM` 多端口入向分流绿 + 既有 mesh E2E **无回归** + `BidirectionalPortAdapter` 的 2 参 override 带 `override` 关键字(编译期冻结签名)。
+- **R-6** 拓扑 B 的 `chi.0 → home.1` ⇒ 因 **R-5** ⇒ chi 侧流量落 `home` 的 `req_in[0]`(与业务请求同桶)。**归属**:随 **R-5** 一并处置(见台账 **Entry #308 ⑤**)。
+- **R-9**(测试侧)`test/test_dual_port_adapter.cc` 与 `test/test_dual_port_inbound_dispatch.cc` 曾在**全局命名空间**定义同名 `MockDualPortModule` ⇒ **ODR 违反** ⇒ 链期取决于 TU 顺序 ⇒ 适配器写进 A 成员、测试读 B 成员(实测两侧 `net_resp_in()` 地址差 **0x48** 字节)的**静默内存错位**。✅ **同批已修**(两处 mock 均移入匿名命名空间 + 注释说明;见台账 Entry #309 ⑤ R-9)。
+
+### ③ 计数纪律(逐字)
+
+- `B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` / `include/tlm/cep/protocol_instances.json` / `include/tlm/cep/protocol_instance.schema.json` / `include/tlm/cep/stub_cache_core.hh` / `include/tlm/cep/cohif_noc_bridge.hh` **零 diff**。
+- ⛔ 本段**不**宣称「协议语义达成」:准确表述 = 「**回程腿在拓扑级闭合**(延迟族可测)+ 框架入向路由缺陷已修 + 台账可对账」。
+
+### ④ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,**且** §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十五 **逐字未变**;索引仍在**文末**(SU 十六插在其**之前**;自检:本段之后**唯一的** `## ` 段是 `## §末 文档索引`)
+- [ ] ① 的 (a) / (b) / 双条件 ① ② **逐条**有落点与证据;⛔ **SU · 十五 原文未被回改**
+- [ ] ⚠️ **订正一(双条件缺第三条)** 已登记,含**实测证据**(`completions_sent > 0` ∧ `net_completions_in == 0`)
+- [ ] ⚠️ **订正二(SU · 十五 ② ①(a) 的「注」)** 已登记,且全文 grep `BidirectionalPortAdapter` 后**不再存在未调和的相反陈述**
+- [ ] ② 的 **R-5 / R-6** 逐条带**代码级证据** + **归属**;R-5 另带**触发条件**与**完成判据**;**R-9 已修**且有回归证据
+- [ ] ③ 计数纪律逐条复验(零 diff **五**项 + `B3b-2` **0/4**)
+- [ ] **回程腿闭合不被读成「全绿」**:IC3 仍 **⚪ 不适用**;⛔ 未新增任何「一致性安全」断言
+- [ ] 索引已同步:头部自述 **47 → 48 个一级节 / 19 → 20 则 SU** + **索引 B 加第 20 行**;⚠️ 本次**手工同步**(索引生成器不在仓内,SU · 十五 ④ 已登记 backlog)· 具名闸 `cep_index_position_check.sh` 复跑 rc=0
+- [ ] 冻结面五步授权已执行:台账 **Entry #310** 授权 → **commit 本段**(产物)→ `cep_freeze_check.sh --update --authorized-by "Entry #310"` → **清单单独 commit** → **无参复验** provenance 通过
+
+**关联**:台账 **Entry #310**(本段授权)· **#309**(T1 + E1)· **#308**(R-2 实施)· **#307**(4 项裁决 + 实施顺序)· **#305 ③ R-2**(残余登记)· **#304**(SU 十五 授权)· **#295**(索引移文末纪律)· change **`cpptlm-cep-dual-port-inbound-dispatch`**
+
+---
+
 ## §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295)
 
-> **用途**:本文件已 **47 个一级节 / 19 则 Status Update**(全部列于下表)⇒ 追加层与主体同量级 ⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)。
+> **用途**:本文件已 **48 个一级节 / 20 则 Status Update**(全部列于下表)⇒ 追加层与主体同量级 ⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)。
 
 > ⚠️ **新纪律(per 台账 Entry #295,逐字)**:本索引**永久置于文末**;此后**新增段落 SHALL 插在本索引之前** ⇒ **新增内容永不使既有 `path:line` 锚点位移**;⚠️ **最新 SU 在本索引之前**(⛔ 勿在本文末找最新段)。
 
@@ -2420,8 +2470,9 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 | 45 | Status Update(2026-11-08 · 十三,per 台账 Entry #293)—— **声明面落点裁定回填**(= **甲**)+ **D-9 元数据字段增补**(F-12) | 2183 |
 | 46 | Status Update(2026-11-08 · 十四,per 台账 Entry #295)—— **F-08 残余裁定**(索引**移到文末** + 新纪律 + 具名闸)+ **retention 裁定 = 丙**(指针) | 2235 |
 | 47 | Status Update(2026-11-09 · 十五,per 台账 Entry #304)—— **「Core·TrafficGen 主干」的实施后状态**(SU · 十一 ① 的 **10 条决策**逐条落地)+ **残余缺口**登记(⛔ 「全绿」**未达成**) | 2290 |
+| 48 | Status Update(2026-11-09 · 十六,per 台账 Entry #310)—— **残余缺口 ①「回程腿」已闭合**(双端口适配器入向**按端口组**路由)+ **残余登记(R-5 / R-6)+ 同批已修(R-9)** | 2362 |
 
-### 索引 B · Status Update(18 · 追加层)
+### 索引 B · Status Update(20 · 追加层)
 
 | # | 日期 | 主题 | 台账 | 行 |
 |---|---|---|---|---|
@@ -2444,6 +2495,7 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 | 17 | 2026-11-08 | **声明面落点裁定回填**(= **甲**)+ **D-9 元数据字段增补**(F-12) | Entry #293 | 2183 |
 | 18 | 2026-11-08 | **F-08 残余裁定**(索引**移到文末** + 新纪律 + 具名闸)+ **retention 裁定 = 丙**(指针) | Entry #295 | 2235 |
 | 19 | 2026-11-09 | **「Core·TrafficGen 主干」的实施后状态**(10 条决策逐条)+ **残余缺口**登记(⛔ 「全绿」未达成) | Entry #304 | 2290 |
+| 20 | 2026-11-09 | **残余缺口 ①「回程腿」已闭合**(双端口适配器入向按端口组路由)+ 残余登记 **R-5 / R-6** + 同批已修 **R-9** | Entry #310 | 2362 |
 
 ### 索引 C · 关键表指针(高频查阅)
 
