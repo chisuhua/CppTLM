@@ -69,30 +69,6 @@
   ],
   "pending_signing": [
     {
-      "adr": "ADR-CEP-07A-06bis-artifact-disposition.md",
-      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
-      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
-      "owner": "architect",
-      "batch": "T4",
-      "ledger_entry": "Entry #307"
-    },
-    {
-      "adr": "ADR-CEP-08-ordering-point-portability.md",
-      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
-      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
-      "owner": "architect",
-      "batch": "T4",
-      "ledger_entry": "Entry #307"
-    },
-    {
-      "adr": "ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md",
-      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
-      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
-      "owner": "architect",
-      "batch": "T4",
-      "ledger_entry": "Entry #307"
-    },
-    {
       "adr": "ADR-CEP-12-protocol-engine-capability-map.md",
       "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
       "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
@@ -126,14 +102,6 @@
     },
     {
       "adr": "ADR-CEP-16-06-evolution-route-mapping.md",
-      "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
-      "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
-      "owner": "architect",
-      "batch": "T4",
-      "ledger_entry": "Entry #307"
-    },
-    {
-      "adr": "ADR-CEP-17-ruby-slicc-protocol-family.md",
       "reason": "起草中 ⇒ 正文尚可补顶层 Verification 章(⛔ 不属永久豁免)",
       "trigger_condition": "该 ADR 签发前必须补顶层 Verification 章(前瞻判据 · 可勾选)⇒ 补完后从本表移除并由闸判绿",
       "owner": "architect",
@@ -337,6 +305,33 @@
       "trigger_condition": "建立 `INV-CEP-07-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ functional 模式产出正数 p50/p95/p99/max 必红)并从本表移除",
       "owner": "architect",
       "ledger_entry": "Entry #314"
+    },
+    {
+      "adr": "ADR-CEP-08-ordering-point-portability.md",
+      "chapter": "V-08-4",
+      "target_id": "INV-CEP-08-ICx",
+      "scope": "**现行口径**(per `ADR-CEP-08` SU §8.2 的**逐网络**形态):`ordering_assumption` / `vc_binding` 的 key 须登记到 network + `vc_id < vc_count` + `ordering ⊆ vc_binding` —— 该三子校验的机器断言归因 id(载体 = `scripts/test/cep_decl_alignment_check.sh` 子校验 ②/③)。⚠️ v0.1 的扁平谓词「key 解析到唯一 `vc_id`」**已被 SU §8.2 取代**,⛔ 不得复用。",
+      "trigger_condition": "建立 `INV-CEP-08-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ 必红)并从本表移除",
+      "owner": "architect",
+      "ledger_entry": "Entry #315"
+    },
+    {
+      "adr": "ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md",
+      "chapter": "V-09-4",
+      "target_id": "INV-CEP-09-ICx",
+      "scope": "`vc_id` 取值 ∈ 0–3 的**闸侧检查**归因 id —— 检查本体已存在(`include/tlm/cep/channel_dependency_graph.hh` 的 `kMaxVcId = 3` + 越界 FAIL,载体 `test/test_cep_channel_dependency_gate.cc`);`include/bundles/noc_bundles_tlm.hh:38` 只是 `ch_uint<8>` 字段 + 注释声明,**8 bit 宽并不锁 0–3**",
+      "trigger_condition": "建立 `INV-CEP-09-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ 必红)并从本表移除",
+      "owner": "architect",
+      "ledger_entry": "Entry #315"
+    },
+    {
+      "adr": "ADR-CEP-17-ruby-slicc-protocol-family.md",
+      "chapter": "V-17-4 / V-17-5 / V-17-6",
+      "target_id": "INV-CEP-17-ICx",
+      "scope": "① `07 号 §5.1.1` 表格一致性的**完整**断言(现有仅 adapter 名逐字一致 + 表解析);② 「协议族 vs 协议实例」表述纪律(adapter 数 = 实例数 · 「8 个独立协议」标注)—— **文档层,无闸**;③ 守门 invariant 计数的**单一真源**(ADR 内不得写死计数)",
+      "trigger_condition": "建立 `INV-CEP-17-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ 必红)并从本表移除;文档层项若最终不可机器判 ⇒ 改为「人工评审登记」并注明",
+      "owner": "architect",
+      "ledger_entry": "Entry #315"
     }
   ]
 }

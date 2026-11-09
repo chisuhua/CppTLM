@@ -17426,6 +17426,33 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑥ 关联**:**#313**(T3 冻结范围登记表 + 反向校验)· **#312**(T2 新 spec 入冻结集 + spec 达标化)· **#307**(4 项裁决:C-3.2 签发两步 / C-3.3 签发前置 / C-1 分区与豁免)· **#305 ③ R-1** · **#310**(SU · 十六 授权)· `test/cep_adr_structural_deferrals.json` · `scripts/test/cep_adr_structural_check.sh`
 
+### Entry #315 — 2026-11-09 [architect](**T4 签发批次第 2 批**:07A / 08 / 09 / 17 —— 补顶层 Verification 章 + **签发 v1.0**)
+
+**主题**:per oracle 裁决 **C-3** 执行 **T4 批次第 2 批** —— 4 份起草中 ADR(`ADR-CEP-07A` / `-08` / `-09` / `-17`)补**顶层 Verification 章**并**签发 v1.0**。本 Entry 是**冻结面授权记录**(改 `docs/adr/ADR-CEP-*.md` ⇒ 五步授权链)。
+
+**角色**:architect(裁决 + 双审)· builder(实施)· planner(台账)。**KPI**:Proposed **0/3**(不变;不建 change)。
+**批次**:第 1 批 = 04/05/06/07(Entry #314)· **第 2 批 = 07A / 08 / 09 / 17(本 Entry)** · 第 3 批 = 12/13/14/15/16/18。
+
+**① 本批的 4 章(共 6 + 4 + 4 + 6 = 20 条判据)**:
+
+| ADR | 新章 | 判据 | 可执行 / ⏭ / 待建 |
+|---|---|---|---|
+| `ADR-CEP-07A` 06-bis 产物处置 | `## Verification` | 3(V-07A-1~3) | **3 可执行** · 0 ⏭ · 0 待建 |
+| `ADR-CEP-08` Ordering Point 可迁移性 | `## Verification` | 4(V-08-1~4) | 2 可执行 · **1 ⏭**(`IC1` 已登记 ⏭-unmodelled)· 1 待建 |
+| `ADR-CEP-09` 多 VC 仲裁与死锁自由 | `## Verification` | 4(V-09-1~4) | 2 可执行 · **1 ⏭**(`IC2` 已登记 ⏭-unmodelled)· 1 待建 |
+| `ADR-CEP-17` Ruby-SLICC 协议族 | `## Verification` | 6(V-17-1~6) | 3 可执行(复用 04-IC7 / 05-IC1 / `CEN-Ib11`)· 1 半有牙 · 2 文档层/待建 |
+
+**② 本批的特殊点(如实登记)**:
+- **`ADR-CEP-17` 不新增归因 id**(其 §3.1 明写:发起的 2 条不变量 owner = `ADR-CEP-04` / `-05`)⇒ 本章**复用** `INV-CEP-04-IC7` / `INV-CEP-05-IC1` / `CEN-Ib11`(owner `ADR-CEP-02`)⇒ ⛔ 零新造。
+- **⏭-unmodelled 项如实标注**:`ADR-CEP-08-IC1`(通用形式不可静态判定)· `ADR-CEP-09-IC2`(仲裁器未建模)⇒ 两章均**显式标注**「反向 fixture 无 ⇒ ⛔ **禁**当作鉴别力判据」(per `ADR-CEP-01 §7 V6-a` 同款纪律),⛔ 不伪装成有牙判据。
+- **任内 id 债务 3 笔新增**(共 **7 笔**):`INV-CEP-08-ICx`(逐网络 key 形态:`vc_id < vc_count` + `ordering ⊆ vc_binding` —— ⚠️ **非** v0.1 已被取代的扁平「唯一 vc_id」谓词)· `INV-CEP-09-ICx`(vc_id ∈ 0–3 结构锁的归因 id)· `INV-CEP-17-ICx`(§5.1.1 表完整断言 + 表述纪律 + 计数单一真源)⇒ 全部机检登记(`pending_invariant_ids`)。
+
+**③ 双审(本批)**:oracle → critic(见 ④ 的处置表)· 档位 = 批次级(同 Entry #314 的先例)。
+
+**④ 边界**:⛔ **决策正文零改动**(只补 Verification 章 + header 元数据行 + 追加 SU);⛔ **不**宣称判据已达成(前瞻判据 + ⏭/待建如实标注);⛔ `B3b-2` **维持 0/4**;⛔ 剩余 6 份(12/13/14/15/16/18)不在本批。
+
+**⑤ 关联**:**#314**(第 1 批)· **#313**(T3 登记表)· **#312**(T2 新 spec 入冻结集)· **#307**(4 项裁决)· **#305 ③ R-1** · `test/cep_adr_structural_deferrals.json` · `scripts/test/cep_adr_structural_check.sh` · `test/cep_invariant_deferrals.json`(⏭-unmodelled 的登记真源)
+
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 
 **主题**:按修订 ④ 的关键路径推进 **A6(G2 可达门)** 与 **W4**;判据落到「**有区分力**」形态(每条附变异体)。

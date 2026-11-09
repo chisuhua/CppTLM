@@ -1,7 +1,7 @@
 # ADR-CEP-08: Ordering Point 可迁移性规则
 
-> **状态**: 🟡 起草中(v0.1)
-> **日期**: 2026-10-21
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-21 / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **作用域**: **Ordering Point 的定义 + 可迁移性判据 + 排序假设面边界 + 组合兼容性检查项**
 > **关联真源**:
@@ -193,6 +193,24 @@ Sharer Tracker 决定**谁**要参与,Ordering Point 决定**序**从哪来。�
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #315 · oracle C-3.3)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**;归因 id **一律复用**既有体系(`INV-CEP-08-IC1` ~ `IC3`,其中 `IC1` 已登记为 **⏭-unmodelled`)⇒ ⛔ **禁**新造平行 id 体系。
+> ⚠️ **⏭ 项的纪律**(per `ADR-CEP-01 §7 V6-a` 同款):无有效反向 fixture 的判据**禁**当作鉴别力判据 ⇒ 下表次行显式标注。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-08-1** | **「E 态静默升级」检查项必须存在**:任何跨层 / 跨域组合的可行性检查**必须包含**该项;**缺项 = fail**(⛔ 不得静默跳过)(§3 `IC2` · 抓取点 2) | `include/tlm/cep/ordering_point_checker.hh` · `test/test_cep_ordering_point_checker.cc` | 归因 id **`INV-CEP-08-IC2`** · 毒化:从组合检查器删掉该检查项 ⇒ 必红 |
+| **V-08-2** | Ordering Point **不绑定**任何物理实体(目录 / 总线 / 树形 manager / in-network **皆可**)⇒ 协议中立(§3 `IC3` · 抓取点 1/5) | `include/tlm/cep/ordering_point_checker.hh` · `test/test_cep_ordering_point_checker.cc` | 归因 id **`INV-CEP-08-IC3`** · 毒化:在 checker 内绑定目录类 / 总线类 ⇒ 必红 |
+| **V-08-3** | 同一一致性域内,任意两条冲突事务**恰在一个** Ordering Point 序列化(§3 `IC1` · 抓取点 1) | ⚠️ **机器载体不可得** —— 该条已登记为 **⏭-unmodelled**(`test/cep_invariant_deferrals.json`:通用形式不可静态判定,当前仅**单点 vacuous** 判据)⇒ 载体 = `include/tlm/cep/ordering_point_checker.hh` 的单点判据 | 归因 id **`INV-CEP-08-IC1`**(**⏭-unmodelled**)· 反向 fixture **无**(不可构造)⇒ ⛔ **禁**当作鉴别力判据;触发条件:出现可静态判定的多序列化点形态时 |
+| **V-08-4** | `ordering_assumption` / `vc_binding` 的 **key 形态 = 逐网络**(network 登记 + `vc_id < vc_count` + `ordering ⊆ vc_binding`),否则配置加载 fail(抓取点 4;⚠️ **现行口径以 SU §8.2 的逐网络形态为准** —— v0.1 的扁平「解析到唯一 `vc_id`」谓词**已被取代**,⛔ 不得复用) | `scripts/test/cep_decl_alignment_check.sh`(子校验 ②/③:`vc_id < vc_count` + `ordering ⊆ vc_binding`)· `test/test_cep_schema.cc`(`INV-CEP-12-IC2` 组) | 归因 id **待建立**(既有 id 表内无对应条目)⇒ 登记于 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`;⛔ 本章不新造 |
+
+**载体状态汇总**:V-08-1 / V-08-2 的载体**已存在且逐条实证** ⇒ **可执行**;V-08-3 属 **⏭-unmodelled**(已登记,禁当鉴别力判据);V-08-4 的**归因 id 待建立** ⇒ 在 id 建立前**不得**计入「有牙载体」。
+
+**签发前置自检**:① 本章**位于正文**(首个 `## Status Update` 之前)✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture**(⏭ 项与待建项均已**显式标注 + 机检登记**)✅ ③ 归因 id **全部复用**既有体系(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
+
+---
 ## 8. Status Update(2026-10-22):排序假设面的 key 粒度改为逐网络 × 逐 `vc_id`
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——
@@ -223,3 +241,29 @@ Sharer Tracker 决定**谁**要参与,Ordering Point 决定**序**从哪来。�
 旧文「必须能解析到**唯一** `vc_id`」这一**谓词在嵌套形态下整体消失** —— network 即 key,
 其下 `vc_id` 显式给出,不存在多义;不修订则冻结集内两份 ADR 会对同一字段给出**两个不同的 fail 判据**。
 **机器校验**:`scripts/test/cep_decl_alignment_check.sh` 第 ②/③ 项(键对称性 + `ordering ⊆ vc_binding` + `vc_id < vc_count`)。
+
+---
+
+## Status Update(2026-11-09,per 台账 Entry #315)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #315**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 判据的**载体 + 归因 id 逐条实证** | 载体文件与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;⏭-unmodelled 项对 `test/cep_invariant_deferrals.json`;id 债务对 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`(闸 ④b **机检**) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(6 处措辞/覆盖呈现修正已全落)· critic **APPROVE_WITH_CONDITIONS**(0 BLOCKER · 2 SHOULD_FIX + 3 NIT 已全落)· 处置明细 = Entry #315 ④ |
+| ④ 台账授权 | **Entry #315** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #315"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据全部可执行**(如实分层):可执行 / **⏭-unmodelled** / **归因 id 待建立** / **文档层(人工评审)** 四类在本文件 Verification 章的「载体状态汇总」中**逐条标注**;⛔ 不得把 ⏭ 项或待建项读成「已具备判别力」。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #315**(授权 + 双审处置)· **#314**(第 1 批 04/05/06/07)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`

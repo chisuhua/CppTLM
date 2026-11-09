@@ -1,7 +1,7 @@
 # ADR-CEP-17: Ruby-SLICC 协议族接入与协议族抽象语义
 
-> **状态**: 🟡 起草中(v0.3)
-> **日期**: 2026-10-20
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-20 / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **关联调研**: [`docs/research/cep-coherence-protocol-space-survey.md`](../research/cep-coherence-protocol-space-survey.md) **v0.3**(2026-10-20,5 类 21 份源;**含 3 篇论文 PDF 原文 + 178 页博士论文 PDF 原文**;36 条引文已逐条回溯 PDF)
 > **关联真源 1**: [`docs/architecture/07-coherence-exploration-platform.md`](../architecture/07-coherence-exploration-platform.md) v0.1(§5.1 协议族映射表,含 §5.1.4 学术协议族)
@@ -365,6 +365,26 @@ Table 1.3 佐证:已发布的 3 个工具**各缺一段算法阶段**(HeteroGen 
 ## 6. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #315 · oracle C-3.3)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**。
+> ⚠️ **本 ADR 不新增归因 id**(§3.1 明写:它发起的 2 条不变量 `INV-CEP-04-IC7` / `INV-CEP-05-IC1` **归 owner = `ADR-CEP-04` / `-05`**)⇒ 本章**复用**那些 id 与 `ADR-CEP-02` 的 `CEN-Ib11`;⛔ **禁**新造平行 id 体系。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-17-1** | token 类协议下 Sharer Tracker **不跟踪** sharer set(token 由副本携带权限)(§3.1 第 1 行,owner = `ADR-CEP-04 §11`) | `include/tlm/cep/broadcast_null_tracker.hh` · `test/test_cep_instance_declaration_contract.cc` | 归因 id **`INV-CEP-04-IC7`**(owner ADR-04)· 毒化:`BroadcastNull` 开始维护 sharer set ⇒ 必红 |
+| **V-17-2** | Stub Cache Core **只暴露稳定状态**;瞬态 + 协议私有状态住 Protocol Engine 插件内部(§3.1 第 2 行,owner = `ADR-CEP-05 §4.3`) | `test/test_cep_canonical_flow_contract.cc` | 归因 id **`INV-CEP-05-IC1`**(owner ADR-05)· 毒化:Stub 侧出现瞬态取值 ⇒ 必红 |
+| **V-17-3** | `perm` **维持 4 值锁**;atomic 意图作 `request` 流的**独立属性**(⛔ 不扩 `perm`)(决策 6 的 v0.2 闭合;抓取点 2) | `test/test_cep_canonical_flow_contract.cc` | 归因 id **`CEN-Ib11`**(owner `ADR-CEP-02` 的不变量集合)· 毒化:扩 `perm` 枚举 / 把 atomic 塞进 `perm` ⇒ 必红 |
+| **V-17-4** | `07 号 §5.1` 表格语义:**adapter 名与声明侧锁定字面量一致**(单向:声明 → 字面量)· **表行数 8 / 8** · **HTM 明确排除** · 计数短语不重复计 adapter(抓取点 1/3) | `test/test_cep_chi_rnf_subset.cc`(声明侧 `inst["adapter"]` 对锁定字面量的断言)· `test/test_cep_schema.cc`(`rows511 == 8` / `rows512 == 8` / `16 个 adapter 实例` / `不重复计 adapter` / `MESI_Three_Level_HTM` + 明确排除)· `docs/architecture/07-coherence-exploration-platform.md §5.1.1` | 归因 id **待建立**(既有 id 表内无 §5.1 表一致性条目;该 schema 用例**无 `INV-CARRIER` 标记** —— 2026-11-05 刻意移除借壳)⇒ 登记于 `pending_invariant_ids`;毒化:改**声明侧** adapter 名(偏离 §5.1.1 锁定字面量)⇒ `CR-01` 必红。⚠️ **⛔ 改文档表格里的 adapter 名不会红**(该锁不读文档单元格)⇒ 「文档表格 → 声明」方向**无牙**;`§5.1.4` 的 5 行表**只锁短语、不数行** ⇒ 同样无牙 |
+| **V-17-5** | **「协议族 vs 协议实例」表述纪律**:`adapter 数 = 协议实例数`(⛔ 非族数);引用 gem5 Ruby 清单处**必须**标「8 个独立协议」+ HTM 排除(§3.2 · 抓取点 5) | ⚠️ **文档层判据**(无机器载体:该表述纪律未被任何闸扫描)⇒ 人工评审 | 归因 id **待建立** ⇒ 登记 `pending_invariant_ids`;反向 fixture **无** ⇒ ⛔ **禁**当作鉴别力判据(per `ADR-CEP-01 §7 V6-a` 同款纪律) |
+| **V-17-6** | 守门 invariant 总数以 **`07 号 §4`** 为**单一真源**(§3.1 明写「本 ADR 不再维护计数」)⇒ ⛔ 本 ADR 内**不得**再出现自有计数口径 | `docs/architecture/07-coherence-exploration-platform.md §4` · `scripts/test/cep_docs_sync_check.sh`(计数单一真源断言) | 归因 id **待建立** ⇒ 登记 `pending_invariant_ids`;毒化:在 ADR 内写死一个计数 ⇒ **人工评审**(⚠️ 当前**无**文档闸断「ADR 正文不得含计数」;`cep_docs_sync_check.sh` 只断 `07 号 §4` ↔ owner ADR 的**计数一致**)⇒ ⛔ 不得声称「文档闸必红」 |
+
+**载体状态汇总**:V-17-1 ~ V-17-3 的载体**已存在且逐条实证** ⇒ **可执行**;V-17-4 **部分有牙** —— adapter 名锁(**单向:声明 → 字面量**)+ 表行数 8/8 + HTM 排除 + 计数短语**均已机检**,但「文档表格 → 声明」方向与 `§5.1.4` 行数**无牙**;V-17-5 为**文档层判据**(禁当鉴别力判据);V-17-6 的单一真源断言**已存在**(`docs_sync` 断 `07 号 §4` ↔ owner 计数一致),但「ADR 内计数禁令」的机器载体**不存在** ⇒ 该半为**人工评审**。
+
+**签发前置自检**:① 本章**位于正文**(首个 `## Status Update` 之前)✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture**(待建项已**机检登记**,文档层项已**显式标注禁当鉴别力判据**)✅ ③ 归因 id **全部复用**既有体系(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
+
+---
 ## 8. Status Update(2026-10-22):`ordering_assumption` / `vc_binding` 的 key 形态随 per-network 化修订
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——
@@ -476,3 +496,29 @@ R-T6:队列 #10 已裁决的「非对称」定义(CXL 式 = 「**request 类消�
 **关联**: 台账 `obj-cep-platform.md` **Entry #138**(授权记录)· #134 · #122(CXL 形态先例)
 · `ADR-CEP-11` SU(2026-11-01,per Entry #122)(CXL 的 7 条口径)· #135
 · `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` §6 / §7
+
+---
+
+## Status Update(2026-11-09,per 台账 Entry #315)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #315**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 判据的**载体 + 归因 id 逐条实证** | 载体文件与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;⏭-unmodelled 项对 `test/cep_invariant_deferrals.json`;id 债务对 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`(闸 ④b **机检**) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(6 处措辞/覆盖呈现修正已全落)· critic **APPROVE_WITH_CONDITIONS**(0 BLOCKER · 2 SHOULD_FIX + 3 NIT 已全落)· 处置明细 = Entry #315 ④ |
+| ④ 台账授权 | **Entry #315** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #315"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据全部可执行**(如实分层):可执行 / **⏭-unmodelled** / **归因 id 待建立** / **文档层(人工评审)** 四类在本文件 Verification 章的「载体状态汇总」中**逐条标注**;⛔ 不得把 ⏭ 项或待建项读成「已具备判别力」。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #315**(授权 + 双审处置)· **#314**(第 1 批 04/05/06/07)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`

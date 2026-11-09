@@ -1,7 +1,7 @@
 # ADR-CEP-09: 多 VC 路由器仲裁与 VC 分配的死锁自由性论证
 
-> **状态**: 🟡 起草中(v0.1)
-> **日期**: 2026-10-21
+> **状态**: ✅ **已签发**(v1.0,2026-11-09 —— 见 `## Verification` 章与其后的签发 Status Update)
+> **日期**: 2026-10-21 / **2026-11-09**(签发)
 > **作者**: CppTLM build agent(architect mode)
 > **作用域**: **多 VC 仲裁策略 + VC 分配的死锁自由性论证义务(两段式)**
 > **关联真源**:
@@ -173,6 +173,23 @@
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+
+## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> **口径**:本章是**签发前置**(per 台账 Entry #315 · oracle C-3.3)。每条给**载体** + **反向 fixture(毒化 ⇒ 必红 + 归因 id)**;归因 id **一律复用**既有体系(`INV-CEP-09-IC1` / `IC3`,其中 `IC2` 已登记为 **⏭-unmodelled**)⇒ ⛔ **禁**新造平行 id 体系。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V-09-1** | 每个协议实例组合**必须**通过**装配期**通道依赖图**无环性**检查;不通过 ⇒ **配置 fail**(§3 `IC1` · 抓取点 1) | `include/tlm/cep/channel_dependency_graph.hh` · `test/test_cep_instance_declaration_contract.cc` | 归因 id **`INV-CEP-09-IC1`** · 毒化:**声明边表**含环(如 `compute_noc`: `0→1` ∧ `1→0`)⇒ 必红(⚠️ 毒化对象是 `channel_dependency_edges.per_network` —— `ordering_assumption` **不编码边**,per SU 2026-11-03 ③ 的实证) |
+| **V-09-2** | `ordering_assumption` / `vc_binding` 变更 ⇒ **闸层重算敏感性**:同 config 两跑一致(确定性)+ 单字段变更 ⇒ 判定**翻转**且 FAIL 出自闸层(§3 `IC3` · 抓取点 2)⚠️ **⛔ 不是「无环性检查重跑」** —— 环的边来自**声明边表**,不由这两字段推导 ⇒ 不存在「无环变有环」的 delta(载体**测试** `test/test_cep_channel_dependency_gate.cc:498-501` 明记) | `test/test_cep_channel_dependency_gate.cc` | 归因 id **`INV-CEP-09-IC3`** · 毒化:变更后**不重算**(沿用旧判定)⇒ 必红 |
+| **V-09-3** | 多 VC 仲裁策略**不得**在通道依赖图上引入新环(§3 `IC2` · 抓取点 4) | ⚠️ **机器载体不可得** —— 该条已登记为 **⏭-unmodelled**(`test/cep_invariant_deferrals.json`:仲裁器**未建模**;多 VC 仲裁属 Stage 4+) | 归因 id **`INV-CEP-09-IC2`**(**⏭-unmodelled**)· 反向 fixture **无**(无可断言对象)⇒ ⛔ **禁**当作鉴别力判据;触发条件:多 VC 仲裁器建模落地时 |
+| **V-09-4** | `vc_id` 取值 ∈ **0–3**(抓取点 3) | ⚠️ **真正的 0–3 机检在闸侧**:`include/tlm/cep/channel_dependency_graph.hh` 的 `kMaxVcId = 3` + 越界即 FAIL · `include/bundles/noc_bundles_tlm.hh:38` 仅为 `ch_uint<8>` 字段 + 注释声明 0–3 域(**8 bit 宽并不锁 0–3**)· `test/test_cep_channel_dependency_gate.cc` | 归因 id **待建立**(闸侧 `kMaxVcId` 检查**已存在**,但既有 id 表内无对应条目)⇒ 登记于 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`;⛔ 本章不新造 |
+
+**载体状态汇总**:V-09-1 / V-09-2 的载体**已存在且逐条实证** ⇒ **可执行**;V-09-3 属 **⏭-unmodelled**;V-09-4 的**归因 id 待建立**(结构锁已在,id 缺)⇒ 在 id 建立前**不得**计入「有牙载体」。
+
+**签发前置自检**:① 本章**位于正文**(首个 `## Status Update` 之前)✅ ② 每条判据均有**载体 + 归因 id + 反向 fixture**(⏭ 项与待建项均已**显式标注 + 机检登记**)✅ ③ 归因 id **全部复用**既有体系(⛔ 零新造)✅ ④ 载体**逐条实证存在** ✅
+
+---
 ## 8. Status Update(2026-10-22):通道依赖图的顶点升为 `(协议实例, network, vc_id)`
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——
@@ -489,3 +506,29 @@ TileLink 有 **5** 个通道(A/B/C/D/E)且**规范自带**全序 `A < B < C < D 
 
 **关联**: 台账 **Entry #193**(授权记录)· #141(SU 2026-11-02)· #138(SU 2026-11-01)· #66(§8.3 顶点升级)
 · `ADR-CEP-01` SU 2026-11-03(#4)(需求侧裁决 + 证书四条 + 载体重构)· `include/tlm/cep/channel_dependency_graph.hh`(③ 的实测对象)
+
+---
+
+## Status Update(2026-11-09,per 台账 Entry #315)—— **签发**(v1.0)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #315**(`[adr-amendment]` + 冻结面五步授权链)。
+> **本次签发 = oracle 裁决 C-3.2 的**两步**动作**:① **补顶层 `## Verification` 章**(签发前置,per C-3.3 —— 该章此前缺失 ⇒ 本 ADR 长期停在 🟡);② **原地更新 header 的 `> **状态**:` 元数据行**(唯一豁免行)+ 追加本段。⛔ **决策内容一字未动**。
+
+### ① 签发前置(逐条达成)
+
+| 前置 | 达成证据 |
+|---|---|
+| ① **顶层 Verification 章**存在且位于**正文**(首个 `## Status Update` 之前) | 本文件 `## Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)` 章 · ADR 结构闸 `scripts/test/cep_adr_structural_check.sh` 判**合规** |
+| ② 判据的**载体 + 归因 id 逐条实证** | 载体文件与断言位置已对 `test/cep_invariant_assertion_map.json` 逐条核对;⏭-unmodelled 项对 `test/cep_invariant_deferrals.json`;id 债务对 `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids`(闸 ④b **机检**) |
+| ③ **oracle → critic 双审** | oracle **PASS-WITH-NOTES**(6 处措辞/覆盖呈现修正已全落)· critic **APPROVE_WITH_CONDITIONS**(0 BLOCKER · 2 SHOULD_FIX + 3 NIT 已全落)· 处置明细 = Entry #315 ④ |
+| ④ 台账授权 | **Entry #315** |
+| ⑤ 冻结面五步授权链 | 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #315"` → **清单单独 commit** → **无参复验** |
+
+### ② 签发后的边界(逐字)
+
+- ⛔ **决策内容未动**:既有正文与既有 `## Status Update` 段**逐字未变**;正文的**唯一**变更是**新增** `## Verification` 章(签发前置)。
+- ⛔ **不宣称判据全部可执行**(如实分层):可执行 / **⏭-unmodelled** / **归因 id 待建立** / **文档层(人工评审)** 四类在本文件 Verification 章的「载体状态汇总」中**逐条标注**;⛔ 不得把 ⏭ 项或待建项读成「已具备判别力」。
+- ⛔ `B3b-2` **维持 0/4**。
+- 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
+
+**关联**:台账 **Entry #315**(授权 + 双审处置)· **#314**(第 1 批 04/05/06/07)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`
