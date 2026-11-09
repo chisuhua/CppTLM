@@ -1,0 +1,10 @@
+# 项目侧 session-bootstrap profile(per `rdd-session-bootstrap` skill 的零配置路径)
+# 用途:新会话开始时一键生成 **Layer 3 原始状态**(Layer 4 paste-ready prompt 由 LLM 合成)
+# 维护:新增 test family / custom section 时改本文件(⛔ 不改 skill 内的 engine)
+[profile]
+name = "cpptlm"
+title = "CppTLM CEP Session Bootstrap"
+
+[sections]
+order = ["header", "active_changes", "initiative_status", "recent_commits", "workspace_health"]
+custom = []

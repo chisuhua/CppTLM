@@ -4,7 +4,7 @@ priority: P0
 phase: phase-10
 category: core-impl
 type: feature
-状态: pending
+状态: ✅ 已归档(2026-11-09,per 台账 Entry #305 —— ✅ 已完成归档语义:delta 已合并进 `openspec/specs/cep-stub-cache-chstream-surface/spec.md` + `openspec/specs/cep-stub-cache-core/spec.md` 的 `:56` 单条 MODIFIES;归档件 = `openspec/changes/archive/2026-11-09-cpptlm-cep-stub-cache-chstream-surface/`;tasks 52/52)
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 依赖: ADR-CEP-05, ADR-CEP-06, ADR-CEP-07, ADR-CEP-12, ADR-CEP-19
 来源: ADR-CEP-19 决策 9（显式延期）+ 台账 Entry #291~#296

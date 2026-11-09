@@ -1310,6 +1310,38 @@ W1(独立)     B2(并行)     B1(A9 后,分批)
 
 **关联**:台账 **Entry #299**(本段)· **#298 / #297**(A0+A1/A2 + 前版路径)· `.rddf/reviews/` 无新增文件(双审结论由本 Entry 承载)· `ADR-CEP-19` SU · 三 · `ADR-CEP-06` SU 2026-11-08 · 二
 
+
+### 2026-11-09 剩余任务盘点 + 新会话交接(轨 A 闭环后 —— planner,per 台账 **Entry #306**)
+
+> **性质**:§10 **追加段**(append-only)。⛔ 不回改上方任何段落。
+> **触发**:change `cpptlm-cep-stub-cache-chstream-surface` **已归档**(Entry #305)⇒ 轨 A **无遗留** ⇒ 本段盘**剩余**工作并给出**新会话推进方式**。
+> **交接产物**:`.rddf/reviews/cep-next-session-handover-2026-11-09.md`(完整盘点 + 启动清单 + 粘贴式 prompt + 硬纪律 + 文件索引)。
+
+#### ① 剩余任务(4 组 · 全部不在轨 A)
+
+| 组 | 任务 | 实测/现状 | 归属 | 估时 |
+|---|---|---|---|---|
+| **治理** | **B2** ADR 结构闸 + deferrals 清单 | ⚠️ 口径漂移:旧记「13/22 缺 Verification」⇒ **实测 20/22** | builder(零冻结面) | 0.5d |
+| **治理** | **B1** 17 份「🟡 起草中」ADR **逐批**签发 | A9 已完成 ⇒ 前置已满足;⛔ 不可批量 | architect + builder | 1d/批 |
+| **残余** | **R-1** 新 main spec 未入 M1 冻结集 | 治理不对等 | **architect 裁决** | 小 |
+| **残余** | **R-2** 回程腿拓扑级不可达(双条件) | 「全绿 run」未达成 | builder(另立 change) | 中 |
+| **残余** | **R-3** Step 7.5 重挂检测未做 | 本轮只有测试级 `[BSS-01]` | builder(另立 change) | 小 |
+| **周期** | **E1** D-4 季度探测 | ⚠️ cadence 脚本报 `CADENCE-NEVER-RUN` ⇒ **从未真实执行** | planner + 外部检索 | 季度 |
+| **周期** | **E2** 终态 DoD Go 复审 | `B3b-2` 仍 0/4 | planner | 季度 |
+| **可选** | **O-1** 索引生成器入仓 · **O-3** `cpptlm-cep-b3b2-d4-trigger-probe` 提案 · **O-4** `.arch-handoff.json` 陈旧(⇒ 继续走内置流程) · **O-5** session-bootstrap profile | — | planner | 低 |
+
+#### ② 建议顺序(解锁最多 / 风险最低)
+
+**B2** → **R-1 裁决** → **B1 第 1 批** → **E1(含 `--record`)** → **R-2 / R-3**(红线面,各自另立 change)⇒ 理由:B2 零冻结面且把结构缺口变可见(B1 的准备);R-1 是治理不对等;B1 慢(逐批授权);E1 是**从未执行过**的漏检口;R-2/R-3 价值最高但成本最大。
+
+#### ③ 新会话推进方式
+
+- **方式 A**:`bash ~/.agents/skills/rdd-workflow/skills/rdd-session-bootstrap/rdd-session-bootstrap.sh` ⇒ Layer 3 原始状态 ⇒ LLM 合成 Layer 4 paste-ready prompt(⛔ 不直接拿 Layer 3 当 prompt;⛔ 复用旧 prompt 前核对 timestamp + HEAD);
+- **方式 B**:手动 6 步启动清单(role.json / git log+status / `openspec list` / 读交接文档 §二 与 §11 Entry #305 / ctest + freeze 闸 / 明确本轮 1 件事 + 角色口令)—— 全部写在那份交接文档里;
+- **粘贴式 prompt** ⇒ 同上交接文档 §三。
+
+**关联**:台账 **Entry #306** · **#305**(归档 + KPI 同步 + 残余登记)· **#304**(A9.2 三处 SU)· **#297 ~ #303**(实施流水)· `.rddf/reviews/cep-next-session-handover-2026-11-09.md`
+
 ## §11 决策台账(append-only,per `rdd-planner/SKILL.md:158`)
 
 > **append-only**:每次新增 entry 追加到段尾;**不可删除 / 不可改写**早期 entry。
@@ -17115,6 +17147,27 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 **④ 验证(实测)**:构建 rc=0;`SCE-* / RPR-* / E2E-*` **27 cases / 336 assertions** 绿;`ctest` **165/165**(含新增 `cep_index_position_check` 闸);`./test.sh --mode off` **21/21**;7 个文档/契约闸 + `cep_index_position_check` 全绿;`openspec validate --strict` 绿;⛔ 红线六项**零 diff**;⛔ `experimental/preregistration.json` / `metrics.schema.json` **零 diff**;**`B3b-2` 维持 0/4**。
 
 **⑤ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`**(归档件 `openspec/changes/archive/2026-11-09-cpptlm-cep-stub-cache-chstream-surface/`)· **#304**(A9.2 三处 SU)· **#303**(A8 + 双向闸)· **#302**(A7)· **#301**(A6 + W4)· **#300**(A4 + A5)· **#297**(A0 授权 `:56` 单条 MODIFIES)· `07 号` SU · 十五 · `ADR-CEP-19` SU 2026-11-09 · `ADR-CEP-06` SU 2026-11-09
+
+
+### Entry #306 — 2026-11-09 [plan](**剩余任务盘点** + **新会话交接产物** —— 轨 A 闭环后的全局盘点)
+
+**主题**:change `cpptlm-cep-stub-cache-chstream-surface` 归档后(Entry #305)盘点**全部剩余工作**,并产出**新会话可用的交接件**(盘点 + 启动清单 + 粘贴式 prompt + 硬纪律 + 文件索引)。
+**角色**:planner(盘点 + 交接)· builder(A9 已交付)· architect(R-1 裁决待办)。
+**KPI**:Proposed **0/3**(不变;本 Entry **不**建 change ⇒ 不占 slot)。
+
+**① 盘点口径**:按**组**枚举(治理 / 残余 / 周期 / 可选),每条带**实测现状** + **归属** + **估时/节奏**;⛔ 轨 A 已闭环 ⇒ **无实施轨遗留**;⛔ 不为 `B3b-2` 造内部替代品。
+
+**② 实测订正(⛔ 以现场为准)**:ADR「缺 `## Verification`」**实测 = 20/22**(旧记 13/22 已漂移)⇒ B2 的 deferrals 清单须按**现场扫描**生成;「🟡 起草中」ADR **17 份**(与 B1 口径一致);cadence 脚本 `cep_b3b2_d4_quarterly_review.sh` 报 **`CADENCE-NEVER-RUN`** ⇒ **E1 从未真实执行过一次**。
+
+**③ 交接产物**:`.rddf/reviews/cep-next-session-handover-2026-11-09.md`;另建 `.rddf/skill-profiles/session-bootstrap.toml`(skill 零配置路径 ⇒ 新会话可一键出 Layer 3 状态)。
+
+**④ 状态漂移修正**:`.rddf/improvements/cpptlm-cep-stub-cache-chstream-surface.md` 的 `状态: pending` ⇒ 改为「✅ 已归档」(本 change 已归档)。
+
+**⑤ 建议顺序**:**B2 → R-1 裁决 → B1 第 1 批 → E1(含 `--record`)→ R-2 / R-3**。
+
+**⑥ 边界**:⛔ 不改任何已签发结论 · ⛔ 不动 `B3b-2` 计数 · ⛔ 不建 change(本 Entry 不占 KPI slot)· ⛔ 交接件的「粘贴式 prompt」**不得**被读成授权(它只是上下文,执行仍需用户口令)。
+
+**⑦ 关联**:**#305**(归档 + KPI)· **#304**(A9.2)· **#297 ~ #303**(实施流水)· `.rddf/reviews/cep-next-session-handover-2026-11-09.md`
 
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 

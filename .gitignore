@@ -126,3 +126,8 @@ external/gem5-v25/
 
 # gem5 运行产物(per scripts/cep/parity/run_parity.sh)
 m5out/
+
+# 2026-11-09(per 台账 Entry #306):**session-bootstrap 的 paste-ready prompt** 是
+# **session-local 产物**(per `rdd-session-bootstrap` skill §What NOT to do:
+# 「❌ commit `last-bootstrap-prompt.md` (session-local, gitignored)」)⇒ 必须忽略。
+last-bootstrap-prompt.md
