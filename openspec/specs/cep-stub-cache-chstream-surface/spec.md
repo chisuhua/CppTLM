@@ -1,7 +1,13 @@
 # cep-stub-cache-chstream-surface Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-stub-cache-chstream-surface. Update Purpose after archive.
+
+定义 CEP 的**端口面载体**:可注册的 ChStream 端点 **`StubCacheEndpointTLM`**(组合式 wrapper,内部**持有** `StubCacheCore` 纯类)与 **home 简化模型** **`CohIfResponderTLM`**,使 `TrafficGenTLM` 的**真实业务流量**可经 `StubCacheCore` 抵达协议引擎与 home 应答端,并在**拓扑级**闭合往返(⇒ 延迟族 5 键**可测**;per 台账 Entry #308 / `07 号` SU · 十六)。
+
+⚠️ **边界(逐字)**:
+- 本 spec **不**承载协议族级 / 条款级语义(credit · retry · ordering point · 多拍聚合 · Perm 规则 · 容量与队列模型);
+- `CohIfResponderTLM` **不是**协议实例(⛔ 不出现在 `protocol_instances.json`,per `ADR-CEP-19` SU · 三 裁定**甲**)⇒ 其声明面缺失以**恰好 4 项豁免**逐字登记(见下);
+- ⛔ 本 spec **不**宣称任何拓扑承载「13 键全绿」(`IC3` 仍 **⚪ 不适用**);`B3b-2` **维持 0/4**。
 
 ## Requirements
 
@@ -84,10 +90,10 @@ TBD - created by archiving change cpptlm-cep-stub-cache-chstream-surface. Update
   - ③ ⛔ **不得**据「未进声明面」推断它**未声明**;
   - ④ ⛔ **不得**据此推断它**不承载**最小应答语义。
 - **AND** 该 4 项 SHALL 逐字可 `grep` 命中(机器可判点)
-- **AND** 边界句「**登记 ≠ 可复算**」SHALL 同时出现于**本 delta** 与**台账条目**
+- **AND** 边界句「**登记 ≠ 可复算**」SHALL 同时出现于**本 spec** 与**台账条目**
 - **AND** 声明句「⛔ **不作为任何家族的 T1–T4 条款级证据**」SHALL 逐字出现
 
-> **锚点**:`openspec/changes/cpptlm-cep-stub-cache-chstream-surface/specs/cep-stub-cache-chstream-surface/spec.md`(本段)+ `test/cep_e2e_runs.jsonl`(台账侧 `evidence_scope`)
+> **锚点**:本 spec 的「home 简化模型 SHALL 以 **豁免登记** 表达声明面缺失」场景(≡ 归档 delta 的同名场景;归档件不入库 ⇒ ⛔ 不作路径锚点)· `test/cep_e2e_runs.jsonl`(台账侧 `evidence_scope`)· `docs/architecture/07-coherence-exploration-platform.md` **SU · 十五 / 十六**(残余缺口的闭合登记)
 
 #### Scenario: 计数纪律 SHALL 逐字生效
 

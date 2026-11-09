@@ -17336,6 +17336,29 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑤ 关联**:**#310**(SU · 十六 授权 + 五步链)· **#309**(T1 + E1)· **#308**(R-2 实施)· **#307**(4 项裁决 + 实施顺序)· **#305 ③ R-2**(残余登记)· 归档件 `openspec/changes/archive/2026-11-09-cpptlm-cep-dual-port-inbound-dispatch/`
 
+### Entry #312 — 2026-11-09 [architect](**冻结面授权**:新 main spec `cep-stub-cache-chstream-surface` 纳入 M1 冻结集 —— 台账 R-1 闭合)
+
+**主题**:授权把 **新建** main spec `openspec/specs/cep-stub-cache-chstream-surface/spec.md` 纳入 **M1 冻结集** ⇒ 走**五步授权链**:本 Entry 授权 → **产物 commit**(spec 达标化 + `FROZEN_GLOBS` 增 1 条)→ `cep_freeze_check.sh --update --authorized-by "Entry #312"` → **清单单独 commit** → **无参复验**。
+
+**角色**:architect(授权 + 裁决依据)· builder(机制)。**KPI**:Proposed **0/3**(不变;本 Entry 不建 change)。
+
+**① 裁决依据(per oracle 2026-11-09 C-2.4)**:该 spec 属**已交付能力的契约面**(轨 A change `cpptlm-cep-stub-cache-chstream-surface` 已归档,Entry #305)⇒ 纳入冻结集;**同类先例** `openspec/specs/cep-stub-cache-core/spec.md` **已在冻结集内** ⇒ 不纳入则「治理不对等」永久化。纳入只意味着「改动须授权」,**不**意味着「不可改」。
+⚠️ 本次**只新增 1 条** glob ⇒ ⛔ **不**扩 `FROZEN_GLOBS` 的其余任何条目(其余 **26** 份 `cep-*` main spec 的处置属 **T3** scope registry,另议)。
+
+**② ⚠️ 前置:spec 达标化(实测发现,冻结前必须做)**:该 spec 由归档命令生成时,**Purpose 是占位串**「TBD - created by archiving change … Update Purpose after archive.」⇒ **冻结一个占位 Purpose 的契约面 = 把半成品固化** ⇒ 冻结前先补齐:
+| 修 | 内容 |
+|---|---|
+| **Purpose** | 补写为「CEP 端口面载体」的正式 Purpose(含 **3 条边界**:不承载协议族级/条款级语义 · `CohIfResponderTLM` 不是协议实例 · **不**宣称任何拓扑承载「13 键全绿」,`IC3` 仍 ⚪,`B3b-2` 仍 0/4) |
+| **悬空自引用** | 「同时出现于**本 delta**」⇒ 改「**本 spec**」(归档后「本 delta」不可解析) |
+| **悬空路径锚点** | 锚点原指向 `openspec/changes/cpptlm-cep-stub-cache-chstream-surface/specs/…`(该路径**已随归档失效**,且归档件**不入库** ⇒ 引用必断链)⇒ 改指**活路径**(本 spec 同名场景 + `test/cep_e2e_runs.jsonl` + `07 号` SU · 十五/十六) |
+⇒ **实测**:`openspec validate cep-stub-cache-chstream-surface --type spec --strict` ⇒ **valid**(改前为失败);`openspec validate --specs --strict` 全局 **36 passed/87 failed → 37 passed/86 failed**(其余 86 项为**既有债**,⛔ 非本次引入) |
+
+**③ 五步授权链**:① 本 Entry 授权 → ② **产物 commit**(`FROZEN_GLOBS` 增 `openspec/specs/cep-stub-cache-chstream-surface/spec.md` + spec 达标化 + 本 Entry)→ ③ `cep_freeze_check.sh --update --authorized-by "Entry #312"` → ④ **清单单独 commit**(⛔ 清单**不**与产物同 commit)→ ⑤ **无参复验** provenance 通过。
+
+**④ 边界**:⛔ 不改任何 **ADR**;⛔ 不改任何**既有**冻结产物的内容(仅新增 1 个成员的 hash);⛔ `B3b-2` **维持 0/4**;⛔ 不动 `protocol_instances.json` / `protocol_instance.schema.json` / `stub_cache_core.hh` / `cohif_noc_bridge.hh` / `cep_b3b2_deferrals.json`。
+
+**⑤ 关联**:**#311**(归档 + KPI 0/3)· **#310**(SU · 十六 授权)· **#308**(R-2 实施)· **#307**(4 项裁决:C-2.4 纳入冻结集 / C-2.2 registry 归 T3)· **#305 ③ R-1**(残余登记:新 spec 未纳入 M1 冻结集)· **#295**(索引纪律)
+
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 
 **主题**:按修订 ④ 的关键路径推进 **A6(G2 可达门)** 与 **W4**;判据落到「**有区分力**」形态(每条附变异体)。

@@ -75,6 +75,13 @@ FROZEN_GLOBS=(
   #   (同 Entry #56 先例:契约面被静默改写 = 判据退化,必须走授权闸)
   "openspec/specs/cep-vc-mapping-contract/spec.md"
   "openspec/specs/cep-stub-cache-core/spec.md"
+  # 2026-11-09(Entry #312):`cpptlm-cep-stub-cache-chstream-surface` 轨 A 已归档(Entry #305)
+  #   ⇒ 新建 main spec `cep-stub-cache-chstream-surface` 属**已交付能力的契约面** ⇒ 纳入冻结集。
+  #   ⚠️ 先例:同类 `openspec/specs/cep-stub-cache-core/spec.md` 已在集内 ⇒ 不纳入则「治理不对等」永久化。
+  #   ⚠️ **只增这一条**:其余 26 份 `cep-*` main spec 的「未纳入」登记属 scope registry(T3),⛔ 不在此扩。
+  #   ⚠️ 冻结前该 spec 已**达标化**(Purpose 由归档占位补齐 + 悬空「本 delta」自引用与悬空路径锚点修正,
+  #      per Entry #312 ②)⇒ 冻结的是**成品契约面**,⛔ 不是占位半成品。
+  "openspec/specs/cep-stub-cache-chstream-surface/spec.md"
 )
 
 if [ "${1:-}" = "--update" ]; then
