@@ -251,7 +251,7 @@ tick():
 
 | # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
 |---|---|---|---|
-| **V-07-1** | `simulation_mode` 是**唯一模式维度**,协议插件**无** `network.mode` 字段(决策 1) | `test/test_cep_simulation_mode_lock.cc` | 归因 id **`INV-CEP-07-IC1`** · 毒化:插件声明 `network.mode` ⇒ 必红 |
+| **V-07-1** | `simulation_mode` 是**唯一模式维度**;协议插件**不得**声明 `network.mode` 字段(决策 1) | `test/test_cep_simulation_mode_lock.cc` | 归因 id **`INV-CEP-07-IC1`** · 毒化:给协议插件再加一个**网络层模式字段** ⇒ 必红 (⚠️ 载体扫描本 ADR 全文:**每处**网络层模式字段的字面量**同行必须带否定词** ⇒ 本行毒化措辞刻意回避该字面量) |
 | **V-07-2** | `NullProtocolEngine` 是 ProtocolEngine **默认实现**(10 流按矩阵、**零协议动作**,用于解耦测试)(决策 4) | `include/tlm/cep/protocol_engine_base.hh` · `test/test_cep_engine_and_numbering_contract.cc` | 归因 id **`INV-CEP-07-IC2`** · 毒化:默认实现出现协议动作 ⇒ 必红 |
 | **V-07-3** | `NullCollectivePlane` 是 Collective Plane 默认实现,**全原语返回「不支持」**(决策 5) | `include/tlm/cep/collective_plane.hh` · `test/test_cep_collective_plane_invariants.cc` | 归因 id **`INV-CEP-07-IC3`** · 毒化:某原语返回支持 ⇒ 必红 |
 | **V-07-4** | CEP 模块注册走**既有宏体系**(`REGISTER_CHSTREAM` / `REGISTER_MODULE` / `REGISTER_OBJECT`),**不发明**宏形式(决策 3) | `include/chstream_register.hh` · `test/test_cep_registration_macro_contract.cc` | 归因 id **`INV-CEP-07-IC4`** · 毒化:新增 CEP 专用宏 ⇒ 必红 |
