@@ -469,7 +469,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**(2026-11-09 实测,per `openspec list --json`;唯一 active `cpptlm-cep-dual-port-inbound-dispatch` 已于本日归档 ⇒ slot 已释放,per 台账 Entry #311)⇒ **当前 Proposed 并发 = 0/3**。
+`openspec/changes/` 当前 **0 个 active**(2026-11-09 实测,per `openspec list --json`;`cpptlm-cep-bidirectional-multiport-inbound`(R-5/R-6 修复)已于本日归档 ⇒ slot 已释放,per 台账 Entry #318)⇒ **当前 Proposed 并发 = 0/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -1341,6 +1341,87 @@ W1(独立)     B2(并行)     B1(A9 后,分批)
 - **粘贴式 prompt** ⇒ 同上交接文档 §三。
 
 **关联**:台账 **Entry #306** · **#305**(归档 + KPI 同步 + 残余登记)· **#304**(A9.2 三处 SU)· **#297 ~ #303**(实施流水)· `.rddf/reviews/cep-next-session-handover-2026-11-09.md`
+
+### 2026-11-09 后续任务全量盘点 + 实施路径(architect 四段复盘后 —— planner,per 台账 **Entry #317**)
+
+> **性质**:§10 **追加段**(append-only)。⛔ 不回改上方任何段落。
+> **触发**:用户口令「切 architect 对完成和后续任务进行梳理,检查我们要实现的目标/为什么实现/怎么做/为什么这么做/目前任务是什么;然后切 planner 对后续还有哪些任务内容都梳理一遍,再给出后续任务内容和实施路径」(2026-11-09)。
+> **本段的输入**:① architect 域四段复盘(目标 / why / how / why这样 / 目前任务)② planner 域全量盘点 ③ **metis 缺口分析**(planner 的固定审查者,1 轮)④ 逐条**实测**复核。
+> ⚠️ **本段含 1 处 architect 复盘的自我订正**(§8.3 归档判据的**前置条件误读**)—— 详见 §11 Entry #317 ②。
+
+#### ① 目标四段复盘(architect 域)
+
+| 段 | 内容 | 真源 |
+|---|---|---|
+| **目标(What)** | 把「用 CHI / CXL / UALink 的这个 SoC,coherence 开销 / 停顿 / 死锁风险如何」这类跨协议取舍问题,从「靠人脑推演」变成「**可跑实验出数据**」 | `§2.1` |
+| **为什么(Why)** | ① 协议中立基线**缺位**(`06 §1.1` 只落地 60-70%)② `06-bis` **实质 0 复用**(90% 是 markdown 草案)③ 探索平台**无实验产物**④ 真实 IP **实证缺口**(H100 GMMU / CMN-700 / UALink Common 2.0) | `§1.2` |
+| **怎么做(How)** | ADR 契约面(19 决策 ADR)→ **14 个 change 串行**(KPI Proposed ≤1/3)→ **66 条守门 invariant**(61 有牙载体 + 5 授权⏭)→ **8 个研究假设**(判据-指标需求表)→ **4 件套实验产物 + 13 必纳 metric** | `§4.0` / `§6.2` / `§9.1` |
+| **为什么这么做(Why this way)** | ① **归建模框架**(`ADR-CEP-00 §2` 决策 4,gem5 Ruby 同构)② **代码归口 CppTLM / 设计权威分层**(决策 1)③ **单 DRI + 准入门 + KPI 串行**(决策 3)④ **invariant 全量有牙**(「编号级宣称达成」= 明确禁止的失败模式)⑤ **⏭ 登记而非豁免**(分母 66 永不可缩) | `ADR-CEP-00 §2` / `§6.2` / Entry #236 |
+
+#### ② 现状(实测,非台账自述)
+
+| 项 | 实测 |
+|---|---|
+| **DoD 12 条** | **实质全达成**(14 change 全 archived · 66 invariant = 61 + 5 · 8 假设全有结论 · Kill 未触发) |
+| **Stage Go 节点** | Stage 0 ~ Stage 3 **全部 ✅**;**终态 DoD Go = ⏳ 挂起**(唯一未达成 = `B3b-2` = **0/4 ⏭**) |
+| **测试基线** | `ctest` **167/167** · `./test.sh --mode off` **21/21** · 4 个治理闸全绿 · `openspec list` ⇒ **0 active** |
+| **ADR 签发** | 19 份决策 ADR ⇒ **17 已签发 + 2 永久豁免**(11/19);`pending_signing` = **0**;id 债务 **11 笔**(机检) |
+| **KPI** | **0/3** |
+| **未 push** | **17 commit**(本地领先 `origin/main`) |
+| ⚠️ **排期 vs 实测** | `§4.6` 写「串行 **14 季度** / 2030-Q1 终态」;实测 14 个 change 从 **2026-10-23 到 2026-11-04(13 天)**全部归档 ⇒ **提前约 13 个季度** ⇒ 季度表述已成**历史叙事**,非现行口径 |
+
+#### ③ 剩余任务全量盘点(6 类 · 每项带退出条件)
+
+| 类 | 项 | 依据 | 性质 | 退出条件 |
+|---|---|---|---|---|
+| **A 目标层** | **A1** `§12` 终态 DoD Go 挂起(`B3b-2` 0/4) | `Entry #264` 已裁口径 ② | **待用户裁决** | 见 ④ 四选项 |
+| | **A2** 排期口径与实测脱节 | `:297` / `:313` vs 归档日实测 | 文档 | 加实测注记(⛔ 不改历史值);⚠️ 改 `§4.0` / `§4.6` ⇒ **触发排期「五处同改」规则** |
+| **B 代码缺陷** | **B1 = R-5 / R-6** 双向适配器 2 参 override **签名不匹配** | **编译期探针决定性证实**(见 ④) | **真 bug** | 编译期签名锁 + 运行期分桶 + 决定性变异 + e2e 结论重验 |
+| | **B2 = R-3** `ModuleFactory` Step 7.5 桥重挂**静默覆盖** | `attach_protocol_bridge` 三处实现均为 `bridge_ =` 覆盖赋值 | 真 bug | ⛔ **前置**:architect 先裁「同一模块多桥挂载是否合法」 |
+| **C 契约 / 治理** | **C1** `NUMBER-MAP` 状态列 ✅ 三义 | oracle C-3 已把它**降级为状态镜像** | **疑似伪任务** | 先问 oracle 是否已闭合 ⇒ 是则降级为图例说明(零五步链) |
+| | **C2** **27 份**「已交付但未冻结」`cep-*` main spec | `test/cep_freeze_scope_registry.json` | 治理不对等 | 先定**纳入判据三档** + 分批(每批 ≤5) |
+| | **C3** id 债务 **11 笔** | `test/cep_adr_structural_deferrals.json` 的 `pending_invariant_ids` | **部分伪任务** | 分类后**只做 (a) 类**(已有现成载体) |
+| **D 周期** | **D1** E1 季度重跑 | cadence 闸(≤100 天) | 登记项 | 非实施轨 |
+| **E 运维** | **E1** 17 commit 未 push | `git rev-list --count origin/main..HEAD` | 用户决策 | push |
+
+#### ④ 实施路径(**B1 ∥ C1/C2 并行**,非严格串行)
+
+```
+┌─ 用户门(并行,不阻塞实施) ──────────────────────────────┐
+│  A1 终态 DoD Go 口径裁决(四选项)  +  A2 排期口径注记    │
+└────────────────────────────────────────────────────────┘
+
+P1 实施轨 ★最高价值 ─────────────────────────────────────
+  B1 = R-5 / R-6 双向适配器 2 参 override 修复
+    ├ include/framework/bidirectional_port_adapter.hh(:335 ⇒ unsigned + override)
+    ├ 新建 test/test_framework_bidirectional_multiport_inbound.cc
+    │   (⛔ 不塞 test_router_tlm.cc —— 实测其零 ChStream 装配 ⇒ 会产出伪载体)
+    ├ AC 5 层:① static_assert 签名锁 ② 运行期分桶(N=2/N=5 全枚举)
+    │           ③ RouterTLM 真装配 ④ 决定性变异(2 条,必附) ⑤ e2e baseline 前后对比
+    ├ 同批处置:process_response_input(零调用点 + 写入 req_in 疑似 copy-paste)
+    └ 同批裁决:端口忙静默丢包(⇒ 回压 or 丢弃+计数)
+    ⇒ 完成后立即 push(用户授权)—— 避免栈深 ≥20 妨碍回滚 / bisect
+
+P2 实施轨 ──────────────────────────────────────────────
+  B2 = R-3(⛔ 待 architect 裁决「多桥挂载是否合法」⇒ AC 三态 + 零半挂载 + 双反向 fixture)
+
+P3 治理轨 ──────────────────────────────────────────────
+  C1 → C2 → C3(⛔ C3 只做 (a) 类,其余留登记 —— 硬造关键词闸 = P6 闸教训重演)
+
+P4 登记项(非实施轨) ────────────────────────────────────
+  D1 季度重跑 · E1 push
+```
+
+#### ⑤ metis 缺口分析的 4 处修正(原草案的 slop)
+
+| 原草案 | 判定 | 修正 |
+|---|---|---|
+| 「P0 决策轨占本轮」 | 已知空转(`Entry #264` 已裁 ⇒ A1 的「维持」是 no-op) | **取消 P0**;A1 作**用户门并行走**,不阻塞 B1 |
+| 「C3 = 11 笔齐做」 | **造伪闸**(登记表自身已写「若最终不可机器判 ⇒ 改为人工评审登记」) | **只做 (a) 类** |
+| 「C2 = 27 份逐份核对」 | 无判据 / 无退出条件的批量填充式任务 | 先定**纳入判据三档** + 分批 |
+| 「5 轨严格串行」 | **伪串行**(`B1` 与 `C1/C2` 零交集) | **B1 ∥ C1/C2** 并行 |
+
+**关联**:台账 **Entry #317**(本段的授权 + 逐条处置)· **#316**(T4 收尾批)· **#307**(4 项架构裁决)· **#264**(终态 DoD Go 挂起 · 口径 ②)· **#310**(R-5 / R-6 登记 + `07 号` SU · 十六)· **#236**(B2 载体评审教训)
 
 ## §11 决策台账(append-only,per `rdd-planner/SKILL.md:158`)
 
@@ -17517,6 +17598,144 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑧ 追加落字(同批次)**:F-A4 采用**方案 (b)** ⇒ `:56` 的**最终合并文本 = ADR 原文(含「对端协议引擎」逐字)+ delta 限定句**(驱动者 = home 简化模型,⛔ 不是协议引擎)⇒ Entry #297 的授权引用**不需要改写**,但合并文本以本句为准。
 
+
+
+### Entry #317 — 2026-11-09 [sprint-review](**后续任务全量盘点 + 实施路径** —— architect 四段复盘 → planner 盘点 → metis 缺口分析 ⇒ **1 处自我订正** + **6 类剩余任务** + **B1 / B2 实施路径**)
+
+**主题**:用户口令「切 architect 对完成和后续任务进行梳理……然后切 planner 对后续还有哪些任务内容都梳理一遍,再给出后续任务内容和实施路径」⇒ 本 Entry 落 **§10 路径段 + §11 台账**;architect 域产出目标四段复盘(目标 / why / how / why这样 / 目前任务),planner 域产出全量盘点 + 实施路径,并经 **metis**(planner 的固定审查者,1 轮)缺口分析 ⇄ 逐条实测复核。
+
+**角色**:architect(四段复盘)· planner(盘点 + 路径 + 落盘)· metis(缺口分析)· builder(下一轮 B1 实施)。
+**KPI**:Proposed **0/3**(不变;本 Entry 本身不建 change ⇒ 不占 slot)。
+**触发**:用户口令(2026-11-09)。
+
+**① architect 四段复盘的结论(摘要)**:
+
+| 段 | 结论 |
+|---|---|
+| **目标** | 「跨协议取舍从人脑推演变成可跑实验出数据」(`§2.1`);CEP = gem5 Ruby 同构的**框架级能力**,非 dGPU 业务扩展(`ADR-CEP-00 §2` 决策 4) |
+| **why** | 协议中立基线缺位(60-70%)+ `06-bis` 实质 0 复用 + 无实验产物 + 真实 IP 实证缺口(`§1.2`) |
+| **how** | 19 决策 ADR → 14 change 串行 → 66 invariant(61+5)→ 8 假设 → 4 件套产物(`§4.0` / `§6.2` / `§9.1`) |
+| **why 这样** | 归建模框架 / 代码与设计权威分层 / 单 DRI + KPI 串行 / invariant 全量有牙 / ⏭ 登记而非豁免 |
+| **目前任务** | DoD 12 条**实质全达成**;Stage 0~3 Go 全 ✅;**终态 Go 挂起**(`B3b-2` 0/4)⇒ 剩余是**治理债 + 2 个真代码缺陷 + 1 个待裁决的目标层问题** |
+
+**② ⚠️ 一处自我订正(architect 复盘阶段的口径误读)**:
+
+⚠️ architect 复盘初稿称「`§8.3` **退出 / 归档判据** 4/4 满足 ⇒ objective **可归档**」⇒ **该结论不成立,予以订正**。
+
+- **误读点**:`obj-cep-platform.md:684` 原文 = 「**Stage 4+ 进入维护态后**,objective 归档条件: …」⇒ 前置条件是「**已进入 Stage 4+ 维护态**」,而 Stage 4+ 按 `:297` / `:313` = **2030-Q1** 起 ⇒ **「现在归档」不在 `§8.3` 授权范围内**。我把「进入维护态**之后**的 4 条」误读为「4 条满足即可归档」。
+- **连带订正**:初稿据此提出的「**两个终态门冲突**」框架**整体建立在该误读上** ⇒ 真实冲突只剩**一个**(`§12` 终态 DoD Go 挂起),且 `Entry #264` **已裁**口径 ②(维持挂起)⇒ 「重新裁决」= **重复开口已裁事项**。
+- ⛔ **不改台账原文**(`§8.3` 文本无误)· ⛔ 不改 `Entry #264`(append-only)· 本条仅登记**复盘口径的订正**。
+
+**③ 剩余任务全量盘点(6 类;详见 §10 本次追加段 ③)**:A1(终态 Go 口径 · 待裁决)· A2(排期口径脱节)· **B1 = R-5/R-6**(真 bug)· **B2 = R-3**(真 bug · 待 architect 裁决)· C1(R-8 · 疑似伪任务)· C2(27 份未冻结 spec)· C3(id 债务 11 笔 · 部分伪任务)· D1(季度重跑)· E1(push)。
+
+**④ B1(R-5 / R-6)的决定性代码证据(本轮新做 —— 编译期探针,非文本断言)**:
+
+⚠️ **R-5 的成立性此前只有「签名比对」的文本推断**;本轮用**编译期探针**实测:
+
+```
+error: no matches converting function 'process_request_input' to type
+       'void (class cpptlm::StreamAdapterBase::*)(class Packet*, unsigned int)'
+note: candidates are:
+  'void BidirectionalPortAdapter<...>::process_request_input(Packet*, std::size_t)'  ← :335
+  'void BidirectionalPortAdapter<...>::process_request_input(Packet*) override'      ← :331
+```
+
+⇒ 派生类**没有**基类 2 参签名 `(Packet*, unsigned)` 的 override ⇒ `ChStreamTargetPort::recvReq`(`include/core/chstream_port.hh:70`)调的基类双参版**回退单参** ⇒ `:331` 硬编码 `port_idx = 0` ⇒ **恒用端口 0** ⇒ `RouterTLM`(5 端口)与**全部 CEP 引擎**(N=2)的多端口入向路由失效。**R-6**(拓扑 B `chi.0 → home.1` 因 R-5 落 `home.req_in[0]`)随之为真。
+
+⚠️ **一条 metis 主张的实测驳回**:metis 主张「需在 CMake 对 framework 目标加 `-Woverloaded-virtual=1`」⇒ **不成立**:① 项目已有 `-Wall -Wextra -Wpedantic`(`CMakeLists.txt:69`)⇒ 该警告**已开启**;② 最小复现**会**报 `was hidden`;③ **但真实头文件不报**(GCC 14.2 实测,含显式实例化与真实构建两种路径)⇒ ⛔ **不得**把「编译期可见」当作守门手段 ⇒ **采纳 metis 的 `static_assert` 签名锁**(已实证可行)。
+
+**⑤ metis 缺口分析的处置(逐条 · planner 域)**:
+
+| metis finding | 处置 |
+|---|---|
+| **§8.3 前置被误读** | ✅ **全部采纳** ⇒ ② 订正 + A1 选项重列(见 ⑥) |
+| 「P0 决策轨 = 空转」 | ✅ 采纳 ⇒ **取消 P0**;A1 作用户门**并行走** |
+| 「C3 = 11 笔齐做 = 造伪闸」 | ✅ 采纳 ⇒ **只做 (a) 类**(已有现成载体);其余**留登记**(登记表 `:3` / `:310` / `:319` 自身已写「若最终不可机器判 ⇒ 改为人工评审登记」) |
+| 「C2 = 批量填充式任务」 | ✅ 采纳 ⇒ 先定**纳入判据三档** + 分批(≤5/批,`27 → 27-n` 可对账) |
+| 「5 轨严格串行 = 伪串行」 | ✅ 采纳 ⇒ **B1 ∥ C1/C2** |
+| 「`test_router_tlm.cc` 零 ChStream 装配 ⇒ 塞进去即伪载体」 | ✅ 采纳 ⇒ 实测 `grep -cE "ChStream\|bind_ports\|process_request_input" test/test_router_tlm.cc` = **0** ⇒ **新建** `test/test_framework_bidirectional_multiport_inbound.cc` |
+| 「B1 完成判据须 5 层 + 决定性变异必附」 | ✅ 采纳(per `Entry #236` 的载体评审教训:「载体未咬合判据**主体**」曾 3 次回归) |
+| 「`process_response_input` 零调用点 + 写入 `req_in` 疑似 copy-paste」 | ✅ 采纳 ⇒ **B1 同批处置**(实测:全仓**零调用点**;`bidirectional_port_adapter.hh:349` 写的是 `module_->req_in()[port_idx]`) |
+| 「端口忙 = 静默丢包」 | ✅ 采纳 ⇒ **B1 同批裁决**(实测:`:339-341` 无 `else` 分支;`chstream_port.hh:72` 恒 `return true` + 无条件 `PacketPool::release(pkt)`) |
+| 「B1 是语义变更 ⇒ 既有 e2e 结论可能变」 | ✅ 采纳 ⇒ AC 第 ⑤ 层 = **e2e baseline 前后对比** + 结论重验登记(⛔ 仅写「无回归」不足以交付) |
+| 「B2 需先有 architect 裁决」 | ✅ 采纳 ⇒ **B2 不先立 change** |
+| 「B1 完成后立即 push」 | ✅ 采纳(⇒ 避免栈深 ≥20 妨碍回滚 / bisect)· ⛔ **push 仍需用户授权** |
+| 「`-Woverloaded-virtual` 需专门加」 | ❌ **驳回**(实测见 ④)⇒ 改用 `static_assert` |
+| 「C1 先问 oracle」 | ✅ 采纳 ⇒ **C1 降级为前置确认**,不是无条件五步链 |
+
+**⑥ A1 待用户裁决(四选项 · 前置已澄清)**:
+
+⚠️ 前置澄清:⛔ 「现在归档」**不在** `§8.3` 授权范围(前置 = 已进入 Stage 4+ 维护态 = 2030-Q1)⇒ 下述**只有 2 个新选项**是真开口;「维持现状」= `Entry #264` 口径 ②。
+
+| 选项 | 内容 | 代价 / 风险 |
+|---|---|---|
+| **甲** | 显式声明**提前进入 Stage 4+ 维护态** + 归档 objective;`B3b-2` 判据**随义务转移**到新载体 | 新 objective 必须**引用**旧台账而非续写(否则单一真源断链);⛔ 硬约束须写明「**objective 归档 ≠ B3b-2 关闭**」 |
+| **乙** | 维持 `Entry #264` 口径 ②,不动作 | 现状;每季度仍需回看一次 |
+| **丙** | 改判 DoD 结构(把 `B3b-2` 移出终态门) | ⚠️ 与 `Entry #264` ③ 已排除的「口径 ③」同族(分母 6→2 收缩 + 目标文本自身降格)⇒ **需先推翻该裁决** |
+| **丁** | objective 保持 active,`B3b-2` 改为 §12 季度复审项,DoD Go 判据改为「12 条中 11 条 + 1 条外部依赖显式声明」 | ⚠️ 成本最低,但同样撞 `Entry #264` ③ 的「目标文本自身降格」否决 ⇒ 需同样先推翻 |
+
+⚠️ **需一并裁决**:`CXL 2.0` 是**显式冻结**且登记为「永久」⇒ 若永久,它是否**仍占 `0/4` 的分母**?(否则 4 族里第 1 族永远不可能转 ✅)
+
+**⑦ 边界**:⛔ `B3b-2` **维持 0/4**;⛔ 不为 `B3b-2` 造内部替代品、不绕过 T1–T4;⛔ 「全绿 run」**不可达**(IC3 仍 ⚪ 不适用)⇒ **R-5 修好 ≠ 全绿**;⛔ 不改任何**已签发 ADR** 的决策正文;⛔ 不改 `Entry #264` / `§8.3` 原文;⛔ **不主动 push**(用户决策);⛔ R-5 与 R-3 **不合并**(B1 小而可判定 / B2 大而需独立设计 ⇒ 合并会让更有价值的 B1 被更复杂的设计拖住);⛔ 本 Entry 不建 change ⇒ 不占 KPI slot。
+
+**⑧ 关联**:**#316**(T4 收尾批 · 可签署集清零)· **#310**(R-5 / R-6 登记 + `07 号` SU · 十六)· **#307**(4 项架构裁决 C-1~C-4)· **#264**(终态 DoD Go 挂起 · 口径 ②)· **#236**(B2 载体评审教训 · 决定性变异必附)· **#232 / #233 / #236**(B2 口径链)· `obj §10` 本次追加段 · `include/framework/bidirectional_port_adapter.hh:331` / `:335` / `:347` · `include/core/stream_adapter_base.hh:82` · `include/core/chstream_port.hh:70` / `:72` · `src/core/module_factory.cc:764~980`
+
+
+### Entry #318 — 2026-11-09 [build](**R-5 / R-6 修复**:`BidirectionalPortAdapter` 2 参 override 签名对齐 ⇒ 8 个多端口模块入向**按端口分桶**;含 2 条决定性变异 + 同批处置 2 项)
+
+**主题**:per 台账 **Entry #317**(盘点 + P1 实施轨最高价值项)与 **#310**(R-5/R-6 残余登记),修复 `include/framework/bidirectional_port_adapter.hh` 的 **2 参 `process_request_input` 签名不匹配**(`std::size_t` ≠ 基类 `unsigned`,且无 `override`)。本 Entry 是**实施回执**。
+
+**角色**:planner(improvement 草稿 + change 4 件套)· builder(实施 T1~T6)· architect(裁决已在 #307 / #310)。**KPI**:**0/3 → 1/3**(本 change 占 1 slot)。
+
+**① 根因(编译期探针决定性证实 —— 非文本推断)**:
+```
+error: no matches converting function 'process_request_input' to type
+       'void (class cpptlm::StreamAdapterBase::*)(class Packet*, unsigned int)'
+note: candidates are:
+  'void BidirectionalPortAdapter<...>::process_request_input(Packet*, std::size_t)'  ← :335
+  'void BidirectionalPortAdapter<...>::process_request_input(Packet*) override'      ← :331
+```
+⇒ 基类双参版**回退单参**(`stream_adapter_base.hh:82-84`)⇒ `:331` 硬编码 `port_idx = 0` ⇒ **恒用端口 0**。
+
+**② 受影响面(实测全量 —— 8 个注册项)**:`include/chstream_register.hh` 的 `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED` 注册 **7 个 N=2**(`CohIfProtocolEngine` / `ChiRnfProtocolEngine` / `MesifProtocolEngine` / `TileLinkProtocolEngine` / `MoesiGpuProtocolEngine` / `UalinkProtocolEngine` / `CohIfResponderTLM`)+ `RouterTLM`(**N=5**)⇒ 全部多端口入向路由失效;**R-6**(拓扑 B `chi.0 → home.1` 落 `home.req_in[0]`)随之为真。
+
+**③ 修复(1 处)+ 同批处置(2 项)**:
+| 项 | 内容 |
+|---|---|
+| **T1 主修** | `:335` `std::size_t` → **`unsigned`** + **加 `override`** ⇒ 真 override;并把该 override 从 `private` 移到 **`public`**(与 `MultiPortStreamAdapter` / `DualPortStreamAdapter` 两个同族适配器对齐 —— 它们本来就在 `public`) |
+| **T2.1 `process_response_input`** | **删除**(全仓**零调用点** + 写入 `module_->req_in()` 疑似 copy-paste)⇒ per design D-2 甲:⛔ 不保留「零调用点的疑似缺陷」悬空;删除 ⇒ 零行为变化 |
+| **T2.2 端口忙** | 保持**丢弃语义**(⛔ 不改 `recvReq` 的返回契约 —— 那影响全框架)但**加可观测计数**(`inline static` ⇒ **不入对象布局**)+ 静态访问器 ⇒ 丢包从「不可见」变「可见」。⚠️ **诚实边界**:⛔ 本 change **不**解决丢包(回压/阻塞属另立 change) |
+
+**④ 判据(`test/test_framework_bidirectional_multiport_inbound.cc`,新文件 · 6 cases / 112 assertions)**:
+| 判据 | 内容 |
+|---|---|
+| **AC-1** | 编译期签名锁:`static_cast<AdapterSig>(&AdapterN2::process_request_input)` + 基类签名取地址 —— 修复前**编译红**(实测见 ⑤ 变异①) |
+| **AC-2** | **全枚举**分桶:N=2 / N=5,对 `k ∈ [0,N)` 注入带唯一 tag 的 Packet(走 `ChStreamTargetPort::recvReq` 真实入口)⇒ 断言**仅** `req_in[k]` 收到 |
+| **AC-3** | **RouterTLM 真装配**(5 端口 `bind_ports_array`)跑同一断言 ⇒ ⛔ 不是「只有模板夹具绿」 |
+| **AC-7** | 端口忙 ⇒ 计数递增(断言**不静默**) |
+| **AC-8** | `port_idx == N` 越界 ⇒ no-op(不崩、不越界) |
+
+⚠️ **载体形态**:⛔ 不塞 `test_router_tlm.cc` —— 实测 `grep -cE "ChStream|bind_ports|process_request_input"` = **0**(该文件零 ChStream 装配)⇒ 塞进去会产出**伪载体**(per Entry #236 的失败模式)。
+
+**⑤ 决定性变异证据(必附,per Entry #236)**:
+| 变异 | 结果 |
+|---|---|
+| **① `unsigned` → `std::size_t`**(签名回退) | ✅ **编译红**,错误签名 = `no matches converting function 'process_request_input' to type 'void (BidirectionalPortAdapter<...>::*)(Packet*, unsigned int)'` ⇒ 红因**正确** |
+| **② `port_idx = 0` 硬编码** | ✅ **4 cases 红**(分桶断言失败,红因 = 目标端口桶 `valid() == false`)⇒ 红因**正确** |
+| 恢复后 | ✅ **6 cases / 112 assertions 全绿** |
+
+**⑥ e2e baseline 前后对比(AC-5)**:`[dualport]` **59/14 不变** · `[cep]` **11488/505 不变**。
+⚠️ **「结论不受影响」的理由(结构性,非巧合)**:CEP e2e 的 `inject()`(`test/test_cep_stub_cache_e2e.cc:45-49`)是**直接写模块的 `InputStreamAdapter`**(`data() = b; set_valid(true)`),**完全绕过** adapter 的 `process_request_input` 入向路径 ⇒ R-5 的修复对这些路径**结构性无影响**。⛔ 本结论**不**由「跑一遍仍绿」推出。
+
+**⑦ 验证(实测)**:`ctest` **168/168**(新增 1 项 `framework_bidirectional_multiport_inbound`,已显式注册 —— ⚠️ 其标签**不含** `[cep]` ⇒ 不注册则 `cep_all` 覆盖不到 = 「只测不跑」)· `./test.sh --mode off` **21/21** · `cep_freeze_check` 无参 **rc=0**(42 产物 hash 一致)· `cep_docs_sync_check --strict` ✅ · ADR 结构闸 **4/4** · `cep_b3b2_d4_quarterly_review` **4 PASS / 1 WARN**。
+
+**⑧ 零 diff 边界(AC-9,逐条实测)**:`include/tlm/cep/**` **零 diff** · M1 冻结清单 **零 diff** · `test/cep_b3b2_deferrals.json` / `protocol_instances.json` / `protocol_instance.schema.json` **零 diff** · ⛔ **`B3b-2` 维持 0/4** · ⛔ **未宣称「全绿 run」**(IC3 仍 ⚪ 不适用)。
+
+**⑨ KPI 同步(6 处活口径)**:obj §5.2 · `phase-10.md` · `cpptlm-cep-umbrella.md` · `roadmap.md` · `AGENTS.md` · `cpptlm-cep-nvlink-sharp.md`(2 处)⇒ 全部 **0/3 → 1/3**;⚠️ 该同步由 **`cep_gate_selftest` 抓出来**(它实测 `openspec list` = 1/3 与文档声明 0/3 不符)⇒ 闸有效。
+
+**⑩ 边界**:⛔ 不改任何 main spec(`skip_specs: true`)· ⛔ 不改 `07 号` 既有 SU(零冻结面改动 ⇒ 无需五步授权链)· ⛔ 不改已签发 ADR 决策正文 · ⛔ 与 R-3 **不合并**(R-3 待 architect 裁决「多桥挂载是否合法」)· ⛔ **不主动 push**。
+
+**⑪ 关联**:**#317**(盘点 + 路径)· **#310**(R-5/R-6 残余登记 + `07 号` SU · 十六)· **#307**(4 项裁决)· **#264**(终态 DoD Go 挂起)· **#236**(载体评审教训)· **#309 ⑤ R-9**(ODR 先例)· improvement `.rddf/improvements/cpptlm-cep-bidirectional-multiport-inbound.md` · change `openspec/changes/archive/2026-11-09-cpptlm-cep-bidirectional-multiport-inbound/`(✅ 已完成归档)
 
 
 ---

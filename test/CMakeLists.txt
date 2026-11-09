@@ -262,6 +262,12 @@ add_test(NAME cep_scenario_anchor_reconciliation
 set_tests_properties(cep_scenario_anchor_reconciliation
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_test(NAME cep_all COMMAND cpptlm_tests "[cep]" -r compact)
+# 双向适配器**多端口入向分桶**(per change `cpptlm-cep-bidirectional-multiport-inbound`
+# 的 AC-2/AC-3/AC-7/AC-8;台账 Entry #310 R-5/R-6 + Entry #317)
+# ⚠️ 标签**不含** `[cep]` —— 本测试判的是**框架层 adapter** 行为,与 CEP 契约无关
+#    ⇒ 必须独立注册,否则 `cep_all` 覆盖不到(即「只测不跑」)。
+add_test(NAME framework_bidirectional_multiport_inbound
+         COMMAND cpptlm_tests "[adapter][bidirectional][multiport]" -r compact)
 # CEP 契约同步 lint(ADR 存在性 / invariant 计数单一真源 / P 编号口径 / 4 件套)
 add_test(NAME cep_docs_sync_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_docs_sync_check.sh --strict)

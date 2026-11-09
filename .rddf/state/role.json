@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-09T03:01:51Z",
+  "updated_at": "2026-11-09T14:14:58Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-07T02:04:33Z",
-      "by": "user",
-      "reason": "checkpoint next move #3:把 nvlink_sharp 自足探针 CP-05 的唯一白名单登记进契约面(上一轮验收 NIT)⇒ doc-only 契约对齐 change"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-07T02:20:52Z",
-      "by": "user",
-      "reason": "用户口令「切 planner 检查剩余的任务,并给出后续任务执行路径」⇒ 盘点 CEP objective 剩余 DoD + 台账遗留 + improvement 活跃态 + backlog,产出后续执行路径"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-07T02:33:25Z",
-      "by": "user",
-      "reason": "用户口令「切 builder 执行批 1」⇒ L1(CI 红线:13 个历史遗留格式化债)+ L2(coverage 文档 TileLink-C 行 L4 档误标修正),per 台账 Entry #274 §⑥"
-    },
     {
       "role": "architect",
       "at": "2026-11-07T09:50:16Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-09T03:01:51Z",
       "by": "user",
       "reason": "用户口令「请 oracle 对上述裁决的4点给出建议,然后按建议顺序用对应的角色实施任务」=> 按 7.4 实施顺序,R-2(双端口适配器入向按包类型分流 + 拓扑 emit_completions + 反向 fixture)需 builder 域改代码;建 openspec change cpptlm-cep-dual-port-inbound-dispatch(per AGENTS.md 反模式:影响>=2 模块/公共行为)。oracle 4.3「不建 change」仅适用治理轨 T1~T5,不覆盖 R-2。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-09T13:42:38Z",
+      "by": "user",
+      "reason": "用户口令「切 architect 对完成和后续任务进行梳理,检查我们要实现的目标/为什么实现/怎么做/为什么这么做/目前任务是什么」⇒ architect 域:目标-why-how-现状四段复盘(只读调研 + 讨论,不出实施代码)"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-09T13:45:21Z",
+      "by": "user",
+      "reason": "用户口令「然后切 planner 对后续还有哪些任务内容都梳理一遍,再给出后续任务内容和实施路径」⇒ planner 域:全量剩余任务盘点 + 实施路径编排(承接 architect 四段复盘)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-09T14:14:58Z",
+      "by": "user",
+      "reason": "用户口令「直接开 B1(先起 improvement 草稿 → change → 实施)」⇒ improvement 草稿已落(planner 域,HARD-GATE 通过)+ change 4 件套已建(validate --strict rc=0)⇒ 切 builder 域实施 T1~T7"
     }
   ],
   "auto_switch_window": null

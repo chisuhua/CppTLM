@@ -65,6 +65,7 @@
 #include "stream_adapter.hh"
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <queue>
 
 namespace cpptlm {
@@ -172,6 +173,12 @@ namespace cpptlm {
             unsigned remaining_cycles;
         };
         std::queue<PendingCredit> pending_credits_;
+
+        // 端口忙丢包计数 —— **static**(C++17 `inline static`)⇒ **不入对象布局**
+        // ⇒ 零布局影响(本类无跨实例 static_cast 约束,见 design D-3)。
+        // ⚠️ 语义:端口忙 ⇒ 包被**丢弃**(丢弃语义不变)⇒ 此计数只让丢弃**可观测**,
+        //    ⛔ **不**代表「已解决丢包」(回压 / 阻塞属另立 change)。
+        inline static std::uint64_t dropped_on_busy_port_ = 0;
 
     public:
         explicit BidirectionalPortAdapter(ModuleT* mod) : module_(mod) {
@@ -325,6 +332,7 @@ namespace cpptlm {
                     vc);
         }
 
+    public:
         /**
          * @brief 处理请求输入（从上游 Router 来的 flit）
          */
@@ -332,26 +340,41 @@ namespace cpptlm {
             process_request_input(pkt, 0);
         }
 
-        void process_request_input(Packet* pkt, std::size_t port_idx) {
+        /**
+         * @brief 处理请求输入（多端口版 —— **必须**与基类签名逐字一致）
+         *
+         * ⚠️ **签名必须是 `unsigned`**,与基类
+         * `StreamAdapterBase::process_request_input(Packet*, unsigned)` **逐字一致**
+         * ⇒ 本函数是真 override ⇒ `ChStreamTargetPort::recvReq`
+         * (`include/core/chstream_port.hh`)传入的 `port_idx_` 才会到达此处
+         * ⇒ 入向包落进**正确的端口桶** `req_in()[port_idx]`。
+         *
+         * ⛔ **禁止**改成 `std::size_t`(或任何其他整型):那会让本函数**不再 override**
+         * 基类虚函数 ⇒ 基类双参版**回退单参** ⇒ 派生类的单参版硬编码端口 0
+         * ⇒ **所有多端口模块的入向路由恒落端口 0**(8 个注册项受影响:
+         * `RouterTLM` N=5 + 7 个 CEP 模块 N=2)。
+         * ⇒ 该签名由 `test/test_framework_bidirectional_multiport_inbound.cc`
+         * 的**编译期 `static_assert` 签名锁**冻结(漂回即编译红)。
+         */
+        void process_request_input(Packet* pkt, unsigned port_idx) override {
             if (!pkt || !pkt->payload || port_idx >= N)
                 return;
             auto& req_adapter = module_->req_in()[port_idx];
             if (!req_adapter.valid()) {
                 req_adapter.process(pkt);
+            } else {
+                // 端口忙 —— 该端口上一包尚未被模块消费 ⇒ 本包**被丢弃**。
+                // ⚠️ 丢弃**语义不变**(回压 / 阻塞需改 `recvReq` 的返回契约 ⇒ 属另立 change),
+                //    但**不再是静默的**:计数在此递增 ⇒ 可观测。
+                ++dropped_on_busy_port_;
             }
         }
 
-        /**
-         * @brief 处理响应输入（从下游 Router 来的 flit）
-         */
-        void process_response_input(Packet* pkt, std::size_t port_idx) {
-            if (!pkt || !pkt->payload || port_idx >= N)
-                return;
-            auto& req_adapter = module_->req_in()[port_idx];
-            if (!req_adapter.valid()) {
-                req_adapter.process(pkt);
-            }
-        }
+        /// @brief 端口忙导致的丢包计数（**static** ⇒ 不入对象布局 ⇒ 零布局影响）
+        static std::uint64_t dropped_on_busy_port_count() { return dropped_on_busy_port_; }
+
+        /// @brief 复位端口忙丢包计数（供测试与仿真初始化使用）
+        static void reset_dropped_on_busy_port_count() { dropped_on_busy_port_ = 0; }
 
         Packet* process_response_output() override {
             // 响应输出由 tick() 直接处理
