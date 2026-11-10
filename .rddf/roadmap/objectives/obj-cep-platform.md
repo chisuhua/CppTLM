@@ -18100,6 +18100,46 @@ C-2 定义了 M1 冻结集 = 「**已签发能力的契约面基线**」,但**�
 **⑨ 关联**:**#323**(R-8 实施回执)· **#322 / #321**(R-8 裁决 · ⑦ 的「NUMBER-MAP 移出」单独立项)· **#317**(盘点 · C2 处置前提:原写「需先定纳入判据三档 + 分批 ≤5」⇒ **本 Entry 交换为 glob 一次批量**)· **#313 / #312**(T3 registry 建立 / T2 spec 达标化先例)· **#307 C-2**(**被本 Entry 取代**的「枚举式」裁定)· `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` · `scripts/test/cep_freeze_check.sh` · `test/cep_freeze_scope_registry.json` · oracle(2026-11-10,1 轮,PASS-WITH-NOTES)
 
 
+### Entry #325 — 2026-11-10 [build](**C-2′ 实施回执**:M1 冻结面改 glob 全量 ⇒ **42 → 69 产物** · **27 份未冻结一次归零** · 反向校验反转为 exclusion-integrity · registry 退役)
+
+**主题**:实施 **Entry #324**(C-2′ 裁决)。本 Entry 是**实施回执**。
+
+**角色**:architect(裁决 + 冻结面授权 · **#324**)· builder(实施)· planner(台账)。**KPI**:Proposed **0/3**(不建 change ⇒ 不占 slot)。
+
+**① 交付面(3 处)**:
+| 项 | 内容 |
+|---|---|
+| **`FROZEN_GLOBS`** | 加 **`"openspec/specs/cep-*/spec.md"`**(取代逐条枚举)⇒ dry-run 确认:glob **完全覆盖**现有 10 条显式 spec **+ 新增 27 条** ⇒ `artifact_count` **42 → 69** |
+| **反向校验反转** | 原口径「新 spec **未登记** ⇒ 红」(枚举式下的「知情未冻结」机制)⇒ 现 **exclusion-integrity**:① glob 展开集必在 manifest;② 唯一豁免通道 = `exclusions[]`,每条须 `path` + `reason` + `ledger_entry` 且**台账可解析**;③ 指向不存在的 spec ⇒ 红(防僵尸);④ 空数组 = **全量冻结** |
+| **`payload` 加 `exclusions: []`** | 范围记录随 `manifest.globs` 入库 ⇒ **范围变更进入 review diff**(⚠️ 脚本自身**明确不冻结**,故不能靠脚本记录范围) |
+| **registry 退役** | `test/cep_freeze_scope_registry.json` ⇒ schema 改 `cep-freeze-scope-exclusions/v3`,保留 **留档**(记录「2026-11-09 ~ 11-10 期间 27 份契约面曾处于**无冻结保护**状态」的历史事实)+ ⛔ 明写「**不得据此重启逐份核对**」 |
+
+**② ⚠️ 本次修复的一个**活缺陷**(实测:oracle 发现 + 我核实)**:
+旧反向校验的两个集合差 = `spec_rels - frozen_specs - registered` 与 `registered - spec_rels` ⇒ **不含** `registered ∩ frozen_specs` ⇒ 「**登记为未冻结、实际已冻结**」**不会被判红** ⇒ 若走「5 批渐进枚举」路线,中间态会产生 **22 条僵尸登记** ⇒ 而 registry `:3` 明言本表存在的意义是「杜绝双真源」。⇒ **glob 化后 registry 退役 ⇒ 该盲区自然消失**(无须单独修)。
+
+**③ 五步链(Entry #324 授权)**:
+台账 **Entry #324** 授权 → 产物 commit `2692e2d3` → `cep_freeze_check.sh --update --authorized-by "Entry #324"` ⇒ **69 个产物** → **清单单独 commit** `ea426b86` → 无参复验 **provenance 通过**(69 产物 hash 与 commit `2692e2d3` 一致)· ⚠️ `frozen_at_commit ≠ HEAD` 是**正常态**(清单 commit 后 HEAD 前进)。
+
+**④ 决定性变异(2 条,均按正确原因红 + 恢复后转绿)**:
+| 变异 | 结果 |
+|---|---|
+| **① 排除表加一条指向不存在 spec 的条目** | ✅ 红:`排除表条目指向**不存在**的 spec: openspec/specs/cep-nonexistent/spec.md` |
+| **② 一条缺 `reason` + 一条 `ledger_entry` 解析不到**(`Entry #9999`) | ✅ 红:两条**各自**报出(缺 `path`/`reason`/`ledger_entry` + 台账解析不到)⇒ 三项校验**都活着** |
+| 恢复 | ✅ `glob 展开 37 份 cep-* main spec · 排除表 0 条(空 = 全量冻结)` |
+
+**⑤ 验证(实测)**:`ctest` **168/168** · `./test.sh --mode off` **21/21** · `cep_freeze_check` 无参 **rc=0**(provenance 69 产物一致)· `cep_docs_sync_check --strict` ✅ · ADR 结构闸 **4/4** · 索引位置闸 rc=0 · `cep_*.sh` 全绿。
+
+**⑥ 零 diff 边界(逐条)**:⛔ 未改任何 spec 的**正文**(37 份 hash 全部按原内容入清单)· ⛔ 未改 `ADR-CEP-NUMBER-MAP` 的 **ADR 侧**冻结资格(单独裁决,Entry #321 ⑦)· ⛔ 未修 `cep-core-contracts:184` 的「条款无机器载体」残余(正交轴)· ⛔ `B3b-2` 维持 **0/4** · ⛔ 未宣称「全绿 run」。
+
+**⑦ ⚠️ 诚实边界(逐条)**:
+- **冻结 ≠ 正确 ≠ 有机器载体** —— 冻结的**唯一**效果 = 「**改动须授权**」。⚠️ 活反例:`openspec/specs/cep-core-contracts/spec.md:184` 的「含议题/依赖/状态」条款**在冻结集内但无机器载体**(`test_cep_contracts_crosscheck.cc:57-87` 不检该条)⇒ 上一轮 R-8 差点被**静默改写**且**不会自动报红** ⇒ 本次扩面**不改变**这个事实 ⇒ ⛔ 不得读作「27 份已验收」。
+- **Purpose/Scenario 达标度是正交轴** —— 实测 **8 份** TBD(**3 份已在冻结集**)⇒ 独立 remediation 批次 ⇒ ⛔ 不入冻结判据。
+- **本裁决交换了 Entry #307 C-2 的「枚举式」** —— 依据 = 三条实测(C-2 目的在内涵上已等于 glob 全量 · TBD 不能作排除信号 · 排除表当前为空)⇒ ⛔ 不得把「枚举 vs glob」再当开放问题重开。
+- **未做(单独立项)**:`ADR-CEP-NUMBER-MAP` 的 **ADR 侧** exclusion 机制(走 `docs/adr/ADR-CEP-*.md` glob,与本轮 spec glob 是**两个独立面**)。
+
+**⑧ 关联**:**#324**(C-2′ 裁决 + 冻结面授权)· **#323 / #322 / #321**(R-8 链)· **#317**(盘点 · C2 原处置「先定三档 + 分批 ≤5」⇒ **已被 #324 交换为 glob 一次批量**)· **#313**(原 registry 建立)· **#312**(T2 spec 达标化先例)· **#307 C-2**(**被取代**的枚举式裁定)· `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(69 产物 · `exclusions: []`)· `scripts/test/cep_freeze_check.sh` · `test/cep_freeze_scope_registry.json`(退役)· oracle(1 轮,PASS-WITH-NOTES)
+
+
 ---
 ---
 
