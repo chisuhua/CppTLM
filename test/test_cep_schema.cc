@@ -756,13 +756,16 @@ TEST_CASE("[cep][schema] 07 号 §5.1 的 adapter 实例数与表格行数一致
     //    —— 原测试**完全没查 07 号**。
     //    计数规则的**下界**来自 07 号 §5.1 的表格;若表格行数与声明数漂移,
     //    「已实现 adapter 实例数」的下界就失真 → 必须机器核对。
+    // 2026-11-11 批 3 按层拆分:§5.1 实体已下沉到 `docs/architecture/cep/protocol-engine.md`
+    //   ⇒ 表体与口径字样在该文件;标题层级因文件标题为 h1 而提升一级(h4 → h3)。
+    //   ⛔ 总纲「07 号」仍保留 `### 5.1.x` 节号桩(节号体系不迁移),但**表体**在子文档。
     const auto truth = read_file(
-        (repo_root() / "docs" / "architecture" / "07-coherence-exploration-platform.md").string());
+        (repo_root() / "docs" / "architecture" / "cep" / "protocol-engine.md").string());
 
     // §5.1.1 工业硬件协议族: | **族** | 实例 | `Adapter` | 状态 | ... |
-    const auto i511 = truth.find("#### 5.1.1");
-    const auto i512 = truth.find("#### 5.1.2");
-    const auto i513 = truth.find("#### 5.1.3");
+    const auto i511 = truth.find("### 5.1.1");
+    const auto i512 = truth.find("### 5.1.2");
+    const auto i513 = truth.find("### 5.1.3");
     REQUIRE(i511 != std::string::npos);
     REQUIRE(i512 != std::string::npos);
     REQUIRE(i513 != std::string::npos);
@@ -815,9 +818,9 @@ TEST_CASE("[cep][schema] 07 号 §5.1 的 adapter 实例数与表格行数一致
     REQUIRE(rows511 + rows512 == 16);
 
     // §5.1 的声明必须与表格一致,且必须声明 16 是**下界** + 语义索引不重复计 adapter
-    INFO("07 号 §5.1 未声明 16 个 adapter 实例");
+    INFO("cep/protocol-engine.md §5.1 未声明 16 个 adapter 实例");
     REQUIRE(truth.find("16 个 adapter 实例") != std::string::npos);
-    INFO("07 号 §5.1 未声明 §5.1.4 的语义索引不重复计 adapter");
+    INFO("cep/protocol-engine.md §5.1 未声明 §5.1.4 的语义索引不重复计 adapter");
     REQUIRE(truth.find("不重复计 adapter") != std::string::npos);
     INFO("07 号 §5.1 未声明 5 个一致性模型语义索引");
     REQUIRE(truth.find("5 个一致性模型语义索引") != std::string::npos);

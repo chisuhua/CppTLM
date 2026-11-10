@@ -67,6 +67,16 @@ DOCS=(
   "docs/adr/ADR-CEP-12-protocol-engine-capability-map.md"
   "docs/adr/ADR-CEP-13-coherence-domain-ownership.md"
   "docs/architecture/07-coherence-exploration-platform.md"
+  # 2026-11-11(per 批 3 按层拆分):8 篇子文档纳入受检面 ——
+  #   ⛔ 否则拆分后新文档**零机器检查**(治理倒退);它们的节号引用与路径引用同样必须可达。
+  "docs/architecture/cep/stub-cache-core.md"
+  "docs/architecture/cep/coherence-interface.md"
+  "docs/architecture/cep/protocol-engine.md"
+  "docs/architecture/cep/directory-ordering.md"
+  "docs/architecture/cep/collective-plane.md"
+  "docs/architecture/cep/fabric-transport.md"
+  "docs/architecture/cep/simulation-and-experiment.md"
+  "docs/architecture/cep/core-traffic-gen.md"
   "openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/tasks.md"
   ".rddf/roadmap/objectives/obj-cep-platform.md"
 )

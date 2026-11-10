@@ -22,6 +22,22 @@
 > **关联路线图**: [`phase-10`](../../.rddf/roadmap/phases/phase-10.md)+ [`objective-cep-platform`](../../.rddf/roadmap/objectives/obj-cep-platform.md)
 > **关联跨仓**: ArchForge `09-coherence-protocol.md` + `microarchitecture/coherence-{protocol,bridge,domain}.md`(接口草案,本文仅引用)
 
+> ## 📐 文件性质声明(**机器可读 · 批 3 拆分后**)
+>
+> **本文件 = 总纲(唯一入口)**。按层拆分的子文档在 [`docs/architecture/cep/`](cep/)。
+>
+> | 节 | 性质 | 实体位置 |
+> |---|---|---|
+> | **§4** invariant 总表 | **正文(定义处)** | ⛔ **就在本文件** —— 4 个消费方钉住(`cep_docs_sync_check.sh` / `test/cep_adr_parser.hh` / `test_cep_canonical_invariants.cc` / `ADR-CEP-00A §3.9`) |
+> | §1 / §2 | 正文(导航图 + 6 层职责) | 本文件 |
+> | §3 / §5 / §6 / §7 | **指针(非定义处)** | `cep/` 8 篇子文档(逐节桩首行写实体路径) |
+> | §8 | 正文(演进路线 + 治理不变量) | 本文件 |
+> | §9 / §10 | 正文(列表) | 本文件 |
+> | §11 / §12 | 指针桩 | 台账 / `docs/guide/cep-usage.md` |
+> | Status Update 附录 | 决策与状态登记(过渡态) | 本文件(⛔ A 类部分待批 4 落 ADR 后收口) |
+>
+> ⛔ **引用纪律**:指 `§N` 时**以本文件为准**(节号体系不迁移);⛔ 不得在子文档另立节号。
+
 ---
 
 ## 1. 文档定位与真源关系
@@ -164,80 +180,14 @@ group-scoped completion     → Fabric Collective Plane
 
 ## 3. canonical 10 条 Coherence Interface 流
 
+> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/coherence-interface.md`](../cep/coherence-interface.md)。
+> ⚠️ **本节的 3.1 实体在 `coherence-interface.md`;3.2 / 3.3 实体在 `stub-cache-core.md`。**
+
 ### 3.1 清单(per `ADR-CEP-02 §2`,首次定义)
-
-| # | 流名 | 方向 | 完成纪律 | 语义 |
-|---|------|------|---------|------|
-| 1 | `request` | node → center | requester-scoped | 缓存行请求(读 / 唯一化 / 写回 / 驱逐) |
-| 2 | `completion` | center → node | requester-scoped | 请求完成 + data(若 inline)+ perm + error |
-| 3 | `snoop` | center → node | requester-scoped | snoop 查询 / 失效 / clean / forward |
-| 4 | `snoop_resp` | node → center | requester-scoped | snoop 响应:hit + state + dirty + data + txn_id |
-| 5 | `writeback` | node → center | requester-scoped | 驱逐/写回:addr + data + dirty |
-| 6 | `forward_data` | node ↔ node(经中心调度)| requester-scoped | 数据转发:src_addr + dst_addr + data + perm |
-| 7 | `back_invalidate` | center → node | requester-scoped | 反向失效:addr + type(invalidate/clean)+ txn_id(CXL 3.0 DCOH 的 BISnp 走这里;⚠️ **方向反转例外** = `node → center`(device→host,S2M),其响应 BIRsp = M2S —— 方向反转例外说明见 `ADR-CEP-02` §2 表下)|
-| 8 | `address_resolve` | node ↔ center | requester-scoped | 地址归属解析:pa + node_id → home_node + coherent_flag |
-| 9 | `barrier` | center → node ↔ center(双向)| requester-scoped | 单请求者排空/可见性点;**不携带 group_id / participant_count / epoch_id** |
-| 10 | `snoop_completion_ack` | node → center | requester-scoped | snoop 完成后 ack;配对 `snoop_resp` 而非 `completion` |
-
-**不变量**(per `ADR-CEP-02 §2` CEN-Ib1~10):
-
-| ID | 规则 |
-|----|------|
-| CEN-Ib1 | `request` 必有配对 `completion` |
-| CEN-Ib2 | `completion` 不携带 unsolicited 数据 |
-| CEN-Ib3 | `snoop` 必有 `snoop_resp` |
-| CEN-Ib4 | `snoop_resp` 必须含 `txn_id` 用于 ack 配对 |
-| CEN-Ib5 | `writeback` 不与 `request` 竞态 |
-| CEN-Ib6 | `forward_data` 对 stub 透明(不可分辨性) |
-| CEN-Ib7 | `back_invalidate` 是 requester-scoped,**不是** group rendezvous |
-| CEN-Ib8 | `address_resolve` 在 ProtocolEngine 内终结 |
-| CEN-Ib9 | `barrier` 流不携带 group_id / participant_count / epoch_id |
-| CEN-Ib10 | `snoop_completion_ack` 配对 `snoop_resp` 不配对 `completion` |
-| **CEN-Ib11** | **atomic 意图作为 `request` 流的独立属性承载;`perm` 枚举维持 4 值锁,不新增 "ATOMIC" perm 值**(per `ADR-CEP-02`,一手:ProtoGen p.7 局限 L2)|
 
 ### 3.2 Stub Cache Core 的 RN 侧投影(per `ADR-CEP-05 §2`)
 
-**Stub 只感知 5 条流**(net-side),另 5 条由 ProtocolEngine 内部消化:
-
-| Stub 接口 | 对应 canonical 流 | 折叠说明 |
-|-----------|----------------|---------|
-| `request(addr, perm)` | 流 1 | — |
-| `completion(txn_id, data, perm, error)` | 流 2 | — |
-| `snoop(addr, type, txn_id)` | 流 3 | — |
-| `snoop_resp(addr, hit, state, dirty, data, txn_id)` | 流 4 | — |
-| `writeback(addr, data, dirty)` | 流 5 | — |
-| `evict_line(addr)` | **core-side 原语** | 非 CohIf 流投影;net-side 表现为流 5 + 流 2 |
-
-**5 隐藏流 → stub 原语折叠映射表**(α 方案正确性的唯一审计点):
-
-| 隐藏流 | stub 表现 | 关键不变量 |
-|--------|----------|-----------|
-| 流 6 `forward_data` | 不可显式为接口;stub 收到流 2 `completion` 时数据可用即视为"forward 或 memory 完成" | **CEN-Ib6 不可分辨性** |
-| 流 7 `back_invalidate` | 表现为普通 invalidate snoop | stub 无协议特异行为 |
-| 流 9 `barrier` | 对 stub 不可见 | barrier 穿插时 stub 的 MSHR 占用、snoop 响应、写回顺序均不变 |
-| 流 8 `address_resolve` | 在 ProtocolEngine 内终结 | 不泄漏到 stub 任何接口 |
-| 流 10 `snoop_completion_ack` | 由 ProtocolEngine 内部消化 | stub 不知道 snoop ack 单独流存在 |
-
-**Stub Cache 7 条不变量**(per `ADR-CEP-05 §4.3`):
-
-| ID | 规则 |
-|----|------|
-| INV-SC1 | 同一 addr 在 stub 内部任何时刻最多 1 个 outstanding request |
-| INV-SC2 | evict 不允许选取 outstanding line |
-| INV-SC3 | snoop 响应必须在固定延迟内返回(参数化)|
-| INV-SC4 | completion 与 request 严格配对(无 unsolicited completion);`txn_id` 沿用 `ADR-X.1-transaction-id.md` 命名 |
-| INV-SC5 | dirty writeback 必须带 data;clean writeback 不带 |
-| INV-SC6 | hit 路径不产生网络流量(cpu_side 直接返回)|
-| INV-CEP-05-IC1 | 只暴露**稳定状态**;瞬态态 + 协议私有态(token 等)住 Protocol Engine 插件内部(per `ADR-CEP-05 §4.3`)|
-
 ### 3.3 缓存核心协议无关性
-
-- **缓存行粒度**:64B,地址对齐
-- **权限状态**:`NONE / I / S / E / M`(MESI 抽象),**不暴露** CHI 的 UC/SC/UD/SD 七态
-- **内部资源**:tag/data SRAM、MSHR、写回缓冲、替换策略、预取器
-- **禁止**:缓存核心直接处理 REQ/SNP/DAT 通道,或直接处理 TxnID / HomeNID / CompAck
-
----
 
 ## 4. 67 编号位 / 66 条守门 invariant 总表(单一真源)
 
@@ -303,351 +253,56 @@ group-scoped completion     → Fabric Collective Plane
 
 ## 5. Bundle 与协议适配
 
-### 5.1 协议族 → 协议实例 → adapter 映射
+> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/protocol-engine.md`](../cep/protocol-engine.md)。
+> ⚠️ **按层分流**:5.1 → `protocol-engine.md` · 5.2 → `directory-ordering.md` · 5.3 → `collective-plane.md` · 5.4 → `coherence-interface.md`。
 
-> **表述纪律**(per `ADR-CEP-17 §3.2`):"协议族" = **协议实例的来源集合**;"协议实例" = 一个具体可实现协议(1 个 `.slicc` / 1 个 adapter)。**adapter 数量 = 协议实例数**,不是族数。
->
-> **当前口径**:**2 个来源族(工业 6 族 / Ruby 1 族)= 16 个 adapter 实例** + §5.1.4 的 **5 个一致性模型语义索引**(交叉视图,不重复计 adapter)。
+### 5.1 协议族 → 协议实例 → adapter 映射
 
 #### 5.1.1 工业硬件协议族(6 族 / 8 实例)
 
-| 协议族 | 协议实例 | adapter | 通道模型 | 关键差异 |
-|--------|---------|---------|----------|---------|
-| **CHI** | CHI RN-F | `ChiRnfAdapter` | RN-F 6 通道(TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT)| RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck;**UC→UD 静默升级**(轴 2)与 `moesi_gpu` 的 `E→M` **同型** —— 4 值 `perm` 无法表达 ⇒ 静默升级声明归 `perm_upgrades.json`(per `ADR-CEP-12 §11`) |
-| **CXL 2.0 非对称** | CXL 2.0 | `CxlCacheAdapter` | D2H/H2D 各 3 通道(Req/Rsp/Data)| Host 侧 Snoop Filter;设备不感知其他设备 |
-| **CXL 3.0 对称** | CXL 3.0 对称 | `CxlDcohAdapter`(独立载体;**非** `CxlCacheAdapter` 的模式)| + CXL.mem 增 **BISnp(S2M)/ BIRsp(M2S)** 两通道 | **DCOH = Device Coherence(agent / engine)**(设备内的一致性代理,**非** "Ownership History");设备可对 **host** 发起反向 snoop(BI;**不**对 peer device);归属基于 **HPA**(设备内部翻译到 media address,**非** DPA 归属) |
-| **TileLink-C** | TileLink-C | `TileLinkCAdapter` + `TileLinkProtocolEngine` | A/B/C/D/E 通道 | Tree Tip 权限模型;Probe/Acquire/Grant 家族,无传统 snoop 广播;lookup 可能 ESCALATE_UP |
-| **NVLink** | NVLink | `NvlinkAdapter` | NVLink TL Read/Write/Atomic/Probe | NVSwitch 内嵌 SHARP/atomic/barrier;排序点可落在 Switch/SPU |
-| **UALink** | UALink | `UalinkAdapter` | Station/Port/Lane;TL Load/Store/Atomic | In-Network Compute(ReadReduce/WriteMulticast/Broadcast/AllReduce) |
-| **MOESI/GPU** | `moesi_gpu` | `MoesiGpuAdapter` | 6 态 × 6 事件;snoop 型(SoC 内) | ArchForge 贡献(per `32 号` §6.1);**E→M 静默升级**是 `ADR-CEP-13` 域可见写判据 (a)(b) 的**争点所在**(**该争点已裁定 → 状态见 `ADR-CEP-05 §13.1`**) |
-| **MESIF** | `mesif` | `MesifAdapter` | 分级目录型(跨卡);目录查询 / 定向 snoop;**SharerTracker 选型 = `HierarchicalDirectory`**(`SYSTEM/EXACT/GLOBAL/HIERARCHICAL` —— 多级聚合) | ArchForge 贡献(per `32 号` §6.2);与 `moesi_gpu` **互不承认**(per `32 号` C1);⚠ 声明权威已迁本仓 ⇒ 与 `32 号 §6.2` **分叉**(跨仓追认债) |
-
-> **协议数 6 族 / 8 实例**(✅ **2026-11-06 一致性修复** —— per 台账 Entry #239:新增 `ualink_4` 实例 ⇒ 本计数与 `protocol_instances.json` 的 8 实例**首次相符**;此前本处写 8 而 JSON 为 7);CXL 2.0 与 3.0 对称在**实现阶段**是两个 change;⚠️ **2026-11-02 订正**(per 台账 Entry #167)—— adapter **不共用**:2.0 = `CxlCacheAdapter` · 3.0 对称 = `CxlDcohAdapter`(**独立载体**;per 本文件 `Status Update(2026-11-02)` ③ + 台账 Entry #154)⇒ 原「同一 adapter 的两种模式」的表述**已失效**)
->
-> **族计数的口径**(2026-10-22 补记,per 台账 **Entry #12**):`moesi_gpu` / `mesif` 计为**同一来源族**
-> (ArchForge 声明族,含 2 套互不承认的一致性架构,per `32 号` C1)→ **+1 族 / +2 实例**,
-> 镜像 CXL「1 族 / 2 实例」的先例。两者 `family` 字段均为 `industrial`(per `32 号` 声明)。
-> **状态 = 按队列实况(2026-11-02 更新,per 台账 Entry #148 授权)** —— `moesi_gpu` = 队列 #6 **已落地归档**(2026-10-27;首个 `status=implemented` 实例);`mesif` = 队列 #9 **已落地归档**(2026-10-30;**第 3 个** `status=implemented` 实例;R-1 裁决 Entry #96 已落地为 `HierarchicalDirectory` 行为实现;2 项缺口(状态机规约 / 5→4 投影表)**已闭**(Entry #101 归档 + Entry #102 追认)⇒ **已就绪**);`chi_rnf` = 队列 #8 **已落地归档**(2026-10-28;**第 2 个** `status=implemented` 实例);`cxl_2_0` = 队列 #10 **已落地归档**(2026-11-01;**第 4 个** `status=implemented` 实例;⚠️ **两段式** —— 规约层 + 实现层;`sharer_tracker` = 「不参与」);`tilelink_c` = 队列 #11 **已落地归档**(2026-11-02;**第 5 个** `status=implemented` 实例;⚠️ **两段式** —— 规约层 + 实现层;`sharer_tracker` = `TreeManager`);`ualink_4` = **2026-11-06 声明落地**(per 台账 Entry #239 —— 路径 A;13 键取值**全部裁决** + `ADR-CEP-12` 订正 #1)⇒ **`status=implemented` 实例 7 → 8**;⚠️ 但 `sharer_tracker` = 「**不参与**」(无硬件一致性 ⇒ 无 sharer-set 知识需求)。**状态值以 `obj §4.0` 排队总表为唯一权威**(本表**不复制**排期,per 防双真源立场)。
->
-> **2026-10-22 补记**(per 台账 **Entry #13** [adr-amendment]):`moesi_gpu` 行的「**争点所在**」表述
-> **已失效** —— ArchForge 已裁定判据 (b) **成立**(`4ff2fa6`,Q-3a = 是)→ 该静默 `E→M` **是域可见写**。
-> **状态值以 `ADR-CEP-05 §13.1` 为唯一权威**(本表**不复制**状态值,per 防双真源立场);
-> 本行的「已落地 / 已排期」状态**不受影响**(排期 ≠ 就绪)。
-
 #### 5.1.2 Ruby-SLICC 协议族(1 族 / 8 实例,per `ADR-CEP-17 §2 Decision 2`)
-
-> **来源**: gem5 Ruby `src/mem/ruby/protocol/*.slicc`(per `docs/research/gem5-coherence-protocols-survey.md:16-23` 实证)
-> **定位**: **学术 / 教学协议族**,与 §5.1.1 的工业硬件协议族**互补而非重叠**
-
-| 协议实例 | 判定 | Sharer Tracker 选型 | 关键说明 |
-|---------|------|-------------------|---------|
-| MESI_Two_Level | ✅ 直接支持 | `FullMapDirectory` | 标准 2 级 directory-based |
-| MESI_Three_Level | ✅ 直接支持 | `FullMapDirectory` | 3 级;多层状态机在插件内 |
-| MOESI_CMP_directory | ✅ 直接支持 | `FullMapDirectory` | `dir.sm` = 中心目录 = `FullMapDirectory` |
-| MOESI_hammer | ✅ 直接支持 | `SparseSnoopFilter` | `probeFilter` 保守过滤 = caps `CONSERVATIVE` 语义 ✅ |
-| MOESI_AMD_Base | ✅ 直接支持 | `SparseSnoopFilter` | 含 `probeFilter` / `Region*` / `CorePair` |
-| GPU_VIPER | ✅ 直接支持 | 复用 MOESI_AMD_Base | GPU 侧 coherence 在插件内 |
-| **MOESI_CMP_token** | ⚠️ **需扩展 1** | **`BroadcastNull` 或不参与** | token 由副本携带,不依赖中心 sharer set(per `ADR-CEP-17 §2 Decision 3`)|
-| **MESI_Three_Level_HTM** | ❌ **明确排除** | — | 事务内存边界(HTM 需 read-set / write-set / 事务中止语义),超出纯缓存一致性模型(per `ADR-CEP-17 §2 Decision 5`)|
-
-**关键映射证据**:gem5 Ruby 消息模型(RubyRequest / RubyResponse / RubySnoopResponse)→ CEP canonical 10 流 **100% 覆盖,零新增流**(per `docs/research/cep-coherence-protocol-space-survey.md §3.3`)。
-
-> **注**:调研文档 `gem5-coherence-protocols-survey.md:27` 指出本快照中 `MESI_CMP_directory` 协议**不存在**(历史 gem5 曾有,现已删除,仅 MOESI 版存活);上表按调研文档原文照录。
 
 #### 5.1.3 协议私有状态边界(per `ADR-CEP-17 §2 Decision 4`)
 
-| 状态类别 | 例子 | 归属 |
-|---------|------|------|
-| **稳定状态(SSP)** | `I / S / E / M`(CEP Stub Cache 暴露) | Stub Cache Core `perm` 枚举 |
-| **瞬态状态** | `T`(Temporary,per ArchForge 09 MOESI/GPU 6×6);ProtoGen 生成的 transient states | **Protocol Engine 插件内部** |
-| **协议私有状态** | token(per MOESI_CMP_token);HTM 的 read-set / write-set | **Protocol Engine 插件内部** |
-
-**依据**:Oswald **ProtoGen** 方法论建立在"从 SSP(稳定状态协议)生成非原子协议"之上 — 瞬态状态分配是其算法第 2 步(per `docs/research/cep-coherence-protocol-space-survey.md §4.1.1` / §4.1.2)。CEP 的分层与之一致:Stub Cache = SSP 层,Protocol Engine = 非原子事务层。
-
-**守门 invariant**:`INV-CEP-05-IC1`(Stub 只暴露稳定状态)+ `INV-CEP-04-IC7`(token 类协议 tracker 不跟踪 sharer set)。
-
-> **v0.2 证据补强**(per `docs/research/cep-coherence-protocol-space-survey.md` v0.2 §4.1.2 / §4.1.5):ProtoGen 论文实测 **MSI 协议含 18 个瞬态状态**,non-stalling MSI/MESI/MOSI 为 **18-20 状态 / 46-60 转换**(`ProtoGen_ISCA2018-draft.md:89-90`, `:1282-1285`)。→ **CEP Stub Cache 的 4 个稳定状态不是缓存模型,而是客户端侧协议状态投影**;真实协议的瞬态复杂度全部归 Protocol Engine 插件。
-
 #### 5.1.4 协议语义实例(按一致性模型索引)(5 语义,per `ADR-CEP-17 §2 Decision 7`)
-
-> **来源**:Oswald *Gen 算法族*(ProtoGen ISCA 2018 / HieraGen ISCA 2020 / HeteroGen HPCA 2022)论文 case study 集(per `HeteroGen_HPCA2022-draft.md:1266-1276` Table I)
-
-> **⚠️ 分类维度澄清(v0.3 复审 R8)**:本小节**不是**与 §5.1.1 / §5.1.2 并列的"第三个族",而是**协议语义的索引视图**:
-> - **"族"= 协议实例的来源集合** —— §5.1.1(工业硬件标准,6 族 / 8 实例)+ §5.1.2(gem5 Ruby 实现,1 族 / 8 实例)
-> - **"一致性模型"= 协议实例的语义属性**,用于**索引语义**,**不是**来源分类
-> - ⚠️ **两者交叉**:**MSI / MESI** 既是 §5.1.2 gem5 Ruby 族的实例,又是本表的 SC 语义 —— **同一协议语义的不同实现**,adapter 按 §5.1.1/§5.1.2 计,**不重复计数**
-> - **落地口径**:本表列出的是**协议语义**;其 adapter 是否实现、归哪一族,由 §5.1.1 / §5.1.2 决定
-
-| 协议语义 | 一致性模型 | 判定 | Sharer Tracker 选型 | adapter 归属 | 关键说明 |
-|---------|-----------|------|-------------------|-------------|---------|
-| MSI / MESI | **SC** | ✅ 直接支持 | `FullMapDirectory` | **§5.1.2**(gem5 Ruby MESI_Two_Level / Three_Level)| SWMR + writer-initiated invalidation;CEP 基线协议 |
-| TSO-CC | **TSO** | ✅ 直接支持 | **`BroadcastNull` 或不参与** | 新增(若选为实现目标)| **主动放弃 sharer tracking** 以利用 TSO 松弛(per HeteroGen §VI-B)→ 配 snoop filter 自相矛盾 |
-| RCC / RCC-O | **RC** | ✅ 直接支持 | **`BroadcastNull` 或不参与** | 新增(若选为实现目标)| 写缓冲 + release 时写回 + acquire 时自失效(不做中心目录)|
-| **GPU**(源自 Spandex) | **RC** | ✅ 直接支持 | **`BroadcastNull` 或不参与** | 新增(若选为实现目标)| **write-through 直写** + 局部缓冲 —— **与 ArchForge 09 §4.1 的 GPU write-through 策略直接对应**;Spandex 协议不做 sharer tracking 式中心目录(per 调研 §3.5)|
-| PLO-CC | **PLO**(partial-load-order) | ✅ 直接支持 | **`BroadcastNull` 或不参与** | 新增(若选为实现目标)| 只强制 W→W 与 R→W 序;属自失效类协议,不做 sharer tracking |
-
-**Sharer Tracker 选型修正说明(per oracle 全面架构审查 N5)**:`SparseSnoopFilter` **本身即一种 sharer tracker**,与「主动放弃 sharer tracking」的协议特征**自相矛盾**。上述语义(TSO-CC / RCC / RCC-O / GPU / PLO-CC)均属自失效 / write-through 类,统一取 `BroadcastNull` 或「不参与」 —— 与 `ADR-CEP-17` 决策 3(token 类协议同原则)一致。
-
-**前置条件(硬)**:**这组协议语义必须**依赖**一致性标签维度**(`ADR-CEP-12` schema 的 `consistency_labels` 字段),否则无法表达"同一 `barrier` 在 SC / TSO / RC 下效果不同"。per `ADR-CEP-17 §2 Decision 7` 与调研 §5.3 F6。
-
-**诚实边界(必读,per `ADR-CEP-17 §2 Decision 9` + 调研 F19)**:
-*Gen 族作者自陈其**两个独立工具**"无法在**无人工介入**下自动完成"分层 + 异构组合("...is **not possible with these tools without manual intervention**",博士论文 §9.2)。⚠️ 注意:这是**工具工程限制**,**不是算法不可能** —— 论文 §1.3 明示 HieraGen 阶段**可以**消费 HeteroGen 阶段的输出。
-→ **CEP 的对应结论**:多层目录组合 + 跨一致性域组合**可做**,但走**人工声明 + 实验证伪**路线 —— 正确性由**随机 / litmus 实验在声明的 `verification_scope` 内尝试证伪**;**平台不提供无违例保证**(per `ADR-CEP-06 §3` 的 `verification_mode` 契约)。**不承诺自动化**;且 `ADR-CEP-07` 的插件接口须为组合预留接缝。
-
-> **口径澄清(per oracle 全面架构审查 Q4)**:*Gen 族的限制分两层 —— **工具集成负担**(CEP **不继承**,因其不做自动合成)与**语义组合负担**(CEP **完全继承**,因其须人工套用全部组合判据)。准确表述是「**工具集成负担不继承;语义组合负担完全继承**」,而非「该限制不直接适用」。
-
-**规模与验证参考**:
-- HeteroGen 在 **gem5** 上以 64 核(60 tiny + 4 big)对比手工异构协议 **HCC**,平均性能相当、网络流量差异 < 5%(per `hetergen:1382-1400`)→ **gem5 已是该研究线的标准评测床**
-- 验证手段为 Murϕ(Safety + Deadlock Freedom)+ **111 个异构 litmus test**(per `hetergen:1277-1316`)→ 对应 CEP `ADR-CEP-06` 的 `deadlock_violations` / `memory_violations` 闸
-
 
 #### 5.1.5 「转移表真源」判定式(T1–T4)与来源效力
 
-> **本节解决什么**:§5.1.1 的「补运行时引擎的触发条件」用了「**转移表真源**」一词 ——
-> 本节给出它的**判定式**、**载体形态分类**、**来源效力分档**与**普查三要素**。
-> ⛔ 本节是**判据**,不是状态登记(逐族达成度见 `objective-cep-platform`)。
-
-**T1–T4 四要件(⛔ **合取** —— 任一子集成立**不构成**触发、**不构成**达成度)**：
-
-| 要件 | 内容 | 机器可判标志 |
-|---|---|---|
-| **T1 存在** | 仓内规约载体持有**有限封闭**的转移结构(态集 × 事件集 ⇒ 目标集),非散文、非示例 | 载体有编译期矩阵 + 计数常量 |
-| **T2 可判定** | 每格有 `basis.kind` + 条款级 `ref`;`Unknown` 比例可机器统计 | **决定性变异**:删一格 ⇒ 判据必红 |
-| **T3 可消费** | 存在「平台消息/意图面 → 该表索引轴」的映射,**映射每一行同样有条款级 `ref`**;无锚行显式 `pending` 且 **fail-closed**(引擎 SHALL NOT 消费) | 映射表进规约载体(编译期锁)+ 毒化实测 |
-| **T4 完备** | `Unknown` 格占比 = 0(或空集语义被规范明确) | 计数交叉核对(编译期 `static_assert`) |
-
-**载体形态分类(⛔ 否则 T1/T2 的判定尺度不统一)**：
-
-| 形态 | 适用族 | T1 / T2 的等价要求 |
-|---|---|---|
-| **状态矩阵型** | TileLink-C · CXL 2.0 / 3.0 | 态集 × 事件集矩阵 + 逐格 `basis`/`ref` + 删格必红 |
-| **opcode / 事件表型** | CHI RN-F | 表级 `ref` + 表完备性 `static_assert`(⛔ **不要求**逐格 basis —— 其表是 opcode→channel/flow,**不是**态 × 事件矩阵) |
-
-**T3 普查三要素(定义 —— 防下一个未定义术语)**：
-
-| 要素 | 内容 |
-|---|---|
-| **行宇宙** | 「平台消息/意图面 → Event 轴」的**全部行**(哪些消息/意图 × 各事件)—— **逐行列出,不是抽样** |
-| **锚标准** | 映射行的合法锚 = **规范条款级定位**;若某行只靠仓内构造(如 `ADR-CEP-12` 的 6 类消息类)⇒ 须标 `self-derived` 并**显式登记**,⛔ 不得当规范锚 |
-| **交付物与登记位置** | 映射表进**规约载体**(编译期锁)+ 逐行 `basis` + `ref`;⛔ 悬空判据禁令 ⇒ 载体不存在前该判据**不可执行** |
-
-> ⚠️ **两轴不同 artifact**:adapter 内「逐消息表」的映射目标是**消息类**(`ADR-CEP-12`),
-> 与 T3 的 **Event 轴**不同 ⇒ ⛔ 不得据「adapter 已有逐消息表」宣称 T3 已满足。
-
-**来源效力分档(适用新族是否计入,⛔ 不追溯既有格)**：
-
-| 档 | 语义 | 可否计入「转移表真源」 |
-|---|---|---|
-| **规范条款级(`Direct`)** | 规范正文的 §/Table 级定位 | ✅ 可计入 |
-| **人类成员条款摘要** | 人类按条款摘录 + 签署,含条款定位 | ✅ 可计入(**前提**:AI 不接触规范正文) |
-| **公开非规范来源** | 博客 / 内核文档 / 厂商补丁 / webinar / 论文摘要 | ❌ **不构成** `Direct`;可作**探索载体**(弱档 + `pending=true` + fail-closed)但**不计入** |
-| **仓内自构造(`self-derived`)** | 仅由本仓决策定义(如 6 类消息类) | ❌ 不计入 ⇒ 须显式登记 |
-
-> **域边界(B3a vs B3b)**:同为非规范材料,**声明域**可被机器消费(实例声明经装配闸消费),
-> **矩阵域**必须 fail-closed —— 理由是**错误代价不对称**:声明错 ⇒ 能力声明失准(可实验证伪、可回滚);
-> 矩阵格错 ⇒ **引擎静默实现错误状态转移**且看起来权威。
-> **carve-out(⛔ 不追溯)**:既有载体的 `basis` 枚举**注释语义不变**,其效力由各自 change 链授权。
-
-**判据纪律(硬句)**:
-- T1–T4 **合取**;任一子集 ✅ **不构成**触发、**不构成**达成度、**不得**作为立项 / 补引擎依据;
-- 达成度**只许一个状态 token**(`✅ 达成 / ⛔ 冻结 / ⏭ 受限`),⛔ 不得出现「T1✅」字样;
-- 逐要件 grid 只许留在附录,表头须写「**非判定粒度**」。
-
 ### 5.2 目录策略可插拔(Sharer Tracker 5 实现,per `ADR-CEP-04 §2`)
-
-| 实现 | scope | completeness | authority | aggregation_at | 适用 |
-|------|-------|--------------|-----------|----------------|------|
-| `FullMapDirectory` | SYSTEM | EXACT | GLOBAL | HOME | CHI HN-F 精确目录 |
-| `SparseSnoopFilter` | SYSTEM | CONSERVATIVE | GLOBAL | HOME | CHI SF / CXL 2.0 Host SF(宁多探不漏探)|
-| `DcohSymmetric` | LOCAL_MEMORY_REGION | **必须 CONSERVATIVE** | LOCAL_HINT | **HOME** | CXL 3.0 对称(per-device DCOH)|
-| `TreeManager` | SUBTREE | EXACT | LOCAL | TREE_PARENT | TileLink ClientMetadata |
-| `BroadcastNull` | NONE | EXACT(degenerate) | NONE | NONE | 无目录基线(target = all)|
-
-**caps descriptor 替代 bool**(per `ADR-CEP-04 §2 Decision 3`):`scope` / `completeness` / `authority` / `aggregation_at` 四属性 struct,禁止任何 `is_distributed` / `is_central` bool flag。
-
-**DCOH 完备性契约**(正确性命门):`CONSERVATIVE` = **绝不漏 sharer**(可超集);`PARTIAL` 必须声明 broadcast fallback;禁止无 fallback 的 PARTIAL。
 
 ### 5.3 集合通信旁路平面(per `ADR-CEP-03`)
 
-**原语最小集**:`{REDUCE, BROADCAST, MULTICAST, BARRIER}`(AllReduce = REDUCE + BROADCAST 复合,不列原语)。
-
-**SHARP atomic vs cache-coherent atomic 区分**(5 条防误分类规则,per `ADR-CEP-03 §3.1`):
-
-| 规则 | 内容 |
-|------|------|
-| **R1** | opcode 永远不作分类器(源端插件只发一种 ATOMIC)|
-| **R2** | 唯一分类点在 fabric ingress:`(dest_addr ∩ collective_region_table) && group_epoch_valid` |
-| **R3** | 区域互斥强制(一个地址不得同时 SHARP 已注册 + coherence-cacheable;组注册时 drain)|
-| **R4** | epoch 纪律(group_destroy 后区域回归 coherence 域;epoch 未 commit 前 coherence atomic = 正常服务)|
-| **R5** | 可观测性(divert 计数器 + fail-stop 断言)|
-
-**跨平面 ordering 契约**(5 场景,per `ADR-CEP-03 §3.3`):Coherent atomic ↔ SHARP reduce 同地址时,前者须先 completion、后者须先 commit;复合流由 Core 层编排,**禁止**通过拓宽 coherence 事务集表达。
-
 ### 5.4 Bundle 约束
-
-- **协议 Bundle**(网络层,项目级):`NoCFlitBundle`(16 字段)/ `PcieTlpBundle`(frozen)/ `Axi4Bundle`(≥5 消费者)/ MSI-X / DLLP / TLP wire
-- **业务 Bundle**(业务层,模块 owner):`CacheReqBundle` / `CacheRespBundle` / `GmmuPteBundle` / `SdmaCmdBundle` / `DoorbellBundle` / `CrBundle`(APB-lite LWC)/ `MsixBundle`
-- **跨模块共享的业务 Bundle**(第三类:业务语义字段 + 项目级 owner,真源 1 `06 号 §3.3`):`CohIfBundle`(`include/bundles/cep_coherence_bundles_tlm.hh`)—— 承载 canonical 10 流中**跨 Stub↔PE 边界的 5 条 RN-side 流**(`request` / `completion` / `snoop` / `snoop_resp` / `writeback`;由**强类型** `flow_id` 区分,域外 5 条流**类型不可表达**);**不含网络层字段**;**取网络侧演进纪律**
-- **编译期锁**:`BUNDLE_FIELD_WIDTH` static_assert + `is_trivially_copyable` 断言
-- **不做**:协议专属字段泄漏进共享抽象(per `ADR-CEP-04 §3.2` 规范 intent 原则)
-
----
 
 ## 6. 仿真语义与集成 seam
 
+> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/simulation-and-experiment.md`](../cep/simulation-and-experiment.md)。
+> ⚠️ **按层分流**:6.1 / 6.2 / 6.4 → `simulation-and-experiment.md` · **6.3 / 6.3.1(传输层装配 seam)→ `fabric-transport.md`**。
+
 ### 6.1 simulation_mode 单一维度(per `ADR-CEP-07 §2 Decision 1`)
-
-| 模式 | 含义 | 延迟 | 何时用 |
-|------|------|------|--------|
-| `functional` | 业务/网络逻辑正确性验证 | **0** | 前期性能建模期 |
-| `timing` | 周期精确仿真 | > 0 | 后期协议特化时 |
-
-**真源**:`06 v0.4 §5.1` + `01-hybrid §4.7`(per oracle v0.4 B3-5 实证 — 06 §4.7 不存在)。
-
-**不引入 `network.mode`**:协议特化是**工程**(改模块代码),不是 JSON 字段切换(per `06 §5.2` gem5 SLICC 经验)。
 
 ### 6.2 两种模式的推进差异
 
-| 仿真语义 | coherence 流推进 | group-scoped completion 推进 |
-|---------|------------------|-------------------------------|
-| `functional` | 同步直调(per `SimplePort::send`);事务完成 = 单次 tick 即达 | rendezvous 等待 = 占位(0 cycle),全组 ack 后即时 emit |
-| `timing` | cycle-accurate;跨 cycle 累加 | rendezvous 等待 = 累计 cycle;未到齐不推进仿真周期 |
-
-**实现**:`ProtocolEngine::advance_cycle()` 虚函数(per `chstream_module.hh:73` 默认空实现)按 mode 分发 — functional: no-op;timing: cycle accumulation。
-
 ### 6.3 ModuleFactory 集成 seam(per `ADR-CEP-07 §2 Decision 3`)
-
-**真实注册机制**(不发明不存在的宏形式,per oracle v0.4 B7 实证):
-
-| 模块类型 | 基类 | 注册机制 |
-|---------|------|----------|
-| **ProtocolEngine** 派生类 | `ChStreamModuleBase` | `ModuleFactory::registerObject<T>`(per `include/core/module_factory.hh:122`)|
-| **SharerTracker** 派生类 | `SimModule`(per `module_factory.hh:135` `static_assert std::is_base_of_v<SimModule, T>`)| `REGISTER_MODULE(T)`(per `include/modules_cluster.hh:41-105`,合法参数化宏)|
-| **FabricCollectivePlane** 派生类 | `SimModule` | `REGISTER_MODULE(T)` |
-| **StubCacheCore** | `ChStreamModuleBase` | `ModuleFactory::registerObject<T>` + `ChStreamAdapterFactory::create` |
-
-> **注意**:`REGISTER_CHSTREAM`(`include/chstream_register.hh:50`)与 `REGISTER_OBJECT`(`include/modules.hh:30`)**均无参数**,不存在 `REGISTER_CHSTREAM(T)` / `REGISTER_OBJECT(T)` 形式。
-
-**冻结面**:CEP 不进 `cpptlm_emulator.h`(23 ABI 零 diff);不改 `include/tlm/pcie/pcie_endpoint_tlm.h` `[[deprecated]]` 状态;不接管 `dgpu_board_shell.cc`;不破 `include/tlm/cache_tlm.hh`。
-
 
 #### 6.3.1 「经网络」的定义与拓扑分档(J-9)
 
-> **本节解决什么**:「**事务经网络抵达对端**」这个说法在仓内**极易假绿** —— 本节钉死
-> 「网络」与「桥」各指什么,并给出**按拓扑分档的可机判判据**。
-
-**「网络」= ChStream `connections`(可带 `latency`)。**
-**桥 = 装配期投影登记器,⛔ 不在数据路径上** —— 它是**无状态投影器**(`pack`/`unpack`
-只搬共有字段 + `flow_id → flit_category` 有损投影),`src/` 中**零**调用点。
-
-⇒ ⛔ **「事务穿过桥抵达对端」是假绿表述** ⇒ 必须**拆成两条独立判据**:
-
-| 判据 | 内容 |
-|---|---|
-| **① 互联可达** | 「一次事务经**带 latency 的 ChStream 连接**抵达对端」—— ⛔ **不经桥** |
-| **② 桥投影** | **测试级**断言(构造 `CohIfBundle` → `pack` → 断言 `NoCFlitBundle.flit_category` 正确 → `unpack` → 断言共有字段恒等)⇒ ⛔ **不得**写成「事务穿过桥」 |
-
-> ⚠️ 仓内**不存在** Router + flit 级路径 ⇒ 拓扑的**名称 / 描述 SHALL 如实反映**这一点。
-
-**J-9 拓扑分档判据(机器判;J-9 是 J-1 的分档细化,⛔ 不改 J-1~J-8 的编号与含义)**：
-
-| 拓扑 | 判据 |
-|---|---|
-| **A(直连)** | 装配闸 `SKIP`(⇒ `cep.bridges` 键**缺省**)∧ `cep.bridges` **不存在** ∧ 所有 `connections` **无 `latency > 0`** |
-| **B(经网络)** | 装配闸 `PASS` ∧ `cep.bridges` **恰好 1 条** ∧ 该条 `modules` **恰好 3** ∧ **至少 1 条** `connections` 带 `latency > 0` ∧ 三个模块的**桥指针**指向**同一 `bridge_id`** |
-
-**为什么 A 必须零延迟(因果序 ⛔ 不可颠倒)**：
-- **主理由 = 判别力**:若 A 也带 `latency` ⇒ B 的「互联可达」面**退化为 A 的子集** ⇒ 两拓扑并存失去主要依据;
-- **次理由 = latency 断言纯度**:A 是全绿载体 ⇒ 其 latency 断言须**只**反映模块/协议处理延迟,⛔ 不混入连接延迟。
-
-**两条实施契约(缺一 ⇒ J-9 落空)**：
-1. B 的 bridge entry **必须**带 `protocol_instance` 且命名一个**已声明**实例(缺失或未声明 ⇒ 判红);
-2. `ChStreamModuleBase` **无 `bridge()` 访问器**(`attach_protocol_bridge` 是虚函数,`bridge()` 只在 `ProtocolEngineBase`)
-   ⇒ 「逐模块桥指针指向同一 `bridge_id`」预设了当前**不存在**的能力 ⇒ 契约须写明:
-   **wrapper / home 模型自行存储桥指针并暴露只读访问器**(⛔ 不动基类)。
-
-> ⚠️ **桥成员互斥**:`ProtocolEngineBase::bridge_` 是**单槽**且 `attach_protocol_bridge` 直接赋值
-> ⇒ 同一模块被**多个** bridge entry 挂载 ⇒ **桥被静默覆盖而装配仍返回 true** ⇒ ⛔ 不得让同一模块出现在两个 entry。
-
 ### 6.4 Null 实现(解耦测试兜底)
-
-- **`NullProtocolEngine`**:10 流覆盖矩阵 — 流 1/3/4/5/6/7/10 no-op;流 2 immediate-complete;流 8 immediate-resolve;流 9 immediate-complete
-- **`NullCollectivePlane`**:所有原语返回"不支持" — CHI / CXL 配置下的默认绑定,是"启停干净"的可测试载体
-
----
 
 ## 7. 实验输出协议
 
+> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/simulation-and-experiment.md`](../cep/simulation-and-experiment.md)。
+> ⚠️ **本节全部实体**在 `simulation-and-experiment.md`。
+
 ### 7.1 4 件套(per `ADR-CEP-06 §2`)
-
-```
-experimental/<run_id>/
-  ├── simulation_config.json      # JSON 配置快照(输入)
-  ├── trace.h5                   # HDF5 trace(per cycle per txn 事件)
-  ├── metrics.json               # 关键 metric 数值
-  └── report.html                # A/B 对比报表
-```
-
-`run_id` 格式:`{protocol}-{topology}-{directory}-{timestamp}`
 
 ### 7.2 13 个必纳 metric
 
-| Metric | 类型 | 单位 | 含义 |
-|--------|------|------|------|
-| `total_cycles` | int | cycles | 仿真总周期数 |
-| `total_transactions` | int | count | 完成事务总数 |
-| `transactions_per_cycle` | float | txn/cycle | 吞吐 |
-| `avg_latency_cycles` | float | cycles | 平均事务延迟(request→completion) |
-| `p50_latency_cycles` | float | cycles | 50 分位延迟 |
-| `p95_latency_cycles` | float | cycles | 95 分位延迟 |
-| `p99_latency_cycles` | float | cycles | 99 分位延迟 |
-| `max_latency_cycles` | float | cycles | 最大延迟 |
-| `coherence_stalls` | int | count | coherence 事务因 Ordering/credit/snoop 等待的周期数 |
-| `collective_stalls` | int | count | collective 事务因 group rendezvous 等待的周期数 |
-| `directory_misses` | int | count | directory lookup 失败次数 |
-| `deadlock_violations` | int | count | 死锁违例次数(应 0,否则 fail)|
-| `memory_violations` | int | count | 一致性违例次数(应 0,否则 fail)|
-
-**4 个可选 metric**:`link_utilization_per_link` / `vc_stall_per_vc` / `snoop_fanout_per_request` / `directory_size_distribution`
-
-**兜底契约**:不可观测 metric 标 `not-collected` + `_not_collected_reason`,**禁止**省略 / 写 0 / 写 -1。
-
 ### 7.2.1 实验验证深度契约(per `ADR-CEP-06 §3`)
-
-- 每次实验**必须**声明 `verification_mode` ∈ {`exhaustive`, `bounded_random`, `sampled`} 与 `verification_scope`(规模上限描述)
-- `bounded_random` / `sampled` 的结果**不得**表述为「已证明无死锁 / 无违例」—— `deadlock_violations == 0` 只代表「在声明的 `verification_scope` 内未观测到」
-- 平台**不承诺**「任意配置都能穷尽验证」—— 这是规模事实,不是实现缺陷
-
-> 完整契约见 [`ADR-CEP-06 §3`](../adr/ADR-CEP-06-experiment-protocol.md)(含一手规模上限依据:极端配置需 1TB RAM + 数小时)。**本节不复制具体数字,避免第二真源。**
-
 
 #### 7.2.2 「全绿」的两级判定(run-validity / hypothesis-verdict)
 
-> **本节解决什么**:「全绿」曾是**单一词**:既被读成「13 键全部有值」,也被读成「假设成立」
-> ⇒ 两者达成度天差地别。本节把它**拆成两级,各自独立可判**。
-
-| 级 | 判据 | ⛔ 不得混用 |
-|---|---|---|
-| **run-validity**(运行有效性) | ① 13 键**齐备**;② 每值**要么真实数值、要么带 reason 的 `not-collected`**;③ `not-collected ⊆` **预登记** out-of-scope 集;④ **违例类**若 `not-collected` ⇒ IC3 判「**⚪ 不适用**」 | ⛔ **不是**「13 键全部有值」 |
-| **hypothesis-verdict**(假设结论) | §9 判据逐条标「**测量了 / 未测量 / fail**」;未测量**不继承** pass | ⛔ 未测量 ⛔ 不得算 pass |
-
-**预登记闸是本判定的承重结构**:若 emit 端可**事后自由**标 `not-collected`,
-则「结构零冒充实测」只是被替换成「`not-collected` 冒充预声明」—— **自欺升级**而非消除。
-⇒ 预登记集合的载体在 **objective / plan 域(评审过的设计面)**,⛔ **不在** `metrics.json`(被试者自证的报表面)。
-
-**违例类允许 `not-collected`(⛔ 禁止会把未测量写成 0)**:若禁止,emit 的唯一合规出路就是
-**把未测量写成 0**。正确规则 = **允许 + 连带证据降级**(IC3 判「不适用」+ 不得作一致性安全断言的证据 + 报告层 badge)。
-
 ### 7.3 sweep / A-B 工具
-
-| 工具 | 功能 |
-|------|------|
-| `tools/run_sweep.py` | 维度组合(protocol × topology × directory)→ N 个 4 件套 + `sweep_summary.csv` |
-| `tools/ab_compare.py` | baseline vs target → `delta_metrics.json` + CDF overlay + `report.html` |
-| `tools/render_report.py` | `metrics.json` + `trace.h5` → `report.html`(summary 表 + latency CDF + violation badges) |
-| `tools/aggregate.py` / `plot.py` / `recommend.py` | 聚合 / 排名图 / 阈值建议 |
-
----
 
 ## 8. 演进路线与阶段边界
 
@@ -1774,4 +1429,12 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 | §6.3.1 「经网络」定义 + J-9 拓扑分档 | 行 534 | 拓扑 A/B 的**可机判判据**;⛔ 防「事务穿过桥」假绿 |
 | §7.2.2 「全绿」两级判定 | 行 624 | run-validity / hypothesis-verdict 分离 |
 | §8.5 文档层治理不变量 | 行 731 | 跨仓锚点两类处置 + ADR 编辑禁令 + 决策块计数口径 |
+| **子文档:第 1 层** | [`cep/stub-cache-core.md`](cep/stub-cache-core.md) | §3.2 / §3.3 实体 |
+| **子文档:第 2 层** | [`cep/coherence-interface.md`](cep/coherence-interface.md) | §3.1 / §5.4 实体 |
+| **子文档:第 3 层** | [`cep/protocol-engine.md`](cep/protocol-engine.md) | §5.1(含 5.1.1~5.1.5)实体 |
+| **子文档:第 4 层** | [`cep/directory-ordering.md`](cep/directory-ordering.md) | §5.2 实体 |
+| **子文档:第 5 层** | [`cep/collective-plane.md`](cep/collective-plane.md) | §5.3 实体 |
+| **子文档:第 6 层(传输层)** | [`cep/fabric-transport.md`](cep/fabric-transport.md) | §6.3 / §6.3.1 实体 |
+| **子文档:仿真与实验** | [`cep/simulation-and-experiment.md`](cep/simulation-and-experiment.md) | §6.1/6.2/6.4 + §7 实体 |
+| **子文档:Core/TrafficGen** | [`cep/core-traffic-gen.md`](cep/core-traffic-gen.md) | 骨架(A 类待批 4) |
 | `obj-cep-platform.md` §6.2 | 台账 | 终局 DoD 12 条 |

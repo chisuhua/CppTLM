@@ -383,8 +383,8 @@ ArchForge 侧承载(G6/G7/G8/G12)。
       "symbol": "combination_capabilities"
     },
     {
-      "file": "docs/architecture/07-coherence-exploration-platform.md",
-      "line": 310,
+      "file": "docs/architecture/cep/protocol-engine.md",
+      "line": 16,
       "symbol": "16 个 adapter 实例"
     }
   ]
