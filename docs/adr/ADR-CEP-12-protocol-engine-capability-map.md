@@ -981,3 +981,67 @@ CXL / MOESI-GPU / MESIF 走**软件一致性 / 无 collective 能力** ⇒ 强�
 - 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
 
 **关联**:台账 **Entry #316**(授权 + 双审处置)· **#315 / #314**(第 2/1 批)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`
+
+## Status Update 2026-11-11(per 台账 Entry #338)—— 三项**能力映射域**的决策补登(SLICC 备选重评结论 / 声明层 3 项建模假设 / MOESI-GPU 引擎形态限制)
+
+> **性质**:末尾追加 SU(append-only)。⛔ **既有正文与既有 `## Status Update` 段逐字未变**;⛔ **新增 invariant 数 = 0**;⛔ 不改 schema / ABI / 声明面取值。
+> **来源**:`docs/architecture/07-coherence-exploration-platform.md` 的 `Status Update 2026-10-30(第十六则)` 与 `Status Update 2026-11-04`(Stage 3 收口)—— 二者的 **A 类(改变架构约束)** 部分按裁定表由本 SU 承接;其 **E 类(判据/定义)** 部分已在 `07 号` 正文(§5.1.5 / §8.5)落位,本 SU **不重复**。
+> **冻结面**:本 ADR 属 M1 冻结集 ⇒ 本段走**两步授权**(授权记录 = 台账 **Entry #338**)。
+
+### ① SLICC 式备选重评的**触发条件集合修订**(承接本 ADR §8.4 登记的备选;结论见既有 SU)
+
+**结论:维持现行 per-network 嵌套形态**(⛔ **不**迁移 SLICC 式「协议本地虚拟网络 + 装配绑定产物」)。
+> ⚠️ **本段是「触发条件集合的修订」,不是第二次独立重评** —— 同结论已由本 ADR 既有 SU(2026-10-30 · Entry #106)登记;本段**取代该 SU 的触发条件集合**,**结论不变**。
+
+理由按权重:
+
+1. **收益尚不成立** —— 重复在**除 `tilelink_c` 外的 6 个实例**间是**机械**的;而 `tilelink_c` 是**已登记的例外**(per `ADR-CEP-01` E.3.1 段:`compute_noc` 上 `tilelink_c` 与其余 6 实例映射不一致 ⇒ **该网不得用 M-2**)⇒ 不构成「零缺陷」结论。
+   ⚠️ **既有防线均不拦截该不一致**:`INV-CEP-12-IC2` 的三条件(per-network 键对称 / vc_id 槽位上界 / 6 类词表)**不含跨实例一致性**;装配期无环闸按 `ADR-CEP-01` §E.4 对 `vc_binding` 语义**结构性恒真**(任一实例的图 = 声明边表的诱导子图 ⇒ DAG 的子图仍是 DAG)⇒ 无环 verdict **与类→VC 的语义分配无关**。
+2. **代价是跨仓的** —— 迁移将推翻已交付的嵌套形态 ⇒ 需重开跨仓谈判;**在刚收敛时重开谈判**的成本高于收益。
+3. **备选不被杀死** —— ⛔ 本条**不注销** §8.4 的备选,而是**改绑到更强的触发条件**:
+
+| 触发条件 | 判定方式 |
+|---|---|
+| **出现第 3 张 network**(当前 2 张) | `fabric.json` 的 `networks` 长度 ≥ 3 |
+| **某实例需要跨 network 的联合排序**(单实例无法用 per-network 绑定表达) | 该实例的 `ordering_assumption` / `vc_binding` 出现**跨 network** 的联合约束(当前全部为网络特化) |
+| **Stage 2 引入 fabric 侧绑定面消费者** | 出现消费 `(协议, vnet) → (network, vc_id)` 绑定产物的载体 |
+| **出现第 4 个 `implemented` 实例** | `protocol_instances.json` 中 `status = implemented` 的实例数 ≥ 4 |
+
+> ⚠️ **第 4 条已被事实超越**:`implemented` 实例数现为 **8** ⇒ 「≥ 4」已**恒真** ⇒ 该条**不再具备触发力**,保留仅为与既有 SU 的集合对齐 ⇒ **实际有效触发 = 前 3 条**。
+> ⇒ **触发时须重新普查并按本 ADR 的判定式重判**(⛔ 不得直接沿用本结论)。
+
+### ② 声明层 3 项建模假设的**处置**
+
+**实测更正(本 SU 的事实基础;逐项直读 `include/tlm/cep/protocol_instances.json` 的 **8 个实例**)**:
+
+- `consistency_labels` 是 **`{read, write}` 二元组**;`SC/SC` = **5/8** 实例(`chi_rnf` / `cxl_2_0` / `cxl_3_0_symmetric` / `tilelink_c` / `nvlink_4`)—— 其中 **4 个工业族 + 1 个学术族**(`tilelink_c` 的 `family = academic`);`moesi_gpu` = `RC-data`/`RC-release`;`mesif` = `RC-acquire`/`RC-release`;`ualink_4` = `PLO`/`PLO`
+- `writeback` 是 **`flow_support` 的成员**(canonical 10 流之一)—— ⛔ **不是** 6 类消息类(per 本 ADR 的 **R-T3** —— 该条定义在本 ADR 的 **Status Update(2026-11-01, Entry #138)** 内,⛔ **不是**正文);取值 **7/8** 为 `true`(`ualink_4` = `false`)
+- `combination_capabilities` 的三维 = `concurrent` / `hierarchical` / `heterogeneous`;全 `true` = **7/8**(`ualink_4.hierarchical = false`)
+
+| 假设 | 处置 | 依据 |
+|---|---|---|
+| `combination_capabilities` 三维全 true(**7/8**) | **维持** + 登记为「**声明入口 + 实验证伪**」 | 组合能力不进 DoD,走人工声明 + 实验证伪 |
+| `consistency_labels = SC/SC`(**5/8**,含 1 学术族) | **补 litmus 证伪判据**:排序 / litmus 实验结果与 SC 期望不符 ⇒ 该实例假设标 `violated` | SC 是**强假设**,必须可证伪;⚠️ **落地载体与 owner 待指定**(候选:现有 H 系列实验 harness;owner = builder;触发 = 首次对某实例跑 litmus 时);⛔ **本条是决策,不是已实施** |
+| `flow_support.writeback = true`(**7/8**) | **登记为建模简化** + 加限定语 | ⚠️ 最可疑项:**3 个实例的 `sharer_tracker.impl = 不参与`**(`chi_rnf` / `cxl_2_0` / `ualink_4`;其 `caps` 的 `scope`/`authority`/`aggregation_at` 均为 `NONE`,但 `completeness` 恒为 `EXACT`/`CONSERVATIVE` ⇒ **不是「全 NONE」**)仍声明 `writeback = true` ⇒ 存在语义张力。限定语:**「表示协议语义支持写回,不表示该实例的 tracker 会利用」**;⛔ 暂不删(删需改 3 个实例声明) |
+
+
+### ③ `MoesiGpuProtocolEngine` 的**形态限制**登记(**设计内限制,非债务**)
+
+**实测(逐项直读源码与声明面)**:
+- **canonical 10 流的回调 = 纯计数**(11 个 `override` 标记 = 10 个流回调 + 1 个析构);`on_address_resolve` 另写 `out.home_node = 0`(⛔ 非空体,但非状态迁移)
+- **无 emit / egress**(⛔ 引擎不主动发起)
+- **已注册**:`include/chstream_register.hh` 有 `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("MoesiGpuProtocolEngine", ...)`
+- **已有 JSON 拓扑**:`configs/cep_moesi_gpu_pe_minimal.json` 声明该类型
+- **状态迁移入口是显式 API** `submit_local_request()`(表驱动迁移 + 补偿记录)—— **不是** canonical 流回调
+⇒ **形态**:**canonical 10 流回调 = 纯计数**,**引擎发起侧无载体**(状态迁移须经显式 API 调用)⇒ L4 事务级 E2E **只能单向**(外部驱动事件 → 验证计数 + 补偿记录);反向(引擎发起 → 对端响应)**无载体**。 亦常被称作「10 流记账壳」。
+⇒ **处置**:登记为**设计内限制**,⛔ **不**列为债务、⛔ **不**补 emit(补 emit = 重开既有决策且无端到端消费者 ⇒ 过度工程)。
+
+### ④ Verification(可勾选 · 前瞻)
+
+- [x] ① 的结论(维持嵌套形态)+ **4 条**改绑触发条件已逐条登记(第 4 条「`implemented` ≥ 4」已被事实超越 ⇒ **实际有效 3 条**),且**不注销** §8.4 的备选
+- [x] ② 的 3 项假设处置已逐项给出,且**修正**了 SC/SC 的覆盖口径(**5/8**,含 1 学术族)、`writeback` 的字段形态(**`flow_support` 成员,非 6 类消息类**)与 `combination_capabilities` 的分母(**7/8**)
+- [x] ③ 的形态限制按**实测**(10 流回调纯计数 + `on_address_resolve` 另写 home_node + **已注册** + **已有 JSON 拓扑** + 迁移入口为显式 API)登记,非「零注册 / 无拓扑」
+- [x] ⛔ 既有正文与既有 SU 段**逐字未变**;**新增 invariant 数 = 0**;⛔ 未宣称任何既有判据已机器化
+- [x] 冻结面两步授权已执行:台账 **Entry #338** 授权 → **commit 本段 + 其余 3 段 ADR SU + `cep/fabric-transport.md`** → `cep_freeze_check.sh --update --authorized-by "Entry #338"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #338**(授权)· **#332**(A1 终态 DoD Go 口径裁决 —— 口径 ④ 的 ratify 门**独立**于本 SU)· **#106**(SLICC 备选重评的原始登记)· **#214**(Stage 3 收口)· **#288 / #292**(另两则 A 类决策的承载 ADR)· `docs/architecture/cep/protocol-engine.md` §5.1.5(T1–T4 判定式 + 来源效力分档 —— 本 SU 的 E 类对应面;≡ `07 号` §5.1.5 指针桩)· `07 号` §8.5(治理不变量)

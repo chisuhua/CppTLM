@@ -614,3 +614,38 @@ stub 是 RN ⇒ miss 时发起 `request` 并**挂起等 `completion`**;而**全�
 - [ ] 冻结面两步授权已执行:台账 **Entry #304** 授权 → **commit 本段 + `07 号` SU · 十五 + `ADR-CEP-06` SU** → `cep_freeze_check.sh --update --authorized-by "Entry #304"` → **清单单独 commit** → 无参复验 provenance 通过
 
 **关联**:台账 **Entry #304**(授权)· **#297**(A0 授权 `:56` 单条 MODIFIES)· **#288**(决策 9 解除条件)· **#293**(声明面裁定 甲)· `07 号` **SU · 十五** · `ADR-CEP-06` SU 2026-11-09 · 一 · `openspec/changes/cpptlm-cep-stub-cache-chstream-surface/`
+
+## Status Update 2026-11-11(per 台账 Entry #338)—— 「Core·TrafficGen 主干」的**六项装配决策**补登(ASM-1 / ASM-3 / ASM-4 / ASM-7 / ASM-8 / ASM-9)
+
+> **性质**:末尾追加 SU(append-only)。⛔ **既有正文与既有 Status Update 段逐字未变**;⛔ **新增 invariant 数 = 0**;⛔ 不改 schema / ABI。
+> **来源**:`docs/architecture/07-coherence-exploration-platform.md` 的 `Status Update 2026-11-08 · 十一`(10 条统一)—— 其 **A 类(改变架构约束)** 部分由本 SU 承接。
+> **已由本 ADR 既有 SU 覆盖、本 SU 不重复**:ASM-0(完成者角色)· ASM-2(命中路径回响应)· ASM-5(两拓扑并存)· ASM-6(冻结 spec MODIFIES)· ASM-10(计数纪律)。
+> **冻结面**:本 ADR 属 M1 冻结集 ⇒ 本段走**两步授权**(授权记录 = 台账 **Entry #338**)。
+> **编号口径**:本 SU 用 **`ASM-N`**(Assembly Semantics,N 沿用 `07 号` SU · 十一 ① 的 **D-N** 序号 ⇒ 本段覆盖 **ASM-1 / 3 / 4 / 7 / 8 / 9**),⛔ **刻意避开 `D-N`** —— 本 ADR 既有内容已用 `D-N` 指「**审查报告 D 编号**」(`D-7` / `D-8` 在该体系里是「治理动作、不进本 ADR」)⇒ 同名双义会误导。
+
+### ① 六项补登的决策(逐条)
+
+| # | 决策 | 结论 |
+|---|---|---|
+| **ASM-1** | 可观测面与 13 必纳 metric 的来源 | **latency 测发起端(wrapper)**;wrapper **只暴露原始观测事实**,聚合由 harness 消费 ⇒ **零基类改动、零既有引擎波及** |
+| **ASM-3** | 引擎可观测面的扩展边界 | wrapper 暴露**公开观测 API**;违例类在不适用场景 ⇒ `not-collected` + **显式登记降格**;第一批目标族 = **CHI RN-F**(有回响应 + 有并发写) |
+| **ASM-4** | 「接收器」的角色 | **不新建 Sink**(后置为 `ab_compare` 的 baseline 侧)+ wrapper **单一模块双角色** |
+| **ASM-7** | 流量模式与可复现性 | `SEQUENTIAL`(基线)+ `RANDOM`(**固定种子并入 config 快照**;因需真实并发写以使 `memory_violations = 0` 有意义);⛔ `TRACE` 本轮不做。⚠️ **本决策的两项开放项**:① `uniform_int_distribution` 跨 stdlib **非位精确** ⇒ config 快照须记工具链;② `seed` 是否进 **snapshot 文件**待实施期确认。⚠️ **原文的「今无落点」表述已过时**(种子注入面已于 2026-11-08 就位,见台账 Entry #288 之后的实现回执)⇒ ⛔ **本段不重复该表述,也不宣称落地状态**(状态面见台账) |
+| **ASM-8** | 判据清单 | **8 条**:J-1 装配 · J-2 事务抵达 · J-3 端到端响应完整 · J-4 **IC3 绿 + run-validity 绿**(⛔ **不是**「13 键全部有值」—— 保留 `not-collected` 合法出口)· J-5 **决定性变异** · J-6 指标自洽 · J-7 桥投影对称 · J-8 B 不承载全绿。⚠️ **两项待补**:① run 的 `hypothesis_id` **须绑定 `H3`**(唯一双违例类均须实测的已登记行);② 三键(`coherence_stalls` / `collective_stalls` / `directory_misses`)的**测量归属与「真实 0」口径**待定。⚠️ **本段不给绑定机制/载体现状**(状态面见台账) |
+| **ASM-9** | 实验产物规范 | `experimental/run-<ts>-cep-e2e-{A\|B}/` + 4 件套;⛔ 产物**不入库** ⇒ **入台账的是元数据**(run id · config 快照 sha256 · 13 键结论 · IC3 verdict · 拓扑标记);`preregistration.json` **不动** |
+
+### ② 实施前的文档纪律(⛔ **不得**预先宣称)
+
+- 上表登记的是**架构决策**,⛔ **不是**落地事实 ⇒ 凡涉及的文档面 **不得**出现「已具备端到端可测能力」「TrafficGen 已接入 CEP」「13 键已全绿」类表述;
+- ⇒ 落地状态的更新由**载体文件与台账**承担(⛔ 不在本 SU)。
+
+### ③ Verification(可勾选 · 前瞻)
+
+- [x] 六项补登各有**可执行文本**且与本 ADR 既有 SU **互不矛盾**(已覆盖的 5 项不重复登记)
+- [x] ② 的「实施前不得宣称」纪律已登记;本 SU **无**任何落地宣称
+- [x] ASM-7 的两项**开放项**(跨 stdlib 位精确性 / `seed` 进 snapshot 的落点)已登记为开放项;⛔ 未宣称落地状态
+- [x] ASM-8 的两项**待补**(hypothesis_id 绑定 / 三键测量归属)已登记为待补,未写成已闭合
+- [x] ⛔ 既有正文与既有 SU 段**逐字未变**;**新增 invariant 数 = 0**
+- [x] 冻结面两步授权已执行:台账 **Entry #338** 授权 → **commit 本段 + 其余 3 段 ADR SU + `cep/fabric-transport.md`** → `cep_freeze_check.sh --update --authorized-by "Entry #338"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #338**(授权)· **#288**(10 条决策 + 原授权)· **#292**(ASM-0 更正 / J-9)· **#293**(声明面落点 = 甲)· **#304**(决策 9 的实施后状态)· `.rddf/reviews/cep-ualink-e2e-framework-discussion.md`(讨论纪要 —— 六项的逐条依据)· `docs/architecture/cep/fabric-transport.md`(J-9 拓扑分档判据 + **混排装配规则**的镜像面)
