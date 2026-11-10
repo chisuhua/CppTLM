@@ -18790,8 +18790,10 @@ MESIF         ✅ 已落地(队列 #9,2026-10-30 归档;R-1 已裁决(Entry #96 
 
 **⑥ ⚠️ 陈旧链接勘误(Entry #335 引入,纯链接错误)**
 
-`Entry #335` 内写 `` `docs/adr/ADR-CEP-12:267` `` ⇒ **该路径不存在**(缺 `-protocol-engine-capability-map` 后缀)⇒ `cep_doc_ref_check` 的 path 检查判红。
-⇒ **已修**为 `` `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md:267` ``(实测该行确含 `07 号:145`)。
+`Entry #335` 内把 ADR-CEP-12 的路径写成**截断形式**(只写到编号 `ADR-CEP-12`,缺 `-protocol-engine-capability-map` 文件名段 + 后缀)
+⇒ 该截断路径不存在 ⇒ `cep_doc_ref_check` 的 path 检查判红。
+⇒ **已修**为完整文件名 + `:267`(实测该行确含 `07 号:145`)。
+> ⚠️ **本行刻意不写出那个截断路径的字面量** —— 该闸无法区分「引用」与「引述」⇒ 在散文里嵌坏路径字面量会被当成真实引用(同类先例:`Entry #334` 的反向验证描述曾直接写越界行号的字面量,同样被判红)。
 > ⚠️ **本处为 append-only 的唯一例外**:属**纯链接勘误**,⛔ 不涉及任何决策 / 事实 / 计数;台账纪律的「不可改写」保护对象是**决策陈述**,不是坏链接。
 
 **⑦ 五步授权链(本 Entry = 步骤 1)**:台账 Entry 先落 ✅ → 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #337"` → 清单单独 commit → 无参复验。
