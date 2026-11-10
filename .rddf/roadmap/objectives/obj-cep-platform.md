@@ -17994,6 +17994,53 @@ note: candidates are:
 **⑧ 关联**:**#321**(R-8 裁决 · **本 Entry 修订其形态与影响面清单**)· **#320**(R-3 实施回执)· **#317**(盘点 · C1 处置前提已被 #321 订正)· **#307**(4 项 oracle 裁决 · C-1 / C-2 / C-3 来源)· **#305 ③ R-8**(残余登记)· `openspec/specs/cep-core-contracts/spec.md:184`(冻结主契约 · 本轮**零 diff**)· `docs/adr/ADR-CEP-NUMBER-MAP.md` · `scripts/test/cep_adr_structural_check.py` · `test/cep_adr_structural_deferrals.json` · oracle(2026-11-10,1 轮,PASS-WITH-NOTES)· critic(2026-11-10,1 轮,REJECT,1 BLOCKER)
 
 
+### Entry #323 — 2026-11-10 [build](**R-8 实施回执**:NUMBER-MAP 第 5 列语义归位为「ADR 文件存在性」+ 口径行 + 结构闸**派生视图** + 登记表两数组清零 ⇒ **冻结主契约零 diff**)
+
+**主题**:实施 **Entry #321**(R-8 裁决)与 **#322**(形态修订 D-1′)。本 Entry 是**实施回执**。
+
+**角色**:architect(裁决 + 冻结面授权 · **#321 / #322**)· builder(实施)· planner(台账)。**KPI**:Proposed **0/3**(路线甲 ⇒ **不建 change** ⇒ **不占 slot**)。
+
+**① 交付面(4 处 + 连带 3 处)**:
+
+| 项 | 内容 |
+|---|---|
+| **D-1′ 第 5 列** | 21 行改 `✅ 已起草` · `CEP-10`(无 ADR 文件)保留 `🟡 待起草` ⇒ 符号由 **5 种形态降为 2 值** ⇒ 生命周期维度上的**镜像面归零** + **CEP-10 占位信号保住** |
+| **D-2′ 口径行** | §2 决策 1 表**紧上方**(五要点 + 例外声明):第 5 列 = 文件存在性 · **不承载**生命周期 · 生命周期真源 = 各 ADR header + SU 链 · **本 ADR 自身亦同此例** · 派生视图获取命令 · 凭据与真源分离 · §6 `✅ 已拍板` 属「决策已定」维度不受本口径覆盖 |
+| **D-3′ 派生视图** | `scripts/test/cep_adr_structural_check.py` 新增 `number_map_ids` / `adr_file_for` / `read_lifecycle_state` / `print_derived_lifecycle_view` ⇒ 左表 = **NUMBER-MAP §2 决策 1 的编号集合** ⇒ `CEP-10` 显式「🟡 未起草(无 ADR 文件)」· 生命周期抽取**锚定首个** `> **状态**:` · 打印**覆盖率** `已解析 N/21` + 未识别者清单 · 输出自带「派生自 header,非权威」口径行 · **纯导航 · 不判红** |
+| **D-4′ 登记表** | `status_drift`(4)+ `map_status_ambiguity`(20)两数组**清零并删除** · `note` 同步 · `schema` v1 → **v2** · 闸的 docstring 同步(N3)· 报告循环保留但改为打印一行「生命周期状态面已归零」(避免「另报」段静默消失) |
+| **D-5′ 修死引用** | `excluded` reason 改引**真裁决** = 台账 **Entry #307 C-1**(分母 = 22 − NUMBER-MAP − 00 宪章 − 00A 锚点表),附 `07 号`「Status Update 2026-11-04(#2)」② 作**职权域佐证**(不作成裁决)⇒ ⛔ **不再引「SU 十五 ②」**(两种读法都落空,per critic S10) |
+| **连带** | §6 决策汇总表第 1 行删「+ 状态」(S1)· `:79` 去重说明删「状态更准确」(S2)· header `v0.6` → **`v0.7`**(N1)· 追加 `## Status Update`(N2) |
+
+**② critic BLOCKER B1 的闭合证据(冻结主契约零 diff)**:
+
+| 处置要求 | 核验 |
+|---|---|
+| 冻结主契约 `openspec/specs/cep-core-contracts/spec.md:184` 要求表项「含议题 / 依赖 / **状态**」⇒ 删列 = 静默改写冻结契约 | ✅ **该 spec 零 diff**(`git diff --stat` 空)⇒ 条款**仍成立**(第 5 列的「状态」= 该编号 ADR 文件的起草状态) |
+| 其归档 delta 副本(`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md:162`)同为冻结成员 | ✅ **零 diff** ⇒ 无需「历史措辞」注记 |
+| 路线甲 ⇒ 零额外五步链 · 不占 KPI slot | ✅ 本轮**只** NUMBER-MAP 一个冻结件走五步链;**未建 change** ⇒ KPI 保持 **0/3** |
+
+**③ 五步链(Entry #321 授权)**:
+台账 **Entry #321** 授权 → 产物 commit `4bb18c5c` → `cep_freeze_check.sh --update --authorized-by "Entry #321"`(清单 diff **恰 4 处**:NUMBER-MAP hash + `authorized_by` + `frozen_at` + `frozen_at_commit`;其余 **41 产物零变化**)→ **清单单独 commit** → 无参复验 **rc=0**(provenance 42 产物一致,commit `4bb18c5c`)。
+
+**④ 决定性变异(2 条,均按正确原因生效)**:
+| 变异 | 结果 |
+|---|---|
+| **① 改一份 ADR 的 header**(`ADR-CEP-13` ⇒ `🟡 起草中(v9.9)`)⇒ 派生表随之变 | ✅ 派生表该行立即变为「起草中」⇒ **证明它是派生而非存储**(per Entry #236 载体咬合纪律) |
+| **② `ADR-CEP-17` 另有 2 条**无 emoji**的 `> **状态**:` 行**(`:311` / `:322`) | ✅ 抽取正确锚定**首个**(`:3` 的已签发行)⇒ 「锚定首个匹配」规则有效 |
+
+**⑤ 验证(实测)**:`ctest` **168/168** · `./test.sh --mode off` **21/21** · `cep_freeze_check` 无参 **rc=0** · `cep_docs_sync_check --strict` ✅ · ADR 结构闸 **4/4**(3 个决定性变异仍红)· `cep_doc_ref_check` ✅ · 索引位置闸 rc=0 · `cep_*.sh` 全绿。
+**形状核验**:编号表 **22 数据行 × 每行 5 格**(⛔ 无列数不齐)。
+
+**⑥ 零 diff 边界(逐条实测)**:`openspec/specs/cep-core-contracts/spec.md` · 其归档 delta 副本 · `docs/architecture/07-coherence-exploration-platform.md` · `docs/adr/ADR-CEP-00A-*.md` · `scripts/test/cep_invariant_map_check.py` —— **全部零 diff**。⛔ 不新建 invariant id(`07 号 §4` / `ADR-CEP-00A §4` / `cep_invariant_map_check.py:33` 零 diff)· ⛔ 不建判红闸 · ⛔ `B3b-2` 维持 **0/4** · ⛔ **未宣称「全绿 run」**。
+
+**⑦ ⚠️ 诚实边界(逐条登记)**:
+- **实例级闭合,非类级**:本次消除**本表**的镜像面并补上**本文件**的自洽口径 ⇒「复发根因闭合」**仅就本表成立**;**类级口径**(「CEP 文档中任何 ADR 的生命周期/版本状态一律以其自身 header 为准」)是**另一条缺口**,已登记 backlog(含 `07 号 §8.3` / `ADR-CEP-16 §5` / `ADR-CEP-17:337` 三处同型载体,per critic 实测)⇒ **本轮不做**。
+- **派生视图非权威**:纯导航 · 不判红 ⇒ ⛔ 不得被任何文档引用为状态依据;⚠️ 其权威面比 C-3 的「header + SU 链」**窄一档**(只取 header)⇒ 若某 ADR 的 SU 已改判而 header 未回改,派生视图会**忠实复制一个过期真源** ⇒ 已登记 backlog。
+- **判红镜像 ≠ 撤销降级**:⚠️ 纠正 oracle 的过强论证 —— 判红派生副本**不必然**提升为真源(先例:`include/tlm/cep/fabric.json` 是派生副本且有 drift 闸,真源仍在 ArchForge)⇒ 正确表述为「**镜像已归零 ⇒ 无物可判红**」⇒ ⛔ 不得把该错误一般化固化为后续依据。
+
+**⑧ 关联**:**#322**(形态修订 + 授权续)· **#321**(R-8 裁决 + 冻结面授权)· **#320**(R-3 实施回执)· **#317**(盘点 · C1 处置前提已被 #321 订正)· **#307**(4 项 oracle 裁决 · C-1 / C-2 / C-3 来源)· **#305 ③ R-8**(残余登记)· `openspec/specs/cep-core-contracts/spec.md:184`(冻结主契约 · **零 diff**)· `docs/adr/ADR-CEP-NUMBER-MAP.md` · `scripts/test/cep_adr_structural_check.py` · `test/cep_adr_structural_deferrals.json` · oracle(1 轮,PASS-WITH-NOTES)· critic(1 轮,REJECT,1 BLOCKER)
+
+
 ---
 ---
 
