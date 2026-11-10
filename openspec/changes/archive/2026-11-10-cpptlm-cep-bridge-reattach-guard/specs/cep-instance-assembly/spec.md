@@ -20,7 +20,8 @@ CEP 协议实例的**实例级装配** SHALL 由**三层证据**共同判定 —
 #### Scenario: IAG-02 —— 负控:未声明 / 未绑定 / 未登记 / 模块缺失 / id 重复 ⇒ 必红
 
 - **WHEN** 分别构造:bridge 指向**未声明**实例 · 实例 `family` **缺失或不可解析** · bridge 的 `modules` **为空或引用不在拓扑**的模块 · `bridge_id` **缺失或重复** · `cep.bridges` 为空 · **required** 实例的 plane 绑定**为空或缺失** · plane 名**未登记**
-- **THEN** 装配闸 SHALL 判红
+- **THEN** 装配闸 SHALL 判 FAIL,且错误信息 SHALL 命中对应归因 tag(`[IAG-01]` ~ `[IAG-07]` **与 `[BSS-01]`**)
+- **AND** **非 required** 实例的 plane 绑定为 null ⇒ SHALL **判 PASS**(「不启用 collective」是合法状态,⛔ 不得误判为装配失败)
 
 #### Scenario: BSS-01 —— 跨 entry 重叠(同一模块属多个 bridge entry)⇒ 必红
 

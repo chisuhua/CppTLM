@@ -17853,7 +17853,21 @@ note: candidates are:
 
 **⑧ 零 diff 边界**:`include/tlm/cep/**` 除本 change 涉及的 2 个头外零 diff · M1 冻结清单除授权更新外零变化(41 产物 hash 未变)· `test/cep_b3b2_deferrals.json` / `protocol_instances.json` / `protocol_instance.schema.json` 零 diff · ⛔ **`B3b-2` 维持 0/4** · ⛔ **未宣称「全绿 run」**(IC3 仍 ⚪ 不适用)· ⛔ 未改任何已签发 ADR 决策正文。
 
-**⑨ 关联**:**#319**(裁决 + 冻结面授权)· **#317**(盘点 + P2 轨)· **#310**(R-3 残余登记)· **#305 ③ R-3**(残余登记:「动 `module_factory.cc` ⇒ 红线 ⇒ 另立 change」)· **#307**(4 项 oracle 裁决)· `obj:16671`(跨 entry 模块互斥 = 硬纪律)· `07 号` **SU · 十五 ②④**(「只测不拦」表述 · 由 **SU · 十七** 闭合)· `openspec/specs/cep-instance-assembly/spec.md`(MODIFIES)· change **`openspec/changes/archive/2026-11-10-cpptlm-cep-bridge-reattach-guard/`** · oracle(1 轮,PASS-WITH-NOTES)· critic(1 轮,REJECT,2 BLOCKER ⇒ 本 change 为闭合动作)
+**⑨ critic 复审的处置(2026-11-10,APPROVE_WITH_CONDITIONS · mergeable: yes · scope_exceeded: true)**:
+复审判定 **B1 / B2 均 CLOSED** · **无新 BLOCKER** ⇒ 放行。本轮另修 **3 条 in-scope**(均为**本轮引入**):
+| # | 处置 |
+|---|---|
+| **N1** | ✅ 已修:`07 号` 索引 A 第 49 行 / 索引 B 第 21 行的行号 **2413 → 2412**(实际 SU 十七标题行号;原值差 1 行 ⇒ 锚点指向空行) |
+| **§4.1** | ✅ 已修:delta 的 MODIFIED 重述时**丢失**了 IAG-02 的两条规范条款 ⇒ 已**恢复**并扩写 tag 范围为「`[IAG-01]` ~ `[IAG-07]` **与 `[BSS-01]`**」;**main spec 与归档 delta 副本同批同步** |
+| **N3** | ✅ 已修:测试小节标题「⇒ 装配失败(**零桥挂载**)」与诚实边界不齐 ⇒ 改为只写「⇒ 装配失败」+ 注明「⛔ 不断言零桥挂载(内部性质,外部不可观测)」 |
+**⚠️ 记 backlog(3 条 · critic 判为超范围 / 既有漂移 · 本轮**不**返工)**:
+| # | 内容 | 归属 |
+|---|---|---|
+| **N2** | `07 号` `### 索引 A · 一级节(47)` 与表内 **49** 行 / 自述 **49** 不符 ⇒ **既有 -2 漂移**(上一轮为 46 vs 48)⇒ `cep_index_position_check.sh` ③ 只比「行数 vs 自述」不比对标题文本 ⇒ 不报 | 既有漂移 · builder |
+| **N4** | `07 号:2064`(SU 十一 ①-b ③)仍写「建议在 Step 7.5 增…重挂检测(**独立 backlog**,⛔ 不在本轮)」⇒ 该**建议本轮已执行** ⇒ 陈述已过时(实质已由 SU 十七 ② 披露) | 既有陈述 · architect(须走 SU 追加链) |
+| **N5** | `ADR-CEP-04:996` + `07 号:321` 仍写装配闸 tag 集 =「`[IAG-01]`~`[IAG-07]`」⇒ **既有陈旧**(该闸本轮之前就已产出 `[BSS-01]`)⇒ 本轮改 main spec 反而**缩小**了该背离 | 既有陈旧 · 冻结件 ⇒ 须另走 SU 追加链 |
+
+**⑩ 关联**:**#319**(裁决 + 冻结面授权)· **#317**(盘点 + P2 轨)· **#310**(R-3 残余登记)· **#305 ③ R-3**(残余登记:「动 `module_factory.cc` ⇒ 红线 ⇒ 另立 change」)· **#307**(4 项 oracle 裁决)· `obj:16671`(跨 entry 模块互斥 = 硬纪律)· `07 号` **SU · 十五 ②④**(「只测不拦」表述 · 由 **SU · 十七** 闭合)· `openspec/specs/cep-instance-assembly/spec.md`(MODIFIES)· change **`openspec/changes/archive/2026-11-10-cpptlm-cep-bridge-reattach-guard/`** · oracle(1 轮,PASS-WITH-NOTES)· critic(1 轮,REJECT,2 BLOCKER ⇒ 本 change 为闭合动作)
 
 
 ---

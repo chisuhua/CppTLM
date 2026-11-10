@@ -68,7 +68,11 @@ nlohmann::json with_single_entry_repeating_w(nlohmann::json cfg) {
 
 } // namespace
 
-// ── 子情形 ① · 跨 entry 重叠 ⇒ 装配失败(零桥挂载)──────────────────────
+// ── 子情形 ① · 跨 entry 重叠 ⇒ 装配失败 ─────────────────────────────────
+// ⚠️ **本判据只断言「装配失败」** ⛔ **不**断言「零桥挂载」—— 后者是**代码结构**
+//    保证的内部性质(关口在挂载循环之前 ⇒ 循环不进入),而**外部不可观测**
+//    (`instances` 在 `instantiateAll` 末尾才 move ⇒ 早退时 `getInstance` 恒 nullptr)
+//    ⇒ per 台账 Entry #320 ④ 的诚实边界。
 TEST_CASE("CEP bridge reattach guard: 跨 entry 重叠 ⇒ instantiateAll 返回 false",
           "[cep][assembly][bridge-reattach][bss-01]") {
     REGISTER_CHSTREAM;
