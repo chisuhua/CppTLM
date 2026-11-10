@@ -124,6 +124,11 @@ VIRTUAL_PATHS=(
   "docs/adr/ADR-CEP-00-...md"                       # 同上
   "openspec/.../tasks.md"                          # 省略号(散文引用,per obj §4.7.3 载体分工表的通用写法)
   "docs/research/…"                                # 省略号(散文引用)—— 台账 Entry #90 ④b 记录过同类误伤
+  "experimental/run-<ts>-<tag>/<hN>/"              # **目录布局示意**(2026-11-10,per 批 1 前置审查):含 `<ts>`/`<tag>`/`<hN>`
+                                                      #   三段**占位符** ⇒ 不是「可判存在的单一路径」(实际 run 目录名逐次不同)
+                                                      #   ⇒ 由 07 号 §12.4「仓内实际布局与契约有三处差异」① 引用
+                                                      #   ⚠️ **登记理由**:它是**布局形态的描述**,不是指向某个具体产物的引用
+                                                      #   ⇒ 豁免不掩盖「产物缺失」—— 产物齐备性由 `cep_e2e_reconcile_check.sh` 独立判
   "openspec/changes/archive/2026-10-28-…/"          # 省略号(散文引用)—— 同上
   "docs/architecture/07-*.md"                        # 通配
   "include/tlm/cep/.gitkeep"                        # 占位文件
@@ -271,10 +276,23 @@ for d in "${DOCS[@]}"; do
       fail "$(basename "$d"): 引用不存在的文件 $f"; BAD_PATH=$((BAD_PATH + 1)); continue
     fi
     if [ -n "$ln" ] && [ "$ln" -eq "$ln" ] 2>/dev/null; then
-      total=$(wc -l < "$f")
-      if [ "$ln" -gt "$total" ]; then
-        fail "$(basename "$d"): $f:$ln 越界（共 $total 行）"; BAD_PATH=$((BAD_PATH + 1))
-      fi
+      # 2026-11-10(per 裁定表 v3.2 §十一 S1):**台账**是 append-only,行号天然是「时点值」
+      #   ⇒ 目标文件收缩后越界是**预期行为**,只判路径存在,不打越界红。
+      #   实测(2026-11-10):批 1 后 07 号 2763 → 1578 行,DOCS 数组内**恰好 1 处**越界
+      #   = 台账的 `docs/architecture/07-coherence-exploration-platform.md:2337`
+      #   ⇒ 豁免台账后 DOCS 内零越界;其余 10 个文件的行号检查**完全不变**(不新增假阴性)。
+      #   ⛔ 只豁免台账,不做「按文件类型分流」的大改 —— 原规格的「活文档」桶新增的
+      #   `AGENTS.md` / `docs/*/README.md` 与「快照」桶新增的 4 类目录**均不在 DOCS 数组内**
+      #   ⇒ 改不到实际生效的判定面,只会引入新的假阴性(详见裁定表 §十一 S1 的证据表)。
+      case "$d" in
+        .rddf/roadmap/objectives/*) : ;;   # 时点快照:行号越界不判(路径存在仍判)
+        *)
+          total=$(wc -l < "$f")
+          if [ "$ln" -gt "$total" ]; then
+            fail "$(basename "$d"): $f:$ln 越界（共 $total 行）"; BAD_PATH=$((BAD_PATH + 1))
+          fi
+          ;;
+      esac
     fi
   done < <(extract_path_refs "$d")
 done
@@ -475,6 +493,40 @@ if [ -d "$ARCHFORGE" ]; then
   [ "$EMPTY_X" -gt 0 ] && warn "$EMPTY_X 处「ArchForge:」为承接上文的空前缀（非可判引用,已跳过）"
 else
   warn "[SKIP] ArchForge 仓不在本环境（$ARCHFORGE）—— 跨仓引用与跨仓语义断言无法校验（非本仓缺陷）"
+fi
+
+echo ""
+echo -e "${BLUE}[5/5] 台账内「07 号:N」行号锚点可达性（死目标登记表豁免）${NC}"
+# 2026-11-10(per 台账 Entry #334 ⑤ + metis P1-7):
+#   `07 号:N` **散文形态**不被 [2/4] 的 path:line 检查覆盖(extract_path_refs 只认
+#   反引号包裹的真实路径)⇒ 台账锚点一旦悬空**无人发现**。
+#   实测腐化证据:台账 obj:3918 与 docs/implementation/2026-10-22-cep-poc-spike-spec.md:226
+#   都写「`07 号:684` = 📐 契约已定义,🛠️ 未实现」,而 684 实为「simulation_mode ✅ 已落地」
+#   ⇒ **引用早已失效**。本检查 + 死目标登记表 = 重定向表的防腐蚀机制。
+LEDGER=".rddf/roadmap/objectives/obj-cep-platform.md"
+TRUTH7="docs/architecture/07-coherence-exploration-platform.md"
+DEADTSV="$SCRIPT_DIR/cep_doc_ref_dead_anchors.tsv"
+if [ ! -f "$LEDGER" ] || [ ! -f "$TRUTH7" ]; then
+  warn "台账或 07 号 不存在 —— 本项 SKIP（不判红）"
+elif [ ! -f "$DEADTSV" ]; then
+  fail "死目标登记表缺失: $DEADTSV"
+else
+  TOTAL7=$(wc -l < "$TRUTH7")
+  DEAD_N=0
+  while IFS=$'\t' read -r _anch _dest; do
+    case "$_anch" in ''|\#*|锚点) continue ;; esac
+    DEAD_N=$((DEAD_N + 1))
+  done < "$DEADTSV"
+  ANCHORS=$(grep -oE '07 号[:：][0-9]+' "$LEDGER" 2>/dev/null | sed -E 's/.*[^0-9]//' | sort -un)
+  ANCH_CNT=0; ANCH_OK=0; ANCH_DEAD=0; BAD_ANCHOR=0
+  for a in $ANCHORS; do
+    ANCH_CNT=$((ANCH_CNT + 1))
+    if [ "$a" -le "$TOTAL7" ]; then ANCH_OK=$((ANCH_OK + 1)); continue; fi
+    if grep -qE "^${a}[[:space:]]" "$DEADTSV"; then ANCH_DEAD=$((ANCH_DEAD + 1)); continue; fi
+    fail "台账引用 07 号:$a 越界（共 $TOTAL7 行）且**不在**死目标登记表 $DEADTSV 中"
+    BAD_ANCHOR=$((BAD_ANCHOR + 1))
+  done
+  [ "$BAD_ANCHOR" -eq 0 ] && pass "台账内 ${ANCH_CNT} 个「07 号:N」锚点全部可达（${ANCH_OK} 个行号有效 + ${ANCH_DEAD} 个死目标已登记豁免 / 登记表 ${DEAD_N} 条）"
 fi
 
 echo ""

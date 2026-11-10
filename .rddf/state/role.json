@@ -1,40 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-11-10T07:10:45Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-10T20:30:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-08T10:30:00Z",
-      "by": "user",
-      "reason": "用户口令「按你建议进入下一步」=> 内置流程:创建 change cpptlm-cep-stub-cache-chstream-surface(P0)"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-08T11:34:08Z",
-      "by": "user",
-      "reason": "用户口令「切 architect 梳理目标/why/how/当前任务」=> 架构域:目标与路径复盘"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-08T11:37:40Z",
-      "by": "user",
-      "reason": "用户口令「切 planner 梳理后续任务内容与实施路径」=> planner 域:全量盘点 + 路径重排(含 architect 新发现 F-A1~F-A6)"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-08T11:54:11Z",
-      "by": "user",
-      "reason": "用户指令「审查通过后实施」=> 开工批次 1(A1/A2 收尾 F-A1~F-A7)"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-08T22:51:51Z",
-      "by": "user",
-      "reason": "用户口令「切 architect 做 A9.2(3 处 SU)→ 再切回 builder 归档」"
-    },
     {
       "role": "builder",
       "at": "2026-11-08T23:13:03Z",
@@ -124,6 +94,36 @@
       "at": "2026-11-10T07:10:45Z",
       "by": "user",
       "reason": "用户口令「切architect裁决A1」⇒ A1 = 终态 DoD Go 口径裁决(四选项:甲/乙/丙/丁);属架构取舍 ⇒ architect 域 ⇒ oracle → critic 双审"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-10T16:20:00Z",
+      "by": "user",
+      "reason": "用户口令「按你建议顺序推进」⇒ 授权执行规划(cep-next-batch-plan-2026-11-10.md)的三角色序列:① builder 批 0.6(冻结闸 +1 glob / 快照豁免缩版)→ ② planner 前置 3/4/6/7 → ③ 回 architect 批 1。本回合 = ① builder 域:改 scripts/test/cep_freeze_check.sh 与 scripts/test/cep_doc_ref_check.sh(per 规划 §一 精确 diff)。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-10T17:05:00Z",
+      "by": "user",
+      "reason": "用户口令「按你建议顺序推进」⇒ 序列第 ② 步。批 0.6 已完成(builder:冻结闸+1 glob / 快照豁免缩版 / VIRTUAL_PATHS 登记示意路径;33/35 闸绿,2 红同源=07号 hash 漂移=五步链步骤 1)。本回合 = planner 域:落五步链步骤 1 的台账 Entry + 前置 3(§8.3 ④ 澄清)/ 4(M 类载荷补齐)/ 6(状态列落点)/ 7(重定向表)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-10T18:40:00Z",
+      "by": "user",
+      "reason": "用户口令「按你建议顺序推进」⇒ 序列第 ③ 步。planner 域已完成:Entry #333(五步链步骤1 授权 + 重定向表)+ Entry #334(4 项裁决落定 + metis gap 处置 + §4.0-a 表 + §4.0 #14 行订正);8 项前置齐备。本回合 = builder 域:装 metis P1-7 派生的「台账 07 号:N 防腐蚀闸」(scripts/test/cep_doc_ref_dead_anchors.tsv + cep_doc_ref_check.sh 检查段)。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-10T19:20:00Z",
+      "by": "user",
+      "reason": "用户口令「按你建议顺序推进」⇒ 序列第 ④ 步。批 0.6(builder:冻结闸+1 glob / 快照豁免缩版 / VIRTUAL_PATHS 登记 / [5/5] 防腐蚀闸+死目标 tsv)与 planner 前置 3/4/6/7(Entry #333/#334)全部完成,8 项前置齐备。本回合 = architect 域:执行批 1 主体(07 号瘦身 22 M + 5 D + 1 消失 + §11 迁出 + §12 迁 docs/guide/cep-usage.md 含 51 处引用改写 + 索引重建 + §5.1.1 状态列迁出)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-10T20:30:00Z",
+      "by": "user",
+      "reason": "用户口令「按你建议顺序推进」⇒ 序列第 ⑤ 步。architect 批 1 主体已完成(07 号 2763→1625 · 手册 204 行 · §4 逐行相同 · §5.1.1 5 列 · 508 cases 全绿 · 33/35 闸绿,2 红=五步链步骤 2 待 commit)。本回合 = builder 域:① tsv 升级为「重定向表」(13 位移 + 8 死目标)② 产物 commit ③ cep_freeze_check --update ④ 清单单独 commit ⑤ 无参复验。"
     }
   ],
   "auto_switch_window": null

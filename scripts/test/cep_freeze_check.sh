@@ -30,6 +30,12 @@ MANIFEST="docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json"
 FROZEN_GLOBS=(
   "docs/adr/ADR-CEP-*.md"
   "docs/architecture/07-coherence-exploration-platform.md"
+  # 2026-11-10(per 裁定表 v3.2 §五 批 0.6 ①):批 3 按层拆分 → `docs/architecture/cep/*.md`
+  #   8 篇子文档必须与其主纲同受 M1 冻结面约束 ⇒ 提前扩 glob。
+  #   按 Entry #324 C-2′ 的「glob 全量 + 显式排除表(当前为空)」口径 ⇒ 新文件自动入集,
+  #   无需逐条登记「未冻结」。⚠️ 当前 `docs/architecture/cep/` 不存在 ⇒ 本 glob 现 0 匹配,
+  #   冻结产物数 69 → 69 不变(批 3 建目录后自动纳入)。
+  "docs/architecture/cep/*.md"
   "include/tlm/cep/protocol_instance.schema.json"
   "include/tlm/cep/fabric.schema.json"
   # 2026-10-25(Entry #56 B1'):**实例数据**也纳入冻结 ——
