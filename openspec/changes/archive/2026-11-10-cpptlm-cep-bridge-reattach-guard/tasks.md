@@ -56,23 +56,23 @@
 ## T7 · 冻结面五步链
 
 - [x] T7.1 台账 **Entry #319** 授权(已落)
-- [ ] T7.2 产物 commit(SU 十七 + 索引 + 计数)
-- [ ] T7.3 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #319"`
-- [ ] T7.4 **清单单独 commit**(⛔ 不与产物同 commit)
-- [ ] T7.5 无参复验 rc=0 + provenance 通过
+- [x] T7.2 产物 commit(SU 十七 + 索引 + 计数)
+- [x] T7.3 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #319"`
+- [x] T7.4 **清单单独 commit**(⛔ 不与产物同 commit)
+- [x] T7.5 无参复验 rc=0 + provenance 通过
 
 ## T8 · 回归 + 归档
 
-- [ ] T8.1 `ctest --test-dir build -j4` 全绿
-- [ ] T8.2 `./test.sh --mode off` 21/21
-- [ ] T8.3 `bash scripts/test/cep_freeze_check.sh` 无参 rc=0
-- [ ] T8.4 `bash scripts/test/cep_docs_sync_check.sh --strict` ✅
-- [ ] T8.5 `scripts/test/cep_*.sh` **35/35** 全绿
-- [ ] T8.6 `bash scripts/test/cep_adr_structural_check.sh` 4/4
-- [ ] T8.7 零 diff 边界核验(`include/tlm/cep/**` 除本 change 2 头外 · B3b-2 三件 · 冻结清单除授权更新外)
+- [x] T8.1 `ctest --test-dir build -j4` 全绿
+- [x] T8.2 `./test.sh --mode off` 21/21
+- [x] T8.3 `bash scripts/test/cep_freeze_check.sh` 无参 rc=0
+- [x] T8.4 `bash scripts/test/cep_docs_sync_check.sh --strict` ✅
+- [x] T8.5 `scripts/test/cep_*.sh` **35/35** 全绿
+- [x] T8.6 `bash scripts/test/cep_adr_structural_check.sh` 4/4
+- [x] T8.7 零 diff 边界核验(`include/tlm/cep/**` 除本 change 2 头外 · B3b-2 三件 · 冻结清单除授权更新外)
 - [x] T8.8 `openspec validate cpptlm-cep-bridge-reattach-guard --strict` rc=0
-- [ ] T8.9 **归档**:`openspec archive cpptlm-cep-bridge-reattach-guard --yes`(带 delta ⇒ 合并进 `cep-instance-assembly` main spec)⇒ KPI slot 释放 + 6 处 KPI 活口径同步回 0/3
-- [ ] T8.10 台账追加**实施回执** Entry(含 T4 的两条变异结果 + T5/T6 的落点 + T7 的链证据)
-- [ ] T8.11 ⛔ **不主动 push**(用户决策)
+- [x] T8.9 **归档**:`openspec archive cpptlm-cep-bridge-reattach-guard --yes`(带 delta ⇒ 合并进 `cep-instance-assembly` main spec)⇒ KPI slot 释放 + 6 处 KPI 活口径同步回 0/3
+- [x] T8.10 台账追加**实施回执** Entry(含 T4 的两条变异结果 + T5/T6 的落点 + T7 的链证据)
+- [x] T8.11 ⛔ **不主动 push**(用户决策)
 
 **关联**:台账 Entry **#319** / **#317** / **#310** / **#305 ③ R-3** · oracle(1 轮)· critic(1 轮,REJECT ⇒ 本 change 为闭合动作)· `07 号` SU · 十五 ②④

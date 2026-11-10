@@ -469,7 +469,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**(2026-11-09 实测,per `openspec list --json`;`cpptlm-cep-bidirectional-multiport-inbound`(R-5/R-6 修复)已于本日归档 ⇒ slot 已释放,per 台账 Entry #318)⇒ **当前 Proposed 并发 = 0/3**。
+`openspec/changes/` 当前 **0 个 active**(2026-11-10 实测,per `openspec list --json`;`cpptlm-cep-bridge-reattach-guard`(R-3 装配路径关口)已于本日归档 ⇒ slot 已释放,per 台账 Entry #320)⇒ **当前 Proposed 并发 = 0/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -17808,6 +17808,52 @@ note: candidates are:
 **⑦ 边界**:⛔ 不引入优先级语义 · ⛔ 不动三处 `attach_protocol_bridge` 的实现签名 · ⛔ 不把 `run_instance_assembly_gate` 拉进装配路径 · ⛔ 不改 `run_instance_assembly_gate` 的公开签名 / `InstanceAssemblyReport` / verdict 枚举 · ⛔ 不复用 `IAG-08` · ⛔ `B3b-2` 维持 0/4 · ⛔ 不宣称「全绿 run」· ⛔ **不主动 push**。
 
 **⑧ 关联**:**#318**(R-5/R-6 修复回执)· **#317**(盘点 + P2 轨)· **#310**(R-3 残余登记)· **#307**(4 项 oracle 裁决)· **#305 ③ R-3**(残余登记:「动 `module_factory.cc` ⇒ 红线 ⇒ 另立 change」)· `obj:16671`(跨 entry 模块互斥 = 硬纪律)· `07 号` **SU · 十五 ②④**(**只测不拦**表述 · 待 SU · 十七 闭合)· `openspec/specs/cep-instance-assembly/spec.md` · `include/tlm/cep/instance_assembly_gate.hh` · `src/core/module_factory.cc` · oracle(2026-11-09,1 轮)· critic(2026-11-09,1 轮,REJECT)
+
+
+### Entry #320 — 2026-11-09 [build](**R-3 实施回执**:`[BSS-01]` 执行臂落地 ⇒ 装配路径**循环前**结构性关口 + **delta spec** + `07 号` **SU · 十七** ⇒ **R-3 闭合**)
+
+**主题**:实施 **Entry #319** 的裁决(方案「丁」)⇒ 补齐 `[BSS-01]` 判据的**执行臂**。本 Entry 是**实施回执**。
+
+**角色**:architect(裁决 + 冻结面授权 · **#319**)· builder(实施)· planner(台账)。**KPI**:**0/3 → 1/3**(立项)→ **0/3**(归档,slot 释放)。
+
+**① 交付面(5 处 + 冻结面 1 处)**:
+| 项 | 内容 |
+|---|---|
+| **helper(唯一实现)** | 新增 `include/tlm/cep/bridge_module_membership.hh`(`tlm::cep` **公开**命名空间,⛔ 不留在 `detail`)—— `count_bridge_module_membership` / `find_bridge_module_conflicts` / `bridge_module_conflict_message`(诊断文本与 `[BSS-01]` 现文本**逐字一致**,保留计数 `(n)`) |
+| **装配闸改调** | `instance_assembly_gate.hh` ⑥ 段改调 helper ⇒ **行为严格等价**;⛔ 不改公开签名 / `InstanceAssemblyReport` / verdict 枚举;同批改写「只测不拦 / 另立 change」注释(critic N-1) |
+| **装配路径关口** | `module_factory.cc` Step 7.5:挂载循环**之前**调同一 helper;命中 ⇒ **直接 `return false`** ⇒ 循环不进入 ⇒ **零桥挂载**;同批补 Step 7.5 注释第 6 条红条件(critic N-2) |
+| **判据** | 新增 `test/test_cep_bridge_reattach_guard.cc`(3 cases / 15 assertions):子情形①跨 entry 重叠 · 子情形②单 entry 内重复 · **两侧结论一致**(正/负控对);载体形态 = **真 `instantiateAll`** |
+| **delta spec** | MODIFIES `openspec/specs/cep-instance-assembly/spec.md` ⇒ 判据集合 + 归因 tag 范围(`[IAG-01]`~`[IAG-07]` **与 `[BSS-01]``)· **两子情形显式枚举** + 「装配路径 SHALL 执行同一判据」段 ⇒ **critic BLOCKER B2 闭合** |
+| **冻结面** | `07 号` 追加 **SU · 十七**(append-only;⛔ 不回改 SU 十五 ②④ 原文)+ 索引 A/B + 头部自述 **48 → 49 个一级节 / 20 → 21 则 SU** ⇒ **critic BLOCKER B1 闭合** |
+
+**② critic 的 2 条 BLOCKER 闭合证据**:
+
+| BLOCKER | 闭合证据 |
+|---|---|
+| **B1** `07 号:2337`(M1 冻结集成员)逐字写「⛔ **本轮不做**,登记为 backlog」⇒ 落地后每个维度变假 | **SU · 十七** ① 逐条对照登记:① 判据仍成立(未改语义)② 「只测不拦」**已过时 ⇒ 本段闭合** ③ 「本轮不做」**已落地** ⇒ R-3 闭合 ④ 「登记为 backlog」**已消解**。⛔ **SU 十五 ②④ 原文逐字未回改**。**五步链**:Entry #319 授权 → 产物 commit `25f7aade` → `--update --authorized-by "Entry #319"`(清单 diff **恰 4 处**:07 号 hash + `authorized_by` + `frozen_at` + `frozen_at_commit`;其余 **41 产物零变化**)→ **清单单独 commit** `6f01a8cd` → 无参复验 **rc=0**(provenance 42 产物一致,commit `25f7aade`) |
+| **B2** 装配路径将依据**主 spec 未列明的判据** + **spec 未列明的 tag** 拒绝配置 | delta spec 已合并进 main spec(归档时)⇒ 实测:main spec 含 `[BSS-01]` **9 处** + **3 个** `#### Scenario: BSS-01` + 归因 tag 范围已含 `[BSS-01]`;⛔ **未复用 `IAG-08`**(已被 `test_cep_instance_assembly.cc:185` 占用) |
+
+**③ 决定性变异(必附,per Entry #236)**:
+| 变异 | 结果 |
+|---|---|
+| **① helper 判定改成恒不命中**(`n > 999`) | ✅ **2 cases 红** ⇒ 红因**正确** |
+| **② helper 加 entry 内去重**(口径收窄) | ✅ **子情形② 红** ⇒ 红因**正确** |
+| 恢复后 | ✅ **15 assertions / 3 cases 全绿**;**SCE-12 既有正/反控照过**(7 assertions)⇒ helper 重构的行为等价证据 |
+
+**④ ⚠️ 一条判据层面的诚实边界(实测得出)**:「循环前 fail」相对「循环后 fail」的差异在**外部不可观测** —— `instances` 在 `instantiateAll` **末尾**才 `move` ⇒ 早退时 `getInstance` 恒 nullptr ⇒ 两种实现对外部**同样**表现为「返回 false」。⇒ 本 change 的判据断言「**装配失败**」,**不**断言「零桥挂载」(后者是**代码结构**保证的内部性质:关口在循环之前 ⇒ 循环不进入)。⛔ 不得把「零桥挂载」写成可由判据证明的性质。
+
+**⑤ 收缩影响面(实测)**:**0 份现存配置受影响** —— 仓内 **8 份**含 `cep.bridges` 的 config **全部只有 1 条 entry、零重复模块**。⇒ 合法配置空间收缩(重复-entry 拓扑由「可装配 + 静默覆盖」变「装配失败」)在现存配置上**影响面为零**。
+
+**⑥ ⚠️ 三条诚实边界(逐条登记)**:
+- **失败原子性(限桥层)**:失败发生在对象已创建之后 ⇒ **不新增回滚机制**;⛔ **不得**表述为「零副作用 / 原子」。
+- **诊断优先级**:结构性关口**短路** ⇒ 同一 config 若同时违反其它桥校验条件,**只报** `[BSS-01]` 一类原因 ⇒ **结构性关口先于逐条桥校验**。
+- **离线 CLI 不对称**:`validate_topology` CLI **未**挂本判据 ⇒ `instantiateAll` 与 CLI 对同一 config 结论**不一致**;⚠️ 该不对称**非本轮新增**(IAG 闸族从未 CLI 挂载)⇒ 登记为 **backlog**,本轮不补。
+
+**⑦ 验证(实测)**:`ctest` **168/168** · `./test.sh --mode off` **21/21** · `scripts/test/cep_*.sh` **35/35 全绿** · `cep_freeze_check` 无参 **rc=0** · `cep_docs_sync_check --strict` ✅ · ADR 结构闸 **4/4** · 索引位置闸 **rc=0**(49/49 · 21/21 自洽)· b3b2 季度闸 ✅。
+
+**⑧ 零 diff 边界**:`include/tlm/cep/**` 除本 change 涉及的 2 个头外零 diff · M1 冻结清单除授权更新外零变化(41 产物 hash 未变)· `test/cep_b3b2_deferrals.json` / `protocol_instances.json` / `protocol_instance.schema.json` 零 diff · ⛔ **`B3b-2` 维持 0/4** · ⛔ **未宣称「全绿 run」**(IC3 仍 ⚪ 不适用)· ⛔ 未改任何已签发 ADR 决策正文。
+
+**⑨ 关联**:**#319**(裁决 + 冻结面授权)· **#317**(盘点 + P2 轨)· **#310**(R-3 残余登记)· **#305 ③ R-3**(残余登记:「动 `module_factory.cc` ⇒ 红线 ⇒ 另立 change」)· **#307**(4 项 oracle 裁决)· `obj:16671`(跨 entry 模块互斥 = 硬纪律)· `07 号` **SU · 十五 ②④**(「只测不拦」表述 · 由 **SU · 十七** 闭合)· `openspec/specs/cep-instance-assembly/spec.md`(MODIFIES)· change **`openspec/changes/archive/2026-11-10-cpptlm-cep-bridge-reattach-guard/`** · oracle(1 轮,PASS-WITH-NOTES)· critic(1 轮,REJECT,2 BLOCKER ⇒ 本 change 为闭合动作)
 
 
 ---
