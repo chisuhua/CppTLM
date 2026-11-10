@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-10T01:19:28Z",
+  "updated_at": "2026-11-10T03:08:46Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-07T18:38:53Z",
-      "by": "user",
-      "reason": "用户裁决「同意你的裁定建议」⇒ 10 条决策全部统一 ⇒ 切 architect 落架构文档 + 决策文档(ADR-CEP-19 SU + 07 号 SU),走 oracle → critic 双审"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-08T05:29:01Z",
-      "by": "user",
-      "reason": "用户建议三段式流程(architect 文档 → planner 路径图 → builder 实施);architect 段已闭合 ⇒ 本阶段产出「任务路径图」(双轨 + 3 门 + 4 里程碑)"
-    },
     {
       "role": "architect",
       "at": "2026-11-08T08:05:39Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-10T01:19:28Z",
       "by": "user",
       "reason": "用户口令「先 oracle + critic 复核」⇒ oracle PASS-WITH-NOTES(7 finding)+ critic REJECT(2 BLOCKER:07 号 SU 陈述变假 / 判据无 main spec 载体)⇒ 修正方案落台账 Entry #319(含冻结面授权)⇒ 切 builder 域实施:共享 helper + 装配路径关口 + delta spec + 07 号 SU 十七 + 五步链"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-10T02:43:49Z",
+      "by": "user",
+      "reason": "用户口令「继续 C1」⇒ C1 = R-8(NUMBER-MAP 状态列三义 + 镜像腐化)⇒ 切 architect 域:实测已得 20 条可判定矛盾(台账记的 4 条是 T4 签发前的旧数)⇒ 问 oracle 修法形态(改数值 / 改图例 / 两者),再回 builder 实施"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-10T03:08:46Z",
+      "by": "user",
+      "reason": "用户口令「继续 C1」⇒ R-8 形态经 oracle(PASS-WITH-NOTES)+ critic(REJECT,1 BLOCKER:冻结主契约 cep-core-contracts:184 要求表项含『状态』⇒ 删列=静默改写冻结契约)⇒ Entry #321/#322 定案为**路线甲**(保留列+换语义为『ADR 文件存在性』⇒ 冻结契约零 diff)⇒ 切 builder 域实施 D-1′~D-5′"
     }
   ],
   "auto_switch_window": null

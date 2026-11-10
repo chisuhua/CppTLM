@@ -19,9 +19,12 @@
   ③ **豁免锚点存活**:`waivers[].evidence_anchor` 的每一行仍存在且仍含 Verification 标题 ⇒ 否则红
   ④ **登记表自身健康**:条目指向的文件存在 · `ledger_entry` 非空 · 名单无重复
 
-另报(**不判红**,per oracle C-3:生命周期状态真源 = ADR 文件自身):
-  · `status_drift`          —— NUMBER-MAP 与 ADR header 的**可判定**矛盾
-  · `map_status_ambiguity`  —— NUMBER-MAP 状态列 ✅ **三义** ⇒ 不可判读 ⇒ 降级为镜像
+派生视图(**不判红**,per 台账 Entry #321 / #322):
+  · **编号 → 生命周期 / 文件存在性** —— 读各 ADR 的 header `> **状态**:` **现算现打**
+    ⇒ **派生**而非存储 ⇒ 不可能腐化(先例:`cep_invariant_map_check.py`「映射表是生成物」)。
+    ⚠️ **生命周期状态真源 = 各 ADR 文件自身**(header + Status Update 链,per oracle C-3);
+    本视图**非权威**,且⛔ **不得被任何文档引用为状态依据**。
+    口径落点 = `docs/adr/ADR-CEP-NUMBER-MAP.md` §2 决策 1 表上方。
 
 用法:
   python3 scripts/test/cep_adr_structural_check.py            # 校验(退出码 0 = 绿)
@@ -29,6 +32,7 @@
 """
 import argparse
 import fnmatch
+import io
 import json
 import os
 import re
@@ -87,6 +91,88 @@ def nested_anchor_lines(text):
     return [
         i for i, ln in enumerate(text.split("\n"), 1) if NESTED_RE.match(ln)
     ]
+
+
+# ══════════════════════════════════════════════════════════════════════
+# 派生视图:编号 → 生命周期 / 文件存在性(**纯导航 · 不判红**)
+#   · 左表 = NUMBER-MAP §2 决策 1 的编号集合(⛔ 非磁盘清单 —— 否则 CEP-10 缺席)
+#   · 生命周期抽取**锚定首个** `> **状态**:` 行
+# ══════════════════════════════════════════════════════════════════════
+NUMBER_MAP = os.path.join(ROOT, "docs", "adr", "ADR-CEP-NUMBER-MAP.md")
+CEP_ID_RE = re.compile(r"^\| \*\*(CEP-[0-9A]+)\*\* \|")
+STATUS_RE = re.compile(r"^>\s*\*\*状态\*\*:\s*(.+)$")
+
+
+def number_map_ids():
+    """从 NUMBER-MAP §2 决策 1 表读编号集合(⛔ 不依赖磁盘文件清单)"""
+    if not os.path.exists(NUMBER_MAP):
+        return []
+    ids = []
+    for line in io.open(NUMBER_MAP, encoding="utf-8"):
+        m = CEP_ID_RE.match(line)
+        if m and m.group(1) not in ids:
+            ids.append(m.group(1))
+    return ids
+
+
+def adr_file_for(cep_id):
+    """编号 → 对应 ADR 文件路径(⛔ None = 无文件 ⇒ 该编号未起草)"""
+    d = os.path.join(ROOT, "docs", "adr")
+    if not os.path.isdir(d):
+        return None
+    prefix = "ADR-" + cep_id + "-"
+    for name in sorted(os.listdir(d)):
+        if name.startswith(prefix) and name.endswith(".md"):
+            return os.path.join(d, name)
+    return None
+
+
+def read_lifecycle_state(path):
+    """读 header 的**首个** `> **状态**:` 行(锚定首个匹配 —— 某些 ADR 另有
+    无 emoji 的状态行,如 ADR-CEP-17 ⇒ 不锚定会抽到散文行)
+
+    返回 (生命周期类, 原始串);生命周期类 ∈ {已签发, 起草中, 未识别}
+    """
+    if not path:
+        return ("未起草", "")
+    for line in io.open(path, encoding="utf-8"):
+        m = STATUS_RE.match(line)
+        if not m:
+            continue
+        raw = m.group(1).strip()
+        if "已签发" in raw:
+            return ("已签发", raw)
+        if "起草中" in raw:
+            return ("起草中", raw)
+        return ("未识别", raw)
+    return ("未识别", "(无 `> **状态**:` 行)")
+
+
+def print_derived_lifecycle_view():
+    """打印派生视图(**纯导航 · 不判红**)"""
+    ids = number_map_ids()
+    print("\n── 派生视图:编号 → 生命周期 / 文件存在性 ──")
+    print("  ⚠️ **派生自各 ADR header,非权威**;生命周期状态真源 = 各 ADR 自身"
+          "(header + Status Update 链,per oracle C-3)")
+    if not ids:
+        print("  (NUMBER-MAP 未读到编号集合)")
+        return
+    parsed = 0
+    unknown = []
+    for cep_id in ids:
+        path = adr_file_for(cep_id)
+        if path is None:
+            print(f"  · {cep_id:<8} 🟡 未起草(无 ADR 文件)")
+            continue
+        state, raw = read_lifecycle_state(path)
+        if state == "未识别":
+            unknown.append(cep_id)
+        else:
+            parsed += 1
+        short = os.path.basename(path)
+        print(f"  · {cep_id:<8} {state:<6} {short}  |  {raw}")
+    total = len([i for i in ids if adr_file_for(i) is not None])
+    print(f"  覆盖率:已解析 {parsed}/{total}" + (f" · 未识别: {', '.join(unknown)}" if unknown else ""))
 
 
 def main():
@@ -239,15 +325,10 @@ def main():
         print("\n── 永久豁免(ADR 不可变 ⇒ 正文无法补章)──")
         for name, w in waivers.items():
             print(f"  ⏭ {name}  anchors={w.get('evidence_anchor')}")
-    for key, label in (
-        ("status_drift", "NUMBER-MAP ↔ ADR header 的可判定矛盾(修法在冻结集内 ⇒ 须授权)"),
-        ("map_status_ambiguity", "NUMBER-MAP 状态列 ✅ 三义(不可判读 ⇒ 已降级为镜像)"),
-    ):
-        rows = reg.get(key, [])
-        if rows:
-            print(f"\n── {label} · {len(rows)} 条 ──")
-            for r in rows:
-                print(f"  · {r.get('adr') or r.get('cep_id')}: {r.get('map_state', '')}")
+    print_derived_lifecycle_view()
+
+    print("\n── 生命周期状态面 ──")
+    print("  · NUMBER-MAP 状态列已归零(口径见 `ADR-CEP-NUMBER-MAP` §2 决策 1 表上方)")
 
     print("")
     if errors:
