@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-09T14:14:58Z",
+  "updated_at": "2026-11-10T01:19:28Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-07T09:50:16Z",
-      "by": "user",
-      "reason": "用户口令「重新审查CEP架构,检查是否偏移了目标」+ 指出用户原构想(CEP = 在现有拓扑链接上对互连模块做带一致性协议的建模;原业务 Bundle 可接入 CEP 互联网络)⇒ architect 域:实证核对 CEP 定位 vs 原构想,给出偏移判定"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-07T16:36:01Z",
-      "by": "user",
-      "reason": "用户口令「请继续修订,然后切 planner 给出下一步任务推荐」⇒ architect 修订已完(SU·十 + 评分更正 49/60)⇒ planner:排序下一步任务 + 依赖 + 估时 + 风险"
-    },
     {
       "role": "architect",
       "at": "2026-11-07T18:38:53Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-09T14:14:58Z",
       "by": "user",
       "reason": "用户口令「直接开 B1(先起 improvement 草稿 → change → 实施)」⇒ improvement 草稿已落(planner 域,HARD-GATE 通过)+ change 4 件套已建(validate --strict rc=0)⇒ 切 builder 域实施 T1~T7"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-09T16:40:38Z",
+      "by": "user",
+      "reason": "用户口令「提交,然后继续下一项」⇒ B1 已提交(f94a0ab4);下一项 = B2(R-3)⇒ 切 architect 域裁「重挂检测的落点」(装配路径 vs 闸路径),再回 builder 实施"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-10T01:19:28Z",
+      "by": "user",
+      "reason": "用户口令「先 oracle + critic 复核」⇒ oracle PASS-WITH-NOTES(7 finding)+ critic REJECT(2 BLOCKER:07 号 SU 陈述变假 / 判据无 main spec 载体)⇒ 修正方案落台账 Entry #319(含冻结面授权)⇒ 切 builder 域实施:共享 helper + 装配路径关口 + delta spec + 07 号 SU 十七 + 五步链"
     }
   ],
   "auto_switch_window": null

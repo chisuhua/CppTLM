@@ -1,0 +1,17 @@
+schema: spec-driven
+created: 2026-11-09
+goal: 把 `[BSS-01]`(同一模块属多个 bridge entry ⇒ `bridge_` 单槽被静默覆盖)的**执行臂**接到 `ModuleFactory` 装配路径 ⇒ 判据实现在独立小头 `tlm/cep/bridge_module_membership.hh`(**唯一实现**,装配闸与装配路径共用);B3b-2 计数不变(0/4)
+affected_areas:
+  - include/tlm/cep/bridge_module_membership.hh
+  - include/tlm/cep/instance_assembly_gate.hh
+  - src/core/module_factory.cc
+  - test/test_cep_bridge_reattach_guard.cc
+  - openspec/specs/cep-instance-assembly/spec.md
+  - docs/architecture/07-coherence-exploration-platform.md
+# ⚠️ 本 change **带 delta spec**(MODIFIES `cep-instance-assembly`)——
+#    critic BLOCKER B2:装配路径将依据一条**主 spec 未列明的判据** + 一个
+#    **spec 未列明的归因 tag** 拒绝配置 ⇒ 必须把 `[BSS-01]` 写进 spec 的
+#    判据集合 + 归因 tag 范围。
+#    ⚠️ `cep-instance-assembly` 当前为 `unfrozen-delivered`
+#    (per `test/cep_freeze_scope_registry.json`)⇒ MODIFIES **无需授权链**,
+#    归档时合并即可。

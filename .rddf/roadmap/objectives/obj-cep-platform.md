@@ -17738,6 +17738,78 @@ note: candidates are:
 **⑪ 关联**:**#317**(盘点 + 路径)· **#310**(R-5/R-6 残余登记 + `07 号` SU · 十六)· **#307**(4 项裁决)· **#264**(终态 DoD Go 挂起)· **#236**(载体评审教训)· **#309 ⑤ R-9**(ODR 先例)· improvement `.rddf/improvements/cpptlm-cep-bidirectional-multiport-inbound.md` · change `openspec/changes/archive/2026-11-09-cpptlm-cep-bidirectional-multiport-inbound/`(✅ 已完成归档)
 
 
+### Entry #319 — 2026-11-09 [architect](**R-3 裁决落定**(方案「丁」:抽共享 helper + 装配路径循环前 fail)+ **冻结面授权**:`07 号` 追加 **SU · 十七** + change 带 delta spec ⇒ 闭合 critic 的 2 条 BLOCKER)
+
+**主题**:per 台账 **Entry #317**(盘点)的 **P2 实施轨**(`B2 = R-3`)。用户口令「先 oracle + critic 复核」⇒ 经 **oracle**(1 轮,PASS-WITH-NOTES,7 finding)+ **critic**(1 轮,REJECT,2 BLOCKER + 7 SHOULD_FIX + 4 NIT)⇒ 本 Entry 落**修正后的裁决** + **冻结面授权**。
+
+**角色**:architect(裁决 + 冻结面授权)· builder(实施)· planner(台账)。**KPI**:Proposed **0/3**(本 Entry 本身不建 change ⇒ 不占 slot)。
+
+**① R-3 的真实缺口(实测,非推断)**:
+| # | 事实 | 出处 |
+|---|---|---|
+| 1 | 三处 `attach_protocol_bridge` **全是覆盖赋值**(`set_bridge` / `bridge_ =` / `bridge_ =`)⇒ 后挂静默覆盖先挂;基类默认 `return false` | `protocol_engine_base.hh:190` · `cohif_responder.hh:98` · `stub_cache_endpoint.hh:96` · `chstream_module.hh:90` |
+| 2 | 装配路径**无跨条目检查**;`bridge_failed` 只在**桥自身**出错时置位 | `module_factory.cc:811`~`:980` · `:982` |
+| 3 | **契约侧判据已存在**:`[BSS-01]` = 「模块名在**全部** `bridges[].modules` 展开序列计数 > 1 ⇒ FAIL」(**无 entry 内去重** ⇒ 单 entry 内 `["w","w"]` 亦红);带反向 fixture SCE-12 | `instance_assembly_gate.hh:212`~`:229` · `test_cep_stub_cache_e2e.cc:437`~`:454` |
+| 4 | 闸**只测不拦** —— `grep "instance_assembly" src/core/module_factory.cc` ⇒ **零命中** | 实测 |
+| 5 | `protocol_bridges_` 是 `vector<unique_ptr>` ⇒ 桥对象存活 ⇒ **语义静默覆盖,非悬垂** | `module_factory.cc:974` |
+
+⇒ **R-3 不是新决策,而是「已签发判据的执行臂缺失」** ——「多桥挂载不合法」早已裁决(`obj:16671`「跨 entry 模块互斥为**硬纪律**」)。
+
+**② 修正后的裁决(方案「丁」—— 吸收 oracle 7 finding + critic 2 BLOCKER + 7 SHOULD_FIX + 4 NIT)**:
+
+| 项 | 内容 | 来源 |
+|---|---|---|
+| **落点** | Step 7.5 的挂载循环(`:811`)**之前**调共享 helper;命中重复 ⇒ **直接 `return false`** ⇒ 循环**根本不进入** ⇒ **零桥挂载** | oracle F3 + M2(原写法「置 `bridge_failed`」是**错的**:该 flag 是**累积标志** ⇒ 置位后循环照跑 ⇒ 半挂载成立) |
+| **helper 落点** | **独立小头** `include/tlm/cep/bridge_module_membership.hh`(`tlm::cep` 公开命名空间,⛔ **不留在 `detail`** —— 已升格为跨模块共享契约)⇒ 框架 core **不必**拖入 `collective_plane.hh`(826 行)/ `protocol_family.hh` | critic S-1 |
+| **helper 入参** | 取 **`bridges` 数组**(⛔ 非整个 config)⇒ 与 ⑥ 段取数对象**语义同一** ⇒ 等价性可逐行核对 | critic S-2 |
+| **helper 返回** | **带计数**的结构(⛔ 不可只返 `vector<string>`)⇒ `[BSS-01]` 报错文本**携带计数 `(n)`** 的行为**严格等价** | context-builder 发现的漏洞 + M1 |
+| **诊断文本** | 与 `[BSS-01]` 现文本**逐字一致**(`[BSS-01] module in multiple bridge entries: <name> (<n>)`)⇒ 归因/grep 不失效 | critic S-3 |
+| **「零半挂载」口径** | **限定到桥层** —— 本 `return false` 发生在对象已创建之后(`:293` 局部 `object_instances` / `:369` `registerInstance` / Step 7 已注入 `stream_adapters_` 均已发生)⇒ **不需新增回滚机制**(与既有 `:983` 早退路径同性质)· ⛔ **不得**写「零副作用 / 原子」全称 | critic S-4 |
+| **失败语义并存** | 新关口 = 结构性 · 循环前 · 短路 · 只报 1 类原因;既有 `bridge_failed` = 累积 · 逐条 · 最后统一 `return false` ⇒ 同一 config 可能**少报**既有 5 类红 ⇒ design 须写明「**优先级:结构性关口先于逐条桥校验**」 | critic S-5 |
+| **离线 CLI 不对称** | `instantiateAll` 与 `validate_topology` 对同一 config 结论将**不一致**(CLI 从未挂 IAG 闸族)⇒ **显式登记**为 backlog(非本轮新增) | critic S-6 |
+| **收缩影响面(实测)** | 仓内 **8 份**含 `cep.bridges` 的 config **全部只有 1 条 entry、零重复模块** ⇒ 收缩**不影响任何现存配置**;JSON 语法层**可表达**(`bridges` 是数组)⇒ **R-3 前置举证「能否由 JSON 拓扑表达」成立** | 台账 R-3 前置条件 |
+
+**③ critic 的 2 条 BLOCKER ⇒ 闭合方式**:
+
+| BLOCKER | 问题 | 闭合动作 |
+|---|---|---|
+| **B1** | `docs/architecture/07-coherence-exploration-platform.md:2337`(**M1 冻结集成员**)逐字写着「该闸…⇒ **只测不拦**;`ModuleFactory` 装配路径上的重挂检测…⛔ **本轮不做**,登记为 backlog」⇒ 落地后**每个断言维度都变假** | **走五步授权链**改它:本 Entry 授权 → `07 号` 追加 **SU · 十七**(append-only;⛔ 不回改 SU 十五 ②④ 原文)→ 索引 A/B 各加一行 + 头部自述 **48 → 49 个一级节 / 20 → 21 则 SU** → 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #319"` → **清单单独 commit** → 无参复验 |
+| **B2** | 装配路径将依据一条**主 spec 未列明的判据** + 一个**spec 未列明的归因 tag** 拒绝配置(`cep-instance-assembly/spec.md:12` 写「归因 tag 为 `[IAG-01]` ~ `[IAG-07]`」;`[BSS-01]` **全仓零 main spec**) | change **必须带 delta spec**(MODIFIES `cep-instance-assembly`)⇒ 判据集合加入 `[BSS-01]` + tag 范围改写为含 `[BSS-01]` + **显式枚举两个子情形**(跨 entry 重叠 · 单 entry 内重复 `["w","w"]`)· ⛔ **不得复用 `IAG-08`**(已被 `test_cep_instance_assembly.cc:185` 占用)· ⚠️ 该 spec 现为 `unfrozen-delivered`(`cep_freeze_scope_registry.json`)⇒ **MODIFIES 无需授权链**,归档时合并即可(⇒ 不违反「零 main spec 改动」边界:main spec 只在归档时变) |
+
+**④ critic 的 SHOULD_FIX / NIT 处置(逐条)**:
+
+| # | 处置 |
+|---|---|
+| **S-1** | ✅ 采纳 ⇒ **独立小头** `include/tlm/cep/bridge_module_membership.hh`(`tlm::cep` 公开命名空间)+ 头注释写明「**唯一实现,禁复制**」(per `module_factory.cc:173`「禁双实现」) |
+| **S-2** | ✅ 采纳 ⇒ helper 入参取 `bridges` 数组 |
+| **S-3** | ✅ 采纳 ⇒ 诊断文本逐字沿用 `[BSS-01] …` |
+| **S-4** | ✅ 采纳 ⇒ 「零半挂载」限定到**桥层**;⛔ 不写「零副作用」 |
+| **S-5** | ✅ 采纳 ⇒ design 写明「优先级:结构性关口先于逐条桥校验」+ 可能少报既有 5 类红 |
+| **S-5b** | ✅ 采纳 ⇒ **维持 Step 7.5**(不前移到 Step 0.25)⇒ 但须把失败副作用范围**写实**(对象已创建)· ⚠️ 前移到 Step 0.25 的代价 = 判据块混装「拓扑形状」与「协议语义」两类 |
+| **S-6** | ✅ 采纳 ⇒ design **显式登记** CLI 不对称 + 登记 backlog |
+| **S-7** | ✅ 采纳 ⇒ delta spec **显式枚举两个子情形** |
+| **N-1** | ✅ 采纳 ⇒ 同批改写 `instance_assembly_gate.hh:210-212` 注释(「只测不拦 / 另立 change」就**在被改的同一个文件里** ⇒ 落地即过时) |
+| **N-2** | ✅ 采纳 ⇒ 同批补 `module_factory.cc:776-781` Step 7.5 注释的第 6 条红条件 |
+| **N-3** | ✅ 采纳 ⇒ helper 头注释写明判据**出处**(`07 号` SU · 十七 + 本 Entry)· ⛔ `.cc` 侧只引用 helper(不引 ADR / 不写 `§` 节号) |
+| **N-4** | ✅ 采纳 ⇒ 本 Entry = **#319**;`07 号` 索引 A/B 各加一行 + 头部自述计数同步 |
+
+**⑤ 已排除的方案(附理由,供后人复核)**:
+
+| 方案 | 排除理由 |
+|---|---|
+| **乙**:装配路径整体调 `run_instance_assembly_gate` | **结论维持排除,但理由改写**(oracle F2):⛔ **不是**「gate 不进装配路径」(Step 0.25 已有 `run_channel_gate` + `run_ordering_gate`,`:176`~`:177`)⇒ 真实理由 = **IAG 判据面与装配合法配置硬冲突**(IAG-02 要求 `protocol_instance` 必填 vs 装配 `:873` 可选;IAG-07 要求 `bridge_id` 必填 vs 装配 `:862`~`:869` 自动分配)⇒ 整体接入**必误伤** |
+| **丙**:挂载后置校验 | 全局判据降级为循环后检查 + 接受不必要的半挂载对象图 + 无法一次报告全部违规(oracle F7) |
+| **甲**:装配路径自写一遍检测 | 违反 `module_factory.cc:173`「禁双实现」+ 与 `[BSS-01]` 必然语义漂移(oracle F1) |
+| 改三处 `attach_protocol_bridge` 为「已挂则拒挂」 | 需三处各自记「已挂」状态;检测在装配层一处即可 |
+| 引入多桥挂载优先级语义 | 契约已判不合法 ⇒ 给非法配置定义行为,违反 fail-fast |
+
+**⑥ oracle 的 3 项核验(architect 代跑,结论一致)**:`cep_freeze_check.sh` 无参 **rc=0**(42 产物零漂移)· `scripts/test/cep_*.sh` **35/35 全绿** · `grep -rn "instance_assembly_gate" scripts/` ⇒ **零命中**(⇒ 加 helper 不触发任何守门清单同步)。
+
+**⑦ 边界**:⛔ 不引入优先级语义 · ⛔ 不动三处 `attach_protocol_bridge` 的实现签名 · ⛔ 不把 `run_instance_assembly_gate` 拉进装配路径 · ⛔ 不改 `run_instance_assembly_gate` 的公开签名 / `InstanceAssemblyReport` / verdict 枚举 · ⛔ 不复用 `IAG-08` · ⛔ `B3b-2` 维持 0/4 · ⛔ 不宣称「全绿 run」· ⛔ **不主动 push**。
+
+**⑧ 关联**:**#318**(R-5/R-6 修复回执)· **#317**(盘点 + P2 轨)· **#310**(R-3 残余登记)· **#307**(4 项 oracle 裁决)· **#305 ③ R-3**(残余登记:「动 `module_factory.cc` ⇒ 红线 ⇒ 另立 change」)· `obj:16671`(跨 entry 模块互斥 = 硬纪律)· `07 号` **SU · 十五 ②④**(**只测不拦**表述 · 待 SU · 十七 闭合)· `openspec/specs/cep-instance-assembly/spec.md` · `include/tlm/cep/instance_assembly_gate.hh` · `src/core/module_factory.cc` · oracle(2026-11-09,1 轮)· critic(2026-11-09,1 轮,REJECT)
+
+
 ---
 ---
 

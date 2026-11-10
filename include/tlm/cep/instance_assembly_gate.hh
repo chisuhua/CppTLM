@@ -23,6 +23,7 @@
 #include <nlohmann/json.hpp>
 
 #include "tlm/cep/collective_plane.hh"
+#include "tlm/cep/bridge_module_membership.hh"
 #include "tlm/cep/protocol_family.hh"
 
 namespace tlm::cep {
@@ -207,24 +208,16 @@ inline InstanceAssemblyReport run_instance_assembly_gate(
 
     // ⑥ 桥单槽兜底(per W4):同一模块属**多个** bridge entry ⇒ 模块的 `bridge_` 单槽
     //    会被**后挂的桥静默覆盖** ⇒ 判红。
-    //    ⚠️ 本闸是**装配期拓扑体检**(由测试侧调用)⇒ 「**只测不拦**」——
-    //    真要在 `ModuleFactory` 装配路径上拦住 ⇒ 须动 `src/core/module_factory.cc`
-    //    (红线面)⇒ **另立 change**(per §10 修订 ④ ② 的风险登记)。
+    //    ⚠️ **判据实现在 `tlm/cep/bridge_module_membership.hh`**(**唯一实现**)——
+    //       本闸与 `ModuleFactory` 装配路径**共用**同一份 ⇒ 禁双实现
+    //       (per `src/core/module_factory.cc:173` 的「禁双实现」纪律;
+    //        per 台账 Entry #319 ④ S-1 / S-2)。
+    //    ⚠️ **口径**:**无 entry 内去重** ⇒ 两个子情形都命中:① 跨 entry 重叠
+    //       ② 单 entry 内重复列同一模块(如 `["w","w"]`)(per Entry #319 ②)。
     {
-        std::map<std::string, int> membership;
-        for (const auto& bridge : bridges) {
-            if (!bridge.contains("modules") || !bridge.at("modules").is_array())
-                continue;
-            for (const auto& m : bridge.at("modules")) {
-                if (m.is_string())
-                    ++membership[m.get<std::string>()];
-            }
-        }
-        for (const auto& [mod_name, n] : membership) {
-            if (n > 1) {
-                rep.errors.emplace_back("[BSS-01] module in multiple bridge entries: " + mod_name +
-                                        " (" + std::to_string(n) + ")");
-            }
+        for (const auto& [mod_name, n] :
+             tlm::cep::find_bridge_module_conflicts(bridges)) {
+            rep.errors.emplace_back(tlm::cep::bridge_module_conflict_message(mod_name, n));
         }
     }
 

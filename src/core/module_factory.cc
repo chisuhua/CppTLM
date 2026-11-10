@@ -62,6 +62,7 @@
 #include "framework/stream_adapter.hh"
 #include "metrics/stats_manager.hh"
 #include "sim_module.hh"
+#include "tlm/cep/bridge_module_membership.hh"
 #include "tlm/cep/channel_dependency_graph.hh"
 #include "tlm/cep/ordering_point_checker.hh"
 #include "tlm/cep/protocol_family.hh"
@@ -779,6 +780,10 @@ bool ModuleFactory::instantiateAll(const json& config) {
     //   ③ 两个被消费的桥 `bridge_id_` **重复**   ⇒ 红(CC-05 ④)
     //   ④ 桥元数据自检不过(`protocol_id_`/`bridge_id_` 为 0) ⇒ 红(CC-05 ④)
     //   ⑤ 目标模块不存在 / 不支持桥挂载        ⇒ 红
+    //   ⑥ **结构性关口**(循环**之前**执行,先于 ① ~ ⑤):同一模块属**多个** bridge
+    //      entry ⇒ 模块的 `bridge_` 单槽会被**后挂的桥静默覆盖** ⇒ 红(`[BSS-01]`)
+    //      ⇒ 判据实现在 `tlm/cep/bridge_module_membership.hh`(**唯一实现**,
+    //      与装配闸共用 ⇒ 禁双实现,per 本文件 `:173` 的纪律)
     //
     // ⚠️ **共享语义**(per CC-03 ③):一个 bridge 条目的 `modules` 可列**多个**模块
     //    ⇒ **同一个桥实例**被挂到多个 PE ⇒ 满足「同一 `ProtocolBridgeEr*` 可被
@@ -801,6 +806,38 @@ bool ModuleFactory::instantiateAll(const json& config) {
                              std::string(bsec.type_name()).c_str());
                 bridge_failed = true;
             } else {
+                // ── ⑥ 结构性关口:**循环之前**执行(先于 ① ~ ⑤)──────────────
+                // 同一模块属**多个** bridge entry ⇒ 模块的 `bridge_` 单槽会被
+                // **后挂的桥静默覆盖** ⇒ 装配失败(`[BSS-01]` 归因)。
+                //
+                // ⚠️ **失败原子性(限桥层)**:本关口在挂载循环**之前** ⇒ 循环不进入
+                //    ⇒ **零桥挂载**(不产生被覆盖的 `bridge_` 单槽)。
+                //    ⛔ 但**不等于「零副作用」** —— 本 `return false` 发生在对象已创建
+                //    之后(`object_instances` 局部量在函数末尾才 move / 模块已注册 /
+                //    Step 7 已注入 adapter)⇒ **不新增回滚机制**
+                //    (与既有 `bridge_failed` 早退路径同性质)。
+                //
+                // ⚠️ **诊断信息**:本关口**短路** ⇒ 同一 config 若同时违反 ① ~ ⑤,
+                //    **只报** `[BSS-01]` 一类原因 ⇒ 优先级 = 结构性关口先于逐条桥校验。
+                //
+                // ⚠️ **与装配闸的口径一致**:判据在 `tlm/cep/bridge_module_membership.hh`
+                //    (**唯一实现**,禁复制)⇒ 无 entry 内去重 ⇒ 跨 entry 重叠与
+                //    单 entry 内重复**都**命中。
+                {
+                    const auto conflicts = tlm::cep::find_bridge_module_conflicts(bsec);
+                    if (!conflicts.empty()) {
+                        for (const auto& [mod_name, n] : conflicts) {
+                            std::fprintf(stderr, "[ModuleFactory] %s\n",
+                                         tlm::cep::bridge_module_conflict_message(mod_name, n)
+                                             .c_str());
+                        }
+                        std::fprintf(stderr,
+                                     "[ModuleFactory] 协议桥装配失败(同一模块属多个 bridge entry"
+                                     " ⇒ `bridge_` 单槽会被静默覆盖)\n");
+                        return false;
+                    }
+                }
+
                 // 协议实例声明 —— 与 Step 0.25 的 gate **同一份**解析(不重复实现)
                 const tlm::cep::ChannelDeclaration decl =
                     tlm::cep::parse_channel_declaration_from_config(final_config);
