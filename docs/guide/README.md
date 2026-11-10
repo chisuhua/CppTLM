@@ -15,6 +15,7 @@
 | [CREDIT_FLOW_USER_GUIDE.md](./CREDIT_FLOW_USER_GUIDE.md) | Credit-based Flow Control | 用户/开发者 |
 | [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) | 开发者指南（模块开发、调试） | 开发者 |
 | [UE_DRIVER_MIGRATION_GUIDE.md](./UE_DRIVER_MIGRATION_GUIDE.md) | UE driver 移植指南（framebuffer_size 单一真源约定） | UE driver 作者 |
+| [cep-usage.md](./cep-usage.md) | **CEP 使用手册**（Stage 4+ 维护态交接：10 分钟上手 / 载体地图 / 新增协议族流程 / 实验 4 件套 / 闸清单 / 冻结面五步授权链 / DoD 读法 / 未结义务） | CEP 维护者 |
 
 ---
 

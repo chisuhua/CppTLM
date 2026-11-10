@@ -311,16 +311,16 @@ group-scoped completion     → Fabric Collective Plane
 
 #### 5.1.1 工业硬件协议族(6 族 / 8 实例)
 
-| 协议族 | 协议实例 | adapter | 状态 | 通道模型 | 关键差异 |
-|--------|---------|---------|------|----------|---------|
-| **CHI** | CHI RN-F | `ChiRnfAdapter` | **✅ 已落地**(队列 #8,2026-10-28 归档;Stage 1 subset → Stage 2 full) | RN-F 6 通道(TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT)| RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck;**UC→UD 静默升级**(轴 2)与 `moesi_gpu` 的 `E→M` **同型** —— 4 值 `perm` 无法表达 ⇒ 静默升级声明归 `perm_upgrades.json`(per `ADR-CEP-12 §11`) |
-| **CXL 2.0 非对称** | CXL 2.0 | `CxlCacheAdapter` | **✅ 已落地**(队列 #10,2026-11-01 归档;**两段式** —— 规约层 + 实现层) | D2H/H2D 各 3 通道(Req/Rsp/Data)| Host 侧 Snoop Filter;设备不感知其他设备 |
-| **CXL 3.0 对称** | CXL 3.0 对称 | `CxlDcohAdapter`(独立载体;**非** `CxlCacheAdapter` 的模式)| **✅ 已落地**(队列 #12,2026-11-02 归档;**两段式** —— 规约层 + 实现层) | + CXL.mem 增 **BISnp(S2M)/ BIRsp(M2S)** 两通道 | **DCOH = Device Coherence(agent / engine)**(设备内的一致性代理,**非** "Ownership History");设备可对 **host** 发起反向 snoop(BI;**不**对 peer device);归属基于 **HPA**(设备内部翻译到 media address,**非** DPA 归属) |
-| **TileLink-C** | TileLink-C | `TileLinkCAdapter` + `TileLinkProtocolEngine` | **✅ 已落地**(队列 #11,2026-11-02 归档;**两段式** —— 规约层 + 实现层)· **✅ 运行时引擎已落地**(2026-11-06,per 台账 **Entry #246** —— `TileLinkProtocolEngine` = **B3b 第 2 个实例**,事件语义**零自有副本**地委托 T3 表 `kT3MappingCells`) | A/B/C/D/E 通道 | Tree Tip 权限模型;Probe/Acquire/Grant 家族,无传统 snoop 广播;lookup 可能 ESCALATE_UP |
-| **NVLink** | NVLink | `NvlinkAdapter` | **✅ 已落地**(队列 #13,2026-11-03 归档;**两段式** —— 规约层 `cpptlm-cep-nvlink-sharp-state-spec` + 实现层 `cpptlm-cep-nvlink-sharp`;实例 `nvlink_4` · `nvlink-4.0` · `BroadcastNull` tracker) | NVLink TL Read/Write/Atomic/Probe | NVSwitch 内嵌 SHARP/atomic/barrier;排序点可落在 Switch/SPU |
-| **UALink** | UALink | `UalinkAdapter` | 🟡 **部分落地**(2026-11-04 —— **两段式**:规约层 `cpptlm-cep-ualink-inc-state-spec` 已归档 + 实现层 `cpptlm-cep-ualink-inc` 已归档 —— `UalinkAdapter`(零自有表副本)+ `FabricCollectivePlane`(数据路径真可达);✅ **`ualink_4` 实例已声明**(2026-11-06 —— 13 键取值**全部裁决**:4 键 per `ADR-CEP-04` SU 2026-11-06 + 9 键 per `ADR-CEP-12` SU 2026-11-06(含订正 #1);取值锚 = 锚点摘要 `C-10`——**4 个互相独立的公开非规范来源** + **一步推断**留档,⛔ 未读任何规范正文)⇒ ✅ **实例级装配已闭合**(2026-11-06 —— per 台账 **Entry #258**:`ualink_4` 挂进拓扑 `configs/cep_ualink_pe_minimal.json`(2 个 `CohIfProtocolEngine` + `cep.bridges[].protocol_instance`)+ collective plane 绑 **`FabricCollectivePlane`**(承载真实 fabric 集合流量)+ 装配闸 `instance_assembly_gate.hh`(`[IAG-01]`~`[IAG-07]`,含反控))⇒ ⚠️ **流语义已闭环(记账级弱档建模声明)**(2026-11-07 —— per 台账 **Entry #269**:`request`/`completion` 由 **`UalinkProtocolEngine`** 专用承载 —— **记账级**(bookkeeping-only):观测面 = **三分法**(记账 2 / 拒绝 7 / pending 1)+ **order-free 在途集合**(`txn_id` 恒等匹配);⛔ **零发射** / ⛔ **零协议状态机** / ⛔ **零 UPLI 通道级语义**(`ReqCmd` / 4 通道 / tag 配对**均不实现**);依据 = **4 个互相独立的公开非规范来源** + **一步推断** ⇒ 证据档位 `public_nonnormative`)⇒ ⛔ **不得**读成「UALink 协议语义已实现」(per `ADR-CEP-12` SU 2026-11-07 ②③ 的**字面禁令**)⇒ ⛔ **不得**读成「协议能力已完整」;**B3b 的 UALink 行维持 ⏭ 受限(仍 0/4)** | Station/Port/Lane;TL Load/Store/Atomic | In-Network Compute(ReadReduce/WriteMulticast/Broadcast/AllReduce) |
-| **MOESI/GPU** | `moesi_gpu` | `MoesiGpuAdapter` | **✅ 已落地**(队列 #6,2026-10-27 归档;首个 `status=implemented` 实例) | 6 态 × 6 事件;snoop 型(SoC 内) | ArchForge 贡献(per `32 号` §6.1);**E→M 静默升级**是 `ADR-CEP-13` 域可见写判据 (a)(b) 的**争点所在**(**该争点已裁定 → 状态见 `ADR-CEP-05 §13.1`**) |
-| **MESIF** | `mesif` | `MesifAdapter` | **✅ 已落地**(队列 #9,2026-10-30 归档;R-1 **已裁决**(Entry #96 —— 新增第 6 种 SharerTracker 实现 `HierarchicalDirectory` + `AggregationAt::HIERARCHICAL`,per `ADR-CEP-04 §13`)+ 声明权威**已迁到本仓**(per `ADR-CEP-12 §13`);**规约层已闭合 + 已追认**(Entry #101 归档 + Entry #102 追认闭合:ArchForge `42 号` **35 格逐格追认闭合**、**纠正 1 格**(`M+SnpShared`:`S`→`F`)、待追认 **31/35 → 0/35**;⚠ **残余风险**(按档批量 14 格证据强度弱于逐格)见 `docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md` §5)· **实现层已落地归档**(2026-10-30,Entry #105 / #106:`cpptlm-cep-mesif-adapter` —— `MesifAdapter`(零自有表副本,委托消费规约载体)+ `MesifProtocolEngine`(真插件 + atomic 最小可用路径 + R-3 写回接线)+ `HierarchicalDirectory` 行为实现;落点见 `.rddf/improvements/cpptlm-cep-mesif-adapter.md` 与 `openspec/specs/cep-mesif-adapter/`) | 分级目录型(跨卡);目录查询 / 定向 snoop;**SharerTracker 选型 = `HierarchicalDirectory`**(`SYSTEM/EXACT/GLOBAL/HIERARCHICAL` —— 多级聚合) | ArchForge 贡献(per `32 号` §6.2);与 `moesi_gpu` **互不承认**(per `32 号` C1);⚠ 声明权威已迁本仓 ⇒ 与 `32 号 §6.2` **分叉**(跨仓追认债) |
+| 协议族 | 协议实例 | adapter | 通道模型 | 关键差异 |
+|--------|---------|---------|----------|---------|
+| **CHI** | CHI RN-F | `ChiRnfAdapter` | RN-F 6 通道(TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT)| RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck;**UC→UD 静默升级**(轴 2)与 `moesi_gpu` 的 `E→M` **同型** —— 4 值 `perm` 无法表达 ⇒ 静默升级声明归 `perm_upgrades.json`(per `ADR-CEP-12 §11`) |
+| **CXL 2.0 非对称** | CXL 2.0 | `CxlCacheAdapter` | D2H/H2D 各 3 通道(Req/Rsp/Data)| Host 侧 Snoop Filter;设备不感知其他设备 |
+| **CXL 3.0 对称** | CXL 3.0 对称 | `CxlDcohAdapter`(独立载体;**非** `CxlCacheAdapter` 的模式)| + CXL.mem 增 **BISnp(S2M)/ BIRsp(M2S)** 两通道 | **DCOH = Device Coherence(agent / engine)**(设备内的一致性代理,**非** "Ownership History");设备可对 **host** 发起反向 snoop(BI;**不**对 peer device);归属基于 **HPA**(设备内部翻译到 media address,**非** DPA 归属) |
+| **TileLink-C** | TileLink-C | `TileLinkCAdapter` + `TileLinkProtocolEngine` | A/B/C/D/E 通道 | Tree Tip 权限模型;Probe/Acquire/Grant 家族,无传统 snoop 广播;lookup 可能 ESCALATE_UP |
+| **NVLink** | NVLink | `NvlinkAdapter` | NVLink TL Read/Write/Atomic/Probe | NVSwitch 内嵌 SHARP/atomic/barrier;排序点可落在 Switch/SPU |
+| **UALink** | UALink | `UalinkAdapter` | Station/Port/Lane;TL Load/Store/Atomic | In-Network Compute(ReadReduce/WriteMulticast/Broadcast/AllReduce) |
+| **MOESI/GPU** | `moesi_gpu` | `MoesiGpuAdapter` | 6 态 × 6 事件;snoop 型(SoC 内) | ArchForge 贡献(per `32 号` §6.1);**E→M 静默升级**是 `ADR-CEP-13` 域可见写判据 (a)(b) 的**争点所在**(**该争点已裁定 → 状态见 `ADR-CEP-05 §13.1`**) |
+| **MESIF** | `mesif` | `MesifAdapter` | 分级目录型(跨卡);目录查询 / 定向 snoop;**SharerTracker 选型 = `HierarchicalDirectory`**(`SYSTEM/EXACT/GLOBAL/HIERARCHICAL` —— 多级聚合) | ArchForge 贡献(per `32 号` §6.2);与 `moesi_gpu` **互不承认**(per `32 号` C1);⚠ 声明权威已迁本仓 ⇒ 与 `32 号 §6.2` **分叉**(跨仓追认债) |
 
 > **协议数 6 族 / 8 实例**(✅ **2026-11-06 一致性修复** —— per 台账 Entry #239:新增 `ualink_4` 实例 ⇒ 本计数与 `protocol_instances.json` 的 8 实例**首次相符**;此前本处写 8 而 JSON 为 7);CXL 2.0 与 3.0 对称在**实现阶段**是两个 change;⚠️ **2026-11-02 订正**(per 台账 Entry #167)—— adapter **不共用**:2.0 = `CxlCacheAdapter` · 3.0 对称 = `CxlDcohAdapter`(**独立载体**;per 本文件 `Status Update(2026-11-02)` ③ + 台账 Entry #154)⇒ 原「同一 adapter 的两种模式」的表述**已失效**)
 >
@@ -668,323 +668,20 @@ experimental/<run_id>/
 
 ## 11. Gap → 实现状态映射
 
-> **口径(2026-10-27 活口径表同步,per 台账 Entry #82 授权)**:本表是**实现状态的活映射** —— 状态以**实测**为准(代码载体 + 行为化测试 + 归档件三者一致),**不复制** ADR 判据文本。
-> **图例**:🟡 = 部分落地 / 降级实现(逐行标注缺口与承接队列)· ✅ = 已落地且有行为化载体 · ⛔ = scope reduction。
-> **本表只登记状态**,不改 §3 ~ §8 的架构正文(per ADR 不可变 + Status Update 先例)。
-
-| 能力 | 定义位置 | 实现状态(2026-11-02 实测) | 承接 change |
-|------|---------|-------------------------|-----------|
-| canonical 10 流契约 | §3.1 | 🟡 **部分落地** —— Stub Cache RN 侧 5 流(`stub_cache_core.hh` 6 接口)已行为化;`MoesiGpuAdapter` 6 事件已行为化;`protocol_instances.json` 的 `flow_support` 10 布尔已填;**载体已落地**(`CohIfBundle` —— `include/bundles/cep_coherence_bundles_tlm.hh`,Entry #84;`ProtocolEngine` 基类 —— `include/tlm/cep/protocol_engine_base.hh`,Entry #85) | 载体 = `cpptlm-cep-cohif-carrier`(队列 #7) |
-| Stub Cache Core | §3.2 | ✅ **已落地** —— 6 接口 / 5 态 / `INV-SC1`~`SC6` + `INV-CEP-05-IC1` 行为化(14 测试) | `cpptlm-cep-stub-cache-core`(2026-10-25 已归档) |
-| SharerTracker **6** 实现 | §5.2 | ✅ **6 / 6** —— ⚠️ 2026-11-03(队列 #13 实现层)`BroadcastNull` 行为实现落地(`broadcast_null_tracker.hh`,协议无关)⇒ 6 个 tracker **全部**有行为面 —— `FullMapDirectory`(队列 #4,**参考实现**,当前**无实例声明**)+ `HierarchicalDirectory`(队列 #9,多级聚合 + F 态缺口登记)+ `SparseSnoopFilter`(队列 #10 实现层,**CONSERVATIVE** 保守型)+ `TreeManager`(队列 #11 实现层,**树形**:`SUBTREE`/ `FullMapDirectory`(队列 #4,**参考实现**,当前**无实例声明**)+ `HierarchicalDirectory`(队列 #9,多级聚合 + F 态缺口登记)+ `SparseSnoopFilter`(队列 #10 实现层,**CONSERVATIVE** 保守型)+ `TreeManager`(队列 #11 实现层,**树形**:`SUBTREE`/`EXACT`/`LOCAL`/`TREE_PARENT` + `CHAIN` hazard;`ESCALATE_UP` 的**首次真实使用**)+ `DcohSymmetric`(队列 #12 实现层,**保守型**:`LOCAL_MEMORY_REGION`/`CONSERVATIVE`/`LOCAL_HINT`/`HOME` + `STALL` hazard;**独立头** `cxl_dcoh_tracker.hh`)**五个行为实现已落地**;其余 1 个(`BroadcastNull`)**仅声明层 traits**(`sharer_tracker.hh:200` 的 `kTrackerTraits` 数组) | 行为实现落位登记:`DcohSymmetric` ↔ #12 **✅ 已落地**(2026-11-02)· `BroadcastNull` = **无消费者 ⇒ 不排期、保留登记**;⚠️ `TreeManager` 的**行为实现已于 2026-11-02 落地**(队列 #11 实现层,per 台账 Entry #146)⇒ **本行的实现数由 3 / 6 改为 4 / 6 → 5 / 6**(第 5 个 = `DcohSymmetric`,队列 #12 实现层,2026-11-02,per 台账 Entry #166 / **#167**);⚠️ **`FullMapDirectory` = 同样「无消费者 ⇒ 不排期、保留登记」**(2026-11-01 per 台账 Entry #139 裁决 —— **反向缺口**:有行为实现 · 零实例声明;⚠️ 与 R11 的「声明超前于实现」**方向相反**,不因 R11 降级而闭合;**实现不废弃**,未来 CHI-full 队列出现时直接可用);per 台账 Entry #107 / #112 / #129 / #139) |
-| Collective Plane | §5.3 | 🟡 **部分落地** —— `CollectivePlaneIf` 恰 7 方法 + `NullCollectivePlane` + `LocalCollectivePlane`(group 生命周期 / region-epoch / BARRIER rendezvous);⚠️ **2026-11-04(队列 #14 实现层)新增 `FabricCollectivePlane`**(承载**真实 fabric 集合流量**):**REDUCE / BROADCAST / MULTICAST 数据路径真可达** + **C-3 控制面与数据面互斥**(in-flight ⇒ 拒绝 register / destroy,`Status::ControlPlaneConflict`);⚠️ `LocalCollectivePlane` 的数据路径**仍**未实现(返 `Status::DataPathNotImplemented`);`fabric_ingress_classify` 路由接线未实现 | 骨架 = `cpptlm-cep-collective-plane-base`(2026-10-26 已归档);数据路径 = `cpptlm-cep-ualink-inc`(2026-11-04 已归档) |
-| ProtocolEngine adapter 实例(§5.1.1 工业 8 + §5.1.2 Ruby 8 = 16;§5.1.4 候选语义落地后为 20) | §5.1 | 🟡 **8 个已落地**(⚠️ 2026-11-03 队列 #13 实现层 +1 `NvlinkAdapter`;⚠️ 2026-11-06(per 台账 Entry #239)路径 A +1 `UalinkAdapter`;⚠️ 本格原有「adapter 实例 **5 个**」与「**6 个已落地**」**两个互相矛盾的数字** ⇒ 一并订正为 **7**) —— `MoesiGpuAdapter`(6 态 × 6 事件表驱动 + 6→4 perm 投影 + 6→3 消息类映射;首个 `status=implemented` 实例)· `ChiRnfAdapter`(队列 #8)· `MesifAdapter`(队列 #9,零自有表副本 + 6→3 映射)· `CxlDcohAdapter`(队列 #12,零自有表副本 + 独立规约载体;**6 实例**)· `CxlCacheAdapter`(队列 #10,委托规约载体 + 三态查询面)· `TileLinkCAdapter`(队列 #11,零自有表副本 + 6→3 映射 + 10 行逐消息表)· `NvlinkAdapter`(队列 #13,零自有表副本)· `UalinkAdapter`(队列 #14,零自有表副本;**无硬件一致性** ⇒ 无 snoop 类流);**`ProtocolEngine` 基类已落地**(`ProtocolEngineBase<N>`,Entry #85);**`NullProtocolEngine`(§6.4 + `INV-CEP-07-IC2`)亦已落地**(10 流覆盖矩阵 + 2 条编译期锁,Entry #85)—— **adapter 实例 8 个**(`MoesiGpuAdapter` / `ChiRnfAdapter` / `MesifAdapter` / `CxlDcohAdapter` / `CxlCacheAdapter` / `TileLinkCAdapter` / `NvlinkAdapter` / `UalinkAdapter`);基类落地 ≠ 插件实例落地 | `cpptlm-cep-moesi-gpu-adapter`(2026-10-27 已归档);载体 = 队列 #7 |
-| ModuleFactory seam | §6.3 | 🟡 **部分落地** —— 装配期判据闸门已接(`src/core/module_factory.cc:167-186`,`run_channel_gate` + `run_ordering_gate`,FAIL 即中止实例化);**协议桥钩子已从死钩子变活钩子**(`register_protocol_bridge(name, factory_lambda)` + `get_bridges()` 转 public + `ModuleFactory` **Step 7.5** 消费路径,Entry #86);**`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏已落地**(`include/chstream_register.hh`,Entry #87;含 `static_assert(n > 1)` + 运行期验证)⇒ **CEP 类注册已落地**(`CohIfProtocolEngine`,Entry #88)+ **JSON 装配端到端通过**(一次 CohIf 事务**穿过** adapter 抵达对端)⇒ `INV-CEP-07-IC4` **已闭合** | **已完成**(Entry #89):Phase 6 判据收口(`test/test_cep_cohif_carrier.cc` 17 case)+ Phase 7 反向 fixture **登记位置**补齐(`scripts/README.md` §反向 fixture 登记 + `docs/ONBOARDING.md §5.5`)+ **零 diff** 复核通过 |
-| 实验输出 4 件套 | §7 | ✅ **已落地** —— `tools/{render_report,run_sweep,ab_compare}.py` + `experimental/metrics.schema.json` + 4 件套契约测试(`test_cep_canonical_invariants.cc` / `test_cep_dummy_signals.cc` / `test_cep_module_factory_seam.cc` / `test_cep_simulation_mode_lock.cc`) | Stage 0(`cpptlm-cep-umbrella`,2026-10-23 已归档) |
-| simulation_mode 单一维度 | §6.1 | ✅ 已落地(`06 §5.1` + `01-hybrid §4.7` + `VramControllerTLM::set_mode`)| — |
-| Bundle 二分类 | §5.4 | ✅ 已落地(`06 §3.2` 18 个 .hh;**第三类已由 `06 §3.3` 增补**,其唯一实例 `CohIfBundle` **已落地**(2026-10-27 per 台账 Entry #84)—— 见第四则 Status Update ③)| — |
-| Python 拓扑生成 | §8.1 沿用 `06 §7` | ✅ 已落地(`cpptlm.library.mesh_cluster/ring_cluster`)| — |
-| IOMMU 完整协议 | §8.2 P5 | ⛔ scope reduction **待签发独立 ADR**(per `ADR-CEP-00 §3`)| 待定 |
-| Ordering Point 可迁移性判据 | `ADR-CEP-08 §3` | ✅ **已落地** —— J1 / J2 / J3 + `INV-CEP-08-IC2` 行为化(6 测试);**J3 通用形式不可静态判定 ⇒ 多点显式 `SKIP`**;J2 在合法声明上 vacuous PASS | `cpptlm-cep-directory-ordering-plane`(2026-10-25 已归档) |
-| 通道依赖图无环检查 | `ADR-CEP-09 §3` | ✅ **已落地** —— 装配期逐 `(network, vc)` verdict + DFS 三色环检测(8 测试) | `cpptlm-cep-directory-ordering-plane`(2026-10-25 已归档) |
-| 协议实例能力声明 schema | `ADR-CEP-12 §3` | ✅ **已落地** —— `protocol_instance.schema.json`(M1 冻结集)+ 5 条 AC 判据 + `protocol_instances.json` 声明源(**7** 实例:`moesi_gpu` / `mesif` / `chi_rnf` / `cxl_2_0` / `tilelink_c` / **`cxl_3_0_symmetric`** / **`nvlink_4`** —— ⚠️ 2026-11-03 队列 #13 实现层 +1);**首个 `implemented` 实例的装配期复核已通过**(⚠️ **2026-11-02 订正**(per 台账 Entry #167):队列 #12 新增第 6 个实例) | `cpptlm-cep-stub-cache-core` / `cpptlm-cep-moesi-gpu-adapter`(均已归档) |
-| 跨域组合判据 | `ADR-CEP-13 §3` | 🟡 **部分落地** —— 判据 (a)(b) 已裁定(`moesi_gpu` 静默 `E→M` = 域可见写);**跨域人工声明 + 实验证伪未落地** | Stage 2(队列 #12 ~ #14) |
-
----
-
-## §附录 · Status Update 2026-10-25(per 台账 Entry #62)
-
-> **授权**:Entry #62(队列 #4 建 change + DRI 四项裁决:S1-1 ②建图层 + S1-7 (β) 同批 + M-4 行为侧登记保留 + scope 切小)。
-> **口径**:本节不改动正文;只**登记授权** + 3 个 change 引用修正。
-> **引用修正清单**:
-> - `§7.4 P3 SnoopFilter → SharerTracker 5 实现` 的 change 关联:队列 #3(已完成归档)的 M-4 契约 + 队列 #4(即将实施)的**FullMapDirectory 唯一行为实现**(per 2026-10-25 DRI 裁决「范围切小」,其余 4 实现跟随队列 #6~#9)
-> - `ADR-CEP-04 §8` 的 4 个后续 change 名(`cpptlm-cep-sharer-tracker-base/-impls/-cxl-dcoh/-tilelink-tree`)**失指已处置**(该 ADR §10 Status Update)
-> - **SharerTracker 实施载体**改为:**`cpptlm-cep-directory-ordering-plane`**(单 change,1 KPI slot)
-> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #62)。
-
-## §附录 · Status Update 2026-10-27(per 台账 Entry #74)
-
-> **授权**:Entry #74(队列 #7 `cpptlm-cep-cohif-carrier` 立项 + KPI 排队 13 → 14 + `ADR-CEP-19` 签发)。
-> **口径**:本节**不改**正文,仅登记授权 + 1 处**活口径表**的机械同步 + 3 处引用修正。
-> **① §8.1 Stage 表的机械同步(活口径,per Entry #27 / #71 同款先例)**:该表原写「Stage 1 = **7** / 合计 **11**」—— **已落后两代**(连 2026-10-26 的 13 都未跟上)。`ADR-CEP-00 §2 Decision 3` 的排队现为 **14**(Stage 1 = **10**)⇒ **同批机械同步**为 Stage 1 = **10** / 合计 = **14**,并把 Stage 1 的内容描述从「3 协议 RN-F subset」补全为「**CohIf 载体** + 5 协议实例(RN-F subset / `moesi_gpu` / `mesif` / CXL 非对称 / TileLink-C)」。**本表仍只承载「Stage 划分 + change 数」**,**不含**时间跨度与估时(排期真源 = `obj §4.0`)。
-> **② §6.3 ModuleFactory 集成 seam 的落地排期**:该节表规定「**ProtocolEngine** 派生类 = `ChStreamModuleBase` + `ModuleFactory::registerObject<T>`」等四类派生类 —— 仍是**最终形态**口径;**落地**排在队列 #7 `cpptlm-cep-cohif-carrier`(见 `ADR-CEP-07` Status Update 同日登记)。
-> **③ §5.4 Bundle 约束的落点**:该节列的业务 / 网络 Bundle 清单**不含** CohIf Bundle —— 其交付队列为 #7,路径 `include/bundles/cep_coherence_bundles_tlm.hh`(per `ADR-CEP-19` 决策 6;**避开** `ADR-CEP-07A` 明令「不创建」的 `coherence_bundles_tlm.hh`)。**本节正文不改**,待队列 #7 实施后再同步。
-> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #74)。
-
-## §附录 · Status Update 2026-10-27(第二则 · per 台账 Entry #82 —— 实现状态映射漂移回填)
-
-> **授权**:Entry #82(P1 架构文档漂移回填 —— 由用户 2026-10-27 直接指令授权;配套 P0 = commit `d52fff56`)。
-> **口径**:本节**不改**架构正文(§2 ~ §10 的定义 / 职责 / 判据一律不动),仅登记授权 + **2 处活口径表的机械同步** + 失指引用修正。**冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #82"`。
+> **本节已迁出**(per 台账 Entry #333 架构文档治理):
+> 落地状态的唯一真源 = **`objective-cep-platform §4.0` 排队总表**(队列位状态)+ **`objective-cep-platform §4.0-a` 协议实例状态表**(实例级状态)+ **`objective-cep-platform §11` 决策台账**(残余缺口与欠账登记)。
 >
-> **① §11「Gap → 实现状态映射」全表机械同步(活口径表,per Entry #27 / #71 / #74 同款先例)**:该表原写「📐 契约已定义,🛠️ 未实现」11 行 —— **落后两代**(队列 #3 ~ #6 全部已归档,状态早已翻转)。本次按**实测**(代码载体 + 行为化测试 + 归档件三者一致)逐行重写为 🟡 / ✅ / ⛔ 三态并标注缺口与承接队列:
-> - **✅ 已完全落地(4 行)**:Stub Cache Core(`cpptlm-cep-stub-cache-core` 已归档)· 实验输出 4 件套(Stage 0 `cpptlm-cep-umbrella` 已归档)· Ordering Point 可迁移性判据 + 通道依赖图无环检查(均 `cpptlm-cep-directory-ordering-plane` 已归档)· 协议实例能力声明 schema(`cpptlm-cep-stub-cache-core` / `-moesi-gpu-adapter` 已归档)
-> - **🟡 部分落地(5 行)**:canonical 10 流契约(载体未落地)· SharerTracker 5 实现(**1/5**,其余 4 个仅 traits)· Collective Plane(骨架已落地,3 原语数据路径未实现)· ProtocolEngine adapter 实例(**1 个**,且基类本身不存在)· ModuleFactory seam(闸门已接 + **CEP 类注册已落地**,Entry #88 ⇒ `INV-CEP-07-IC4` **已闭合**)· 跨域组合判据(判据已裁定,人工声明未落地)
-> - **失指引用修正**:原「承接 change」列的 `cpptlm-cep-sharer-tracker-base` —— 该**change 目录不存在**(仅存同名 main spec `openspec/specs/cep-sharer-tracker-base/spec.md`);实施载体是 `cpptlm-cep-directory-ordering-plane`(同文件 2026-10-25 附录「SharerTracker 实施载体改为」已声明,本次 §11 漏同步)⇒ 已改为队列 #9 ~ #11 并标注队列 #9 另需第 6 实现 `HierarchicalDirectory`
->
-> **② §5.1.1 工业协议族表的**状态列**机械同步(活口径,per 同款先例)**:原 `moesi_gpu` / `mesif` 两行状态列均写「**未排期**」—— `moesi_gpu` 已于 2026-10-27 随队列 #6 **完成归档**(首个 `status=implemented` 实例),`mesif` 已**排期至队列 #9**(⚠ R-1 阻塞登记;季度见 `obj §4.0`)⇒ 同步为「✅ 已落地」/「📋 已排期」。**族计数(1 族 / 2 实例)与 `Entry #12` / `#13` 的历史补记不动**;**状态值以 `obj §4.0` 排队总表为唯一权威**,本表不复制排期。
->
-> **③ §5.4 Bundle 约束:本节正文仍不改**(per 本文件 2026-10-27 第一则附录 ③ 的既有处置 —— 待队列 #7 落地 `CohIfBundle` 后再同步第三类)。本则仅在 §11 的「Bundle 二分类」行注明「**第三类已由 `06 §3.3` 增补**,其唯一实例待落地」。
->
-> **④ 未随本则改动的已知缺口(登记,不处理)**:`NullProtocolEngine`(`§6.4` + `INV-CEP-07-IC2`)**无代码载体且无队列 owner**;`06 号 §15.1` / `§15.4` 尚未加「时间线转隶 CEP」注记;`06 号 §9.1` 的 `module_factory.cc` 行号漂移 ≈25 行 —— 三项均在**本仓 06 号 / 01 号**(非本冻结面成员),由同批 P1 在 06 号 / 01 号侧处置,本文件不代改。
->
-> **⚠️ 后续处置(2026-10-27,per 台账 Entry #83)**:上列 3 项**已全部处置** —— ① `NullProtocolEngine` owner = 队列 #7 task 2.5 / 2.6 / 2.7(增补);② `06 §15.1` / `§15.4`「时间线转隶 CEP」注记已加(commit `4d1e54fa`);③ `06 §9.1` 行号已刷新(commit `4d1e54fa`)。
->
-> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #82)。
-
-## §附录 · Status Update 2026-10-27(第三则 · per 台账 Entry #83 —— 载体缺口登记与 owner 指派)
-
-> **授权**:Entry #83(P2 收口:潜伏编译缺陷消解 + C9 机器断言补齐 + `NullProtocolEngine` owner 指派;用户 2026-10-27 直接指令授权)。
-> **口径**:本节**不改**架构正文(§2 ~ §10 的定义 / 职责 / 判据一律不动),仅登记 ① §11 一处**活口径**的 owner 补登 + ② 第二则 ④ 的处置回填 + ③ 两份 ADR 的 Status Update 指向。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #83"`。
-
-> **① §11「ProtocolEngine adapter 实例」行的 owner 补登(活口径)**:该行原文记「**`ProtocolEngine` 基类本身不存在**」—— 事实仍成立,但**`NullProtocolEngine`(§6.4 + `INV-CEP-07-IC2`)此前既无载体又无 owner** ⇒ 重演「无主债」。**本次指派**:owner = **`cpptlm-cep-cohif-carrier`(队列 #7)task 2.5 / 2.6 / 2.7** —— 理由:队列 #7 的 Phase 2 交付 `ProtocolEngineBase` 派生 `ChStreamModuleBase`,而 `INV-CEP-07-IC2` 规定 `NullProtocolEngine` 是 ProtocolEngine 的**默认实现**且须有 **10 流覆盖矩阵**(逐流行为 per §6.4)⇒ **建基类者同时交付其 ADR 强制的默认实现**,属该 change 的契约面自洽,非范围蔓延。task 2.6 / 2.7 附**反向 fixture**(覆盖矩阵缺 1 流 / 某流语义退化 ⇒ 必红)。
-
-> **② 第二则 ④「未随本则改动的已知缺口」的处置回填**:该处登记的 3 项**已全部处置** —— ① `NullProtocolEngine` owner = 队列 #7 task 2.5~2.7(见 ①);② `06 号 §15.1` / `§15.4`「时间线转隶 CEP」注记已加(commit `4d1e54fa`);③ `06 号 §9.1` 行号已刷新(commit `4d1e54fa`)。
-
-> **③ 本则关联的两份 ADR Status Update(同日追加,授权同源)**:
-> - `ADR-CEP-14` Status Update 2026-10-27 —— C9 四条要求的**覆盖现状逐条对账** + C++ 侧机器断言补齐 + **变异测试反证**(含一次真实的「负向断言恒真空」缺陷登记)。
-> - `ADR-CEP-07A` Status Update 2026-10-27(第二则)—— §4 验证口径第 2 项的**不实声称订正**(「Stage 0 由 `test_cep_canonical_invariants.cc` 的 C9 覆盖」实测不成立)+ `INV-CEP-07A-IC2` 与决策 1 第 7 项 ③ 的**时效张力登记** + C++ 侧 IC2 覆盖现状表。
->
-> **④ 本则未处理、已登记的项**:① `INV-CEP-07A-IC2` 的**时效限定**(拓扑 Python 层自 Stage 2 起适用)属**收紧 invariant** = 决策变更 —— **待 architect 裁决**,builder 不自行签发;② `ADR-CEP-14` C9 第 1 条的「反射 / 类型 trait」形态仍未落地(当前以标识符词扫描近似覆盖);③ `tlm::cep::ContractVerdict` 同名冲突已消解(commit `7f91abd9`),但 **`openspec/specs/` 与 ADR 契约面均无该符号名** ⇒ 无 delta spec 变更需求。
-
-> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #83)。
-
-## §附录 · Status Update 2026-10-27(第四则 · per 台账 Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)
-
-> **授权**:Entry #84(队列 #7 `cpptlm-cep-cohif-carrier` **Phase 1 实施** —— `CohIfBundle` 载体落地;用户 2026-10-27 直接指令授权)。
-> **口径**:本节仅登记 ① §5.4 的**已到期同步**(第一则附录 ③ 明确「待队列 #7 实施后再同步」⇒ **本次即该同步点**)+ ② §11 一处**活口径**的计数/状态机械同步。**§2 ~ §4 / §6 ~ §10 的定义 / 职责 / 判据零改动**。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #84"`。
-
-> **① §5.4 Bundle 约束:第三类同步(第一则附录 ③ 的已到期动作)** —— 该节原列「协议 Bundle / 业务 Bundle」**二分**,`CohIfBundle` **不在其中**;第一则附录 ③ 当时的处置是「**本节正文不改,待队列 #7 实施后再同步**」。**队列 #7 Phase 1 已交付 `CohIfBundle`**(2026-10-27,`include/bundles/cep_coherence_bundles_tlm.hh`)⇒ **本次执行该同步**:§5.4 增列**第三类**「跨模块共享的业务 Bundle」+ 其唯一实例 `CohIfBundle`。**§5.4 的其余三条(协议 Bundle 清单 / 业务 Bundle 清单 / 编译期锁 / 不做)** 与 §3.1 / §3.2 / §6 ~ §10 一律零改动。
-
-> **② §11「Bundle 二分类」行的活口径同步** —— 原写「`06 §3.2` **17** 个 .hh …其唯一实例**待落地**」⇒ 现为「**18** 个 .hh …其唯一实例 `CohIfBundle` **已落地**(Entry #84)」。
-
-> **③ `06 号` / `01 号` 侧的配套计数同步(真源 1,非冻结面成员)** —— 新增 1 个 `.hh` ⇒ `ls include/bundles/*.hh` 由 17 → **18**、`bundle_base` 派生类型由 25 → **26**、Bundle 类型总数 26 → **27**。`06 号` §1.3 / §1.4 图 / §2 / §3.2 / §3.3 与 `01 号` §1.2 的计数已同批同步(per 台账 Entry #84);`06 号` §1.3 第 3 项「不引入新 Bundle 类型」已加**例外**说明(`CohIfBundle` 属 §3.3 第三类,不在该文件二分讨论范围内)。
-
-> **④ 本则未处理、已登记的项** —— ① `CohIfBundle` 的**承载面**(ProtocolEngine 端口面 / `ProtocolBridge` / JSON 装配连通性)尚未落地 —— 归队列 #7 **Phase 2 ~ 5**;② `07 号` §6.4 的 `NullProtocolEngine` 仍无载体 —— 归队列 #7 task 2.5~2.7(owner 已于 Entry #83 指派);③ `INV-CEP-07A-IC2` 的时效限定与 `ADR-CEP-14` C9 第 1 条的「反射 / 类型 trait」形态仍**待 architect 裁决**(Entry #83 已登记,本则不重复)。
-
-> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #84)。
-
-## §附录 · Status Update 2026-10-27(第五则 · per 台账 Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)
-
-> **授权**:Entry #85(队列 #7 `cpptlm-cep-cohif-carrier` **Phase 2 实施** —— ProtocolEngine 端口面 + `NullProtocolEngine`;用户 2026-10-27 直接指令授权)。
-> **口径**:本节仅登记 ① §11 两处**活口径**的机械同步 + ② §6.4 的**实现状态**登记。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #85"`。
-
-> **① §11 两处**活口径**的机械同步**:「canonical 10 流契约」行的载体口径由「`CohIfBundle` 已落地 / `ProtocolEngine` 基类仍不存在」改为「**两者均已落地**」;「ProtocolEngine adapter 实例」行补登 `ProtocolEngineBase<N>` 与 `NullProtocolEngine` 已落地 —— **但 adapter 实例仍是 1 个**(`MoesiGpuAdapter`):**基类落地 ≠ 插件实例落地**,该行的主计数不变。
-
-> **② §6.4 Null 实现的**状态登记**(正文不改)**:§6.4 的「`NullProtocolEngine`:10 流覆盖矩阵 — 流 1/3/4/5/6/7/10 no-op;流 2 immediate-complete;流 8 immediate-resolve;流 9 immediate-complete」**仍是口径本身**,本次不改;登记其**已落地**:`include/tlm/cep/protocol_engine_base.hh`(`ProtocolEngineBase<N>` + `NullProtocolEngine<N>`),10 流覆盖矩阵以**单一真源**(`kNullFlowMatrix`)落盘,并由**两条编译期锁**钉住(① 覆盖完整性:canonical 10 流各恰好一次且总数 10;② 逐流行为与本节口径一致)。⇒ **`INV-CEP-07-IC2` 的「默认实现 + 10 流覆盖矩阵」两条要求已可执行验证**(此前全仓零载体)。
-
-> **③ 与 `ADR-CEP-07` 的同步**:决策 4 草图的落点路径(`include/tlm/cep/null_protocol_engine.hh`)与实现落点(`protocol_engine_base.hh`)**不同**,已登记为**路径偏离**(语义零变化)—— 详见 `ADR-CEP-07` Status Update 2026-10-27(第二则)②③。
-
-> **④ 本则未处理、已登记的项**:① ProtocolEngine 的**注册与 JSON 装配**(`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏 + `module_factory.hh` 钩子扩展)尚未落地 ⇒ 归队列 #7 **Phase 3 ~ 5**;② `INV-CEP-07-IC4`(0 个 CEP 类注册)**仍无载体** —— 同上;③ 本仓 `BidirectionalPortAdapter::tick()` 的**实现**目前**硬编码 `NoCFlitBundle` 语义**(读 `flit_category` 决定 `PKT_REQ`/`PKT_RESP`、credit 用 `NoCFlitBundle`)⇒ 用它承载 `CohIfBundle` 需要**泛化** —— 归 Phase 4 / 5,**本则不处理**。
-
-> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #85)。
-
-## §附录 · Status Update 2026-10-28(第六则 · per 台账 Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)
-
-> **授权**:Entry #86(队列 #7 `cpptlm-cep-cohif-carrier` **Phase 3 实施** —— ProtocolBridge 特化桥 + `register_protocol_bridge` 死钩子变活钩子 + per-bridge 元数据;用户 2026-10-28 指令授权)。
-> **口径**:本节仅登记 ① §11 活口径的**机械同步** + ② Phase 3 的**落地状态** + ③ **判据分层的架构事实**。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #86"`。
-
-> **① §11「ModuleFactory seam」行的活口径同步**:原写「0 个 CEP 类注册 ⇒ `INV-CEP-07-IC4` 无载体 | 队列 #7(`REGISTER_CHSTREAM_BIDIRECTIONAL` + `module_factory.hh:313-315` 死钩子扩展)」⇒ 现为「**死钩子扩展已实施**(`register_protocol_bridge(name, factory_lambda)` + `get_bridges()` 转 public + `ModuleFactory` Step 7.5 消费路径,Entry #86);**`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏仍未开始**(Phase 4)⇒ **0 个 CEP 类注册** ⇒ `INV-CEP-07-IC4` **仍无载体**」。**该行的主结论(0 个 CEP 类注册)不变**。
-
-> **② Phase 3 落地登记(正文不改)**:交付 `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` 类型擦除基类 + `ProtocolBridge<InB,OutB,Ordered>` 模板子类 + `AbstractProtocolBridge<FlitT>` identity 基线)+ `include/tlm/cep/cohif_noc_bridge.hh`(CohIf ↔ NoC 特化桥)+ `include/tlm/cep/protocol_family.hh`(协议来源族 ↔ 数字编号的唯一真源)。
-> 判据状态:**CC-03** 两层落地(① 消息内容层:共有字段 4 个双向无损 + 协议语义字段显式登记丢弃/降维;② 端到端层:`Packet` payload 数据区承载完整 12 字段 ⇒ 逐字段恒等)· **CC-05** 四子条件全部落地(注册表可读 / Step 7.5 消费 / `(name, factory_lambda)` 形态 / per-bridge 元数据齐备)· **CC-06** **引用**队列 #6 的 AC-04 实现(未重立第二份)。
-> ⚠️ **「端到端层」是判据的**加强**而非削弱** —— 「CohIf 语义跨网络不透损」由**跨真实网络的往返**保证(原单层判据只覆盖同进程内 Bundle 往返)。详见 `ADR-CEP-19` Status Update 2026-10-28(第二则)②。
-
-> **③ 架构事实登记(本则核心)—— 「Bundle 级逐字段 round-trip 恒等」不可达**:`CohIfBundle.flow_id` 域 = **5 值**;`NoCFlitBundle.flit_category` 域 = **3 值**;队列 #6 的 6→3 消息类映射表是**刻意多对一**的 ⇒ **5→3 多对一有损** ⇒ 仅靠网络 flit 字段空间**不可能**唯一恢复 `flow_id` ⇒ 协议语义(`perm`/`snoop_type`/`line_state`/`hit`/`dirty`/`error`/`atomic` + `flow_id`)**必须**有自己的落脚点 ⇒ 落在 **Packet payload 数据区**(2026-10-28 DRI 裁决的 **B′ 方案**;**不**用 `tlm_extension` ⇒ 不触 `06 号 §4.5` 的 P3+ 排除项)。
-
-> **④ per-bridge 元数据口径(2026-10-28 DRI 裁决)**:**`protocol_id_` = 协议来源族的数字编号**(`family` ∈ {`industrial`,`ruby-slicc`,`academic`},编号真源在 `include/tlm/cep/protocol_family.hh`);**实例级唯一性由 `bridge_id_` 负责**。⚠️ 判据 CC-05 ④ 原措辞「`protocol_id_` 与实例声明的 `family` 一致」若按「相等」读则**恒真**(多个 industrial 实例同族)⇒ 本次按**编号对齐**落地,判据**未被削弱**反而可机器检查。
-
-> **⑤ 行号漂移登记(本文件正文的行号引用按「ADR 不可变」不改)**:本文件引用的 `include/core/module_factory.hh:122`(现 **128**)/ `:135`(现 **141**)/ `module_factory.hh:313-315`(现 **336-343**)与 `chstream_module.hh:73`(现 **74**)/ `:54`(现 **55**)**均已语义漂移**(符号仍在,行号变了)⇒ 完整对照表见 `06 号` 文末「附录 · 行号对照表」(2026-10-28)。
-
-> **⑥ 本则未处理、已登记的项**:① `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏与 CEP 类注册 ⇒ 归队列 #7 **Phase 4 / 5**(`INV-CEP-07-IC4` 仍无载体);② `BidirectionalPortAdapter::tick()` 仍**硬编码 `NoCFlitBundle` 语义** ⇒ 承载 `CohIfBundle` 需泛化 ⇒ 归 Phase 4 / 5(第五则 ④ 已登记,本则**状态不变**)。
-
-## §附录 · Status Update 2026-10-28(第七则 · per 台账 Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化)
-
-> **授权**:Entry #87(队列 #7 `cpptlm-cep-cohif-carrier` **Phase 4 实施** —— 装配宏 + 编译期锁 + 反向 fixture;用户 2026-10-28 指令授权)。
-> **口径**:本节仅登记 ① §11 活口径的**机械同步** + ② Phase 4 的**落地状态** + ③ **泛化的必要性与边界**。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #87"`。
-
-> **① §11「ModuleFactory seam」行的活口径同步**:原写「**`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏仍未开始**(Phase 4)」⇒ 现为「**宏已落地**(`include/chstream_register.hh`,Entry #87;含 `static_assert(n > 1)` 与**运行期**验证:adapter 工厂可查到该类型且端口数一致 + JSON 顶层可实例化该类型)」。⚠️ **该行的主结论不变**:**0 个 CEP 类注册**(`REGISTER_MODULE` / `REGISTER_OBJECT` 对 **CEP 类**零命中)⇒ `INV-CEP-07-IC4` **仍无载体** —— 宏是**能力**,不是**注册**。
-
-> **② Phase 4 落地登记(正文不改)**:交付 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)` —— ① **两件都做**(`ModuleFactory::registerObject<T>` + `ChStreamAdapterFactory::registerBidirectionalPortAdapter<T,B,N>`)② **不**照抄 `REGISTER_CHSTREAM_DUAL` 的**半截实现**(那个宏**只**注册 adapter、**不含** `registerObject`,且全仓零调用点 ⇒ 不能作为形态基准)③ 宏内 `static_assert(n > 1)`(判据 CC-04 ③)。
-
-> **③ 必要的前置:`BidirectionalPortAdapter` 的 Bundle 无关化(泛化)** —— 该 adapter 原本**硬编码** `NoCFlitBundle` 语义:读 `flit_category` 决定 `PKT_REQ`/`PKT_RESP`,且 credit 用 `NoCFlitBundle` 构造 ⇒ 承载 `CohIfBundle` 会**编译不过**(`CohIfBundle` 无 `flit_category` / `vc_id`)。⇒ 抽成 `cpptlm::BundleDirectionTraits<BundleT>`:**框架层不认识任何具体 Bundle**,各 Bundle 在**自己的层**提供特化(CEP 侧先例 `include/tlm/cep/cohif_direction_traits.hh`)。⚠️ **未特化的 BundleT ⇒ 编译期报错**(不是静默用错方向)。⇒ **`NoCFlitBundle` 特化逐行为等价于泛化前的硬编码实现**(实测全量回归 **0 变化**)。
-
-> **④ 判据状态**:CC-04 ③ 的「**N ≥ 2**」由**编译期锁**(`static_assert(n > 1)`)保证,且**反向 fixture 实测有牙**:N=1 ⇒ 编译失败且失败原因**精确命中**该断言(若失败原因是别的 ⇒ 判据「因错误的原因红」⇒ 脚本判红);N=2 ⇒ 编译成功(正控)。⇒ 已注册 ctest `cep_chstream_bidirectional_macro_reverse_verify`(3/3)。
-
-> **⑤ 行号漂移登记(本文件正文的行号引用按「ADR 不可变」不改)**:`include/framework/bidirectional_port_adapter.hh` 因 Phase 4 的泛化(新增 trait 块 + 模板参数)整体下移 —— `bind_port_pair` 128 → **171**、`bind_ports`(**空操作 shim**)141 → **184**、`pending_credits_` 105 → **148**、`receive_credit` 调用 184 → **225**、`send_credit` 216 → **257**、`send_credit_impl` 228 → **269**。⚠️ **`CATEGORY_CREDIT` 的写入点位置迁移**:原 `:235`(在 `send_credit_impl` 内)⇒ 现 `:109`(在 `BundleDirectionTraits<NoCFlitBundle>::fill_credit` 内)—— **语义不变**,但「全仓唯一写 `CATEGORY_CREDIT` 的点」的**位置**变了 ⇒ 相关陈述已加**时态锚定**(见 `.rddf/improvements/cpptlm-cep-stub-cache-core.md`)。⚠️ `include/chstream_register.hh` 的既有行号(**50 / 119 / 121 / 175 / 177**)**零漂移**(新宏插在 `REGISTER_CHSTREAM_DUAL` 之后)。
-
-> **⑥ 本则未处理、已登记的项**:① **CEP 类注册**(`REGISTER_CHSTREAM_BIDIRECTIONAL` 的**实际使用者**)⇒ 归队列 #7 **Phase 5**(`INV-CEP-07-IC4` 仍无载体);② `BidirectionalPortAdapter::tick()` 的其余部分仍**假定模块提供 `receive_credit`** ⇒ `ProtocolEngineBase` 已加**默认空实现**(零波及),但**协议引擎的 credit 回收语义**未建模 ⇒ 归 Phase 5。
-
+> **架构文档不承载实施状态** —— 本节原表(能力 → 实现状态 → 承接 change)是**实施视图**,不属于蓝图。
+> 能力清单本身仍在 **§2 / §3 / §5.1** 定义,本节不重复。
 ## §附录 · Status Update 2026-10-28(第八则 · per 台账 Entry #88 —— JSON 装配连通性落地 + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记)
 
-> **授权**:Entry #88(队列 #7 `cpptlm-cep-cohif-carrier` **Phase 5 实施** —— JSON 装配连通性;用户 2026-10-28 指令授权)。
-> **口径**:本节仅登记 ① §11 活口径的**机械同步** + ② Phase 5 的**落地状态** + ③ **egress 通道语义**这一新决策面 + ④ 行号漂移。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #88"`。
-
-> **① §11「ModuleFactory seam」行的活口径同步**:原写「但 **0 个 CEP 类注册**(`REGISTER_MODULE` / `REGISTER_OBJECT` 对 CEP 类零命中)⇒ `INV-CEP-07-IC4` **仍无载体**(宏是**能力**,不是**注册**)」⇒ 现为「**CEP 类注册已落地**(`CohIfProtocolEngine` = `CohIfNullProtocolEngine` 的非模板可注册外壳,`REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED` 注册,Entry #88)+ **JSON 装配端到端通过**(一次 CohIf 事务**穿过** adapter 抵达对端)⇒ `INV-CEP-07-IC4` **已闭合**」。⚠️ **口径限定**:闭合的是「**CEP 类走既有宏体系注册**」这一条;**协议桥**的**消费**仍由 `config["cep"]["bridges"]` 驱动(配置驱动,非自动挂载)。
-
-> **② Phase 5 落地登记(正文不改)**:task **5.1 ~ 5.4** 全闭合 —— ① **走既有 JSON 端口注册链**(`ChStreamAdapterFactory` → `ModuleFactory` 的 `is_multi` 分支 → `bind_port_pair`),**零** programmatic 端口注入;② `configs/cep_cohif_pe_minimal.json`(2 个 PE,N=2,双向互连 + `cep.bridges` 挂载);③ **端到端**:一次 CohIf 事务**穿过** adapter 抵达对端(判据形态 = 对端 canonical 流**计数器递增** + 发起侧**未**收到自己的事务 + 其它流**未**被误触发);④ **反向 fixture 2 类**(「无连接」⇒ `NotArrived`;「dst 指向不存在的端口索引」⇒ 非 `Arrived`)。⚠️ **判据纪律**:反向 fixture 用 `ReachOutcome` **枚举**区分「装配失败 / 未实例化 / 未抵达 / 已抵达」⇒ 防止「因错误的原因红」(装配被拒也算「红」)。
-
-> **③ 新决策面登记 —— egress 通道(CohIf ⇒ `req_out`)**:Phase 5 发现 egress 走哪条通道**不是**纯实现细节,而是**判据可判别性**的前提 ⇒ 由 Bundle 专属 trait 声明:`cpptlm::BundleDirectionTraits<BundleT>::egress_channel()`(`Resp` 默认 = `RouterTLM` 既有行为;`Req` = `CohIf` 语义)。
-> ⚠️ **登记一条实测纠偏**(避免留下错误口径):**两种通道都能把数据送到对端 ingress** —— 框架的 `ChStreamTargetPort::recvReq` 对 `req_in` / `resp_in` **一视同仁**,都投递到 `process_request_input` ⇒ 「走 `resp_out` 会丢数据」的说法**不成立**。⇒ `CohIf` 选 `req_out` 的**真实理由**是:① **方向语义正确** —— `resp_out` 装的是「**对方→我**」那条 JSON 连接的响应通道,egress 借用它会**倒置连接方向**;② **判据有牙** —— egress 走 `req_out` 时「断开我→对方的连接」**确实切得断** egress;实测把 `CohIfBundle` 的 `egress_channel` 改成 `Resp` ⇒ 反向 fixture「dst 指向不存在的端口索引」**假通过**(另一条 JSON 连接仍把 `resp_out` 接到对端)⇒ 该 trait 值已作为**具名判据**钉在 `test/test_cep_cohif_json_assembly.cc`。
-
-> **④ 判据状态**:CC-04 ①②③ **全部有可执行判据 + 反向 fixture**(实测有牙,且**因正确原因**红)。`INV-CEP-07-IC4` 由「无载体」转「**已闭合**」。
-
-> **⑤ 行号漂移登记(本文件正文的行号引用按「ADR 不可变」不改)**:`include/chstream_register.hh` 因 Phase 5 在 **前部**插入「共享注册 helper + 2 个装配宏」且在 `REGISTER_CHSTREAM` 宏体**内部**插入「CEP PE 注册 + 协议桥注册」⇒ `REGISTER_CHSTREAM` 50 → **107**、`registerObject<tlm::RouterTLM>` 62 → **119**、`registerObject<tlm::NICTLM>` 63 → **120**、`registerBidirectionalPortAdapter<tlm::RouterTLM>` 119 → **188**、`registerDualPortAdapter<tlm::NICTLM>` 121 → **190**、`REGISTER_CHSTREAM_DUAL` 175 → **244**、其宏内 `registerDualPortAdapter` 177 → **246**。⚠️ **一处「零漂移」结论已失效**:第七则 ⑤ 登记的「`chstream_register.hh` 既有行号零漂移」是**当时**的口径(Phase 4 把新宏插在 `REGISTER_CHSTREAM_DUAL` **之后**),现已被 Phase 5 推翻。`include/framework/bidirectional_port_adapter.hh` 再 +24/+26/+35(`EgressChannel` 枚举等)。完整对照表见 `06 号` 文末「附录 · 行号对照表(Entry #88)」。
-
-> **⑥ 本则未处理、已登记的项**:① **协议引擎的 credit 回收语义**仍未建模(`ProtocolEngineBase::receive_credit` 是**默认空实现**)⇒ 归 Phase 6;② `ProtocolEngineBase::tick()` 现在会**驱动 adapter**(与 `RouterTLM::tick()` 惯例一致)—— 该行为变更已进入**框架惯例**,但**协议引擎侧**的 tick 语义尚未在 `07 号 §6.4` 展开登记 ⇒ 归 Phase 6;③ Phase 6(测试收口)/ Phase 7(闸与真源同步)未开始。
-
-## §附录 · Status Update 2026-10-28(第九则 · per 台账 Entry #89 —— 判据收口(Phase 6)+ 闸与真源同步(Phase 7))
-
-> **授权**:Entry #89(队列 #7 `cpptlm-cep-cohif-carrier` **Phase 6 + Phase 7 实施** —— 判据收口 + 反向 fixture 登记 + 零 diff 复核;用户 2026-10-28 指令授权)。
-> **口径**:本节仅登记 ① §11 活口径的**机械同步** + ② Phase 6/7 的**落地状态**。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #89"`。
-
-> **① §11「ModuleFactory seam」行的活口径同步**:末列「队列 #7 Phase 6(测试收口)/ Phase 7(闸与真源同步)」⇒ 现为「**已完成**(Entry #89):Phase 6 判据收口(`test/test_cep_cohif_carrier.cc` 17 case)+ Phase 7 反向 fixture **登记位置**补齐(`scripts/README.md` §反向 fixture 登记 + `docs/ONBOARDING.md §5.5`)+ **零 diff** 复核通过」。⚠️ **该行的主结论不变**:`🟡 **部分落地**`(闸门已接 + 钩子已活 + CEP 类已注册 + 端到端已通;但**跨域组合判据**等其它行仍非本 change 范围)。
-
-> **② Phase 6 落地登记(正文不改)**:① `test/test_cep_cohif_carrier.cc`(新建,**17 case / 52 assertion**)覆盖 **CC-01 ①②③ / CC-02 ①②③ / CC-04 ①②③**;② `test/test_cep_protocol_bridge_contracts.cc`(Phase 3 交付,Phase 6 复核覆盖完整,**14 case / 104 assertion**)覆盖 **CC-03 / CC-05 / CC-06**;③ **CC-06 引用**队列 #6 的 AC-04 实现(`tlm::cep::category_value_domain()`,来自 `include/tlm/cep/adapter_schema_contracts.hh`)⇒ **不重立第二份判据**。
-> ⚠️ **编译期锁在 ctest 内可执行**(满足「编译期锁**不得**只以『编译红』充当 ctest 判据」):该文件用 `popen` 调编译器,断言「编译**确实**失败」**且**「失败原因**命中**预期的那条 `static_assert`」⇒ 防「因错误的原因红」。
-> ⚠️ **反向 fixture 实测有牙**:临时删掉**头文件 + 编译探针**两处 `is_trivially_copyable` 锁 ⇒ 「CC-02 反向 fixture ④」**报红**;恢复后全绿。
-
-> **③ Phase 7 落地登记(正文不改)**:① **反向 fixture 登记位置补齐** —— 本 change 的 4 个反向 fixture 脚本此前**未登记**在 `scripts/README.md` 守门脚本表与 `docs/ONBOARDING.md §5.5` ⇒ 已补登记,并新增 **`scripts/README.md` §反向 fixture 登记**表(判据 ID · fixture 形态 · **登记位置**,共 **13** 条);② ctest 显式登记 3 条(`cep_cohif_carrier` / `cep_protocol_bridge_contracts` / `cep_json_assembly`);③ **零 diff** 复核:`test/test_cep_canonical_invariants.cc` 零 diff + 全 change 范围**未新增** `INV-CEP-*` 定义 ⇒ **新增 invariant 数 = 0**(`[cep][canonical-invariant]` 13 case / 687 assertion 全绿)。
-> ⚠️ **一处口径偏离已诚实登记**:Phase 7 的 task 7.1 字面指向 `scripts/test/cep_decl_reverse_verify.sh`,但该脚本守的是「**协议实例声明 ↔ schema 一致性**」域(`fabric.json` / `protocol_instances.json` / ArchForge 声明),与本 change 的判据域(CohIf 载体 / ProtocolEngine 端口面 / ProtocolBridge / JSON 装配)**零交集** ⇒ 在其中加本 change 的 fixture **等于测另一个闸**(违反「不重发明」)⇒ **未改动该脚本**,改按「登记位置补齐」落地(见 `tasks.md` 7.1 的口径偏离登记)。
-
-> **④ 门禁实测**:9 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --changes --strict` 全 rc=0;`cep_gate_selftest` rc=0;`ctest -R cep` **35/35**;全仓 `cpptlm_tests` **1983 case / 873322 assertion** 全绿(原 1966 / 873276 ⇒ **+17 case / +46 assertion**,**0 回归**)。
-
-> **⑤ 本则未处理、已登记的项**:① **协议引擎的 credit 回收语义**仍未建模(`ProtocolEngineBase::receive_credit` 是**默认空实现**)—— `07 号 §6.4` 尚未展开登记该语义 ⇒ 归**后续 change**(不属本 change 范围);② `ProtocolEngineBase::tick()` 驱动 adapter 的行为已进**框架惯例**,其协议引擎侧语义同样待后续 change 登记。
-
-## 附录 · Status Update 2026-10-28(第十则 · per 台账 Entry #93 —— 队列 #8 `cpptlm-cep-chi-rnf-subset` 立项 + §5.1.1 CHI 行同步)
-
-> **授权**:Entry #93(队列 #8 立项 + 转正;Phase 0 治理前置)。
-> **口径**:本节仅登记 §5.1.1 **状态列**的机械同步(活口径,per 同款先例)+ CHI 行的**协议事实**补充。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #93"`。
-
-> **① §5.1.1 CHI 行的状态列同步**:原写「Stage 1 subset → Stage 2 full」(阶段路线,与本列「按队列实况」的口径不符)⇒ 同步为「🟡 **实施中**(队列 #8;Stage 1 subset → Stage 2 full)」。**状态值以 `obj §4.0` 排队总表为唯一权威**,本表不复制排期(per 防双真源立场);队列 #8 归档后须再同步为「✅ 已落地」。
-
-> **② CHI 行的协议事实补充 —— `UC→UD` 静默升级**:CHI RN-F 在**轴 2**(独占干净 → 脏)上的 `UC→UD` 转换**零总线事务** ⇒ 与 `moesi_gpu` 的 `E→M` **同型** ⇒ 4 值 `perm` 同样无法表达。
-> ⚠️ **与台账 Entry #71 的 F-1 区分(勘误,per Entry #91 ⑤)**:F-1 称「CHI RN-F 是**显式**请求升级 ⇒ 不需要该演进」—— 该结论仅适用于**轴 1**(获取独占 S→U,CHI **显式**:ReadUnique / MakeUnique / CleanUnique 走 TXREQ);**轴 2** 上 CHI 是**静默**的。F-1 的**排期结论不受影响**(perm 形态演进的**机制**已由队列 #6 交付,队列 #8 只**填行**)。
-> **判据 2 的状态仍以 `ADR-CEP-05 §13.1` 为唯一权威**(本表**不复制**状态值);CHI 的静默升级声明落 `perm_upgrades.json`(本仓自持声明源,per `ADR-CEP-12 §11` 的权威分区)。
-
-> **③ 实例声明的权威分区**:CHI RN-F 是**首个非 ArchForge 贡献**的工业协议实例 ⇒ 其实例声明的**权威归属**机制(镜像域 vs 本仓域 + `repo_owned_instance_ids[]` 登记)见 **`ADR-CEP-12 §11`**;本文件不复述。
-
-> **④ 门禁实测**:11 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --changes --strict` 全 rc=0;`ctest -R cep` **35/35**;全仓 `cpptlm_tests` **1983 case / 873322 assertion** 全绿(0 回归)。
-
----
-
-## 附录 · Status Update 2026-10-28(第十一则 · per 台账 Entry #95 —— 队列 #8 `cpptlm-cep-chi-rnf-subset` 归档)
-
-> **授权**:Entry #95(队列 #8 归档 + 活口径同步)。
-> **口径**:本节仅登记 §5.1.1 **CHI 行状态列**的机械同步(活口径,per 同款先例)。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #95"`。
-
-> **① §5.1.1 CHI 行的状态列同步**:「🟡 实施中(队列 #8)」⇒「**✅ 已落地**(队列 #8,2026-10-28 归档)」。**状态值以 `obj §4.0` 排队总表为唯一权威**,本表不复制排期(per 防双真源立场)。
-
-> **② 落地内容(CHI RN-F subset,5 项交付面)**:① `include/tlm/cep/chi_rnf_adapter.hh` —— 5 稳定态 × 6 事件 + 6→4 `perm` 投影 + 6→3 消息类映射 4 行;**E1 一手锚** = IHI0050 Issue G §B4.1/§B1.5.2(`UC` 是 Unique 态 ⇒ 唯一副本 ⇒ store 命中**零总线事务** ⇒ `UC→UD` **静默升级**);② `include/tlm/cep/chi_rnf_protocol_engine.hh` —— **真插件**(6 通道观测点 + Credit 记账 + TxnID 管理 + CompAck);③ `protocol_instances.json` 的 `chi_rnf` 实例 + 顶层 `repo_owned_instance_ids[]`(**实例级权威分区**,per `ADR-CEP-12 §11`);④ 判据 CR-01 ~ CR-14 收口(19 case / 344 assertion)+ 反向 fixture 27 条;⑤ 装配实测(`configs/cep_chi_rnf_pe_minimal.json` + 逐 `(network, vc)` verdict)。
-
-> **③ 已知缺口登记(诚实)**:① 「是否携带数据」以 `data != 0` 近似 —— `CohIfBundle` **无** `has_data` 位(冻结面)⇒ 数据恰为 0 的 `CompData` 会被归到 `RXRSP`;② CompAck 无 CohIf 载体(`flow_id` 域只有 5 值)⇒ 通道级记账,非真实发射;③ AC-04 的恒等判定遍历**全 6 类**默认表 ⇒ 只用 4 类的子集 adapter **机械判「非恒等」**(结构上真、语义上误导)⇒ 修归独立 change。
-
-> **④ 门禁实测**:11 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --changes --strict` 全 rc=0;`ctest -R cep` **36/36**;全仓 `cpptlm_tests` **2002 case / 873729 assertion** 全绿(0 回归)。
-
----
-
+> ⛔ **决策正文见 [`ADR-CEP-19`**](../adr/ADR-CEP-19-*.md)的对应 Status Update**(egress 通道语义 / JSON 装配连通性 / 钩子死→活)。
+> 本节原为实施状态登记,per 台账 Entry #333 架构文档治理已移除;**状态见 `objective-cep-platform §4.0` / `§4.0-a` / `§11`**。
 
 ## 附录 · Status Update 2026-10-29(第十二则 · per 台账 Entry #96 —— 队列 #9 的 R-1 裁决落地)
 
-> **授权**:Entry #96(R-1 裁决 + 权威迁移落地;architect 裁决 / builder 实施)。
-> **口径**:本节仅登记 §5.1.1 **MESIF 行**的活口径同步 + 裁决要点索引。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #96"`。
-
-> **① R-1 的裁决(决策正文见 `ADR-CEP-04 §13`,本表不复述)**:SharerTracker 增**第 6 种实现** `HierarchicalDirectory`(`SYSTEM` / `EXACT` / `GLOBAL` / `HIERARCHICAL`)+ `AggregationAt` 增枚举值 `HIERARCHICAL`;`caps` **仍为 4 属性**(层级深度是实现参数,不是能力属性)。**否决**了「扩 caps 为 5 维」与「用 `TreeManager` 降级近似」两条路线(后者会把缺口藏进「近似」二字)。
-
-> **② `mesif` 声明权威的迁移(决策正文见 `ADR-CEP-12 §13`)**:ArchForge `32 号 §6.2` 声明 `mesif` 的 `sharer_tracker.impl = SparseSnoopFilter`,与同文件 `§9.1` 的三级目录**不自洽**,且 `SparseSnoopFilter` 已被 `moesi_gpu` 占用 ⇒ 该 id 的声明权威**迁到本仓**(顶层 `authority_migrations[]` 登记,带理由 + 台账锚 + 原声明快照锚)。**代价已登记**:本仓与 `32 号 §6.2` 的 `mesif` 声明**分叉** ⇒ 跨仓追认债(ArchForge 侧动作)。
-
-> **③ 余 2 项缺口(不在本次裁决范围,另立)**:① ArchForge 侧**无** MESIF 状态机规约(仅 5 态词表 `M/E/S/I/F`);② ArchForge 侧**无** MESIF 的 5→4 `perm` 投影表(仅 `F → WRITEBACK` 单条)。⇒ 队列 #9 **仍不可启动**。
-
-> **④ 门禁实测**:11 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --changes --strict` 全 rc=0;全仓 `cpptlm_tests` **2005 case / 873788 assertion** 全绿。
-
----
-
-
-## 附录 · Status Update 2026-10-29(第十三则 · per 台账 Entry #101 —— 队列 #9 的**规约层**已闭合)
-
-> **授权**:Entry #101(规约层 change `cpptlm-cep-mesif-state-spec` **归档**;architect/builder 实施)。
-> **口径**:本节仅登记 §5.1.1 **MESIF 行**的活口径同步 + 交付物索引。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #101"`。
-
-> **① 规约层已闭合**:change `cpptlm-cep-mesif-state-spec` **归档**(「**已完成归档**」语义 ⇒ 2 份 delta spec 合并进 `openspec/specs/cep-mesif-state-spec/` 与 `openspec/specs/cep-chi-rnf-subset/`)。交付:MESIF **5 态 × 6 事件**转换表(30 格)+ **5→4 `perm` 投影表**(5 格)+ **逐格依据**(`kind` / `ref` / `note`)+ **8 条偏离清单** + **2 项语义损失**登记;规范性载体 = `include/tlm/cep/mesif_state_spec.hh`。
-
-> **② 判据口径边界**:判据锁**完备性 / 可审计性 / 待追认标记 / 内部自洽**,**不**锁推导值的**语义正确性** —— 未追认的值**带着 `pending` 标记**留在规约里,**不**被固化为「既定事实」;**唯一例外**是 3 个**锚点格**(`I→NONE` / `E+Wr→M` / `S+Wr→S`),锁定的是**自洽性不变量**(per change 的 design `D-ζ` 锚点格例外段)。
-
-> **③ ⚠️ 跨仓追认债仍在**:**31 / 35 格待追认**(机器可查:`MesifStateSpec::pending_count()`);逐格追认清单 = `docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md`(**由载体生成**,含 `--check` 模式);跨仓承接 = `ArchForge:.rddf/improvements/cep-alignment-debt-cleanup.md`。⇒ **队列 #9 的实现层**须等逐格追认(或明确接受本仓推导)后才可启动。
-
-> **④ 门禁实测**:12 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --changes --strict` 全 rc=0;`ctest -R cep` 39/39;全仓 `cpptlm_tests` **2011 case / 874139 assertion** 全绿。
-
----
-
-## 附录 · Status Update 2026-10-30(第十四则 · per 台账 Entry #102 —— MESIF 规约的**跨仓逐格追认闭合**)
-
-> **授权**:Entry #102(收讫 ArchForge 跨仓通告 + 执行 X-1 / X-3;builder 实施)。
-> **口径**:本节仅登记 §5.1.1 **MESIF 行**的活口径同步 + 追认结论索引。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
-> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #102"`。
-
-> **① 追认闭合**:ArchForge `42 号`《MESIF 状态机规约逐格追认结论登记表》给出 **35 格逐格结论**(路径 A 混合变体:**20 格逐格裁决 + 15 格按档批量**,豁免 1)⇒ 本仓载体 35 格**全部**转为**一手原文**(`kind = Primary` · `pending = false`)⇒ **待追认 31/35 → 0/35**。
-
-> **② 纠正 1 格**:`M + SnpShared` 的目标态由 `S` 纠正为 **`F`** —— 脏 Owner 写回后**保留 Owner 身份**成为转发点(与 `E+SnpShared→F` 同型)。⚠️ 该纠正暴露本仓载体的一处**自相矛盾**(表头注释并列 `E→F` 与 `M→S`,而 `M→S` 与其**自身** D2 原则「干净 Owner 保留 Owner 身份」不符)⇒ 连带新增**偏离 D5**(8 → **9** 条)。
-
-> **③ 连带后果(已登记为语义损失 ③)**:`M → F` 之后,脏 Owner 的**写回路径**落在 `F`/`M` 同投影的**不可分辨点** ⇒ 「已写回(干净)」与「仍脏」在 4 值 `perm` 接口上**同值** ⇒ 写回事实在 perm 上**不可见** ⇒ 该后果**不可消除**(消除需扩 `perm` 值域 ⇒ 违反 4 值锁)⇒ 实现层须依赖 **Sharer Tracker** 判别「谁持有」。
-
-> **④ 权威迁移条目已删除(X-1)**:ArchForge `32 号 §6.2` 的 `mesif` 声明已对齐本仓口径 ⇒ 两端声明**逐字段全等**(12 个非 `status` 键,实测)⇒ 本仓 `protocol_instances.json` 顶层 `authority_migrations[]` 的 `mesif` 条目**已删除** ⇒ ⑥ 镜像闸对 `mesif` **恢复逐字段校验**(迁移**审计痕迹**保留在 `derived_from.freeze_state` + 台账 Entry #96 / #102)。
-
-> **⑤ 实现层可启动**:队列 #9 的**规约层缺口已完全闭合**(规约 + 追认 + 权威对齐)⇒ **实现层**(`MesifAdapter` / `MesifProtocolEngine`)**可启动**,但 SHALL 以追认清单 §5 的**残余风险**为已知输入。
-
-> **⑥ 门禁实测**:12 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --all --strict` 全 rc=0;`ctest -R cep` 全绿;全仓 `cpptlm_tests` 全绿(0 回归)。
-
----
-
-## 附录 · Status Update 2026-10-30(第十五则 · per 台账 Entry #105 / #106 —— 队列 #9 `cpptlm-cep-mesif-adapter` **实现层**归档)
-
-> **本则覆盖以下几处过时口径**(历史块 append-only,**不回改**):
-> · 2026-10-27 第二则(Entry #82)§11 映射表里的 `SharerTracker 5 实现 / 🟡 1 / 5` 与
->   `adapter 实例 / 🟡 1 个` —— 本则在**活跃区**(§5.1.1 / §5.2 / §11)已把数值与措辞对齐,
->   历史块由其自身日期标定,不再代表当前态;
-> · 2026-10-29 第十二则(Entry #96)末句「**余 2 项缺口**未闭 ⇒ 队列 #9 仍不可启动」——
->   2 项缺口已闭(Entry #101 归档 + Entry #102 逐格追认),实现层已归档。
-
-### 实现状态变更(活口径)
-
-| 项 | 变更前 | 变更后 | 依据 |
-|---|--------|--------|------|
-| SharerTracker 实现 | **5** 实现(`1 / 5` 有行为) | **6** 实现(`2 / 6` 有行为) | `ADR-CEP-04 §13`(Entry #96 裁决)+ 第 6 种 `HierarchicalDirectory` 行为实现落地(队列 #9) |
-| `mesif` 实例 | `status = planned`(📋 已排期) | **`status = implemented`**(✅ 已落地归档) | `INV-CEP-12-IC3`(status 变更 ⇒ 计数同步);`implemented` 实例 **2 → 3** |
-| ProtocolEngine adapter 实例 | **1** 个(`MoesiGpuAdapter`) | **3** 个(`MoesiGpuAdapter` / `ChiRnfAdapter` / `MesifAdapter`) | 队列 #8 已落地 `ChiRnfAdapter`;队列 #9 交付 `MesifAdapter` |
-| `mesif` 的静默升级 | 声明源自述「**无**该能力」 | **有**:`UNIQUE → WRITEBACK`(`E + Wr → M`) | `mesif_state_spec.hh` 的 `is_silent_upgrade`;`perm_upgrades.json` 已修订 |
-
-### 队列 #9 的实现层交付(可寻址)
-
-- **载体**:`include/tlm/cep/mesif_adapter.hh`(零自有表副本,委托消费规约载体)·
-  `include/tlm/cep/mesif_protocol_engine.hh`(真插件 + atomic 最小可用路径 + R-3 写回接线)·
-  `include/tlm/cep/sharer_tracker.hh`(`HierarchicalDirectory`:多级聚合 + `kBehaviorDecisions[5]` + F 态缺口登记)
-- **契约**:`openspec/specs/cep-mesif-adapter/` + `openspec/specs/cep-hierarchical-directory/`(归档时由 delta spec 合并)
-- **判据**:`test/test_cep_mesif_adapter.cc` / `test_cep_hierarchical_directory.cc` /
-  `test_cep_mesif_protocol_engine.cc` / `test_cep_mesif_instance_decl.cc` +
-  `scripts/test/cep_mesif_adapter_reverse_verify.sh`(16 条毒化,「因正确原因红」机器判定)
-- **残余风险**(不得写成「已消除」):R-1(按档批量 14 格证据强度弱于逐格)· R-3(写回事实在
-  4 值 `perm` 上不可分辨 ⇒ 由 `LocalView.dirty` 掩码 + 写回接线补偿)· 残留 A(`HierarchicalDirectory`
-  行为语义无真源 ⇒ 逐条 `basis` + `pending` + 跨仓追认债)· 残留 C(`atomic` 的 `consistency_intent`
-  无独立字段 ⇒ 显式登记)· 引擎建模决策 E-1 ~ E-6(`design D-λ`)
-
-### 后续义务
-
-- **S1-3 已触发**(口径 = `implemented` 实例 ≥ 3)⇒ 真实义务 = `ADR-CEP-12 §8.4` 的
-  **SLICC 式「协议本地虚拟网络 + 装配期绑定」备选重评**(结论将入后续台账条目);
-- 「承接项 2」(per-network 嵌套形态)**滚动复核第 2 次**已落。
-
-
----
+> ⛔ **决策正文见 [`ADR-CEP-04`**](../adr/ADR-CEP-04-*.md)的对应 Status Update**(`HierarchicalDirectory` 第 6 种 SharerTracker 实现 / R-1 裁决)。
+> 本节原为实施状态登记,per 台账 Entry #333 架构文档治理已移除;**状态见 `objective-cep-platform §4.0` / `§4.0-a` / `§11`**。
 
 ## 附录 · Status Update 2026-10-30(第十六则 · per 台账 Entry #106 —— **S1-3 触发后的真实义务**结论)
 
@@ -1097,63 +794,6 @@ experimental/<run_id>/
 
 **关联**: 台账 `obj-cep-platform.md` **Entry #131**(授权记录)· #122(口径 7 条)· #127(规约层归档)· #128(实现层转正)
 · `ADR-CEP-11` 的 `## Status Update(2026-11-01)` ③⑦ · `ADR-CEP-12 §11`(实例级权威分区)
-
----
-
-## Status Update(2026-11-02,per 台账 Entry #148)—— §5.1.1 / §11 的**状态列机械同步**(活口径)+ 声明源实例数订正
-
-> **正文改动限于「状态 / 计数」机械同步**(§5.1.1 表的**状态列** + §11 两处计数 + 一处锚点);
-> **族 / 实例口径表体零改动** ⇒ §5.1.1 仍为 **8 行**(TileLink-C 行**本就存在**)⇒
-> `test/test_cep_schema.cc` 的 `rows511 == 8` **保持不变**。
-> ⚠️ **冻结面两步授权**:授权记录 = 台账 **Entry #148**(`--update --authorized-by "Entry #148"`)。
-
-### ① §5.1.1 协议族表的**状态列**陈旧(3 行)—— 机械同步(活口径)
-
-| 行 | 原状态列 | 现行状态列 | 依据 |
-|---|---|---|---|
-| **CXL 2.0 非对称** | `Stage 1` | **✅ 已落地**(队列 #10,2026-11-01 归档;**两段式**) | 台账 Entry #127 / #132 |
-| **TileLink-C** | `Stage 1` | **✅ 已落地**(队列 #11,2026-11-02 归档;**两段式**) | 台账 Entry #143 / #147 |
-| **MESIF** | **📋 已排期** | **✅ 已落地**(队列 #9,2026-10-30 归档) | 台账 Entry #105 / #106 |
-
-> ⚠️ **MESIF 行原状态列与同行后半段自相矛盾** —— 状态标签写「📋 已排期」,而同一格后半段写
-> 「**实现层已落地归档**(2026-10-30,Entry #105 / #106)」⇒ 本则消解该互斥。
-> ⚠️ **状态列一律以 `obj §4.0` 排队总表为唯一权威**(per 本表既有立场)—— 本则**不复制**季度值。
-
-### ② §5.1.1 回写注:补 `cxl_2_0` / `tilelink_c` 两行(原只回写 3 行,落后两代)
-
-- `cxl_2_0` = 队列 #10 **已落地归档**(2026-11-01;**第 4 个** `status=implemented` 实例;两段式;`sharer_tracker` = 「不参与」);
-- `tilelink_c` = 队列 #11 **已落地归档**(2026-11-02;**第 5 个** `status=implemented` 实例;两段式;`sharer_tracker` = `TreeManager`)。
-- ⇒ **`implemented` 实例数 = 5**;⚠️ **与 §5.1.1 的「6 族 / 8 实例」**不是同一口径**(后者是**族内模式行**数)。
-
-### ③ §11 两处计数 + 一处锚点漂移
-
-| # | 位置 | 原 | 现行 | 依据 |
-|---|---|---|---|---|
-| 1 | §11 ProtocolEngine adapter 实例行 | 🟡 **3 个已落地**(`MoesiGpuAdapter` / `ChiRnfAdapter` / `MesifAdapter`) | 🟡 **5 个已落地**(+ `CxlCacheAdapter` / `TileLinkCAdapter`) | 队列 #10 / #11 |
-| 2 | §11 协议实例能力声明 schema 行 | `protocol_instances.json` 声明源(**2 实例**) | 声明源(**5** 实例) | 同上 |
-| 3 | §11 SharerTracker 行 | 仅声明层 traits(`sharer_tracker.hh:188`) | `sharer_tracker.hh:200` 的 `kTrackerTraits` 数组 | **锚点漂移修正**(:188 指向 `struct TrackerTraits`,traits **数组**在 :200) |
-| 4 | §11 能力表头 | 实现状态(2026-10-27 实测) | 实现状态(2026-11-02 实测) | — |
-
-### ④ ⚠️ 已知残留(**本则不处理**,仅登记)
-
-- **§5.1.1 表体行数 = 8 不变** ⇒ 台账 Entry #143 ⑥ item 3 预测的「`== 8` ⇒ 9」**不成立**
-  (TileLink-C 行**本就存在**,只是**状态列**陈旧)⇒ `test/test_cep_schema.cc` 的
-  `REQUIRE(rows511 == 8)` **保持不变**;⚠️ 该预测偏差由台账 **Entry #148** 澄清。
-- **§11 本则**只改「状态 / 计数」;**SharerTracker 6 实现的清单本身不变**(4 行为实现已落地),
-  `FullMapDirectory` 的**反向缺口**按 Entry #139 ③ **保持开放**(登记态)。
-
-### ⑤ 后果 / 代价
-
-| 面 | 后果 |
-|---|---|
-| **本文件** | **状态列 + 2 处计数 + 1 处锚点 + 回写注**;§5.1.1 表体与「6 族 / 8 实例」计数**不变** |
-| **测试面** | `test/test_cep_schema.cc` 的 `rows511 == 8` **零改动**(断言本就成立) |
-| **下游** | `protocol_instances.json` 已是 **5** 实例 ⇒ 本则只是把**真源 1** 的**落后计数**追平 |
-
-**关联**: 台账 `obj-cep-platform.md` **Entry #148**(授权记录)· #147(队列 #11 归档)· #132(队列 #10 归档)
-· #143(队列 #11 规约层归档)· #139(`FullMapDirectory` 落位裁决)· #137(R11 降级)
-· `ADR-CEP-04` 的 `## Status Update(2026-11-01)` · `ADR-CEP-12 §11`(实例级权威分区)
-· `openspec/specs/cep-sharer-tracker-base/spec.md`(同批追加段)
 
 ---
 
@@ -1555,52 +1195,6 @@ oracle 复核通过 —— 含 3 处事实修正)后落地。本则是**真源 1
 
 ---
 
-## Status Update(2026-11-06 · 三,per 台账 Entry #246)—— TileLink-C **运行时引擎落地**(B3b 达成度 **1/6 → 2/6**)
-
-**主题**:change `cpptlm-cep-tilelink-runtime-engine`(台账 Entry #243 立项 / **Entry #246** 实施回执)落地 —— TileLink-C 成为 **B3b 第 2 个运行时引擎实例**(第 1 个 = CHI RN-F)。
-**性质**:⛔ 本 SU **不改** §5.1.1 的**行数**(仅**行内**追加引擎落地标注)⇒ 跨仓对齐锚点行号**不变**;⛔ 不新增 invariant 编号;⛔ 冻结面 `protocol_instance.schema.json` / `protocol_instances.json` / `perm_upgrades.json` **零改动**。
-
-### ① 交付面
-
-| 面 | 内容 |
-|---|---|
-| **引擎载体** | `include/tlm/cep/tilelink_protocol_engine.hh`(header-only,`ProtocolEngineBase<2>` 派生)—— **CohIf 意图面 → 权限转移事件面**的**事件计数/上报器** |
-| **事件真源** | **零自有副本** —— 事件语义一律经唯一消费载具 `consumable_mask_of(PlatformIntent)` 委托 T3 表 `kT3MappingCells`(per `tilelink_state_spec.hh`) |
-| **注册面** | `chstream_register.hh` 注册第 4 个引擎名 `TileLinkProtocolEngine`(N=2 ⇒ JSON 侧可逐实例选择;⛔ 引擎**不解析 JSON**) |
-| **装配面** | `configs/cep_tilelink_pe_minimal.json`(2 × `TileLinkProtocolEngine` + `cohif_noc` 桥绑定 `tilelink_c` 实例) |
-| **契约面** | `test/test_cep_tilelink_engine.cc`(7 cases · 101 assertions,标签 `[cep][tilelink][engine]`)+ delta spec `TLE-01`~`TLE-08` |
-| **构建期取证** | `scripts/test/cep_tilelink_engine_failclosed.sh`(影子树三态:clean / pending / deleted)+ `cep_tilelink_engine_probe.cc` |
-
-### ② 判据 4 件套(证据)
-
-| 判据 | 证据 |
-|---|---|
-| **正控** | `[cep][tilelink][engine]` 7 cases / 101 assertions 绿;`[cep]` 全量 441 cases / 10337 assertions 绿;`ctest` 全量绿 |
-| **反控** | 4 条反向 fixture(`Pending` 声明事件 / `Pending` 可消费掩码归零 / `row_ref` 重复 / 掩码越界)+ Null 引擎对照(同一 5 流:真插件 **4 事件** vs Null **零事件面**)+ JSON 装配反控(换 Null ⇒ 类型判据判否) |
-| **决定性变异** | 影子树删 `TLC-M-02` 行 ⇒ 编译红且**签名命中** T3 编译期锁(`static_assert` 文案含 `T3:`);真源 sha256 **未变** ⇒ 取证后无需复原 |
-| **fail-closed(消费面)** | 影子树把该行改 `Pending` ⇒ **引擎事件发射出口计数 = 0**(⛔ 非掩码函数返回值 —— 那是 state_spec 层重复) |
-
-### ③ 认识论边界(⛔ 不得被误读)
-
-- **引擎 ≠ 协议实现**:引擎只做「意图 → 事件类别」的**计数/上报**;⛔ **不**建 PE 本地树状态机(Nothing/Branch/Tip)—— 12 格矩阵是**规约层**真源,运行面**只读**。
-- **不携带源态**:TileLink `Cap`「源不定」(D1 §8.1.4)⇒ 引擎只声明**事件类别**,⛔ 不预设 from-state(per `TLE-05` 的 grep 级判据)。
-- **不连带推进**:CXL 2.0(冻结)/ CXL 3.0 / NVLink / UALink 四族状态**不变**(⏭ / 未触发,per Entry #238 的逐族登记)。
-- **B3b 达成度**:1/6 → **2/6**;⛔ **不得**改写为「B3b 已达成」—— 终态 DoD Go 的剩余前置 = 其余 4 族。
-
-### ④ Verification(前瞻判据 · 可勾选)
-
-- [x] 引擎 10 个 `on_*` 全覆盖 + 11 意图参数化断言(7 零事件意图 **basis == Direct** 双断言)
-- [x] **零自有事件表副本**:禁止性 lint(0 处 `kT3MappingCells` / `event_mask` 字段 / 掩码成员数组)+ 唯一载具计数判据
-- [x] L4 事务级贯通:5 流 `dispatch_cohif` ⇒ Grow × 1 + Prune × 3;⛔ `request` 自身**零事件**(反直觉点单独钉死)
-- [x] JSON 装配成功 + 类型判别(正控/反控)+ 注册端口数 = 2
-- [x] fail-closed 消费面零发射 + 决定性变异签名命中(构建期影子树取证,真源零改动)
-
-**关联**:台账 **Entry #246**(实施回执 + 冻结面授权)· **#245**(F2 漏勾回填)· **#244**(T3 归档)· **#243**(立项 + metis 4 BLOCKER 全修)· **#242**(T3 实施)·
-`openspec/changes/cpptlm-cep-tilelink-runtime-engine/` · `include/tlm/cep/tilelink_protocol_engine.hh` · `include/tlm/cep/tilelink_state_spec.hh` ·
-`configs/cep_tilelink_pe_minimal.json` · `scripts/test/cep_tilelink_engine_failclosed.sh` · `test/test_cep_tilelink_engine.cc`
-
----
-
 ## Status Update(2026-11-06 · 四,per 台账 Entry #249)—— 「转移表真源」的**来源效力**与 **B3b 计入口径**
 
 > **性质**:末尾追加 SU(append-only)。⛔ 不改 §5.1.1 行数;⛔ 不新增 invariant 编号;⛔ 不改 schema / ABI。
@@ -1797,241 +1391,10 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 
 ---
 
-## Status Update(2026-11-07 · 六,per 台账 Entry #264)—— SU · 四 §④ **选项戊已裁决** + **终态 DoD Go 挂起**(口径 ②)
-
-> **性质**:末尾追加 SU(append-only)。⛔ 不改 §5.1.1 行数;⛔ 不回改 SU · 四 §④ 的五选项表格(⛔ 只登记其**裁决结果**);⛔ 不改任何 invariant 编号。
-> **触发**:台账 **Entry #251**(选项戊裁决)· **#263**(剩余任务盘点)· 用户授权「按 oracle 建议」+ oracle 对三候选口径的建议。
-> **审查**:`oracle`(终态裁决口径建议)⇒ **建议口径 ②**;`critic`(P2/P3 补复核 + 契约对齐复审,见台账 Entry #261/#262)。
-
-### ① §④ 五选项的裁决结果(登记,不回改表格)
-
-**选项戊已由用户裁决(2026-11-06,per 台账 Entry #251)** ⇒ DoD 条目拆分:`B3b-1`(可读规范族运行时引擎)= **2/2 ✅** + `B3b-2`(受限族)= **0/4 ⏭**(含触发条件),两条**各自独立可判**。
-
-### ② 终态 DoD Go 的裁决(口径 ②:挂起)
-
-**判定句**:**「B3b-2 终态裁决 = 0/4 ⏭ 未达成(维持),终态 DoD Go 挂起;解除条件 = 任一受限族经 D-4 升级路径满足 T1–T4 并交付引擎 + L4 E2E(重新普查后改判),或用户另行裁决 DoD 结构。」**
-
-- ⚠️ **挂起(pending)≠ 拒绝**:Stage 1~3 验收窗口为 **2030-Q1**,当前属中期判定(与 `obj` §5.2 的「当时的合法中间态」同型);
-- ⚠️ **与 B2「N ≥ 1」判例对齐**:B2 明禁「全 ⏭ 登记为达成」(`cep-b2-unmodelled-verdict.md` §127)⇒ **B3b-2 = 0/4(全 ⏭)** **不得**登记为达成 ⇒ 同一 objective 内不得双标;
-- ⛔ **排除口径 ①**(`⏭ ⇒ Go`):即 SU · 四 §④ **选项丁**的单条目复刻 —— 撞 B2 判例 + 选项丁否决理由 + §5.1.1 防自欺条款(三重阻挡);若将来要采用,**缺一不可**的前置 = ① 4 族 deferral 的**机器可查登记** ② 「条目未达成」与「Go 判定规则」**两层文本分离** ③ architect 追加 SU 说明改的是**判定规则** ④ 触发条件**逐族可解析**到真实台账 Entry;
-- ⛔ **排除口径 ③**(降为非阻塞项):三种实现形态分别撞「分母 6→2 收缩(违反 B2 先例)」「退化为口径 ①」「目标文本自身降格」⇒ **不自洽**;且需先由用户修订 Entry #251 的戊 ⇒ 非本轮可执行项。
-
-### ③ 计数与语义的边界(⛔ 不得混读)
-
-- **DoD 语境**用 `B3b-1` / `B3b-2`(各自独立可判);**族级审计语境**用 SU · 四 **D-3** 三元组(`2 达成 / 分母 6 / {1 显式冻结, 3 受限-⏭}`)⇒ 两套记账**不得互相覆盖**;
-- ⛔ 不得写「B3b-2 ✅(⏭)」形态(⛔ 单一状态 token);⛔ 不得把 `B3b-1` 的 ✅ 扩写为「B3b 整体达成」。
-
-### ④ 已登记的强度缺口(⛔ 本条**不**假装闭合)
-
-4 族的 ⏭ 目前**只有台账文字登记**,弱于 B2 的机器校验 ⇒ **登记**该缺口,**不假装等价**(per SU · 四 §⑤ 的同款表述)⇒ 补齐动作(4 族 deferral 的机器可查登记 + 闸校验)与 `cxl_dcoh` / `nvlink_sharp` 的 `RefKind` 迁移**同轮实施**(per 台账 Entry #263 ② 的 improvement)。
-
-### ⑤ Verification(可勾选验收判据)
-
-- [ ] `obj §6.2` 的 B3b-2 行含**终态裁决**子 bullet(挂起语义 + 解除条件指针 + B2「N ≥ 1」对齐句)
-- [ ] `obj` 的终态行标注「⏳ 未发生(挂起)」且指向本 Entry
-- [ ] 4 族 ⏭ 的**机器可查登记**已立项(与 `RefKind` 迁移同轮)⇒ 本条登记该缺口而**不**宣称已闭合
-- [ ] 冻结面两步授权已执行(`cep_freeze_check.sh --update --authorized-by "Entry #264"` → 清单单独 commit)
-
----
-
-## Status Update(2026-11-07 · 七,per 台账 Entry #280)—— 「Core·TrafficGen 主干」**显式延期项的事实复核**(⏸ 已登记,未排期)+ Stub Cache「✅」的读法澄清
-
-> **性质**:末尾追加 SU(append-only)。⛔ 不改 §2 架构分层表(定位)**逐字未动**;⛔ 不改 §3.1 canonical 10 流;⛔ 不改 §5.1.1 各族行;⛔ 不回改 SU · 一 ~ 六 的任何一段;⛔ **不动** `ADR-CEP-05`(其 cpu_side 接口形态已被**冻结 main spec** + **已签发 `ADR-CEP-19` 决策 9** 双重钉住 ⇒ 任何改动**须显式裁决**,⛔ **非**「reopen 已签批 ADR」流程,亦**非**「起草中顺手改」)⇒ 属**裁决面**非登记面。
-> **触发**:用户复核 CEP 架构定位时提出的质疑 ——「CEP 应是在**现有拓扑链接**上对互连模块做带一致性协议的建模,且**原业务 Bundle 可接入到 CEP 互联网络**」。
-> **审查**:`oracle`(定性 + 措辞风险咨询)→ `critic`(本段的架构审稿),顺序不可颠倒。
-> **关联**:`ADR-CEP-19` 决策 9(显式延期)· `ADR-CEP-05` 决策 2(三明治挂载,已拍板)· `ADR-CEP-07` 决策 3/4 · `ADR-CEP-02` · `ADR-CEP-04` / `ADR-CEP-12`(三层纪律的 case-bound 归属)。
-
-### ① 定位**未偏移**(结论先行 —— 本段**不**改架构)
-
-| # | 证据 | 原文 |
-|---|---|---|
-| 1 | **§2 架构分层表**(本文件 line 50) | `Core·TrafficGen / Stub Cache / Coherence Interface / Protocol Engine / Directory & Ordering Plane / Fabric Collective Plane / Fabric & Transport Plane` ⇒ **「一致性互联语义模型」** ⇒ **「Core·TrafficGen」是本架构的顶层组成** |
-| 2 | **三明治挂载**(`ADR-CEP-05` 决策 2 · `stub_cache_core.hh` line 14) | `Traffic Generator ──(cpu_side)──> Stub Cache ──(net_side)──> ProtocolEngine ──> CohIf` ⇒ **业务侧 → 一致性侧**的接缝**已定义** |
-| 3 | **CohIfBundle 的字段集**(`include/bundles/cep_coherence_bundles_tlm.hh` line 6) | 「字段集为**业务语义**,**不含任何网络层字段**」⇒ CohIf **不是**协议专用包 |
-
-⇒ ⇒ **「CEP = 在现有拓扑链接上对互连模块做带一致性协议的建模」+「原业务 Bundle 接入 CEP 互联网络」= 本平台的原定架构**,**定位层零偏移** ⇒ ⛔ 本段**不回改** §2 分层表。
-
-### ② 「未装配」= **既有显式延期**的复核确认(⛔ **不是**「偏离」/「欠账」)
-
-⚠️ **本节 5 条实测 = 对既有登记的复核确认**:该主干未装配**并非新发现的偏离**,而是 `ADR-CEP-19` **决策 9「不动 `StubCacheCore`(显式延期)」**的延期态 —— 本队列**不**给 `StubCacheCore` 加 ChStream 端口面;该腿归**具名** change **`cpptlm-cep-stub-cache-chstream-surface`**(排本队列之后)⇒ **有 owner + 有前置**,⛔ **不是「以后再说」**。同 ADR 的后果表亦明文:「载体队列只闭合 PE↔网络 ⇒『ChStream 承载业务 bundle』的**业务侧**证明仍不完整」+「**在延期 change 交付前,该面不作承诺**」。
-⚠️ 旁证:本文件 **§8.1 的 Stage 0~3 DoD**(14 个 change)从**未**含该装配 ⇒ ⇒ **本段登记的是「既有延期态的事实复核」**,⛔ **不是**新增欠承诺。
-
-| # | 未装配事实 | 实测证据 |
-|---|---|---|
-| **G-0a** | 7 个 CEP JSON 拓扑**全部只含 ProtocolEngine** | `configs/cep_*_pe_minimal.json` 的 `modules[].type` 集合**零个**含 `StubCacheCore` / `TrafficGenTLM` |
-| **G-0b** | Stub Cache 的 `net_side` 只与 **mock** 引擎对接过 | `stub_cache_core.hh` line 42 明示「`net_side` 由 **mock ProtocolEngine** 驱动(本 change 不引入真实协议引擎)」 |
-| **G-0c** | H2 / H3 / H6 实验**既不用** TrafficGen,也不用 StubCache / ProtocolEngine | `test_cep_h2_h3_experiments.cc` / `test_cep_h6_vc_isolation.cc` 对这四个符号的引用 **0 命中** ⇒ 那批实验流量**自造** |
-| **G-0d** | **根因**:`StubCacheCore` 不是可注册的 ChStream 模块 | `stub_cache_core.hh` line 154 = `class StubCacheCore {` ⇒ **无 `ChStreamModuleBase` 派生 / 无端口** ⇒ 而 TrafficGen 走 ChStream 端口(`OutputStreamAdapter<CacheReqBundle>`)⇒ 无法同图直连 |
-| **G-0e** | **`bundle → 功能操作` 的语义映射面未定义** | TrafficGen 发 `CacheReqBundle`(`include/bundles/cache_bundles_tlm.hh` line 38-46:is_write / fragment / size / data)⇒ `cpu_side` 是**功能操作** `cpu_read` / `cpu_write` / `evict_line`(`stub_cache_core.hh` line 118-208):① **op 编码映射未定**;② `evict_line` 在 `CacheReqBundle` 里**无对应原语**;③ **同步** `AccessResult{hit,pending,txn_id}` ⇒ **异步** `CacheRespBundle` 的在途关联与发射时机**未定**;④ **net_side 侧同样缺映射**:`net_side` 的 5 流(`request` / `completion` / `snoop` / `snoop_resp` / `writeback``stub_cache_core.hh` line 229 / 247 / 260 等)**是功能方法**,其 `flow_id` 命名**逐字对齐** `CohIfBundle` 的 `flow_id` 域(line 16)但**类型上无任何 Bundle 端口** ⇒ `CohIfBundle` ↔ net_side 功能 5 流的映射**亦未定义**(且为**双向**:egress `request`/`writeback`/`snoop_resp` + ingress `completion`/`snoop`)⇒ ⇒ **G1 只解决「端口存在」,不解决「语义对接」;cpu_side 与 net_side 两侧适配面同 scope** |
-
-### ③ Stub Cache「✅」的**读法**澄清(⚠️ 收窄读法,**不改行义**)
-
-- 本文件 **§11 落地状态表**(`Stub Cache Core` 行,line 678)的「✅ 已落地 —— 6 接口 / 5 态 / `INV-SC1`~`SC6` + `INV-CEP-05-IC1` 行为化(14 测试)」与 **§2.2 各层职责表**(line 143)的「✅」= 计在**能力 / 行为化维度**(change DoD)⇒ ⛔ **不可外推**为「**可装配**」「**装配**」「**语义**」三维度;
-- 同理,§11 的 **canonical 10 流契约行**为「🟡 **部分落地** —— Stub Cache RN 侧 5 流已行为化;`MoesiGpuAdapter` 6 事件已行为化;`protocol_instances.json` 的 `flow_support` 10 布尔已填;**载体已落地**」⇒ 其「**载体已落地**」子句 ⛔ **≠**「**业务侧流量可达**」;
-- ⇒ **本条仅作局部口径声明,⛔ 不升格为通用层**:「声明 ≠ 装配 ≠ 语义」是**实例声明域**的 case-bound 纪律(per `ADR-CEP-04` / `ADR-CEP-12`)⇒ 此处只注明**「§11 该行的 ✅ 计在哪个维度」**,⛔ **不**引入「能力 / 可装配 / 装配 / 语义」四层通用纪律(避免概念层膨胀 ⇒ 此后每个状态格都背上「逐层标注」义务)。⚠️ 若再发生第三次「✅ 维度混淆」,统一词汇**单独立项**(backlog),不在本条顺手完成。
-
-### ④ 后果(可实验性被限死 —— 但这是**已知代价**,非新发现)
-
-- CEP 现有全部事务级判据均为「**引擎 ↔ 引擎**」的**同构对等**形态 ⇒ 可回答「该协议在**引擎间**事务流下会怎样」;
-- ⛔ **不可**回答「该协议在**真实业务流量**下会怎样」⇒ 该面**在延期 change 交付前不作承诺**(per `ADR-CEP-19` 决策 9 的后果表);
-- ⚠️ **不改变任何计数**:`B3b-2` **维持 0/4**(计数依据是**规范条款级** T1–T4,非「链路跑通」)⇒ 即便未来补上该主干,**⛔ 不得**用它改判 B3b。
-
-### ⑤ 闭合项与**待裁决点**(登记,⛔ 本段不实施)
-
-| # | 闭合项 | 形态 |
-|---|---|---|
-| **G1** | `StubCacheCore` **升格为可注册的 `ChStreamModuleBase` 派生类** | 带 `cpu_side` 的 `InputStreamAdapter<CacheReqBundle>`;⚠️ `net_side` 的 5 流**命名已对齐** `CohIfBundle` 的 `flow_id` 域(`stub_cache_core.hh` line 16)但**同为功能接口、⛔ 非 Bundle 端口** ⇒ **net_side 适配面与 cpu_side 同 scope**(⛔ 不可读作「net_side 已是 CohIfBundle」)。⚠️ 最小改法:升格 + **保留原纯类接口**(以适配器包裹)⇒ ⛔ 不破坏 `INV-SC1`~`INV-SC6` 与既有 14 个单测。⚠️ **裁决范围必须同时含 G-0e 映射面**(wrapper 内部翻译 vs 独立 mapper 模块)—— **二者不可分割** |
-| **G2** | 新 JSON 拓扑 | `TrafficGenTLM → StubCacheCore → <真实引擎> → <对端引擎>`(或经 `cohif_noc` 桥) |
-| **G3** | 装配级 E2E 判据 | 从 TrafficGen 发请求 → 经 Stub Cache `cpu_side` → 真实引擎 `net_side` → **对端抵达断言**。⚠️ **诚实边界**:若对端是同构引擎,则仍只是 **L4-direct** ⇒ 它证明的仅是「**结构可达**」(端口发出的事务经 `cpu_side` 抵达对端引擎端口),⛔ **非**「协议语义 E2E」,⛔ **非**「规范条款级」,⛔ **亦非「映射语义保真」**(后者由 G-0e 的裁决与判据另行保证) |
-| **G4** | **本段**(登记动作本身) | ✅ **登记型闭合**(区别于 G1~G3 的**实施型**闭合项)—— **登记即闭合**,不宣称任何实施面进展 |
-
-⚠️ **待 architect 裁决(实施 G1 前必须先裁)**:
-
-1. `StubCacheCore` 的 `cpu_side` 维持**功能操作接口**(由外部适配器承接)vs **升格为 ChStream 端口**(可装配)?⇒ ⚠️ 后者 = **变更 `ADR-CEP-05` 决策 2「三明治挂载:cpu_side / net_side 双端口」的 cpu_side 接口形态** —— 该 ADR 虽为**起草中(v0.6)**(⛔ 故**不**走「reopen 已签批 ADR」流程),但其决策已被 ① **冻结 main spec** `openspec/specs/cep-stub-cache-core/spec.md`(M1 冻结集成员 ⇒ MODIFIES 须**两步授权** + 台账 Entry)与 ② **已签发 `ADR-CEP-19` 决策 9** 的延期理由(建立在「stub 维持**纯类功能接口**」现状上)双重钉住 ⇒ ⛔ **非「起草中顺手改」**,**须显式裁决**;
-2. **G-0e 映射面归属**(wrapper 内部翻译 vs 独立 mapper 模块;⚠️ 范围含 **cpu_side 与 net_side 两侧**)+ `INV-SC*` 判据载体的**增量纪律**(维持纯类 14 测;升格只增不改,新装配判据为增量);
-3. 新 wrapper 的**注册面**(`REGISTER_CHSTREAM` 新名入词汇表)与命名;
-4. **G2 / G3 是否收编**进既有具名延期 change **`cpptlm-cep-stub-cache-chstream-surface`**(扩围)vs 另立新 change(影响 Proposed KPI 计数)⇒ ⛔ **本段不新立 change**。
-
-### ⑥ Verification(可勾选验收判据 · 前瞻)
-
-- [ ] 本段 SU 已追加,且 §2 / §3.1 / §5.1.1 与 SU · 一 ~ 六 **逐字未变**
-- [ ] ② 的定性为「**既有显式延期的事实复核**」且**引证**齐全:`ADR-CEP-19` 决策 9 + 其后果表「不作承诺」+ `ADR-CEP-19` roadmap 行「⏸ 已登记,未排期」+ 具名 change `cpptlm-cep-stub-cache-chstream-surface` + §8.1 Stage DoD 未含该装配
-- [ ] ③ 的**引证已修正**:「✅」行在 **§11 落地状态表 / §2.2 各层职责表**(⛔ **非** §3.2);「canonical 10 流契约」行是「🟡 **部分落地**」内的「**载体已落地**」**子句**(⛔ 非整行「已落地」)
-- [ ] ③ 已显式声明「**收窄的是读法,不改行义**」且**未**升格为通用四层纪律
-- [ ] 5 条未装配事实(G-0a ~ G-0e)在仓内**可复现**
-- [ ] G1 的**裁决点**已登记且**未**在裁决前实施 ⇒ 实施面不得先于裁决;裁决点含 **`ADR-CEP-05` 决策 2 的 cpu_side 接口形态变更须显式裁决(⛔ 非「reopen 已签批 ADR」流程)**与 **G-0e 归属(含两侧)**
-- [ ] G1 若实施:`StubCacheCore` 的升格**不破坏** `INV-SC1`~`INV-SC6` 与既有 14 个单测
-- [ ] G2 / G3 若实施:新拓扑含 `TrafficGenTLM` + `StubCacheCore` + **真实**协议引擎(⛔ 非 mock)⇒ 且判据含**对端抵达断言**
-- [ ] **G4 为登记型闭合**,不得被读作 G1~G3 中任一已推进
-- [ ] ⚠️ 任何实现**未**改 `B3b-2` 的 **0/4**;新增文件与文档**无**「B3b-2 已达成」形态的计数
-- [ ] 冻结面两步授权已执行:台账 **Entry #280** 授权 → **commit 本段** → `cep_freeze_check.sh --update --authorized-by "Entry #280"` → **清单单独 commit** → 无参复验 provenance 通过
-
-**关联**:台账 **Entry #280**(授权 + 登记)· `ADR-CEP-19` 决策 9 + 后果表(显式延期 · 不作承诺)· `ADR-CEP-05` 决策 2(三明治挂载 · 待显式裁决的 cpu_side 接口形态)· `ADR-CEP-07` 决策 3/4(注册 seam)· `ADR-CEP-02` · `ADR-CEP-04` / `ADR-CEP-12`(三层纪律的 case-bound 归属)· `include/tlm/cep/stub_cache_core.hh`(三明治挂载 · cpu_side / net_side)· `include/tlm/traffic_gen_tlm.hh`(ChStream 端口形态)· `include/bundles/cache_bundles_tlm.hh`(G-0e 的 bundle 字段集)
-
----
-
 ## Status Update(2026-11-07 · 八,per 台账 Entry #282)—— **G1~G3 的 4 条待裁决点裁定**(architect)+ G1 形态修正为「组合式 wrapper」
 
-> **性质**:末尾追加 SU(append-only)。⛔ 不改 SU · 七 的任何一段(⛔ 其「G1 升格」措辞由本段**修正登记**,不改其原文);⛔ 不改 §2 / §3.1 / §5.1.1;⛔ 不回改 SU · 一 ~ 六;⛔ **不动** `ADR-CEP-05`(起草中 v0.6)· `ADR-CEP-19`(已签发)· 冻结 main spec `cep-stub-cache-core`(本段**不**实施 ⇒ **零** spec 改动)。
-> **触发**:台账 **Entry #280** SU · 七 登记的 **4 条待裁决点**(实施 G1 前必裁)⇒ 本段为**裁决登记**。
-> **审查**:`oracle`(4 裁决的架构咨询)→ `critic`(本段架构审稿),顺序不可颠倒。
-
-### ① C-1 形态裁决:**组合式 wrapper**(原「升格」措辞修正)
-
-> **裁决**:`StubCacheEndpointTLM`(`ChStreamModuleBase` 派生)内部**持有** `StubCacheCore` 实例;注册形态 = **双端口非对称**适配(`registerDualPortAdapter<StubCacheEndpointTLM, CacheReqBundle, CacheRespBundle, CohIfBundle, CohIfBundle>`,先例 `NICTLM`:`nic_tlm.hh:81` + `:114` `pe_req_in(): InputStreamAdapter<CacheReqBundle>`)⇒ **两侧 Bundle 类型可不同**,⛔ **不**需额外跨类型转换点模块;`StubCacheCore` **纯类零改动**(`:154` 现状维持)⇒ 14 个既有单测与 `INV-SC1`~`INV-SC6` 判据载体**零变化**。
-
-⚠️ **修正 SU · 七 的「升格」措辞**(⛔ 不改其原文):目标态(可注册 + `cpu_side` 端口面)**不变**,实施路径由「**升格**」修正为「**组合**」⇒ **冻结面最小**(`stub_cache_core.hh` 零 diff)。
-⚠️ **网络参与非必要**:G2 最小拓扑 = `TrafficGenTLM → StubCacheEndpointTLM → CohIfProtocolEngine` 全 ChStream 直连 ⇒ **不**经网络;「wrapper net_side → `CohIfNoCProtocolBridge` → RouterTLM」列为 **optional 场景 2**(复用既有桥,零新桥代码)。
-⚠️ **冻结 main spec 改动面**:`:56`(「`net_side` SHALL 由 mock ProtocolEngine 驱动」)⇒ **直连场景亦撞**(真实引擎驱动)⇒ **必 MODIFIES**;`:71`(「`net_side` SHALL 不产生任何 flit」)⇒ **仅网络场景 2 撞** ⇒ 若不实现场景 2 ⇒ **不动** ⇒ **最小冻结面改动 = `:56` 单条**。
-
-### ② C-2 映射面归属:**wrapper 内部**(G-0e 两侧)
-
-- ① `CacheReqBundle`(is_write / address / data / size)↔ `cpu_read` / `cpu_write` 的 **op 编码**;
-- ② `evict_line` 原语缺口 ⇒ 以「保留 core-side 功能方法 + 测试/装配夹具显式调用」承载,⛔ **不**伪造 `CacheReqBundle` 字段(缺口**如实登记**,不扩 Bundle);
-- ③ **同步** `AccessResult` ⇒ **异步** `CacheRespBundle` 的**在途关联与发射时机**:由 wrapper 直读 stub 的既有观测面(`mshr_` / `pending_resps_` / `outstanding_txn()` / `cycle()`)实现 ⇒ ⛔ 零影子 MSHR、⛔ stub **不**暴露新的内部状态;
-- ④ net_side egress/ingress 的 `CohIfBundle` ↔ 功能 5 流编码 由 wrapper 完成;
-- ⛔ **`CohIfNoCProtocolBridge` 的 `pack`/`unpack` 冻结不动**;
-- ⚠️ **语义分层红线**:wrapper 只做「**功能方法 ↔ Bundle**」的**端点编码**;桥只做「**Bundle ↔ flit**」的**承载投影**;`flow_id` → canonical 流的解释权在**类型层**(`CohIfBundle` 强类型枚举)⇒ wrapper 只**产生**合法 `flow_id`,⛔ **不解释**其含义;⇒ **新增映射代码禁入** `include/framework/` 与 `cohif_noc_bridge.hh`;⇒ ✅ **正向圈定**:**映射实现仅许存在于 `StubCacheEndpointTLM` 自身的 `.hh` / `.cc`**,⛔ **不得**另立独立 mapper / 翻译 / 桥接模块(⇒ 使红线 = 正向圈定 + 负向禁令,design.md 的红线条款方可引用本段原文)。
-
-### ③ C-3 注册面与命名
-
-- 注册走**真实注册机制**(per `ADR-CEP-07` 决策 3「不发明宏形式」):`ModuleFactory::registerObject<StubCacheEndpointTLM>("StubCacheEndpointTLM")` + `ChStreamAdapterFactory::registerDualPortAdapter<...>(...)` ⇒ 与 `CohIfProtocolEngine` 同款**双注册**;
-- ⛔ **不**用 `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED`(`chstream_register.hh:95`,**对称**单 BundleT ⇒ 不满足异构两侧);⛔ **不**用 `REGISTER_CHSTREAM_DUAL` 宏(`:288` —— **半截实现**:只注册 adapter、**不含** `registerObject` + **全仓零调用点** ⇒ 不能作为形态基准,per `chstream_register.hh:76-77`);
-- 命名 = **`StubCacheEndpointTLM`**(类名 = 注册名,仓内短名惯例):`StubCache` 前缀声明与 `StubCacheCore` 的组合归属;`Endpoint` 声明 ChStream 端点身份;`TLM` 后缀符合 `CacheTLM` / `NICTLM` 族惯例;
-- ⛔ 不用 `Adapter` 后缀(撞未注册的 testbench 协议 adapter 家族 `ChiRnfAdapter` / `UalinkAdapter`);⛔ 不用 `ProtocolEngine` 后缀(非引擎);⛔ 不用 `Bridge` 词干(撞 `ProtocolBridge` 家族);⛔ 不用 `Wrapper`(泄漏实现手法进注册名词汇表)。
-
-### ④ C-4 change 归属:**收编**进既有具名延期 change
-
-- G1~G3 收编进 **`cpptlm-cep-stub-cache-chstream-surface`**(新建其 change 目录;Proposed **0 → 1/3**);**不改名**(改名 = 再登记);⚠️ 该名字字面只承诺「端口面」,而收编后实际承载 **G1~G3 三面**(端口面 / 拓扑 / 判据)⇒ **change 的 proposal 须显式声明收编 scope = G1~G3**(防「名字与范围不符」的口径争议);
-- 理由:① `ADR-CEP-19` 决策 9(`:132`)已把该腿具名绑定到这个名字 ⇒ 收编 = **履行已签发承诺**,零额外登记;② G1/G2/G3 是同一件事的「端口面 / 拓扑 / 判据」三面,拆分将制造「有端口面而无装配判据」的中间态 ⇒ 违背零债务原则;③ KPI 影响与另立**完全相同**(0→1),收编避免延期项空壳化。
-
-### ⑤ R-1 判定:协议语义**不入**承载层 ⇒ **不拆** change
-
-按 ② 的归属裁决执行 ⇒ 协议语义不会进入承载层 ⇒ ⛔ **不**拆分为「承载接线 / 语义映射」两个 change(拆后承载层 change 无独立判据,纯治理开销)。
-⚠️ **残余风险**:实施者若把 G-0e 映射做成「通用协议桥」复用件 ⇒ 红线即破 ⇒ 防线 = **change design.md 的语义分层红线条款** + review 闸。
-
-### ⑥ 计数与判据边界(重申)
-
-- `B3b-2` **维持 0/4**(per SU · 七)⇒ ⛔ 即便 G1~G3 交付,**不得**用它改判 B3b(计数依据 = 规范条款级 T1–T4);
-- G3 的对端抵达断言 = **结构可达**证明(≡ **L4-direct**)⇒ ⛔ 非「协议语义 E2E」· ⛔ 非「规范条款级」· ⛔ **亦非「映射语义保真」**(后者由 G-0e 的判据另行保证)。
-
-### ⑦ Verification(可勾选验收判据 · 前瞻)
-
-- [ ] 本段 SU 已追加,且 SU · 一 ~ 七 与 §2 / §3.1 / §5.1.1 **逐字未变**;SU · 七 的「升格」措辞由本段**修正登记**且**未回改**其原文
-- [ ] 4 条裁决(形态 / 映射归属 / 注册与命名 / change 归属)各有**可执行文本**且**互相不矛盾**
-- [ ] **冻结面零改动**:本段**未**触碰 `stub_cache_core.hh` / `ADR-CEP-05` / `ADR-CEP-19` / 冻结 main spec ⇒ **这四者的 hash 不变**;⚠️ `07 号` 自身的 hash 变更由**末条两步授权**(Entry #282)覆盖
-- [ ] 实施前的**新台账 Entry**已登记(⚠️ Entry #280 的授权范围**仅覆盖 SU · 七**,**不预授权**冻结 main spec 的 MODIFIES)⇒ 两步授权流程就绪
-- [ ] G1 若实施:`StubCacheCore` **纯类零改动** ⇒ `INV-SC1`~`INV-SC6` 与 14 个既有单测**全绿**
-- [ ] G2 若实施:最小拓扑 = `TrafficGenTLM → StubCacheEndpointTLM → CohIfProtocolEngine`(**直连**,⛔ 未经网络)⇒ 且 wrapper 的两侧 Bundle 类型**确为异构**
-- [ ] G3 若实施:判据含**对端抵达断言**;⚠️ 若实现 optional 场景 2 ⇒ 冻结 main spec 的 `:71` 同步 MODIFIES
-- [ ] change design.md 含**语义分层红线条款**;⛔ 新增映射代码**未**进入 `include/framework/` 与 `cohif_noc_bridge.hh`
-- [ ] ⚠️ 任何实现**未**改 `B3b-2` 的 **0/4**;新增文件与文档**无**「B3b-2 已达成」形态的计数
-- [ ] 冻结面两步授权已执行:台账 **Entry #282** 授权 → **commit 本段** → `cep_freeze_check.sh --update --authorized-by "Entry #282"` → **清单单独 commit** → 无参复验 provenance 通过
-
-**关联**:台账 **Entry #282**(裁决授权)· **#280**(SU · 七 · 4 条待裁决点的来源)· `ADR-CEP-19` 决策 9(具名延期 + 四条理由)· `ADR-CEP-05` 决策 2(三明治挂载)· `ADR-CEP-07` 决策 3(真实注册机制)· `include/tlm/cep/stub_cache_core.hh`(纯类 + 六接口 + 折叠映射表)· `include/tlm/nic_tlm.hh`(dual-port 先例)· `include/framework/chstream_adapter_factory.hh`(`registerDualPortAdapter`)· `include/framework/cohif_noc_bridge.hh`(冻结不动的承载投影)· `openspec/specs/cep-stub-cache-core/spec.md`(`:56` 必改 · `:71` 视场景)
-
----
-
-## Status Update(2026-11-08 · 九,per 台账 Entry #284)—— SU · 八 的**桥路径引用更正** + 语义分层红线的**落点澄清**
-
-> **性质**:末尾追加 SU(append-only)。⛔ 不改 SU · 八 的任何一段(⛔ 其关联段的错误路径由本段**更正登记**,不改其原文);⛔ 不改 §2 / §3.1 / §5.1.1;⛔ 不回改 SU · 一 ~ 八;⛔ **零**代码 / 契约 / 冻结 main spec 改动。
-> **触发**:Entry #282 冻结面两步授权后跑全量 `ctest` ⇒ `cep_doc_ref_check` 判红 ⇒ 定位为 SU · 八 **关联段**的一处**路径目录写错**。
-> **审查**:`oracle` → `critic` 顺序纪律**不适用**(本段为**事实性更正**,⛔ 不含架构决策 ⇒ 无需再次双审;其内容为前两轮裁决的**路径补全**)。
-
-### ① 更正内容
-
-| # | 项 | SU · 八 原文(⛔ 不回改) | **更正后** |
-|---|---|---|---|
-| 1 | 桥的实现路径(关联段) | `include/framework/` + `cohif_noc_bridge.hh`(即**两个反引号片段拼成**的目录写错;⛔ 刻意拆写,避免被路径可达性闸当成真实引用) | **`include/tlm/cep/cohif_noc_bridge.hh`**(实测:`include/chstream_register.hh:8` include 的即 `tlm/cep/cohif_noc_bridge.hh` ⇒ **桥在 CEP 域,不在框架层**) |
-| 2 | 语义分层红线的**负向禁令落点** | 「禁入 `include/framework/` 与 `cohif_noc_bridge.hh`」 | **两条并存**:① **泛化** —— 新增映射代码禁入 `include/framework/`(框架层);② **具体** —— 不得改 `include/tlm/cep/cohif_noc_bridge.hh`(桥的既有 `pack`/`unpack` 实现) |
-
-⚠️ **红线方向未变**:「wrapper 只做端点编码 / 桥只做承载投影」**不变** ⇒ 本更正**仅补全落点**,⛔ **不**改变 4 条裁决的实质(形态 / 映射归属 / 注册与命名 / change 归属)。
-
-### ② 根因与审稿遗漏(诚实登记)
-
-- **根因**:oracle 的裁决原文只给**文件名** `cohif_noc_bridge.hh`(未给目录)⇒ architect 在**转写**进 SU · 八 时**补全目录补错**(写成框架层)⇒ ⇒ **笔误级**,⛔ 非决策错误;
-- ⚠️ **审稿遗漏**:`critic` 两轮(REJECT 轮 + APPROVE 轮)**均未抓出**该路径错 ⇒ 登记为**审稿流程的已知盲点**(「oracle 原稿的文件名 ⇒ 转写补目录」这一环**无机器核验**)⇒ ⇒ 后续凡引用仓内文件,提交前须**逐条核对路径存在性**(本仓既有闸 `cep_doc_ref_check` 正是该核验的载体 ⇒ 这次是它**首次**拦下此类错误 ⇒ ✅ 闸有效)。
-
-### ③ Verification(可勾选验收判据 · 前瞻)
-
-- [ ] 本段 SU 已追加,且 SU · 一 ~ 八 与 §2 / §3.1 / §5.1.1 **逐字未变**
-- [ ] SU · 八 关联段的桥路径已由本段**更正登记**(⛔ 未回改其原文);`include/tlm/cep/cohif_noc_bridge.hh` 在仓内**存在**
-- [ ] 语义分层红线的负向禁令已补全为**两条并存**(泛化:框架层 / 具体:桥实现)
-- [ ] **4 条裁决的实质未变**(形态 / 映射归属 / 注册与命名 / change 归属)⇒ 与 SU · 八 逐条一致
-- [ ] 冻结面两步授权已执行:台账 **Entry #284** 授权 → **commit 本段** → `cep_freeze_check.sh --update --authorized-by "Entry #284"` → **清单单独 commit** → 无参复验 provenance 通过
-
-**关联**:台账 **Entry #284**(更正授权)· **#283**(待新建 change 路径豁免)· **#282**(4 条裁决 · 本段更正其关联段路径)· **#280**(SU · 七)· `include/tlm/cep/cohif_noc_bridge.hh`(桥的真实位置)· `include/framework/chstream_adapter_factory.hh`(`registerDualPortAdapter`)
-
-## Status Update(2026-11-08 · 十,per 台账 Entry #286)—— §5.1.1 **状态列**的维度澄清 + 「弱档」的使用边界
-
-> **性质**:末尾追加 SU(append-only)。⛔ 不改 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 九 的任何一段(⛔ 其状态列原文**逐字保留**);⛔ **零**代码 / 契约 / 冻结 main spec 改动。
-> **触发**:架构文档内容审查(Entry #285)的 **F-4′ / F-5′** 两项扣分项的**精确化**(初判为「52/102 处无维度限定」与「2 处违规」⇒ 复核后**部分成立 / 轻微**)。
-> **审查**:`oracle` → `critic` 顺序纪律**不适用**(本段为**既有口径的精确化**,⛔ 不含新的架构决策)。
-
-### ① §5.1.1 状态列「✅ 已落地」的**维度**(精确化 SU · 七 ③ 的覆盖范围)
-
-- 本文件 **§5.1.1 工业硬件协议族表**的**状态列**里,各族的「✅ **已落地**」= 计在 **「该族的 adapter 契约 + 实例声明(+ 表内已单独标注的运行时引擎)」**维度 ⇒ ⛔ **不**含「**业务侧流量接入**」维度,⛔ **不**含「**可装配 ChStream 模块**」维度(该维度见 SU · 七 / 八 / 九 登记的显式延期项);
-- ⇒ 例:某行标「✅ 已落地」**不得**被外推为「该族已接入 `Core·TrafficGen` / Stub Cache 侧」⇒ ⚠️ **该面目前是显式延期**(per `ADR-CEP-19` 决策 9 与本文件 SU · 七 ~ 九);
-- 同理,**§11 落地状态表**各行的「✅ / 🟡」按 SU · 七 ③ 的**局部口径**读(计在**能力 / 行为化**维度)⇒ ⛔ **不可互推维度**;
-- ⚠️ **本条仅收窄读法,不改行义**:状态列原文按其字面即「该族契约已落地」,本条只阻止把该标记外推到「业务侧 / 可装配」维度。
-
-### ② 「弱档」的使用边界(⛔ 独立于 SU · 七 ③ 的禁令)
-
-- `ADR-CEP-12` SU 2026-11-07 ③ 的禁令:「**弱档**」**不得单独出现** —— 必须全称「**公开非规范来源 + pending + fail-closed**」⇒ 该禁令的**复述文本**本身含「弱档」一词,**不构成违反**;
-- ⇒ 本文件内**合规**的用法 = 三要素同现(如「basis 标注为弱档、`pending=true`、**fail-closed** 禁止引擎消费」);
-- ⚠️ **本条登记 2 处边界用法**(不构成违规,但属**易被误读**的简写):① §5.1.1 UALink 行的「**记账级弱档建模声明**」⇒ 读作「**记账级** + 弱档」;② 一处历史 SU 的「(cxl 弱档 / ualink `Pending` …)」⇒ 读作「basis 值枚举名」;⇒ ⇒ **二者均非「单独出现」的违规**,⛔ 不需回改(append-only),此处**仅登记读法**。
-
-### ③ Verification(可勾选验收判据 · 前瞻)
-
-- [ ] 本段 SU 已追加,且 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 九 **逐字未变**
-- [ ] §5.1.1 状态列的「✅ 已落地」的**维度**已明确为「adapter 契约 + 实例声明(+ 已标注的运行时引擎)」,⛔ 不含「业务侧 / 可装配」
-- [ ] 「弱档」的**合规用法**(三要素同现)与 **2 处边界用法**已区分登记;⛔ 未把禁令复述误判为违规
-- [ ] 评分报告 `.rddf/reviews/cep-arch-doc-review-2026-11-08.md` 的 **D3 分数与 F-4/F-5 表述已按本段精确化更正**,并登记**取证方法的假阳性**(初判把动词用法与状态标记混为一谈)
-- [ ] 冻结面两步授权已执行:台账 **Entry #286** 授权 → **commit 本段** → `cep_freeze_check.sh --update --authorized-by "Entry #286"` → **清单单独 commit** → 无参复验 provenance 通过
-
-**关联**:台账 **Entry #286**(精确化授权)· **#285**(审查 + 评分 · F-4/F-5 的来源)· **#284**(SU · 九)· **#282**(4 条裁决)· **#280**(SU · 七 ③ 的局部口径)· `ADR-CEP-12` SU 2026-11-07 ③(术语纪律)· `ADR-CEP-19` 决策 9(显式延期)
-
----
+> ⛔ **决策正文见 [`ADR-CEP-19`**](../adr/ADR-CEP-19-*.md)的对应 Status Update**(G1~G3 的 4 条待裁决点裁定 / 组合式 wrapper 形态修正)。
+> 本节原为实施状态登记,per 台账 Entry #333 架构文档治理已移除;**状态见 `objective-cep-platform §4.0` / `§4.0-a` / `§11`**。
 
 ## Status Update(2026-11-08 · 十一,per 台账 Entry #288)—— **「Core·TrafficGen 主干」的架构决策登记**(10 条统一)+ 实施前**不得宣称已落地**
 
@@ -2182,296 +1545,33 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 
 ## Status Update(2026-11-08 · 十三,per 台账 Entry #293)—— **声明面落点裁定回填**(= **甲**)+ **D-9 元数据字段增补**(F-12)
 
-> **性质**:末尾追加 SU(append-only)。⛔ 不改 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十二 的任何一段(⛔ **SU · 十二** ④ 登记的「甲 / 乙**待裁**」与 ① 的 D-9 行原文**逐字保留**,⛔ 其措辞**由本段取代 / 增补**,原文不回改);⛔ **零**代码 / 契约 / 冻结 main spec 改动;⛔ 不改任何 DoD 结论。
-> **触发**:台账 **Entry #291** ② A-4(声明面落点二选一)· 用户 2026-11-08 口令「裁甲/乙」· 第二轮审查 **F-12**(D-9 只登记元数据 ⇒ 台账的「13 键结论」无据可核)。
-> **审查**:`oracle`(裁定的理由 + 字段集是否越权/是否与既有 `ADR-CEP-06` 契约冲突)→ `critic`(本段 + `ADR-CEP-19` SU · 三 + `ADR-CEP-06` SU 2026-11-08 的架构审稿),顺序不可颠倒。
-> **关联**:`ADR-CEP-19` SU 2026-11-08 · 三 · `ADR-CEP-06` SU 2026-11-08 · 台账 **Entry #291 / #292 / #293**
-
-### ① 声明面落点:**已裁 = 甲**(状态追认)
-
-- **原文(⛔ 保留不回改)**:SU · 十二 ④ 登记「声明面落点二选一(**待 architect 裁**;⛔ 本段不预裁)」并列 **甲** / **乙** 两条路线。
-- **裁定**:**甲** —— home 简化模型 **不进** `include/tlm/cep/protocol_instances.json` ⇒ **零冻结面增量** ⇒ 由**契约面 delta 登记明示豁免**承载(登记内容见 `ADR-CEP-19` SU · 三 ③)。
-- ⚠️ **理由要点**(完整 5 条 + 实测证据见 `ADR-CEP-19` SU · 三 ②):① **类别不同**(协议实例 vs home 模型);② **无机器义务**(实测 `cep_decl_alignment_check.sh` 只校验**声明侧**、`cep_decl_reverse_verify.sh` 只改声明文件、`test_cep_source_registry.cc` 按**显式 include** 枚举而**不做目录扫描**、CDX-06 类探针按 `id` **定点查**字段);③ **乙不带来新信息**(home 应答面的**声明级语义空间**已被 `chi_rnf` 的 `flow_support` 覆盖);④ **代价不对称**(乙 = 改 M1 冻结件 schema + **跨仓同步** ArchForge 32 号声明);⑤ **甲是唯一与已签发文档不自相矛盾的选项**(`ADR-CEP-12` SU 2026-11-08 ② 已把「home 模型 ⛔ 不在声明面」当作**既定前提**使用 ⇒ 选乙须先勘误该已冻结 SU)。
-- ⇒ 本段为**现行状态真源**;⛔ 上引原文保留不回改。
-- ⚠️ **与计数的关系**:本裁定**不改任何计数** —— `B3b-2` **维持 0/4**;⛔ `protocol_instances.json` 与 `protocol_instance.schema.json` **均零 diff**。
-
-### ② D-9 的**元数据字段增补**(F-12)
-
-- **原文(⛔ 保留不回改)**:SU · 十一 ① 的 D-9 行 = 「实验产物规范 | `experimental/run-<ts>-cep-e2e-{A\|B}/` + 4 件套;⛔ 产物不入库 ⇒ **入台账的是元数据**(run id · config 快照 sha256 · **13 键结论** · IC3 verdict · 拓扑标记);`preregistration.json` **不动**」。
-- ⚠️ **原表述的缺口**(本轮实测):① 「13 键**结论**」只表示**判定**,不表示**取值** ⇒ 台账条目**无据可核**;② 未记 `metrics.json` 本身 ⇒ **无法与产出该结论的那次 run 对账**;③ 未记 `verification_mode` / `verification_scope` ⇒ 台账里的「IC3 绿」在 `bounded_random` / `sampled` 情形下**会被读成「已证明无死锁 / 无违例」**(per `ADR-CEP-06` §3 规模上限契约第 2 条的**禁止**表述);④ 未记 `hypothesis_id` ⇒ 台账条目**不指向**具体的预登记假设行(与 SU · 十一 ① 的 D-8「待补 ①」同源)。
-- **增补后的台账元数据字段集**(7 项;**主体裁决**在 `ADR-CEP-06` SU 2026-11-08):
-
-| # | 字段 | 内容 | 来源 |
-|---|---|---|---|
-| 1 | `run_id` | run 标识 | run 目录名 |
-| 2 | `config_sha256` | `simulation_config.json` 的 sha256 | 4 件套之一 |
-| 3 | **`metrics_sha256`** | **`metrics.json` 的 sha256** ← **F-12 核心新增** | 4 件套之一 |
-| 4 | **`metrics_13`** | **13 键的**值 **或** `not-collected` 标记**(逐键;⛔ 不是 pass/fail 摘要)**;⚠️ `not-collected` 的键 SHALL **同时带 reason**(per `INV-CEP-06-IC4`) | `metrics.json` 的 13 个必纳字段(per `INV-CEP-06-IC2`) |
-| 5 | **`verification_mode` + `verification_scope`** | 规模上限声明;**载体 = `simulation_config.json`**(per `tools/run_sweep.py` 的机器校验点;若 `metrics.json` 同名字段漂移 ⇒ **以 config 为准**) | per `ADR-CEP-06` §3 规模上限契约第 1 条(既有要求,本段只是**把它带进台账**) |
-| 6 | `ic3_verdict` + `hypothesis_id` | IC3 判定 + 预登记假设行标识;⚠️ 判定 SHALL 用 **SU 2026-11-05(#3) 三态词表**(✓ 通过 / ❌ 违例 fail / ⚪ 不适用)⇒ ⛔ **不得**记二值「绿 / 红」——「⚪不适用」被压成「绿」= **压扁风险在台账侧复发** | `INV-CEP-06-IC3` + `metrics.json` 的 `hypothesis_id` |
-| 7 | `topology_tag` | A / B | 本框架的拓扑标记 |
-
-### ③ 边界(**逐字**)
-
-> **登记 ≠ 可复算** —— 因产物**不入库**,台账条目只提供**对账**能力(该条目 ↔ 那一次 run 的 `metrics.json`,由 `metrics_sha256` 对齐)⇒ ⛔ **不得**表述为「实验可复算 / 可重放」;⚠️ `metrics_sha256` **不**保证结论正确,它只保证「台账记的是哪一份产物」;⛔ **不得**据台账条目声称「已证明无死锁 / 无违例」—— 该表述受 `verification_mode` / `verification_scope` 约束(per `ADR-CEP-06` §3 规模上限契约第 2 条);⚠️ **对账能力的前提是「那一份产物仍可取得」** —— run 目录不入库 ⇒ 可核性随 **retention** 衰减 ⇒ ⛔ 本段**不**裁决 retention(属另一条独立决策)。
-
-⇒ ⇒ 由此,**D-9 的「入台账的是元数据」得到精确化**:元数据 = **实验元数据的完整投影**(含规模上限声明),⛔ **不是**结论摘要;而「产物不入库」这一前提**保持不变**(⛔ 本段**不**裁决把产物入库 —— 那属另一条独立决策,若日后需要 ⇒ 另立 Entry)。
-
-### ④ Verification(可勾选验收判据 · 前瞻)
-
-- [ ] 本段 SU 已追加,且 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十二 **逐字未变**
-- [ ] ① 的裁定(甲)已登记 + 5 条理由要点已登记;上引「待裁」原文**保留未回改**
-- [ ] ② 的 7 字段集已逐项登记,含 `metrics_sha256` 与「13 键的值 / `not-collected` 标记」两项新增
-- [ ] ③ 的边界句已**逐字**登记;「产物不入库」前提**保持不变**;⛔ 未裁决产物入库
-- [ ] ⛔ 本段**无**任何落地宣称;`protocol_instances.json` **零 diff**;`protocol_instance.schema.json` **零 diff**;`experimental/preregistration.json` **零 diff**;**`B3b-2` 维持 0/4**
-- [ ] 冻结面两步授权已执行:台账 **Entry #293** 授权 → **commit 本段 + `ADR-CEP-19` SU · 三 + `ADR-CEP-06` SU** → `cep_freeze_check.sh --update --authorized-by "Entry #293"` → **清单单独 commit** → 无参复验 provenance 通过
-
-**关联**:台账 **Entry #293**(授权)· **#292**(SU · 十二 · 待裁登记 + 双审闭环)· **#291**(A-4 / F-12 义务清单)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(F-05 / F-12)· `ADR-CEP-19` SU 2026-11-08 · 三 · `ADR-CEP-06` SU 2026-11-08 · `ADR-CEP-12` SU 2026-11-08 · `include/tlm/cep/protocol_instances.json` · `include/tlm/cep/protocol_instance.schema.json`
-
-
-
----
+> ⛔ **决策正文见 [`ADR-CEP-06`**](../adr/ADR-CEP-06-*.md)的对应 Status Update**(声明面落点裁定(= 甲)+ D-9 元数据字段增补)。
+> 本节原为实施状态登记,per 台账 Entry #333 架构文档治理已移除;**状态见 `objective-cep-platform §4.0` / `§4.0-a` / `§11`**。
 
 ## Status Update(2026-11-08 · 十四,per 台账 Entry #295)—— **F-08 残余裁定**(索引**移到文末** + 新纪律 + 具名闸)+ **retention 裁定 = 丙**(指针)
 
-> **性质**:末尾追加 SU(append-only)。⛔ 不改 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十三 的任何一段(⛔ SU · 十三 ③ 的「⛔ 本段**不**裁决 retention」原文**逐字保留**,本段为其**履行**);⛔ **零**代码 / 契约 / 冻结 main spec 改动;⛔ 不改任何 DoD 与计数。
-> **触发**:台账 **Entry #293** ⑥ 的 architect 域剩余两项(**F-08 残余** / **retention**)· 用户 2026-11-08 口令「收 F-08 残余 + retention 决策」。
-> **审查**:`oracle`(索引移动的**锚点代价核算** + retention 量级 + IC 明细载体)→ `critic`(本段 + `ADR-CEP-06` SU 2026-11-08 · 二 的架构审稿),顺序不可颠倒。
-> **关联**:`ADR-CEP-06` SU 2026-11-08 · 二 · 台账 **Entry #293 / #295** · `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`(锚点清单)· `docs/adr/ADR-CEP-00A-real-source-anchor-map.md`(§3.9)
+> ⛔ **决策正文见 [`ADR-CEP-06`**](../adr/ADR-CEP-06-*.md)的对应 Status Update**(F-08 残余裁定(索引移到文末 + 新纪律 + 具名闸)/ retention = 丙)。
+> 本节原为实施状态登记,per 台账 Entry #333 架构文档治理已移除;**状态见 `objective-cep-platform §4.0` / `§4.0-a` / `§11`**。
 
-### ① F-08 残余裁定:索引**移到文末** + **新纪律** + **具名闸**
+## 12. CEP 使用手册(Stage 4+ 维护态交接)
 
-- **问题**:本文件的 §末文档索引位于 **SU · 十 ~ 十三 之前**(实测段 = **L2008~2105,共 98 行**)⇒ ① 它**不在文末**;② 每次追加 SU 都让它「又在中间」⇒ **结构性复发**(F-08)。
-- **锚点代价(实测,移动前逐项查)**:
-
-  | 消费方 | 是否受影响 | 依据 |
-  |---|---|---|
-  | **ArchForge 对齐清单** | ⛔ **不受影响** | 只锚本文件 **L310**(symbol `16 个 adapter 实例`)⇒ 在索引**之前** |
-  | **`ADR-CEP-00A` §3.9**(CEP 真源锚点表) | ⛔ **不受影响** | 该表**只锚章节号**(§1 ~ §8),**无行号** |
-  | `cep_docs_sync_check.sh`(§4 invariant 总表) | ⛔ **不受影响** | 按**标题**定位 §4,非固定行号 |
-  | `cep_doc_ref_check.sh` | ⛔ **不受影响** | 按 `file\|sec` 键,**非行号** |
-  | **仓内行号引用(全仓实测 = 18 处)** | ⚠️ **15 处在位移区** | 14 处在 `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(本会话产物,可改)+ 1 处在台账 **Entry #291**(§11 append-only ⇒ ⛔ 不回改,由 Entry #295 **登记更正**);其余 3 处(`:316` ×2 / `:318`,分布在**三个**文件)**在索引之前** ⇒ 不受影响 |
-
-  ⇒ ⇒ **一次性代价 = 位移 98 行 + 15 处引用同步**,**无跨仓影响**。
-- **裁定**:**索引移到文末**(删除原处索引段 + 在**文末**追加重生成的索引)⇒ ⇒ ⚠️ 该动作是「**删改既有段**」(per 用户 2026-11-08 定性)⇒ ⇒ **正当性**:索引是**派生导航件**(自述「由脚本生成,零手抄」),其位置**不承载任何决策** ⇒ 移动**不触及**任何已签发决策;⚠️ append-only 的对象是**决策与 SU 段**,不是派生索引。
-- ⇒ ⇒ **新纪律(逐字)**:
-
-> **索引永久置于文末**;此后**新增**段落 SHALL 插在索引**之前** ⇒ ⇒ **新增内容永不使既有 `path:line` 锚点位移**;索引**每次追加后重生成**(因其自身在文末 ⇒ 长度变化**不位移任何正文**)。
-
-- ⚠️ **索引头部自述同步改写**(否则下一位追加者无从知道本纪律):由「⛔ 勿以索引在文末为前提」改为「**最新 SU 在本索引之前;新增段落 SHALL 插在本索引之前**」。
-- ⚠️ **代价登记**:移动使 **SU · 十 ~ 十三** 整体上移 **98 行** ⇒ ⇒ 15 处引用须按**移动后实测行号**更新(⛔ **不得**按 delta 机械换算 —— 换算错误会让「更正」本身错位);⚠️ 该位移**一次性**且**不可逆**(⛔ 不回移到原处 ⇒ 否则复发)。
-- **具名闸(归 builder)**:`scripts/test/cep_index_position_check.sh` —— 断言「索引段之后**零个**其它 `## ` 级标题」(⛔ 不只取末位比较 —— 报错须可定位)+ ctest 注册 ⇒ ⇒ 使新纪律**机器可判**(⛔ 不靠人记)。
-
-### ② retention 裁定 = **丙**(指针,主体在 `ADR-CEP-06`)
-
-> **裁定 = 丙**:`metrics.json` + `simulation_config.json` **作为证据载体入库**;**范围 SHALL 限于「有对应台账条目的 run」**(⚠️ 首批 = **h3 升级 run 及以后**;⚠️ 历史 **127** 个 run **grandfather**:⛔ 不回填、⛔ 不得以其为对账依据);`trace.h5` / `report.html` **不入库**;⛔ 二者入库**不等于**升格为**契约面**(⛔ 不进 `FROZEN_GLOBS`、⛔ 不产生任何 `INV-*` / 判据、⛔ 不改 `experimental/` 的任何 schema)。
-- **D-9 的 retention 面被**取代(supersession)****(⛔ SU · 十一 ① 的 D-9 行原文保留不回改):D-9 行是**全称**「⛔ 产物不入库」⇒ 把 4 件中的 2 件入库**与其字面矛盾** ⇒ ⇒ 故本条**不**称「精确化」,而称「**取代**」:
-  - **取代的正当性**:① SU · 十三 ③ 已把 retention **显式挂起**为「另一条独立决策」⇒ 本条即其履行;② **F-12 的 `metrics_sha256`(Entry #293 裁定 2)在逻辑上要求存在仓内对账对象** ⇒ ⇒ 已有一条签发依赖链迫使本裁定发生;
-  - **取代的**范围**:⛔ **仅** D-9 的 **retention 面**(产物是否入库);✅ D-9 的**台账元数据字段面**(SU · 十三 ② 的 7 字段)**不受影响**;✅ D-9 的「产物 ≠ 契约面」原则**不变**。
-- **回滚路径**:撤销 `.gitignore` 的两条例外 + `git rm` 已入库的 run 目录 ⇒ 恢复现状;⚠️ **台账已记条目保留为历史记录、⛔ 不回删**。
-- **规模与选项对比**:见 `ADR-CEP-06` SU 2026-11-08 · 二 ②(实测:全量 11 MB / 丙口径上限 **2.6 MB** / 单件均值 12.5 KB + 0.6 KB);甲(无可对账对象)· 乙(11 MB + 存大部分可再生件,⚠️ CDF 需 trace)· 丁(无现成归档 + 只覆盖 CI run + 会过期)为排除理由。
-> **能力边界(逐字)**:入库的两件只提供 ① **对账**(台账 `metrics_sha256` ↔ 仓内 `metrics.json`) ② **13 键逐键复核** ③ **可复跑**(同 `simulation_config.json` + 同种子 + **同代码版本(git rev)** + 同工具链)⇒ ⛔ **不**提供 **bit-identical 复现**(`RANDOM` 模式的 `uniform_int_distribution` **跨 stdlib 非位精确**,per `07 号` SU · 十一 ① 的 D-7 漂移登记);⛔ **不**提供 **trace 级分析的可复核性**(`trace.h5` 不入库);⚠️ **schema 漂移不影响对账**(`metrics_sha256` 锚的是**字节**,不是 schema 合法性)⇒ 老 `metrics.json` 可能不满足未来的 `metrics.schema.json`,但对账仍成立。
-
-### ③ Verification(可勾选验收判据 · 前瞻)
-
-- [ ] 本段 SU 已追加,且 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十三 **逐字未变**
-- [ ] ① 的裁定(移到文末)+ **新纪律逐字** + **索引头部自述改写**已登记;「正当性」与「一次性代价」已登记;**锚点代价表 5 行**齐备
-- [ ] 移动后 **索引段是最后一个 `## ` 段**;`bash scripts/test/cep_archforge_alignment_check.sh` 绿(L310 仍有效);`cep_docs_sync_check.sh --strict` / `cep_doc_ref_check.sh` 绿
-- [ ] **15 处行号引用**已处置:14 处(审查报告)**按移动后实测行号**更正;1 处(台账 Entry #291)**由 Entry #295 登记更正**(old / new 双记)
-- [ ] ② 的 retention 裁定与 `ADR-CEP-06` SU 2026-11-08 · 二 **逐条一致**(裁定句 + 边界句逐字);「**取代**」而非「精确化」的定性已登记(含两条正当性)
-- [ ] ⛔ `experimental/preregistration.json` / `metrics.schema.json` **零 diff**;⛔ 未新增 `INV-*`;**`B3b-2` 维持 0/4**
-- [ ] 冻结面两步授权已执行:台账 **Entry #295** 授权 → **commit 本段 + `ADR-CEP-06` SU** → `cep_freeze_check.sh --update --authorized-by "Entry #295"` → **清单单独 commit** → 无参复验 provenance 通过
-
-**关联**:台账 **Entry #295**(授权)· **#293**(⑥ 的两项剩余待办:本段即其履行)· **#292**(D-9 元数据字段的原始裁决)· `ADR-CEP-06` SU 2026-11-08 · 二(retention 主体)· `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`(L310 锚点)· `docs/adr/ADR-CEP-00A-real-source-anchor-map.md`(§3.9 只锚章节号)· `.gitignore` · `experimental/`(127 run / 206 metrics)
-
----
-
-
-## Status Update(2026-11-09 · 十五,per 台账 Entry #304)—— **「Core·TrafficGen 主干」的实施后状态**(SU · 十一 ① 的 **10 条决策**逐条落地)+ **残余缺口**登记(⛔ 「全绿」**未达成**)
-
-> **性质**:末尾追加 SU(append-only)。⛔ 不改 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十四 的任何一段(⛔ SU · 十一 ① 的 10 条决策**原文逐字保留**,本段只登记其**实施后状态**);⛔ **零**代码 / 契约面改动(仅本文件 + 两份 ADR 的 SU);⛔ **不**改任何 DoD 结论与计数。
-> **触发**:change **`cpptlm-cep-stub-cache-chstream-surface`** 的实施闭环(台账 **Entry #297 ~ #303**:A0 授权 / A1·A2 两模块 / A1b 收尾 6 项 / A3·A4·A5 两拓扑 / A6 判据 J-1~J-9 / A7 harness + 三键归属 / A8 首批 run 入库 + 7 字段台账 + 双向闸 / A9.1 契约面 delta 终稿)+ 用户 2026-11-09 口令「切 architect 做 A9.2」。
-> **审查**:`oracle`(本段 ① 的 10 条落地判定与 ② 的残余缺口口径)—— 按 architect 的审查档位,本段属「**只同步实施态 / 改措辞**」⇒ **单审 oracle**,⛔ 不启 critic 双审。
-> **关联**:`ADR-CEP-19` SU 2026-11-09 · 一 · `ADR-CEP-06` SU 2026-11-09 · 一 · 台账 **Entry #297 ~ #304** · `openspec/changes/cpptlm-cep-stub-cache-chstream-surface/`
-
-### ① 10 条决策的**实施后状态**(逐条落地判定)
-
-| # | 决策(SU · 十一 ① 原文) | 实施后状态 | 落点 / 证据 |
-|---|---|---|---|
-| **D-0** | 「完成者」= home 应答端(**协议中立替身**措辞已被 Entry #292 改为「**真实 home 的简化模型**」);**进 JSON 拓扑**;⛔ **不进** `protocol_instances.json` | ✅ **已落地** | `include/tlm/cep/cohif_responder.hh`(`CohIfResponderTLM`:参数化延迟回 `Completion` · `Writeback` 接收即消费零响应 · `Snoop` 可配发);进拓扑 A / B 两份 config;⛔ 声明面**零 diff** |
-| **D-1** | latency 测发起端(wrapper);wrapper **只暴露原始观测事实**,聚合由 harness 消费 | ✅ **已落地** | wrapper 公开面 = per-txn 周期戳 + `id_space` + in-flight + `cpu_resp_backlog`;聚合在 `test/cep_experiment_harness.hh`(⛔ 契约面零聚合) |
-| **D-2** | 命中路径**也回** CPU 侧响应;「承载层回 NoD 响应 ≠ 协议引擎发射」须写明 | ✅ **已落地** | 命中 → 就地生成 `CacheRespBundle`;拒绝路径亦回(`error_code=1`);措辞禁令写在 wrapper 头注释与 delta |
-| **D-3** | 引擎可观测面扩展边界;违例类不适用 ⇒ `not-collected` + 显式降格登记 | ✅ **已落地** | `metrics.json` 的 `_not_collected` 逐键带 reason;13 键「各有结论」判定 = `cep_exp::metrics_13_covered()` |
-| **D-4** | 不新建 Sink;wrapper 单一模块双角色 | ✅ **已落地** | 仓内**零**新增 Sink 类;wrapper 仍为单模块(端口面 4 访问器) |
-| **D-5** | 两拓扑并存(A = 直连 / 全绿载体;B = 互联可达 + 桥投影,⛔ 不承载全绿) | ⚠️ **两拓扑并存已落地;A 的「全绿载体」目标未达成**(见 ② ①) | `configs/cep_chi_rnf_e2e_{a,b}.json`;J-9 分档判据(机器判) |
-| **D-6** | 冻结 spec **`:56` 单条** MODIFIES;`:71` 撤销;`:63` 不动 | ⚠️ **delta 已落地**;⛔ **main spec 合并尚未执行**(随归档 T9.3 + Entry #297 授权链) | 台账 Entry #297 授权;delta 与 main spec 的 diff = **锚点仅 `:56` 一处**(1 行替 2 行)⇒ **合并动作**在归档时执行,本段**不**宣称已合并 |
-| **D-7** | `RANDOM` + **固定种子并入 config 快照**;⛔ `TRACE` 不做;⚠️ `TrafficGenTLM` **无** seed / 地址段 setter ⇒ 须新增;⚠️ 跨 stdlib 非位精确 ⇒ 快照须记工具链 | ✅ **已落地** | `set_seed` / `set_addr_range`(⚠️ 必须**重建** `addr_dist_`)/ `seed()`;快照 `provenance` = 种子 + **git rev** + 工具链;⛔ `TRACE` 未做 |
-| **D-8** | 8 条判据(J-1 ~ J-8)+ **J-9** 分档;⚠️ ① run 的 `hypothesis_id` **绑定 `H3`**;⚠️ ② 三键测量归属待定 | ⚠️ **装置层判据 J-1 ~ J-9 全部落地**(含 3 个决定性变异体);⛔ **实验闸层未覆盖**(本 run 非实验 run ⇒ 绑 H3 不可能 ⇒ J-4 在**实验闸层**不可计算,见 ② ②) | `test/test_cep_stub_cache_e2e.cc`(SCE-01 ~ SCE-21) |
-| **D-9** | run 目录 `experimental/run-<ts>-cep-e2e-{A|B}/` + 4 件套;⛔ 产物不入库 ⇒ 入台账的是元数据 | ⚠️ **落地形态 = 取代版**(retention **丙** 由 SU · 十四 ② 授权取代 D-9 的 retention 面)⇒ **只入库 2 件**(`metrics.json` + `simulation_config.json`);⚠️ **目录命名偏离**:规范 `run-<ts>-cep-e2e-{A\|B}/` ⇒ 实测 `experimental/run-2026-11-09-cep-e2e/`(**无拓扑后缀**;拓扑标记走**元数据**的 `topology_tag`)—— 本段登记该偏离(⛔ 不回改规范原文) | `.gitignore` 三段式例外 + `test/cep_e2e_runs.jsonl` + 双向闸 |
-| **D-10** | 计数纪律 | ✅ **逐字生效** | `B3b-2` 仍 **0/4**;`cep_b3b2_deferrals.json` / `protocol_instances.json` / `protocol_instance.schema.json` **零 diff**;`stub_cache_core.hh` **零 diff** |
-
-### ② 残余缺口与**偏离**(诚实登记;⛔ 不回改 SU · 十一 / 十四 原文)
-
-① **「全绿 run」目标未达成(残余缺口)** —— SU · 十四 ④ 把拓扑 A 定位为「全绿载体(13 键全有值 + IC3 闸门绿 + 端到端响应完整)」;**本轮实施未达成**:
-   - **IC3 = ⚪ 不适用**(违例类 `memory_violations` 无样本)⇒ ⛔ **不得**记「绿」;
-   - **延迟族 5 键 `not-collected`**(本装置无已完成往返)⇒ 「13 键全有值」不成立(按 SU#1 口径为「13 键**各有结论**」);
-   - **端到端响应完整**只在**模块级**判据闭合(SCE-03 / SCE-14),**拓扑级**未闭合;
-   - ⇒ **根因 = 双重成因**(⛔ 缺一即不成立):
-     - **(a) 框架层路由缺陷**:`include/framework/dual_port_stream_adapter.hh` 的 `DualPortStreamAdapter` **只 override 单参** `process_request_input(Packet*)`(→ `process_pe_request_input` 填 `pe_req_in()`,`:189-199`,**不看 `pkt->type`**),**未 override 双参版** ⇒ 基类默认**回退单参版**(`include/core/stream_adapter_base.hh:82-84`);而 `ChStreamTargetPort::recvReq` 调的恰是**双参版**(`include/core/chstream_port.hh:70`)⇒ ⇒ net 侧入向(含 home 回程)**恒落 PE 侧**,`net_resp_in()` 永不可达(旁证:`process_net_response_input()` **零调用点**)⇒ ⛔ `include/framework/` 是红线 ⇒ **本轮零改动**;⚠️ **注**:`BidirectionalPortAdapter` 的双参路由**是对的**(`req_in()[port_idx]`,`:335-342`)⇒ **不是**本次受限点;
-     - **(b) 本 change 的**主动设计选择****:拓扑 A/B 的 home 配 `emit_completions: false`(`include/tlm/cep/cohif_responder.hh:152-157`)⇒ 到期 `Completion` **在模块内被抑制、不发上网**(`completions_suppressed` 计数)⇒ **即使 (a) 修好,当前配置下延迟族仍无样本**;
-   - ⇒ **触发条件(双条件,缺一不可)**:① 另立 change 修 `dual_port_stream_adapter.hh` 的**入向按端口路由**(+ 冻结面授权);② 拓扑 config 改 `emit_completions: true` 并重跑 ⇒ 届时「全绿 run」目标方可重新评估;
-   - ⚠️ **附带勘误登记**:`include/tlm/cep/cohif_responder.hh` 的注释把根因文件名写成 `bidirectional_port_adapter.hh` ⇒ **张冠李戴** ⇒ 归 builder 同批勘误(⛔ 非冻结面,⛔ 不影响实现行为)。
-
-② **D-8 ① 的偏离:run 的 `hypothesis_id` = `framework-e2e`,⛔ **未**绑定 `H3`** —— 理由(逐条):
-   - `H3` 的预登记 out-of-scope = {`coherence_stalls`, `collective_stalls`, `directory_misses`} ⇒ **延迟族 5 键必须实测**;而本装置**无延迟样本**(见 ①)⇒ 绑 `H3` 会违反「未列入 out-of-scope 者必须实测」;
-   - ⛔ **不得**事后扩 `experimental/preregistration.json`(明令禁止)⇒ 不能为 run 新增假设行;
-   - ⇒ **落地形态 = 「框架验证 run」**(`run_class = framework-verification` · `not_an_experiment_run = true`)⇒ ⛔ **不作 B4 证据** · ⛔ **不作任何一致性安全断言** ⇒ 用途**仅** = **可对账**(台账 `metrics_sha256` ↔ 仓内 `metrics.json`);
-   - ⇒ **判据分层(必须分开读)**:**装置层**(Catch2 的 J-1 ~ J-9)全绿;⛔ **实验闸层**(把 run 纳入 `preregistration` 假设并过 tools 判据④)**未覆盖** —— 本 run **不**走该层(SU · 十一 D-8 待补 ① 已预警「不绑 hypothesis ⇒ J-4 在机器闸下不可计算」)⇒ ⇒ 「J-1 ~ J-9 全落地」**仅在装置层**成立;
-   - ⚠️ **J-4 的落点相应调整**:IC3 三态(`✓ 通过` / `❌ 违例 fail` / `⚪ 不适用`)的产出者 = `cep_exp::ic3_verdict()`;本 run 落 **⚪ 不适用** ⇒ ⛔ 「IC3 绿」在本 run 上**不成立**,⛔ 不改任何 hypothesis 结论。
-
-③ **D-5 / SU · 十四 ④ 的拓扑形态偏离(实施态如实登记)** —— 实际落地:
-   - **拓扑 A** = `TrafficGenTLM → StubCacheEndpointTLM → CohIfResponderTLM`(3 模块)—— SU · 十四 ④ 写的 `… → ChiRnfProtocolEngine ⇄ ChiRnfProtocolEngine ⇄ CohIfResponderTLM` **未采纳**;理由:RN-F **不服务** `request`(引擎对只把 Request 记为 `foreign_event`、**不回 Completion**)⇒ 业务事务必须**直连 home**,否则 stub 的 miss 永远挂起 ⇒ ⇒ A 的价值收敛为「**直连 + 全零延迟 + 闸 `SKIP`**」(J-9 分档面);
-   - **拓扑 B** = `StubCacheEndpointTLM` + `ChiRnfProtocolEngine` + `CohIfResponderTLM`(三端点**共挂 1 条** bridge entry · `bridge_id = 7`)—— 业务路径 = `w.1 → home.0`(**带 `latency = 3`**),`chi` 走**装配面**(`chi.0 → home.1`,零延迟)⇒ ⇒ 「互联可达」(**经带延迟的 `connections`**,⛔ 不经桥)与「桥投影」(**测试级** `pack`/`unpack` + 逐模块同 `bridge_id`)仍是**两条独立判据**(SU · 十一 ①-b 的要求)⇒ 落地一致;
-   - ⇒ **形态差异如实登记**;⛔ **不回改** SU · 十四 ④ 原文。
-
-④ **SU · 十一 ①-b ③ 的重挂检测:落地为**闸**(测试级)**,Step 7.5 检测仍为 backlog** —— 跨 bridge entry 的模块互斥由新判据 **`[BSS-01]`**(`instance_assembly_gate.hh`)+ 反向 fixture 守住(同一模块属多个 entry ⇒ `FAIL`);⚠️ 该闸为**装配期拓扑体检**(测试侧调用)⇒ **只测不拦**;`ModuleFactory` 装配路径上的重挂检测(动 `src/core/module_factory.cc` ⇒ 红线)⛔ **本轮不做**,登记为 backlog。
-
-### ③ 计数纪律(逐字)
-
-- `B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` / `include/tlm/cep/protocol_instances.json` / `include/tlm/cep/protocol_instance.schema.json` **零 diff**;`include/tlm/cep/stub_cache_core.hh` **零 diff**(组合式 wrapper ⇒ 纯类未动)。
-- ⛔ 本段**不**宣称「已具备端到端可测能力」的**完整**形态:准确表述 = 「**真实业务流量可进入 CEP 互联面(出向腿)+ 端到端响应在模块级闭合 + 台账可对账**」。
-
-### ④ Verification(可勾选验收判据 · 前瞻)
-
-- [ ] 本段 SU 已追加,且 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十四 **逐字未变**;索引仍在**文末**(SU 十五插在其**之前**)
-- [ ] ① 的 10 条落地判定逐条有落点 / 证据;**D-5 / D-8 / D-9** 的 ⚠️ 形态已如实登记(⛔ 不写成 ✅)
-- [ ] ② ① 的**根因**(框架层 dual-port 入向路由)与**触发条件**(另立 change)已登记;⛔ 未把「全绿」写成已达成
-- [ ] ② ② 的偏离理由三条齐备(且**未**触碰 `preregistration.json`)
-- [ ] ② ③ 的拓扑形态差异(A 的引擎对未采纳 / B 的 chi 走装配面)已登记;⛔ SU · 十四 ④ 原文未回改
-- [ ] ② ④ 的「只测不拦」与 backlog 状态已登记
-- [ ] ③ 计数纪律逐条复验(零 diff 四项 + `B3b-2` 0/4)
-- [ ] ② ① 的根因**锚到代码行**(`dual_port_stream_adapter.hh:189-199` + `stream_adapter_base.hh:82-84` + `chstream_port.hh:70`)+ 双重成因与**双条件触发**均登记
-- [ ] ② ① 的「端到端响应完整」拆成两个可判件:① 拓扑 config 的 `emit_completions == false`(jq 判)+ ② 模块级 SCE-03 / SCE-14 绿
-- [ ] 索引已同步:头部自述 **46 → 47 个一级节 / 18 → 19 则 SU** + 索引 A / B 各加一行;⚠️ **本次为手工同步**(索引生成器**不在仓内**,登记为 backlog)⇒ 且索引**仍是文末最后一个 `## ` 段**(自检:其后零个 `## ` 标题;⚠️ 具名闸 `cep_index_position_check.sh` **尚未建**(归 builder,per tasks W1.1))
-- [ ] 冻结面两步授权已执行:台账 **Entry #304** 授权 → **commit 本段 + `ADR-CEP-19` SU + `ADR-CEP-06` SU** → `cep_freeze_check.sh --update --authorized-by "Entry #304"` → **清单单独 commit** → 无参复验 provenance 通过
-
-**关联**:台账 **Entry #304**(授权)· **#303**(A8 + 双向闸 + 首批 run)· **#302**(A7 + 三键归属)· **#301**(A6 + W4)· **#300**(A4 + A5)· **#297**(A0 授权)· **#288**(10 条决策原始登记)· `ADR-CEP-19` SU 2026-11-09 · 一 · `ADR-CEP-06` SU 2026-11-09 · 一 · `openspec/changes/cpptlm-cep-stub-cache-chstream-surface/`
-
----
-
-## Status Update(2026-11-09 · 十六,per 台账 Entry #310)—— **残余缺口 ①「回程腿」已闭合**(双端口适配器入向**按端口组**路由)+ **残余登记(R-5 / R-6)+ 同批已修(R-9)**
-
-> **性质**:末尾追加 SU(append-only)。⛔ 不改 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十五 的任何一段(⛔ **SU · 十五 ① 的「双条件」与 ② ①(a) 的「注」原文均逐字保留** —— 本段只登记其**实施后状态**与**两处不完整的订正**)。
-> **触发**:change `cpptlm-cep-dual-port-inbound-dispatch` 的闭环(台账 Entry #307 立项裁决 / #308 实施 / #309 T1+E1)。
-> **审查**:oracle(本段属「只同步实施态 / 改措辞」⇒ **单审 oracle**,⛔ 不启 critic 双审)· 判定 **PASS-WITH-NOTES**(0 BLOCKER · 1 must-fix + 4 note,逐条处置见台账 **Entry #310 ②**)。
-
-### ① 残余缺口 ①「回程腿在拓扑级不可达」——**已闭合**(逐条对照 SU · 十五 ① 的 (a)/(b)/双条件)
-
-| SU · 十五 ① 的登记 | 实施后状态 | 落点 / 证据 |
-|---|---|---|
-| **(a) 框架层路由缺陷**:`DualPortStreamAdapter` 只 override **单参** `process_request_input` ⇒ 基类双参版回退单参 ⇒ `port_idx` 丢失 ⇒ 入向**恒落 PE 侧** | ✅ **已修** | `include/framework/dual_port_stream_adapter.hh:210` **override 双参版** ⇒ **按端口组**路由(组 0 = PE ⇒ `pe_req_in()` · 组 1 = Net ⇒ `net_resp_in()`);`:222` 单参版委托组 0(既有直接调用者行为不变);`process_net_response_input()` 由**零调用点**变活。⚠️ `src/core/module_factory.cc:733` 的跨实例 `static_cast` 要求布局逐字节相同 ⇒ ⛔ **未新增成员** |
-| **(b) 本 change 的主动设计选择**:拓扑 A/B 的 home 配 `emit_completions: false` | ✅ **已改** | `configs/cep_chi_rnf_e2e_{a,b}.json` ⇒ `true`;`Config::emit_completions` **保留**(可用于把回程腿**有意**留在模块级判据) |
-| **双条件 ①** 修适配器(+ 冻结面授权) | ✅ **已执行** | `include/framework/` **不在** M1 冻结集(`cep_freeze_check.sh` 的 `FROZEN_GLOBS` 无此条)⇒ **无需** `--update` 授权;但属**共享框架层**(影响 ≥ 2 模块 ⇒ AGENTS.md 反模式)⇒ 已**立 change** |
-| **双条件 ②** 拓扑 config 改 `true` 并重跑 | ✅ **已执行** | 新 run `cep-e2e-2026-11-09-b`(延迟族 5 键 **`not-collected` → 实测 5 cycles**;`memory_violations` 仍 `not-collected` ⇒ `ic3_verdict = ⚪ 不适用`) |
-| ⚠️ **订正一:双条件不完整 —— 实需第三条** | ✅ **已补** | CohIf 的 egress 走 `req_out` ⇒ 回程从 **`home.req_out[0]`** 发出;原拓扑只有 `w.1 → home.0` ⇒ 其正向 pair 是 `w.req_out[1] ↔ home.req_in[0]` ⇒ **`home.req_out[0]` 未被任何连接绑定** ⇒ `send()` 失败 ⇒ 回程**根本发不出去** ⇒ 须补 **`home.0 → w.1`**(每方向一条**显式**连接 = CohIf「断链即断达」模型的直接推论)。**实测证据**:仅做 ①② 时 `completions_sent > 0` 而 `net_completions_in == 0` |
-| ⚠️ **订正二:SU · 十五 ② ①(a) 的「注」**(原文称 `BidirectionalPortAdapter` 的双参路由「**是对的**…**不是**本次受限点」) | ⚠️ **以本行调和** | 实测(**R-5**):其双参函数 `bidirectional_port_adapter.hh:335` 因 **签名不匹配**(`std::size_t` ≠ 基类 `unsigned`,且无 `override`)⇒ **从未作为 override 被 `ChStreamTargetPort::recvReq` 调用** ⇒ 单参版 `:331` 硬编码 `port_idx = 0` ⇒ **多端口入向路由实际失效**。⇒ 原文「不是本次受限点」**仅对「本轮回程腿」成立**(回程腿走的是 **dual** 适配器),⛔ 不成立于「该适配器无缺陷」 |
-
-**⚠️ 拓扑级闭合的准确表述**(⛔ 不越界):**延迟族 5 键出实测值** ∧ **`net_completions_in > 0`** ∧ **`cpu_responses > 0`**;
-⛔ **仍不承载「全绿 run」** —— IC3 仍 **⚪ 不适用**(违例类 `memory_violations` 无样本,**自 SU · 十五 至今未变**)⇒ **SU · 十五 ① 的「全绿未达成」结论不变**。
-
-### ② 残余登记(**R-5 / R-6**)+ 同批已修(**R-9**)
-
-- **R-5**`include/framework/bidirectional_port_adapter.hh` 的 `process_request_input(Packet*, std::size_t)` 与基类 `process_request_input(Packet*, unsigned)` **签名不匹配**(64-bit `std::size_t` ≠ 32-bit `unsigned`,且该处**无 `override` 关键字**)⇒ **不是 override** ⇒ 基类双参版回退单参 ⇒ 该适配器**恒用端口下标 0** ⇒ `RouterTLM`(5 端口)与全部 CEP 引擎(2 端口)的**多端口入向路由失效**。
-  - **归属**:另立 change(影响面 ≫ 回程腿;⛔ 不在 `cpptlm-cep-dual-port-inbound-dispatch` 内修)。
-  - **触发条件(可判定)**:任一**多端口** bidirectional 模块的入向按端口分流判据须成立 —— 即「从端口 N 进的包必须落 `req_in()[N]`」;`RouterTLM` 的 mesh E2E 在「路由器 → NIC 分端口投递」上须有**地址/端口一致**断言。
-  - **完成判据**:`RouterTLM` 多端口入向分流绿 + 既有 mesh E2E **无回归** + `BidirectionalPortAdapter` 的 2 参 override 带 `override` 关键字(编译期冻结签名)。
-- **R-6** 拓扑 B 的 `chi.0 → home.1` ⇒ 因 **R-5** ⇒ chi 侧流量落 `home` 的 `req_in[0]`(与业务请求同桶)。**归属**:随 **R-5** 一并处置(见台账 **Entry #308 ⑤**)。
-- **R-9**(测试侧)`test/test_dual_port_adapter.cc` 与 `test/test_dual_port_inbound_dispatch.cc` 曾在**全局命名空间**定义同名 `MockDualPortModule` ⇒ **ODR 违反** ⇒ 链期取决于 TU 顺序 ⇒ 适配器写进 A 成员、测试读 B 成员(实测两侧 `net_resp_in()` 地址差 **0x48** 字节)的**静默内存错位**。✅ **同批已修**(两处 mock 均移入匿名命名空间 + 注释说明;见台账 Entry #309 ⑤ R-9)。
-
-### ③ 计数纪律(逐字)
-
-- `B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` / `include/tlm/cep/protocol_instances.json` / `include/tlm/cep/protocol_instance.schema.json` / `include/tlm/cep/stub_cache_core.hh` / `include/tlm/cep/cohif_noc_bridge.hh` **零 diff**。
-- ⛔ 本段**不**宣称「协议语义达成」:准确表述 = 「**回程腿在拓扑级闭合**(延迟族可测)+ 框架入向路由缺陷已修 + 台账可对账」。
-
-### ④ Verification(可勾选验收判据 · 前瞻)
-
-- [ ] 本段 SU 已追加,**且** §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十五 **逐字未变**;索引仍在**文末**(SU 十六插在其**之前**;自检:本段之后**唯一的** `## ` 段是 `## §末 文档索引`)
-- [ ] ① 的 (a) / (b) / 双条件 ① ② **逐条**有落点与证据;⛔ **SU · 十五 原文未被回改**
-- [ ] ⚠️ **订正一(双条件缺第三条)** 已登记,含**实测证据**(`completions_sent > 0` ∧ `net_completions_in == 0`)
-- [ ] ⚠️ **订正二(SU · 十五 ② ①(a) 的「注」)** 已登记,且全文 grep `BidirectionalPortAdapter` 后**不再存在未调和的相反陈述**
-- [ ] ② 的 **R-5 / R-6** 逐条带**代码级证据** + **归属**;R-5 另带**触发条件**与**完成判据**;**R-9 已修**且有回归证据
-- [ ] ③ 计数纪律逐条复验(零 diff **五**项 + `B3b-2` **0/4**)
-- [ ] **回程腿闭合不被读成「全绿」**:IC3 仍 **⚪ 不适用**;⛔ 未新增任何「一致性安全」断言
-- [ ] 索引已同步:头部自述 **47 → 48 个一级节 / 19 → 20 则 SU** + **索引 B 加第 20 行**;⚠️ 本次**手工同步**(索引生成器不在仓内,SU · 十五 ④ 已登记 backlog)· 具名闸 `cep_index_position_check.sh` 复跑 rc=0
-- [ ] 冻结面五步授权已执行:台账 **Entry #310** 授权 → **commit 本段**(产物)→ `cep_freeze_check.sh --update --authorized-by "Entry #310"` → **清单单独 commit** → **无参复验** provenance 通过
-
-**关联**:台账 **Entry #310**(本段授权)· **#309**(T1 + E1)· **#308**(R-2 实施)· **#307**(4 项裁决 + 实施顺序)· **#305 ③ R-2**(残余登记)· **#304**(SU 十五 授权)· **#295**(索引移文末纪律)· change **`cpptlm-cep-dual-port-inbound-dispatch`**
-
----
-
-## Status Update(2026-11-09 · 十七,per 台账 Entry #319)—— **装配路径的桥重挂检测已落地**(`[BSS-01]` 执行臂)+ **SU · 十五 ②④ 的「只测不拦 / 登记为 backlog」陈述闭合**
-
-> **性质**:末尾追加 SU(append-only)。⛔ 不改 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十六 的任何一段(⛔ **SU · 十五 ②④ 原文逐字保留** —— 本段只登记其**实施后状态**);⛔ **零**代码 / 契约面改动(仅本文件 + 两份 spec 的 delta)。
-> **触发**:change **`cpptlm-cep-bridge-reattach-guard`** 的实施闭环(台账 **Entry #319** 裁决 + 冻结面授权)。
-> **审查**:**oracle**(1 轮,PASS-WITH-NOTES,7 finding)+ **critic**(1 轮,REJECT,2 BLOCKER + 7 SHOULD_FIX + 4 NIT)⇒ 本段是两条 BLOCKER 的**闭合动作**。
-> **关联**:**`07 号` SU · 十五 ②④**(**只测不拦**表述 · 本段闭合)· 台账 **Entry #319** / **#317** / **#310** / **#305 ③ R-3** · `openspec/specs/cep-instance-assembly/spec.md`(MODIFIES)· `include/tlm/cep/bridge_module_membership.hh` · `src/core/module_factory.cc`
-
-### ① SU · 十五 ②④ 的实施后状态(逐条对照)
-
-| SU · 十五 ②④ 的登记 | 实施后状态 | 落点 / 证据 |
-|---|---|---|
-| 「跨 bridge entry 的模块互斥由新判据 **`[BSS-01]`**(`instance_assembly_gate.hh`)+ 反向 fixture 守住(同一模块属多个 entry ⇒ `FAIL`)」 | ✅ **仍然成立**(判据**未改语义**,仅重构实现) | `include/tlm/cep/instance_assembly_gate.hh` ⑥ 段改调共享 helper(行为**严格等价**) |
-| 「⚠️ 该闸为**装配期拓扑体检**(测试侧调用)⇒ **只测不拦**」 | ⚠️ **已过时 ⇒ 本段闭合**:闸**仍是**测试侧拓扑体检(职责不变)· 但**判据已进装配路径** ⇒ 「只测不拦」的**事实**不再成立 | 装配路径见 ② |
-| 「`ModuleFactory` 装配路径上的重挂检测(动 `src/core/module_factory.cc` ⇒ 红线)⛔ **本轮不做**,登记为 backlog」 | ✅ **已落地** ⇒ 本残余(R-3)**闭合** | `src/core/module_factory.cc` Step 7.5 **结构性关口**(见 ②) |
-| 「登记为 backlog」 | ✅ **backlog 已消解**(R-3 闭合)⇒ 台账 **Entry #319** ② 记录裁决与闭合 | 台账 Entry #319 |
-
-### ② 装配路径的**结构性关口**(R-3 的落地形态)
-
-- **判据实现在 `include/tlm/cep/bridge_module_membership.hh`**(`tlm::cep` **公开**命名空间)——
-  ⚠️ **唯一实现** ⇒ 装配闸与装配路径**共用同一份** ⇒ **禁双实现**
-  (per `src/core/module_factory.cc:173`「两个挂点调用**同一组**判据函数 —— 禁双实现」纪律;
-  `:806`「与 Step 0.25 的 gate **同一份**解析(不重复实现)」先例)。
-  ⇒ ⛔ **不留在** `instance_assembly_gate.hh` 的 `detail` 命名空间(已升格为跨模块共享契约);
-  ⇒ 独立小头 ⇒ 框架 core **不必**拖入 `collective_plane.hh` / `protocol_family.hh`。
-- **落点**:`ModuleFactory::instantiateAll()` 的 Step 7.5,在**桥挂载循环之前**执行 ⇒ 命中 ⇒ **直接 `return false`** ⇒ 循环**不进入** ⇒ **零桥挂载**(模块的 `bridge_` 单槽不被后挂的桥覆盖)。
-- ⚠️ **失败原子性(限桥层)**:该失败发生在对象已创建之后(`object_instances` 局部量在函数末尾才 `move` / 模块已注册 / Step 7 已注入 adapter)⇒ **不新增回滚机制**(与既有 `bridge_failed` 早退路径同性质)⇒ ⛔ **不得**表述为「零副作用 / 原子」。
-- ⚠️ **诊断优先级**:结构性关口**短路** ⇒ 同一 config 若同时违反其它桥校验条件,**只报** `[BSS-01]` 一类原因 ⇒ **结构性关口先于逐条桥校验**。
-- ⚠️ **判定口径(与 `[BSS-01]` 现文本逐字一致)**:**无 entry 内去重** ⇒ **两个子情形都命中**:① **跨 entry 重叠**;② **单 entry 内重复**(同一 entry 的 `modules` 列同一模块名两次)。⇒ 口径**既不得收窄也不得放宽**。
-- ⚠️ **合法配置空间收缩**:重复-entry 拓扑由「可装配 + 静默覆盖」变为「**装配失败**」⇒ 已由 `openspec/specs/cep-instance-assembly/spec.md` 的 **MODIFIES** delta 登记(判据集合 + 归因 tag 范围 + 两子情形 + 「装配路径 SHALL 执行同一判据」段)⇒ ⚠️ **实测收缩影响面 = 0 份现存配置**(仓内 8 份含 `cep.bridges` 的 config **全部只有 1 条 entry、零重复模块**)。
-- ⚠️ **离线 CLI 不对称(登记)**:本判据**未**挂到 `validate_topology` CLI ⇒ `instantiateAll` 与 CLI 对同一 config 结论**不一致**。⚠️ 该不对称**非本轮新增**(IAG 闸族从未 CLI 挂载)⇒ 登记为 backlog,本轮**不**补。
-
-### ③ 计数纪律(逐字)
-
-- ⛔ `B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` / `include/tlm/cep/protocol_instances.json` / `include/tlm/cep/protocol_instance.schema.json` **零 diff**。
-- ⛔ 本段**不**宣称「全绿 run」(IC3 仍 **⚪ 不适用**);⛔ 本段**不**引入任何新的判据语义(「跨 entry 模块互斥」早已定为硬纪律)。
-
-### ④ Verification(可勾选验收判据 · 前瞻)
-
-- [ ] 本段 SU 已追加,**且** §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十六 **逐字未变**;索引仍在**文末**(SU 十七插在其**之前**;自检:本段之后**唯一的** `## ` 段是 `## §末 文档索引`)
-- [ ] ① 的逐条对照已登记;⛔ **SU · 十五 ②④ 原文未被回改**
-- [ ] ② 的**唯一实现** + **结构性关口** + **零桥挂载** + **原子性边界(限桥层)** + **诊断优先级** + **两子情形** + **收缩影响面** + **CLI 不对称** 逐条有落点
-- [ ] ③ 计数纪律逐条复验(零 diff 三项 + `B3b-2` **0/4**)
-- [ ] 判据**两侧一致**:同一 config ⇒ 装配闸判红 **且** 装配失败;正控 ⇒ 闸判绿 **且** 装配成功
-- [ ] **决定性变异 2 条**:① helper 判定改成恒不命中 ⇒ 用例必红;② helper 加 entry 内去重(口径收窄)⇒ 子情形②必红
-- [ ] SCE-12 既有正/反控**照过**(helper 重构的行为等价证据)
-- [ ] 索引已同步:头部自述 **48 → 49 个一级节 / 20 → 21 则 SU** + **索引 A 加第 49 行 + 索引 B 加第 21 行**;⚠️ 本次**手工同步**(索引生成器不在仓内,SU · 十五 ④ 已登记 backlog)· 具名闸 `cep_index_position_check.sh` 复跑 rc=0
-- [ ] 冻结面五步授权已执行:台账 **Entry #319** 授权 → **commit 本段**(产物)→ `cep_freeze_check.sh --update --authorized-by "Entry #319"` → **清单单独 commit** → **无参复验** provenance 通过
-
-**关联**:台账 **Entry #319**(本段授权 + 裁决)· **#317**(盘点 + P2 轨)· **#310**(R-3 残余登记)· **#305 ③ R-3** · **#307**(4 项 oracle 裁决)· change **`cpptlm-cep-bridge-reattach-guard`**
-
----
+> **本节已迁出**(per 台账 Entry #333 架构文档治理 + 用户裁决 B):
+> 全文见 [`docs/guide/cep-usage.md`](../guide/cep-usage.md) —— 10 分钟上手 / 载体地图 / 新增协议族标准流程 / 实验 4 件套跑法 / 闸清单 / 冻结面五步授权链 / DoD 读法 / 未结义务清单。
+>
+> **本节在架构文档中只保留入口指针** —— 操作步骤不属架构蓝图(per `AGENTS.md §DOC HYGIENE` 真源原则)。
+> ⚠️ **本标题保留「CEP 使用手册」字样** —— `objective-cep-platform §8.3` ④ 的判定命令 `grep -rln "CEP 使用手册"` 依赖它(per 台账 Entry #334 ②)。
 
 ## §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295)
 
-> **用途**:本文件已 **49 个一级节 / 21 则 Status Update**(全部列于下表)⇒ 追加层与主体同量级 ⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)。
+> **用途**:本文件已 **23 个一级节 / 9 则 Status Update**(全部列于下表)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)。
 
 > ⚠️ **新纪律(per 台账 Entry #295,逐字)**:本索引**永久置于文末**;此后**新增段落 SHALL 插在本索引之前** ⇒ **新增内容永不使既有 `path:line` 锚点位移**;⚠️ **最新 SU 在本索引之前**(⛔ 勿在本文末找最新段)。
 
-> ⚠️ **原「版本史」行是历史堆积**(单行 1,506 **字符** / 2,119 字节)⇒ 本索引为其**可导航等价物**;⛔ **不回改**该行(append-only)⇒ **以本索引为准**。
+> ⚠️ **本索引由脚本生成(零手抄)⇒ 每次追加后重生成**;**生成器不在仓内**(登记为 backlog:落 `scripts/`)。
 
-> ⚠️ 本索引由脚本生成(零手抄)⇒ **每次追加后重生成**;**生成器不在仓内**(登记为 backlog:落 `scripts/`)。
+> ⚠️ **2026-11-10 批 1 后**:本索引已按新文件重建(索引 A **50 → 23** 行 · 索引 B **21 → 9** 行)⇒ 与本文件现存的一级节 / SU **逐条对应**;自述数 **23 / 9** == 索引 A / 索引 B 行数(`cep_index_position_check.sh` 判据)。
 
-### 索引 A · 一级节(47)
+### 索引 A · 一级节(23)
 
 | # | 章节 | 行 |
 |---|---|---|
@@ -2485,78 +1585,41 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 | 8 | 8. 演进路线与阶段边界 | 542 |
 | 9 | 9. Primary ADRs | 620 |
 | 10 | 10. References | 648 |
-| 11 | 11. Gap → 实现状态映射 | 669 |
-| 12 | §附录 · Status Update 2026-10-25(per 台账 Entry #62) | 695 |
-| 13 | §附录 · Status Update 2026-10-27(per 台账 Entry #74) | 705 |
-| 14 | §附录 · Status Update 2026-10-27(第二则 · per 台账 Entry #82 —— 实现状态映射漂移回填) | 714 |
-| 15 | §附录 · Status Update 2026-10-27(第三则 · per 台账 Entry #83 —— 载体缺口登记与 owner 指派) | 734 |
-| 16 | §附录 · Status Update 2026-10-27(第四则 · per 台账 Entry #84 —— CohIf 载体落地 + §5.4 第三类同步) | 752 |
-| 17 | §附录 · Status Update 2026-10-27(第五则 · per 台账 Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现) | 768 |
-| 18 | §附录 · Status Update 2026-10-28(第六则 · per 台账 Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层) | 784 |
-| 19 | §附录 · Status Update 2026-10-28(第七则 · per 台账 Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化) | 804 |
-| 20 | §附录 · Status Update 2026-10-28(第八则 · per 台账 Entry #88 —— JSON 装配连通性落地 + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记) | 822 |
-| 21 | §附录 · Status Update 2026-10-28(第九则 · per 台账 Entry #89 —— 判据收口(Phase 6)+ 闸与真源同步(Phase 7)) | 841 |
-| 22 | 附录 · Status Update 2026-10-28(第十则 · per 台账 Entry #93 —— 队列 #8 `cpptlm-cep-chi-rnf-subset` 立项 + §5.1.1 CHI 行同步) | 860 |
-| 23 | 附录 · Status Update 2026-10-28(第十一则 · per 台账 Entry #95 —— 队列 #8 `cpptlm-cep-chi-rnf-subset` 归档) | 878 |
-| 24 | 附录 · Status Update 2026-10-29(第十二则 · per 台账 Entry #96 —— 队列 #9 的 R-1 裁决落地) | 895 |
-| 25 | 附录 · Status Update 2026-10-29(第十三则 · per 台账 Entry #101 —— 队列 #9 的**规约层**已闭合) | 912 |
-| 26 | 附录 · Status Update 2026-10-30(第十四则 · per 台账 Entry #102 —— MESIF 规约的**跨仓逐格追认闭合**) | 928 |
-| 27 | 附录 · Status Update 2026-10-30(第十五则 · per 台账 Entry #105 / #106 —— 队列 #9 `cpptlm-cep-mesif-adapter` **实现层**归档) | 948 |
-| 28 | 附录 · Status Update 2026-10-30(第十六则 · per 台账 Entry #106 —— **S1-3 触发后的真实义务**结论) | 989 |
-| 29 | Status Update(2026-11-01,per 台账 Entry #131)—— §5.1.1 **CXL 行**的措辞对齐(裁决 ③⑦)+ `cxl_2_0` 实例登记 | 1056 |
-| 30 | Status Update(2026-11-02,per 台账 Entry #148)—— §5.1.1 / §11 的**状态列机械同步**(活口径)+ 声明源实例数订正 | 1103 |
-| 31 | Status Update(2026-11-02,per 台账 Entry #154)—— §5.1.1 / §5.4 / §11 的 **5 处口径订正** + **对称模式的 adapter 形态裁决** | 1160 |
-| 32 | Status Update 2026-11-04 —— Stage 3 收口的 **5 项架构级裁决**(B3 口径拆分 · 3 项声明假设处置 · `FullMapDirectory` 触发条件 · 跨仓锚点治理不变量 · MOESI-GPU 形态登记) | 1239 |
-| 33 | Status Update 2026-11-04(#2)—— 实验输出契约的**可执行化**(C1)+ ADR 一决策一文档化的**残留登记与触发条件**(C2) | 1327 |
-| 34 | Status Update(2026-11-06,per 台账 Entry #238)—— 「转移表真源」的**判定式(T1–T4)** + **TileLink-C 阻塞解除** + 逐族重判 | 1462 |
-| 35 | Status Update(2026-11-06 · 三,per 台账 Entry #246)—— TileLink-C **运行时引擎落地**(B3b 达成度 **1/6 → 2/6**) | 1558 |
-| 36 | Status Update(2026-11-06 · 四,per 台账 Entry #249)—— 「转移表真源」的**来源效力**与 **B3b 计入口径** | 1604 |
-| 37 | Status Update(2026-11-06 · 五,per 台账 Entry #257)—— D-1「来源效力」的**机器可判落地回填**(命题范围收窄 + 载体覆盖账 + D-4 ③/④ 回填) | 1697 |
-| 38 | Status Update(2026-11-07 · 六,per 台账 Entry #264)—— SU · 四 §④ **选项戊已裁决** + **终态 DoD Go 挂起**(口径 ②) | 1800 |
-| 39 | Status Update(2026-11-07 · 七,per 台账 Entry #280)—— 「Core·TrafficGen 主干」**显式延期项的事实复核**(⏸ 已登记,未排期)+ Stub Cache「✅」的读法澄清 | 1837 |
-| 40 | Status Update(2026-11-07 · 八,per 台账 Entry #282)—— **G1~G3 的 4 条待裁决点裁定**(architect)+ G1 形态修正为「组合式 wrapper」 | 1913 |
-| 41 | Status Update(2026-11-08 · 九,per 台账 Entry #284)—— SU · 八 的**桥路径引用更正** + 语义分层红线的**落点澄清** | 1975 |
-| 42 | Status Update(2026-11-08 · 十,per 台账 Entry #286)—— §5.1.1 **状态列**的维度澄清 + 「弱档」的使用边界 | 2005 |
-| 43 | Status Update(2026-11-08 · 十一,per 台账 Entry #288)—— **「Core·TrafficGen 主干」的架构决策登记**(10 条统一)+ 实施前**不得宣称已落地** | 2036 |
-| 44 | Status Update(2026-11-08 · 十二,per 台账 Entry #292)—— **4 项决策面勘误与补充**(D-0 定位改写 / `:71` 撤销理由 / 状态追认 / 拓扑分档判据 **J-9**) | 2110 |
-| 45 | Status Update(2026-11-08 · 十三,per 台账 Entry #293)—— **声明面落点裁定回填**(= **甲**)+ **D-9 元数据字段增补**(F-12) | 2183 |
-| 46 | Status Update(2026-11-08 · 十四,per 台账 Entry #295)—— **F-08 残余裁定**(索引**移到文末** + 新纪律 + 具名闸)+ **retention 裁定 = 丙**(指针) | 2235 |
-| 47 | Status Update(2026-11-09 · 十五,per 台账 Entry #304)—— **「Core·TrafficGen 主干」的实施后状态**(SU · 十一 ① 的 **10 条决策**逐条落地)+ **残余缺口**登记(⛔ 「全绿」**未达成**) | 2290 |
-| 48 | Status Update(2026-11-09 · 十六,per 台账 Entry #310)—— **残余缺口 ①「回程腿」已闭合**(双端口适配器入向**按端口组**路由)+ **残余登记(R-5 / R-6)+ 同批已修(R-9)** | 2362 |
-| 49 | Status Update(2026-11-09 · 十七,per 台账 Entry #319)—— **装配路径的桥重挂检测已落地**(`[BSS-01]` 执行臂)+ **SU · 十五 ②④ 的「只测不拦 / 登记为 backlog」陈述闭合** | 2412 |
+| 11 | 11. Gap → 实现状态映射(**已迁出,仅存指针**) | 669 |
+| 12 | 12. CEP 使用手册(**已迁出 → `docs/guide/cep-usage.md`**,仅存指针) | 1556 |
+| 13 | 附录 · Status Update 2026-10-30(第十六则 · per 台账 Entry #106 —— **S1-3 触发后的真实义务**结论) | 686 |
+| 14 | Status Update(2026-11-01,per 台账 Entry #131)—— §5.1.1 **CXL 行**的措辞对齐(裁决 ③⑦)+ `cxl_2_0` 实例登记 | 753 |
+| 15 | Status Update(2026-11-02,per 台账 Entry #154)—— §5.1.1 / §5.4 / §11 的 **5 处口径订正** + **对称模式的 adapter 形态裁决** | 800 |
+| 16 | Status Update 2026-11-04 —— Stage 3 收口的 **5 项架构级裁决**(B3 口径拆分 · 3 项声明假设处置 · `FullMapDirectory` 触发条件 · 跨仓锚点治理不变量 · MOESI-GPU 形态登记) | 879 |
+| 17 | Status Update 2026-11-04(#2)—— 实验输出契约的**可执行化**(C1)+ ADR 一决策一文档化的**残留登记与触发条件**(C2) | 967 |
+| 18 | Status Update(2026-11-06,per 台账 Entry #238)—— 「转移表真源」的**判定式(T1–T4)** + **TileLink-C 阻塞解除** + 逐族重判 | 1102 |
+| 19 | Status Update(2026-11-06 · 四,per 台账 Entry #249)—— 「转移表真源」的**来源效力**与 **B3b 计入口径** | 1198 |
+| 20 | Status Update(2026-11-06 · 五,per 台账 Entry #257)—— D-1「来源效力」的**机器可判落地回填**(命题范围收窄 + 载体覆盖账 + D-4 ③/④ 回填) | 1291 |
+| 21 | Status Update(2026-11-08 · 十一,per 台账 Entry #288)—— **「Core·TrafficGen 主干」的架构决策登记**(10 条统一)+ 实施前**不得宣称已落地** | 1399 |
+| 22 | Status Update(2026-11-08 · 十二,per 台账 Entry #292)—— **4 项决策面勘误与补充**(D-0 定位改写 / `:71` 撤销理由 / 状态追认 / 拓扑分档判据 **J-9**) | 1473 |
+| 23 | §末 文档索引 | None |
 
-### 索引 B · Status Update(21 · 追加层)
+### 索引 B · Status Update(9 · 追加层 2026-11-01 起)
 
 | # | 日期 | 主题 | 台账 | 行 |
 |---|---|---|---|---|
-| 1 | 2026-11-01 | §5.1.1 **CXL 行**的措辞对齐(裁决 ③⑦)+ `cxl_2_0` 实例登记 | Entry #131 | 1056 |
-| 2 | 2026-11-02 | §5.1.1 / §11 的**状态列机械同步**(活口径)+ 声明源实例数订正 | Entry #148 | 1103 |
-| 3 | 2026-11-02 | §5.1.1 / §5.4 / §11 的 **5 处口径订正** + **对称模式的 adapter 形态裁决** | Entry #154 | 1160 |
-| 4 | 2026-11-04 | Stage 3 收口的 **5 项架构级裁决**(B3 口径拆分 · 3 项声明假设处置 · `FullMapDirectory` 触发条件 · 跨仓锚点治理不变量 · MOESI-GPU 形态登记) | — | 1239 |
-| 5 | 2026-11-04 | 实验输出契约的**可执行化**(C1)+ ADR 一决策一文档化的**残留登记与触发条件**(C2) | — | 1327 |
-| 6 | 2026-11-06 | 「转移表真源」的**判定式(T1–T4)** + **TileLink-C 阻塞解除** + 逐族重判 | Entry #238 | 1462 |
-| 7 | 2026-11-06 | TileLink-C **运行时引擎落地**(B3b 达成度 **1/6 → 2/6**) | Entry #246 | 1558 |
-| 8 | 2026-11-06 | 「转移表真源」的**来源效力**与 **B3b 计入口径** | Entry #249 | 1604 |
-| 9 | 2026-11-06 | D-1「来源效力」的**机器可判落地回填**(命题范围收窄 + 载体覆盖账 + D-4 ③/④ 回填) | Entry #257 | 1697 |
-| 10 | 2026-11-07 | SU · 四 §④ **选项戊已裁决** + **终态 DoD Go 挂起**(口径 ②) | Entry #264 | 1800 |
-| 11 | 2026-11-07 | 「Core·TrafficGen 主干」**显式延期项的事实复核**(⏸ 已登记,未排期)+ Stub Cache「✅」的读法澄清 | Entry #280 | 1837 |
-| 12 | 2026-11-07 | **G1~G3 的 4 条待裁决点裁定**(architect)+ G1 形态修正为「组合式 wrapper」 | Entry #282 | 1913 |
-| 13 | 2026-11-08 | SU · 八 的**桥路径引用更正** + 语义分层红线的**落点澄清** | Entry #284 | 1975 |
-| 14 | 2026-11-08 | §5.1.1 **状态列**的维度澄清 + 「弱档」的使用边界 | Entry #286 | 2005 |
-| 15 | 2026-11-08 | **「Core·TrafficGen 主干」的架构决策登记**(10 条统一)+ 实施前**不得宣称已落地** | Entry #288 | 2036 |
-| 16 | 2026-11-08 | **4 项决策面勘误与补充**(D-0 定位改写 / `:71` 撤销理由 / 状态追认 / 拓扑分档判据 **J-9**) | Entry #292 | 2110 |
-| 17 | 2026-11-08 | **声明面落点裁定回填**(= **甲**)+ **D-9 元数据字段增补**(F-12) | Entry #293 | 2183 |
-| 18 | 2026-11-08 | **F-08 残余裁定**(索引**移到文末** + 新纪律 + 具名闸)+ **retention 裁定 = 丙**(指针) | Entry #295 | 2235 |
-| 19 | 2026-11-09 | **「Core·TrafficGen 主干」的实施后状态**(10 条决策逐条)+ **残余缺口**登记(⛔ 「全绿」未达成) | Entry #304 | 2290 |
-| 20 | 2026-11-09 | **残余缺口 ①「回程腿」已闭合**(双端口适配器入向按端口组路由)+ 残余登记 **R-5 / R-6** + 同批已修 **R-9** | Entry #310 | 2362 |
-| 21 | 2026-11-09 | **装配路径的桥重挂检测已落地**(`[BSS-01]` 执行臂)+ **SU · 十五 ②④ 的「只测不拦 / 登记为 backlog」陈述闭合** | Entry #319 | 2412 |
+| 1 | 2026-11-01 | Status Update(2026-11-01,per 台账 Entry #131)—— §5.1.1 **CXL 行**的措辞对齐(裁决 ③⑦)+ `cxl_2_0` 实例登记 | Entry #131 | 753 |
+| 2 | 2026-11-02 | Status Update(2026-11-02,per 台账 Entry #154)—— §5.1.1 / §5.4 / §11 的 **5 处口径订正** + **对称模式的 adapter 形态裁决** | Entry #154 | 800 |
+| 3 | 2026-11-04 | Status Update 2026-11-04 —— Stage 3 收口的 **5 项架构级裁决**(B3 口径拆分 · 3 项声明假设处置 · `FullMapDirectory` 触发条件 · 跨仓锚点治理不变量 · MOESI-GPU 形态登记) | — | 879 |
+| 4 | 2026-11-04 | Status Update 2026-11-04(#2)—— 实验输出契约的**可执行化**(C1)+ ADR 一决策一文档化的**残留登记与触发条件**(C2) | — | 967 |
+| 5 | 2026-11-06 | Status Update(2026-11-06,per 台账 Entry #238)—— 「转移表真源」的**判定式(T1–T4)** + **TileLink-C 阻塞解除** + 逐族重判 | Entry #238 | 1102 |
+| 6 | 2026-11-06 | Status Update(2026-11-06 · 四,per 台账 Entry #249)—— 「转移表真源」的**来源效力**与 **B3b 计入口径** | Entry #249 | 1198 |
+| 7 | 2026-11-06 | Status Update(2026-11-06 · 五,per 台账 Entry #257)—— D-1「来源效力」的**机器可判落地回填**(命题范围收窄 + 载体覆盖账 + D-4 ③/④ 回填) | Entry #257 | 1291 |
+| 8 | 2026-11-08 | Status Update(2026-11-08 · 十一,per 台账 Entry #288)—— **「Core·TrafficGen 主干」的架构决策登记**(10 条统一)+ 实施前**不得宣称已落地** | Entry #288 | 1399 |
+| 9 | 2026-11-08 | Status Update(2026-11-08 · 十二,per 台账 Entry #292)—— **4 项决策面勘误与补充**(D-0 定位改写 / `:71` 撤销理由 / 状态追认 / 拓扑分档判据 **J-9**) | Entry #292 | 1473 |
 
 ### 索引 C · 关键表指针(高频查阅)
 
 | 表 | 位置 | 用途 |
 |---|---|---|
-| §5.1.1 工业硬件协议族 | 行 321 | 8 实例 / 6 族的落地状态 |
-| §3.1 canonical 10 流 | 行 190 | 一致性流的唯一清单 |
+| §5.1.1 工业硬件协议族 | 行 312 | 8 实例 / 6 族(**状态列已迁出** → `obj §4.0-a`) |
+| §3.1 canonical 10 流 | 行 167 | 一致性流的唯一清单 |
 | §6.4 Null 实现 | 行 480 | 解耦测试兜底 |
-| §11 落地状态表 | 行 678 | 载体 / invariant / 契约面的落地口径 |
+| ~~§11 落地状态表~~ | **已迁出** | → `objective-cep-platform §4.0` / `§4.0-a` |
+| ~~§12 CEP 使用手册~~ | **已迁出** | → [`docs/guide/cep-usage.md`](../guide/cep-usage.md) |
 | `obj-cep-platform.md` §6.2 | 台账 | 终局 DoD 12 条 |
