@@ -62,11 +62,30 @@ FROZEN_GLOBS=(
   "tools/render_report.py"
   "tools/run_sweep.py"
   "tools/ab_compare.py"
+  # ── 2026-11-10(C-2′ / Entry #324):spec 侧 **glob 全量**(取代逐条枚举)──────
+  "openspec/specs/cep-*/spec.md"
   # 2026-10-23(Entry #30 修正):umbrella 已归档 → delta spec 路径随迁。
   # ⚠️ **不得**用 `openspec/changes/**/specs/cep-core-contracts/spec.md`:
   #    `**` 可跨 0 层 → 未来任何 change 复用本 capability 名即被当作「新增未登记的
   #    冻结产物」而误报冻结漂移(前向陷阱)。故**只**匹配已归档的 umbrella。
   "openspec/changes/archive/*cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md"
+  # ══════════════════════════════════════════════════════════════════════
+  # 2026-11-10(台账 Entry #324,**C-2′ 裁决** ⇒ **取代** Entry #307 C-2 的「枚举式」):
+  #   **spec 侧改为 glob 全量 + 显式排除表(当前为空)**。
+  #   判据:冻结对象 = `openspec/specs/` 下**任何** capability spec ——
+  #     理由 = **目录语义**由归档命令保证(⏸ 暂存归档**必须** `--skip-specs`
+  #     ⇒ 该目录只可能容纳**已交付**能力的义务文本)。
+  #   ⇒ 「记录类 main spec」属**分类错误**(判决记录在 `changes/archive/` 与测试输出,
+  #      **不在** `openspec/specs/`)⇒ **排除表当前为空**。
+  #   ⚠️ **Purpose = TBD 不是排除信号** —— 实测 8 份 TBD 中 **3 份已在冻结集**
+  #      (`cep-poc-spike-verification` / `cep-stub-cache-core` / `cep-vc-mapping-contract`)
+  #      且正文均为 SHALL 义务文本 ⇒ 拿它当闸门会**追溯宣判 3 个已冻结成员不合规**。
+  #      ⇒ Purpose/Scenario 达标度是**正交轴**(独立 remediation 批次),⛔ 不阻断冻结。
+  #   ⚠️ 为何 glob 而非逐条枚举:⭐ `--update` 是**全量重算**,`artifacts` 里无论如何都有
+  #      逐文件 sha256 ⇒ 枚举的唯一收益只剩「逐文件 opt-out 粒度」,而这用一个空的
+  #      `exclusions` 数组即可零成本买到;且枚举有**僵尸登记盲区**(下方反向校验段)。
+  #   唯一可排除情形**须显式登记**(如 `ADR-CEP-NUMBER-MAP` 那种「每新增 ADR 必加行」
+  #      的例行维护型载体 —— ⚠️ 它走 **ADR glob**,与 spec glob 是**两个独立面**)。
   # 归档后**系统契约**落在 main spec —— 同样纳入冻结(否则契约面可被静默改写)
   "openspec/specs/cep-core-contracts/spec.md"
   # 2026-10-25(Entry #55):队列 #2 归档 → delta capability 落在 main spec —— 同样纳入冻结
@@ -158,6 +177,11 @@ payload = {
     "artifact_count": len(files),
     "globs": list(globs),
     "artifacts": {rel: sha256(rel) for rel in files},
+    # ══ 2026-11-10(C-2′ / Entry #324):**排除表**(唯一可豁免「glob 全量冻结」的通道)══
+    #   语义:冻结面 = `openspec/specs/cep-*/spec.md` **全集**;本数组**当前为空**。
+    #   条目形态:`{"path": <相对路径>, "reason": <为何不冻结>, "ledger_entry": <台账 Entry #N>}`
+    #   ⇒ 校验见 `cep_freeze_check.sh` 的 exclusion-integrity 段(**空数组 = 全量冻结**)
+    "exclusions": [],
 }
 with open(os.path.join(root, manifest_path), "w", encoding="utf-8") as f:
     json.dump(payload, f, ensure_ascii=False, indent=2, sort_keys=True)
@@ -218,33 +242,55 @@ if missing or changed or drift:
     print(f"  \033[0;31m✗\033[0m M1 冻结校验失败:{len(missing)} 缺失 / {len(changed)} 被改 / {len(drift)} 未登记")
     sys.exit(1)
 
-# ── 冻结范围登记完整性(反向校验,per oracle 2026-11-09 C-2.3 / 台账 Entry #313)──
-#   `openspec/specs/cep-*/spec.md` 全体 == 已冻结(manifest) ∪ 登记表 `unfrozen`
-#   ⇒ 新增 main spec 若**未在登记表登记** ⇒ 红:「未冻结」必须是**知情决定**,
-#     而非静默缺口(⛔ 本登记**不**等于该契约面已受冻结保护)。
-#   ⚠️ frozen 名单**不在**登记表重复维护(唯一真源 = manifest)⇒ 杜绝双真源。
+# ── 冻结范围 **exclusion-integrity**(反向校验,**2026-11-10 C-2′ / 台账 Entry #324**)──
+#   ⚠️ **本段已反转**:C-2.3(Entry #313)原口径 = 「新增 main spec **未登记** ⇒ 红」
+#      —— 那是在**枚举式**冻结下的「知情未冻结」机制。
+#   ⇒ C-2′(Entry #324)改为 **glob 全量**后,方向反转:
+#      ① `openspec/specs/cep-*/spec.md` **全部**必须在 manifest(由 glob 保证)⇒
+#         「未纳入冻结」**不再是默认状态**;
+#      ② 唯一可豁免的路径 = **排除表**(manifest 的 `exclusions[]`),且每条**必须**
+#         带 `path` + `reason` + `ledger_entry`,且 `ledger_entry` 须能在台账解析;
+#      ③ 排除表条目指向不存在的 spec ⇒ 红(防僵尸);
+#      ④ 排除表**当前为空** —— 出现新条目须走五步链(review diff 可见)。
+#   ⚠️ **为何要反转**:枚举式下有一个**活缺陷** —— 旧段的两个集合差
+#      (`spec_rels - frozen_specs - registered` / `registered - spec_rels`) **不含**
+#      `registered ∩ frozen_specs` ⇒ 「**登记为未冻结、实际已冻结**」**不会被判红**
+#      ⇒ 渐进枚举的中间态会产生**僵尸登记**(而 registry `:3` 明言本表存在的意义
+#      是「杜绝双真源」)⇒ glob 化后 registry 退役 ⇒ 盲区**自然消失**。
+#   ⚠️ 脚本自身**明确不冻结**(见文件头 `:16-19`,checker 必须可修)⇒
+#      **范围记录**由 `manifest.globs` 承担(`--update` 已写入)⇒ 范围变更进入 review diff。
 import glob as _glob
-REG_REL = "test/cep_freeze_scope_registry.json"
-_reg_path = os.path.join(root, REG_REL)
-if os.path.exists(_reg_path):
-    with open(_reg_path, encoding="utf-8") as f:
-        reg = json.load(f)
-    registered = {e["path"] for e in reg.get("unfrozen", [])}
-    spec_paths = sorted(_glob.glob(os.path.join(root, "openspec/specs/cep-*/spec.md")))
-    spec_rels = {os.path.relpath(p, root) for p in spec_paths}
-    frozen_specs = {p for p in arts if p.startswith("openspec/specs/")}
-    unregistered = sorted(spec_rels - frozen_specs - registered)
-    stale = sorted(registered - spec_rels)
-    if unregistered or stale:
-        for p in unregistered:
-            print(f"  \033[0;31m✗\033[0m 新 main spec **未在冻结范围登记表**登记: {p}")
-        for p in stale:
-            print(f"  \033[0;31m✗\033[0m 登记表的条目指向**不存在**的 spec: {p}")
-        print(f"  \033[0;31m✗\033[0m 冻结范围登记完整性校验失败({len(unregistered)} 未登记 / {len(stale)} 失效)")
-        sys.exit(1)
-    print(f"  \033[0;32m✓\033[0m 冻结范围登记完整性:已冻结 {len(frozen_specs)} + 登记未冻结 {len(registered)} == 全部 {len(spec_rels)} 份 `cep-*` main spec")
-else:
-    print(f"  \033[1;33m!\033[0m 冻结范围登记表不存在({REG_REL})⇒ 「未冻结」侧**无登记**(未纳入治理)")
+import re as _re
+# 台账 entry id 解析(与 shell 侧的 `ENTRY_IDS` 同口径 —— 精确 id = `### ` 之后、` — ` 之前)
+_LEDGER_REL = ".rddf/roadmap/objectives/obj-cep-platform.md"
+_LEDGER_ABS = os.path.join(root, _LEDGER_REL)
+LEDGER_IDS = set()
+if os.path.exists(_LEDGER_ABS):
+    for _ln in open(_LEDGER_ABS, encoding="utf-8"):
+        if _ln.startswith("### "):
+            LEDGER_IDS.add(_re.sub(r" *—.*$", "", _ln[4:]).strip())
+EXCL = man.get("exclusions", []) if isinstance(man, dict) else []
+_excl_errors = []
+_spec_paths = sorted(_glob.glob(os.path.join(root, "openspec/specs/cep-*/spec.md")))
+_spec_rels = {os.path.relpath(p, root) for p in _spec_paths}
+for e in EXCL:
+    if not isinstance(e, dict):
+        _excl_errors.append(f"排除表条目不是对象: {e!r}")
+        continue
+    p, why, led = e.get("path"), e.get("reason"), e.get("ledger_entry")
+    if not p or not why or not led:
+        _excl_errors.append(f"排除表条目缺 `path`/`reason`/`ledger_entry`: {p or '<no path>'}")
+        continue
+    if p not in _spec_rels:
+        _excl_errors.append(f"排除表条目指向**不存在**的 spec: {p}")
+    if led not in LEDGER_IDS:
+        _excl_errors.append(f"排除表条目的 `ledger_entry` 在台账中解析不到: {led}")
+if _excl_errors:
+    for m in _excl_errors:
+        print(f"  \033[0;31m✗\033[0m {m}")
+    print(f"  \033[0;31m✗\033[0m 排除表完整性校验失败({len(_excl_errors)} 项)")
+    sys.exit(1)
+print(f"  \033[0;32m✓\033[0m 冻结范围 exclusion-integrity:glob 展开 {len(_spec_rels)} 份 `cep-*` main spec · 排除表 {len(EXCL)} 条(空 = 全量冻结 ✓)")
 
 # ── provenance 自检(2026-10-22 代码复审 B4)──────────────────────────────
 # 清单的 hash 与工作区一致 **不等于** 「这批产物 = frozen_at_commit 的内容」。
