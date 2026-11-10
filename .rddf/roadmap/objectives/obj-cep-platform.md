@@ -18683,7 +18683,7 @@ MESIF         ✅ 已落地(队列 #9,2026-10-30 归档;R-1 已裁决(Entry #96 
 | `07 号:321` / `:316` / `:322` / `:323` | **不变** | 行号不变 · **内容已变** | §5.1.1 状态列迁出(该 4 行第 4 列变空) |
 | `07 号:177` / `:145` / `:310` / `:325` | **不变** | 行号不变 · 内容不变 | §3 canonical 流表 / §1.3 / §5.1 正文 / §5.1 计数行 |
 
-> ⚠️ `07 号:2337` / `:1977` / `:1802` / `:684` / `:676` 在**全仓**还有 26 次引用(分布在 `.rddf/reviews/**`(14)· `.opencode/plan/**`(4)· `openspec/changes/archive/**`(4)· `docs/implementation/**`(3)· `docs/adr/**`(1))⇒ **台账侧已登记豁免**(`scripts/test/cep_doc_ref_dead_anchors.tsv`,23 条);⛔ **其余文件的处理** = 时点快照豁免(reviews/plans/archive/implementation)+ **ADR 侧走 SU 地址表**(`docs/adr/ADR-CEP-12:267` 的 `07 号:145` 批 1 不受影响,`145 < 669`)⇒ 登记为 backlog(不阻断)。
+> ⚠️ `07 号:2337` / `:1977` / `:1802` / `:684` / `:676` 在**全仓**还有 26 次引用(分布在 `.rddf/reviews/**`(14)· `.opencode/plan/**`(4)· `openspec/changes/archive/**`(4)· `docs/implementation/**`(3)· `docs/adr/**`(1))⇒ **台账侧已登记豁免**(`scripts/test/cep_doc_ref_dead_anchors.tsv`,23 条);⛔ **其余文件的处理** = 时点快照豁免(reviews/plans/archive/implementation)+ **ADR 侧走 SU 地址表**(`docs/adr/ADR-CEP-12-protocol-engine-capability-map.md:267` 的 `07 号:145` 批 1 不受影响,`145 < 669`)⇒ 登记为 backlog(不阻断)。
 > ✅ **机器载体**:`scripts/test/cep_doc_ref_dead_anchors.tsv`(**重定向表 23 条**)+ `cep_doc_ref_check.sh` **[5/5]** 段 ⇒ 台账内每个 `07 号:N` 须满足「N ≤ 07 号当前行数」或「N ∈ 表」⇒ **实测 20 个锚点:13 有效 + 7 豁免 + 0 未登记**。
 > ✅ **反向验证**:未登记越界锚点 ⇒ 判红;已登记锚点 ⇒ 豁免绿;台账字节还原后 rc=0。
 
@@ -18741,6 +18741,63 @@ MESIF         ✅ 已落地(队列 #9,2026-10-30 归档;R-1 已裁决(Entry #96 
 **⑤ 五步授权链(本 Entry = 步骤 1)**:台账 Entry 先落 ✅ → 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #336"` → 清单单独 commit → 无参复验。
 
 **⑥ 关联**:**#333 / #334**(批 1 治理基线)· **#335**(批 1 实施回执)· **#167**(CXL adapter 独立载体 —— 陈旧句的作废来源)· **#258**(UALink 实例装配闭合 —— 另两处陈旧句的推翻来源)· **#238 / #249 / #257**(T1–T4 判定式与来源效力分级的原始裁决)· **#264**(口径 ② —— §7.2.2 的 DoD 边界)· **#288 / #292**(「经网络」定义 + J-9)· **#295 / #292**(§7.2.2 与 §8.5 的治理不变量来源)· **#319**(五步链先例)
+
+
+### Entry #337 — 2026-11-11 [planner](**批 3 开工授权 + 实施回执** —— 按层拆分 8 篇子文档;含**闸假绿发现**)
+
+**主题**:per 用户口令「继续批3」⇒ 批 3(按层拆分)已完成 ⇒ 本 Entry 落**授权**(五步链步骤 1)+ **实施回执** + **两项治理面发现**。
+
+**① 授权范围**:`07 号` 拆分 + 新建 `docs/architecture/cep/` **8 篇子文档** + 3 处**闸/测试同步**。冻结面 = `07 号`(M1 成员)+ **8 篇新子文档**(批 0.6 已扩 glob `docs/architecture/cep/*.md` ⇒ 自动入集)⇒ 冻结产物 **69 → 77**。
+
+**② 实施回执(实测)**
+
+| 项 | 结果 |
+|---|---|
+| 总纲 | **1778 → 1440 行**(-338;§3 / §5 / §6 / §7 的实体下沉,原编号 heading **全部保留**为节号桩) |
+| 子文档 | **8 篇 / 503 行**(coherence-interface 50 · stub-cache-core 53 · protocol-engine 160 · directory-ordering 23 · collective-plane 25 · fabric-transport 63 · simulation-and-experiment 107 · core-traffic-gen 22) |
+| 编号 heading | **46 → 46,零丢失**(h2 28 / h3 87 / h4 7 全保持)⇒ **341+ 处节号引用零改写** ✅ |
+| 文件性质声明 | 总纲顶部加**机器可读**声明表:「**§4 = 正文(定义处)**;§3/§5/§6/§7 = **指针**,实体见 `cep/<file>.md`」+ 每节桩首行写实体路径(per 裁定表 S1/S2) |
+| 索引 C | +8 行子文档入口(共 19 行);索引闸 23/23 · 9/9 绿 |
+| `docs/architecture/README.md` | Doc Map +8 行(子文档逐篇列出) |
+| 测试 | `[cep]` **508 cases / 11516 assertions** 全绿(重编译后) |
+
+**③ 按层分流的映射(⛔ 非按 §N 机械搬运)**
+
+| 子文档 | 承载 | 来源节 |
+|---|---|---|
+| `stub-cache-core.md` | 第 1 层 | §3.2 / §3.3 |
+| `coherence-interface.md` | 第 2 层 | §3.1 / §5.4 |
+| `protocol-engine.md` | 第 3 层 | §5.1(含 5.1.1~**5.1.5 转移表真源判定式**) |
+| `directory-ordering.md` | 第 4 层 | §5.2 |
+| `collective-plane.md` | 第 5 层 | §5.3 |
+| **`fabric-transport.md`** | **第 6 层(传输层,用户点名)** | §6.3 / **§6.3.1 经网络定义 + J-9** |
+| `simulation-and-experiment.md` | 仿真与实验 | §6.1 / §6.2 / §6.4 / §7 全部 |
+| `core-traffic-gen.md` | Core/TrafficGen | **骨架**(10 条决策属 **A 类** ⇒ 待批 4 落 ADR) |
+
+**④ 3 处闸/测试同步(⛔ 不做则拆分即治理倒退)**
+
+| # | 项 | 改动 |
+|:--:|---|---|
+| 1 | `scripts/test/cep_doc_ref_check.sh` | `DOCS` **+8 篇子文档** —— ⛔ 否则拆分后新文档**零机器检查** |
+| 2 | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md` | `cpptlm[]` 锚点 **`07 号:310` → `cep/protocol-engine.md:16`**(符号「16 个 adapter 实例」随 §5.1 下沉) |
+| 3 | `test/test_cep_schema.cc` | 读路径 `07 号` → **`cep/protocol-engine.md`**;标题层级 `#### 5.1.x` → **`### 5.1.x`**(文件标题为 h1 ⇒ 提升一级)⇒ 已**重编译**验证 |
+
+**⑤ ⚠️ 治理面发现 1:`cep_doc_ref_check.sh` 的「假绿」**
+
+`cep_doc_ref_check.sh` **不加 `--strict` 时发现问题仍 `exit 0`**(`:500` 的 `[ "$STRICT" = true ] && exit 1` ⇒ 默认 false)⇒ **本仓无任何调用方用 `--strict`** ⇒ 该闸实质是**软闸**。
+⇒ **后果**:本会话前几轮的「35/35 闸全绿」对该闸是**假绿** —— 实测它一直报「1 处问题」(见 ⑥)。
+⇒ **处置**:① 本 Entry 记录该缺口;② 后续闸扫描**必须双判 `rc` + `✗` 计数**(已据此改为 `32/35 + 3 处冻结面同源`);③ ⛔ **未**改闸的默认行为(改 `--strict` 默认为 `true` 属**闸强度变更** ⇒ 需独立 change + 决定性变异,⛔ 不在本批)。
+
+**⑥ ⚠️ 陈旧链接勘误(Entry #335 引入,纯链接错误)**
+
+`Entry #335` 内写 `` `docs/adr/ADR-CEP-12:267` `` ⇒ **该路径不存在**(缺 `-protocol-engine-capability-map` 后缀)⇒ `cep_doc_ref_check` 的 path 检查判红。
+⇒ **已修**为 `` `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md:267` ``(实测该行确含 `07 号:145`)。
+> ⚠️ **本处为 append-only 的唯一例外**:属**纯链接勘误**,⛔ 不涉及任何决策 / 事实 / 计数;台账纪律的「不可改写」保护对象是**决策陈述**,不是坏链接。
+
+**⑦ 五步授权链(本 Entry = 步骤 1)**:台账 Entry 先落 ✅ → 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #337"` → 清单单独 commit → 无参复验。
+> ⚠️ **本次清单 diff 预期 10 处**(07 号 hash + authorized_by + frozen_at + frozen_at_commit + **8 个新产物条目**)—— ⛔ 非先例的「恰 4 处」形态(`Entry #319/#333/#336` 均为无新增产物);本批新增 8 篇 ⇒ 属**首次扩集**。
+
+**⑧ 关联**:**#333 / #334**(拆分方案的裁定来源:§六 8 篇清单 + 三条硬规则)· **#336**(批 2 —— 4 个判据小节,批 3 后随 §5.1 / §6.3 / §7.2 下沉到子文档)· **#319 / #335**(五步链 · 重定向表先例)· **#324**(M1 冻结面 glob 口径 —— 批 0.6 扩的 `cep/*.md` 使 8 篇自动入集)· `ADR-CEP-00A §3.9`(07 号节号映射表 —— 批 3 后节号体系未变,⛔ 无需改 ADR)· `cep_archforge_alignment_check.sh`(跨仓机器锚点)· `test/test_cep_schema.cc`(§5.1 表行数断言的载体变更)
 ---
 ---
 

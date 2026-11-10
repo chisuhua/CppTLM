@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-11T10:40:00Z",
+  "updated_at": "2026-11-11T13:50:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-09T13:45:21Z",
-      "by": "user",
-      "reason": "用户口令「然后切 planner 对后续还有哪些任务内容都梳理一遍,再给出后续任务内容和实施路径」⇒ planner 域:全量剩余任务盘点 + 实施路径编排(承接 architect 四段复盘)"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-09T14:14:58Z",
-      "by": "user",
-      "reason": "用户口令「直接开 B1(先起 improvement 草稿 → change → 实施)」⇒ improvement 草稿已落(planner 域,HARD-GATE 通过)+ change 4 件套已建(validate --strict rc=0)⇒ 切 builder 域实施 T1~T7"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-09T16:40:38Z",
-      "by": "user",
-      "reason": "用户口令「提交,然后继续下一项」⇒ B1 已提交(f94a0ab4);下一项 = B2(R-3)⇒ 切 architect 域裁「重挂检测的落点」(装配路径 vs 闸路径),再回 builder 实施"
-    },
     {
       "role": "builder",
       "at": "2026-11-10T01:19:28Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-11T10:40:00Z",
       "by": "user",
       "reason": "用户口令「继续批2」⇒ 序列第 ⑧ 步。planner 已落 Entry #336(批 2 授权 + 回执 + 陈旧句核查;行号改用语义锚)。本回合 = builder:批 2 五步链(台账 Entry commit → 07 号产物 commit → --update → 清单单独 commit → 无参复验)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-11T12:00:00Z",
+      "by": "user",
+      "reason": "用户口令「继续批3」⇒ 序列第 ⑨ 步。architect 已完成批 3 拆分(总纲 1778→1440 · 8 篇子文档 495 行 · 46 个编号 heading 零丢失 · 文件性质声明 + 索引 C 8 行 + README Doc Map)。本回合 = builder:① doc_ref_check DOCS 加 8 篇子文档 ② 对齐清单 07号:310 锚点改指 cep/protocol-engine.md ③ 修台账 broken ref(docs/adr/ADR-CEP-12)④ 五步链。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-11T13:20:00Z",
+      "by": "user",
+      "reason": "用户口令「继续批3」⇒ 序列第 ⑩ 步。批 3 拆分已完成并闸同步(总纲 1778→1440 · 8 篇子文档 563 行 · 46 编号 heading 零丢失 · DOCS +8 · 对齐锚点改指 cep/protocol-engine.md:16 · test_cep_schema.cc 改指子文档并重编译 · 508 cases 绿 · 3 处红全同源于冻结面)。本回合 = planner:Entry #337(批 3 授权 + 回执 + 闸假绿发现 + 陈旧链接勘误)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-11T13:50:00Z",
+      "by": "user",
+      "reason": "用户口令「继续批3」⇒ 序列第 ⑪ 步。planner 已落 Entry #337(批 3 授权 + 回执 + 闸假绿发现 + 陈旧链接勘误)。本回合 = builder:批 3 五步链(Entry/角色 commit → 产物 commit(总纲+8 子文档+闸+测试+对齐清单)→ --update → 清单 commit → 复验)。"
     }
   ],
   "auto_switch_window": null
