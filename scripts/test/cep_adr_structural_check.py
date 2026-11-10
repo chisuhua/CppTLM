@@ -287,34 +287,141 @@ def main():
     # ── ④b 归因 id 债务登记机检(per oracle 2026-11-09 must-fix #3)──────────
     #   「判据存在但机器载体无对应 id 条目」这类债务必须**登记在机器可查处**,
     #   且登记本身**可机检** ⇒ 否则它只是「纯承诺」(给缺口盖章)。
-    print("\n[4b/4] 归因 id 债务登记(pending_invariant_ids)机检")
+    print("\n[4b/4] 归因结论登记(invariant_attribution_dispositions)机检 · 三层")
     ledger_path = os.path.join(ROOT, ".rddf", "roadmap", "objectives", "obj-cep-platform.md")
     ledger_text = ""
     if os.path.isfile(ledger_path):
         ledger_text = open(ledger_path, encoding="utf-8").read()
-    id_debts = reg.get("pending_invariant_ids", [])
-    if not id_debts:
-        info("无归因 id 债务登记")
-    for d in id_debts:
-        miss = [k for k in ("adr", "chapter", "target_id", "scope", "trigger_condition", "owner", "ledger_entry")
-                if not d.get(k)]
-        if miss:
-            errors += fail("id 债务条目字段缺失 %s: %s" % (d.get("adr"), ", ".join(miss)))
+
+    DISPOSITIONS = {
+        "carrier_present_id_absent": ("carrier_anchor", "expected_symbol"),
+        "carrier_buildable_id_blocked": ("blocked_by",),
+        "doc_layer_manual_review": ("review_ledger_entry",),
+        "condition_unmet": ("condition_probe",),
+    }
+
+    def frozen_globs():
+        """从 `cep_freeze_check.sh` 求值 `FROZEN_GLOBS`(用于 blocked_by 真伪校验)"""
+        sh = os.path.join(ROOT, "scripts", "test", "cep_freeze_check.sh")
+        gl = []
+        if os.path.isfile(sh):
+            txt = open(sh, encoding="utf-8").read()
+            m = re.search(r"FROZEN_GLOBS=\((.*?)\)\n", txt, re.S)
+            if m:
+                gl = re.findall(r'"([^"]+)"', m.group(1))
+        return gl
+
+    _FG = frozen_globs()
+
+    def in_frozen(path_rel):
+        import fnmatch
+        return any(fnmatch.fnmatch(path_rel, g) for g in _FG)
+
+    disp_list = reg.get("invariant_attribution_dispositions", [])
+    # ── (a) 分类合法 ─────────────────────────────────────────────
+    for e in disp_list:
+        tags = "%s %s" % (e.get("adr", "?"), e.get("chapter", "?"))
+        dp = e.get("disposition")
+        if dp not in DISPOSITIONS:
+            errors += fail("[4b-a] 非法 disposition %r: %s" % (dp, tags))
             continue
-        apath = os.path.join(ROOT, reg["adr_dir"], d["adr"])
+        miss = [k for k in ("adr", "chapter", "rationale") if not e.get(k)]
+        miss += [k for k in DISPOSITIONS[dp] if e.get(k) is None]
+        if miss:
+            errors += fail("[4b-a] 字段缺失 %s: %s" % (tags, ", ".join(miss)))
+            continue
+        apath = os.path.join(ROOT, reg["adr_dir"], e["adr"])
         if not os.path.isfile(apath):
-            errors += fail("id 债务条目指向不存在的 ADR:%s" % d["adr"])
+            errors += fail("[4b-a] 指向不存在的 ADR: %s" % tags)
             continue
         atext = open(apath, encoding="utf-8").read()
-        for chap in [c.strip() for c in str(d["chapter"]).split("/")]:
+        for chap in str(e["chapter"]).split("/"):
+            chap = chap.strip()
             if chap and chap not in atext:
-                errors += fail("id 债务条目的章节锚点 %s §%s 在 ADR 内不存在" % (d["adr"], chap))
-        if not re.fullmatch(r"INV-CEP-[0-9A-Z]+-ICx", str(d["target_id"])):
-            errors += fail("id 债务条目的 target_id 命名空间不合规 %s(须形如 INV-CEP-NN-ICx)" % d["target_id"])
-        if ledger_text and ("### %s" % d["ledger_entry"]) not in ledger_text:
-            errors += fail("id 债务条目的台账凭据不存在:%s" % d["ledger_entry"])
-    if id_debts:
-        ok("归因 id 债务登记 %d 笔逐条机检通过(ADR 存在 + 章节锚点 + id 命名空间 + 台账 Entry)" % len(id_debts))
+                errors += fail("[4b-a] 章节锚点 %s 在 ADR 内不存在: %s" % (chap, tags))
+
+    # ── (b) 证据可反驳(4 谓词,逐条执行) ─────────────────────────
+    for e in disp_list:
+        dp = e.get("disposition")
+        tags = "%s %s" % (e.get("adr", "?"), e.get("chapter", "?"))
+        if dp == "carrier_present_id_absent":
+            f = os.path.join(ROOT, str(e.get("carrier_anchor", "")))
+            if not os.path.isfile(f):
+                errors += fail("[4b-b] carrier_anchor 文件不存在: %s (%s)" % (e.get("carrier_anchor"), tags))
+            elif e.get("expected_symbol") and str(e["expected_symbol"]) not in open(f, encoding="utf-8", errors="ignore").read():
+                errors += fail("[4b-b] expected_symbol %r 在 carrier_anchor 内 grep 不到: %s"
+                                % (e["expected_symbol"], tags))
+        elif dp == "carrier_buildable_id_blocked":
+            bp = str(e.get("blocked_by", ""))
+            if not os.path.exists(os.path.join(ROOT, bp)):
+                errors += fail("[4b-b] blocked_by 路径不存在(谎称被挡): %s (%s)" % (bp, tags))
+            elif not in_frozen(bp):
+                errors += fail("[4b-b] blocked_by 不在冻结集(谎称被冻结挡): %s (%s)" % (bp, tags))
+        elif dp == "doc_layer_manual_review":
+            led = str(e.get("review_ledger_entry", ""))
+            if ledger_text and ("### %s" % led) not in ledger_text:
+                errors += fail("[4b-b] review_ledger_entry 在台账解析不到: %s (%s)" % (led, tags))
+            elif ledger_text:
+                # 该 Entry 正文须含本条 chapter 号(防「复制粘贴台账 Entry 批量盖章」)
+                m = re.search(r"### " + re.escape(led) + r".*?(?=\n### |\Z)", ledger_text, re.S)
+                body = m.group(0) if m else ""
+                chs = [c.strip() for c in str(e.get("chapter", "")).split("/") if c.strip()]
+                if chs and not any(c in body for c in chs):
+                    errors += fail("[4b-b] review_ledger_entry %s 的正文不含 chapter 号(疑似批量盖章): %s"
+                                   % (led, tags))
+        elif dp == "condition_unmet":
+            probe = e.get("condition_probe") or {}
+            tgt = str(probe.get("target", ""))
+            if not tgt or not os.path.exists(os.path.join(ROOT, tgt)):
+                errors += fail("[4b-b] condition_probe.target 不存在: %r (%s)" % (tgt, tags))
+
+    # ── (c) 覆盖完备:19 份决策 ADR 的 V 行须「含归因 id」或「已登记」──────
+    ID_RE = re.compile(r"CEN-Ib\d+|INV-SC\d+|INV-CEP-[0-9A-Z]+-IC\d+")
+    VROW = re.compile(r"^\|\s*\*\*(V-\d+[A-Z]?\-\d+)\*\*\s*\|")
+    registered = {}
+    for e in disp_list:
+        for ch in re.findall(r"V-\d+[A-Z]?\-\d+", str(e.get("chapter", ""))):
+            registered.setdefault(e.get("adr"), set()).add(ch)
+    uncovered = []
+    v_total = 0
+    for name in decision:
+        apath = os.path.join(ROOT, reg["adr_dir"], name)
+        if not os.path.isfile(apath):
+            continue
+        text = open(apath, encoding="utf-8").read()
+        m = re.search(r"^## Status Update", text, re.M)
+        body = text[: m.start()] if m else text
+        vm = re.search(r"^## Verification.*?(?=^## |\Z)", body, re.M | re.S)
+        if not vm:
+            continue
+        for line in vm.group(0).split("\n"):
+            mm = VROW.match(line)
+            if not mm:
+                continue
+            v_total += 1
+            ch = mm.group(1)
+            if not ID_RE.search(line) and ch not in registered.get(name, set()):
+                uncovered.append("%s %s" % (name, ch))
+    if uncovered:
+        errors += fail("[4b-c] 覆盖不完备:%d 个 V 行既无归因 id 也未登记 —— %s"
+                       % (len(uncovered), "; ".join(uncovered[:6]) + (" …" if len(uncovered) > 6 else "")))
+    else:
+        ok("[4b-c] 覆盖完备:%d 行 V 行全部「含归因 id」或「已在 disposition 表登记」" % v_total)
+
+    # ── (d) 防批量盖章:同一 review_ledger_entry 不得服务 >1 条 ──────────
+    from collections import Counter
+    _led = Counter(e.get("review_ledger_entry") for e in disp_list
+                   if e.get("disposition") == "doc_layer_manual_review")
+    for led, n in _led.items():
+        if n > 1:
+            errors += fail("[4b-d] 同一 review_ledger_entry 服务 %d 条人工评审(>1 ⇒ 批量盖章口): %s"
+                           % (n, led))
+
+    if disp_list and not errors:
+        cnt = Counter(e.get("disposition") for e in disp_list)
+        ok("归因结论登记 %d 条 · 三层机检通过(a 分类合法 / b 证据可反驳 / c 覆盖完备 / d 防批量盖章)"
+           % len(disp_list))
+        info("  disposition 分布:" + ", ".join("%s=%d" % kv for kv in sorted(cnt.items())))
 
     # ── 报告(不判红) ───────────────────────────────────────────────
     if pending:

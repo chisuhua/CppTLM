@@ -1,6 +1,6 @@
 {
-  "schema": "cep-adr-structural-deferrals/v2",
-  "note": "ADR 结构闸的**登记表**(per oracle 2026-11-09 裁决 C-1)。本文件**登记**闸的两类例外(永久豁免 / 待补)与三真源漂移;闸脚本 `scripts/test/cep_adr_structural_check.sh` 逐条校验。⛔ 本表**不改**任何 ADR 的正文 —— 缺口靠**补章**收敛,豁免靠**锚点**受限。⚠️ 命名与 `test/cep_b3b2_deferrals.json`(冻结件)**无关**且**不得**混用。 ⚠️ **待补条目是活清单**(非历史流水):某份 ADR 补齐顶层 Verification 章并签发后,**必须**从 `pending_signing` 移除(否则结构闸按「登记过期」判红)—— 2026-11-09 批次:04/05/06/07 已补章 ⇒ 已移除(per 台账 Entry #314)。 ⚠️ `pending_invariant_ids` = **归因 id 债务登记**(判据存在但机器载体无对应 id 条目)⇒ 由结构闸**逐条机检**(ADR 文件存在 + 章节号真在 ADR 内 + id 命名空间合规 + 台账 Entry 存在)⇒ **不是纯承诺**。 ⚠️ **Verification 章「签发前置自检」第 ④ 项有两种合法形态**:「载体**逐条实证存在**」(有机器载体时)或「**无机器载体 ⇒ 逐条如实标注**」(文档层 / 条件触发型判据)—— 后者**必须**同时在 `pending_invariant_ids` 留债 ⇒ ⛔ 不得把「无载体」写成「已实证」。 ⚠️ **2026-11-10(per 台账 Entry #321 / #322)**:原 `status_drift` / `map_status_ambiguity` 两数组**已清零并删除** —— 二者本是**手工快照**(闸只 `reg.get(key,[])` 打印,**从不解析** NUMBER-MAP 表、**从不解析** 22 份 header)⇒ 已实证自身腐化(登记 4 条 vs 实测漂移 20 条)。⇒ 现改为:**① NUMBER-MAP 第 5 列只承载 ADR 文件存在性**;**② 生命周期状态真源 = 各 ADR header + SU 链**(口径落 NUMBER-MAP §2 决策 1 表上方);**③ 派生视图**由 `cep_adr_structural_check.py` 现算现打(纯导航 · 不判红)。",
+  "schema": "cep-adr-structural-deferrals/v3",
+  "note": "ADR 结构闸的**登记表**(per oracle 2026-11-09 裁决 C-1)。本文件**登记**闸的两类例外(永久豁免 / 待补)与三真源漂移;闸脚本 `scripts/test/cep_adr_structural_check.sh` 逐条校验。⛔ 本表**不改**任何 ADR 的正文 —— 缺口靠**补章**收敛,豁免靠**锚点**受限。⚠️ 命名与 `test/cep_b3b2_deferrals.json`(冻结件)**无关**且**不得**混用。 ⚠️ **待补条目是活清单**(非历史流水):某份 ADR 补齐顶层 Verification 章并签发后,**必须**从 `pending_signing` 移除(否则结构闸按「登记过期」判红)—— 2026-11-09 批次:04/05/06/07 已补章 ⇒ 已移除(per 台账 Entry #314)。 ⚠️ `pending_invariant_ids` = **归因 id 债务登记**(判据存在但机器载体无对应 id 条目)⇒ 由结构闸**逐条机检**(ADR 文件存在 + 章节号真在 ADR 内 + id 命名空间合规 + 台账 Entry 存在)⇒ **不是纯承诺**。 ⚠️ **Verification 章「签发前置自检」第 ④ 项有两种合法形态**:「载体**逐条实证存在**」(有机器载体时)或「**无机器载体 ⇒ 逐条如实标注**」(文档层 / 条件触发型判据)—— 后者**必须**同时在 `pending_invariant_ids` 留债 ⇒ ⛔ 不得把「无载体」写成「已实证」。 ⚠️ **2026-11-10(per 台账 Entry #321 / #322)**:原 `status_drift` / `map_status_ambiguity` 两数组**已清零并删除** —— 二者本是**手工快照**(闸只 `reg.get(key,[])` 打印,**从不解析** NUMBER-MAP 表、**从不解析** 22 份 header)⇒ 已实证自身腐化(登记 4 条 vs 实测漂移 20 条)。⇒ 现改为:**① NUMBER-MAP 第 5 列只承载 ADR 文件存在性**;**② 生命周期状态真源 = 各 ADR header + SU 链**(口径落 NUMBER-MAP §2 决策 1 表上方);**③ 派生视图**由 `cep_adr_structural_check.py` 现算现打(纯导航 · 不判红)。 ⚠️ **2026-11-10(C3′ / 台账 Entry #326)**：`pending_invariant_ids` **改名并改语义**为 `invariant_attribution_dispositions`(**v2 → v3**)—— 原语义「**待办债务**」在架构上**不可偿**：**8 份已签发 ADR 的 Verification 章逐字写「⛔ 本章不新造 id」**(`ADR-CEP-04:327` / `-05:293,297` / `-06:220-221` / `-07:259` / `-08:207` / `-09:186`)且 `-12/-14/-15/-18` 写「归因 id **一律复用**既有体系」⇒ **建 id = 改写「禁止建 id」这句已签发正文**。故改为**分类收敛**：每条给 `disposition` ∈ {carrier_present_id_absent, carrier_buildable_id_blocked, doc_layer_manual_review, condition_unmet} + `rationale`(须引 ADR 行号或冻结件路径)· ⛔ **11→0 物理上不可能**(清零只能靠删表 = 销毁证据)。⚠️ 旧 `trigger_condition` 的「建立 `INV-CEP-NN-ICx` 时…」是**循环触发**(把目标当条件)⇒ **已删除**。",
   "compliance_rule": {
     "chapter_pattern": "^##\\s+.*(Verif|验证|验收判据)",
     "position_rule": "必须位于首个 `## Status Update` 段之前(正文章)⇒ Status Update 段内的嵌套 `###` 不算",
@@ -68,105 +68,170 @@
     }
   ],
   "pending_signing": [],
-  "pending_invariant_ids": [
+  "invariant_attribution_dispositions": [
     {
       "adr": "ADR-CEP-04-sharer-tracker-abstraction-redesign.md",
       "chapter": "V-04-7",
-      "target_id": "INV-CEP-04-ICx",
-      "scope": "DCOH 完备性契约的断言面 —— CONSERVATIVE 侧已存在(caps / broadcast_fallback / 宁多探不漏探);PARTIAL 分支当前**无实现** ⇒ 其断言面待建",
-      "trigger_condition": "`PARTIAL` tracker 实现落地 **或** 建立 `INV-CEP-04-ICx` 时,必须**同时**交付该 id 的反向 fixture(毒化 ⇒ 必红)并从本表移除",
-      "owner": "architect",
-      "ledger_entry": "Entry #314"
+      "disposition": "condition_unmet",
+      "rationale": "DCOH 完备性契约的 PARTIAL 分支当前**无实现**（`cxl_dcoh_tracker.hh` 实测不含 `PARTIAL`）⇒ 判据的前提对象不存在 ⇒ 断言面**无可断言之物**。CONSERVATIVE 侧已由既有载体的 caps / broadcast_fallback / 宁多探不漏探覆盖。",
+      "condition_probe": {
+        "target": "include/tlm/cep/cxl_dcoh_tracker.hh",
+        "expect": "不含 PARTIAL"
+      },
+      "next_action": "PARTIAL tracker 实现落地时改判并补断言"
     },
     {
       "adr": "ADR-CEP-05-stub-cache-core-interface.md",
-      "chapter": "V-05-2 / V-05-6",
-      "target_id": "INV-CEP-05-ICx",
-      "scope": "① 折叠映射表「逐字对齐 canonical 10 流 ⇒ 零 diff」的**字面审计**(现有检查仅为单向形态 + 5 隐藏流齐备);② 三明治挂载形态 + bypass 模式的**配置面**判据",
-      "trigger_condition": "建立 `INV-CEP-05-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ 必红)并从本表移除",
-      "owner": "architect",
-      "ledger_entry": "Entry #314"
+      "chapter": "V-05-2",
+      "disposition": "carrier_buildable_id_blocked",
+      "rationale": "折叠映射表「逐字对齐 canonical 10 流 ⇒ 零 diff」的**字面审计**本体缺失（现有检查仅单向形态 + 5 隐藏流齐备）；载体族 `test_cep_canonical_flow_contract.cc` **已在**。⛔ id 被 `ADR-CEP-05:293`「禁在本章新造 id」挡。",
+      "blocked_by": "docs/adr/ADR-CEP-05-stub-cache-core-interface.md",
+      "carrier_anchor": "test/test_cep_canonical_flow_contract.cc",
+      "next_action": "补字面审计断言（无 id）"
+    },
+    {
+      "adr": "ADR-CEP-05-stub-cache-core-interface.md",
+      "chapter": "V-05-6",
+      "disposition": "carrier_buildable_id_blocked",
+      "rationale": "三明治挂载形态 + bypass 模式的**配置面**判据；载体 `test_cep_stub_cache_e2e.cc` **已在**（实测不含 `bypass` 字面）⇒ 需补该配置面用例。⛔ id 被 `ADR-CEP-05:297` 挡。",
+      "blocked_by": "docs/adr/ADR-CEP-05-stub-cache-core-interface.md",
+      "carrier_anchor": "test/test_cep_stub_cache_e2e.cc",
+      "next_action": "补 bypass 配置面断言（无 id）"
     },
     {
       "adr": "ADR-CEP-06-experiment-protocol.md",
-      "chapter": "V-06-6 / V-06-7",
-      "target_id": "INV-CEP-06-ICx",
-      "scope": "① `verification_mode` 两键存在 + enum 恰 3 档的断言面(该用例无 INV-CARRIER 标记、不在 id 表内);② 「not-collected ⊆ 预登记集」的 run 级执行面(tools 判据④)",
-      "trigger_condition": "建立 `INV-CEP-06-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ 必红)并从本表移除",
-      "owner": "architect",
-      "ledger_entry": "Entry #314"
+      "chapter": "V-06-6",
+      "disposition": "carrier_buildable_id_blocked",
+      "rationale": "`verification_mode` 两键存在 + enum 恰 3 档的断言面 —— 该用例**存在**（`test_cep_simulation_mode_lock.cc` 实测含 `verification_mode`）但**无 `INV-CARRIER` 标记**、不在 id 表内。⛔ id 被 `ADR-CEP-06:220-221` 挡。",
+      "blocked_by": "docs/adr/ADR-CEP-06-experiment-protocol.md",
+      "carrier_anchor": "test/test_cep_simulation_mode_lock.cc",
+      "next_action": "同上（无 id）"
+    },
+    {
+      "adr": "ADR-CEP-06-experiment-protocol.md",
+      "chapter": "V-06-7",
+      "disposition": "carrier_buildable_id_blocked",
+      "rationale": "「`not-collected` ⊆ 预登记集」的 run 级执行面 —— 载体 `tools/run_sweep.py` **已在**。⛔ id 被 `ADR-CEP-06:220-221` 挡。",
+      "blocked_by": "docs/adr/ADR-CEP-06-experiment-protocol.md",
+      "carrier_anchor": "tools/run_sweep.py",
+      "next_action": "同上（无 id）"
     },
     {
       "adr": "ADR-CEP-07-simulation-and-integration-semantics.md",
       "chapter": "V-07-6",
-      "target_id": "INV-CEP-07-ICx",
-      "scope": "延迟族**其余 4 键**(`p50_latency_cycles` / `p95_latency_cycles` / `p99_latency_cycles` / `max_latency_cycles`)在 **functional 模式**下的 mode-specific 正值断言 —— 现有 `functional_latency_problems()` 只覆盖 `avg_latency_cycles` 单键(schema 的 `minimum: 0` 只挡负数,不挡「functional 写正数」)",
-      "trigger_condition": "建立 `INV-CEP-07-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ functional 模式产出正数 p50/p95/p99/max 必红)并从本表移除",
-      "owner": "architect",
-      "ledger_entry": "Entry #314"
+      "disposition": "carrier_buildable_id_blocked",
+      "rationale": "延迟族**其余 4 键**（p50/p95/p99/max）在 functional 模式下的正值断言 —— 现有 `functional_latency_problems()`（`test_cep_engine_and_numbering_contract.cc:263`）**只覆盖 avg 单键** ⇒ 需扩 4 键。⛔ id 被 `ADR-CEP-07:259` 挡。",
+      "blocked_by": "docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md",
+      "carrier_anchor": "test/test_cep_engine_and_numbering_contract.cc",
+      "next_action": "扩 functional_latency_problems 到 4 键（无 id）"
     },
     {
       "adr": "ADR-CEP-08-ordering-point-portability.md",
       "chapter": "V-08-4",
-      "target_id": "INV-CEP-08-ICx",
-      "scope": "**现行口径**(per `ADR-CEP-08` SU §8.2 的**逐网络**形态):`ordering_assumption` / `vc_binding` 的 key 须登记到 network + `vc_id < vc_count` + `ordering ⊆ vc_binding` —— 该三子校验的机器断言归因 id(载体 = `scripts/test/cep_decl_alignment_check.sh` 子校验 ②/③)。⚠️ v0.1 的扁平谓词「key 解析到唯一 `vc_id`」**已被 SU §8.2 取代**,⛔ 不得复用。",
-      "trigger_condition": "建立 `INV-CEP-08-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ 必红)并从本表移除",
-      "owner": "architect",
-      "ledger_entry": "Entry #315"
+      "disposition": "carrier_present_id_absent",
+      "rationale": "现行口径（`ADR-CEP-08 §8.2` 逐网络形态）：`ordering_assumption` / `vc_binding` 的 key 登记到 network + `vc_id < vc_count` + `ordering ⊆ vc_binding` 三子校验 —— 载体 `scripts/test/cep_decl_alignment_check.sh` **已在**且实测 `INV-CARRIER` **零命中** ⇒ 只缺 id 标记。⛔ id 被 `ADR-CEP-08:207` 挡（且**不得复用**已被取代的扁平谓词 `INV-CEP-12-IC2`）。",
+      "blocked_by": "docs/adr/ADR-CEP-08-ordering-point-portability.md",
+      "carrier_anchor": "scripts/test/cep_decl_alignment_check.sh",
+      "expected_symbol": "ordering_assumption",
+      "next_action": "加 INV-CARRIER 标记前须先解决 id 禁令"
     },
     {
       "adr": "ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md",
       "chapter": "V-09-4",
-      "target_id": "INV-CEP-09-ICx",
-      "scope": "`vc_id` 取值 ∈ 0–3 的**闸侧检查**归因 id —— 检查本体已存在(`include/tlm/cep/channel_dependency_graph.hh` 的 `kMaxVcId = 3` + 越界 FAIL,载体 `test/test_cep_channel_dependency_gate.cc`);`include/bundles/noc_bundles_tlm.hh:38` 只是 `ch_uint<8>` 字段 + 注释声明,**8 bit 宽并不锁 0–3**",
-      "trigger_condition": "建立 `INV-CEP-09-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ 必红)并从本表移除",
-      "owner": "architect",
-      "ledger_entry": "Entry #315"
-    },
-    {
-      "adr": "ADR-CEP-17-ruby-slicc-protocol-family.md",
-      "chapter": "V-17-4 / V-17-5 / V-17-6",
-      "target_id": "INV-CEP-17-ICx",
-      "scope": "① `07 号 §5.1.1` 表格一致性的**完整**断言(现有仅 adapter 名逐字一致 + 表解析);② 「协议族 vs 协议实例」表述纪律(adapter 数 = 实例数 · 「8 个独立协议」标注)—— **文档层,无闸**;③ 守门 invariant 计数的**单一真源**(ADR 内不得写死计数)",
-      "trigger_condition": "建立 `INV-CEP-17-ICx` 时,必须**同时**交付其反向 fixture(毒化 ⇒ 必红)并从本表移除;文档层项若最终不可机器判 ⇒ 改为「人工评审登记」并注明",
-      "owner": "architect",
-      "ledger_entry": "Entry #315"
+      "disposition": "carrier_present_id_absent",
+      "rationale": "`vc_id ∈ 0–3` 的**闸侧检查** —— 载体 `include/tlm/cep/channel_dependency_graph.hh:61`（`kMaxVcId = 3`）+ `:538`（越界 FAIL）**已在**；`test/test_cep_channel_dependency_gate.cc` 为其测试侧。⛔ id 被 `ADR-CEP-09:186` 挡。",
+      "blocked_by": "docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md",
+      "carrier_anchor": "include/tlm/cep/channel_dependency_graph.hh",
+      "expected_symbol": "kMaxVcId",
+      "next_action": "同上"
     },
     {
       "adr": "ADR-CEP-12-protocol-engine-capability-map.md",
       "chapter": "V-12-6",
-      "target_id": "INV-CEP-12-ICx",
-      "scope": "`sharer_tracker` 一致性:自失效类协议**不得**填 `SparseSnoopFilter`(§2 决策 7 · 抓取点 6)的机器断言面",
-      "trigger_condition": "建立 `INV-CEP-12-ICx` 时,必须**同时**交付其反向 fixture(自失效族实例填 SparseSnoopFilter ⇒ 必红)并从本表移除",
-      "owner": "architect",
-      "ledger_entry": "Entry #316"
+      "disposition": "carrier_buildable_id_blocked",
+      "rationale": "`sharer_tracker` 一致性：自失效类协议**不得**填 `SparseSnoopFilter`（§2 决策 7 · 抓取点 6）。载体 `test_cep_instance_declaration_contract.cc` **已在**（实测不含 `SparseSnoopFilter` 字面）⇒ 需补该一致性断言。⛔ id 被 `ADR-CEP-12:214` 挡（「一律复用既有体系」）。",
+      "blocked_by": "docs/adr/ADR-CEP-12-protocol-engine-capability-map.md",
+      "carrier_anchor": "test/test_cep_instance_declaration_contract.cc",
+      "next_action": "补一致性断言（复用既有 id）"
     },
     {
       "adr": "ADR-CEP-14-stub-contract-tests.md",
       "chapter": "V-14-4",
-      "target_id": "INV-CEP-14-ICx",
-      "scope": "**测试替身不入产品目录**:`include/tlm/cep/` 不得含测试替身(抓取点 4)的机器断言面",
-      "trigger_condition": "建立 `INV-CEP-14-ICx` 时,必须**同时**交付其反向 fixture(往产品目录放一个替身 ⇒ 必红)并从本表移除",
-      "owner": "architect",
-      "ledger_entry": "Entry #316"
+      "disposition": "carrier_buildable_id_blocked",
+      "rationale": "**测试替身不入产品目录**：`include/tlm/cep/` 不得含测试替身。目录清单闸 trivial 可建。⛔ id 被 `ADR-CEP-14:155` 挡。",
+      "blocked_by": "docs/adr/ADR-CEP-14-stub-contract-tests.md",
+      "carrier_anchor": "include/tlm/cep/",
+      "next_action": "建目录白名单闸（复用既有 id）"
     },
     {
       "adr": "ADR-CEP-15-cachetlm-alignment.md",
       "chapter": "V-15-4",
-      "target_id": "INV-CEP-15-ICx",
-      "scope": "`07 号 §3.3`「缓存核心协议无关性」段说明与 `CacheTLM` 边界的**文档层判据**(无机器载体 ⇒ 人工评审)",
-      "trigger_condition": "建立 `INV-CEP-15-ICx` 时,必须**同时**交付其反向 fixture 并从本表移除;若最终不可机器判 ⇒ 改为「人工评审登记」并注明",
-      "owner": "architect",
-      "ledger_entry": "Entry #316"
+      "disposition": "doc_layer_manual_review",
+      "rationale": "`07 号 §3.3`「缓存核心协议无关性」段与 `CacheTLM` 边界的**文档层判据**（`ADR-CEP-15:172` 自认无机器载体）⇒ 人工评审。",
+      "review_ledger_entry": "Entry #327",
+      "next_action": "无（已登记人工评审）"
+    },
+    {
+      "adr": "ADR-CEP-17-ruby-slicc-protocol-family.md",
+      "chapter": "V-17-4",
+      "disposition": "carrier_buildable_id_blocked",
+      "rationale": "`07 号 §5.1.1` 表格一致性的**完整**断言（现有仅 adapter 名逐字一致 + 表解析）；`test_cep_schema.cc` **部分覆盖**。⛔ id 被 `ADR-CEP-17:372` 挡（「本 ADR 不新增归因 id」）。",
+      "blocked_by": "docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md",
+      "carrier_anchor": "test/test_cep_schema.cc",
+      "next_action": "补完整断言（复用既有 id）"
+    },
+    {
+      "adr": "ADR-CEP-17-ruby-slicc-protocol-family.md",
+      "chapter": "V-17-5",
+      "disposition": "doc_layer_manual_review",
+      "rationale": "「协议族 vs 协议实例」表述纪律（adapter 数 = 实例数 · 「8 个独立协议」标注）—— **文档层，无闸**（`ADR-CEP-17:379` 自认）。",
+      "review_ledger_entry": "Entry #328",
+      "next_action": "无"
+    },
+    {
+      "adr": "ADR-CEP-17-ruby-slicc-protocol-family.md",
+      "chapter": "V-17-6",
+      "disposition": "doc_layer_manual_review",
+      "rationale": "守门 invariant 计数的**单一真源**（ADR 内不得写死计数）—— `cep_docs_sync_check.sh` 只断「一致」不断「ADR 内不得含计数」⇒ **文档层**。",
+      "review_ledger_entry": "Entry #329",
+      "next_action": "无"
     },
     {
       "adr": "ADR-CEP-18-protocol-generation-scope.md",
-      "chapter": "V-18-1 / V-18-2 / V-18-3 / V-18-4",
-      "target_id": "INV-CEP-18-ICx",
-      "scope": "**纯 trade-off ADR 的 4 条边界判据**(§3 无新不变量):① Stage 1~3 DoD/实现产物不得出现 DSL/解析器/代码生成器;② 「生成 Murϕ FSM」路径须重评;③ `*Gen` 族落地 SLICC/Rumur 后端 ⇒ 重评 T1 规模判据;④ 借鉴 *Gen 族 MIT 源码须保留版权声明 —— **4 条全部无机器载体**",
-      "trigger_condition": "建立 `INV-CEP-18-ICx` 时,必须**同时**交付其反向 fixture 并从本表移除;若某条最终不可机器判 ⇒ 改为「人工评审登记」并注明",
-      "owner": "architect",
-      "ledger_entry": "Entry #316"
+      "chapter": "V-18-1",
+      "disposition": "carrier_buildable_id_blocked",
+      "rationale": "Stage 1~3 DoD / 实现产物**不得**出现 DSL / 解析器 / 代码生成器 —— 「生成器」关键词扫描可建。⛔ id 被 `ADR-CEP-18:130`（「无新 invariant」）+ `:174`（「一律复用」）挡。",
+      "blocked_by": "docs/adr/ADR-CEP-18-protocol-generation-scope.md",
+      "carrier_anchor": "scripts/",
+      "next_action": "建关键词扫描闸（无 id）"
+    },
+    {
+      "adr": "ADR-CEP-18-protocol-generation-scope.md",
+      "chapter": "V-18-2",
+      "disposition": "doc_layer_manual_review",
+      "rationale": "「生成 Murϕ FSM」路径须重新评审 —— **评审流程义务** ⇒ 人工评审。",
+      "review_ledger_entry": "Entry #330",
+      "next_action": "无"
+    },
+    {
+      "adr": "ADR-CEP-18-protocol-generation-scope.md",
+      "chapter": "V-18-3",
+      "disposition": "condition_unmet",
+      "rationale": "`*Gen` 族若落地 SLICC / Rumur 后端须重评 T1 规模判据 —— 仓内**无 `*Gen` 族** ⇒ 条件未触发。",
+      "condition_probe": {
+        "target": "include/tlm/cep/",
+        "expect": "不含 *Gen 族"
+      },
+      "next_action": "*Gen 族落地时改判"
+    },
+    {
+      "adr": "ADR-CEP-18-protocol-generation-scope.md",
+      "chapter": "V-18-4",
+      "disposition": "carrier_buildable_id_blocked",
+      "rationale": "借鉴 `*Gen` 族 MIT 源码须保留版权声明 —— license-header 扫描可建。⛔ id 被 `ADR-CEP-18:130` / `:174` 挡。",
+      "blocked_by": "docs/adr/ADR-CEP-18-protocol-generation-scope.md",
+      "carrier_anchor": "scripts/",
+      "next_action": "建 license-header 扫描闸（无 id）"
     }
   ]
 }
