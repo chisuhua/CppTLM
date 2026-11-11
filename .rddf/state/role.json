@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "verifier",
-  "updated_at": "2026-11-12T03:40:00Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-12T04:40:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-11T09:00:00Z",
-      "by": "user",
-      "reason": "用户口令「提交，然后继续批2」⇒ 4 commit 已 push(45dc5e9f..6d4f8c96,未 push=0)。本回合 = architect 域批 2:E 类提炼(纯 E 2 则 26/33 + 混合 7 则的 E 部分)进正文,按 SU33 勘误后版本非逐字搬运;含处理 07号:1268/:1546 两处保留段陈旧陈述(SU21/SU23 将被删除⇒陈旧随之消失,但不得搬进正文)。"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-11T10:00:00Z",
-      "by": "user",
-      "reason": "用户口令「继续批2」⇒ 序列第 ⑦ 步。architect 批 2 主体完成(07 号 1625→1777 · 新增 4 个判据小节 §5.1.5/§6.3.1/§7.2.2/§8.5 · 10 则 SU 加正文吸收指针 · 索引 C +4 行 · 新正文零陈旧句 · 索引闸绿 · 508 cases 绿)。本回合 = planner 域:Entry #336 批 2 授权 + 实施回执(五步链步骤 1)。"
-    },
     {
       "role": "builder",
       "at": "2026-11-11T10:40:00Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-12T03:40:00Z",
       "by": "user",
       "reason": "用户口令「执行建议的下一步内容」⇒ 修完后的第 2 轮复验(报告的路由建议明确要求复跑 3 闸 + docs_sync + ctest)。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-12T04:10:00Z",
+      "by": "user",
+      "reason": "用户口令「切 architect 起 ②」⇒ 执行台账 §13.6 的 W0 = 出 C2 方案（T-C2-⓪ 判据作用域 + T-C2-① 实现路径）+ 裁 U-3。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-12T04:40:00Z",
+      "by": "user",
+      "reason": "用户口令「选A」⇒ 落 W0 方案到 .rddf/reviews/（architect 无权写该目录，按角色矩阵由 builder 落盘）+ 随后 C2 立项。"
     }
   ],
   "auto_switch_window": null

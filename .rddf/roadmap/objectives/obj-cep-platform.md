@@ -19248,3 +19248,52 @@ graph LR
 | 冻结面 | `07 号` **未改** ⇒ `artifact_count` 仍 **78**、hash 未变 ⇒ **不需五步链** |
 
 **⑦ 关联**:**Entry #342**(C1 实施回执)· **#340**(§13 C1 立项)· **#339**(SU 收口批 · AC-4 靶点失效的根因)· verifier 报告 `.rddf/reviews/cpptlm-cep-gate-strength-tooling-verify.md`(本条的判据来源)· `ADR-CEP-06`(有牙原则)
+
+---
+
+### Entry #344 — 2026-11-12 [architect](**W0 完成**:C2 方案 — `T-C2-⓪` 条件化口径 + `T-C2-①` 扩展 C-1′ + `U-3` 裁定)
+
+**主题**:per 用户口令「切 architect 起 ②」+「选 A」⇒ 完成台账 §13.6 的 **W0**（「architect 出 C2 方案 + 裁 U-3」）。方案落 `.rddf/reviews/cep-c2-vc-consistency-decision.md`（206 行）;**⛔ 零 ADR 改动 / 零声明改动 / 零实施代码**;⛔ 不是 OpenSpec change ⇒ **不占 D1 槽位**。
+
+**① 流程说明(角色边界)**
+
+- `.rddf/reviews/` **不在** `.rddf/config/arch-docs.json` 的 `arch_paths`（= `docs/adr` / `docs/architecture` / `docs/designs` / `docs/guide/cep-usage.md`）⇒ 按角色矩阵 **architect 无权写该目录** ⇒ 方案由 architect **在响应正文产出**、经用户「选 A」认可后由 **builder 誊进本目录**。⚠️ 该冲突已如实摆给用户，未静默越权（未改 `arch-docs.json` 去凑权限）。
+
+**② 三个裁决(含否决理由)**
+
+| # | 裁决 | 决定性理由 |
+|:--:|---|---|
+| **T-C2-⓪** | **条件化口径**：只有**在 `certificate_scope` 内**（声明用 M-2 共享 VC 池）的 network 才要求逐 VC 一致;不在 scope 内**允许不一致**。❌ 否决全局口径 | ① `ADR-CEP-01` **§E.3.3 已裁决**「不一致 ⇒ 该 network **不得用 M-2**」—— 是**禁止共享池**不是**非法拓扑**（全局口径与已签发 ADR 冲突）② CEP 的存在意义 = **跨协议对比** ⇒ 各协议 VC 分配天然不同 ③ 全局口径**落地即红**，唯一出路是改 `tilelink_c` 的 `vc_binding`（篡改协议映射）或踢出 `compute_noc`（篡改拓扑）⇒ **为让闸变绿而改数据** |
+| **T-C2-①** | **扩展 C-1′ 适用域**（在 `collective_plane_contract.hh` 的 V6-d 内实现 (a)+(b)+C-1′-S），**不抽** `fabric_vc_consistency.hh`。❌ 否决「抽 network-agnostic 判据」 | 选项 B 的**唯一卖点** = 「供装配闸共用」⇒ **实测 0 个 config 有多协议实例**（8 个 `configs/cep_*` 每个恰好 1 个 `protocol_instance`）⇒ 该共用点是**空场景** ⇒ 抽 header = 「for future use」死代码（正是 C1 的 **MUST-5** 刚删掉的那一类）。⚠️ **推翻了 §13.3「两条路都合法」的隐含对称** |
+| **U-3** | `compute_noc` 上 `tilelink_c` 的 VC 映射差异 = **已登记的合法协议差异**，⛔ **不改任何声明** | `ADR-CEP-01 E.3.3` 只裁决「该网不得用 M-2」，**未**裁决非法;`ADR-CEP-12` 决策 6 明确 VC 分配是 per-network。⚠️ **不伪造协议依据** —— 本仓无「`tilelink_c` vc1 承载 snoop」的规范引用 ⇒ 文档只写「按其自身 `vc_binding` 登记，本仓不主张其规范依据」 |
+
+**③ 方法论增量(本方案的核心发现)**
+
+- **把作用域从「自声明」改为「自校验」**：新增判据 **C-1′-S** = 对每个 `plane_binding` 指向 `is_local_model == false` 的 plane 的实例，其 `vc_binding` 里的**每个 network** 必须在 `certificate_scope` 内。今天 **绿**（`ualink_4 → ualink_fabric` ⊂ scope），变异 **红**。
+  ⇒ 关闭 **(a) 现有实现最大的隐藏缺口**：`certificate_scope` 写漏一个 network ⇒ 判据**静默不覆盖**且**无任何闸抱怨**。
+- **对 §13.3 表述的更正**：「`compute_noc` **无判定**」的根因**不是判据能力**（C-1′ 逻辑**已与 network 无关**，`collective_plane_contract.hh:905-946`），而是**作用域是自声明数据、无独立真源校验**。
+
+**④ C2 验收判据:台账原 4 条 + 新增 4 条**
+
+| # | 判据 | 决定性变异 |
+|:--:|---|---|
+| ⑤（新） | (b) 改某实例某 VC 的 `ordering`（`p2p_ordered` ↔ `unordered`）⇒ 必红 | (b) 的唯一决定性变异 —— **旧实现必绿**（`grep -c ordering_assumption` = **0**）⇒ 证明新判据有牙 |
+| ⑥（新） | C-1′-S：把 `compute_noc` 上某实例绑到 `FabricCollectivePlane` ⇒ 必红 | 红因须是「不在 certificate_scope」，⛔ 不是「plane 未登记」 |
+| ⑦（新） | 删某实例某 VC 的 `ordering` ⇒ 必红 | schema 仅 `minProperties: 1` ⇒ **挡不住**，只能靠判据 |
+| ⑧（新） | `certificate_scope` 清空 ⇒ 必红（⛔ 不是「无判定 ⇒ PASS」） | 与现有 `:901-904` 同型，作回归基线 |
+
+> ⚠️ 判据 ①（改某实例某 VC 的消息类 ⇒ 必红）**必须在 `certificate_scope` 内的 network 上做**；若在 `compute_noc` 上做而红 ⇒ **判据实现错了**（scope 泄漏），须回到 T-C2-⓪。
+
+**⑤ 事实基线(全部实测可复核)**
+
+`certificate_scope` = **1 项**(FabricCollectivePlane / ualink_fabric)· `compute_noc` = **7** 实例且 `tilelink_c` 在 vc 1/2/3 不同 · `ualink_fabric` = **3** 实例且 (a)(b) 全一致 · `plane_binding` = `{null, null, LocalCollectivePlane, FabricCollectivePlane}` · plane 注册表 3 项仅 `FabricCollectivePlane` 的 `is_local_model = false` · `vc_count` 均为 **4** · `ordering_assumption` 在 `collective_plane_contract.hh` **0 处** · 多协议实例装配场景 **0 个**。
+
+**⑥ 残余不可判项(登记,不静默)**
+
+- **R-1**:`plane_binding` 自身漏登记（实例实际用 fabric 承载 plane 但 `plane_binding` 为 null）⇒ C-1′-S 漏判 —— 自声明数据无独立真源。
+- **R-2**:「不一致的 network 确实走了 M-1」不可判（本仓无 M-1 配置载体）。
+⇒ 须在 C2 的 **C-4** 登记面体现（「登记 ≠ 达成」）。
+
+**⑦ 明确不做**:⛔ 不实施 M-1 回退机制 · ⛔ 不改 `compute_noc` / `tilelink_c` 声明 · ⛔ 不改 ADR 正文 · ⛔ 不抽 `fabric_vc_consistency.hh` · ⛔ 不把 `compute_noc` 加进 `certificate_scope`（它是 M-1 网络，不是"漏登"）。
+
+**⑧ 关联**:**§13.6 W0**（本 Entry 的判据）· **§13.3**（C2 定义，本 Entry 更正其一处理解）· **Entry #340**（串行执行序）· `ADR-CEP-01` §E.3.1 / §E.3.3 · `ADR-CEP-12` 决策 5/6 · `docs/architecture/cep/fabric-transport.md` R1/R5 · **Entry #342 / #343**（C1 的 MUST-5 先例：删半死分支）
