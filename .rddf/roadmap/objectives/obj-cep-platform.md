@@ -19107,7 +19107,7 @@ graph LR
 |:--:|---|---|
 | **W0**(architect 出 C2 方案) | ✅ **完成** | Entry #344 ①~⑧(T-C2-⓪ / T-C2-① / U-3)+ ⑨(K-1 / K-2) |
 | **W1**(C1 闸强度与工具补齐) | ✅ **完成并通过独立验收** | Entry #342(实施回执)· #343(F-1/F-2/F-4 修补)· verifier 报告 **9/9 AC PASS / 0 BLOCKER**(第 2 轮复验)· 实测 `ctest` **169/169** · `[cep]` **508 cases / 11516 assertions** · **35 闸 35/35 rc=0** · `artifact_count` 仍 **78** |
-| **W2**(C2 实施) | 🟡 **已立项**(2026-11-12)· 实施待开工 | Entry #345 · `openspec/changes/cpptlm-cep-transport-vc-consistency/`(4 文件 · 17 AC)· KPI 槽位 **0/3 → 1/3** |
+| **W2**(C2 实施) | 🟡 **实施中**(2026-11-12 开工授权) | **Entry #347**(授权)· **#345**(立项)· **#346**(metis gap 处置)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(TDD 5 步计划 · 10 个 WU)· `openspec/changes/cpptlm-cep-transport-vc-consistency/`(4 文件 · 17 AC)· KPI 槽位 **1/3** |
 | **W3**(C3)· **W4**(C4) | ⛔ **待立项**(D1 串行 ⇒ 须待 W2 归档) | — |
 
 > ⚠️ **C1 无 OpenSpec change**:C1 的产物 = 脚本 + 文档 ⇒ per 先例 `cpptlm-cep-b3b2-d4-trigger-probe` ⇒ **不占 KPI slot**(§13.1 的 C1 行「冻结面 = 无」与实际不符 —— C1 实际改了 `07 号` 索引段并**走了五步链**;该行是 2026-11-11 快照的表述,⛔ 不回改)。
@@ -19439,3 +19439,71 @@ graph LR
 **⑦ 关联**
 
 `Entry #345`(C2 立项)· **#344**(W0 + K-1/K-2)· metis 审查会话 `ses_e351691feffe8Pg9DLcm1xh1EW` · `openspec/changes/cpptlm-cep-transport-vc-consistency/{proposal,design,tasks}.md` + delta spec
+
+### Entry #347 — 2026-11-12 [build](**C2 实施开工授权** —— `cpptlm-cep-transport-vc-consistency` 实施期授权记录;**同时是冻结面五步链的 `--authorized-by` 依据**)
+
+**主题**:per 用户口令「现在开 A0 授权门」⇒ 执行 `tasks.md` 的 **A0 授权门(G1)** —— 授权 `cpptlm-cep-transport-vc-consistency` 进入实施期。**⛔ 本 Entry 不含任何实施代码**。
+
+> ⚠️ **授权号 = `Entry #347`** —— **⛔ 不是 `Entry #346`**(后者已被 metis gap 分析处置占用,per **Entry #346** ⑨)。按 **C1 先例**(Entry #342 = 「C1 开工授权 + 实施回执」且同时充当 `--update --authorized-by` 的授权依据)⇒ **本 Entry 同时是 A6.2 / A9.2 的授权记录**。
+
+**① 授权范围**
+
+| 面 | 授权内容 |
+|---|---|
+| **实施** | `openspec/changes/cpptlm-cep-transport-vc-consistency/` 的 **A1 ~ A9** 全部任务(62 项) |
+| **源码** | ⛔ **仅** `include/tlm/cep/collective_plane_contract.hh`(`VcBindingSnapshot` +1 字段 + 2 条子判据 + 成功 detail 措辞)—— **CP-03 共享头** |
+| **测试** | ⛔ **仅** `test/test_cep_ualink_inc.cc`(既有 V6-d 四证书的载体面) |
+| **冻结面(3 处)** | `docs/architecture/cep/fabric-transport.md` · `docs/adr/ADR-CEP-01-fabric-collective-plane.md` · `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` ⇒ ⛔ **ADR 只允许末尾追加 `## Status Update`**(正文逐字不改) |
+| **契约** | `openspec/changes/cpptlm-cep-transport-vc-consistency/specs/cep-collective-plane-contract/spec.md` 的 delta;⛔ **不改** main spec(归档时才合并 ⇒ 触发**第二次**五步链) |
+| **⛔ 冻结面外** | **零**声明数据改动 · **零** ADR 正文改动 · **零** main spec 改动 · **零**新闸 · **零**既有 fixture 变异形态改动 |
+
+**② A0 门四项的实测回执**
+
+| # | 任务 | 实测 |
+|:--:|---|---|
+| **A0.1** | 授权 Entry | ✅ 本条(**Entry #347**)—— 授权号落定,`tasks.md` A6.2 的占位符同步改为 `#347` |
+| **A0.2** | §13 实施路径推进 | ✅ §13.9 的 **W2** 行 → **实施中**(见下「③ §13.9 同步」) |
+| **A0.3** | 声明数据零改动基线 | ✅ `git diff --exit-code -- <4 文件>` **rc=0**;4 个 sha256 已记录(见下「④ 基线指纹」)⇒ **AC-13 的起点** |
+| **A0.4** | 既有 V6-d 四证书基线 | ✅ `./build/bin/cpptlm_tests "[cep][ualink-inc]"` ⇒ **All tests passed(294 assertions in 12 test cases)** —— 改动前的对照 |
+
+**③ §13.9 同步(W2 → 实施中)**
+
+| 波次 | 状态 | 回执 |
+|:--:|---|---|
+| **W2**(C2 实施) | 🟡 **实施中**(2026-11-12 开工授权) | **Entry #347**(授权)· **#345**(立项)· **#346**(metis gap 处置)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(TDD 5 步计划 · 10 个 WU)· `openspec/changes/cpptlm-cep-transport-vc-consistency/`(4 文件 · 17 AC)· KPI 槽位 **1/3** |
+
+**④ 基线指纹(A0.3 的内容级守门起点)**
+
+| 文件 | sha256(前 16 位) |
+|---|---|
+| `include/tlm/cep/protocol_instances.json` | `628fedbc4ec49ef5` |
+| `include/tlm/cep/collective_planes.json` | `e933b5d357d9718f` |
+| `include/tlm/cep/fabric.json` | `296b8981c3a09e91` |
+| `include/tlm/cep/protocol_instance.schema.json` | `45f44277a4b2c033` |
+
+⇒ 实施期终态(A6.5)逐个比对 ⇒ ⛔ 除「零 diff」外再加一道**内容级**守门。
+
+**⑤ TDD 计划落盘**
+
+`.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(新建 · **TDD 5 步** · 10 个 Work Unit)—— per C1 先例(C1 有 `.rddf/plans/cpptlm-cep-gate-strength-tooling.md`,147 行)。
+> ⚠️ 该 plan 是 `tasks.md` 的 **TDD 5 步展开**,⛔ **不新增决策** —— 任何新取舍须回 architect。**9 处关键约束**逐条锚定来源(`kContractRuleCount == 6` 硬断言 / 归因尾部空格 / `U-3` 零声明改动 / `K-1` 不扩 `UntestedRegistry` / `T-C2-⓪` 条件化口径 / 禁双实现 / 产物 commit 先于 `--update` / `openspec` MODIFIED 场景名守恒 / ⛔ 不改既有 C-3 fixture 变异形态)。
+
+**⑥ 冻结面五步链(本 Entry = 步骤 1)**
+
+```
+① 本 Entry(#347) 授权  ← ✅ 本条
+② 产物 commit(源码 + 测试 + 3 份文档 + delta spec,一次 commit)
+③ bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #347"
+④ 清单 commit(docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json)
+⑤ 无参复验:bash scripts/test/cep_freeze_check.sh   ⇒ rc=0
+```
+
+> ⚠️ **产物 commit 必须先于 `--update`**(per C1 已验证的顺序,Entry #342);⚠️ `artifact_count` **不新增**(= 78,3 处产物**已在**冻结集内 ⇒ 只改 hash);⚠️ **归档时另有第二次五步链**(A9.2,main spec 合并 ⇒ `openspec/specs/cep-*/spec.md` glob 命中)。
+
+**⑦ 本 Entry ⛔ 明确不做**
+
+⛔ 零实施代码(判据实现与反向 fixture 属 A1~A3)· ⛔ 零 ADR 改动 · ⛔ 零声明数据改动 · ⛔ 零 main spec 改动 · ⛔ 未新增任何闸 · ⛔ 未改既有 C-3 fixture 的变异形态 · ⛔ 未改 `kContractRuleCount`(`== 6` 是硬断言)。
+
+**⑧ 关联**
+
+**Entry #346**(metis gap 分析处置 · 18 条建议全量落盘)· **#345**(C2 立项)· **#344**(W0 + K-1/K-2 裁决)· `#342` / `#343`(C1 开工授权 + 验收修补 —— **五步链先例**)· `.rddf/reviews/cep-c2-vc-consistency-decision.md` · `.rddf/plans/cpptlm-cep-transport-vc-consistency.md` · `openspec/changes/cpptlm-cep-transport-vc-consistency/`
