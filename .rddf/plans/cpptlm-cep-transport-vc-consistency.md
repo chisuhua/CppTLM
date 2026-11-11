@@ -105,17 +105,17 @@
 ### WU-5 · 文档同步(G4 前半 · A5)
 
 - [ ] **A5.1~A5.4** `docs/architecture/cep/fabric-transport.md`:R5 表「当前机器判定」列逐条更新 · R1 段 scope 表述订正 · **写明 `R1-a ≡ C-1′`** · `:145` 的 `R1-c` 悬空引用改为「已由 `R1-c` 判据覆盖」
-- [ ] **A5.5** 「诚实边界」段登记 **L-4 / L-5**(`R-1` / `R-2`)+ 该段 **⛔ 不含**「已验证 / 已满足」字样(per **AC-16** —— ⛔ **措辞核对**,非红/绿闸)
-- [ ] **A5.6** 写明地位差异:`U-1`/`U-2` **有** C-4 机器守门 / `R-1`/`R-2` **没有**(per **AC-17**)
+- [x] **A5.5** 「诚实边界」段登记 **L-4 / L-5**(`R-1` / `R-2`)+ 该段 **⛔ 不含**「已验证 / 已满足」字样(per **AC-16** —— ⛔ **措辞核对**,非红/绿闸)
+- [x] **A5.6** 写明地位差异:`U-1`/`U-2` **有** C-4 机器守门 / `R-1`/`R-2` **没有**(per **AC-17**)
 - [ ] **A5.7 / A5.7b** 登记 **L-1 / L-2 / L-3 / L-6 / L-7** + **`:129` / `:142`** 的「四证书」同步改为六条(per metis **P1-14**)
 - [ ] **A5.8 / A5.9** `docs/adr/ADR-CEP-01-*.md` / `ADR-CEP-12-*.md` **末尾追加** `## Status Update`(⛔ **正文逐字不改**)
 
 ### WU-6 · 契约 delta(G4 后半 · A7)
 
-- [ ] **A7.1** delta:`MODIFIED` `cep-collective-plane-contract-shared-mode-certificate` —— 既有 6 个 Scenario **逐字保留** + 新增 **4** 个(`R1-b` / `R1-c` / **既有归因前缀不变** / 真实 gate 路径)
-- [ ] **A7.2** ⛔ **不新增 `Requirement`**(与「不新增 `ContractRule`」同型)
-- [ ] **A7.3** ⛔ 不改 `openspec/specs/cep-collective-plane-contract/spec.md`(归档时才合并 ⇒ **另行触发**五步链)
-- [ ] **A7.4** `openspec validate cpptlm-cep-transport-vc-consistency --strict` ⇒ rc=0
+- [x] **A7.1** delta:`MODIFIED` `cep-collective-plane-contract-shared-mode-certificate` —— 既有 6 个 Scenario **逐字保留** + 新增 **4** 个(`R1-b` / `R1-c` / **既有归因前缀不变** / 真实 gate 路径)
+- [x] **A7.2** ⛔ **不新增 `Requirement`**(与「不新增 `ContractRule`」同型)
+- [x] **A7.3** ⛔ 不改 `openspec/specs/cep-collective-plane-contract/spec.md`(归档时才合并 ⇒ **另行触发**五步链)
+- [x] **A7.4** `openspec validate cpptlm-cep-transport-vc-consistency --strict` ⇒ rc=0
 
 ### WU-7 · 冻结链(G5 · A6)
 

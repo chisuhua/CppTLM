@@ -19804,3 +19804,56 @@ graph LR
 **⑪ 关联**
 
 **Entry #347**(A0 授权)· **#348**(A1)· **#349**(A2)· **#350**(A3)· **#346**(metis gap 处置 —— P0-2 的「版本无关探针」/ P0-7 的「`find` 而非 `rfind`」在本条**双落地**)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-4)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A4 段)
+
+### Entry #352 — 2026-11-12 [build](**C2 · A5 文档同步 + A7 契约 delta** —— 3 处冻结产物 + delta 内部矛盾修复;**G4 门达成**)
+
+**主题**:per 用户口令「开 A5」⇒ 执行 `tasks.md` 的 **A5**(文档同步)+ **A7**(契约 delta)。**⇒ G4 达成**。**⛔ 本 Entry 只改工作区**,产物 commit 与五步链在 **A6**。
+
+**① A5 落地内容(3 处冻结产物)**
+
+| # | 文件 | 改动 | 落点 |
+|:--:|---|---|---|
+| **A5.1~A5.4** | `docs/architecture/cep/fabric-transport.md` | ① **R5 表**「当前机器判定」列逐条更新(R1 行不再写「(b) 无载体」/「`compute_noc` 无判定」;R3 行「M-2 四证书」→「M-2 **六**证书」)② **R1 段**新增「作用域 = 条件化口径」框(`compute_noc` 按 `ADR-CEP-01 §E.3.3` **不属 M-2** ⇒ **按裁决不判**,⛔ 非「未覆盖」)③ **写明 `R1-a ≡ C-1′` 映射**(新增「命名映射」段)④ **`:145` 的 `R1-c` 悬空引用处置** ⇒ 改为「`R1-a`/`R1-b`/`R1-c` 三条**均已机器化**」 |
+| **A5.5~A5.7b** | 同上 | ⑤ **诚实边界段**登记 **R-1 / R-2**(残余不可判项)+ **L-1 / L-2 / L-3 / L-6 / L-7**(五条表征局限)⑥ **地位差异**(`U-1`/`U-2` **有** C-4 机器守门 / `R-1`/`R-2` **没有**、不参与任何闸)⑦ **`R1-b` 兑现既有承诺**的说明(`protocol_instance.schema.json` 早宣称「一致性由装配期校验承担」而 `INV-CEP-12-IC2` 只保证 key 可解析 ⇒ 该承诺此前**无承担者**)⑧ **「下一步」段**改为「已完成(2026-11-12)」 |
+| **A5.8** | `docs/adr/ADR-CEP-01-fabric-collective-plane.md` | **末尾追加** `## Status Update 2026-11-12`(`R1-c` 的规约锚点)—— 背景(§E.3.3 只定义参照集、**从未规定「哪些 network 需被检查」**)+ 决策(5 步判定序列 s-1~s-5)+ ⛔ 三件明确不做 + 已知边界(R-1 / L-6 / L-7)+ 5 条 Verification。⛔ **正文与既有 SU 逐字未变**;⛔ **新增 invariant 数 = 0** |
+| **A5.9** | `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` | **末尾追加** `## Status Update 2026-11-12`(`R1-b` 的规约锚点)—— 背景(**决策 5 的承诺此前无承担者** = 已存在的**决策-实现缺口**)+ 决策(b-1~b-4 判定序列 + 实例集合口径)+ ⛔ 五件明确不做 + 已知边界(L-1 / L-2 / L-3)+ 6 条 Verification。⛔ **正文与既有 SU 逐字未变**;⛔ **不改 `protocol_instance.schema.json` 的 description** |
+
+**② A7 契约 delta —— 修掉一处**内部矛盾**(实施期发现)**
+
+delta 的 `:41`(V6-d Scenario)已写 `R1-c` 在「循环**之后**、`C-4` 之前」,但 `:173`(R1-c Scenario **内部**)仍写「循环**之前**」⇒ **同一份 delta 内自相矛盾**,且与实现(A3 落地为「循环之后」)**不一致** ⇒ 已统一为「循环之后、`C-4` 之前」+ 补「⛔ 不放循环之前」的**理由**(既有 C-3 fixture 的归因抢占)+ 补 **L-6 代价**(first-failure-wins ⇒ scope 缺口可能被遮蔽)。
+> 📌 **这条矛盾是 A5 逐字核对时才发现的** —— 若不做逐字核对,一份自相矛盾的 delta 会一路合进 main spec。
+
+**③ AC-16 / AC-17 的字面核对(实测)**
+
+| AC | 判据 | 实测 |
+|:--:|---|---|
+| **AC-16** | 诚实边界段 ⛔ 不含「已验证 / 已满足」字样 | ✅ 「已验证」= **0** 次 · 「已满足」= **0** 次 |
+| **AC-17** | 文档须写明 ① `R1-a ≡ C-1′` 映射 ② 地位差异 | ✅ 映射在 `:142`;地位差异在 `:138-139` |
+
+> ⚠️ **措辞调整留档**:初稿引用 C-4 守门时写「未被冒充成**已满足**」⇒ 命中 AC-16 的字面 ⇒ **已改为**「未被冒充**为达成**」(语义不变,字面归零)⇒ **「措辞核对」判据必须逐字跑,不能靠语义判断**。
+
+**④ 实测闸(A5 后 —— 冻结链**预期红**)**
+
+| 面 | 实测 | 判定 |
+|---|---|---|
+| `openspec validate cpptlm-cep-transport-vc-consistency --strict` | ✅ **valid** | ✅ |
+| `bash scripts/test/docs_sync_check.sh --strict` | **rc=0** | ✅ |
+| `bash scripts/test/cep_doc_ref_check.sh` | **rc=0** | ✅ |
+| `python3 scripts/test/agents_md_lint.py` | **rc=0** | ✅ |
+| `[cep]` Catch2 | ✅ **512 cases / 11672 assertions**(文档改动**零**影响) | ✅ |
+| `cep_freeze_check` | ❌ **0 缺失 / 3 被改 / 0 未登记** | ⚠️ **预期红**(五步链在 A6)—— 与 design **D-8** 的预期**逐字一致** |
+| `ctest` | ❌ **3 项失败**:`cep_docs_sync_check`(#90)· `cep_freeze_check`(#142)· `cep_freeze_reverse_verify`(#158) | ⚠️ **全部同源** = 冻结链预期红(与 C1 实施期 Entry #342 的现象**完全一致**)⇒ **A6 走完五步链后转绿** |
+
+**⑤ G4 门达成**
+
+| 门 | 内容 | 状态 |
+|:--:|---|:--:|
+| **G4** | **A5(文档 3 处)+ A7(契约 delta)** | ✅ **达成** —— 3 处冻结产物改动 + delta 内部矛盾修复 + AC-16 / AC-17 字面核对通过 |
+
+**⑥ ⛔ 本 Entry 明确不做**
+
+⛔ **未 commit 产物**(五步链在 **A6**)· ⛔ 未跑 `--update`(⇒ 冻结链**预期红**)· ⛔ 零实施代码改动 · ⛔ 未改任何 ADR **正文** · ⛔ 零声明数据改动 · ⛔ 未改 main spec · ⛔ 未合并 delta。
+
+**⑦ 关联**
+
+**Entry #351**(A4 并排取证)· **#350**(A3)· **#349**(A2)· **#348**(A1)· **#347**(A0 授权)· **#346**(metis gap 处置)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-5 / WU-6)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A5 / A7 段)

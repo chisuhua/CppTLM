@@ -106,16 +106,18 @@
 
 ## A5 · 文档同步(3 处冻结产物 · G4 前半)
 
-- [ ] A5.1 `docs/architecture/cep/fabric-transport.md` · **R5 表**「当前机器判定」列逐条更新(R1 行**不再**写「(b) 无载体」/「`compute_noc` 无判定」)
-- [ ] A5.2 同上 · **R1 段** scope 表述订正:「作用域 = 声明 M-2 的 network(`compute_noc` **按裁决不属 M-2**,非"未覆盖")」
-- [ ] A5.3 同上 · **写明 `R1-a ≡ C-1′` 映射**(否则读者以为 R1-a 无载体)
-- [ ] A5.4 同上 · **`:145` 的 `R1-c` 悬空引用处置** ⇒ 改为「已由 `R1-c` 判据覆盖」(per K-2:它**已由本 change 定义**,⛔ 不是「定义它还是删除它」二选一)
-- [ ] A5.5 同上 · **「诚实边界」段**登记 **L-4 / L-5**(`R-1` / `R-2`),且该段 **⛔ 不含**「已验证 / 已满足」字样(per **AC-16**;决定性变异:把 `R-1` 表述改成「已验证」⇒ 必红)
-- [ ] A5.6 同上 · **写明地位差异**:`U-1`/`U-2` **有** C-4 机器守门 / `R-1`/`R-2` **没有**(纯文档级)(per **AC-17**)
-- [ ] A5.7 同上 · 登记 **L-1**(单实例 network 空转)/ **L-2**((b) 只证跨实例一致)/ **L-3**(值域由既有 schema 闸挡)/ **L-6**(R1-c 置于循环后 ⇒ scope 缺口可能被 first-failure-wins 遮蔽)/ **L-7**(空 `plane_binding` ⇒ C-1′-S vacuous PASS)
-- [ ] A5.7b 同上 · **`:129`(R3 段「四条证书」)与 `:142`(R5 表「M-2 四证书」)**同步改为六条(per metis **P1-14**)⇒ ⛔ 不留读者可见的过时表述
-- [ ] A5.8 `docs/adr/ADR-CEP-01-fabric-collective-plane.md` · **末尾追加** `## Status Update`(C-1′-S 锚点)—— ⛔ **正文逐字不改**
-- [ ] A5.9 `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` · **末尾追加** `## Status Update`((b) 锚点 + IC2 职责边界澄清)—— ⛔ **正文逐字不改**
+- [x] A5.1 `docs/architecture/cep/fabric-transport.md` · **R5 表**「当前机器判定」列逐条更新(R1 行**不再**写「(b) 无载体」/「`compute_noc` 无判定」)
+- [x] A5.2 同上 · **R1 段** scope 表述订正:「作用域 = 声明 M-2 的 network(`compute_noc` **按裁决不属 M-2**,非"未覆盖")」
+- [x] A5.3 同上 · **写明 `R1-a ≡ C-1′` 映射**(否则读者以为 R1-a 无载体)
+- [x] A5.4 同上 · **`:145` 的 `R1-c` 悬空引用处置** ⇒ 改为「已由 `R1-c` 判据覆盖」(per K-2:它**已由本 change 定义**,⛔ 不是「定义它还是删除它」二选一)
+- [x] A5.5 同上 · **「诚实边界」段**登记 **L-4 / L-5**(`R-1` / `R-2`),且该段 **⛔ 不含**「已验证 / 已满足」字样(per **AC-16**;决定性变异:把 `R-1` 表述改成「已验证」⇒ 必红)
+- [x] A5.6 同上 · **写明地位差异**:`U-1`/`U-2` **有** C-4 机器守门 / `R-1`/`R-2` **没有**(纯文档级)(per **AC-17**)
+      > ✅ **实测**:诚实边界段字面核对 ⇒「已验证」= **0** 次 ·「已满足」= **0** 次(per **AC-16**);`R1-a ≡ C-1′` 映射已写入(`:142`)
+- [x] A5.7 同上 · 登记 **L-1**(单实例 network 空转)/ **L-2**((b) 只证跨实例一致)/ **L-3**(值域由既有 schema 闸挡)/ **L-6**(R1-c 置于循环后 ⇒ scope 缺口可能被 first-failure-wins 遮蔽)/ **L-7**(空 `plane_binding` ⇒ C-1′-S vacuous PASS)
+- [x] A5.7b 同上 · **`:129`(R3 段「四条证书」)与 `:142`(R5 表「M-2 四证书」)**同步改为六条(per metis **P1-14**)⇒ ⛔ 不留读者可见的过时表述
+- [x] A5.8 `docs/adr/ADR-CEP-01-fabric-collective-plane.md` · **末尾追加** `## Status Update`(C-1′-S 锚点)—— ⛔ **正文逐字不改**
+- [x] A5.9 `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` · **末尾追加** `## Status Update`((b) 锚点 + IC2 职责边界澄清)—— ⛔ **正文逐字不改**
+      > ✅ **实测**:`ADR-CEP-01` 791 行(+ 段)· `ADR-CEP-12` 1108 行(+ 段);**3 处产物全部改动** ⇒ `cep_freeze_check` 报「**0 缺失 / 3 被改 / 0 未登记**」⇒ 与 design D-8 的预期**逐字一致**(五步链在 **A6** 才走)
 
 ---
 
@@ -134,10 +136,11 @@
 
 ## A7 · 契约 delta(G4 后半 · **在 A6 之前**)
 
-- [ ] A7.1 delta spec: `MODIFIED` `cep-collective-plane-contract-shared-mode-certificate` —— 新增 **2 个 Scenario**((b) 排序假设逐 VC 一致 + 完备 / (C-1′-S) `(plane, network)` pair 完备性)+ 更新 V6-d Scenario 的「四条证书」表述为**六条**(C-1′ / C-2 / C-3 / C-4 / R1-b / R1-c)与归因前缀清单
-- [ ] A7.2 ⛔ **不新增 `Requirement`** —— 两条判据是既有 `cep-collective-plane-contract-shared-mode-certificate` 的**子判据**(⛔ 与「不新增 `ContractRule`」同型)
-- [ ] A7.3 ⛔ 不改 `openspec/specs/cep-collective-plane-contract/spec.md`(归档时才合并 ⇒ **另行触发**五步链)
-- [ ] A7.4 `openspec validate cpptlm-cep-transport-vc-consistency --strict` ⇒ rc=0
+- [x] A7.1 delta spec: `MODIFIED` `cep-collective-plane-contract-shared-mode-certificate` —— 新增 **2 个 Scenario**((b) 排序假设逐 VC 一致 + 完备 / (C-1′-S) `(plane, network)` pair 完备性)+ 更新 V6-d Scenario 的「四条证书」表述为**六条**(C-1′ / C-2 / C-3 / C-4 / R1-b / R1-c)与归因前缀清单
+- [x] A7.2 ⛔ **不新增 `Requirement`** —— 两条判据是既有 `cep-collective-plane-contract-shared-mode-certificate` 的**子判据**(⛔ 与「不新增 `ContractRule`」同型)
+- [x] A7.3 ⛔ 不改 `openspec/specs/cep-collective-plane-contract/spec.md`(归档时才合并 ⇒ **另行触发**五步链)
+- [x] A7.4 `openspec validate cpptlm-cep-transport-vc-consistency --strict` ⇒ rc=0
+      > ✅ **实测**:**valid**;并修掉 delta spec 的**内部矛盾** —— `:173`(R1-c Scenario 内)仍写「循环**之前**」,与 `:41` 的「循环**之后**」及实现**不一致** ⇒ 已统一为「循环之后、`C-4` 之前」+ 补「⛔ 不放循环之前」的理由与 L-6 代价
 
 ---
 
