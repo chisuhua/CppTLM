@@ -19297,3 +19297,16 @@ graph LR
 **⑦ 明确不做**:⛔ 不实施 M-1 回退机制 · ⛔ 不改 `compute_noc` / `tilelink_c` 声明 · ⛔ 不改 ADR 正文 · ⛔ 不抽 `fabric_vc_consistency.hh` · ⛔ 不把 `compute_noc` 加进 `certificate_scope`（它是 M-1 网络，不是"漏登"）。
 
 **⑧ 关联**:**§13.6 W0**（本 Entry 的判据）· **§13.3**（C2 定义，本 Entry 更正其一处理解）· **Entry #340**（串行执行序）· `ADR-CEP-01` §E.3.1 / §E.3.3 · `ADR-CEP-12` 决策 5/6 · `docs/architecture/cep/fabric-transport.md` R1/R5 · **Entry #342 / #343**（C1 的 MUST-5 先例：删半死分支）
+
+**⑨ K-1 / K-2 追加裁决(2026-11-12,per 用户「切 architect」⇒ 解除 C2 立项阻塞;architect 裁定、用户认可)**
+
+> 触发:metis 对 C2 improvement 草案的 gap 分析指出「C-4 的未检验项**没有可扩展落点**」(K-1)与「(b)/(C-1′-S) 的规约锚点未定」(K-2)。裁决全文见 `.rddf/reviews/cep-c2-vc-consistency-decision.md` **§9 / §10 / §11**。
+
+| # | 裁决 | 决定性依据 |
+|:--:|---|---|
+| **K-1** | `R-1` / `R-2` **不进 C-4**,落 `docs/architecture/cep/fabric-transport.md` 的**「诚实边界」段**（`:106-112`）。⛔ 不扩 `UntestedRegistry` · ⛔ 不新建登记面 | ① **语义类别不同**：`ADR-CEP-01 §E.3.4` 的 U-1/U-2 都是「**证书机制本身不可检验**」,而 R-1/R-2 是「**判据适用范围边界**」⇒ 混在一起会让 C-4 从「证书机制的诚实登记」漂移成「一切已知缺陷登记」⇒ 失去鉴别力。② **候选 (i) 是伪需求**：`UntestedRegistry` **本来就是可注入参数**（`collective_plane_contract.hh:1374-1378` 逐字写「将来出现第二个 M-2 使用方时**不必**改契约头」）⇒ 真问题是「该不该塞」而非「能不能」。③ **边际成本 0**：该文档已在 C2 修改清单内（五步链已计入） |
+| **K-2** | 锚点**按主题拆两处**：(b) → **`ADR-CEP-12`** 的 `## Status Update`,tag = **`[CP-03-VC-CERTIFICATE/R1-b]`**;(C-1′-S) → **`ADR-CEP-01`** 的 `## Status Update`,tag = **`[CP-03-VC-CERTIFICATE/R1-c]`**。⚠️ (a) 保留既有 `/C-1′` tag **不动**,文档写明「**`R1-a` ≡ `C-1′`**」 | ① **(b) 不是新增决策,而是兑现既有承诺**：`protocol_instance.schema.json:180` 的 description 早写「一致性由**装配期校验**承担(per `INV-CEP-12-IC2`)」,而 **IC2 全文只保证 key 可解析**（`ADR-CEP-12:160`）⇒ **该承诺至今无承担者** ⇒ 这是**已存在的决策-实现缺口**。② **(C-1′-S) 是 `E.3.3` 的适用域判据化**：`E.3.3` 定义「参照集 = 两域并集」但**从未规定「哪些 network 需被检查」**。③ **tag 形态符合既有纪律**（`:873-888` 四条共用 `CP-03-VC-CERTIFICATE` + `detail` 子标记;测试用**带 `]`** 的 `rfind` ⇒ 新 tag 不会被 `/C-1′]` 或 `[CP-03-VC-CERTIFICATE]` 误命中）;⛔ 不用 `C-1′-b`（借 `C-1′` 身份）· ⛔ 不新造顶层 id（违反 `:876`「⛔ 不新增 `ContractRule`」）。④ **`R1-c` 悬空引用自然收口**：`fabric-transport.md:145` 的 `R1-c` 全文从未定义 ⇒ 它**本来就在等这个判据** |
+
+**K-2 的主要成本(须在 C2 的 `tasks.md` 显式列出)**：两份 ADR 各追加 1 则 SU ⇒ `ADR-CEP-01` / `ADR-CEP-12` 均在冻结集 ⇒ **C2 的五步链从 1 处(`fabric-transport.md`)增至 3 处**。缓解:三处可在**同一次** `--update --authorized-by` 内一并重算,但**产物 commit 必须先于 `--update`**（C1 已验证的顺序,per Entry #342）。
+
+**对 C2 草案的连带修订(9 条,planner 回填)**：状态解阻塞 · 待裁项改「已裁」 · tag 钉死 · `R-1`/`R-2` 落点改「诚实边界段」 · AC-3/4/5/10/11/12 升级为「验红 + 验红因」 · AC-7 改为「`R1-c` 已由本 change 定义」 · AC-8 五步链 1 → 3 处 · 新增「`R-1`/`R-2` 可 grep 且不含『已验证/已满足』」的文字守门 AC · 新增「`R1-a` ≡ `C-1′` 映射 + 地位差异」文档 AC。

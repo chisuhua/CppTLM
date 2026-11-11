@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-12T04:40:00Z",
+  "updated_at": "2026-11-12T06:05:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-11T10:40:00Z",
-      "by": "user",
-      "reason": "用户口令「继续批2」⇒ 序列第 ⑧ 步。planner 已落 Entry #336(批 2 授权 + 回执 + 陈旧句核查;行号改用语义锚)。本回合 = builder:批 2 五步链(台账 Entry commit → 07 号产物 commit → --update → 清单单独 commit → 无参复验)。"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-11T12:00:00Z",
-      "by": "user",
-      "reason": "用户口令「继续批3」⇒ 序列第 ⑨ 步。architect 已完成批 3 拆分(总纲 1778→1440 · 8 篇子文档 495 行 · 46 个编号 heading 零丢失 · 文件性质声明 + 索引 C 8 行 + README Doc Map)。本回合 = builder:① doc_ref_check DOCS 加 8 篇子文档 ② 对齐清单 07号:310 锚点改指 cep/protocol-engine.md ③ 修台账 broken ref(docs/adr/ADR-CEP-12)④ 五步链。"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-11T13:20:00Z",
-      "by": "user",
-      "reason": "用户口令「继续批3」⇒ 序列第 ⑩ 步。批 3 拆分已完成并闸同步(总纲 1778→1440 · 8 篇子文档 563 行 · 46 编号 heading 零丢失 · DOCS +8 · 对齐锚点改指 cep/protocol-engine.md:16 · test_cep_schema.cc 改指子文档并重编译 · 508 cases 绿 · 3 处红全同源于冻结面)。本回合 = planner:Entry #337(批 3 授权 + 回执 + 闸假绿发现 + 陈旧链接勘误)。"
-    },
     {
       "role": "builder",
       "at": "2026-11-11T13:50:00Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-12T04:40:00Z",
       "by": "user",
       "reason": "用户口令「选A」⇒ 落 W0 方案到 .rddf/reviews/（architect 无权写该目录，按角色矩阵由 builder 落盘）+ 随后 C2 立项。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-12T05:10:00Z",
+      "by": "user",
+      "reason": "用户口令「切 planner 起 C2 立项」⇒ 依 W0 方案（.rddf/reviews/cep-c2-vc-consistency-decision.md，已过用户「选 A」）起草 cpptlm-cep-transport-vc-consistency improvement 5 段。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-12T05:40:00Z",
+      "by": "user",
+      "reason": "用户口令「切 architect」⇒ 裁 C2 立项的两个阻塞前置 K-1(R-1/R-2 登记落点)+ K-2((b)/(C-1′-S) 规约锚点)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-12T06:05:00Z",
+      "by": "user",
+      "reason": "用户口令「切 builder 落盘」⇒ 把 architect 的 K-1/K-2 裁决追加进 .rddf/reviews/cep-c2-vc-consistency-decision.md（该目录不在 arch_paths）。"
     }
   ],
   "auto_switch_window": null

@@ -98,7 +98,7 @@ CEP（Coherence Exploration Platform）的存在意义 = **跨协议对比**：�
 ### 决策
 
 > 在 `include/tlm/cep/collective_plane_contract.hh` 的 **V6-d** 内实现三项并列判据：**(a) 既有 C-1′** + **(b) 新增 ordering 一致性** + **(C-1′-S) 新增作用域完备性**。
-> **不新建 header**、**不抽** `include/tlm/cep/fabric_vc_consistency.hh`（假想文件名，本方案不创建）。
+> **不新建 header**、**不抽** `include/tlm/cep/fabric_vc_consistency.hh`（假想文件，已否决）（假想文件名，本方案不创建）。
 
 ### 为什么（否决 B 的决定性理由 = 实测空场景）
 
@@ -134,7 +134,7 @@ CEP（Coherence Exploration Platform）的存在意义 = **跨协议对比**：�
 | 选项 | 结论 | 理由 |
 |---|---|---|
 | **A · 扩展 C-1′ 适用域（+ 自校验 scope）** | ✅ **采纳** | 单一实现；无空场景预留；改动集中在一个文件 |
-| B · 抽 `include/tlm/cep/fabric_vc_consistency.hh`（假想文件）供装配闸共用 | ❌ 否决 | 共用消费者**实测 0 个**（F10）⇒ 半死代码 |
+| B · 抽 `include/tlm/cep/fabric_vc_consistency.hh`（假想文件，已否决）（假想文件）供装配闸共用 | ❌ 否决 | 共用消费者**实测 0 个**（F10）⇒ 半死代码 |
 | C · 只加 (b)、不动作用域 | ❌ 否决 | 作用域自声明的洞不补 ⇒ 「登记了但没有牙齿」在 (a) 侧继续存在 |
 
 ### 代价
@@ -182,7 +182,7 @@ CEP（Coherence Exploration Platform）的存在意义 = **跨协议对比**：�
 - ⛔ 不实施 M-1 回退机制（「不一致 ⇒ 回 M-1」仍靠人工）—— 不在 C2 范围。
 - ⛔ 不改 `compute_noc` / `tilelink_c` 的任何声明（U-3）。
 - ⛔ 不改 `ADR-CEP-01` / `ADR-CEP-12` 正文。
-- ⛔ 不抽 `include/tlm/cep/fabric_vc_consistency.hh`（假想文件）（T-C2-① = A）。
+- ⛔ 不抽 `include/tlm/cep/fabric_vc_consistency.hh`（假想文件，已否决）（假想文件）（T-C2-① = A）。
 - ⛔ 不把 `compute_noc` 加进 `certificate_scope`（它是 M-1 网络，不是"漏登"）。
 
 **残余不可判项（须在 C2 的 C-4 登记面体现）**：
@@ -204,3 +204,130 @@ CEP（Coherence Exploration Platform）的存在意义 = **跨协议对比**：�
 | 方案落 `.rddf/reviews/` | ✅ 本文件 |
 | ⛔ 不改 ADR | ✅ 0 处 ADR 改动 |
 | ⛔ 不占 D1 槽位 | ✅ 本文件不是 OpenSpec change |
+
+---
+
+## 9. K-1 裁决 —— `R-1` / `R-2` **不进 C-4**，落 `docs/architecture/cep/fabric-transport.md` 的「诚实边界」段
+
+> **触发**: C2 improvement 草案（`.rddf/improvements/cpptlm-cep-transport-vc-consistency.md`）的 `K-1` 待裁项 —— metis gap 分析指出「C-4 的未检验项没有可扩展的落点」。**architect 裁定，用户认可**（2026-11-12）。
+
+### 9.1 决策
+
+> `R-1`（`plane_binding` 漏登记 ⇒ C-1′-S 漏判）与 `R-2`（M-1 不可判）登记进 `docs/architecture/cep/fabric-transport.md` 已有的「**诚实边界**」段（`:106-112`）。
+> ⛔ **不扩 `UntestedRegistry`** · ⛔ **不新建独立登记面**。
+
+### 9.2 核实的决定性事实
+
+| # | 事实 | 来源 |
+|:--:|---|---|
+| A1 | `UntestedRegistry` **本来就是可注入参数**，注释逐字写「由调用方注入 ⇒ 本仓当前**唯一** M-2 使用方默认取 `default_untested_registry()` … **将来出现第二个 M-2 使用方时不必改契约头**」 | `include/tlm/cep/collective_plane_contract.hh:1374-1378` |
+
+⇒ **「扩展 registry 来源」是伪需求** —— 注入点早已存在。真问题是「**该不该**往里塞」，不是「能不能」。
+
+### 9.3 为什么（语义类别不同 —— 决定性）
+
+`ADR-CEP-01` §E.3.4 的 U-1 / U-2 属同一类：
+
+| 项 | 内容 | 类别 |
+|---|---|---|
+| U-1 | 「VC 隔离确实避免协议级死锁」(H6) —— M-2 **主动放弃**隔离 ⇒ 永远无法检验 | **证书机制本身不可检验** |
+| U-2 | 同 VC 内 coherence 与 collective 的相互阻塞 —— VC 级依赖图**不表达** | **机制表达力不足** |
+| **R-1 / R-2** | 自声明数据可能漏 / M-1 无载体 | **判据适用范围边界**（≠ 机制不可检验） |
+
+⇒ 混在一起会让 **C-4 的语义从「证书机制的诚实登记」漂移成「一切已知缺陷登记」** ⇒ 此后任何残余都会往 C-4 塞 ⇒ C-4 失去鉴别力。
+
+**边际成本为 0**：`docs/architecture/cep/fabric-transport.md` **本来就在 C2 的修改清单内**（判据③ R5 表同步 + R1 段订正 + `R1-c` 处置）⇒ 五步链成本已计入。
+
+### 9.4 选项对比
+
+| 选项 | 结论 | 理由 |
+|---|---|---|
+| **A · 进 `docs/architecture/cep/fabric-transport.md` 的诚实边界段** | ✅ **采纳** | 语义对位；文档已在 C2 清单内 ⇒ 边际成本 0；与既有 R1 边界登记同处 |
+| B · 扩 `UntestedRegistry` 使其含 R-1/R-2 | ❌ 否决 | 注入点已存在（A1 ⇒ 无技术障碍）⇒ 反对理由纯语义：会把「判据边界」混进「机制不可检验」，稀释 C-4 |
+| C · 新建独立登记面 | ❌ 否决 | **无消费者**（只有 2 条且不会再增长）+ 新文件是否入冻结集又需一裁 ⇒ 为不存在的增长预留 |
+
+### 9.5 代价（须在 C2 的文档改动中如实写明）
+
+- `R-1` / `R-2` **不会被任何闸校验**（C-4 的「存在 / 非空 / 未被冒充成已满足」机器检查**不覆盖**它们）⇒ 属**文档级登记**。
+- ⚠️ **必须在文档里写明地位差异**：U-1/U-2 有 C-4 机器守门「未被冒充成已满足」;R-1/R-2 **没有**。⛔ 不得让读者以为 R-1/R-2 也有机器守门。
+
+---
+
+## 10. K-2 裁决 —— 锚点**按主题拆两处**，tag 用 `R1-b` / `R1-c`
+
+> **触发**: 同一草案的 `K-2` 待裁项 —— 「(b) / (C-1′-S) 的规约锚点挂哪」。**architect 裁定，用户认可**（2026-11-12）。
+
+### 10.1 决策
+
+| 判据 | tag | 锚点（写进哪份 ADR 的 `## Status Update`） |
+|---|---|---|
+| (a) 类集合一致性（既有） | `[CP-03-VC-CERTIFICATE/C-1′]` **不动** | `ADR-CEP-01` §E.3.1 的 C-1′（既有） |
+| **(b) ordering 一致性** | **`[CP-03-VC-CERTIFICATE/R1-b]`** | **`ADR-CEP-12`** 的 `## Status Update` |
+| **(C-1′-S) scope 完备性** | **`[CP-03-VC-CERTIFICATE/R1-c]`** | **`ADR-CEP-01`** 的 `## Status Update` |
+
+### 10.2 核实的决定性事实
+
+| # | 事实 | 来源 |
+|:--:|---|---|
+| A2 | `INV-CEP-12-IC2` 全文 = 「`ordering_assumption` 的 `named_network` key **必须**解析到唯一 `vc_id`，否则配置加载 fail」 ⇒ **只**保证 key 可解析，**完全不涉及跨实例一致性** | `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md:160` |
+| A3 | 但 `include/tlm/cep/protocol_instance.schema.json` 的 description 写「…一致性由**装配期校验**承担（per `INV-CEP-12-IC2`）」 | `include/tlm/cep/protocol_instance.schema.json:180` |
+| A4 | 现有 tag 纪律：四条证书**共用** `CP-03-VC-CERTIFICATE`，靠 `detail` **子标记**区分，形态 = `[CP-03-VC-CERTIFICATE/<tag>]`;测试用 `rfind("[CP-03-VC-CERTIFICATE]", 0) == 0`（**带 `]`**） | `collective_plane_contract.hh:873-888` + `ualink_inc_state_spec.hh:597` + `test/test_cep_ualink_inc.cc:465-536` |
+| A5 | `fabric-transport.md:145` 写「R1-a 有载体但域未覆盖;**R1-b / R1-c** 无载体」，而 **`R1-c` 全文从未定义**（仅此一处出现） | `docs/architecture/cep/fabric-transport.md:140,145` |
+
+🔴 **A3 + A2 合起来是一个已存在的决策-实现缺口**：决策文本宣称「一致性由装配期校验承担（per IC2）」，而 **IC2 并不承担该职责** ⇒ 该承诺**至今没有承担者**。⇒ (b) 的 SU **不是新增决策**，而是**兑现已有文本的承诺**。
+
+⇒ A4 保证 `[CP-03-VC-CERTIFICATE/R1-b]` **不会**被 `[CP-03-VC-CERTIFICATE]` 或 `/C-1′]` 误命中（`]` 位置不同）。
+⇒ A5 保证 `R1-c` 的语义空缺**本来就在等这个判据**。
+
+### 10.3 为什么这样拆
+
+**(b) → `ADR-CEP-12`**：决策 5 就是 `ordering_assumption` 的定义。SU 内容 = 「决策 5 所称的『装配期校验』由 `R1-b` 承担;其作用域 = 声明 M-2 的 network（per `ADR-CEP-01 §E.3.3` 的条件化口径）;⚠️ `INV-CEP-12-IC2` 只保证 key 可解析，不承担跨实例一致性」。
+**⛔ 不改 `include/tlm/cep/protocol_instance.schema.json` 的 description** —— 它是决策 5 的转录;在 SU 里澄清即可，符合「ADR 不可变 + 追加 SU」。
+
+**(C-1′-S) → `ADR-CEP-01`**：§E.3.3 定义了「参照集 = 两域并集」+「不一致 ⇒ 该网不得用 M-2」，但**从未规定「哪些 network 需要被检查」**。SU 内容 = 「`E.3.3` 的适用域由 `certificate_scope` 声明;新增 `R1-c` 校验其完备性：对每个 `plane_binding` 指向 `is_local_model == false` 的 plane 的实例，其 `vc_binding` 中的每个 **`(plane, network)` 对**必须在 `certificate_scope` 内」。
+
+**tag 形态**：符合既有纪律（A4）—— 共用 `CP-03-VC-CERTIFICATE` 前缀 + `detail` 子标记，**⛔ 不新造顶层归因 id**，**⛔ 不用 `C-1′-b`**（`ADR-CEP-01` 的 `C-1′` 只定义槽位继承 = (a)，借它的名字会掩盖这是新决策）。
+
+**(a) 保留 `/C-1′` 不动**：它是 §E.3.1 四条证书体系的既有术语，改它会破坏 `test/test_cep_ualink_inc.cc:477/489` 的既有 fixture 且**无收益**。⇒ 只在 `docs/architecture/cep/fabric-transport.md` 写明映射「**`R1-a` ≡ `C-1′`**」。
+
+**`R1-c` 悬空引用自然收口**（A5）：`R1-c` 就是 C-1′-S ⇒ C2 的 AC-7 不再是「定义它还是删除」，而是「**它已由本 change 定义**」。
+
+### 10.4 选项对比
+
+| 选项 | 结论 | 理由 |
+|---|---|---|
+| **A · 按主题拆两处（`ADR-CEP-12` + `ADR-CEP-01`），tag = `R1-b`/`R1-c`** | ✅ **采纳** | 主题归属准确；(b) 能兑现 A3 的既有承诺;C-1′-S 是 `E.3.3` 的域判据化;`R1-c` 悬空引用同时收口 |
+| B · 两条都塞进同一份 ADR 的 SU | ❌ 否决 | 会让一份 ADR 承载另一个主题的决策（`ADR-CEP-12` 不定义 `certificate_scope` 的语义，`ADR-CEP-01` 不定义 ordering 语义） |
+| C · tag 用 `C-1′-b` / `C-1′-c` | ❌ 否决 | 借身份：`C-1′` 在 `E.3.1` 里只指槽位继承;且与 `docs/architecture/cep/fabric-transport.md` 的 `R1-b/R1-c` 编号**两套并存** |
+| D · 新造顶层归因 id（如 `CP-13`） | ❌ 否决 | 违反既有纪律（`collective_plane_contract.hh:873-877`「四条共用 `CP-03-VC-CERTIFICATE`」+ `:876`「⛔ 不新增 `ContractRule`」） |
+
+### 10.5 代价（本裁决的主要成本）
+
+1. **两份 ADR 各追加 1 则 SU** ⇒ `docs/adr/ADR-CEP-01-*.md` 与 `docs/adr/ADR-CEP-12-*.md` **均在冻结集**（glob `docs/adr/ADR-CEP-*.md`）⇒ **C2 的五步链从 1 处（`docs/architecture/cep/fabric-transport.md`）增至 3 处**。⚠️ 须在 C2 的 `openspec/changes/<name>/tasks.md` 显式列出。
+   - 缓解：三处可在**同一次** `cep_freeze_check.sh --update --authorized-by` 内一并重算;但**产物 commit 必须先于 `--update`**（C1 已验证的顺序，per 台账 Entry #342）。
+2. **`R1-a` / `C-1′` 双命名共存** ⇒ 文档须显式写映射，否则读者会以为 `R1-a` 无载体。
+3. 判据 ①（既有 (a)）的 tag 不变 ⇒ 既有 fixture 零改动 ✓;但也意味着 **4 条既有证书 + 2 条新判据 = 6 个 tag 形态** ⇒ C2 的 `AC-14`（tag 冲突回归）必要性上升。
+
+---
+
+## 11. 对 C2 improvement 草案的连带修订清单（planner 回填时须逐条落）
+
+| 草案位置 | 修订 | 依据 |
+|---|---|---|
+| `状态` | ⛔ 阻塞 → **可立项**（K-1/K-2 已裁） | §9 / §10 |
+| 待裁项 K-1 / K-2 | 改为「已裁（per 本文件 §9 / §10）」 | §9 / §10 |
+| What Changes #2 / #3 的 tag | 钉死 `R1-b` / `R1-c` | §10.1 |
+| What Changes #4 | 落点 = `docs/architecture/cep/fabric-transport.md` 的**诚实边界段**（⛔ 不是 C-4 / 不是新文件） | §9.1 |
+| AC-3 / 4 / 5 / 10 / 11 / 12 | 红因 tag 钉死 ⇒ 从「只验红」升级为「**验红 + 验红因**」 | §10.1 |
+| AC-7 | `R1-c` 不再是「定义或删除」，而是「**已由本 change 定义**」 | §10.3 |
+| **AC-8** | 五步链从 **1 处 → 3 处**（`docs/architecture/cep/fabric-transport.md` + `ADR-CEP-01` + `ADR-CEP-12`） | §10.5 |
+| **新增 AC** | `R-1`/`R-2` 在「诚实边界」段**可 grep 命中**且 **⛔ 不含「已验证 / 已满足」字样**（与 C-4 同型的文字守门） | §9.5 |
+| **新增 AC** | 文档显式写「`R1-a` ≡ `C-1′`」映射 + 「U-1/U-2 有机器守门 / R-1/R-2 **没有**」的地位差异 | §9.5 / §10.5 |
+
+---
+
+## 12. 边界说明
+
+- 本文件 §1~§8 = **W0** 产出（per 台账 Entry #344）;§9~§12 = **K-1/K-2 裁决**（architect 产出、用户认可后由 builder 落盘，per 本仓 `.rddf/reviews/` 不在 `arch_paths` 的分工）。
+- ⛔ **本文件不改任何 ADR / 声明数据 / 实施代码**;§10 的 SU 内容将在 **C2 实施期**写入 ADR（届时触发冻结面五步链）。
+- ⚠️ **本文件不是 OpenSpec change** ⇒ 不占 D1 槽位。
