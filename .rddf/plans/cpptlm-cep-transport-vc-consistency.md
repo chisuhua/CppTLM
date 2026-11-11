@@ -60,14 +60,14 @@
 
 ### WU-1 · 快照字段(G2 前半 · A1)
 
-- [ ] **A1.1** `VcBindingSnapshot` 新增**一个**字段 `per_network_orderings`(`network → vector<pair<instance_id, map<vc_string, ordering>>>`)—— per design **D-2**
+- [x] **A1.1** `VcBindingSnapshot` 新增**一个**字段 `per_network_orderings`(`network → vector<pair<instance_id, map<vc_string, ordering>>>`)—— per design **D-2**
       > ⛔ **不加** `plane_binding` 进快照(`decl.plane_binding` 已是唯一源 ⇒ 加了 = 双源死字段)
-- [ ] **A1.2** 收集口径 **逐字复刻** `per_network_mappings` 的 push 条件(`:691-692` 的 `if (!mapping.empty())`)=「该 network 的 `vc_binding` **至少含一个整数值**」⇒ ⛔ **不是**「有该 network 键」(per metis **P0-3**)
-- [ ] **A1.2b** loader 的缺失 / 畸形口径 6 行表(per metis **P1-10**):`ordering_assumption` 整体缺失 ⇒ 空映射(由 (b) 判红,⛔ **不是** `source_error`)· 非对象 ⇒ 按「缺声明」处理 · 实例缺 `id` / `id` 重复 ⇒ 置 `source_error`(⛔ **不静默排除**)
-- [ ] **A1.3** ⛔ 快照层**不判**一致性、**不吞**异常
-- [ ] **A1.4** `ordering` 的 key **保持字符串**形态(⛔ 不在快照层规范化 ⇒ 否则 AC-10② 的「前导零 ⇒ FAIL」无法检出)
-- [ ] **A1.5** 既有 `per_network_mappings` 的消费方(`:910` / `:923` / `test/test_cep_ualink_inc.cc:470`)**零改动**
-- [ ] **A1.6** **快照正控断言**:真实数据下 `per_network_orderings["ualink_fabric"].size() == 3` 且每条 key 集合 == `{"0","1","2","3"}`(per metis **P1-11**)⇒ 防 loader 少收集 ⇒ (b) 退化成 L-1 空转而 AC-2 仍绿
+- [x] **A1.2** 收集口径 **逐字复刻** `per_network_mappings` 的 push 条件(`:691-692` 的 `if (!mapping.empty())`)=「该 network 的 `vc_binding` **至少含一个整数值**」⇒ ⛔ **不是**「有该 network 键」(per metis **P0-3**)
+- [x] **A1.2b** loader 的缺失 / 畸形口径 6 行表(per metis **P1-10**):`ordering_assumption` 整体缺失 ⇒ 空映射(由 (b) 判红,⛔ **不是** `source_error`)· 非对象 ⇒ 按「缺声明」处理 · 实例缺 `id` / `id` 重复 ⇒ 置 `source_error`(⛔ **不静默排除**)
+- [x] **A1.3** ⛔ 快照层**不判**一致性、**不吞**异常
+- [x] **A1.4** `ordering` 的 key **保持字符串**形态(⛔ 不在快照层规范化 ⇒ 否则 AC-10② 的「前导零 ⇒ FAIL」无法检出)
+- [x] **A1.5** 既有 `per_network_mappings` 的消费方(`:910` / `:923` / `test/test_cep_ualink_inc.cc:470`)**零改动**
+- [x] **A1.6** **快照正控断言**:真实数据下 `per_network_orderings["ualink_fabric"].size() == 3` 且每条 key 集合 == `{"0","1","2","3"}`(per metis **P1-11**)⇒ 防 loader 少收集 ⇒ (b) 退化成 L-1 空转而 AC-2 仍绿
 
 ### WU-2 · 判据 (b)(G2 后半 · A2)
 

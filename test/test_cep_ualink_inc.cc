@@ -10,6 +10,7 @@
 
 #include "catch_amalgamated.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -445,6 +446,67 @@ TEST_CASE("UIA-07: ualink_4 实例已声明(路径 A 落地的有意变异点)",
     }
     // ⚠️ **负向 witness**:必须**恰好一条** `ualink_4`(重复登记 ⇒ 计数链与镜像闸会分叉)
     REQUIRE(n_ualink == 1u);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// V6-d 快照 —— `per_network_orderings` 字段(per C2 · Entry #347 · A1)
+// ══════════════════════════════════════════════════════════════════════════
+// ⚠️ **正控断言的意图**:该字段若**少收集**一条(⇒ (b) 的「跨实例全等」退化成
+//   **单实例自比** ⇒ 恒绿无鉴别力)而 (b) 的其它断言仍可能显示绿 ⇒ 必须在此**单独**钉住。
+TEST_CASE("V6-d 快照: per_network_orderings 收集口径与实例集合",
+          "[cep][ualink-inc][certificate][snapshot]") {
+    const auto snap = cep::load_vc_binding_snapshot(
+        std::string(CPPTLM_SOURCE_DIR) + "/include/tlm/cep/protocol_instances.json",
+        std::string(CPPTLM_SOURCE_DIR) + "/include/tlm/cep/fabric.json");
+    REQUIRE_FALSE(snap.source_error);
+
+    // ── 正控:`ualink_fabric` 上**恰 3 个**实例有 `vc_binding` ──
+    // (moesi_gpu / mesif / ualink_4 —— per `protocol_instances.json` 的实测)
+    const auto it = snap.per_network_orderings.find("ualink_fabric");
+    REQUIRE(it != snap.per_network_orderings.end());
+    REQUIRE(it->second.size() == 3u);
+
+    // ── 逐实例:携带 `instance_id` + 逐 VC 的 ordering ──
+    std::vector<std::string> ids;
+    for (const auto& [instance_id, orderings] : it->second) {
+        REQUIRE_FALSE(instance_id.empty());
+        ids.push_back(instance_id);
+        // 4 个 VC(0..3)全有 ordering 声明 —— 实测三实例皆为
+        // {0:unordered, 1:unordered, 2:unordered, 3:p2p_ordered}
+        REQUIRE(orderings.size() == 4u);
+        REQUIRE(orderings.count("0") == 1u);
+        REQUIRE(orderings.count("1") == 1u);
+        REQUIRE(orderings.count("2") == 1u);
+        REQUIRE(orderings.count("3") == 1u);
+    }
+    std::sort(ids.begin(), ids.end());
+    REQUIRE(ids == std::vector<std::string>{"mesif", "moesi_gpu", "ualink_4"});
+
+    // ── ⛔ **收集口径 MUST 与 `per_network_mappings` 逐字一致** ──
+    // (per metis P0-3:两个口径分叉 ⇒ (a)/(b) 的实例集合不同 ⇒ L-1 空转 / AC-9 误报)
+    // ⇒ 每个 network 上,两者的**实例条目数** MUST 相等。
+    for (const auto& [network, entries] : snap.per_network_orderings) {
+        const auto mit = snap.per_network_mappings.find(network);
+        REQUIRE(mit != snap.per_network_mappings.end());
+        REQUIRE(mit->second.size() == entries.size());
+    }
+
+    // ── `compute_noc` 上 7 个实例(其中 `tilelink_c` 的 ordering 与其余不同 ——
+    //    **合法协议差异**,per `U-3` ⇒ 此处只断言**被收集到**,⛔ 不断言一致)──
+    const auto cn = snap.per_network_orderings.find("compute_noc");
+    REQUIRE(cn != snap.per_network_orderings.end());
+    REQUIRE(cn->second.size() == 7u);
+
+    // ── key 形态 MUST 保持**字符串**(⛔ 不在快照层规范化)──
+    // ⇒ 「04」这类前导零 MUST **原样保留**到快照层 ⇒ 判据层才拦得住(AC-10②)
+    for (const auto& [network, entries] : snap.per_network_orderings) {
+        for (const auto& [instance_id, orderings] : entries) {
+            for (const auto& [vc_key, ordering] : orderings) {
+                REQUIRE_FALSE(vc_key.empty());
+                REQUIRE_FALSE(ordering.empty());
+            }
+        }
+    }
 }
 
 // ══════════════════════════════════════════════════════════════════════════

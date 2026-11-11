@@ -469,7 +469,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**(2026-11-10 实测,per `openspec list --json`;`cpptlm-cep-bridge-reattach-guard`(R-3 装配路径关口)已于本日归档 ⇒ slot 已释放,per 台账 Entry #320)⇒ **当前 Proposed 并发 = 0/3**。
+`openspec/changes/` 当前 **1 个 active**(`cpptlm-cep-transport-vc-consistency` —— C2 传输层 VC 语义一致性判据落地,2026-11-12 立项 ⇒ 占 1 个 slot,per 台账 **Entry #345**;实施期授权见 **Entry #347**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -19507,3 +19507,62 @@ graph LR
 **⑧ 关联**
 
 **Entry #346**(metis gap 分析处置 · 18 条建议全量落盘)· **#345**(C2 立项)· **#344**(W0 + K-1/K-2 裁决)· `#342` / `#343`(C1 开工授权 + 验收修补 —— **五步链先例**)· `.rddf/reviews/cep-c2-vc-consistency-decision.md` · `.rddf/plans/cpptlm-cep-transport-vc-consistency.md` · `openspec/changes/cpptlm-cep-transport-vc-consistency/`
+
+### Entry #348 — 2026-11-12 [build](**C2 · A1 快照字段落地** —— `per_network_orderings` + **KPI baseline 口径修补**(C2 立项时遗漏的回归))
+
+**主题**:per 用户口令「进入下一步」⇒ 执行 `tasks.md` 的 **A1 快照字段**(G2 前半)。**⛔ 本 Entry 不含判据实现**(那是 A2 / A3)。
+
+**① A1 落地内容(源码 + 测试 · 各 1 处改动)**
+
+| # | 任务 | 内容 |
+|:--:|---|---|
+| **A1.1** | 快照加**一个**字段 | `VcBindingSnapshot::per_network_orderings`(`network → vector<pair<instance_id, map<vc_string, ordering>>>`)—— ⛔ **不加** `plane_binding`(`decl.plane_binding` 已是唯一源 ⇒ 加了 = 双源死字段) |
+| **A1.2** | 收集逻辑 | 口径 **逐字复刻** `per_network_mappings` 的 push 条件(`if (!mapping.empty())`)=「该 network 的 `vc_binding` **至少含一个整数值**」⇒ 两字段实例集合**恒等**(per metis **P0-3**) |
+| **A1.2b** | loader 畸形口径 | 实例**缺 `id`** / `id` 非字符串 / `id` **重复** ⇒ `source_error`(⛔ **不静默排除**);`ordering_assumption` 整体缺失 / 非对象 ⇒ 空映射(由 (b) 判红,⛔ **不是** `source_error`) |
+| **A1.3 / A1.4** | 边界 | 快照层**不判**一致性、**不吞**异常;`ordering` 的 key **保持字符串** ⇒ 不做数值化 / 规范化(否则 AC-10② 的「前导零 ⇒ FAIL」无法检出) |
+| **A1.5 / A1.6** | 回归 + 正控 | 既有 `per_network_mappings` 消费方**零改动**;新增快照正控用例(含「两字段实例条目数逐 network 恒等」断言) |
+
+**② ⚠️ 施工期踩到的一个实现缺陷(已修 · 值得留档)**
+
+初版实现把「是否 push」的判定写成 `if (mapping.empty()) continue;`,但它**位于** `snap.per_network_mappings[...].push_back(std::move(mapping))` **之后** ⇒ `mapping` 已被 **move 空** ⇒ 该判定**恒真** ⇒ **全部**实例被跳过 ⇒ `per_network_orderings` 为空 ⇒ 新用例**红**(实测 `it != snap.per_network_orderings.end()` 失败)。
+⇒ **修法**:判定**必须在 `std::move` 之前取**(`const bool has_mapping = !mapping.empty();`)⇒ 并在代码注释里写明该陷阱(⛔ 「move 后判空」是 C++ 的经典坑)。
+> 📌 **教训(可复用)**:**任何「容器已 push 后再判原容器是否为空」的写法都是错的** ⇒ 判定一律前置取布尔快照。
+
+**③ ⚠️ 同时修补 C2 立项(Entry #345)时遗漏的一处回归 —— KPI baseline 口径漂移**
+
+**事实**:`ctest` 实测 **2 项失败**:`cep_docs_sync_check`(#90)· `cep_gate_selftest`(#130)。
+**归因**:C2 立项使 `openspec list --json` 的 active 由 **0 → 1** ⇒ `cep_docs_sync_check` 的断言①(KPI baseline == 实测)要求**全部活文档的当前态表述**同步为 `1/3`,而 **5 处**仍写 `0/3` ⇒ 断言红 ⇒ `cep_gate_selftest` 内部调该闸 ⇒ **同一根因**连带红。
+**核实**:`git stash` 掉 A1 改动后**仍失败** ⇒ **⛔ 非 A1 引入** ⇒ 是 **Entry #345 立项 commit 的回归**(当时未跑全量 ctest)⇒ **本条一并修补**。
+
+| # | 文件 | 位置 | 处置 |
+|:--:|---|---|---|
+| 1 | `.rddf/roadmap.md` | `:5` | `当前真实 baseline = 0/3` → `1/3`(补 C2 占位说明,保留 slot 释放的历史叙述) |
+| 2 | `.rddf/roadmap/phases/phase-10.md` | `:209` | 同上 |
+| 3 | `.rddf/roadmap/objectives/obj-cep-platform.md` | `§5.2` 活口径段 | `当前 **0 个 active**` → `当前 **1 个 active**`(`cpptlm-cep-transport-vc-consistency`)+ `并发 = 1/3` |
+| 4 | `.rddf/improvements/cpptlm-cep-umbrella.md` | `:306` | `0/3` → `1/3` |
+| 5 | `.rddf/improvements/cpptlm-cep-nvlink-sharp.md` | `:31` + `:211` | `当前实测 0/3` / `全局 baseline = **0/3**` → `1/3` |
+
+> ⚠️ **⛔ 只改「当前态」表述** —— 历史叙述(`旧值 → 新值` 型迁移叙述)由 `§11` 台账承载(append-only)⇒ **不动**。
+> 📌 **这条是本仓的通用纪律**:⛔ **立项 / 归档后必须跑全量 ctest** —— KPI baseline 是**跨文件的活口径**,立项动作会立即让 5 处文档失配(Entry #345 的教训)。
+
+**④ 实测闸(A1 落地后全绿)**
+
+| 面 | 实测 |
+|---|---|
+| **TDD 红 → 绿** | 红:`per_network_orderings` 成员不存在 ⇒ 编译失败(错误信息精确指向缺失成员);绿:`[cep][ualink-inc][snapshot]` ⇒ **All tests passed(108 assertions in 1 test case)** |
+| `ctest --test-dir build -j4` | ✅ **169/169 passed, 0 failed**(155.77s)—— 含新用例(509 cases 口径) |
+| `[cep]` Catch2 | ✅ **All tests passed(11624 assertions in 509 test cases)** —— 较基线(508 / 11516)**各 +1 / +108** ⇒ 正是新增的快照用例 |
+| 既有 `[cep][ualink-inc]` | ✅ **All tests passed(402 assertions in 13 test cases)** —— 较基线(12 / 294)**+1 / +108** ⇒ **既有 4 条证书的断言数未变** ⇒ 归因前缀未被抢 |
+| **35 个** `cep_*.sh` 闸 | ✅ **35/35 rc=0**;✗ 计数 **1** —— 唯一 1 条在 `cep_freeze_reverse_verify.sh` 的「**故意破坏**」步内 ⇒ 反向验证的**预期证据**(与 C1 基线同) |
+| `cep_docs_sync_check` | ✅ **Passed**(KPI baseline 1/3 一致) |
+| `cep_gate_selftest` | ✅ **Passed**(4/4 段 + 全部变异) |
+| 声明数据零改动 | ✅ `git diff --exit-code -- <4 文件>` **rc=0**;4 个 sha256 与 **Entry #347 ④** 记录**逐字一致** |
+| 遗留清扫 | ✅ 2 个改动文件内 **0** 处 TODO / FIXME / 调试日志 / 临时开关 |
+
+**⑤ ⛔ 本 Entry 明确不做**
+
+⛔ 零判据实现(A2 (b) / A3 (C-1′-S) 未动)· ⛔ 零 ADR 改动 · ⛔ 零声明数据改动 · ⛔ 零 main spec 改动 · ⛔ **未改既有 C-3 fixture 的变异形态** · ⛔ 未动 `certificate_scope` / `plane_binding` / `vc_binding` / `ordering_assumption` 任一字。
+
+**⑥ 关联**
+
+**Entry #347**(A0 授权门 · 本 change 的 `--authorized-by` 授权依据)· **#346**(metis gap 处置)· **#345**(C2 立项 · **本次修补其 KPI 口径遗漏**)· **#344**(W0 + K-1/K-2)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-1)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A0 / A1 段)

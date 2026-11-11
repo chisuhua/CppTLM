@@ -634,6 +634,24 @@ struct VcBindingSnapshot {
     /// ⚠️ **为什么需要**:`used` 只有**并集** ⇒ 无法判定 **C-1′** 的「该网全部有绑定的既有实例
     ///   的映射**逐类相等**」(两个实例可能用**同一对** vc ⇒ 并集相同但映射不同)⇒ 必须保留**逐实例**形态。
     std::map<std::string, std::vector<std::map<std::string, unsigned>>> per_network_mappings;
+    /// network → **逐实例**的 `(instance_id, {vc(string) → ordering})`
+    ///
+    /// ⚠️ **收集口径 = 该 network 上「有 `vc_binding`」的实例** ——「有」的定义 MUST
+    ///   **逐字复刻** `per_network_mappings` 的 push 条件(下方 loader 的
+    ///   `if (!mapping.empty())`)⇒ **该 network 的 `vc_binding` 至少含一个整数值**。
+    ///   ⛔ **不是**「`vc_binding` 有该 network 键」—— 值全非整数的条目会被 loader 跳过,
+    ///   两个口径分叉 ⇒ (a) 与 (b) 的实例集合不同 ⇒ L-1 空转 / AC-9 误报。
+    ///
+    /// ⚠️ **⛔ 不以 `ordering_assumption` 为驱动** —— 否则「有 `vc_binding` 却缺
+    ///   `ordering_assumption`」的实例会被**静默排除**(per AC-9)⇒ 某实例该 network 的
+    ///   `ordering_assumption` 缺失时,其 entry 的 ordering 映射为**空**(表示「未声明」)。
+    ///
+    /// ⚠️ **key 保持字符串形态** —— ⛔ **不在快照层做数值化 / 规范化**:
+    ///   否则「`"04"`(前导零)」这类 key 会被静默折成 `"4"` ⇒ AC-10② 的「前导零 ⇒ FAIL」
+    ///   将**无法检出**(per design D-2 ④)。
+    std::map<std::string,
+             std::vector<std::pair<std::string, std::map<std::string, std::string>>>>
+        per_network_orderings;
     bool source_error = false;
     std::string source_error_detail;
 };
@@ -670,6 +688,7 @@ inline VcBindingSnapshot load_vc_binding_snapshot(const std::string& protocol_in
     try {
         const auto pdoc = nlohmann::json::parse(proto);
         if (pdoc.contains("instances") && pdoc["instances"].is_array()) {
+            std::set<std::string> seen_ids;
             for (const auto& inst : pdoc["instances"]) {
                 if (!inst.is_object())
                     continue;
@@ -678,6 +697,20 @@ inline VcBindingSnapshot load_vc_binding_snapshot(const std::string& protocol_in
                 const auto& vb = inst["vc_binding"];
                 if (!vb.is_object())
                     continue;
+                // ── `instance_id` —— `per_network_orderings` 的逐实例标识 ──
+                // ⚠️ **缺 `id` / `id` 非字符串 / `id` 重复 ⇒ `source_error`**(配置错误)
+                //   ⇒ ⛔ **不静默排除** —— 否则红因指认不到人(per design D-2 的 loader 畸形口径表)。
+                if (!inst.contains("id") || !inst["id"].is_string()) {
+                    snap.source_error = true;
+                    snap.source_error_detail = "协议实例声明源某实例缺 `id` 或 `id` 非字符串";
+                    return snap;
+                }
+                const std::string instance_id = inst["id"].get<std::string>();
+                if (!seen_ids.insert(instance_id).second) {
+                    snap.source_error = true;
+                    snap.source_error_detail = "协议实例声明源 `id` 重复: " + instance_id;
+                    return snap;
+                }
                 for (auto net = vb.begin(); net != vb.end(); ++net) {
                     if (!net.value().is_object())
                         continue;
@@ -688,8 +721,36 @@ inline VcBindingSnapshot load_vc_binding_snapshot(const std::string& protocol_in
                             mapping[cls.key()] = cls.value().get<unsigned>();
                         }
                     }
-                    if (!mapping.empty())
+                    // ⚠️ **判定 MUST 在 `std::move` 之前取** —— `mapping` 被 move 后即为空
+                    //   ⇒ 事后判 `mapping.empty()` 恒真 ⇒ 会把**全部**实例跳过(实测踩过)。
+                    const bool has_mapping = !mapping.empty();
+                    if (has_mapping)
                         snap.per_network_mappings[net.key()].push_back(std::move(mapping));
+                    // ── `per_network_orderings` —— 收集 `ordering_assumption[network]` ──
+                    // ⚠️ **收集口径 MUST 逐字复刻上行的 push 条件**(`!mapping.empty()`)
+                    //   ⇒ 两个字段的实例集合**恒等**(per design D-2 ② / metis P0-3)。
+                    // ⚠️ **⛔ 不以 `ordering_assumption` 为驱动** —— 该 network 缺声明时
+                    //   本实例**仍**要被收集(其 ordering 映射为**空** = 「未声明」),
+                    //   否则缺声明的实例会被静默排除(per AC-9)。
+                    // ⚠️ **key 保持字符串** ⇒ 不做数值化 / 规范化(per design D-2 ④)。
+                    if (!has_mapping)
+                        continue;
+                    std::map<std::string, std::string> orderings;
+                    if (inst.contains("ordering_assumption") &&
+                        inst["ordering_assumption"].is_object()) {
+                        const auto& oa = inst["ordering_assumption"];
+                        const auto oit = oa.find(net.key());
+                        // ⚠️ `ordering_assumption[network]` **非对象** ⇒ 按「缺声明」处理
+                        //   (空映射)⇒ 由 (b) 的完备性判红(per design D-2 的 loader 畸形口径表)。
+                        if (oit != oa.end() && oit->is_object()) {
+                            for (auto vc = oit->begin(); vc != oit->end(); ++vc) {
+                                if (vc.value().is_string())
+                                    orderings[vc.key()] = vc.value().get<std::string>();
+                            }
+                        }
+                    }
+                    snap.per_network_orderings[net.key()].emplace_back(instance_id,
+                                                                        std::move(orderings));
                 }
             }
         }

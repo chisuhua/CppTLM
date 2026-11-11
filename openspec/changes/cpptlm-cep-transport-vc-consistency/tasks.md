@@ -27,16 +27,17 @@
 
 ## A1 · 快照字段(契约头 · `include/tlm/cep/collective_plane_contract.hh`)
 
-- [ ] A1.1 `VcBindingSnapshot` **新增一个**字段 `per_network_orderings`(`network → vector<pair<instance_id, map<vc_string, ordering>>>`)—— per design **D-2**
+- [x] A1.1 `VcBindingSnapshot` **新增一个**字段 `per_network_orderings`(`network → vector<pair<instance_id, map<vc_string, ordering>>>`)—— per design **D-2**
       > ⚠️ ⛔ **不加** `plane_binding` 进快照(`decl.plane_binding` 已是唯一源,`:181` / `:226-243`)⇒ 加了 = 双源死字段
-- [ ] A1.2 `load_vc_binding_snapshot` 的收集逻辑:遍历每个 instance 的 `vc_binding`,**对每个 network** 产出一条 entry;`ordering_assumption[network]` 缺失时其 ordering 映射为**空**(表示「未声明」)
+- [x] A1.2 `load_vc_binding_snapshot` 的收集逻辑:遍历每个 instance 的 `vc_binding`,**对每个 network** 产出一条 entry;`ordering_assumption[network]` 缺失时其 ordering 映射为**空**(表示「未声明」)
       > ⚠️ **收集口径 = 「有 `vc_binding` 的实例」** —— ⛔ **不得**以 `ordering_assumption` 为驱动(否则缺声明的实例被静默排除 ⇒ per **AC-9**)
       > ⚠️ **「有」的定义 MUST 逐字复刻** `per_network_mappings` 的 push 条件(`include/tlm/cep/collective_plane_contract.hh:691-692` 的 `if (!mapping.empty())`)⇒ **该 network 的 `vc_binding` 至少含一个整数值**;⛔ **不是**「`vc_binding` 有该 network 键」(值全非整数的条目会被现有 loader 跳过 ⇒ 两个口径分叉 ⇒ per metis **P0-3**)
-- [ ] A1.2b **loader 的缺失 / 畸形口径**(per metis **P1-10**,逐条钉死 ⛔ 不得静默):`ordering_assumption` 整体缺失 ⇒ 该 network 的 ordering 映射为**空**(由 (b) 判红,⛔ **不是** `source_error`)· `ordering_assumption[network]` **非对象** ⇒ 按「缺声明」处理(红因文本须可区分「缺声明」与「值非法」)· 实例**缺 `id`** / `id` 非字符串 / `id` **重复** ⇒ 置 `source_error`(配置错误;⛔ **不静默排除** ⇒ 否则 `instance_id` 无法定位)
-- [ ] A1.3 ⛔ 快照层**不判**任何一致性、**不吞**异常(`ordering_assumption` 缺失 = 数据缺失,由判据判红,⛔ 不是 `source_error`)
-- [ ] A1.4 ⛔ `ordering` 的 key **保持字符串**形态(⛔ 不在快照层规范化 —— 否则 AC-10② 的「前导零 ⇒ FAIL」将无法检出)
-- [ ] A1.5 既有 `per_network_mappings` 的消费方(`:910` / `:923` / `test/test_cep_ualink_inc.cc:470`)**零改动** ⇒ 既有 6 条反向 fixture 仍绿
-- [ ] A1.6 **快照正控断言**(per metis **P1-11**):真实 `include/tlm/cep/protocol_instances.json` 下 `per_network_orderings["ualink_fabric"].size() == 3`(`moesi_gpu` / `mesif` / `ualink_4`)且每条 entry 的 key 集合 == `{"0","1","2","3"}` ⇒ ⛔ **防止 loader 少收集一条 ⇒ (b) 退化成 L-1 空转**(而 AC-2 仍可能显示绿)
+- [x] A1.2b **loader 的缺失 / 畸形口径**(per metis **P1-10**,逐条钉死 ⛔ 不得静默):`ordering_assumption` 整体缺失 ⇒ 该 network 的 ordering 映射为**空**(由 (b) 判红,⛔ **不是** `source_error`)· `ordering_assumption[network]` **非对象** ⇒ 按「缺声明」处理(红因文本须可区分「缺声明」与「值非法」)· 实例**缺 `id`** / `id` 非字符串 / `id` **重复** ⇒ 置 `source_error`(配置错误;⛔ **不静默排除** ⇒ 否则 `instance_id` 无法定位)
+- [x] A1.3 ⛔ 快照层**不判**任何一致性、**不吞**异常(`ordering_assumption` 缺失 = 数据缺失,由判据判红,⛔ 不是 `source_error`)
+- [x] A1.4 ⛔ `ordering` 的 key **保持字符串**形态(⛔ 不在快照层规范化 —— 否则 AC-10② 的「前导零 ⇒ FAIL」将无法检出)
+- [x] A1.5 既有 `per_network_mappings` 的消费方(`:910` / `:923` / `test/test_cep_ualink_inc.cc:470`)**零改动** ⇒ 既有 6 条反向 fixture 仍绿
+      > ✅ **实测**:`[cep][ualink-inc]` ⇒ **All tests passed(402 assertions in 13 test cases)**(较基线 12 cases +294 assertions ⇒ **+1 case / +108 assertions** = 新增快照用例)
+- [x] A1.6 **快照正控断言**(per metis **P1-11**):真实 `include/tlm/cep/protocol_instances.json` 下 `per_network_orderings["ualink_fabric"].size() == 3`(`moesi_gpu` / `mesif` / `ualink_4`)且每条 entry 的 key 集合 == `{"0","1","2","3"}` ⇒ ⛔ **防止 loader 少收集一条 ⇒ (b) 退化成 L-1 空转**(而 AC-2 仍可能显示绿)
 
 ---
 
