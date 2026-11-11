@@ -571,6 +571,16 @@ set_tests_properties(cep_decl_alignment_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                                 SKIP_REGULAR_EXPRESSION "\\[SKIP\\]")
 
+# 声明对齐的**反向验证**(上者的「防自证」对手:40 条毒化副本)
+# ⚠️ **2026-11-12 补注册**(per 台账 Entry #343 = verifier 报告 F-1):本脚本此前**在
+#    `scripts/README.md` 守门表内且状态列写「✅ 生效」,却**从未** `add_test` ⇒
+#    **CI 从不执行它** ⇒ 「登记了,但没有牙齿」的同缺陷类(与 C1 同类,只是不在 C1 的 5 子项内)。
+#    2026-11-12 起**真进 CI**(实测 3 连跑 rc=0 · ~5.7s · 不写仓内文件 ⇒ 可安全并行)。
+add_test(NAME cep_decl_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_decl_reverse_verify.sh)
+set_tests_properties(cep_decl_reverse_verify
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # 预登记 out-of-scope 集合的**真源 ↔ 机器投影 drift 检测**
 # (per ADR-CEP-06 SU#2 ② 门禁②:objective §9.1 ② 表 ↔ experimental/preregistration.json
 #  逐假设集合相等 —— 两侧互为锁,单改一侧即红)

@@ -7,7 +7,7 @@ phase: phase-10
   - ADR-CEP-06
   - ADR-CEP-00A
   - ADR-CEP-12
-状态: 🟡 **待实施**（2026-11-12 起草;per 台账 Entry #340 §13.2 + oracle 审查「需改后批准」的 5 MUST 已全部落盘）
+状态: ✅ **已实施并验收**（2026-11-12 起草 → 实施 → 验收;per 台账 **Entry #342** 实施回执 + **Entry #343** 验收修补 + verifier 报告 `.rddf/reviews/cpptlm-cep-gate-strength-tooling-verify.md` —— **9/9 AC PASS**、0 BLOCKER）
 created: 2026-11-12
 ---
 
@@ -15,7 +15,7 @@ created: 2026-11-12
 
 **主题**: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台 —— CEP 闸强度与工具补齐
 
-> **状态**: 🟡 **待实施**（2026-11-12 起草;per 台账 Entry #340 §13.2「C1 · 闸强度与工具补齐」）
+> **状态**: ✅ **已实施并验收**（2026-11-12;per 台账 **Entry #342** 实施回执 + **Entry #343** 验收修补;verifier 报告 `.rddf/reviews/cpptlm-cep-gate-strength-tooling-verify.md` ⇒ **9/9 AC PASS**、**0 BLOCKER**）
 > **关联路线图**: [`phase-10`](../roadmap/phases/phase-10.md)(in-progress)+ [`objective-cep-platform`](../roadmap/objectives/obj-cep-platform.md)(§13 下一阶段任务梳理 + **Entry #340**)
 > **oracle 审查**: 1 轮,结论 = **需改后批准**（方向无错;5 MUST + 3 SHOULD + 2 NIT 全部落盘 —— 其中 **MUST-4 推翻了本设计初稿的 R-e 方案**(python 段**已有**集合判据 ⇒ 初稿的「新增集合判据」是重复造）、**MUST-5 删掉了 R-f 的「优先探测真实 trace」半死分支**）
 > **统一判据**: 每个被改的闸都必须有**一条决定性变异** —— 破坏 ⇒ 按**正确原因**红 ⇒ 还原 ⇒ 绿。⛔ **不得靠「文件消失」才红**（先例:[`cep_gate_selftest.sh`](../../scripts/test/cep_gate_selftest.sh) **:49-50** 的 fixture 老化记录 —— 旧写法删段时**意外截断整个文件** ⇒ 断言是靠「文件没了」才 fire,不是靠「真段被删」⇒ 2026-10-26 修正;同登记见台账 **Entry #331**）
@@ -94,15 +94,17 @@ created: 2026-11-12
 
 ## Acceptance
 
-- [ ] **AC-1（生成器幂等）**:对 `07 号` 连续跑 2 次生成器 ⇒ 产出**逐字相同**（零手抄 ⇒ 幂等）;且生成后 `git diff` **仅索引 A/B + 自述计数段**为空（索引 C 手工 ⇒ 该段**允许**有 diff）
-- [ ] **AC-2（决定性变异 · 索引完整性）**:`cep_index_position_check.sh` —— **删 `07 号` 一个 `## ` 段 ⇒ 闸必红**,且红因 = 「实际 `## ` 数 ≠ 自述数」（⛔ **不得**靠「文件消失」才红）;**改索引 A 行数 ⇒ 必红**;**改索引 B 行数 ⇒ 必红**
-- [ ] **AC-3（决定性变异 · 行号正确性）**:索引 A/B 的「**行**」列**逐行 == 生成时刻实际行号**（**实测基线:索引 A 当前 10/23 错**）⇒ **手工改乱任一索引行号 ⇒ 闸必红**（⛔ 不接受「只修计数不修行号」）
-- [ ] **AC-4（决定性变异 · 族名交叉校验）**:`cep_b3b2_deferral_check.sh` —— **删 1 族** / **同族加第 2 条** ⇒ 必红（**旧 python 段 `:26-48` 已覆盖,作回归基线**）;**新增靶子:改 `07 号` SU·六 名单中的一族名 ⇒ 必红**（这是**新**交叉校验的决定性变异 —— 旧判据对该变异**不红**,故能证明新判据有牙）;4 族齐且各 1 条 ⇒ 绿
-- [ ] **AC-5（强度可观测 · 不欺）**:b4 闸**输出含 `[synthetic-fixture]` 标注**且 **exit 0** ⇒ 可 `grep` 断言;闸头注释写明「本闸 = 文件层协议镜像校验;真实 run 的 h5 层校验归实验 4 件套运行时」⇒ ⛔ **不得**出现「已验证 trace 内容」类表述
-- [ ] **AC-6（路径漂移清零）**:`bash scripts/test/docs_sync_check.sh --strict` ⇒ **rc=0**（`scripts/README.md` 的 `fabric.json` 缺失路径归零）
-- [ ] **AC-7（闸注册 · 保持）**:`cep_index_position_check` / `cep_b3b2_deferral_check` / `cep_b4_observation_keys_check` **保持**在 `test/CMakeLists.txt` 的 `add_test`（**实测已注册** `:597` / `:708` / `:753`;⛔ **本 change 不动 CMakeLists**）+ `scripts/README.md` 闸表**有登记行**（含**新增 2 行**）⇒ `ctest --test-dir build -N` 能列出
-- [ ] **AC-8（0 回归）**:`ctest --test-dir build -j4` **全绿** + `[cep]` 全绿 + **35 个** `cep_*.sh` 闸 **rc + ✗ 计数双判全绿**
-- [ ] **AC-9（无自证）**:3 条新判据（AC-2 / AC-3 / AC-4 的**新靶子**）**不得**依赖「文件缺失 / 字符串自搜」这类恒真式;每条须有**独立于被测对象**的期望值来源（真源文件名 / 集合 / 实测行号）
+- [x] **AC-1（生成器幂等）**:对 `07 号` 连续跑 2 次生成器 ⇒ 产出**逐字相同**（零手抄 ⇒ 幂等）;且生成后 `git diff` **仅索引 A/B + 自述计数段**为空（索引 C 手工 ⇒ 该段**允许**有 diff）
+- [x] **AC-2（决定性变异 · 索引完整性）**:`cep_index_position_check.sh` —— **删 `07 号` 一个 `## ` 段 ⇒ 闸必红**,且红因 = 「实际 `## ` 数 ≠ 自述数」（⛔ **不得**靠「文件消失」才红）;**改索引 A 行数 ⇒ 必红**;**改索引 B 行数 ⇒ 必红**
+- [x] **AC-3（决定性变异 · 行号正确性）**:索引 A/B 的「**行**」列**逐行 == 生成时刻实际行号**（**实测基线:索引 A 当前 10/23 错**）⇒ **手工改乱任一索引行号 ⇒ 闸必红**（⛔ 不接受「只修计数不修行号」）
+- [x] **AC-4（决定性变异 · 族名交叉校验）**:`cep_b3b2_deferral_check.sh` —— **删 1 族** / **同族加第 2 条** ⇒ 必红（**旧 python 段 `:26-48` 已覆盖,作回归基线**）;**新增靶子:改 `07 号` SU·六 名单中的一族名 ⇒ 必红**（这是**新**交叉校验的决定性变异 —— 旧判据对该变异**不红**,故能证明新判据有牙）;4 族齐且各 1 条 ⇒ 绿
+  > ⚠️ **实施期订正(per 台账 Entry #342 §③)**:AC-4 原写的真源 **`07 号` SU·六** 在收口批(Entry #339)后**已是指针、不含族枚举** ⇒ 实际实现改对齐 **`obj §6.2` 的 `B3b-2` 行**(4 族枚举 + 分母 4)⇒ **语义不变**(仍是「脚本内硬编码名单 ↔ 外部真源」的漂移检测),但**靶点位置**变了。实施回执另记了 2 条新增靶子(**改真源分母** / **台账缺该行**)。
+- [x] **AC-5（强度可观测 · 不欺）**:b4 闸**输出含 `[synthetic-fixture]` 标注**且 **exit 0** ⇒ 可 `grep` 断言;闸头注释写明「本闸 = 文件层协议镜像校验;真实 run 的 h5 层校验归实验 4 件套运行时」⇒ ⛔ **不得**出现「已验证 trace 内容」类表述
+- [x] **AC-6（路径漂移清零）**:`bash scripts/test/docs_sync_check.sh --strict` ⇒ **rc=0**（`scripts/README.md` 的 `fabric.json` 缺失路径归零）
+- [x] **AC-7（闸注册 · 保持）**:`cep_index_position_check` / `cep_b3b2_deferral_check` / `cep_b4_observation_keys_check` **保持**在 `test/CMakeLists.txt` 的 `add_test`（**实测已注册** `:597` / `:708` / `:753`;⛔ **本 change 不动 CMakeLists**）+ `scripts/README.md` 闸表**有登记行**（含**新增 2 行**）⇒ `ctest --test-dir build -N` 能列出
+  > ⚠️ **验收后补充(per 台账 Entry #343 = verifier 报告 F-1)**:**C1 本身**确实**未动 CMakeLists** ✔;但验收发现的 `cep_decl_reverse_verify.sh`「在守门表却从未进 CI」属**独立一笔**(F-1)⇒ `test/CMakeLists.txt` 在 **Entry #343** 中被改(补 1 个 `add_test`)⇒ Total Tests **168 → 169**。**守门表仍 31 行、磁盘仍 35 个脚本** ⇒ 计数口径 31+2+2 = 35 **不变**。
+- [x] **AC-8（0 回归）**:`ctest --test-dir build -j4` **全绿** + `[cep]` 全绿 + **35 个** `cep_*.sh` 闸 **rc + ✗ 计数双判全绿**
+- [x] **AC-9（无自证）**:3 条新判据（AC-2 / AC-3 / AC-4 的**新靶子**）**不得**依赖「文件缺失 / 字符串自搜」这类恒真式;每条须有**独立于被测对象**的期望值来源（真源文件名 / 集合 / 实测行号）
 
 ---
 

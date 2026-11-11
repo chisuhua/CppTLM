@@ -74,10 +74,11 @@
 > 结果解读见 `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md`（含口径限定与反向 fixture 证据）。
 
 > 配套数据文件：`cep_doc_ref_aliases.tsv`（节号别名）/ `cep_doc_ref_registry.tsv`（语义 + 负向断言登记）。
-> **本表 29 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。⚠️ **2026-11-07 订正 + 缺口闭合**(per 台账 Entry #278):原写「**18 个**」—— 实测磁盘 `scripts/test/cep_*.sh` = **31** 个,原表内 **20** 个 / **11** 个未登记 ⇒ 本次**补齐 11 行** ⇒ 现**守门表 29** + **实验运行器 2** = **31** = 磁盘实际⇒ **「表内计数 ≠ 磁盘实际」的预存缺口已闭合**。⚠️ 另有 **3 个脚本此前既未注册 ctest 也未登记**(⇒ **从不被 CI 执行**,判据可能早已失效而无人知道):`cep_cxl_dcoh_adapter_reverse_verify.sh` / `cep_freeze_reverse_verify.sh` / `cep_tilelink_engine_failclosed.sh` ⇒ 实测三者均**跑绿**(12s / 1s / 4s)⇒ 属**注册债**而非判据漂移 ⇒ 本次**已注册进 ctest**。
+> **本表 31 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。⚠️ **2026-11-07 订正 + 缺口闭合**(per 台账 Entry #278):原写「**18 个**」—— 实测磁盘 `scripts/test/cep_*.sh` = **31** 个,原表内 **20** 个 / **11** 个未登记 ⇒ 本次**补齐 11 行** ⇒ 现**守门表 29** + **实验运行器 2** = **31** = 磁盘实际⇒ **「表内计数 ≠ 磁盘实际」的预存缺口已闭合**。⚠️ 另有 **3 个脚本此前既未注册 ctest 也未登记**(⇒ **从不被 CI 执行**,判据可能早已失效而无人知道):`cep_cxl_dcoh_adapter_reverse_verify.sh` / `cep_freeze_reverse_verify.sh` / `cep_tilelink_engine_failclosed.sh` ⇒ 实测三者均**跑绿**(12s / 1s / 4s)⇒ 属**注册债**而非判据漂移 ⇒ 本次**已注册进 ctest**。
 > ⚠️ **2026-11-03 订正**（队列 #13 实现层 / Entry #187）：原写「**15 个**」—— 该数是**表内登记行数**，而 `scripts/test/cep_*.sh` 的**磁盘实际**为 **19** 个（另 3 个未列入本表）
 > ⇒ **表内计数 ≠ 磁盘实际**；本表只登记**已纳入 ctest 的**脚本，差异项以 `ls scripts/test/cep_*.sh` 为准。
-> ⚠️ **2026-11-12 订正 + 缺口闭合**（per 台账 Entry #342）：守门表 **29 → 31** 行（补登 `cep_index_position_check.sh` / `cep_e2e_reconcile_check.sh`）⇒ **31（守门）+ 2（季度复审，刻意不入 ctest）+ 2（实验运行器）= 35 = `ls scripts/test/cep_*.sh` 实测**。⛔ 上方「本表 29 个脚本全部已注册进 `ctest`」的读法对**季度复审 / 实验运行器**两表**不成立** —— 那 4 个是**刻意不注册**（cadence 断言会让无关 PR 变红 / 属实验面非守门面）。
+> ⚠️ **2026-11-12 订正 + 缺口闭合**（per 台账 Entry #342）：守门表 **29 → 31** 行（补登 `cep_index_position_check.sh` / `cep_e2e_reconcile_check.sh`）⇒ **31（守门）+ 2（季度复审，刻意不入 ctest）+ 2（实验运行器）= 35 = `ls scripts/test/cep_*.sh` 实测**。⛔ 上方「本表 31 个脚本全部已注册进 `ctest`」的读法对**季度复审 / 实验运行器**两表**不成立** —— 那 4 个是**刻意不注册**（cadence 断言会让无关 PR 变红 / 属实验面非守门面）。
+> ⚠️ **2026-11-12 补注册**（per 台账 **Entry #343** = verifier 报告 **F-1**）：`cep_decl_reverse_verify.sh` 此前**在守门表内且状态列写「✅ 生效」,却从未 `add_test`** ⇒ **CI 从不执行它** ⇒ 「登记了,但没有牙齿」的同缺陷类。**已补注册进 ctest**（实测 3 连跑 rc=0 · ~5.7s · 不写仓内文件）⇒ 上方「本表 31 个脚本**全部**已注册进 `ctest`」自此**逐条成立**（可机器核:`ctest --test-dir build -N` 的 CEP 项覆盖守门表每个脚本名）。
 > ⚠️ **2026-11-03 补登**（队列 #13 Phase 3，Entry #184）：此前 **队列 #11 / #12 的两个反向脚本**
 > 虽已注册进 ctest，却**未列入本表**（预存登记缺口）⇒ 本次一并补上。
 > ⚠️ **2026-11-07 闭合**(per 台账 Entry #278):原「目录内另有 `cep_freeze_reverse_verify.sh` 与 `cep_gate_selftest.sh` 两个脚本**未列入本表**」的**预存登记缺口已消解** ⇒ 两者已登记入本表。

@@ -1328,7 +1328,7 @@ W1(独立)     B2(并行)     B1(A9 后,分批)
 | **残余** | **R-3** Step 7.5 重挂检测未做 | 本轮只有测试级 `[BSS-01]` | builder(另立 change) | 小 |
 | **周期** | **E1** D-4 季度探测 | ⚠️ cadence 脚本报 `CADENCE-NEVER-RUN` ⇒ **从未真实执行** | planner + 外部检索 | 季度 |
 | **周期** | **E2** 终态 DoD Go 复审 | `B3b-2` 仍 0/4 | planner | 季度 |
-| **可选** | ~~**O-1** 索引生成器入仓~~ ✅ **已闭合**(2026-11-12,per **Entry #342**)· **O-3** `cpptlm-cep-b3b2-d4-trigger-probe` 提案 · **O-4** `.arch-handoff.json` 陈旧(⇒ 继续走内置流程) · **O-5** session-bootstrap profile | — | planner | 低 |
+| **可选** | ~~**O-1** 索引生成器入仓~~ ✅ **已闭合**(2026-11-12,per **Entry #342**)· **O-3** `cpptlm-cep-b3b2-d4-trigger-probe` 提案 · **O-4** `.arch-handoff.json` 陈旧(⇒ 继续走内置流程) · **O-5** session-bootstrap profile · **O-6** 索引生成器 + 索引闸改**围栏感知**解析(围栏内 `## ` 现被**同口径**误计 ⇒ 两者一致、闸不红;⚠️ 当前 `07 号` 围栏内命中 **0** ⇒ 今天无实际错误;⛔ 须**两侧同时**改,只改一侧会让口径分裂 ⇒ 记 backlog,per **Entry #343** ⑤ / verifier 报告 **F-3**) | — | planner | 低 |
 
 #### ② 建议顺序(解锁最多 / 风险最低)
 
@@ -19197,3 +19197,54 @@ graph LR
 | 冻结面 | 无参复验 rc=0;provenance 自检通过(78 个产物 hash 与 commit `0704b7ca` 一致) |
 | 派生订正 | `obj` 的活状态行「索引生成器未入仓(backlog)」⇒ **已入仓**(§「登记态」+ O-1 行);`scripts/README.md` §子目录结构 补 `scripts/cep/` 行(该目录此前**整行缺失** —— 与 R-g 同一 defect class,且新工具落地后必须可被找到) |
 | 提交序 | `58bbc66e`(草案 + plan)→ `65608337`(本 Entry + §13.2)→ `0704b7ca`(产物 7 文件)→ `7e67d8ff`(冻结清单)→ 本回执 commit(**未 push**,等用户确认) |
+
+---
+
+### Entry #343 — 2026-11-12 [build](**C1 验收修补** —— verifier 报告的 F-1 / F-2 / F-4 处置;F-3 记 backlog)
+
+**主题**:per 用户口令「执行建议的下一步内容」⇒ 实施 verifier 验收报告(`.rddf/reviews/cpptlm-cep-gate-strength-tooling-verify.md`)的 **F-1 / F-2 / F-4**。**⛔ 零架构决策变更**(0 ADR / 0 schema / 0 声明面 / 0 ABI / 0 计数变化);**⛔ 不改 `07 号`** ⇒ **不需走冻结面五步链**。
+
+**① 授权与流程**
+
+- 用户口令「执行建议的下一步内容」⇒ 切 `builder`(verifier 只验不改 ⇒ 实施须回 builder)。
+- 判据来源 = verifier 报告的 **7 节**(9 条 AC 判定 + 4 项发现 + 路由建议);本条只做报告里**明确建议**的 3 项。
+- ⚠️ `rdd-builder` 前置 ② `.rddf/state/.planner-handoff.json` 不存在 ⇒ 走**角色内置流程**(轻量:3 项小修,零源码、零 ABI)。
+
+**② F-1 · `cep_decl_reverse_verify.sh` 从未进 CI ⇒ 补注册**
+
+| 项 | 内容 |
+|---|---|
+| **事实**(verifier 实测) | 它**在** `scripts/README.md` 守门表内、状态列写「✅ 生效」,但 `test/CMakeLists.txt` **无** `add_test` ⇒ 全仓**无任何闸或 ctest 项执行它**;而 `cep_decl_alignment_check.sh` 输出却称「4 条反向 fixture: ✓」⇒ 读者会误判已覆盖。**与 C1 同缺陷类(登记了,但没有牙齿)**,但不在 C1 的 5 子项内 |
+| **处置** | ① `test/CMakeLists.txt` 补 `add_test(NAME cep_decl_reverse_verify …)`;② `scripts/README.md:77` 的字面「**29 个**」→ **「31 个」**并订正 `:80` 的引用;③ 追加 2026-11-12 补注册注记 |
+| **为何选「补注册」而非「标注为手工覆盖」** | 补注册**不动任何计数口径**(该脚本本就在守门表内 ⇒ 守门表仍 31 行 ⇒ **31+2+2 = 35 = 磁盘实际** 不变)⇒ 改动面最小(1 个 `add_test` + README 措辞)且**真正消灭缺口**;标注法只是把「没有牙齿」改写成「明说了没有牙齿」 |
+| **实测** | `ctest --test-dir build -N` ⇒ 守门表 **31 个脚本名逐条出现,缺失 0** ⇒ README「本表 31 个脚本**全部**已注册进 `ctest`」自此**机器可核为真**;Total Tests **168 → 169**;该闸 3 连跑 rc=0 · ~5.7s · **不写仓内文件**(⇒ 可安全并行) |
+
+**③ F-2 · 生成器 `--write` 对「索引区间」内的外来内容静默删除 ⇒ 加护栏**
+
+| 项 | 内容 |
+|---|---|
+| **事实**(verifier 实测) | `--write` 重写的是「`## §末 文档索引` → `### 索引 C`」**整段区间** ⇒ 区间内任何**非生成块形态**的行被**静默删除**(实测:外来正文被删、索引却仍留一行指向它)⇒ **索引声称存在、正文没了**。当前 `07 号` 该区间**只有生成内容** ⇒ 今天无实际内容会被删;但 `--write` 是**破坏性**动作且**无任何告警** |
+| **处置** | `scripts/cep/generate_doc_index.py` 新增 `is_generatable()` / `find_foreign()` / `assert_block_generatable()`:**白名单** = 空行 / 表格行 / 引用行 / `### ` 小节标题;命中外来内容 ⇒ **拒绝写盘**(rc=1)并打印行号 + 处置建议。`--check` 与 `--write` **同口径**都拦(不只挡写盘)。**双向自洽**:生成块自身也必须落在白名单内(否则闸与生成器口径分裂) |
+| **决定性变异** | ① 区间内插外来段 ⇒ `--write` **rc=1** 且**文件逐字零改动**、外来正文仍在 ⇒ 证明「拒绝」而非「静默删」;② `--check` 同 fixture ⇒ **rc=1**;③ 真实文件 `--check` ⇒ **rc=0**(无误报) |
+
+**④ F-4 · improvement 草案 AC 勾选态回填**
+
+- 9 条 AC `- [ ]` → `- [x]`(仓库先例:`cpptlm-cep-umbrella.md` 26/26、`cpptlm-cep-nvlink-sharp.md` 9/9)。
+- 状态行 `🟡 待实施` → `✅ 已实施并验收`(指向 Entry #342 / #343 + verifier 报告)。
+- ⚠️ **勾选的同时订正 AC-4 的靶点**:原写「改 `07 号` SU·六 名单中的一族名」—— 收口批(Entry #339)后该段**已是指针、不含族枚举** ⇒ 实际靶点是 **`obj §6.2` 的 `B3b-2` 行** ⇒ 就地加订正说明(per 本条 ② 的同一事实,per Entry #342 §③)。
+
+**⑤ 明确不做(F-3)**
+
+- **F-3**（代码围栏内的 `## ` 被生成器与闸**同口径**误计 ⇒ 两者一致、闸不红）—— **记 backlog,本条不做**。理由:当前 `07 号` 围栏内 `## ` 命中 **0** ⇒ **今天无实际错误**;修它需**生成器与闸同时**改为围栏感知解析(只改一侧会让口径分裂,比现状更糟)⇒ 属独立一笔,不在 verifier 报告的建议范围内。
+
+**⑥ 终态回归回执**
+
+| 面 | 实测 |
+|---|---|
+| `ctest --test-dir build -j4` | **169 / 169 passed, 0 failed**(135.57s;Total Tests 168 → 169,新增 `cep_decl_reverse_verify` = Test #135 · 6.63s) |
+| `[cep]` Catch2 | **508 cases / 11516 assertions** 全绿 |
+| 3 闸 + 冻结面 + 文档面 | `cep_index_position_check` rc=0 · `cep_b3b2_deferral_check` rc=0 · `cep_b4_observation_keys_check` rc=0 · `cep_freeze_check` rc=0 · `docs_sync_check --strict` rc=0 · `agents_md_lint` rc=0 · `generate_doc_index --check` rc=0 |
+| 35 闸 rc 双判 | **35 / 35 rc=0**(逐个 `bash` 跑 + `✗` 计数双判;唯一 1 条 `✗` 在 `cep_freeze_reverse_verify.sh` 的**「故意破坏」步内** ⇒ 那是反向验证的**预期证据**,该闸 rc=0 ⇒ 反向验证成立)。**F-1 的补注册不新增磁盘脚本** ⇒ 磁盘仍 **35** 个;口径 31+2+2 = 35 不变 |
+| 冻结面 | `07 号` **未改** ⇒ `artifact_count` 仍 **78**、hash 未变 ⇒ **不需五步链** |
+
+**⑦ 关联**:**Entry #342**(C1 实施回执)· **#340**(§13 C1 立项)· **#339**(SU 收口批 · AC-4 靶点失效的根因)· verifier 报告 `.rddf/reviews/cpptlm-cep-gate-strength-tooling-verify.md`(本条的判据来源)· `ADR-CEP-06`(有牙原则)

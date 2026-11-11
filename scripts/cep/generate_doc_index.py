@@ -16,6 +16,11 @@
 #   python3 scripts/cep/generate_doc_index.py --write      # 就地重写文末索引段
 #   python3 scripts/cep/generate_doc_index.py --check      # 已同步 ⇒ rc=0;漂移 ⇒ rc=1(CI 用)
 #
+# ⚠️ **「外来内容」护栏**(2026-11-12,per 台账 Entry #343):「索引标题 → 索引 C」区间内
+#    若存在**非生成块形态**的行 ⇒ **拒绝重写**(rc=1)并打印行号 ⇒ 防止 `--write`
+#    把误置在区间内的正文**静默删除**(实测过的数据丢失形态)。处置 = ① 移到索引**之前**
+#    · ② 或手工并入索引块。`--check` 与 `--write` **同口径**都拦。
+#
 # 作者: CppTLM Team / 日期: 2026-11-12
 import argparse
 import re
@@ -43,6 +48,33 @@ def cell(s):
     if "|" in s:
         raise SystemExit("✗ 标题含 `|`,无法安全写入 Markdown 表格: %r" % s)
     return s
+
+
+# ── 「外来内容」护栏(2026-11-12,per 台账 Entry #343 = verifier 报告 F-2)────────
+# ⚠️ **为什么需要**:`--write` 重写的是「索引标题 → 索引 C」**整段区间** ⇒ 该区间内
+#    任何**不属于生成块形态**的行都会被**静默删除**(实测:正文被删,索引却仍留一行
+#    指向它 ⇒ 索引声称存在、正文没了)。⛔ 新增段落本就该插在索引**之前**
+#    (per 索引纪律),落在区间内属**误置** ⇒ 本护栏**拒绝写盘**而不是默默吃掉。
+#    白名单 = 生成块可能产生的行形态(空行 / 表格行 / 引用行 / `### ` 小节标题)。
+#    双向自洽:生成块自身也必须落在白名单内(否则闸与生成器口径会分裂)。
+def is_generatable(line):
+    s = line.strip()
+    if s == "":
+        return True
+    return s.startswith("|") or s.startswith(">") or s.startswith("### ")
+
+
+def find_foreign(lines, idx_i, c_i):
+    """区间内不属于生成块形态的行 ⇒ [(行号, 原文)]。"""
+    return [(i + 1, lines[i]) for i in range(idx_i + 1, c_i) if not is_generatable(lines[i])]
+
+
+def assert_block_generatable(block):
+    bad = [l for l in block if not is_generatable(l)]
+    if bad:
+        raise SystemExit(
+            "✗ 生成块含非白名单行形态(闸与生成器口径会分裂): %r" % bad[:3]
+        )
 
 
 def build_block(heads, sus):
@@ -107,8 +139,8 @@ def build_block(heads, sus):
     return out
 
 
-def render(text):
-    lines = text.split("\n")
+def locate(lines):
+    """返回 (索引标题行索引, 索引 C 行索引);不满足则报错退出。"""
     heads = h2_headings(lines)
     idx = [i for i, t in heads if INDEX_TITLE_KEY in t]
     if len(idx) != 1:
@@ -121,8 +153,16 @@ def render(text):
     )
     if c_i is None:
         raise SystemExit("✗ 未找到 `%s` 小节(索引 C 必须存在且位于索引 A/B 之后)" % TOC_C_PREFIX)
+    return idx_i, c_i
+
+
+def render(lines):
+    idx_i, c_i = locate(lines)
+    heads = h2_headings(lines)
     sus = [(i, t) for i, t in heads if SU_MARK in t]
-    new_lines = lines[: idx_i + 1] + build_block(heads, sus) + lines[c_i:]
+    block = build_block(heads, sus)
+    assert_block_generatable(block)
+    new_lines = lines[: idx_i + 1] + block + lines[c_i:]
     return "\n".join(new_lines)
 
 
@@ -139,7 +179,30 @@ def main(argv):
         print("✗ 未找到 %s" % path, file=sys.stderr)
         return 2
     text = path.read_text(encoding="utf-8")
-    new = render(text)
+    lines = text.split("\n")
+    idx_i, c_i = locate(lines)
+
+    # ── 护栏:区间内的外来内容 ⇒ 拒绝(写盘会静默删除它)──────────────────────
+    foreign = find_foreign(lines, idx_i, c_i)
+    if foreign:
+        print(
+            "✗ %s:「## §末 文档索引」与「### 索引 C」之间存在 **%d 行外来内容** ⇒ 拒绝重写"
+            % (path, len(foreign)),
+            file=sys.stderr,
+        )
+        for lineno, raw in foreign[:10]:
+            print("    %d: %s" % (lineno, raw.strip()[:90]), file=sys.stderr)
+        print(
+            "  · `--write` 会**静默删除**该区间的一切非生成内容 ⇒ 必须先处置。",
+            file=sys.stderr,
+        )
+        print(
+            "  · 处置:① 把该段移到索引**之前**(per 索引纪律)· ② 或手工并入索引块。",
+            file=sys.stderr,
+        )
+        return 1
+
+    new = render(lines)
 
     if args.check:
         if new == text:
