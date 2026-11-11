@@ -18,6 +18,8 @@
 #include <string>
 #include <vector>
 
+#include <unistd.h>
+
 #include <nlohmann/json.hpp>
 
 #include "tlm/cep/collective_plane.hh"
@@ -28,6 +30,14 @@
 namespace {
 
     namespace cep = tlm::cep;
+
+    /// **进程唯一 token** —— 临时目录名 MUST 带它(per `test_cep_tools_contract.cc`
+    /// 的 `proc_token()` 先例):`ctest` 会**并行**跑多个 `cpptlm_tests` 进程
+    /// ⇒ 固定目录名会互相覆盖 ⇒ 竞态失败(实测踩过一次 `cep_all` 偶发红)。
+    const std::string& proc_token() {
+        static const std::string t = "_p" + std::to_string(static_cast<long long>(::getpid()));
+        return t;
+    }
 
     std::string read_repo_file(const std::string& rel) {
         std::ifstream in(std::string(CPPTLM_SOURCE_DIR) + "/" + rel);
@@ -704,7 +714,7 @@ TEST_CASE("V6-d: R1-b / R1-c 在真实 gate 路径可触达(折进 CP-03 行 + �
     //    ⚠️ 结构 = 「遍历 lines 找 VcReservation + detail.find(R1-b) != npos」
     //    ⚠️ 用临时目录写影子文件 ⇒ ⛔ 不碰仓内文件
     {
-        const auto tmp = std::filesystem::temp_directory_path() / "cpptlm_c2_r1b_gate";
+        const auto tmp = std::filesystem::temp_directory_path() / ("cpptlm_c2_r1b_gate" + proc_token());
         std::filesystem::create_directories(tmp);
         // 读真实 protocol_instances ⇒ 改 mesif.ualink_fabric.vc3 = unordered ⇒ 写影子
         {
@@ -745,7 +755,7 @@ TEST_CASE("V6-d: R1-b / R1-c 在真实 gate 路径可触达(折进 CP-03 行 + �
 
     // ── ③ 变异:影子 `declaration`(chi_rnf 插键)⇒ CP-03 行 MUST FAIL 且含 R1-c ──
     {
-        const auto tmp = std::filesystem::temp_directory_path() / "cpptlm_c2_r1c_gate";
+        const auto tmp = std::filesystem::temp_directory_path() / ("cpptlm_c2_r1c_gate" + proc_token());
         std::filesystem::create_directories(tmp);
         {
             std::ifstream in(std::string(root) + "/include/tlm/cep/collective_planes.json");

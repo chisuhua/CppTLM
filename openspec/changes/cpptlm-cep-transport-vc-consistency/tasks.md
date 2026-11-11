@@ -123,14 +123,15 @@
 
 ## A6 · 冻结面五步链(G4 后半)
 
-- [ ] A6.1 产物 commit(源码 + 测试 + 3 份文档 + delta spec,一次 commit)
+- [x] A6.1 产物 commit(源码 + 测试 + 3 份文档 + delta spec,一次 commit)
       > ⚠️ **delta spec 必须在 A7 先写好**(本 commit 含它 ⇒ per metis **P0-5** 的顺序修正)
-- [ ] A6.2 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #347"`(**3 处产物同一次重算**)
+- [x] A6.2 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #347"`(**3 处产物同一次重算**)
       > ⚠️ **授权 Entry 号 MUST 是台账中真实存在的 id**(per `scripts/test/cep_freeze_check.sh:131-139` 的**精确匹配**校验:台账 `### ` 标题里 `— ` 之前的部分必须**完全等于**该参数)⇒ **⛔ 不得**留占位符 `Entry #XXX`(会被闸直接拒绝)⇒ 本 change 的实施期授权 Entry = **Entry #347**(A0.1 落盘时创建;⛔ **不是 #346** —— 后者已被 metis gap 分析处置占用)
       > ⚠️ **产物 commit 必须先于 `--update`**(per C1 已验证的顺序,Entry #342)
-- [ ] A6.3 清单 commit(`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`)
-- [ ] A6.4 无参复验 `bash scripts/test/cep_freeze_check.sh` ⇒ **rc=0**;`artifact_count` **不新增**(= 78)
-- [ ] A6.5 `git diff --exit-code` 对 4 个声明数据/schema 文件 ⇒ 空(**AC-13** 终态)
+- [x] A6.3 清单 commit(`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`)
+- [x] A6.4 无参复验 `bash scripts/test/cep_freeze_check.sh` ⇒ **rc=0**;`artifact_count` **不新增**(= 78)
+- [x] A6.5 `git diff --exit-code` 对 4 个声明数据/schema 文件 ⇒ 空(**AC-13** 终态)
+      > ✅ **实测 rc=0**;4 个 sha256 与 **Entry #347 ④** 记录**逐字一致**
 
 ---
 

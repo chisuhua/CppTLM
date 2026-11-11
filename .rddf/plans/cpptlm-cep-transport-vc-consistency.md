@@ -119,11 +119,11 @@
 
 ### WU-7 · 冻结链(G5 · A6)
 
-- [ ] **A6.1** 产物 commit(源码 + 测试 + 3 份文档 + delta spec,一次 commit)—— ⚠️ **delta spec 必须在 A7 先写好**
-- [ ] **A6.2** `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #347"`(**3 处产物同一次重算**)
-- [ ] **A6.3** 清单 commit(`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`)
-- [ ] **A6.4** 无参复验 ⇒ **rc=0**;`artifact_count` 仍 **78**
-- [ ] **A6.5** `git diff --exit-code` 对 4 个声明数据/schema 文件 ⇒ 空(**AC-13** 终态)
+- [x] **A6.1** 产物 commit(源码 + 测试 + 3 份文档 + delta spec,一次 commit)—— ⚠️ **delta spec 必须在 A7 先写好**
+- [x] **A6.2** `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #347"`(**3 处产物同一次重算**)
+- [x] **A6.3** 清单 commit(`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`)
+- [x] **A6.4** 无参复验 ⇒ **rc=0**;`artifact_count` 仍 **78**
+- [x] **A6.5** `git diff --exit-code` 对 4 个声明数据/schema 文件 ⇒ 空(**AC-13** 终态)
 
 ### WU-8 · 0 回归与验收(A8)
 

@@ -19857,3 +19857,78 @@ delta 的 `:41`(V6-d Scenario)已写 `R1-c` 在「循环**之后**、`C-4` 之�
 **⑦ 关联**
 
 **Entry #351**(A4 并排取证)· **#350**(A3)· **#349**(A2)· **#348**(A1)· **#347**(A0 授权)· **#346**(metis gap 处置)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-5 / WU-6)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A5 / A7 段)
+
+### Entry #353 — 2026-11-12 [build](**C2 · A6 冻结面五步链走完** —— 3 处产物 hash 变更 + `artifact_count` 不变(78);**G5 门达成**;⛔ 顺带修掉一处 `ctest` 并行竞态)
+
+**主题**:per 用户口令「开 A6」⇒ 执行 `tasks.md` 的 **A6**(G5 门)。**⛔ 本 Entry 不含 A8 验收 / A9 归档**。
+
+**① 冻结面五步链(实测全绿)**
+
+| 步 | 内容 | commit / 实测 |
+|:--:|---|---|
+| ① | 台账 Entry 授权 | **#352**(`84b27763`) |
+| ② | **产物 commit**(3 处冻结产物 + delta) | **#352**(`b03c693b`)—— ⛔ 与步骤①**分开 commit**(per C1 先例) |
+| ③ | `cep_freeze_check.sh --update --authorized-by "Entry #347"` | ✅ `✓ 授权校验通过:台账 entry 'Entry #347'`;`已重新生成冻结清单: 78 个产物` |
+| ④ | 清单 commit | **#353**(`f85502dd`) |
+| ⑤ | 无参复验 | ✅ **rc=0**;`✓ M1 产物冻结校验通过:78 个产物 hash 全部一致(冻结于 2026-11-12, commit b03c693b)`;`✓ provenance 自检通过` |
+
+**② 清单 diff(实测恰 6 行 = 3 处 hash + 3 项元数据)**
+
+| 产物 | 旧 hash | 新 hash |
+|---|---|---|
+| `docs/adr/ADR-CEP-01-fabric-collective-plane.md` | `dc8c5e51ddb2…` | `442a6897a8f8…` |
+| `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` | `b9e2a770855f…` | `47512af0f0ab…` |
+| `docs/architecture/cep/fabric-transport.md` | `257ebf2c4262…` | `f3eaddee822ca…` |
+
+元数据:`authorized_by` `Entry #342` → **`Entry #347`**;`frozen_at` `2026-11-11` → `2026-11-12`;`frozen_at_commit` `0704b7ca` → `b03c693b`。
+⇒ **`artifact_count` = 78(不新增)** —— 3 处产物**已在**冻结集内 ⇒ 只改 hash。
+
+**③ ⚠️ `frozen_at_commit ≠ HEAD` 的提示 —— 非失败,与 C1 先例一致**
+
+`✓ M1 产物冻结校验通过` + `✓ provenance 自检通过` + **rc=0** ⇒ 全绿。
+提示本身的成因已写在闸的源码注释里(`scripts/test/cep_freeze_check.sh` 的 provenance 段):「『先 commit 再 `--update`』的两步流程会让 `frozen_at_commit` **天然落后 HEAD 一个 commit**」⇒ **不阻断**。
+**C1 先例同样不重跑**(`7e67d8ff` 清单 commit 之后,`a08d6a4c` 收尾 commit **不含** manifest)⇒ **本轮处理与先例一致**。
+
+**④ ⛔ 顺带修掉一处 `ctest` 并行竞态(A6 期间实测踩到)**
+
+**现象**:A5 后的第一次全量 `ctest` 有 `cep_all`(#88 = 全部 `[cep]` Catch2)失败,但**单独跑绿**、子集跑绿、再次全量跑绿 ⇒ **不可复现的偶发**。
+
+**根因**:本 change 新增的真实 gate 用例(`[cep][ualink-inc][real-gate]`)在 `std::filesystem::temp_directory_path()` 下建了**固定名**目录(`cpptlm_c2_r1b_gate` / `cpptlm_c2_r1c_gate`)⇒ `ctest -j4` 会**并行**跑多个 `cpptlm_tests` 进程 ⇒ 固定名会被另一个进程**互相覆盖 / 删除** ⇒ 竞态失败。
+**修法**:按 `test/test_cep_tools_contract.cc` 的 `proc_token()` 先例,目录名追加 **进程唯一 token**(`_p<pid>`)⇒ 并行进程互不干扰。
+**验证**:修后**连跑 3 轮**全量并行 `ctest` ⇒ **169/169 全绿 ×3** ⇒ 竞态消除。
+
+> 📌 **这条也推翻了 `AGENTS.md` 的「0 已知 flaky」**(2026-10-08 记录)—— 本 change 引入了一个新的竞态面(临时目录名)⇒ 已修;⚠️ **`AGENTS.md` 的「0 已知 flaky」表述现在**又**成立**(竞态已消除)⇒ **不改** `AGENTS.md`(⛔ 不为一次已修的偶发留历史痕迹)。
+> 📌 **纪律**:任何在测试里写 `temp_directory_path()` 的用例 ⇒ 目录名 **MUST** 带进程唯一 token(仓内先例 `test_cep_tools_contract.cc` / `test_cep_cohif_carrier.cc`)。
+
+**⑤ A5 后的 3 项失败已全部转绿**
+
+| 项 | A5 后 | A6 后 |
+|---|---|---|
+| `cep_docs_sync_check`(#90) | ❌(冻结链预期红) | ✅ **Passed** |
+| `cep_freeze_check`(#142) | ❌(同上) | ✅ **Passed** |
+| `cep_freeze_reverse_verify`(#158) | ❌(基线红所致) | ✅ **Passed** |
+
+**⑥ 实测闸(全绿)**
+
+| 面 | 实测 |
+|---|---|
+| `ctest --test-dir build -j4` | ✅ **169/169 passed, 0 failed** —— **连跑 3 轮**均绿(竞态修复验证) |
+| `[cep]` Catch2 | ✅ **512 cases / 11672 assertions** |
+| **35 个** `cep_*.sh` 闸 | ✅ **35/35 rc=0**;✗ 计数 **1**(唯一 1 条在 `cep_freeze_reverse_verify.sh` 的「故意破坏」步内 = **预期证据**) |
+| `cep_freeze_check` 无参 | ✅ **rc=0**;`artifact_count` = **78** |
+| 声明数据零改动 | ✅ `git diff --exit-code -- <4 文件>` **rc=0**;4 个 sha256 与 **Entry #347 ④** **逐字一致** |
+| 测试文件是否在冻结集 | ✅ **否** ⇒ 竞态修复**不触发**清单重算 |
+
+**⑦ G5 门达成**
+
+| 门 | 内容 | 状态 |
+|:--:|---|:--:|
+| **G5** | **A6(冻结面五步链)** | ✅ **达成** —— 5 步全绿 · 3 处 hash 变更 · `artifact_count` 不变 |
+
+**⑧ ⛔ 本 Entry 明确不做**
+
+⛔ 未做 **A8**(0 回归 + 17 AC 验收报告)· ⛔ 未做 **A9**(归档 + 第二次五步链 + KPI 回填)· ⛔ 零声明数据改动 · ⛔ 未改 main spec · ⛔ 未合并 delta。
+
+**⑨ 关联**
+
+**Entry #352**(A5 + A7 + 步骤①)· **#351**(A4 并排取证)· **#350**(A3)· **#349**(A2)· **#348**(A1)· **#347**(A0 授权 —— **本 change 的 `--authorized-by` 授权依据**)· `#342` / `#343`(C1 的五步链先例)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-7)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A6 段)
