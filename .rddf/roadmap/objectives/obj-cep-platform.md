@@ -19028,16 +19028,19 @@ graph LR
 
 > ⚠️ **C4 的范围纪律**:只做 MUST-FIX-1 / MUST-FIX-2;⛔ **MUST-FIX-3 / MUST-FIX-4 待用户 ratify**(见 Entry #340 的 U-1)⇒ **不并入**。
 
-### 13.2 C1 · 闸强度与工具补齐(下一个 change)
+### 13.2 C1 · 闸强度与工具补齐(**已立项 2026-11-12** · `cpptlm-cep-gate-strength-tooling`)
+
+> **立项/实施**:`.rddf/improvements/cpptlm-cep-gate-strength-tooling.md` + `.rddf/plans/cpptlm-cep-gate-strength-tooling.md`;oracle 1 轮「需改后批准」(5 MUST 全落);实施回执与实测见 **Entry #342**。
 
 | 子项 | 现状(实测) | 目标 | 判据 |
 |---|---|---|---|
-| **R-a** | 07 号 文末索引**手工同步**;`cep_index_position_check.sh` 只校验「自述数 == 表行数」,**不**校验「表行数 == 实际 `## ` 数」(⇒ 5 个 `## ` 未列入仍绿) | **索引生成器落仓**(`scripts/`)+ 闸扩展为「实际 `## ` 数 == 自述数」 | 删 07 号 一个 `## ` 段 ⇒ 闸**必红**;生成器**零手抄**(重跑 ⇒ 输出逐字相同) |
-| **R-e** | `cep_b3b2_deferral_check.sh` 的族名校验 = `grep "$DECL" 自身` ⇒ **恒真** ⇒ 假绿 | 改为**集合覆盖 + 逐族锚校验**(4 族逐个有声明行) | 删 1 个族声明 ⇒ 闸**必红**;4 族齐 ⇒ 绿 |
-| **R-f** | `cep_b4_observation_keys_check.sh` 用**自合成** `trace.h5` ⇒ 守门强度打折 | 改用**真实** run 的 `trace.h5`;或**显式声明其为 fixture 并把闸强度标注为「弱」** | 两者二选一,**必须可机器核**(登记字段 + 闸断言) |
+| **R-a** | 07 号 文末索引**手工同步**;`cep_index_position_check.sh` 只校验「自述数 == 表行数」,**不**校验「表行数 == 实际 `## ` 数」(⇒ 5 个 `## ` 未列入仍绿;索引 A 行号 **10/23 错**) | **索引生成器落仓**(`scripts/cep/generate_doc_index.py`)+ 闸扩展为**三合一**「实际 `## ` 数 == 自述数 == 索引 A 行数」+ **行号逐行校验** | 删/降级 07 号 一个 `## ` 段 ⇒ 闸**必红**(红因 = 计数不等,⛔ 非「文件消失」);改乱任一索引行号 ⇒ **必红**;生成器重跑 ⇒ 输出逐字相同 |
+| **R-e** | `cep_b3b2_deferral_check.sh` 的族名校验 = `grep "$DECL" 自身` ⇒ **恒真** ⇒ 假绿;⚠️ 集合判据**已在** python 段(⇒ 真实增量不是它) | **删恒真 grep 段** + 建「`obj §6.2` B3b-2 行 ↔ JSON」**真源交叉校验**(⚠️ 原写「`07 号` SU·六」—— 收口批后该段已为指针,**无族枚举**) | 改真源一族名 ⇒ 闸**必红**(旧判据对该变异**不红**);删 1 族 / 同族重复 ⇒ 必红;4 族齐 ⇒ 绿 |
+| **R-f** | `cep_b4_observation_keys_check.sh` 用**自合成** `trace.h5` ⇒ 守门强度打折 | 采**后者**:显式声明 fixture + 闸强度标注(⛔ 不采「优先真实 run」—— retention 丙使 `trace.h5` 永不入库 ⇒ 该分支在 CI **恒不命中** = 半死代码) | 闸输出含 `[synthetic-fixture]` 标注且 rc=0(可 grep);闸头写明强度边界 |
+| **R-g** | `AGENTS.md` **4 处**写「25 个 `cep_*.sh`」实为 **35**(同句「15 个 probe」实为 17 / 「30 份 main spec」实为 37);`scripts/README.md` 漏登 `cep_index_position_check.sh` 与 `cep_e2e_reconcile_check.sh` | 登记处与磁盘实际**对齐** | `ls scripts/test/cep_*.sh` 逐条在 `scripts/README.md` 有登记(0 缺失);`AGENTS.md` 无「25 个」 |
 | **R-h** | `scripts/README.md` 引用裸路径 `fabric.json` ⇒ `docs_sync_check.sh --strict` **预存失败** | 补目录前缀(`include/tlm/cep/fabric.json`) | `docs_sync_check.sh --strict` rc=0 |
 
-**C1 的统一判据(4 项同主题)**:**每个被改的闸都必须有一条决定性变异** —— 破坏 ⇒ 按**正确原因**红 ⇒ 还原 ⇒ 绿 ⇒ **不得**出现「靠文件消失才红」的偶然事实(先例:批 4 的 `gate_selftest` fixture 曾老化,根因即此)。
+**C1 的统一判据(5 项同主题)**:**每个被改的闸都必须有一条决定性变异** —— 破坏 ⇒ 按**正确原因**红 ⇒ 还原 ⇒ 绿 ⇒ **不得**出现「靠文件消失才红」的偶然事实(先例:批 4 的 `gate_selftest` fixture 曾老化,根因即此)。
 
 ### 13.3 C2 · 传输层 VC 语义一致性判据落地
 
@@ -19128,3 +19131,58 @@ graph LR
 **⑤ 明确不做**:⛔ 不动 06 号 / 06-bis 的正文 · ⛔ 不改 `ADR-CEP-11` 的既有引用文字(只追加 SU)· ⛔ 不改 14 号的判据内容(§2 三选项对比 / §3 裁决 / §4 对拍手段 / §7 成本分期 **全部原样**)· ⛔ 不新建 ADR · ⛔ 不动 `obj §6.2` 任何条目。
 
 **⑥ 关联**:**#340**(下一阶段任务梳理 + 实施路径)· **#339**(SU 收口批)· **#333**(批 1 授权 + 重定向表)· `ADR-CEP-11`(H7 的范围限定)· `ADR-CEP-16` / `ADR-CEP-07A`(06-bis 处置)· `ADR-CEP-00A §3.1 / §3.2 / §3.9`(三份文档的锚点表 owner)· `docs/architecture/cep/` 8 篇子文档 · `docs/architecture/06-inter-module-network.md` §11 / §15
+
+---
+
+### Entry #342 — 2026-11-12 [build](**C1 开工授权 + 实施回执** —— 闸强度与工具补齐:索引生成器落仓 + 3 闸有牙化 + 登记处对齐)
+
+**主题**:per 用户口令「直接开工」⇒ 实施 `cpptlm-cep-gate-strength-tooling`(obj **§13.2** 的 C1)。**5 子项同主题** = 「登记了但没有牙齿」⇒ 本条把它们从**登记**变成**拦截**;**⛔ 零架构决策变更**(0 ADR / 0 schema / 0 声明面 / 0 ABI / 0 计数变化)。
+
+**① 授权与流程**
+
+- 用户口令「直接开工」⇒ `builder`;**⛔ 不新建 OpenSpec change**(产物 = 脚本 + 文档 ⇒ **不占 KPI slot**,先例 `cpptlm-cep-b3b2-d4-trigger-probe`)。
+- ⚠️ `rdd-builder` 的 canonical precondition ② `.rddf/state/.planner-handoff.json` **不存在** ⇒ **⛔ 不伪造前置**,改走**角色内置流程**:自建 `.rddf/plans/cpptlm-cep-gate-strength-tooling.md`(TDD 5 步 canonical markers)+ 轻量执行(无 worktree)。
+
+**② oracle 审查处置(1 轮 · 结论 = 需改后批准)**
+
+| # | oracle 判定 | 实测复核 | 处置 |
+|:--:|---|---|---|
+| **MUST-1** | `AGENTS.md` 的「25 个」是 **4 处**不是 3 处 | ✅ 实测 `:7` / `:217` / `:231` / `:614` = **4** | 4 处全改 35 |
+| **MUST-2** | `07 号:571`「另有 5 个未列入」与 `:577`「逐条对应」**自相矛盾** | ✅ 实测两行并存 | 两行一并重写(生成器口径) |
+| **MUST-3** | 需新增**行号正确性** AC | ✅ 实测索引 A 行号错 **10/23**(比 oracle 估计更重) | 新增 AC-3 + 闸逐行校验 |
+| **MUST-4** | R-e 的「新增集合判据」是**重复造** —— `:26-48` python 段**已有**集合判据 | ✅ 实测确有 `sorted(fams) != sorted(expected)` | R-e 真实增量改为**删恒真段 + 真源交叉校验** |
+| **MUST-5** | R-f 的「优先探测真实 run」是**半死分支**(`.gitignore` 使 `trace.h5` 永不入库 ⇒ CI 恒不命中) | ✅ 实测 `.gitignore` 的 `experimental/*` | **删该分支**,只保留 `[synthetic-fixture]` 显式降级标注 |
+
+**③ 三处如实订正(施工期实测发现,均已落盘)**
+
+| # | 订正 | 依据 |
+|:--:|---|---|
+| 1 | R-e 的**真源不是** `07 号` SU·六 —— 收口批(Entry #339)已把 SU 正文改为**归宿指针** ⇒ 该段**不再含族枚举**;存活真源 = `obj §6.2` 的 `- **B3b-2. …**` 行 | `grep 'CXL 3.0'` 在 07 号 SU 段 **0 命中**;`obj:549` 有完整 4 族枚举 + 分母 4 |
+| 2 | `AGENTS.md` 同句另两处计数漂移:「`15 个` `cep_*_probe.cc`」实为 **17**;`:7`「`30 份` main spec」实为 **37** | `ls scripts/test/cep_*_probe.cc` = 17;`ls -d openspec/specs/cep-*` = 37 |
+| 3 | `.rddf/reviews/cep-governance-goal-scope-review.md:76` 的「冻结产物 **77**」是笔误 ⇒ **78** | `manifest.artifact_count` = 78 |
+
+**④ 实施回执(施工阶段实测)**
+
+| 面 | 实测 |
+|---|---|
+| **R-a** | 新增 `scripts/cep/generate_doc_index.py`(索引 A **28** 行全量 + 索引 B **15** 行全量 + 行号实测);连跑 2 次**逐字相同**(幂等);`--check` rc=0;`07 号` 649 → 660 行(**只**文末索引段) |
+| **R-a 闸** | `cep_index_position_check.sh` 三合一 + 行号逐行 + 标题覆盖;基线 `一级节 A=28/28/28 · SU B=15/15/15 · 问题 0` |
+| **R-e** | 删 `:57-61` 恒真段;新增「真源 token 4 族 + 分母 == 登记族数 + JSON 集合」交叉校验;基线 `2 PASS / 0 FAIL` |
+| **R-f** | 输出首行 `[synthetic-fixture] …`(可 grep 命中 1)+ 闸头写明强度边界;rc=0 |
+| **R-g** | `scripts/README.md` 守门表 **29 → 31** 行(31+2+2 = **35** = 磁盘实际,`ls` 逐条 0 缺失);`AGENTS.md` 4 处 → 35(**另 2 处连订**:17 probe / 37 main spec) |
+| **R-h** | `docs_sync_check.sh --strict` ⇒ **rc=0**、缺失路径数 **0**(修复前 = 1) |
+| **决定性变异** | 索引闸 **5 条**全红且红因正确(降级 `## ` ⇒ 计数不等 / 改行号 / 删索引 A 行 / 删索引 B 行 / 索引后加 `## `);b3b2 闸 **3 条**全红且红因正确(删族 / 同族重复 / **改真源族名 ⇒ 「真源缺族 token」**) |
+| **冻结面** | `artifact_count` 仍 **78**(⛔ 不新增);仅 `07 号` hash 变更 ⇒ 走五步授权链(⑤) |
+| **35 闸双判** | 33 绿;`cep_freeze_check.sh` 红(**预期** —— 链前);`cep_freeze_reverse_verify.sh` 红(**基线红**所致,链后转绿) |
+
+**⑤ 冻结面五步授权链**
+
+1. **本 Entry**(授权 + 回执)
+2. 产物 commit(7 文件)
+3. `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #342"`
+4. 清单(`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`)单独 commit
+5. 无参复验 ⇒ rc=0
+
+**⑥ 明确不做**:⛔ 零 ADR 改动 · ⛔ 不改 `07 号` 的**判据内容**(只改索引段的**生成方式**)· ⛔ 不动 B3b-2 的 `⭕` 登记与计数(仍 **0/4**)· ⛔ 不新增 run 产物入库(retention 丙不动)· ⛔ 不含 C2/C3/C4 · ⛔ 不动 `test/CMakeLists.txt`(3 闸**已注册**)· ⛔ 不改 `docs/guide/cep-usage.md` §12.8 的表格(该表自述「本表不是状态源」)。
+
+**⑦ 关联**:**#340**(§13 任务梳理 + 排序)· **#341**(14 号归位)· **#339**(SU 收口批 · 手工同步吞内容的两处实证)· **#331**(`gate_selftest` fixture 老化先例)· **#295**(索引移文末纪律 + retention 丙)· `ADR-CEP-06`(4 件套 + 有牙原则)· `ADR-CEP-00A` SU 2026-11-11 ①(跨仓锚点治理不变量)· `ADR-CEP-12`(受限族声明)· `.rddf/reviews/cep-governance-goal-scope-review.md`(architect 梳理报告)
