@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-12T02:00:00Z",
+  "current_role": "verifier",
+  "updated_at": "2026-11-12T03:40:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-10T19:20:00Z",
-      "by": "user",
-      "reason": "用户口令「按你建议顺序推进」⇒ 序列第 ④ 步。批 0.6(builder:冻结闸+1 glob / 快照豁免缩版 / VIRTUAL_PATHS 登记 / [5/5] 防腐蚀闸+死目标 tsv)与 planner 前置 3/4/6/7(Entry #333/#334)全部完成,8 项前置齐备。本回合 = architect 域:执行批 1 主体(07 号瘦身 22 M + 5 D + 1 消失 + §11 迁出 + §12 迁 docs/guide/cep-usage.md 含 51 处引用改写 + 索引重建 + §5.1.1 状态列迁出)。"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-10T20:30:00Z",
-      "by": "user",
-      "reason": "用户口令「按你建议顺序推进」⇒ 序列第 ⑤ 步。architect 批 1 主体已完成(07 号 2763→1625 · 手册 204 行 · §4 逐行相同 · §5.1.1 5 列 · 508 cases 全绿 · 33/35 闸绿,2 红=五步链步骤 2 待 commit)。本回合 = builder 域:① tsv 升级为「重定向表」(13 位移 + 8 死目标)② 产物 commit ③ cep_freeze_check --update ④ 清单单独 commit ⑤ 无参复验。"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-10T21:10:00Z",
-      "by": "user",
-      "reason": "用户口令「按你建议顺序推进」⇒ 序列第 ⑥ 步（收口）。批 1 已完成并五步链闭环：C1 ff2a8fb5 / C2 25e78ef2 / C3(清单) 4b68b4be；35/35 闸全绿 + 508 cases 全绿 + 工作区干净。本回合 = planner 域:Entry #335 批 1 实施回执 + 按实际值回填 Entry #333 重定向表（关闭其「须复核回填」的未结项）。"
-    },
     {
       "role": "architect",
       "at": "2026-11-11T09:00:00Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-12T02:00:00Z",
       "by": "user",
       "reason": "用户口令「直接开工」⇒ C1(cpptlm-cep-gate-strength-tooling) 实施。rdd-builder 前置② .planner-handoff.json 不存在 ⇒ 走角色内置流程(自建 .rddf/plans/ TDD 5 步 + 轻量执行)。"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-12T02:40:00Z",
+      "by": "user",
+      "reason": "用户口令「切 verifier 做独立验收」⇒ 对 C1(cpptlm-cep-gate-strength-tooling) 做独立验收。无 openspec change ⇒ 走 verifier 产出契约的 1-5 步本地验收(不走 rdd-verifier skill)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-12T03:10:00Z",
+      "by": "user",
+      "reason": "用户口令「执行建议的下一步内容」⇒ 实施 verifier 报告的 F-1/F-2/F-4（verifier 只验不改 ⇒ 切回 builder）。"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-12T03:40:00Z",
+      "by": "user",
+      "reason": "用户口令「执行建议的下一步内容」⇒ 修完后的第 2 轮复验(报告的路由建议明确要求复跑 3 闸 + docs_sync + ctest)。"
     }
   ],
   "auto_switch_window": null
