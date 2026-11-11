@@ -510,6 +510,97 @@ TEST_CASE("V6-d 快照: per_network_orderings 收集口径与实例集合",
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// V6-d —— **(b) / `R1-b`**:排序假设逐 VC 一致(per C2 · Entry #347 · A2)
+// ══════════════════════════════════════════════════════════════════════════
+// ⚠️ **TDD 纪律**:本段 5 条变异**先于实现**写就 ⇒ 实现期跑出红 ⇒ 再写实现转绿。
+// ⚠️ **归因纪律**:新 tag `[CP-03-VC-CERTIFICATE/R1-b]`(带尾随空格)⇒ 与既有
+//   `[CP-03-VC-CERTIFICATE]` / `[CP-03-VC-CERTIFICATE/C-1′]` **结构上不可能互命中**
+//   (第 22 位是 `]` vs `/`)⇒ 但仍须回归钉住(AC-14)。
+TEST_CASE("V6-d: R1-b 排序假设逐 VC 一致(值不一致 / 条目缺失 / key 非数字 / 前导零 / 越界)",
+          "[cep][ualink-inc][certificate][r1-b]") {
+    const std::string decl_text = read_repo_file("include/tlm/cep/collective_planes.json");
+    const auto doc = nlohmann::json::parse(decl_text);
+    const auto decl = cep::parse_collective_plane_declaration(doc);
+    const auto snap = cep::load_vc_binding_snapshot(
+        std::string(CPPTLM_SOURCE_DIR) + "/include/tlm/cep/protocol_instances.json",
+        std::string(CPPTLM_SOURCE_DIR) + "/include/tlm/cep/fabric.json");
+    REQUIRE_FALSE(snap.source_error);
+
+    constexpr const char* kR1b = "[CP-03-VC-CERTIFICATE/R1-b] ";
+
+    // ── 正控:基线全绿(3 个实例逐 VC 全等)──
+    {
+        std::string d;
+        REQUIRE(cep::evaluate_shared_mode_certificate(decl, snap, cep::default_untested_registry(),
+                                                      d) == cep::ContractVerdict::PASS);
+        REQUIRE(d.rfind("[CP-03-VC-CERTIFICATE]", 0) == 0);
+    }
+
+    // ── 变异① **值不一致**(AC-3)—— 某实例某 vc 的 ordering 改成另一个值 ──
+    {
+        auto poisoned = snap;
+        auto& entries = poisoned.per_network_orderings["ualink_fabric"];
+        REQUIRE(entries.size() == 3u);
+        // 基线 vc3 全为 p2p_ordered ⇒ 改成 unordered ⇒ 与另两个实例不一致
+        REQUIRE(entries[1].second.at("3") == "p2p_ordered");
+        entries[1].second["3"] = "unordered";
+        std::string d;
+        REQUIRE(cep::evaluate_shared_mode_certificate(decl, poisoned,
+                                                      cep::default_untested_registry(),
+                                                      d) == cep::ContractVerdict::FAIL);
+        REQUIRE(d.rfind(kR1b, 0) == 0);
+    }
+    // ── 变异② **条目缺失**(AC-4)—— 删某实例某 vc 的 ordering ──
+    {
+        auto poisoned = snap;
+        auto& entries = poisoned.per_network_orderings["ualink_fabric"];
+        REQUIRE(entries.size() == 3u);
+        REQUIRE(entries[1].second.erase("2") == 1u);
+        std::string d;
+        REQUIRE(cep::evaluate_shared_mode_certificate(decl, poisoned,
+                                                      cep::default_untested_registry(),
+                                                      d) == cep::ContractVerdict::FAIL);
+        REQUIRE(d.rfind(kR1b, 0) == 0);
+    }
+    // ── 变异③ **key 非数字**(AC-10①)──
+    {
+        auto poisoned = snap;
+        auto& entries = poisoned.per_network_orderings["ualink_fabric"];
+        REQUIRE(entries.size() == 3u);
+        entries[1].second["abc"] = "unordered";
+        std::string d;
+        REQUIRE(cep::evaluate_shared_mode_certificate(decl, poisoned,
+                                                      cep::default_untested_registry(),
+                                                      d) == cep::ContractVerdict::FAIL);
+        REQUIRE(d.rfind(kR1b, 0) == 0);
+    }
+    // ── 变异④ **key 前导零**(AC-10②)—— `"04"` 须被拒(schema 的 `^[0-9]+$` 挡不住)──
+    {
+        auto poisoned = snap;
+        auto& entries = poisoned.per_network_orderings["ualink_fabric"];
+        REQUIRE(entries.size() == 3u);
+        entries[1].second["04"] = "unordered";
+        std::string d;
+        REQUIRE(cep::evaluate_shared_mode_certificate(decl, poisoned,
+                                                      cep::default_untested_registry(),
+                                                      d) == cep::ContractVerdict::FAIL);
+        REQUIRE(d.rfind(kR1b, 0) == 0);
+    }
+    // ── 变异⑤ **key 越界**(AC-10③)—— 数值 >= vc_count(4)──
+    {
+        auto poisoned = snap;
+        auto& entries = poisoned.per_network_orderings["ualink_fabric"];
+        REQUIRE(entries.size() == 3u);
+        entries[1].second["4"] = "unordered";
+        std::string d;
+        REQUIRE(cep::evaluate_shared_mode_certificate(decl, poisoned,
+                                                      cep::default_untested_registry(),
+                                                      d) == cep::ContractVerdict::FAIL);
+        REQUIRE(d.rfind(kR1b, 0) == 0);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // V6-d —— 四条证书(C-1′ / C-2 / C-3 / C-4)
 // ══════════════════════════════════════════════════════════════════════════
 TEST_CASE("V6-d: M-2 共享模式证书全绿(C-1′/C-2/C-3/C-4)", "[cep][ualink-inc][certificate]") {

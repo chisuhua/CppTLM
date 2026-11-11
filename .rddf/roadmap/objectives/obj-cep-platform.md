@@ -19566,3 +19566,62 @@ graph LR
 **⑥ 关联**
 
 **Entry #347**(A0 授权门 · 本 change 的 `--authorized-by` 授权依据)· **#346**(metis gap 处置)· **#345**(C2 立项 · **本次修补其 KPI 口径遗漏**)· **#344**(W0 + K-1/K-2)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-1)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A0 / A1 段)
+
+### Entry #349 — 2026-11-12 [build](**C2 · A2 判据 (b) 落地** —— `R1-b` 排序假设逐 VC 一致 + 完备 + key 形态;**5 条变异先写后实现**)
+
+**主题**:per 用户口令「开 A2」⇒ 执行 `tasks.md` 的 **A2**(G2 后半之一)。**⛔ 本 Entry 不含 C-1′-S**(那是 A3)。
+
+**① TDD 5 步实测(红 → 绿)**
+
+| 步 | 实测 |
+|:--:|---|
+| **红** | 5 条变异**先于实现**写就 ⇒ 跑出 **`0 == 1`**(变异①期望 FAIL 得 PASS)⇒ 证明旧实现**不读** `ordering_assumption`(`grep -c` = 0)⇒ 判据**确实缺失** |
+| **绿** | 实现后 ⇒ `[cep][ualink-inc][r1-b]` **All tests passed(20 assertions in 1 test case)** = 基线正控 1 条 + **5 条变异各 3 断言** |
+| **净** | `[cep][ualink-inc]` ⇒ **422 assertions / 14 test cases**(= 基线 402/13 + 20/1)⇒ **既有 6 条反向 fixture 的断言数未变** ⇒ 归因前缀**未被抢** |
+
+**② 判据形态(per design D-3 / D-4 / D-6)**
+
+| 项 | 实现 |
+|---|---|
+| **位置** | **C-2 之后、C-3 之前** —— (b) 的完备性基准 = `snap.vc_count[network]` ⇒ 需先由 C-2 保证该 network 已在 fabric 登记 |
+| **作用域** | **条件化口径**(`T-C2-⓪`):**仅** `certificate_scope` 内的 network ⇒ `compute_noc` 按 `ADR-CEP-01 §E.3.3` **不属 M-2** ⇒ 允许不一致 |
+| **实例集合** | `per_network_orderings[network]`(收集口径与 `per_network_mappings` **恒等**)⇒ ⛔ **不以 `ordering_assumption` 为驱动** |
+| **判定序列** | **b-1 集合非空**(⚠️ 结构性不可达,仅防御)→ **b-2 key 形态** → **b-2.5 越界/溢出** → **b-3 完备** → **b-4 跨实例全等** |
+| **key 形态** | 非空 ∧ 全 ASCII 数字 ∧ (`长度 > 1 ⇒ 首位 ≠ '0'`)⇒ 再 `std::from_chars`(⛔ **不用** `stoul` —— 它接受 `" 4"`、静默接受 `"04"`) |
+| **溢出** | `from_chars` 的 `std::errc` 非零 或 `ptr != last` ⇒ 归「**越界 FAIL**」⇒ ⛔ 不抛异常、⛔ 不当作 0 |
+| **越界优先** | ⚠️ **必须先判越界再判缺失**(per metis **P1-9**)⇒ 否则 `"3"` → `"4"` 会误报「完备性不足」 |
+| **tag** | `kR1b = "[CP-03-VC-CERTIFICATE/R1-b] "`(**尾部空格**,与既有 4 个常量同型) |
+| **⛔ 不实现** | ordering **值域**检查 —— 既有 `scripts/test/cep_decl_alignment_check.sh` 的 `jsonschema` 已锁 `enum` ⇒ **禁双实现** ⇒ 登记 **L-3** |
+| **成功 detail** | `:1165` 的「M-2 共享模式证书全绿(C-1′/C-2/C-3/C-4)」⇒ **「六条」**`(C-1′ / C-2 / R1-b / C-3 / R1-c / C-4)`(per metis **P1-12**)⇒ ⛔ 否则 spec 写六条、运行时输出四条 |
+
+**③ 5 条变异(全部按**正确原因**红,前缀精确 `[CP-03-VC-CERTIFICATE/R1-b] `)**
+
+| # | 变异 | AC | 实测 |
+|:--:|---|---|---|
+| ① | 某实例 vc3 的 ordering 由 `p2p_ordered` → `unordered` | **AC-3** | ✅ FAIL + 前缀正确 |
+| ② | 删某实例 vc2 的 ordering 条目(schema 仍合法,仅 `minProperties: 1`) | **AC-4** | ✅ FAIL + 前缀正确 |
+| ③ | 注入 key `"abc"`(非数字) | **AC-10①** | ✅ FAIL + 前缀正确 |
+| ④ | 注入 key `"04"`(**前导零** —— schema 的 `^[0-9]+$` **挡不住**) | **AC-10②** | ✅ FAIL + 前缀正确 |
+| ⑤ | 注入 key `"4"`(数值 >= `vc_count` = 4) | **AC-10③** | ✅ FAIL + 前缀正确 |
+
+**④ 实测闸(全绿)**
+
+| 面 | 实测 |
+|---|---|
+| `[cep][ualink-inc][r1-b]` | ✅ **20 assertions / 1 test case** |
+| `[cep][ualink-inc]` | ✅ **422 assertions / 14 test cases**(基线 402/13 + 20/1) |
+| `[cep]` | ✅ **510 cases / 11644 assertions**(基线 509/11624 ⇒ **+1 / +20**) |
+| `ctest --test-dir build -j4` | ✅ **169/169 passed, 0 failed**(144.96s) |
+| **35 个** `cep_*.sh` 闸 | ✅ **35/35 rc=0**;✗ 计数 **1**(唯一 1 条在 `cep_freeze_reverse_verify.sh` 的「故意破坏」步内 = **预期证据**) |
+| `kContractRuleCount` | ✅ 仍 **6**(⛔ 未新增第 7 条规则) |
+| 声明数据零改动 | ✅ `git diff --exit-code -- <4 文件>` **rc=0** |
+| **既有归因前缀不变** | ✅ 既有 6 条反向 fixture 的**断言数未变**(402 → 422 的 +20 全部来自新用例) |
+| 成功 detail 措辞 | ✅ 探针实测 = `[CP-03-VC-CERTIFICATE] M-2 共享模式**六条**证书全绿(C-1′ / C-2 / R1-b / C-3 / R1-c / C-4)` |
+
+**⑤ ⛔ 本 Entry 明确不做**
+
+⛔ **零 C-1′-S 实现**(A3 未动)· ⛔ 零 ADR 改动 · ⛔ 零声明数据改动 · ⛔ 零 main spec 改动 · ⛔ 未改既有 C-3 fixture 的变异形态 · ⛔ 未实现 ordering **值域**检查(既有 schema 闸已挡 ⇒ 禁双实现)· ⛔ 未新增 `ContractRule`。
+
+**⑥ 关联**
+
+**Entry #347**(A0 授权)· **#348**(A1 快照字段)· **#346**(metis gap 处置 · P1-9 / P1-12 在本条落地)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-2)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A2 段)

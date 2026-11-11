@@ -45,20 +45,22 @@
 
 > **先写变异(红)再写实现(绿)** —— per TDD 纪律。
 
-- [ ] A2.1 **红 · AC-3**：毒化 `per_network_orderings["ualink_fabric"]` 某 entry 的某 vc 值(`p2p_ordered` → `unordered`)⇒ 断言**必红** + **精确前缀** `[CP-03-VC-CERTIFICATE/R1-b]`
-- [ ] A2.2 **红 · AC-4**：删某 entry 的某 vc ⇒ 必红,前缀 `R1-b`
-- [ ] A2.3 **红 · AC-10①**：key = `"a"` ⇒ 必红,前缀 `R1-b`
-- [ ] A2.4 **红 · AC-10②**：key = `"04"` ⇒ 必红,前缀 `R1-b`
-- [ ] A2.5 **红 · AC-10③**：key 数值 >= `vc_count` ⇒ 必红,前缀 `R1-b`
-- [ ] A2.6 **绿 · 实现**：在 `evaluate_shared_mode_certificate` 的 V6-d 段内新增 (b) 子判据 —— 位置 = **C-2 之后、C-3 之前**(per design **D-6**),tag 常量 `kR1b = "[CP-03-VC-CERTIFICATE/R1-b] "`(**尾部空格**,与 `:884-888` 既有 4 个常量同型)
-- [ ] A2.6b **成功 detail 的措辞同步**:`include/tlm/cep/collective_plane_contract.hh:1006` 的「M-2 共享模式证书全绿(**C-1′ / C-2 / C-3 / C-4**)」⇒ 改为「**六条证书**」并补 `R1-b / R1-c`(per metis **P1-12**)⇒ ⛔ 否则 spec 写六条、运行时输出四条 ⇒ 读者会误判
-- [ ] A2.7 key 形态校验:非空 ∧ 全 ASCII 数字 ∧ (长度 > 1 ⇒ 首位非 `'0'`)⇒ 再用 `std::from_chars` 转换(⛔ 不用 `stoul`)⇒ 数值 vs `vc_count` 判越界 —— per design **D-4**
-- [ ] A2.8 判定序列 = **b-1 集合非空 → b-2 key 形态 → b-2.5 越界(数值 >= vc_count)→ b-3 完备(key 集合 == {0..vc_count-1})→ b-4 跨实例全等**;任一不过 ⇒ 立即 `return FAIL`
+- [x] A2.1 **红 · AC-3**：毒化 `per_network_orderings["ualink_fabric"]` 某 entry 的某 vc 值(`p2p_ordered` → `unordered`)⇒ 断言**必红** + **精确前缀** `[CP-03-VC-CERTIFICATE/R1-b]`
+- [x] A2.2 **红 · AC-4**：删某 entry 的某 vc ⇒ 必红,前缀 `R1-b`
+- [x] A2.3 **红 · AC-10①**：key = `"a"` ⇒ 必红,前缀 `R1-b`
+- [x] A2.4 **红 · AC-10②**：key = `"04"` ⇒ 必红,前缀 `R1-b`
+- [x] A2.5 **红 · AC-10③**：key 数值 >= `vc_count` ⇒ 必红,前缀 `R1-b`
+- [x] A2.6 **绿 · 实现**：在 `evaluate_shared_mode_certificate` 的 V6-d 段内新增 (b) 子判据 —— 位置 = **C-2 之后、C-3 之前**(per design **D-6**),tag 常量 `kR1b = "[CP-03-VC-CERTIFICATE/R1-b] "`(**尾部空格**,与 `:884-888` 既有 4 个常量同型)
+- [x] A2.6b **成功 detail 的措辞同步**:`include/tlm/cep/collective_plane_contract.hh:1006` 的「M-2 共享模式证书全绿(**C-1′ / C-2 / C-3 / C-4**)」⇒ 改为「**六条证书**」并补 `R1-b / R1-c`(per metis **P1-12**)⇒ ⛔ 否则 spec 写六条、运行时输出四条 ⇒ 读者会误判
+- [x] A2.7 key 形态校验:非空 ∧ 全 ASCII 数字 ∧ (长度 > 1 ⇒ 首位非 `'0'`)⇒ 再用 `std::from_chars` 转换(⛔ 不用 `stoul`)⇒ 数值 vs `vc_count` 判越界 —— per design **D-4**
+- [x] A2.8 判定序列 = **b-1 集合非空 → b-2 key 形态 → b-2.5 越界(数值 >= vc_count)→ b-3 完备(key 集合 == {0..vc_count-1})→ b-4 跨实例全等**;任一不过 ⇒ 立即 `return FAIL`
       > ⚠️ **必须先判越界再判缺失**(per metis **P1-9**)⇒ 否则 `"3"` → `"4"` 的变异会误报成「完备性不足」⇒ AC-10③ 的红因不稳
       > ⚠️ **b-1 结构性不可达**(C-1′ `:923-926` 已先判同一情形并 return)⇒ 保留**仅作防御**,⛔ **不得**被读作一条独立判据(per metis **P2-16**)
-- [ ] A2.8b **溢出处置**:`from_chars` 返回 `result_out_of_range` ⇒ 归「**越界 FAIL**」⇒ ⛔ 不得抛异常、⛔ 不得当作 0(per metis **P1-10**)
-- [ ] A2.9 ⛔ **不实现** ordering **值域**检查(既有 `scripts/test/cep_decl_alignment_check.sh` 的 `jsonschema` 已挡)⇒ 登记为 **L-3**
-- [ ] A2.10 **净**：既有 V6-d 6 条反向 fixture + 全部 `[cep]` 仍绿
+- [x] A2.8b **溢出处置**:`from_chars` 返回 `result_out_of_range` ⇒ 归「**越界 FAIL**」⇒ ⛔ 不得抛异常、⛔ 不得当作 0(per metis **P1-10**)
+- [x] A2.9 ⛔ **不实现** ordering **值域**检查(既有 `scripts/test/cep_decl_alignment_check.sh` 的 `jsonschema` 已挡)⇒ 登记为 **L-3**
+- [x] A2.10 **净**：既有 V6-d 6 条反向 fixture + 全部 `[cep]` 仍绿
+      > ✅ **实测**:`[cep][ualink-inc]` ⇒ **422 assertions / 14 test cases**(= 基线 402/13 + 新用例 20/1)⇒ **既有 6 条反向 fixture 的断言数未变** ⇒ 归因前缀未被抢
+      > ✅ `[cep]` ⇒ **510 cases / 11644 assertions**;`ctest -j4` ⇒ **169/169**;35 闸 ⇒ **35/35 rc=0**;`kContractRuleCount` 仍 **6**
 
 ---
 

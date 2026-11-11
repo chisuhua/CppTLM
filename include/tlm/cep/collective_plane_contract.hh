@@ -26,6 +26,7 @@
 #ifndef INCLUDE_TLM_CEP_COLLECTIVE_PLANE_CONTRACT_HH_
 #define INCLUDE_TLM_CEP_COLLECTIVE_PLANE_CONTRACT_HH_
 
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
@@ -33,6 +34,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -946,6 +948,11 @@ inline ContractVerdict evaluate_shared_mode_certificate(const CollectivePlaneDec
     static const char* kC2 = "[CP-09-IC1] ";
     static const char* kC3 = "[CP-03-VC-CERTIFICATE/C-3] ";
     static const char* kC4 = "[CP-03-VC-CERTIFICATE/C-4] ";
+    // ⚠️ **新判据的 tag**(per 台账 Entry #344 ⑨ 的 K-2):共用 `CP-03-VC-CERTIFICATE` 前缀
+    //   + `detail` 子标记;⛔ **不用** `C-1′-b` —— `C-1′` 在 `ADR-CEP-01 §E.3.1` 只定义
+    //   「槽位语义继承」⇒ 借其名会掩盖这是新决策(per K-2 的选项 C 否决)。
+    // ⚠️ **尾部空格**是既有约定(`:884-888` 四个常量均以 `] ` 结尾)⇒ 本常量**必须**同样带。
+    static const char* kR1b = "[CP-03-VC-CERTIFICATE/R1-b] ";
     static const char* kAll = "[CP-03-VC-CERTIFICATE] ";
 
     const auto& vd = decl.vc_reservation_declaration;
@@ -1027,6 +1034,97 @@ inline ContractVerdict evaluate_shared_mode_certificate(const CollectivePlaneDec
                 }
             }
         }
+        // ── **(b) / `R1-b` 排序假设逐 VC 一致** ─────────────────────────
+        // 位置 = **C-2 之后、C-3 之前**(per design D-6):(b) 的完备性基准 =
+        // `snap.vc_count[network]` ⇒ 需先由 C-2 保证该 network 已在 fabric 登记。
+        //
+        // ⚠️ **作用域 = 条件化口径**(per `T-C2-⓪`):**仅** `certificate_scope` 内的 network
+        //   参与 ⇒ `compute_noc` 按 `ADR-CEP-01 §E.3.3` **不属 M-2** ⇒ 允许不一致。
+        // ⚠️ **实例集合 = 该 network 上所有有 `vc_binding` 的实例** —— 由
+        //   `per_network_orderings` 直接给出(收集口径与 `per_network_mappings` 恒等)
+        //   ⇒ ⛔ **不得**改以 `ordering_assumption` 为驱动(否则缺声明的实例被静默排除)。
+        {
+            const auto oit = snap.per_network_orderings.find(entry.network);
+            // b-1 集合非空 —— ⚠️ **结构性不可达**(C-1′ `:923-926` 已先判同一情形并 return)
+            //   ⇒ 保留**仅作防御**,⛔ **不得**被读作一条独立判据。
+            if (oit == snap.per_network_orderings.end() || oit->second.empty()) {
+                detail = std::string(kR1b) + "网络 `" + entry.network +
+                         "` **无任何有 vc_binding 的既有实例** ⇒ 排序假设**无主体**(⛔ 禁 vacuous PASS)";
+                return ContractVerdict::FAIL;
+            }
+            const auto& vcit = snap.vc_count.find(entry.network);
+            // ⚠️ C-2 已保证该 network 在 fabric 登记 ⇒ 此处 `vc_count` 必然存在。
+            const unsigned vc_count = (vcit == snap.vc_count.end()) ? 0u : vcit->second;
+            // ── b-2 key 形态 → b-2.5 越界 → b-3 完备 → b-4 跨实例全等 ──
+            std::map<unsigned, std::string> reference;  // vc → ordering(首个实例为参照)
+            bool have_reference = false;
+            for (const auto& [instance_id, orderings] : oit->second) {
+                std::map<unsigned, std::string> parsed;
+                for (const auto& [vc_key, ordering] : orderings) {
+                    // b-2 **key 形态**:非空 ∧ 全 ASCII 数字 ∧ (长度 > 1 ⇒ 首位非 '0')
+                    //   ⇒ ⛔ **不用** `stoul` —— 它接受 `" 4"`、静默接受 `"04"`。
+                    bool shape_ok = !vc_key.empty();
+                    for (char ch : vc_key) {
+                        if (ch < '0' || ch > '9')
+                            shape_ok = false;
+                    }
+                    if (shape_ok && vc_key.size() > 1 && vc_key.front() == '0')
+                        shape_ok = false;  // 前导零 ⇒ 规范化拒绝(与 `"4"` 语义分裂)
+                    if (!shape_ok) {
+                        detail = std::string(kR1b) + "实例 `" + instance_id + "` 在网络 `" +
+                                 entry.network + "` 的 ordering key `" + vc_key +
+                                 "` **非规范十进制**(⛔ 须为规范十进制整数,⛔ 无前导零)";
+                        return ContractVerdict::FAIL;
+                    }
+                    // 形态合法 ⇒ 转换(`from_chars`;溢出 ⇒ 越界)
+                    unsigned vc = 0;
+                    const char* first = vc_key.data();
+                    const char* last = first + vc_key.size();
+                    const auto res = std::from_chars(first, last, vc);
+                    if (res.ec != std::errc{} || res.ptr != last) {
+                        // b-2.5 **越界/溢出** ⇒ ⛔ 不得抛异常、⛔ 不得当作 0
+                        detail = std::string(kR1b) + "实例 `" + instance_id + "` 在网络 `" +
+                                 entry.network + "` 的 ordering key `" + vc_key +
+                                 "` **数值溢出或越界**(该网 vc_count = " +
+                                 std::to_string(vc_count) + ")";
+                        return ContractVerdict::FAIL;
+                    }
+                    if (vc >= vc_count) {
+                        // b-2.5 **越界** —— ⚠️ **必须先判越界再判缺失**:
+                        //   否则 `"3"` → `"4"` 的变异会误报成「完备性不足」⇒ 归因不稳。
+                        detail = std::string(kR1b) + "实例 `" + instance_id + "` 在网络 `" +
+                                 entry.network + "` 的 ordering key `" + vc_key +
+                                 "` **越界**(该网 vc_count = " + std::to_string(vc_count) + ")";
+                        return ContractVerdict::FAIL;
+                    }
+                    parsed[vc] = ordering;
+                }
+                // b-3 **完备**:该实例的 key 集合 SHALL 恰为 `0 .. vc_count-1`
+                for (unsigned vc = 0; vc < vc_count; ++vc) {
+                    if (parsed.count(vc) == 0) {
+                        detail = std::string(kR1b) + "实例 `" + instance_id + "` 在网络 `" +
+                                 entry.network + "` 的 ordering **未覆盖** vc" + std::to_string(vc) +
+                                 "(该网 vc_count = " + std::to_string(vc_count) + ")";
+                        return ContractVerdict::FAIL;
+                    }
+                }
+                // b-4 **跨实例全等**:同一 vc 上各实例的 ordering 值 SHALL 相同
+                if (!have_reference) {
+                    reference = parsed;
+                    have_reference = true;
+                } else {
+                    for (const auto& [vc, ordering] : reference) {
+                        const auto pit = parsed.find(vc);
+                        if (pit == parsed.end() || pit->second != ordering) {
+                            detail = std::string(kR1b) + "网络 `" + entry.network + "` 的实例 `" +
+                                     instance_id + "` 在 vc" + std::to_string(vc) +
+                                     "` 上的排序假设**与其它实例不一致** ⇒ 混排语义漂移";
+                            return ContractVerdict::FAIL;
+                        }
+                    }
+                }
+            }
+        }
         // ── **C-3 控制面与数据面互斥**(声明级)──────────────────────────
         {
             const CollectivePlaneRegistryEntry* e = find_collective_plane(entry.plane.c_str());
@@ -1064,7 +1162,8 @@ inline ContractVerdict evaluate_shared_mode_certificate(const CollectivePlaneDec
             return ContractVerdict::FAIL;
         }
     }
-    detail = std::string(kAll) + "M-2 共享模式证书全绿(C-1′ / C-2 / C-3 / C-4);作用域 " +
+    detail = std::string(kAll) +
+             "M-2 共享模式**六条**证书全绿(C-1′ / C-2 / R1-b / C-3 / R1-c / C-4);作用域 " +
              std::to_string(vd.certificate_scope.size()) + " 项;未检验项 " +
              std::to_string(untested.items.size()) + " 项已登记";
     return ContractVerdict::PASS;
