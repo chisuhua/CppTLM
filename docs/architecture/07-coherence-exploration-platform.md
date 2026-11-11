@@ -640,3 +640,9 @@ group-scoped completion     → Fabric Collective Plane
 | **子文档:仿真与实验** | [`cep/simulation-and-experiment.md`](cep/simulation-and-experiment.md) | §6.1/6.2/6.4 + §7 实体 |
 | **子文档:Core/TrafficGen** | [`cep/core-traffic-gen.md`](cep/core-traffic-gen.md) | 本层实体 + **决策载体三分**(ASM-1/3/4/7/8/9 + 既有 SU 的 5 条 + §6.3.1);per 批 4 = **已落 ADR**(⛔ 非骨架) |
 | `obj-cep-platform.md` §6.2 | 台账 | 终局 DoD 12 条 |
+
+---
+
+**版本**: v0.2 治理收口(2026-11-11,per 台账 Entry #339)—— **总纲 + 8 篇按层子文档**(`docs/architecture/cep/`);v0.1 起草(2026-10-20)+ 17 则 Status Update(2026-10-25 ~ 2026-11-08)**已全部收敛为归宿指针**(per 批 1 瘦身 / 批 2 E 类提炼 / 批 3 按层拆分 / 批 4 A 类落 ADR / 批 5 SU 收口)。
+**批准状态**: 🟡 待 Oracle 复审
+**维护者**: CppTLM build agent(architect mode)
