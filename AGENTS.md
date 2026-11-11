@@ -4,7 +4,7 @@
 
 ## WHAT THIS IS
 
-TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**（由 PCIe Endpoint IP + GPGPU Cluster + Memory Cluster + NoC Interconnect + 多层 SimModule 容器等 IP 构成）。2026-2027 年完成 **7 阶段 PCIe EP 微架构**全链路交付（链路层 → 编码 → PHY 数字控制 → SR-IOV → AXI Stream Adapter → AXI4Mapper → Host Bypass + RC → 整合），**Phase 1-7 全部通过 Oracle 评审放行；Phase 8 整合交付完成**。2026-10 起承载 **CEP 平台**（Coherence Exploration Platform —— 跨协议一致性探索平台：22 份 ADR + 30 份 main spec + 25 个契约闸），同时继承既有 GPGPU 端（GPU CU / TPC / GPC / GPU Cluster 多层 + DMA/Doorbell/CommandProcessor/CompletionRing MVP）与顶层 ApuSoC 容器。
+TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**（由 PCIe Endpoint IP + GPGPU Cluster + Memory Cluster + NoC Interconnect + 多层 SimModule 容器等 IP 构成）。2026-2027 年完成 **7 阶段 PCIe EP 微架构**全链路交付（链路层 → 编码 → PHY 数字控制 → SR-IOV → AXI Stream Adapter → AXI4Mapper → Host Bypass + RC → 整合），**Phase 1-7 全部通过 Oracle 评审放行；Phase 8 整合交付完成**。2026-10 起承载 **CEP 平台**（Coherence Exploration Platform —— 跨协议一致性探索平台：22 份 ADR + 37 份 main spec + 35 个契约闸），同时继承既有 GPGPU 端（GPU CU / TPC / GPC / GPU Cluster 多层 + DMA/Doorbell/CommandProcessor/CompletionRing MVP）与顶层 ApuSoC 容器。
 
 **First read** for new agents: `docs/ONBOARDING.md` (knowledge-graph-generated ramp-up)。
 Architecture 必读:
@@ -214,7 +214,7 @@ openspec/                # 变更提案工作流 (changes/<name>/{proposal.md,sp
 scripts/                 # 工具脚本 (详见 scripts/README.md)
   build/                # 构建 + 格式化 (build.sh / build_ptx_emu.sh / format.sh)
   test/                 # 测试 + 守门脚本 (docs_sync_check.sh + agents_md_lint.py
-                        #   + 25 个 cep_*.sh 契约闸 + 15 个 cep_* probe .cc)
+                        #   + 35 个 cep_*.sh 契约闸 + 17 个 cep_* probe .cc)
   topology/ pipeline/ stats/ cep/    # 拓扑 / 流水线 / 统计 / CEP 辅助
 
 external/                # git submodule (CppHDL, json, PTX-EMU 等)
@@ -228,7 +228,7 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 |------|------|
 | **CEP 治理宪章 + 真源锚点** | `docs/adr/ADR-CEP-00-platform-charter-and-governance.md`（跨仓归口 + 准入门槛）+ `docs/adr/ADR-CEP-00A-real-source-anchor-map.md`（**引用任何 CEP 章节前必查该表**，禁凭记忆写节号） |
 | **CEP 实现层** | `include/tlm/cep/`（43 个 header-only 文件：protocol engine / adapter / state spec / JSON schema） |
-| **CEP 契约守门脚本** | `scripts/test/cep_*.sh`（25 个 shell 闸：冻结面校验 / 实验运行器 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture；另有 15 个 `cep_*_probe.cc` 编译探针） |
+| **CEP 契约守门脚本** | `scripts/test/cep_*.sh`（35 个 shell 闸：冻结面校验 / 实验运行器 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture；另有 17 个 `cep_*_probe.cc` 编译探针） |
 | **CEP 契约一致性** | `scripts/test/cep_docs_sync_check.sh`（22 份 ADR 的不变量 ↔ owner ADR 实际定义条数一致）+ `scripts/test/cep_doc_ref_check.sh`（对外文档引用节号校验） |
 | **CEP 实验 4 件套** | `scripts/test/cep_experiment_run.sh`（H2/H3/H4/H6 产出与契约校验）+ `scripts/test/cep_freeze_check.sh`（产物冻结先于解读） |
 | **CEP 真实 IP 对齐** | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`（ArchForge 接口对齐清单，§6 C-4 / §7 漂移检测） |
@@ -611,7 +611,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | **ADR** | 22 份 `ADR-CEP-*`（fabric / coherence / protocol / experiment / ownership 各域） |
 | **实现** | `include/tlm/cep/` 43 个 header-only 文件 + `test/test_cep_*.cc` |
 | **OpenSpec** | 37 份 `cep-*` main spec；**0 active** change；132 份已归档 change |
-| **守门** | `scripts/test/cep_*.sh` 25 个契约闸 + 15 个 `.cc` 编译探针（冻结面 / 实验 4 件套 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture） |
+| **守门** | `scripts/test/cep_*.sh` 35 个契约闸 + 17 个 `.cc` 编译探针（冻结面 / 实验 4 件套 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture） |
 | **测试** | `[cep]` —— 规模最大的测试集 |
 | **状态** | 队列 #3~#14 已全部归档（2026-10-26 ~ 2026-11-04）; 当前 1 个 active change（T3 映射锚点普查,per Entry #241） |
 

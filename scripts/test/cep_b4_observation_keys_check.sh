@@ -5,6 +5,14 @@
 # 功能:产一个 h3 v2 run(4 件套)⇒ 校验观测键落 metrics.json **且** trace.h5,
 #       且「同一事务流」实例级覆盖率为 1.0(退化装置 ⇒ 判红)。
 # 作者: CppTLM Team / 日期: 2026-11-05(per 台账 Entry #226)
+#
+# ⚠️ **强度边界(逐字,per 台账 Entry #342 —— ⛔ 不得宣称本闸验证了 trace 内容)**:
+#   本闸 = **文件层协议镜像校验** —— `metrics.json` 是 **cpptlm_tests 的真实产出**;
+#   `trace.h5` 由**本脚本从 metrics.json 镜像合成**(`[synthetic-fixture]`)。
+#   「真实 run 的 h5 层校验」归**实验 4 件套运行时**(`scripts/test/cep_experiment_run.sh`),
+#   ⛔ 不归本闸。**为什么不能优先取真实 run**:retention = 丙(per `ADR-CEP-06` SU Entry #295)
+#   ⇒ `.gitignore` 的 `experimental/*` 使 `trace.h5` **永不入库** ⇒ CI 里「优先真实 run」
+#   的分支**恒不命中** ⇒ 那是半死代码(oracle MUST-5)⇒ 本闸只做**显式降级标注**。
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -18,6 +26,8 @@ fi
 
 OUT="experimental/run-$(date +%Y%m%d-%H%M%S)-b4-obskeys"
 mkdir -p "$OUT/h3"
+
+echo "[synthetic-fixture] trace.h5 由 metrics.json 镜像合成(非真实 run 产物;retention 丙 ⇒ experimental/* 不入库)⇒ 本闸强度 = 文件层协议镜像校验,真实 run 的 h5 层校验归实验 4 件套运行时"
 
 CEP_EXP_DIR="$OUT/h3" CEP_EXP_ID="h3" "$BIN" "[cep][exp][emit]" -r compact >/dev/null
 python3 - "$OUT/h3" <<'PY'

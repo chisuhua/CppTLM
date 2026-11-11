@@ -115,7 +115,7 @@
 - ⛔ **无退出码语义的 `echo PASS` 不算闸** —— 每个闸的 PASS 必须带计数
 - ✅ **近半数闸自带反向 fixture**(17 / 35)⇒ 「破坏输入必红」是默认强度要求,⛔ **新增闸须附决定性变异**
 
-> ⚠️ **名单的权威来源 = `ls scripts/test/cep_*.sh`**(35)⇒ ⛔ **不得**以文档里的数字为准 —— 现有登记处**互不一致且不完整**:`scripts/README.md` §CEP 契约守门脚本(未列 `cep_index_position_check.sh`)· `docs/ONBOARDING.md §5.5`(只列部分)· `AGENTS.md` 的 STRUCTURE 段(写「25 个」)⇒ 补齐见 **§12.8**。
+> ⚠️ **名单的权威来源 = `ls scripts/test/cep_*.sh`**(35)⇒ ⛔ **不得**以文档里的数字为准。**登记处现状(2026-11-12 起,per 台账 Entry #342)**:`scripts/README.md` §CEP 契约守门脚本 **31 行 + 季度复审 2 + 实验运行器 2 = 35**(已补登 `cep_index_position_check.sh` / `cep_e2e_reconcile_check.sh`)· `AGENTS.md` **4 处已订正为 35**(⛔ 原写「25 个」)· `docs/ONBOARDING.md §5.5` **只列部分**(导航性质,⛔ 不作计数源)。
 >
 > ⚠️ **另有 5 个 CEP `.py` 闸**(`cep_adr_structural_check.py` / `cep_b3b2_d4_probe_validate.py` / `cep_b4_observation_keys_check.py` / `cep_invariant_map_check.py` / `cep_gate_harness.py`)—— 由 `.sh` 闸**调用**,⛔ **不单独计入 35**。
 

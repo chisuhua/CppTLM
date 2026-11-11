@@ -44,7 +44,7 @@
 | `cep_ualink_inc_reverse_verify.sh` | 队列 #14 **实现层**载体（`UIA-01` ~ `UIA-07` + **V6-d** 四条证书）的反向验证：**11 组 / 11 条**毒化 fixture（每条必红 **且** 归因 id **精确相等**命中 `PROBE:FAIL <id> `）+ **基线正控** + **归因 id 双向覆盖自检** | ✅ 生效（ctest 注册） |
 | `cep_b3b2_d4_probe_check.sh` | `B3b-2` 受限族的 **D-4 触发探测清单**闸(2026-11-07,per 台账 Entry #274 §④ E1 + Entry #277):① 探测清单结构 / **覆盖谓词**(4 族 × 2 路径 = 8 槽位逐格 ≥1) / 合规边界(key 白名单 + URL pattern + `page_type` 枚举 + banned token)/ 防漂移(`deferral_trigger_sha256`) ② **5 个决定性变异**按固定签名变红(`BODY-FIELD-FORBIDDEN` / `DOC-URL-IN-METADATA-SLOT` / `COVERAGE-GAP` / `SUBJECTIVE-CRITERION` / `DEFERRAL-TRIGGER-DRIFT`)。⚠️ 只校验**协议清单**;⛔ 不保证执行者未在其他渠道接触规范正文(⇒ `incident` 登记 + 季度人工审计);⛔ **不改**任何 DoD 计数 | ✅ 生效（ctest 注册） |
 
-| `cep_b3b2_deferral_check.sh` | `B3b-2`(受限族 0/4)的 **deferral 机器可查登记**闸:4 族齐全 + 字段齐备 + `ledger_entry` 台账可解析 + 与 SU · 六 族名单一致。⚠️ 只校验**登记完整**,⛔ **不改计数**(登记 ≠ 达成) | ✅ 生效（ctest 注册） |
+| `cep_b3b2_deferral_check.sh` | `B3b-2`(受限族 0/4)的 **deferral 机器可查登记**闸:4 族齐全 + 字段齐备 + `ledger_entry` 台账可解析 + 与 **`obj §6.2` B3b-2 行的族枚举交叉校验**(2026-11-12 强化 per 台账 Entry #342:删「grep `$DECL` 自身」的恒真段,改为对**外部真源**的集合级判据)。⚠️ 只校验**登记完整**,⛔ **不改计数**(登记 ≠ 达成) | ✅ 生效（ctest 注册） |
 | `cep_b4_coupling_probe.sh` | **B4**(4 件套实验输出契约)的 **coupling 探针**(13 必纳 metric ↔ 假设判据的耦合面) | ✅ 生效（ctest 注册） |
 | `cep_b4_observation_keys_check.sh` | **B4** 的 **observation_keys** 契约校验(附加键 ≠ 13 必纳语义) | ✅ 生效（ctest 注册） |
 | `cep_gate_selftest.sh` | **守门脚本自身**的自测(闸脚本**不冻结**,但须能修 ⇒ 自测保证「修了没坏」) | ✅ 生效（ctest 注册） |
@@ -52,8 +52,10 @@
 | `cep_prereg_drift_check.sh` | **预登记 out-of-scope 集合**的漂移闸(⛔ 不得事后自由扩张;真源 = `objective §9.1` ② 表) | ✅ 生效（ctest 注册） |
 | `cep_source_effect_check.sh` | **来源类型判据**的**决定性变异**取证(4 类影子副本:`dropped` / `downgraded` / `misclassified` / 影子探针 ⇒ 按固定签名变红)+ 真源 sha256 复原校验 | ✅ 生效（ctest 注册） |
 | `cep_cxl_dcoh_adapter_reverse_verify.sh` | 队列 #12 **实现层** adapter 的反向验证(6 条毒化 fixture:必红 **且** 归因 id 命中)+ 基线正控 | ✅ 生效（ctest 注册） |
-| `cep_freeze_reverse_verify.sh` | `cep_freeze_check.sh` 对**派生文件**(`fabric.json`)有牙的反向验证(基线绿 → 破坏红(点名 fabric.json)→ 还原绿) | ✅ 生效（ctest 注册） |
+| `cep_freeze_reverse_verify.sh` | `cep_freeze_check.sh` 对**派生文件**(`include/tlm/cep/fabric.json`)有牙的反向验证(基线绿 → 破坏红(点名 `include/tlm/cep/fabric.json`)→ 还原绿) | ✅ 生效（ctest 注册） |
 | `cep_tilelink_engine_failclosed.sh` | TileLink-C 运行时引擎的 **fail-closed 消费面 + 决定性变异**取证(影子树机制 + 真源 sha256 复原校验) | ✅ 生效（ctest 注册） |
+| `cep_index_position_check.sh` | `07 号` 文末文档索引闸(**三合一**,2026-11-12 强化 per 台账 Entry #342):① 索引永久置于文末(其后零 `## `)② 实际 `## ` 数 == 自述一级节数 == 索引 A 行数 ③ 实际 Status Update 数 == 自述 SU 数 == 索引 B 行数 ④ **索引 A/B 的「行」列逐行 == 实测行号** + 标题集合相等(防遗漏 / 防重复) | ✅ 生效（ctest 注册） |
+| `cep_e2e_reconcile_check.sh` | **双向对账闸**(per 台账 Entry #295 裁定 2 = retention **丙**;Entry #303):台账条目 ↔ 仓内**已提交** run 产物 —— ① 零 orphan(双向)② `metrics_sha256` 相等 ③ 7 字段齐备 ④ verdict 三态词表(⛔ 不得二值绿/红) | ✅ 生效（ctest 注册） |
 ### 季度复审脚本（守门性质，**刻意不注册 ctest**）
 
 | 脚本 | 作用 |
@@ -74,6 +76,7 @@
 > **本表 29 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。⚠️ **2026-11-07 订正 + 缺口闭合**(per 台账 Entry #278):原写「**18 个**」—— 实测磁盘 `scripts/test/cep_*.sh` = **31** 个,原表内 **20** 个 / **11** 个未登记 ⇒ 本次**补齐 11 行** ⇒ 现**守门表 29** + **实验运行器 2** = **31** = 磁盘实际⇒ **「表内计数 ≠ 磁盘实际」的预存缺口已闭合**。⚠️ 另有 **3 个脚本此前既未注册 ctest 也未登记**(⇒ **从不被 CI 执行**,判据可能早已失效而无人知道):`cep_cxl_dcoh_adapter_reverse_verify.sh` / `cep_freeze_reverse_verify.sh` / `cep_tilelink_engine_failclosed.sh` ⇒ 实测三者均**跑绿**(12s / 1s / 4s)⇒ 属**注册债**而非判据漂移 ⇒ 本次**已注册进 ctest**。
 > ⚠️ **2026-11-03 订正**（队列 #13 实现层 / Entry #187）：原写「**15 个**」—— 该数是**表内登记行数**，而 `scripts/test/cep_*.sh` 的**磁盘实际**为 **19** 个（另 3 个未列入本表）
 > ⇒ **表内计数 ≠ 磁盘实际**；本表只登记**已纳入 ctest 的**脚本，差异项以 `ls scripts/test/cep_*.sh` 为准。
+> ⚠️ **2026-11-12 订正 + 缺口闭合**（per 台账 Entry #342）：守门表 **29 → 31** 行（补登 `cep_index_position_check.sh` / `cep_e2e_reconcile_check.sh`）⇒ **31（守门）+ 2（季度复审，刻意不入 ctest）+ 2（实验运行器）= 35 = `ls scripts/test/cep_*.sh` 实测**。⛔ 上方「本表 29 个脚本全部已注册进 `ctest`」的读法对**季度复审 / 实验运行器**两表**不成立** —— 那 4 个是**刻意不注册**（cadence 断言会让无关 PR 变红 / 属实验面非守门面）。
 > ⚠️ **2026-11-03 补登**（队列 #13 Phase 3，Entry #184）：此前 **队列 #11 / #12 的两个反向脚本**
 > 虽已注册进 ctest，却**未列入本表**（预存登记缺口）⇒ 本次一并补上。
 > ⚠️ **2026-11-07 闭合**(per 台账 Entry #278):原「目录内另有 `cep_freeze_reverse_verify.sh` 与 `cep_gate_selftest.sh` 两个脚本**未列入本表**」的**预存登记缺口已消解** ⇒ 两者已登记入本表。
