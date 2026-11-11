@@ -19098,6 +19098,21 @@ graph LR
 
 台账 **Entry #340**(排序裁决 + 待用户项)· **#339**(收口批)· **#332**(口径 ④ MUST-FIX-1~4)· **#264**(B3b-2 终态裁决)· **#238 / #249 / #251**(T1~T4 · 选项戊 · B3 拆两行)· `.rddf/reviews/cep-governance-goal-scope-review.md`(architect 梳理)· `docs/guide/cep-usage.md` §12.8 · `docs/architecture/cep/fabric-transport.md` R1~R5 · `ADR-CEP-01` E.3.1 段 · `ADR-CEP-00` SU 2026-11-11
 
+### 13.9 · 状态更新(2026-11-12 · C1 验收完成 + C2 正式立项)
+
+> **本节回答什么**:§13.1~§13.8 是 **2026-11-11 快照**;本节是**实施侧的状态推进**(append-only,⛔ 不回改上方段落)。
+> 权威回执 = 台账 **Entry #342** / **#343**(C1)· **#344**(C2 方案 + K-1/K-2)· **#345**(C2 立项)。
+
+| 波次 | 状态 | 回执 |
+|:--:|---|---|
+| **W0**(architect 出 C2 方案) | ✅ **完成** | Entry #344 ①~⑧(T-C2-⓪ / T-C2-① / U-3)+ ⑨(K-1 / K-2) |
+| **W1**(C1 闸强度与工具补齐) | ✅ **完成并通过独立验收** | Entry #342(实施回执)· #343(F-1/F-2/F-4 修补)· verifier 报告 **9/9 AC PASS / 0 BLOCKER**(第 2 轮复验)· 实测 `ctest` **169/169** · `[cep]` **508 cases / 11516 assertions** · **35 闸 35/35 rc=0** · `artifact_count` 仍 **78** |
+| **W2**(C2 实施) | 🟡 **已立项**(2026-11-12)· 实施待开工 | Entry #345 · `openspec/changes/cpptlm-cep-transport-vc-consistency/`(4 文件 · 17 AC)· KPI 槽位 **0/3 → 1/3** |
+| **W3**(C3)· **W4**(C4) | ⛔ **待立项**(D1 串行 ⇒ 须待 W2 归档) | — |
+
+> ⚠️ **C1 无 OpenSpec change**:C1 的产物 = 脚本 + 文档 ⇒ per 先例 `cpptlm-cep-b3b2-d4-trigger-probe` ⇒ **不占 KPI slot**(§13.1 的 C1 行「冻结面 = 无」与实际不符 —— C1 实际改了 `07 号` 索引段并**走了五步链**;该行是 2026-11-11 快照的表述,⛔ 不回改)。
+> ⚠️ **W2 的五步链是 3 处**(per K-2 的代价):`docs/architecture/cep/fabric-transport.md` + `docs/adr/ADR-CEP-01-*.md` + `docs/adr/ADR-CEP-12-*.md` ⇒ 三处可在**同一次** `--update --authorized-by` 内重算,但**产物 commit 必须先于 `--update`**。
+
 ### Entry #341 — 2026-11-11 [planner](**CEP 文档归位 A 方案开工授权** —— 14 号 → `docs/architecture/cep/parity-baseline.md` + 2 处标注修正)
 
 **主题**:per 用户裁决「**A · 仅 14 号移位 + 2 处标注修正**」⇒ 把 `docs/architecture/` 顶层最后一份**纯 CEP 专属**文档移入 `cep/` 子目录,使顶层只剩 **07 号** 1 份 CEP 文档(= AGENTS.md「1 主纲 + N 子文档」模型的直接落地)。
@@ -19310,3 +19325,49 @@ graph LR
 **K-2 的主要成本(须在 C2 的 `tasks.md` 显式列出)**：两份 ADR 各追加 1 则 SU ⇒ `ADR-CEP-01` / `ADR-CEP-12` 均在冻结集 ⇒ **C2 的五步链从 1 处(`fabric-transport.md`)增至 3 处**。缓解:三处可在**同一次** `--update --authorized-by` 内一并重算,但**产物 commit 必须先于 `--update`**（C1 已验证的顺序,per Entry #342）。
 
 **对 C2 草案的连带修订(9 条,planner 回填)**：状态解阻塞 · 待裁项改「已裁」 · tag 钉死 · `R-1`/`R-2` 落点改「诚实边界段」 · AC-3/4/5/10/11/12 升级为「验红 + 验红因」 · AC-7 改为「`R1-c` 已由本 change 定义」 · AC-8 五步链 1 → 3 处 · 新增「`R-1`/`R-2` 可 grep 且不含『已验证/已满足』」的文字守门 AC · 新增「`R1-a` ≡ `C-1′` 映射 + 地位差异」文档 AC。
+
+### Entry #345 — 2026-11-12 [build](**C2 正式立项** —— `cpptlm-cep-transport-vc-consistency` 建档;KPI 槽位 **0/3 → 1/3**)
+
+**主题**:per 用户口令「切 builder 执行」⇒ 执行 A1 的第 1、2 步 —— ① commit C2 improvement 草案 ② **正式立项**建 `openspec/changes/cpptlm-cep-transport-vc-consistency/`。**⛔ 本 Entry 不含任何实施代码**(实现期另立 Entry)。
+
+**① 授权与流程**
+
+- 用户口令「切 builder 执行」⇒ `builder`;**开工前置** = `.rddf/improvements/cpptlm-cep-transport-vc-consistency.md`(175 行 / **17 条 AC**)已存在 ⇒ 满足 `rdd-builder` 的 canonical precondition ①;② `.rddf/state/.planner-handoff.json` **不存在** ⇒ ⛔ **不伪造前置** ⇒ 走**角色内置流程**(`proposal.md` / `design.md` / `tasks.md` 由 builder 直接产出,per 角色矩阵「builder 全部」)。
+- **KPI 槽位**:CEP 系列 Proposed 并发 **0 → 1**(per `§6.3` **D1**「任一时刻 ≤ 1」⇒ 当前 0 active ⇒ 可占)⇒ **C3 / C4 须待本 change 归档后才可立项**。
+
+**② 立项产物(4 文件 · 逐件要点)**
+
+| 文件 | 行数 | 要点 |
+|---|:--:|---|
+| `proposal.md` | 101 | 17 条 AC 从 improvement 草案**逐条搬入**(集合比对:差集双向为空);Why 含「**决策文本的承诺无承担者**」这一硬依据;Out of Scope **13 条**(含 `U-3` / `T-C2-①` / `K-1` / `K-2` 各自的边界 + ⛔ 不修 `validate_topology` target) |
+| `design.md` | 257 | **D-1** 判据落点(⛔ 不新增 `ContractRule`;`kContractRuleCount == 6` 是硬断言)+ tag 形态(尾部空格)+ 归因不冲突的机器依据 · **D-2** 快照**只加一个**字段 `per_network_orderings`(⛔ 不加 `plane_binding` ⇒ 双源死字段)· **D-3** (b) 判定序列 b-1~b-5 · **D-4** VC key 三类策略(⛔ 不用 `stoul` —— 它接受 `" 4"` / 静默接受 `"04"`)· **D-5** (C-1′-S) 判定序列 s-1~s-5 + **方向不可颠倒** · **D-6** V6-d 段**全局判定顺序**(归因稳定性骨架)· **D-7** L-1~L-5 五条边界 · **D-8** 文档 3 处 + 五步链 · **D-9** 声明数据零改动 · **D-10** 测试形态与「旧绿/新红」并排取证 · **D-11** 六条风险对策 · **铁律 10 条** |
+| `tasks.md` | 147 | **TDD 5 步纪律**(每条判据 = 先写变异(红) → 实现(绿) → 净(0 回归);⛔ 不得先写实现再补变异);门 **G1~G5**;里程碑 **M1~M6**;**决定性变异位**逐条对应 AC;⛔ 明确不做 **11 条** |
+| `specs/cep-collective-plane-contract/spec.md` | 190 | `MODIFIED` `cep-collective-plane-contract-shared-mode-certificate`:既有 6 个 Scenario **逐字保留** + 新增 **3 个**(`R1-b` 排序假设逐 VC 一致 / `R1-c` scope 完备性 / 真实 gate 路径可触达) |
+
+**③ 三处实施期发现(实测,已落盘)**
+
+| # | 发现 | 处置 |
+|:--:|---|---|
+| 1 | **`openspec` 的 MODIFIED 校验要求 Scenario 名守恒** —— 改名「C-1′ / C-2 / C-3 / C-4 全绿」⇒「…/ R1-b / R1-c 全绿」被判为「omits scenario(s) the current spec still has」⇒ `validate --strict` **红** | 标题**逐字保留**,并在该 Scenario 内**显式加一段「标题的历史措辞说明」**(六条清单以正文为准)+ Requirement 正文改「四条证书」→「**六条证书**」⇒ validate 转绿 |
+| 2 | **判据实现的三处硬约束**(读源码确认,非推断) | ① `VcBindingSnapshot::per_network_mappings` **不含实例 ID** ⇒ 新字段必须**携带** `instance_id`(否则 AC-4 无法定位红因)· ② `protocol_instance.schema.json` 的 `propertyNames.pattern = ^[0-9]+$` **允许前导零** ⇒ 「`"04"` ⇒ FAIL」**判据必须自带**(schema 挡不住)· ③ `ordering_assumption` 的 key 在 JSON 里是**字符串数字** ⇒ 与 `vc_count` 整数比较**必须显式转换** |
+| 3 | **`ordering_assumption` 的值域已被既有闸挡住** | `scripts/test/cep_decl_alignment_check.sh` 用 `jsonschema` 全量校验 `protocol_instance.schema.json`(其 `additionalProperties.enum` 已锁 `p2p_ordered`/`unordered`)⇒ 判据**不重复实现值域**(禁双实现)⇒ 登记为 **L-3** |
+
+**④ 立项期实测闸(全绿)**
+
+| 面 | 实测 |
+|---|---|
+| `openspec validate cpptlm-cep-transport-vc-consistency --strict` | ✅ **valid** |
+| `openspec validate --changes --strict` | ✅ **1 passed / 0 failed** |
+| `bash scripts/test/docs_sync_check.sh --strict` | **rc=0** |
+| `python3 scripts/test/agents_md_lint.py` | **rc=0** |
+| 表格列数一致性(4 文件,识别转义 `\|`) | **0 处**不一致 |
+| 路径引用(新写文本) | **0 缺失**(3 处为**假想文件/仓内不存在/待产出**,均已就地标注) |
+| AC 集合比对(proposal ↔ improvement 草案) | 17 ↔ 17,差集**双向为空** |
+
+**⑤ 本 Entry ⛔ 明确不做**
+
+⛔ 零实施代码(判据实现、测试、反向 fixture 属实施期)· ⛔ 零 ADR 改动 · ⛔ 零声明数据改动 · ⛔ 零 main spec 改动(delta 未合并;归档时才合并 ⇒ **另行触发**五步链)· ⛔ 未改 `certificate_scope` / `plane_binding` / `vc_binding` / `ordering_assumption` 任一字。
+
+**⑥ 关联**
+
+`Entry #344`(W0 + ⑨ K-1/K-2 裁决)· `#340`(排序裁决 + 串行执行序)· `#342` / `#343`(C1 实施 + 验收修补)· `.rddf/reviews/cep-c2-vc-consistency-decision.md`(§1~§12)· `.rddf/improvements/cpptlm-cep-transport-vc-consistency.md`(17 AC)
