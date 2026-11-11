@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-12T00:05:00Z",
+  "updated_at": "2026-11-12T02:00:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-10T17:05:00Z",
-      "by": "user",
-      "reason": "用户口令「按你建议顺序推进」⇒ 序列第 ② 步。批 0.6 已完成(builder:冻结闸+1 glob / 快照豁免缩版 / VIRTUAL_PATHS 登记示意路径;33/35 闸绿,2 红同源=07号 hash 漂移=五步链步骤 1)。本回合 = planner 域:落五步链步骤 1 的台账 Entry + 前置 3(§8.3 ④ 澄清)/ 4(M 类载荷补齐)/ 6(状态列落点)/ 7(重定向表)。"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-10T18:40:00Z",
-      "by": "user",
-      "reason": "用户口令「按你建议顺序推进」⇒ 序列第 ③ 步。planner 域已完成:Entry #333(五步链步骤1 授权 + 重定向表)+ Entry #334(4 项裁决落定 + metis gap 处置 + §4.0-a 表 + §4.0 #14 行订正);8 项前置齐备。本回合 = builder 域:装 metis P1-7 派生的「台账 07 号:N 防腐蚀闸」(scripts/test/cep_doc_ref_dead_anchors.tsv + cep_doc_ref_check.sh 检查段)。"
-    },
     {
       "role": "architect",
       "at": "2026-11-10T19:20:00Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-12T00:05:00Z",
       "by": "user",
       "reason": "Phase 3 builder:AGENTS.md 标注修正 + 14 文件路径改写(含 2 处代码注释⇒须重编译) + 五步链(冻结集 77→78)。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-12T01:00:00Z",
+      "by": "user",
+      "reason": "用户口令「开始下一个动作」⇒ 起草 C1(闸强度与工具补齐)的 improvement 草稿。走 add-improve 的 HARD-GATE brainstorm ⇒ 先出设计供用户批,不代拍。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-12T02:00:00Z",
+      "by": "user",
+      "reason": "用户口令「直接开工」⇒ C1(cpptlm-cep-gate-strength-tooling) 实施。rdd-builder 前置② .planner-handoff.json 不存在 ⇒ 走角色内置流程(自建 .rddf/plans/ TDD 5 步 + 轻量执行)。"
     }
   ],
   "auto_switch_window": null
