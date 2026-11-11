@@ -39,12 +39,13 @@
 
 ### Features
 
-> **当前无跨 phase feature fragment** (`.rddf/roadmap/features/` 不存在). 跨 phase 改进通过 OpenSpec change + 调研附属 (`docs/research/`) 跟踪. **建特征触发条件**: phase-11 注册且 ≥2 CEP changes 跨 phase-10/11 分布时, 走 `rddf roadmap add-feature cep --phase-refs phase-10,phase-11` 评估(per oracle v0.4 路线图评审 Q1:现在建 feature 是单 phase 退化形态,零信息量)。
+> **当前无跨 phase feature fragment** (`.rddf/roadmap/features/` 不存在). **CEP 下一阶段任务**不在此处 —— 见 [`objective-cep-platform` §13](roadmap/objectives/obj-cep-platform.md)(4 个候选 change · 串行执行序 W0~W4,per 台账 **Entry #340**). 跨 phase 改进通过 OpenSpec change + 调研附属 (`docs/research/`) 跟踪. **建特征触发条件**: phase-11 注册且 ≥2 CEP changes 跨 phase-10/11 分布时, 走 `rddf roadmap add-feature cep --phase-refs phase-10,phase-11` 评估(per oracle v0.4 路线图评审 Q1:现在建 feature 是单 phase 退化形态,零信息量)。
 
 ### Objectives
 
 > **2026-10-26 更新**: 排队扩至 **13** change / **13** 季度(`moesi_gpu` / `mesif` 排入 Stage 1,per 台账 Entry #71)—— 季度跨度**见 `obj §4.6`**。
 > **2026-10-27 更新**: 排队扩至 **14** change / **14** 季度(新增队列 #7 `cpptlm-cep-cohif-carrier` —— CohIf 载体,per 台账 Entry #74)—— 季度跨度**见 `obj §4.6`**。
+> **2026-11-11 更新(治理收口)**: CEP 架构文档治理批 1~6 + 收口批已完成 —— 07 号 **2763 → 648 行**,15 则 Status Update **全为归宿指针**;**决策**在 `docs/adr/ADR-CEP-*.md` · **蓝图**在 `docs/architecture/`(1 主纲 + 8 子文档)· **实施状态**在本台账;**下一步 = §13 的 4 个候选 change**(⛔ 不是继续治理文档);梳理报告见 `.rddf/reviews/cep-governance-goal-scope-review.md`。
 > **2026-11-11 更新**: CEP 架构文档已**按层拆分**为 **1 主纲 + 8 子文档**(主纲唯一入口 = `docs/architecture/07-coherence-exploration-platform.md`;子文档在 `docs/architecture/cep/`)—— **决策**在 `docs/adr/ADR-CEP-*.md`、**实施状态**在本台账 `§4.0` / `§4.0-a` / `§6.2` / `§11`、**操作步骤**在 `docs/guide/cep-usage.md`(per 台账 Entry #333 ~ #339)。
 > **2026-10-20 已建**: [`objective-cep-platform`](roadmap/objectives/obj-cep-platform.md) — CEP 跨 **14** 季度治理叙事(季度跨度**见 `obj §4.6`**)。触发依据:`rdd-planner/SKILL.md:150` 决策表「跨 sprint 目标叙事 + 复盘台账 + deferral rationale → objective」三项全命中(per oracle v0.4 路线图评审 B5 修订:删除不存在的「预埋触发条件」表述)。§11 决策台账**持续追加**(条目数会增长 —— 实测 `grep -c "^### Entry #" .rddf/roadmap/objectives/obj-cep-platform.md`,**不要**引用转述值)。**2026-10-23 口径同步**(per Entry #22 → #25 → #26):Stage 0 已归档(2026-10-23,tasks 99/99,R10 已按 `obj §9.3` 处置)· Stage 1 准入前置 S1-1 ~ S1-7 在 **`obj §4.0` 排队表**可寻址 · change / 季度数统一 11 / 11 · **载体分工与状态更新协议 = `obj §4.7`**。**后续 objective 触发**: 出现第二个跨 sprint 复杂目标时按 rdd-planner SKILL.md:150 流程评估。
 
