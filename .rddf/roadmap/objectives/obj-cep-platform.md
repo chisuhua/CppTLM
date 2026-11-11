@@ -1155,7 +1155,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **E2** | 终态 DoD Go 季度复审(**`B3b-2` 仍 0/4**) | 季度 |
 
 **已闭合(⛔ 不再排)**:F-01 / F-04 / F-05 / F-11(Entry #292)· 甲/乙 + F-12(#293)· §10 修订 ②(#294)· F-08 残余 + retention(#295)· A0b / A2-b(关闭)。
-**登记态(非任务)**:`B3b-2` = 0/4(外部阻塞,内部可推进 = 0)· 讨论纪要「5/12 条依据未留档」(证据面缺口,⛔ 不得事后伪造)· 索引生成器未入仓(backlog)。
+**登记态(非任务)**:`B3b-2` = 0/4(外部阻塞,内部可推进 = 0)· 讨论纪要「5/12 条依据未留档」(证据面缺口,⛔ 不得事后伪造)· ~~索引生成器未入仓(backlog)~~ ⇒ **已入仓** `scripts/cep/generate_doc_index.py`(2026-11-12,per **Entry #342**)。
 
 #### ② 实施路径(关键路径 + **4 门** + 4 里程碑)
 
@@ -1328,7 +1328,7 @@ W1(独立)     B2(并行)     B1(A9 后,分批)
 | **残余** | **R-3** Step 7.5 重挂检测未做 | 本轮只有测试级 `[BSS-01]` | builder(另立 change) | 小 |
 | **周期** | **E1** D-4 季度探测 | ⚠️ cadence 脚本报 `CADENCE-NEVER-RUN` ⇒ **从未真实执行** | planner + 外部检索 | 季度 |
 | **周期** | **E2** 终态 DoD Go 复审 | `B3b-2` 仍 0/4 | planner | 季度 |
-| **可选** | **O-1** 索引生成器入仓 · **O-3** `cpptlm-cep-b3b2-d4-trigger-probe` 提案 · **O-4** `.arch-handoff.json` 陈旧(⇒ 继续走内置流程) · **O-5** session-bootstrap profile | — | planner | 低 |
+| **可选** | ~~**O-1** 索引生成器入仓~~ ✅ **已闭合**(2026-11-12,per **Entry #342**)· **O-3** `cpptlm-cep-b3b2-d4-trigger-probe` 提案 · **O-4** `.arch-handoff.json` 陈旧(⇒ 继续走内置流程) · **O-5** session-bootstrap profile | — | planner | 低 |
 
 #### ② 建议顺序(解锁最多 / 风险最低)
 
@@ -19186,3 +19186,14 @@ graph LR
 **⑥ 明确不做**:⛔ 零 ADR 改动 · ⛔ 不改 `07 号` 的**判据内容**(只改索引段的**生成方式**)· ⛔ 不动 B3b-2 的 `⭕` 登记与计数(仍 **0/4**)· ⛔ 不新增 run 产物入库(retention 丙不动)· ⛔ 不含 C2/C3/C4 · ⛔ 不动 `test/CMakeLists.txt`(3 闸**已注册**)· ⛔ 不改 `docs/guide/cep-usage.md` §12.8 的表格(该表自述「本表不是状态源」)。
 
 **⑦ 关联**:**#340**(§13 任务梳理 + 排序)· **#341**(14 号归位)· **#339**(SU 收口批 · 手工同步吞内容的两处实证)· **#331**(`gate_selftest` fixture 老化先例)· **#295**(索引移文末纪律 + retention 丙)· `ADR-CEP-06`(4 件套 + 有牙原则)· `ADR-CEP-00A` SU 2026-11-11 ①(跨仓锚点治理不变量)· `ADR-CEP-12`(受限族声明)· `.rddf/reviews/cep-governance-goal-scope-review.md`(architect 梳理报告)
+
+**⑧ 终态回归回执(施工完成后补记,2026-11-12)**
+
+| 面 | 实测 |
+|---|---|
+| `ctest --test-dir build -j4` | **168 / 168 passed, 0 failed**(136.44s) |
+| `[cep]` Catch2 | **508 cases / 11516 assertions** 全绿(与台账基线一致 ⇒ 零回归) |
+| **35 闸 rc 双判** | **35 / 35 rc=0**(分两批全跑;链前预期的两条红 —— `cep_freeze_check.sh`(07 号 hash 变)与 `cep_freeze_reverse_verify.sh`(基线红所致)—— 在五步链完成后**均转绿**) |
+| 冻结面 | 无参复验 rc=0;provenance 自检通过(78 个产物 hash 与 commit `0704b7ca` 一致) |
+| 派生订正 | `obj` 的活状态行「索引生成器未入仓(backlog)」⇒ **已入仓**(§「登记态」+ O-1 行);`scripts/README.md` §子目录结构 补 `scripts/cep/` 行(该目录此前**整行缺失** —— 与 R-g 同一 defect class,且新工具落地后必须可被找到) |
+| 提交序 | `58bbc66e`(草案 + plan)→ `65608337`(本 Entry + §13.2)→ `0704b7ca`(产物 7 文件)→ `7e67d8ff`(冻结清单)→ 本回执 commit(**未 push**,等用户确认) |

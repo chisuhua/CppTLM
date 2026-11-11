@@ -18,6 +18,7 @@
 | `pipeline/` | `run_full_pipeline.sh` | 完整仿真流程（生成→仿真→可视化） |
 | `topology/` | `topology_validator.py`, `topology_generator.py`, `analyzer.py`, `path_tracer.py`, `credit_flow.py` | 拓扑生成/分析/验证 |
 | `stats/` | `stats_annotator.py`, `stats_watcher.py`, `layout_manager.py`, `derive_expr.py` | 性能统计与可视化 |
+| `cep/` | `scripts/cep/generate_doc_index.py`, `scripts/cep/parity/`（gem5 对拍探针） | CEP 工具：架构文档**文末索引生成器**（`07 号` 的索引 A/B，2026-11-12 落仓 per 台账 Entry #342）+ 对拍基准探针 |
 
 ## CEP 契约守门脚本（`scripts/test/cep_*.sh`）
 
