@@ -154,10 +154,11 @@ configs/                 # JSON 拓扑配置 (顶层 49 个 json, 递归 60 个)
 docs/
   architecture/          # 真源 1: 通用基础架构 (事务/错误/复位/拓扑/可视化/协议中立基线)
     01-hybrid-architecture-v2.1.md      # ★ 整体 NoC 架构
-    06-inter-module-network.md          # ★ CEP 真源章节 (per ADR-CEP-00A §3.1)
+    06-inter-module-network.md          # 协议中立基线(通用真源 1;CEP 的**引用源**映射见 ADR-CEP-00A §3.1)
     06-bis-coherence-as-network-extension.md  # CEP 一致性扩展真源
     07-coherence-exploration-platform.md # CEP 平台总纲(唯一入口;§4 invariant 定义处)
-    cep/                                # ★ CEP 按层子文档 8 篇(实体;节号以 07 号 为准)
+    cep/                                # ★ CEP 子文档 9 篇(实体;节号以 07 号 为准)
+      parity-baseline.md                #   H7 对拍基准规格(独立验证手段面;**不在 §N 体系内**)
       stub-cache-core.md / coherence-interface.md / protocol-engine.md
       directory-ordering.md / collective-plane.md / fabric-transport.md
       simulation-and-experiment.md / core-traffic-gen.md

@@ -315,7 +315,7 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 - 被验证的是**机制存在且会拦截**(新族接入时表外 `protocol_version` 必被通用闸拦下),
   **不是**「外部规范演进不会造成返工」这一**结论**。
 - **R2 降级不蕴含 R7 变化** —— R7(探索平台结论不可信 · 无对拍验证)的降级条件是
-  **首轮对拍 P-1 ~ P-5 达标**(per `docs/architecture/14-coherence-parity-baseline.md`),
+  **首轮对拍 P-1 ~ P-5 达标**(per `docs/architecture/cep/parity-baseline.md`),
   该实测**尚未发生** ⇒ **R7 维持 🟡 中**。
   ⚠️ 两条风险相邻且都挂在「外部规范 / 外部基准」上 ⇒ 后人**不得**把 R2 的 🟢 读成 R7 也已闭合。
 - **G-3(IC3 变更留痕无自动闸)不因本次降级而关闭** —— 仍为**残余风险**(见 §10.2),自动化列 backlog。
@@ -373,7 +373,7 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 
 **关联**: 台账 `obj-cep-platform.md` **Entry #122**(口径裁决 + 授权记录 + 8 项残余风险 + 草稿修订清单)
 · `ADR-CEP-04 §2 / §4`(caps + hazard 契约)· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值锁)
-· `07 号 §5.1.1`(协议族表)· `docs/architecture/14-coherence-parity-baseline.md`(H7 的范围限定与 R-B 失效区)
+· `07 号 §5.1.1`(协议族表)· `docs/architecture/cep/parity-baseline.md`(H7 的范围限定与 R-B 失效区)
 
 ---
 
@@ -425,3 +425,26 @@ RISC-V adoc 不存在 · `openspecification/tilespec` 仓库 404 · GitHub 搜�
 **关联**: 台账 `obj-cep-platform.md` **Entry #135**(授权记录 + 逐条依据)· **#134**(队列 #11 Task 0 硬门 + ④bis 二次普查)
 · `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md`(§8 版本建议 / §9 钉版 / §7 R-T1·R-T5·R-T8)
 · `ADR-CEP-09`(通道 5 → VC 4,裁决未闭合)· `ADR-CEP-12`(6 类消息类词表,裁决未闭合)
+
+## Status Update 2026-11-11(per 台账 Entry #341)—— **对拍基准规格的路径迁移**(顶层 `14-…` → `cep/parity-baseline.md`)
+
+> **性质**:末尾追加 SU(append-only)。⛔ **既有正文与既有 `## Status Update` 段逐字未变**;⛔ **新增 invariant 数 = 0**;⛔ **不改 §3 锁表任何取值**。
+> **背景**:per 用户裁决「**A · 仅 14 号移位 + 2 处标注修正**」(台账 **Entry #341**)⇒ `docs/architecture/14-coherence-parity-baseline.md` 归位至 `docs/architecture/cep/parity-baseline.md`(**去数字前缀**,per 治理裁定表 §六 硬规则 ②「`cep/` 无数字前缀,避与顶层 01~14 撞车」)⇒ `docs/architecture/` 顶层**只剩 `07 号` 1 份 CEP 文档**(总纲)+ `cep/` 9 篇子文档。
+> **本 ADR 两处引用的处置**:`:318` 与 `:376` 的路径引用已按 ADR 不可变的**第二种合法形态**——「**正文就地澄清(零行数变化)**」(per `ADR-CEP-00A` 的跨仓锚点治理不变量:只改既有行的文字、⛔ 不插入内容 ⇒ **既有行号零位移** ⇒ 跨仓机器锚点不受影响)——就地改为新路径。
+> ⛔ **决策内容零改动**:§3 锁表 8 行、`protocol_version` 取值、判定口径**全部未变**;本段只登记**路径事实订正**。
+
+### 新路径(唯一)
+
+| 旧路径 | **新路径** |
+|---|---|
+| `docs/architecture/14-coherence-parity-baseline.md` | **`docs/architecture/cep/parity-baseline.md`** |
+
+> ⚠️ **该规格文档的内容零改动**(§2 三选项对比 / §3 裁决 / §4 对拍手段 P-1 ~ P-5 / §7 成本分期 **全部原样**)⇒ 本 ADR 的 **H7 口径**与 **R-B 失效区**判定**不变**。
+
+### Verification(可勾选 · 前瞻)
+
+- [x] 本 ADR 的既有 **决策正文与既有 SU 段逐字未变**;唯二例外 = `:318` / `:376` 的**路径就地澄清**(零行数变化,per 上文处置口径)
+- [x] 对拍基准规格**内容零改动** ⇒ H7 口径 / R-B 失效区判定不变
+- [x] 新路径已存在于仓内(`docs/architecture/cep/parity-baseline.md`),并被 `cep_freeze_check.sh` 的 glob `docs/architecture/cep/*.md` 纳入(冻结产物 **77 → 78**)
+
+**关联**:台账 **Entry #341**(授权 + 范围 + 连带修正清单)· **#340**(下一阶段任务梳理与实施路径)· `docs/architecture/cep/parity-baseline.md`(H7 对拍基准规格)· `docs/architecture/07-coherence-exploration-platform.md`(总纲 —— §7 实验输出协议是**运行面**,对拍基准是**手段面**,两者互补不重叠)· 治理裁定表 §六(硬规则 ②)

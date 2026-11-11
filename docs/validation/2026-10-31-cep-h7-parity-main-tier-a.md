@@ -1,7 +1,7 @@
 # H7 主对拍档(固定命中率档)实测报告 —— 口径 A
 
 > **日期**:2026-10-31 · **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #118**
-> **方法规格**:`docs/architecture/14-coherence-parity-baseline.md` §4.2 + §4.4(2026-10-31 裁决的**口径 A**)
+> **方法规格**:`docs/architecture/cep/parity-baseline.md` §4.2 + §4.4(2026-10-31 裁决的**口径 A**)
 > **状态**:✅ 实测完成 ⇒ **结论 =「H7 不可判」**(P-2/P-3 通过,但**鉴别力自检失败**)
 
 ---

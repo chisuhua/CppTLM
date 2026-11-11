@@ -1,7 +1,7 @@
 # H7 对拍基准首轮实测报告 —— 辅助档(常数档)
 
 > **日期**:2026-10-31 · **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #113**
-> **方法规格**:`docs/architecture/14-coherence-parity-baseline.md`(P-1 ~ P-5 判据 + 4 类失配归因)
+> **方法规格**:`docs/architecture/cep/parity-baseline.md`(P-1 ~ P-5 判据 + 4 类失配归因)
 > **状态**:✅ **首轮实测完成(辅助档 PASS)** —— ⚠️ **H7 仍未验证 · R7 维持 🟡 中**
 
 ---

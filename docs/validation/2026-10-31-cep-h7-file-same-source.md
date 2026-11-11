@@ -2,7 +2,7 @@
 
 > **日期**:2026-10-31 · **档位**:主对拍档(文件同源) · **状态**:✅ 实测完成
 > **结论**:**H7 在【声明范围:均匀随机负载】内成立**;
-> ⚠️ **不得**表述为「H7 已验证」(per `docs/architecture/14-coherence-parity-baseline.md` §4.4 的表述纪律)
+> ⚠️ **不得**表述为「H7 已验证」(per `docs/architecture/cep/parity-baseline.md` §4.4 的表述纪律)
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md` Entry #120
 > **判据规格**:`14 号` §4.4(封闭枚举表 + 按 class 分列 + 分层措辞)
 > **前序报告**:`-parity-first-round.md`(常数档)· `-same-source-trace.md`(同源 trace 档)·

@@ -3,7 +3,7 @@
 //   —— CXL 2.0 非对称规约载体(Phase 2a 结构层)的契约测试 + 反向 fixture
 //
 // 作者: CppTLM Team / 日期: 2026-11-01
-// 配套: include/tlm/cep/cxl_state_spec.hh · docs/architecture/14-coherence-parity-baseline.md(无关)
+// 配套: include/tlm/cep/cxl_state_spec.hh · docs/architecture/cep/parity-baseline.md(无关)
 //       openspec/changes/cpptlm-cep-cxl-nonsymmetric-state-spec/(delta spec AC-1 / AC-2 / AC-4 /
 //       AC-5) 台账 obj-cep-platform.md Entry #122(口径裁决)· #123(change 转正)
 //

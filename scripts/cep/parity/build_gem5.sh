@@ -3,7 +3,7 @@
 #   —— **gem5 对拍基准的构建入口**(本仓侧可复现脚本;支持**多版本**)
 #
 # 目的:把「第三方对拍基准 = gem5」从「一次性手工操作」变成**可复现的项目构建步骤**
-#       (per 台账 Entry #113 / `docs/architecture/14-coherence-parity-baseline.md` §3.1:
+#       (per 台账 Entry #113 / `docs/architecture/cep/parity-baseline.md` §3.1:
 #        主基准 = gem5 ⇒ 满足 M3「对拍基准外置」—— 第三方既有资产,本仓不维护其实现)。
 #
 # ── 版本钉版(可复现性硬要求)──────────────────────────────────────────

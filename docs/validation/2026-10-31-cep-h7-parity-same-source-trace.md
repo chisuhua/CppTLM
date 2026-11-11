@@ -1,7 +1,7 @@
 # H7 对拍基准 —— 同源 trace 档首轮实测报告
 
 > **日期**:2026-10-31 · **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #114**
-> **方法规格**:`docs/architecture/14-coherence-parity-baseline.md`(§4.1 访问流契约 + §4.2 模型对齐表 + §4.4 判据)
+> **方法规格**:`docs/architecture/cep/parity-baseline.md`(§4.1 访问流契约 + §4.2 模型对齐表 + §4.4 判据)
 > **状态**:✅ **同源 trace 档跑通,5/5 判据全绿** —— ⚠️ **H7 仍未验证 · R7 维持 🟡 中**
 
 ---

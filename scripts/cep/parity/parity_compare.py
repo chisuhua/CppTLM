@@ -2,7 +2,7 @@
 """scripts/cep/parity/parity_compare.py
    —— 对拍比较器:把 **CppTLM 侧参数** 与 **gem5 侧实测** 比对,产出判据 verdict
 
-判据(辅助档 = **常数档**,per `docs/architecture/14-coherence-parity-baseline.md` §4.2):
+判据(辅助档 = **常数档**,per `docs/architecture/cep/parity-baseline.md` §4.2):
    · **P-1 访问数**:两侧访问数**必须一致**(否则对拍无效 ⇒ 先查这个);
    · **P-4 延迟常数**:命中 / 未命中延迟的**相对偏差 < 容差**(默认 15%)。
 

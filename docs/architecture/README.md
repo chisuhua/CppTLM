@@ -1,7 +1,7 @@
 # 架构设计文档 (通用基础架构)
 
 > **版本**: 1.3
-> **最后更新**: 2026-11-11 (v1.5 — **CEP 文档治理收口**（台账 Entry #333 ~ #339）：07 号 总纲 1440 → 642 行 + 8 篇按层子文档 + 状态标记刷新)
+> **最后更新**: 2026-11-11 (v1.5 — **CEP 文档治理收口**（台账 Entry #333 ~ #339）：07 号 总纲 1440 → 648 行 + **9 篇 CEP 子文档**(per Entry #341 归位 14 号)+ 状态标记刷新)
 > **变更**: 与 `docs/designs/` 分工明确（dGPU 应用架构已迁出）+ 真源 1 (通用基础架构) 索引同步
 
 > **⚠️ v0.4 X-11 cross-ref**: 本目录是 AGENTS.md §DOC HYGIENE 真源原则定义的"真源 1" (通用基础架构唯一真源). 文档状态与正文严格同步是治理成功的必要条件 (per critic 评审 B1+B2 BLOCKER). 任何修订必须先改这里 + 同步索引 (本 README) + 同步 ADR (docs/adr/) + 同步调研 (docs/research/).
@@ -33,8 +33,8 @@
 | [03-error-debug-architecture.md](./03-error-debug-architecture.md) | ✅ v1.0 已实施 | 错误与调试架构 (ErrorCategory + ErrorContextExt + DebugTracker, 2026-10-19 状态对齐) |
 | [04-reset-checkpoint-architecture.md](./04-reset-checkpoint-architecture.md) | ✅ v1.0 已实施 | 复位与快照架构 (ResetConfig + save_snapshot, 2026-10-19 状态对齐) |
 | [06-inter-module-network.md](./06-inter-module-network.md) | 🟡 **v0.4 修订中** (2026-10-19) | 模块互联网络协议中立基线 + Bundle 二分类 + Python 拓扑契约 (详化 01 §1.1 6 层 + §1.2 Bundle 命名 + §4.7 simulation_mode, 双向 cross-ref) |
-| [06-bis-coherence-as-network-extension.md](./06-bis-coherence-as-network-extension.md) | 🟡 **v0.3 修订中** (2026-10-19) | Coherence 演进 seam 详化 (与 06 §15 + ArchForge coherence-protocol.md 跨仓引用, 不重发明) |
-| [07-coherence-exploration-platform.md](./07-coherence-exploration-platform.md) | ✅ **v0.2 治理收口** (2026-11-11) | Coherence Exploration Platform (CEP) 一致性互联仿真平台 — **总纲(唯一入口)**: 6 层架构 + canonical 10 流 + **§4 66 条守门 invariant(编号位 67 / 15 组,定义处)** + 演进路线 (per `ADR-CEP-00` 22 份 ADR 整合, **与 01 §1.1 L1-L6 正交**) · **按层拆分的 8 篇子文档见 [`cep/`](./cep/)** · ⛔ **本文不承载实施状态**(→ 台账 `§4.0` / `§4.0-a` / `§6.2` / `§11`)、⛔ **不承载架构决策**(→ `docs/adr/ADR-CEP-*.md`);10 则历史 SU 已收敛为**归宿指针**(per 台账 Entry #339) |
+| [06-bis-coherence-as-network-extension.md](./06-bis-coherence-as-network-extension.md) | ⛔ **已被 07 号 supersede** · 历史保留 (2026-10-21) | Coherence 演进 seam 详化 (与 06 §15 + ArchForge coherence-protocol.md 跨仓引用, 不重发明) |
+| [07-coherence-exploration-platform.md](./07-coherence-exploration-platform.md) | ✅ **v0.2 治理收口** (2026-11-11) | Coherence Exploration Platform (CEP) 一致性互联仿真平台 — **总纲(唯一入口)**: 6 层架构 + canonical 10 流 + **§4 66 条守门 invariant(编号位 67 / 15 组,定义处)** + 演进路线 (per `ADR-CEP-00` 22 份 ADR 整合, **与 01 §1.1 L1-L6 正交**) · **9 篇 CEP 子文档见 [`cep/`](./cep/)**(按层 8 篇 + `parity-baseline.md`) · ⛔ **本文不承载实施状态**(→ 台账 `§4.0` / `§4.0-a` / `§6.2` / `§11`)、⛔ **不承载架构决策**(→ `docs/adr/ADR-CEP-*.md`);10 则历史 SU 已收敛为**归宿指针**(per 台账 Entry #339) |
 | ↳ [`cep/stub-cache-core.md`](./cep/stub-cache-core.md) | ✅ 子文档 | 第 1 层:Stub Cache Core(§3.2 RN 侧投影 / §3.3 协议无关性) |
 | ↳ [`cep/coherence-interface.md`](./cep/coherence-interface.md) | ✅ 子文档 | 第 2 层:Coherence Interface(§3.1 canonical 10 流 / §5.4 Bundle 约束) |
 | ↳ [`cep/protocol-engine.md`](./cep/protocol-engine.md) | ✅ 子文档 | 第 3 层:Protocol Engine 与协议适配(§5.1 含 **5.1.5 转移表真源判定式**) |
@@ -43,13 +43,13 @@
 | ↳ [`cep/fabric-transport.md`](./cep/fabric-transport.md) | ✅ 子文档 | **第 6 层:传输层**(§6.3 装配 seam + **§6.3.1「经网络」定义 / J-9 拓扑分档**) |
 | ↳ [`cep/simulation-and-experiment.md`](./cep/simulation-and-experiment.md) | ✅ 子文档 | 仿真语义 + 实验输出协议(§6.1/6.2/6.4 + §7 含 **7.2.2「全绿」两级**) |
 | ↳ [`cep/core-traffic-gen.md`](./cep/core-traffic-gen.md) | ✅ 子文档 | Core / TrafficGen 主干(决策载体 = `ADR-CEP-19` SU 2026-11-11 的 ASM-1/3/4/7/8/9 + 既有 SU 的另 5 条;「经网络」定义 = `fabric-transport.md` §6.3.1) |
+| ↳ [`cep/parity-baseline.md`](./cep/parity-baseline.md) | ✅ 子文档 | **H7 对拍基准规格**(R7 / H7 / M3):三选项对比 + 裁决(**gem5 Ruby 主基准**)+ 对拍手段(P-1 ~ P-5 判据 + 4 类失配归因)+ 已知结构性差异;**指定 ≠ 实测** ⇒ H7 仍未验证 · 2026-11-11 由顶层 `14-…` 归位(per 台账 Entry #341) |
 | [08-metrics-collection-framework-v2.2.md](./08-metrics-collection-framework-v2.2.md) | ✅ v2.2.0 已实施 | 性能指标收集框架 (histogram + stats + streaming_reporter, 2026-10-19 状态对齐) |
 | [09-topology-visualization-pipeline.md](./09-topology-visualization-pipeline.md) | ✅ v2.0 已批准 | 配置生成 + 可视化架构 (Python `cpptlm/visualization/` + dashboard, 2026-10-19 状态对齐) |
 | [10-topology-generation-management-system.md](./10-topology-generation-management-system.md) | ✅ v3.0 已批准 | 拓扑生成管理系统 (mesh_cluster / ring_cluster + JSON Schema) |
 | [11-coherence-domain-readiness.md](./11-coherence-domain-readiness.md) | 🟡 早期 readiness 评估 | 一致性域准备状态 (ARCH-011, 与 06-bis v0.3 实施蓝图范围正交, 2026-10-19 加 cross-ref) |
 | [12-topology-gap-analysis.md](./12-topology-gap-analysis.md) | ✅ v1.1 已批准 | 拓扑差距分析 (审查修正版) |
 | [13-dashboard-integration.md](./13-dashboard-integration.md) | ✅ v2.0 已批准 | Dashboard 集成 (FastAPI + RunContext + Monaco Editor) |
-| [14-coherence-parity-baseline.md](./14-coherence-parity-baseline.md) | 🟡 草案 v0.1 | CEP 一致性平台**对拍基准**规格(R7 / H7 / M3):三选项对比 + 裁决(**gem5 Ruby 主基准**)+ 对拍手段(P-1 ~ P-5 判据 + 4 类失配归因)+ 已知结构性差异;**指定 ≠ 实测** ⇒ H7 仍未验证
 | ~~14-sm-operand-supply-design-target.md~~ | ➡️ **已迁 ArchForge** | **SM 操作数供给下一代架构设计目标（OSF：MCOS / ERW / WABR / SOP）** — 2026-10-27 迁至【ArchForge 仓】`docs/architecture/33-sm-operand-supply-design-target.md`（🟡 设计目标声明，非现状真相，**未经 Oracle/ADR 评审**）；配套证据【ArchForge 仓】`docs/research/SM/CudaCore/`（SYNTHESIS + 8 篇解析）。**本仓不再保留副本**（silicon 侧真源在 ArchForge；真源 1 只描述 CppTLM 现状） |
 | [02-complex-topology-architecture.md](./02-complex-topology-architecture.md) | ✅ 已批准 | 复杂拓扑实现架构 (RT 桥接, per [06 §0.3](./06-inter-module-network.md) 边界标注) |
 

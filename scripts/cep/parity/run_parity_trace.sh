@@ -2,7 +2,7 @@
 # scripts/cep/parity/run_parity_trace.sh
 #   —— H7 对拍基准的**同源 trace 档**端到端执行入口
 #
-# 流程(两侧消费**同一条**访问流,per `docs/architecture/14-coherence-parity-baseline.md` §4.1):
+# 流程(两侧消费**同一条**访问流,per `docs/architecture/cep/parity-baseline.md` §4.1):
 #   ① 生成确定性 trace(CSV + gem5 protobuf)
 #   ② gem5 侧:`PyTrafficGen.createTrace` 回放 ⇒ 产出 gem5 侧 JSON
 #   ③ CppTLM 侧:`TrafficGenTLM`(TRACE 模式)+ `CacheTLM` ⇒ 产出 cpptlm 侧 JSON

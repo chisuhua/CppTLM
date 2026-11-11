@@ -223,7 +223,7 @@ MESIF 5 态与 MOESI 6 态**词表都不同**，同名态语义未必同构（ME
 ### WU-9: H7 对拍基准指定（**不进** #9 硬前置）— 2026-Q4 内独立落
 
 > **状态**: ✅ **指定已完成**(2026-10-30,台账 Entry #108)· 裁决 = **gem5 Ruby 主基准** ·
-> 手段规格落 `docs/architecture/14-coherence-parity-baseline.md`(P-1 ~ P-5 + 4 类归因);
+> 手段规格落 `docs/architecture/cep/parity-baseline.md`(P-1 ~ P-5 + 4 类归因);
 > ⏳ **首轮实测(P-B / P-C)未做** ⇒ **H7 仍未验证、R7 维持 🟡 中** ⇒ 实测列入 `obj §10`,
 > **不属**本 change 的任何门禁(per J-2)。
 

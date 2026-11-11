@@ -120,6 +120,10 @@ VIRTUAL_PATHS=(
   "openspec/changes/cpptlm-cep-dcoh-nvlink-refkind-migration"  # RefKind 迁移 **已归档**(2026-11-07,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-refkind-coverage/spec.md)⇒ 台账历史 Entry(#266/#267)的路径引用
   "openspec/changes/cpptlm-cep-ualink-coherence-engine"  # UALink 引擎 **已归档**(2026-11-07,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-ualink-coherence-engine/spec.md)⇒ 台账历史 Entry(#270/#271)的路径引用
   "openspec/changes/archive/2026-11-07-cpptlm-cep-refkind-carrier-whitelist-contract"  # 白名单契约对齐归档件 —— **归档后路径**(台账 Entry #272/#273 引用)
+  "docs/architecture/14-coherence-parity-baseline"    # **历史路径**(2026-11-11 归位;⛔ **不带 .md** ⇒ 子串匹配同时覆盖带/不带后缀两种形态):该文件已迁至
+                                                      #   `docs/architecture/cep/parity-baseline.md`(per 台账 Entry #341)⇒ 台账
+                                                      #   **历史 Entry 的 append-only 引用**与 Entry #341 的迁移对照表仍写旧路径
+                                                      #   (历史不可改写)⇒ 登记为死路径豁免(⛔ 新路径**不豁免**)
   "include/ src/"                                   # 多路径合写(非单一路径)
   "include/ src/ test/"                             # 同上
   # —— 通配 / 省略号 / 目录列表:不是「可判存在的单一路径」——

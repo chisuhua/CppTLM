@@ -297,6 +297,6 @@ GEN:PASS
 - 台账 `.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #122**(口径裁决 + 授权记录 + 8 项残余风险)
 - `docs/adr/ADR-CEP-11-protocol-version-locking.md` 的 **`## Status Update(2026-11-01)`**(裁决 7 条)
 - `docs/adr/ADR-CEP-04-*.md`(§2 caps · §4 hazard 契约)· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值)· `ADR-CEP-05`(投影)
-- `docs/architecture/07-coherence-exploration-platform.md` §5.1.1(协议族表)· `14-coherence-parity-baseline.md`(H7 范围限定 + R-B 失效区)
+- `docs/architecture/07-coherence-exploration-platform.md` §5.1.1(协议族表)· `parity-baseline.md`(H7 范围限定 + R-B 失效区)
 - ArchForge `docs/microarchitecture/snoop_filter.md` §0.2(caps 逐字段一致的**唯一**跨仓锚)· `ADR-SOC-21` D2(不做 CXL 栈)
 - 草稿 `.rddf/improvements/cpptlm-cep-cxl-nonsymmetric.md`(2026-11-01 修订版)

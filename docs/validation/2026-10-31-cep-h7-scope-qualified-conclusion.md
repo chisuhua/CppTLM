@@ -1,7 +1,7 @@
 # H7 结论收口 —— 范围限定声明(A-2 形态)
 
 > **日期**:2026-10-31 · **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #119**
-> **方法规格**:`docs/architecture/14-coherence-parity-baseline.md` §4.4(P-2a 两形态 + 表述纪律)
+> **方法规格**:`docs/architecture/cep/parity-baseline.md` §4.4(P-2a 两形态 + 表述纪律)
 > **状态**:✅ **收口完成** ⇒ 结论 =「**H7 在【声明范围】内成立**」
 
 ---

@@ -52,7 +52,7 @@ def estimate_h0_rB(working_set_bytes, cache_bytes):
 
 
 # ── **封闭枚举表**(profile → class)──────────────────────────────────
-# ⚠️ **唯一真源 = `docs/architecture/14-coherence-parity-baseline.md` §4.4**
+# ⚠️ **唯一真源 = `docs/architecture/cep/parity-baseline.md` §4.4**
 #    (「流的两类分类与『按声明分类』的判据语义」);此处是它的**机器镜像**。
 # ⚠️ **分类由「声明的 profile」决定,不由观测结果反推** ——
 #    否则标准**不可证伪**(一条真均匀流若真挂了会被自动改判为 breaking)。

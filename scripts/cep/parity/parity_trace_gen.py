@@ -2,7 +2,7 @@
 """scripts/cep/parity/parity_trace_gen.py
    —— H7 对拍基准的**同源 trace 生成器**(两侧消费**同一条**访问流)
 
-为什么需要它(per `docs/architecture/14-coherence-parity-baseline.md` §4.1):
+为什么需要它(per `docs/architecture/cep/parity-baseline.md` §4.1):
    · 本仓 `TrafficGenTLM` 的 RNG 是**内部种子** ⇒ 两侧各自生成 ⇒ **无法同源**;
    · gem5 `MemTest` 的地址序列由 `Random::genRandom()` 播种 ⇒ **每次运行不同**;
    ⇒ 唯一正解 = **离线生成一条确定性访问序列,两侧读同一文件**。

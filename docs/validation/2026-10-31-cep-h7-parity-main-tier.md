@@ -1,7 +1,7 @@
 # H7 主对拍档（固定命中率档）实测报告
 
 > **日期**:2026-10-31 · **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #117**
-> **方法规格**:`docs/architecture/14-coherence-parity-baseline.md` §4.2（2026-10-31 修订后的主对拍设计）+ §4.4 判据
+> **方法规格**:`docs/architecture/cep/parity-baseline.md` §4.2（2026-10-31 修订后的主对拍设计）+ §4.4 判据
 > **状态**:✅ **主对拍档已实测** —— ⚠️ **P-2 判 FAIL** ⇒ **H7 在「统一 `h_0`」口径下不成立**
 > ⚠️ **且暴露了 P-2 判据本身的口径不足**(见 §6)
 

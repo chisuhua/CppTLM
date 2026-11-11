@@ -1,8 +1,11 @@
-# 14 — CEP 一致性平台的对拍基准(R7 / H7 口径)
+# CEP 一致性平台的对拍基准(R7 / H7 口径)
 
+> **本文件是** [`07-coherence-exploration-platform.md`](../07-coherence-exploration-platform.md) **的 CEP 子文档**(per 台账 Entry #341 · 2026-11-11 由 `docs/architecture/14-coherence-parity-baseline.md` **归位**至此)。
+> **总纲是唯一入口** —— CEP 主题的**现行**架构文档全部在 `docs/architecture/cep/`;⛔ 原顶层 `14-` 数字前缀已去(per 裁定表 §六 硬规则 ②「`cep/` 无数字前缀,避与顶层 01~14 撞车」)。
+> ⚠️ **本文件不在总纲的 `§N` 节号体系内** —— 它是 **H7 对拍基准规格**(独立**验证手段**面;上游 = `objective-cep-platform §8.1 R7` / `§9.1 H7` / `§9.2 M3` / `§10` P0 行)⇒ **⛔ 不另立节号,也不改总纲的判据**;总纲 §7 是实验输出**运行**面,本文件是对拍**手段**面 —— 两者**互补不重叠**。
 > **状态**:🟡 草案(v0.1,2026-10-30)· **依据**:台账 Entry #108 · **上游**:`obj-cep-platform §8.1 R7` / `§9.1 H7` / `§9.2 M3` / `§10` P0 行
 > **定位**:本文件是**验证方法**规格(可执行口径),**不是**验证报告 ⇒ 实测报告落 `docs/validation/`。
-> **不修改** `07-coherence-exploration-platform.md` 的任何判据;本文只**指定**手段。
+> **不修改** [`docs/architecture/07-coherence-exploration-platform.md`](../07-coherence-exploration-platform.md) 的任何判据;本文只**指定**手段。
 
 ---
 

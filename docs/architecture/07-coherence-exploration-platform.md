@@ -1,6 +1,6 @@
 # 07 — Coherence Exploration Platform(CEP)一致性互联仿真平台
 
-> **状态**: ✅ **v0.2 治理收口**(2026-11-11,per 台账 Entry #339)—— **总纲**(唯一入口)+ 8 篇按层子文档(`cep/`);⛔ **本文不承载「逐实例 / 逐族」的实施状态**(那是台账 `§4.0-a` / `§6.2` / `§11` 的职责;§2 / §8.3 里残留的**交付物起草状态列**属文档自述,不是实施达成度);⛔ **本文不承载架构决策**(见 `docs/adr/ADR-CEP-*.md`)
+> **状态**: ✅ **v0.2 治理收口**(2026-11-11,per 台账 Entry #339)—— **总纲**(唯一入口)+ 9 篇 CEP 子文档(`cep/`);⛔ **本文不承载「逐实例 / 逐族」的实施状态**(那是台账 `§4.0-a` / `§6.2` / `§11` 的职责;§2 / §8.3 里残留的**交付物起草状态列**属文档自述,不是实施达成度);⛔ **本文不承载架构决策**(见 `docs/adr/ADR-CEP-*.md`)
 > **作者**: CppTLM build agent(architect mode)
 > **真源分级**: 本文件是 **真源 1**(通用基础架构,per AGENTS.md §DOC HYGIENE 真源原则)
 > **关联真源 1**:
@@ -30,7 +30,7 @@
 > |---|---|---|
 > | **§4** invariant 总表 | **正文(定义处)** | ⛔ **就在本文件** —— 4 个消费方钉住(`cep_docs_sync_check.sh` / `test/cep_adr_parser.hh` / `test_cep_canonical_invariants.cc` / `ADR-CEP-00A §3.9`) |
 > | §1 / §2 | 正文(导航图 + 6 层职责) | 本文件 |
-> | §3 / §5 / §6 / §7 | **指针(非定义处)** | `cep/` 8 篇子文档(逐节桩首行写实体路径) |
+> | §3 / §5 / §6 / §7 | **指针(非定义处)** | `cep/` 8 篇按层子文档(逐节桩首行写实体路径)+ **`cep/parity-baseline.md`**(H7 对拍基准规格 —— **不在 `§N` 体系内**,独立**验证手段**面) |
 > | §8 | 正文(演进路线 + 治理不变量) | 本文件 |
 > | §9 / §10 | 正文(列表) | 本文件 |
 > | §11 / §12 | 指针桩 | 台账 / `docs/guide/cep-usage.md` |
@@ -639,10 +639,11 @@ group-scoped completion     → Fabric Collective Plane
 | **子文档:第 6 层(传输层)** | [`cep/fabric-transport.md`](cep/fabric-transport.md) | §6.3 / §6.3.1 实体 |
 | **子文档:仿真与实验** | [`cep/simulation-and-experiment.md`](cep/simulation-and-experiment.md) | §6.1/6.2/6.4 + §7 实体 |
 | **子文档:Core/TrafficGen** | [`cep/core-traffic-gen.md`](cep/core-traffic-gen.md) | 本层实体 + **决策载体三分**(ASM-1/3/4/7/8/9 + 既有 SU 的 5 条 + §6.3.1);per 批 4 = **已落 ADR**(⛔ 非骨架) |
+| **子文档:对拍基准** | [`cep/parity-baseline.md`](cep/parity-baseline.md) | **H7 对拍基准规格**(独立**验证手段**面;上游 = `obj §8.1 R7` / `§9.1 H7` / `§9.2 M3`;⛔ **不在 `§N` 体系内**) |
 | `obj-cep-platform.md` §6.2 | 台账 | 终局 DoD 12 条 |
 
 ---
 
-**版本**: v0.2 治理收口(2026-11-11,per 台账 Entry #339)—— **总纲 + 8 篇按层子文档**(`docs/architecture/cep/`);v0.1 起草(2026-10-20)+ 17 则 Status Update(2026-10-25 ~ 2026-11-08)**已全部收敛为归宿指针**(per 批 1 瘦身 / 批 2 E 类提炼 / 批 3 按层拆分 / 批 4 A 类落 ADR / 批 5 SU 收口)。
+**版本**: v0.2 治理收口(2026-11-11,per 台账 Entry #339)—— **总纲 + 9 篇 CEP 子文档**(`docs/architecture/cep/`);v0.1 起草(2026-10-20)+ 17 则 Status Update(2026-10-25 ~ 2026-11-08)**已全部收敛为归宿指针**(per 批 1 瘦身 / 批 2 E 类提炼 / 批 3 按层拆分 / 批 4 A 类落 ADR / 批 5 SU 收口)。
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)
