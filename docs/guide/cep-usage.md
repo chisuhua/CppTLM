@@ -55,7 +55,7 @@
 
 | 步 | 动作 | 落点 / 载体 | 硬约束 |
 |----|------|------------|-------|
-| 0 | **先判「转移表真源」是否成立** | 判定式 T1–T4 = `07 号` Status Update 2026-11-06 §②;**逐族当前判定 = 同段 §③** | ⛔ **T1–T4 未全满足 ⇒ 不补引擎**(补 = 推理填空,per 台账 Entry #238) |
+| 0 | **先判「转移表真源」是否成立** | 判定式 T1–T4 = [`cep/protocol-engine.md`](../architecture/cep/protocol-engine.md) §5.1.5;**逐族当前判定 = 台账 `Entry #249` ① 的 `D-3` + `objective-cep-platform §6.2` 的 B3b-1 / B3b-2**（原文出处 = `07 号` 的 `Status Update(2026-11-06)` §②/§③，per Entry #339 已收敛为归宿指针） | ⛔ **T1–T4 未全满足 ⇒ 不补引擎**(补 = 推理填空,per 台账 Entry #238) |
 | 1 | 建 feature fragment(**条件步**) | `rddf roadmap add-feature cep --phase-refs phase-10,phase-11` | **触发条件** = 「phase-11 注册 **且** ≥2 CEP changes 跨 phase-10/11 分布」(`.rddf/roadmap.md` Features 段);⚠️ **今日 phase-11 未注册 ⇒ 本步暂不执行**;⛔ 单 phase 退化形态(零信息量)不建 |
 | 2 | 建**单** change(两段式) | 规约层 + 实现层(先例:队列 #10 ~ #14) | **KPI Proposed 并发 ≤ 1**(`objective-cep-platform §5.4`) |
 | 3 | 落**状态规约载体** | `<family>_state_spec.hh`(置于 `include/tlm/cep/`,表驱动 `transition` + 逐格 `basis`) | ⛔ **零自有表副本**(adapter 委托规约载体);⚠️ **例外**:若族的状态机**内联在 adapter**(CHI RN-F 先例,per 同段 §③)⇒ **不**新建载体,改走 adapter 内联表 + 对应契约面 |
@@ -146,9 +146,9 @@
 
 ## 12.7 DoD 读法(B3b-1 vs B3b-2 + ⏭ 登记语义 + 禁写 `✅(⏭)`)
 
-**终局 DoD 12 条**真源 = `objective-cep-platform §6.2`。本节只给**读法**,⛔ 不复制条款。⚠️ **禁令的权威文本 = `07 号` 的 `Status Update 2026-11-04` ① 段(防自伪条款)**(防自欺条款);本节只给读法,⛔ 不另立禁令。
+**终局 DoD 12 条**真源 = `objective-cep-platform §6.2`。本节只给**读法**,⛔ 不复制条款。⚠️ **禁令的权威文本 = 台账 `objective-cep-platform §6.2`(B3a / B3b 拆两行 + **防自伪条款**)**—— 原文在 `07 号` 的 `Status Update 2026-11-04` ① 段,per 台账 Entry #339 收口已**收敛为归宿指针**;本节只给读法,⛔ 不另立禁令。
 
-**两条必须分开读的 DoD 行**(per `07 号` Status Update 2026-11-04 ① 的「一词两义」裁决):
+**两条必须分开读的 DoD 行**(per 台账 `objective-cep-platform §6.2` 的「一词两义」拆两行裁决 —— 原文出处 `07 号` 的 `Status Update 2026-11-04` ① 段):
 
 | 行 | 含义 | 当前值 | 读法 |
 |----|------|:-----:|------|
