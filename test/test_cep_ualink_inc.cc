@@ -601,6 +601,70 @@ TEST_CASE("V6-d: R1-b 排序假设逐 VC 一致(值不一致 / 条目缺失 / ke
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// V6-d —— **(C-1′-S) / `R1-c`**:scope 完备性(per C2 · Entry #347 · A3)
+// ══════════════════════════════════════════════════════════════════════════
+// ⚠️ **TDD 纪律**:2 条变异**先于实现**写就 ⇒ 实现期跑出红 ⇒ 再写实现转绿。
+// ⚠️ **变异实例 MUST 用 `chi_rnf`**(per metis P1-8):它**不在** `plane_binding` 里
+//   ⇒ 插键是**真插键**;⛔ **不用** `moesi_gpu` / `mesif`(它们**已在**里、值为 `null`
+//   ⇒ 那是「改值」⇒ 与 AC-5 的描述不符)。
+// ⚠️ **红因必须可区分**:「`(plane, network)` 不在 `certificate_scope`」(s-5)
+//   ⛔ **不是**「plane 未登记」(s-2)⇒ 两者归因文本不同。
+TEST_CASE("V6-d: R1-c scope 完备性(插键不在 scope / 绑定 plane 但无 VC 绑定)",
+          "[cep][ualink-inc][certificate][r1-c]") {
+    const std::string decl_text = read_repo_file("include/tlm/cep/collective_planes.json");
+    const auto doc = nlohmann::json::parse(decl_text);
+    const auto decl = cep::parse_collective_plane_declaration(doc);
+    const auto snap = cep::load_vc_binding_snapshot(
+        std::string(CPPTLM_SOURCE_DIR) + "/include/tlm/cep/protocol_instances.json",
+        std::string(CPPTLM_SOURCE_DIR) + "/include/tlm/cep/fabric.json");
+    REQUIRE_FALSE(snap.source_error);
+
+    constexpr const char* kR1c = "[CP-03-VC-CERTIFICATE/R1-c] ";
+
+    // ── 正控:基线全绿(`ualink_4 → FabricCollectivePlane` 的 `ualink_fabric` 在 scope 内)──
+    {
+        std::string d;
+        REQUIRE(cep::evaluate_shared_mode_certificate(decl, snap, cep::default_untested_registry(),
+                                                      d) == cep::ContractVerdict::PASS);
+        REQUIRE(d.rfind("[CP-03-VC-CERTIFICATE]", 0) == 0);
+    }
+
+    // ── 变异① **AC-5**:给 `chi_rnf` **插键**为 `FabricCollectivePlane` ──
+    //   ⇒ 它的 `vc_binding` 只在 `compute_noc` 上 ⇒ `(FabricCollectivePlane, compute_noc)`
+    //     **不在** `certificate_scope`(scope 只有 `ualink_fabric`)⇒ 必红。
+    {
+        auto poisoned = decl;
+        REQUIRE(poisoned.plane_binding.count("chi_rnf") == 0u);  // 确认是**插键**不是改值
+        poisoned.plane_binding["chi_rnf"] = "FabricCollectivePlane";
+        std::string d;
+        REQUIRE(cep::evaluate_shared_mode_certificate(poisoned, snap,
+                                                      cep::default_untested_registry(),
+                                                      d) == cep::ContractVerdict::FAIL);
+        REQUIRE(d.rfind(kR1c, 0) == 0);
+        // 红因 MUST 含「不在 certificate_scope」⇒ ⛔ 不含「plane 未登记」
+        REQUIRE(d.find("certificate_scope") != std::string::npos);
+        REQUIRE(d.find("未在") == std::string::npos);  // s-2 的红因措辞
+    }
+    // ── 变异② **AC-11**:绑 `FabricCollectivePlane` 的实例**无任何** `vc_binding` ──
+    //   ⇒ M-2 **无主体** ⇒ 必红(对称 C-1′ 的「无实例 ⇒ FAIL」)。
+    {
+        auto poisoned = snap;
+        REQUIRE(poisoned.per_network_orderings.count("ualink_fabric") == 1u);
+        // 从所有 network 里剔除 `ualink_4` ⇒ 该实例在 `per_network_orderings` 中查不到
+        for (auto& [network, entries] : poisoned.per_network_orderings) {
+            entries.erase(std::remove_if(entries.begin(), entries.end(),
+                                         [](const auto& e) { return e.first == "ualink_4"; }),
+                          entries.end());
+        }
+        std::string d;
+        REQUIRE(cep::evaluate_shared_mode_certificate(decl, poisoned,
+                                                      cep::default_untested_registry(),
+                                                      d) == cep::ContractVerdict::FAIL);
+        REQUIRE(d.rfind(kR1c, 0) == 0);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // V6-d —— 四条证书(C-1′ / C-2 / C-3 / C-4)
 // ══════════════════════════════════════════════════════════════════════════
 TEST_CASE("V6-d: M-2 共享模式证书全绿(C-1′/C-2/C-3/C-4)", "[cep][ualink-inc][certificate]") {

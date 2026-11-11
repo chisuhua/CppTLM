@@ -19625,3 +19625,90 @@ graph LR
 **⑥ 关联**
 
 **Entry #347**(A0 授权)· **#348**(A1 快照字段)· **#346**(metis gap 处置 · P1-9 / P1-12 在本条落地)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-2)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A2 段)
+
+### Entry #350 — 2026-11-12 [build](**C2 · A3 判据 (C-1′-S) 落地** —— `R1-c` scope 完备性;**「循环后」决策实测成立**(既有 C-3 fixture 零改动);**AC-1 反向判据 6/6 无 scope 泄漏**)
+
+**主题**:per 用户口令「开 A3」⇒ 执行 `tasks.md` 的 **A3**(G2 的最后一项)。**⇒ G2 门达成**。
+
+**① TDD 5 步实测(红 → 绿)**
+
+| 步 | 实测 |
+|:--:|---|
+| **红** | 2 条变异**先于实现**写就 ⇒ 跑出 **`0 == 1`**(变异①「插键」期望 FAIL 得 PASS)⇒ 旧实现**不读** `plane_binding` ⇒ 判据**确实缺失** |
+| **绿** | 实现后 ⇒ `[cep][ualink-inc][r1-c]` **All tests passed(11 assertions in 1 test case)** = 基线正控 + 2 条变异 |
+| **净** | `[cep][ualink-inc]` ⇒ **433 assertions / 15 test cases**(= A2 后 422/14 + 11/1) |
+
+**② ⭐ metis P0-1 的「循环后」决策 —— 实测成立(本条最有价值的验证)**
+
+| 项 | 实测 |
+|---|---|
+| **决策** | (C-1′-S) 置于 **scope 项循环之后、C-4 之前**(⛔ 不是循环前) |
+| **判据** | 既有 **C-3 的两条反向 fixture**(采用「**改写** `certificate_scope[0].plane`」的变异形态)**未被抢归因** |
+| **证据** | `[cep][ualink-inc]` ⇒ **433 assertions / 15 cases 全绿** ⇒ 既有的 `rfind("[CP-03-VC-CERTIFICATE/C-3]", 0) == 0` **仍成立**;若按原 design(循环前)⇒ 该断言**必失败** |
+| **结论** | ✅ **metis 的 P0-1 是真缺陷** —— 若未在实施前修订,本 change 会在**第一次跑测试**就红 |
+
+**③ 判据形态(per design D-5,含 5 步判定序列)**
+
+| 步 | 判据 | 处置 |
+|:--:|---|---|
+| **s-1** | `plane_binding` 值为空串(loader 把显式 `null` 物化) | **跳过**(该实例不启用 collective;与 V6-c `:831-832` 同型) |
+| **s-2** | plane **未登记**于注册表 | **FAIL**,红因「plane 未登记」—— ⚠️ **诚实差异**:V6-c 的同类检查只在 `status == "unavailable"` 时生效;M-2 模式下 V6-c 是 **SKIP** ⇒ 本判据**自带**这半步(否则是覆盖洞) |
+| **s-3** | plane 是**本地模型** | **跳过**(不承载真实 fabric 集合流量;`nvlink_4 → LocalCollectivePlane` 走此分支) |
+| **s-4** | 该实例**无任何 `vc_binding`** | **FAIL**,红因「M-2 **无主体**」(对称 C-1′ 的「无实例 ⇒ FAIL」) |
+| **s-5** | 该实例 `vc_binding` 的每个 network N ⇒ `(plane, N)` **不在** `certificate_scope` | **FAIL**,红因**含**「不在 `certificate_scope`」且 ⛔ **不含**「plane 未登记」(AC-5 的归因可区分性硬要求) |
+
+> ⚠️ **方向 = 声明 ⇒ scope 完备性**(⛔ 不是「scope 项 ⇒ 声明支持」方向)—— 后者**检不出**「scope 漏登记」。
+> ⚠️ **实例来源 = `per_network_orderings` 反查**(该字段收集口径 = 「有 `vc_binding`」⇒ 查不到 ⟺ 无 `vc_binding`)⇒ ⛔ **不用** `per_network_mappings`(同口径,但反查表更直接)。
+> ⚠️ **空 `plane_binding` ⇒ vacuous PASS**(零键 = 无主体 = 无缺口可查)⇒ ⛔ 语义**区别于** V6-c 的「零键 ⇒ SKIP」⇒ 登记 **L-7**。
+
+**④ 2 条变异(全部按**正确原因**红)**
+
+| # | 变异 | AC | 实测 |
+|:--:|---|---|---|
+| ① | 给 **`chi_rnf`** **插键**为 `FabricCollectivePlane`(⚠️ `chi_rnf` **不在** `plane_binding` 里 ⇒ 真插键;⛔ 不用 `moesi_gpu` / `mesif` —— 它们在里、值为 `null` ⇒ 那是改值)⇒ `(FabricCollectivePlane, compute_noc)` 不在 scope | **AC-5** | ✅ FAIL + 前缀 `R1-c` + 红因含「`certificate_scope`」且 **⛔ 不含「未在」** |
+| ② | 从 `per_network_orderings` 全部 network 里剔除 `ualink_4` ⇒ 该实例无任何 `vc_binding` | **AC-11** | ✅ FAIL + 前缀 `R1-c` |
+
+**⑤ ⭐ AC-1 反向判据(scope 泄漏检测)—— 探针实测 6/6 通过**
+
+| # | 变异(全部在 `compute_noc` —— **scope 外**) | 期望 | 实测 |
+|:--:|---|---|---|
+| 1 | 改 `compute_noc` 的 ordering 值 | 不红 | ✅ verdict=0 |
+| 2 | 删 `compute_noc` 的 ordering 条目 | 不红 | ✅ verdict=0 |
+| 3 | 注入非法 key(`"abc"`) | 不红 | ✅ verdict=0 |
+| 4 | 注入越界 key(`"99"`) | 不红 | ✅ verdict=0 |
+| 5 | 改 `compute_noc` 的 `vc_binding`(C-1′ 侧) | 不红 | ✅ verdict=0 |
+| 6 | 给 `chi_rnf` 显式 `null` 绑定(不启用 collective) | 不红 | ✅ verdict=0 |
+
+⇒ **failures = 0** ⇒ **无 scope 泄漏** ⇒ 条件化口径(`T-C2-⓪`)的实现**正确**。
+
+**⑥ 实测闸(全绿)**
+
+| 面 | 实测 |
+|---|---|
+| `[cep][ualink-inc][r1-c]` | ✅ **11 assertions / 1 test case** |
+| `[cep][ualink-inc]` | ✅ **433 assertions / 15 test cases**(A2 后 422/14 + 11/1) |
+| `[cep]` | ✅ **511 cases / 11655 assertions**(A2 后 510/11644 ⇒ **+1 / +11**) |
+| `ctest --test-dir build -j4` | ✅ **169/169 passed, 0 failed**(164.60s) |
+| **35 个** `cep_*.sh` 闸 | ✅ **35/35 rc=0**;✗ 计数 **1**(唯一 1 条在 `cep_freeze_reverse_verify.sh` 的「故意破坏」步内 = **预期证据**) |
+| `kContractRuleCount` | ✅ 仍 **6** |
+| 声明数据零改动 | ✅ `git diff --exit-code -- <4 文件>` **rc=0** |
+| **AC-1 反向判据** | ✅ 探针 **6/6** 无 scope 泄漏 |
+
+**⑦ 施工期的一处笔误(已修 · 遗留清扫)**
+
+`detail` 拼接的引号不配对(`"` ⇒ 但 `(` + plane + ", " + network +` —— 开头引号未闭合)⇒ 编译报 `missing terminating " character` ⇒ **已修正**;另 `kR1c` 常量初版**漏声明** ⇒ 已补(锚点注释指向 `ADR-CEP-01` 末尾 SU)。
+> 📌 **教训**:`detail` 是**长字符串拼接** ⇒ 每次改动都要**编译验证**(靠肉眼数引号会漏)。
+
+**⑧ G2 门达成**
+
+| 门 | 内容 | 状态 |
+|:--:|---|:--:|
+| **G2** | **A1 + A2 + A3**(两条判据落地 + 变异全红) | ✅ **达成** —— 快照字段 + `R1-b`(5 变异)+ `R1-c`(2 变异)+ AC-1 反向判据(6/6) |
+
+**⑨ ⛔ 本 Entry 明确不做**
+
+⛔ 零 ADR 改动 · ⛔ 零声明数据改动 · ⛔ 零 main spec 改动 · ⛔ **未改既有 C-3 fixture 的变异形态**(「循环后」使它们零改动)· ⛔ 未新增 `ContractRule` · ⛔ 未实现 M-1 回退机制 · ⛔ 未做 A4 的并排取证(A4 独立)· ⛔ 未做 A5~A9。
+
+**⑩ 关联**
+
+**Entry #347**(A0 授权)· **#348**(A1 快照字段)· **#349**(A2 判据 (b))· **#346**(metis gap 处置 —— **P0-1 在本条实测成立**、P1-8 的 `chi_rnf` 在本条落地)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-3)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A3 段)

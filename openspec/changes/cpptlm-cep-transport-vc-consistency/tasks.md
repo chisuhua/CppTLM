@@ -66,15 +66,17 @@
 
 ## A3 · 判据 (C-1′-S) —— scope 完备性(tag `R1-c`)
 
-- [ ] A3.1 **红 · AC-5**：`decl.plane_binding` **插键** ⇒ 必红 + 精确前缀 `[CP-03-VC-CERTIFICATE/R1-c]` + 红因文本**含**「不在 `certificate_scope`」且 **⛔ 不含**「plane 未登记」
+- [x] A3.1 **红 · AC-5**：`decl.plane_binding` **插键** ⇒ 必红 + 精确前缀 `[CP-03-VC-CERTIFICATE/R1-c]` + 红因文本**含**「不在 `certificate_scope`」且 **⛔ 不含**「plane 未登记」
       > ⚠️ **变异实例 MUST 用 `chi_rnf`**(per metis **P1-8** 的实测)—— `chi_rnf` / `cxl_2_0` / `cxl_3_0_symmetric` / `tilelink_c` **不在** `plane_binding` 里 ⇒ 是真「**插键**」;⛔ **不用** `moesi_gpu` / `mesif`(它们**已在** `plane_binding` 里,值为 `null` ⇒ 那是「改值」⇒ 与 AC-5 的描述不符)
-- [ ] A3.2 **红 · AC-11**：令绑定 `FabricCollectivePlane` 的实例在 `per_network_orderings` 中**查不到**(即无任何 VC 绑定)⇒ 必红,前缀 `R1-c`
-- [ ] A3.3 **绿 · 实现**：新增 (C-1′-S) 子判据 —— 位置 = **scope 项循环之后、C-4 之前**(per design **D-5 / D-6** 的**修订**),tag 常量 `kR1c = "[CP-03-VC-CERTIFICATE/R1-c] "`
+- [x] A3.2 **红 · AC-11**：令绑定 `FabricCollectivePlane` 的实例在 `per_network_orderings` 中**查不到**(即无任何 VC 绑定)⇒ 必红,前缀 `R1-c`
+- [x] A3.3 **绿 · 实现**：新增 (C-1′-S) 子判据 —— 位置 = **scope 项循环之后、C-4 之前**(per design **D-5 / D-6** 的**修订**),tag 常量 `kR1c = "[CP-03-VC-CERTIFICATE/R1-c] "`
       > ⚠️ **⛔ 不放循环之前**(per metis **P0-1** 的实测):既有 C-3 的两条反向 fixture(`test/test_cep_ualink_inc.cc:501-520`)用「**改写** `certificate_scope[0].plane`」的变异形态 ⇒ 循环前会让 R1-c **抢归因** ⇒ 既有断言 `rfind("[CP-03-VC-CERTIFICATE/C-3]", 0) == 0` 必失败 ⇒ **既有 6 条反向 fixture 零改动**是本位置的**硬约束**
-- [ ] A3.3b **空 `plane_binding` 的口径**(per metis **P2-17**):零键 ⇒ C-1′-S **无主体** ⇒ **vacuous PASS**(⛔ 与 V6-c 的「零键 ⇒ SKIP」**语义不同**)⇒ 登记进诚实边界段(per **L-7**)
-- [ ] A3.4 判定序列 = **s-1 空绑定跳过 → s-2 plane 未登记 FAIL → s-3 本地模型跳过 → s-4 无 VC 绑定 FAIL → s-5 (plane,network) 不在 scope FAIL**
-- [ ] A3.5 ⛔ **不**用 `per_network_mappings` 的实例集合(那是「有 vc_binding 的实例」)⇒ 本判据用 **`decl.plane_binding`** 的实例集合(「声明了 plane 绑定的实例」)
-- [ ] A3.6 **净**：既有 V6-d 6 条反向 fixture + 全部 `[cep]` 仍绿
+- [x] A3.3b **空 `plane_binding` 的口径**(per metis **P2-17**):零键 ⇒ C-1′-S **无主体** ⇒ **vacuous PASS**(⛔ 与 V6-c 的「零键 ⇒ SKIP」**语义不同**)⇒ 登记进诚实边界段(per **L-7**)
+- [x] A3.4 判定序列 = **s-1 空绑定跳过 → s-2 plane 未登记 FAIL → s-3 本地模型跳过 → s-4 无 VC 绑定 FAIL → s-5 (plane,network) 不在 scope FAIL**
+- [x] A3.5 ⛔ **不**用 `per_network_mappings` 的实例集合(那是「有 vc_binding 的实例」)⇒ 本判据用 **`decl.plane_binding`** 的实例集合(「声明了 plane 绑定的实例」)
+- [x] A3.6 **净**：既有 V6-d 6 条反向 fixture + 全部 `[cep]` 仍绿
+      > ✅ **实测**:`[cep][ualink-inc]` ⇒ **433 assertions / 15 test cases**(= A2 后 422/14 + 新用例 11/1)⇒ **既有 C-3 两条 fixture 未被抢归因**(metis **P0-1** 的「循环后」决策**实测成立**)
+      > ✅ `[cep]` ⇒ **511 cases / 11655 assertions**;`ctest -j4` ⇒ **169/169**;35 闸 ⇒ **35/35 rc=0**;`kContractRuleCount` 仍 **6**;声明数据零 diff
 
 ---
 

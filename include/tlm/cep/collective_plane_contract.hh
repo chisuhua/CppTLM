@@ -953,6 +953,9 @@ inline ContractVerdict evaluate_shared_mode_certificate(const CollectivePlaneDec
     //   「槽位语义继承」⇒ 借其名会掩盖这是新决策(per K-2 的选项 C 否决)。
     // ⚠️ **尾部空格**是既有约定(`:884-888` 四个常量均以 `] ` 结尾)⇒ 本常量**必须**同样带。
     static const char* kR1b = "[CP-03-VC-CERTIFICATE/R1-b] ";
+    // ⚠️ **C-1′-S 的 tag**(per K-2):锚点 = `ADR-CEP-01` 末尾 `## Status Update`
+    //   (它是 `E.3.3` 的**适用域判据化** ⇒ 主题归属 `ADR-CEP-01`)。
+    static const char* kR1c = "[CP-03-VC-CERTIFICATE/R1-c] ";
     static const char* kAll = "[CP-03-VC-CERTIFICATE] ";
 
     const auto& vd = decl.vc_reservation_declaration;
@@ -1142,6 +1145,80 @@ inline ContractVerdict evaluate_shared_mode_certificate(const CollectivePlaneDec
                 detail = std::string(kC3) + "plane `" + entry.plane +
                          "` **未声明**承担 C-3(控制面与数据面互斥)";
                 return ContractVerdict::FAIL;
+            }
+        }
+    }
+    // ── **(C-1′-S) / `R1-c` scope 完备性** ────────────────────────────
+    // 位置 = **scope 项循环之后、C-4 之前**(per design D-5 / D-6 的**修订**)。
+    //
+    // ⚠️ **⛔ 为什么不是「循环之前」**(实测证据):既有 C-3 的两条反向 fixture
+    //   (`test/test_cep_ualink_inc.cc` 的 C-3 段)采用「**改写** `certificate_scope[0].plane`」
+    //   的变异形态 ⇒ 若本判据在循环前,它会**先于** C-3 判红(membership 因 plane 被改写而不成立)
+    //   ⇒ 既有断言 `rfind("[CP-03-VC-CERTIFICATE/C-3]", 0) == 0` **必失败** ⇒ **抢归因**。
+    //   ⇒ 「循环后」使既有 6 条反向 fixture **零改动**。
+    // ⚠️ **代价(L-6)**:first-failure-wins ⇒ 若 scope 漏登记**同时**循环内有别的失败,
+    //   先报循环内的失败 ⇒ scope 缺口**可能被遮蔽** ⇒ ⛔ 不得声称「一次失败报出全部问题」。
+    //
+    // ⚠️ **方向 = 声明 ⇒ scope 完备性**(⛔ 不是「scope 项 ⇒ 声明支持」方向):
+    //   后者**检不出**「scope 漏登记」⇒ 本判据遍历 `decl.plane_binding`(**声明**侧),
+    //   ⛔ 不遍历 `certificate_scope`(那是循环内的事)。
+    {
+        for (const auto& [instance, plane] : decl.plane_binding) {
+            // s-1 显式 `null`(loader 物化成空串)⇒ 该实例**不启用** collective ⇒ 跳过
+            //   (与 V6-c 的判据口径同型;per `ADR-CEP-01` E.3.3 的「`plane_binding` 为 null
+            //    的实例**不在**范围内」)。
+            if (plane.empty())
+                continue;
+            // s-2 **plane 未登记** ⇒ FAIL
+            //   ⚠️ **诚实差异**:`V6-c` 的同类检查只在 `status == "unavailable"` 时生效;
+            //   M-2 模式(`shared_no_isolation`)下 V6-c 为 **SKIP** ⇒ 若本判据也跳过,
+            //   「plane 未登记」在 M-2 下**无任何载体** ⇒ 本判据**自带**这半步(否则是覆盖洞)。
+            const CollectivePlaneRegistryEntry* e = find_collective_plane(plane.c_str());
+            if (e == nullptr) {
+                detail = std::string(kR1c) + "实例 `" + instance + "` 绑定的 plane `" + plane +
+                         "` **未在** plane 注册表登记 ⇒ 声明不自洽";
+                return ContractVerdict::FAIL;
+            }
+            // s-3 **本地模型** ⇒ 跳过(不承载真实 fabric 集合流量 ⇒ 不在 M-2 覆盖内;
+            //   与 C-3 的 `is_local_model` 语义同型)。`nvlink_4 → LocalCollectivePlane` 走此分支。
+            if (e->is_local_model)
+                continue;
+            // s-4 该实例**无任何** `vc_binding` ⇒ M-2 **无主体** ⇒ FAIL
+            //   (对称 C-1′ 的「无实例 ⇒ FAIL」;⛔ 禁 vacuous PASS)。
+            //   ⚠️ 判定口径 = 在 `per_network_orderings` 的**任一** network 下能查到该实例
+            //     (该字段的收集口径 = 「有 `vc_binding`」⇒ 查不到 ⟺ 无 `vc_binding`)。
+            std::vector<std::string> instance_networks;
+            for (const auto& [network, entries] : snap.per_network_orderings) {
+                for (const auto& [instance_id, orderings] : entries) {
+                    if (instance_id == instance) {
+                        instance_networks.push_back(network);
+                        break;
+                    }
+                }
+            }
+            if (instance_networks.empty()) {
+                detail = std::string(kR1c) + "实例 `" + instance + "` 绑定到真实 fabric plane `" +
+                         plane + "` 但**无任何 `vc_binding`** ⇒ M-2 **无主体**(⛔ 禁 vacuous PASS)";
+                return ContractVerdict::FAIL;
+            }
+            // s-5 该实例 `vc_binding` 的**每个** network N ⇒ `(plane, N)` MUST 在 scope 内
+            for (const auto& network : instance_networks) {
+                bool in_scope = false;
+                for (const auto& scope_entry : vd.certificate_scope) {
+                    if (scope_entry.plane == plane && scope_entry.network == network) {
+                        in_scope = true;
+                        break;
+                    }
+                }
+                if (!in_scope) {
+                    // ⚠️ **红因文本**:本文本 MUST **含**「不在 `certificate_scope`」
+                    //   且 ⛔ **不含** s-2 的措辞 ⇒ 两条判据的归因**可区分**(AC-5 的硬要求)。
+                    detail = std::string(kR1c) + "实例 `" + instance + "` 绑定 plane `" + plane +
+                             "` 且其 `vc_binding` 含网络 `" + network + "` ⇒ 但 `(" + plane +
+                             ", " + network +
+                             ")` **不在 `certificate_scope`** 内 ⇒ M-2 覆盖范围**不完备**";
+                    return ContractVerdict::FAIL;
+                }
             }
         }
     }

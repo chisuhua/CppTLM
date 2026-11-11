@@ -82,14 +82,14 @@
 
 ### WU-3 · 判据 (C-1′-S)(G2 · A3)
 
-- [ ] **A3.1** **红 · AC-5**:`decl.plane_binding` **插键** ⇒ 必红 + 前缀 `R1-c` + 红因含「不在 `certificate_scope`」且 **⛔ 不含**「plane 未登记」
+- [x] **A3.1** **红 · AC-5**:`decl.plane_binding` **插键** ⇒ 必红 + 前缀 `R1-c` + 红因含「不在 `certificate_scope`」且 **⛔ 不含**「plane 未登记」
       > ⚠️ 变异实例 MUST 用 **`chi_rnf`**(per metis **P1-8**)—— `moesi_gpu` / `mesif` **已在** `plane_binding` 里 ⇒ 那是「改值」
-- [ ] **A3.2** **红 · AC-11**:绑 `FabricCollectivePlane` 的实例**无任何** `vc_binding` ⇒ 必红
-- [ ] **A3.3** **绿**:位置 = **scope 循环之后、C-4 之前**(⚠️ **⛔ 不放循环前** —— 既有 C-3 fixture 的归因会被抢,per metis **P0-1**);tag `kR1c = "[CP-03-VC-CERTIFICATE/R1-c] "`
-- [ ] **A3.4** 判定序列 s-1 空绑定跳过 → s-2 plane 未登记 FAIL → s-3 本地模型跳过 → s-4 无 VC 绑定 FAIL → s-5 `(plane,network)` 不在 scope FAIL
-- [ ] **A3.5** ⛔ **不用** `per_network_mappings` 的实例集合 ⇒ 用 **`decl.plane_binding`** 的实例集合
-- [ ] **A3.3b** 空 `plane_binding` ⇒ **vacuous PASS**(登记 **L-7**)
-- [ ] **A3.6** **净**:既有 6 条反向 fixture 仍绿 + **归因前缀逐一不变**(A4.4b)
+- [x] **A3.2** **红 · AC-11**:绑 `FabricCollectivePlane` 的实例**无任何** `vc_binding` ⇒ 必红
+- [x] **A3.3** **绿**:位置 = **scope 循环之后、C-4 之前**(⚠️ **⛔ 不放循环前** —— 既有 C-3 fixture 的归因会被抢,per metis **P0-1**);tag `kR1c = "[CP-03-VC-CERTIFICATE/R1-c] "`
+- [x] **A3.4** 判定序列 s-1 空绑定跳过 → s-2 plane 未登记 FAIL → s-3 本地模型跳过 → s-4 无 VC 绑定 FAIL → s-5 `(plane,network)` 不在 scope FAIL
+- [x] **A3.5** ⛔ **不用** `per_network_mappings` 的实例集合 ⇒ 用 **`decl.plane_binding`** 的实例集合
+- [x] **A3.3b** 空 `plane_binding` ⇒ **vacuous PASS**(登记 **L-7**)
+- [x] **A3.6** **净**:既有 6 条反向 fixture 仍绿 + **归因前缀逐一不变**(A4.4b)
 
 ### WU-4 · 并排取证(G3 · A4)
 
