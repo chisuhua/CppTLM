@@ -72,6 +72,12 @@
 **规范载体**:`ADR-CEP-01` 的 **C-1′**(「槽位语义继承」)—— 集合平面**不声明**自己的 VC 绑定,而**继承**该 network 上**全部「在该 network 上有 `vc_binding` 的」既有实例**的 `(message_class → vc_id)` 映射,且**逐类相等**。
 ⇒ **本节是 C-1′ 的镜像 + 补两个 C-1′ 未覆盖的维度**。
 
+> ⚠️ **作用域 = 条件化口径(2026-11-12 明确;per `cpptlm-cep-transport-vc-consistency` change)**:
+> **作用域 = 声明 M-2 的 network**(= `collective_planes.json` 的 `certificate_scope` 所列项),⛔ **不是「所有 network」**。
+> `compute_noc` 按 `ADR-CEP-01 §E.3.3` **不属 M-2**(不使用共享 VC 池)⇒ **按裁决不判**,⛔ **不是「未覆盖」/「无判定」**;
+> 其 VC 映射差异(`tilelink_c`)是**合法协议差异**(⛔ 不得「修正」声明来消除)。
+> ⇒ 作用域**由 `certificate_scope` 声明 + 由 `R1-c` 自校验**(写漏一个 network ⇒ 必红)。
+
 **结构(实测,方向以 `protocol_instances.json` 为准)**:`vc_binding` 是 **`network → 消息类 → VC`**(⛔ **不是** VC → 消息类);`ordering_assumption` 是 **`network → vc → 排序假设`**。
 
 **两条一致性要求**:
@@ -105,11 +111,37 @@
 
 **诚实边界(⚠️ 精确表述)**:
 - ⛔ **不是「无机器判定」** —— C-1′ 的实现**已存在**(`include/tlm/cep/collective_plane_contract.hh` 的逐实例逐类比较,不等 ⇒ FAIL,归因 `[CP-03-VC-CERTIFICATE/C-1′]`,折进 **CP-03** 行);
-- ⚠️ **但其适用域受 `certificate_scope` 限制**(当前**仅 `ualink_fabric`**)⇒ **`compute_noc` 当前无判定**;
-- ⛔ **要求 b(排序假设)当前无机器判定** ⇒ 登记为**缺口**;
+- ✅ **适用域由 `certificate_scope` 声明,且自 **2026-11-12** 起**受校验** —— 新增 `R1-c`(scope 完备性)判据:对每个 `plane_binding` 指向**非本地模型** plane 的实例,其 `vc_binding` 中的每个 **`(plane, network)` 对** MUST 在 `certificate_scope` 内(归因 `[CP-03-VC-CERTIFICATE/R1-c]`)。**⇒ 「写漏一个 network 就静默不覆盖」的洞已关闭。**
+- ✅ **要求 b(排序假设)已有机器判定 —— `R1-b`**:**同一 network** 上**全部有 `vc_binding` 的实例**的 `ordering_assumption[network][vc]` MUST **逐 VC 全等** ∧ **每实例 VC 完备**(key 集合 == `0..vc_count-1`)∧ **key 形态规范**(非数字 / 前导零 / 越界 ⇒ FAIL)(归因 `[CP-03-VC-CERTIFICATE/R1-b]`)。
+- ⛔ **`compute_noc` 的「无判定」不是能力缺失** —— 它按 `ADR-CEP-01 §E.3.3` **不属 M-2**(不使用共享 VC 池)⇒ **按裁决不判**,⛔ **不是「未覆盖」**;其 VC 映射差异(`tilelink_c`)是**合法协议差异**。
 - ⚠️ `INV-CEP-12-IC2` 的三条件(per-network 键对称 / vc_id 槽位上界 / 6 类词表)**不含跨实例一致性**;装配期无环闸对 `vc_binding` 语义**结构性恒真**(见 R2)⇒ **两条既有防线都不拦截本项**。
+   > 📌 **`R1-b` 兑现的是 `protocol_instance.schema.json` 早已宣称的承诺** —— 该 schema 的 `ordering_assumption` description 写「一致性由**装配期校验**承担(per `INV-CEP-12-IC2`)」,而 `IC2` 只保证 key 可解析 ⇒ 该承诺此前**无承担者**,现由 **`R1-b`** 承担。
 
-**下一步(独立 change,⛔ 不在本节)**:**扩展 C-1′ 的适用域**(或把 C-1′ 抽成 network-agnostic 判据,供装配闸与 CP-03 共用)⇒ ⛔ **不在装配闸另造第二实现**(违「唯一实现 + 禁双实现」纪律 —— BSS-01 先例:唯一实现放 `bridge_module_membership.hh`,装配闸与 `ModuleFactory` 共用)。配套**决定性变异**:把某实例的某 vc 改成另一消息类 ⇒ 必红。
+**⚠️ 已知的表征局限(⛔ 不得当作缺陷;⛔ 不得引申为「已全覆盖」)**:
+
+| # | 局限 | 说明 |
+|:--:|---|---|
+| **L-1** | **单实例 network 上空转** | 某 network 若只有 **1 个**有 `vc_binding` 的实例 ⇒ (a)/(b) 的「全等」天然成立 ⇒ **恒绿、无鉴别力**。当前 `ualink_fabric` 有 **3** 个实例(不空转) |
+| **L-2** | **(b) 只证「跨实例一致」,不证「逐类正确」** | 同一 VC 可承载多类消息(`ualink_fabric` 的 vc3 同时承载 `response` + `snoop_resp`)⇒ `ordering_assumption[vc]` 是**每 VC 一个值**,无法表达「`response` 需 ordered 而 `snoop_resp` 需 unordered」⇒ ⛔ **不得**把 `R1-b` 的绿当作「排序语义正确」|
+| **L-3** | **ordering 的取值域不在判据内** | 值域(`p2p_ordered` \| `unordered`)由既有 `scripts/test/cep_decl_alignment_check.sh` 的 `jsonschema` 全量校验锁定 ⇒ 判据**不重复实现**(禁双实现)⇒ ⛔ 不得声称「本判据验证了 ordering 取值合法」|
+| **L-6** | **`R1-c` 置于 scope 循环之后 ⇒ scope 缺口可能被遮蔽** | 若 scope 漏登记**同时**循环内有别的失败 ⇒ first-failure-wins ⇒ 先报循环内的失败,scope 缺口**不在同一份 detail 里** ⇒ ⛔ 不得声称「一次失败即报出全部问题」|
+| **L-7** | **空 `plane_binding` ⇒ `R1-c` vacuous PASS** | 零键 = 无主体 = 无缺口可查;⛔ **语义区别于** V6-c 的「零键 ⇒ SKIP」(后者 = 不适用)⇒ 二者**不得**混为一谈 |
+
+**⚠️ 残余不可判项 —— 登记 ≠ 达成,且 ⛔ 无机器守门**:
+
+| # | 残余 | 为什么不可判 |
+|:--:|---|---|
+| **R-1** | **`plane_binding` 自身漏登记** —— 实例实际用 fabric 承载 plane,但 `plane_binding` 为 `null` ⇒ `R1-c` **漏判** | `plane_binding` 是**自声明数据**,无独立真源能证明「该实例实际在用 fabric 承载 plane」|
+| **R-2** | **「不一致的 network **确实**走了 M-1」不可判** | 本仓**无 M-1 配置载体** ⇒ 只能登记 |
+
+> ⚠️ **`R-1` / `R-2` 的地位差异(必须逐字对照)**:
+> **`U-1` / `U-2`**(`ADR-CEP-01 §E.3.4`)有 **C-4 的机器守门**(「存在 / 非空 / **未被冒充为达成**」);
+> **`R-1` / `R-2` 没有** —— 它们只是**判据边界说明**(本段),**不承担「防冒充」职责**,**不参与任何闸**。
+> ⛔ **不得**让读者以为 `R-1` / `R-2` 也有机器守门。
+
+**命名映射(⛔ 两套编号并存,勿混)**:**`R1-a` ≡ `C-1′`** —— 本节的 `R1-a` 与 `ADR-CEP-01 §E.3.1` 的 `C-1′` 是**同一判据**(前者是本节编号,后者是 ADR 的归因 id)。
+
+**下一步(已完成,2026-11-12)**:**扩展 C-1′ 的适用域**(= 本节 `R1-a`)⇒ 已由 `cpptlm-cep-transport-vc-consistency` change **落地**;**⛔ 未在装配闸另造第二实现**(遵守「唯一实现 + 禁双实现」纪律 —— BSS-01 先例:唯一实现放 `bridge_module_membership.hh`,装配闸与 `ModuleFactory` 共用)。配套**决定性变异**:把某实例的某 vc 改成另一消息类 ⇒ 必红(AC-1)。
 
 ### R2 · 通道依赖边表是 **network 级**属性
 
@@ -126,7 +158,7 @@
 
 **实测**:该数组**为空**(`[]`);plane 绑定 = `moesi_gpu` → `null` · `mesif` → `null` · `nvlink_4` → `LocalCollectivePlane` · `ualink_4` → `FabricCollectivePlane`。
 
-**M-2 共享模式的义务 = `ADR-CEP-01` 的四条证书**(C-1′ 槽位语义继承 / C-2 VC 覆盖完整 / C-3 控制面与数据面互斥 / C-4 未检验项显式登记),由 **V6-a**(空预留门)+ **V6-d**(四证书)折进 **CP-03** 行 ⇒ ✅ **有机器判定**。
+**M-2 共享模式的义务 = `ADR-CEP-01` 的 **六条**证书**(C-1′ 槽位语义继承 / C-2 VC 覆盖完整 / **R1-b 排序假设逐 VC 一致** / C-3 控制面与数据面互斥 / **R1-c scope 完备性** / C-4 未检验项显式登记),由 **V6-a**(空预留门)+ **V6-d**(六证书)折进 **CP-03** 行 ⇒ ✅ **有机器判定**。
 > ⚠️ 本节**不另造**「collective 消息类不得同名」的约束 —— collective **消息类词表尚不存在**(主干只有 6 类词表)⇒ 在无词表的前提下自造禁令**不可判定**;⛔ 若将来引入 collective 专属类,须**同步补机器判定**。
 
 ### R4 · 桥成员互斥(见 §6.3.1)
@@ -137,9 +169,12 @@
 
 | # | 前提 | 当前机器判定 |
 |:--:|---|---|
-| R1 | 跨实例 VC 语义一致((a) 类集合 + (b) 排序假设) | ⚠️ **(a) 已有载体**(C-1′)但**适用域受限**(`certificate_scope` 仅 `ualink_fabric`)⇒ **`compute_noc` 无判定**;**(b) 无载体** |
+| R1 | 跨实例 VC 语义一致((a) 类集合 + (b) 排序假设) | ✅ **两条都有载体**:**(a)** = `C-1′`(归因 `[CP-03-VC-CERTIFICATE/C-1′]`);**(b)** = `R1-b`(归因 `[CP-03-VC-CERTIFICATE/R1-b]`)。⚠️ 作用域 = **声明 M-2 的 network**(`certificate_scope`);`compute_noc` **按 `ADR-CEP-01 §E.3.3` 不属 M-2** ⇒ **按裁决不判**(⛔ 非「未覆盖」)。**scope 完备性**由 `R1-c` 自校验 |
 | R2 | 通道依赖边表(network 级) | ✅ 装配期无环检查(**对 `vc_binding` 语义恒真** ⇒ 不拦截 R1) |
-| R3 | collective VC 预留 / M-2 四证书 | ✅ V6-a + V6-d(折进 CP-03) |
+| R3 | collective VC 预留 / M-2 **六**证书 | ✅ V6-a + V6-d(折进 CP-03) |
 | R4 | 桥成员互斥 | ✅ `[BSS-01]` |
 
-⇒ **结论**:混排的**通道依赖面**(R2)与**桥装配面**(R4)已机器化;**M-2 准入面**(R1-a)有载体但**域未覆盖**;**R1-b / R1-c** 无载体 ⇒ ⚠️ **混排的语义正确性当前依赖声明正确性 + 人工核对**,不依赖机器全量拦截。
+⇒ **结论**:混排的**通道依赖面**(R2)与**桥装配面**(R4)已机器化;**M-2 准入面(R1-a ≡ C-1′ + R1-b + R1-c)已全部机器化** ⇒ 混排的语义正确性**不再仅依赖声明正确性 + 人工核对**;⛔ 但**残余 `R-1` / `R-2` 仍不可判**(见上方「诚实边界」段,且它们**无机器守门**)。
+
+⇒ **结论**(2026-11-12 更新,per `cpptlm-cep-transport-vc-consistency` change):**R1-a**(≡ `C-1′`)/ **R1-b** / **R1-c** 三条判据**均已机器化**(归因分别为 `[CP-03-VC-CERTIFICATE/C-1′]` · `/R1-b` · `/R1-c`,全部折进 **CP-03** 行);配合 **R2**(通道依赖面)与 **R4**(桥装配面)**全部已机器化**。
+⇒ **混排的语义正确性不再仅依赖声明正确性 + 人工核对**;⛔ 但残余 **`R-1` / `R-2`** 仍不可判(见上方「诚实边界」段的「残余不可判项」,且它们**无机器守门** —— 与 `U-1`/`U-2` 的地位**不同**)。

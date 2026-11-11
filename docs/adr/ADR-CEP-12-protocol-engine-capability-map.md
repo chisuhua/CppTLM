@@ -1045,3 +1045,64 @@ CXL / MOESI-GPU / MESIF 走**软件一致性 / 无 collective 能力** ⇒ 强�
 - [x] 冻结面两步授权已执行:台账 **Entry #338** 授权 → **commit 本段 + 其余 3 段 ADR SU + `cep/fabric-transport.md`** → `cep_freeze_check.sh --update --authorized-by "Entry #338"` → **清单单独 commit** → 无参复验 provenance 通过
 
 **关联**:台账 **Entry #338**(授权)· **#332**(A1 终态 DoD Go 口径裁决 —— 口径 ④ 的 ratify 门**独立**于本 SU)· **#106**(SLICC 备选重评的原始登记)· **#214**(Stage 3 收口)· **#288 / #292**(另两则 A 类决策的承载 ADR)· `docs/architecture/cep/protocol-engine.md` §5.1.5(T1–T4 判定式 + 来源效力分档 —— 本 SU 的 E 类对应面;≡ `07 号` §5.1.5 指针桩)· `07 号` §8.5(治理不变量)
+
+## Status Update 2026-11-12(per 台账 Entry #347 / #349)—— **`R1-b` 排序假设一致性判据**签发(决策 5 的「装配期校验」**兑现**)
+
+> **性质**:末尾追加 SU(append-only)。⛔ **正文与既有 SU 段逐字未变**;⛔ **新增 invariant 数 = 0**;⛔ **不改 `protocol_instance.schema.json` 的 description**。
+> **触发**:`cpptlm-cep-transport-vc-consistency` change 的实施(台账 **Entry #347** 开工授权 · **#349** A2 实施回执)。
+
+### ① 背景 —— 决策 5 的承诺此前**无承担者**(已存在的**决策-实现缺口**)
+
+决策 5 定义 `ordering_assumption` 为「逐网络 / 逐 `vc_id`,key 必须可解析」。
+而 `include/tlm/cep/protocol_instance.schema.json` 的 `ordering_assumption` **description 早已宣称**:
+「…排序是协议对所用 (network, vc_id) 的保序需求 + fabric 侧担保,**一致性由装配期校验承担**(per `INV-CEP-12-IC2`)」。
+
+⚠️ **但 `INV-CEP-12-IC2` 全文只保证「`named_network` key 必须解析到唯一 `vc_id`,否则配置加载 fail」** ——
+它**完全不涉及跨实例一致性** ⇒ **该承诺至今没有承担者**。
+
+⇒ 本 SU 是**兑现已有文本的承诺**,⛔ **不是新增决策**。
+
+### ② 决策 —— 新增 **`R1-b`**(排序假设逐 VC 一致),归因 `[CP-03-VC-CERTIFICATE/R1-b]`
+
+**判据**(对 `certificate_scope` 内的**每个** `(plane, network)`,按固定顺序):
+
+| 步 | 检查 | 结论 |
+|:--:|---|---|
+| b-1 | 该 network 的实例集合非空 | FAIL(⛔ 禁 vacuous PASS)—— ⚠️ **结构性不可达**(C-1′ 已先判并 return),仅作防御 |
+| b-2 | 每个实例的 `ordering_assumption[network]` 的 **key 形态** = 规范十进制(非空 ∧ 全 ASCII 数字 ∧ 长度 > 1 ⇒ 首位 ≠ `'0'`) | **FAIL**(非数字 / **前导零**) |
+| b-2.5 | key 数值 **>= `vc_count`** 或**溢出** | **FAIL**(越界)—— ⚠️ **必须先判越界再判缺失** |
+| b-3 | 每个实例的 key 集合 **恰为 `0 .. vc_count-1`** | **FAIL**(VC 不完备) |
+| b-4 | **不同实例**之间,**同一 vc** 的 ordering 值**全等** | **FAIL**(跨实例排序假设不一致) |
+
+**实例集合口径 = 该 network 上「有 `vc_binding`」的实例** —— 「有」的定义 = **该 network 的 `vc_binding` 至少含一个整数值**
+(与 C-1′ 的 `per_network_mappings` 收集口径**恒等**)⇒ ⛔ **不得**以 `ordering_assumption` 为驱动
+(否则「有 `vc_binding` 却缺 `ordering_assumption`」的实例会被**静默排除** ⇒ 缺失者不报错)。
+
+**作用域 = 条件化口径**:⛔ **不是**「任何混排都不得有不一致」,而是「**声明 M-2 的 network** 不得有不一致」。
+
+### ③ ⛔ 明确不做
+
+1. ⛔ **不把 `compute_noc` 加入 `certificate_scope`**(它按 `ADR-CEP-01 §E.3.3` **不属 M-2** ⇒ 允许不一致);
+2. ⛔ **不改任何声明数据**(`protocol_instances.json` 的 `ordering_assumption` 一字不改);
+3. ⛔ **不改本 ADR 的决策 5 正文**,也⛔ **不改** `protocol_instance.schema.json` 的 description(它是决策 5 的**转录**;澄清在本 SU 内即可);
+4. ⛔ **不实现 ordering 的取值域检查**(值域 `p2p_ordered` \| `unordered` 由既有 `scripts/test/cep_decl_alignment_check.sh` 的 `jsonschema` 全量校验锁定 ⇒ **禁双实现**);
+5. ⛔ **不新增 `ContractRule`**(`kContractRuleCount == 6` 是硬断言)。
+
+### ④ 已知边界(⛔ 不得引申为「已全覆盖」)
+
+| # | 边界 | 说明 |
+|:--:|---|---|
+| **L-1** | 某 network 只有 **1 个**有 `vc_binding` 的实例 ⇒ 「全等」天然成立 ⇒ **恒绿、无鉴别力** | 当前 `ualink_fabric` 有 **3** 个实例(不空转) |
+| **L-2** | `R1-b` 只证**跨实例一致**,⛔ **不证「逐类正确」** —— 同一 VC 可承载多类消息(`ualink_fabric` 的 vc3 同时承载 `response` + `snoop_resp`)且 `ordering_assumption[vc]` 是**每 VC 一个值** | ⛔ **不得**把绿当作「排序语义正确」 |
+| **L-3** | ordering 的**取值域**不在本判据内(见 ③-4) | ⛔ 不得声称「本判据验证了取值合法」 |
+
+### ⑤ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本 SU 已追加,且本 ADR **正文与全部既有 SU 逐字未变**;⛔ `protocol_instance.schema.json` **零 diff**
+- [ ] `R1-b` 的 **5 条决定性变异**:① 改某实例某 vc 的 ordering 值 ② 删某实例某 vc 的条目 ③ key 非数字 ④ key 前导零(`"04"`)⑤ key 越界(`>= vc_count`)⇒ **各自必红**且前缀精确 `[CP-03-VC-CERTIFICATE/R1-b]`
+- [ ] **旧绿 / 新红**并排:同一毒化输入在**旧实现**上 PASS(旧实现 `grep -c ordering_assumption` = **0** ⇒ 根本不读该字段)⇒ 取证见 `.rddf/reviews/cpptlm-cep-transport-vc-consistency-oldnew-evidence.md`
+- [ ] **反向判据**:只改 `compute_noc` 的子映射 ⇒ **不得红**(⛔ scope 泄漏)
+- [ ] **真实 gate 路径可达**:经 `run_collective_plane_contract` 触发时折进 `CP-03` 行,且 `report.lines.size() == kContractRuleCount`(= 6)
+- [ ] 冻结面五步授权链已执行(⛔ 与 `ADR-CEP-01` 的 SU **同一次** `--update` 内重算;`artifact_count` 仍 **78**)
+
+**关联**:台账 **Entry #347**(开工授权)· **#349**(A2 实施回执)· **#351**(A4 并排取证)· **#344**(W0 方案 + K-2 裁决)· `ADR-CEP-01` 的 `Status Update 2026-11-12`(`R1-c` 的锚点)· `docs/architecture/cep/fabric-transport.md` R1 / R5 · `include/tlm/cep/collective_plane_contract.hh`(`R1-b` 实现)

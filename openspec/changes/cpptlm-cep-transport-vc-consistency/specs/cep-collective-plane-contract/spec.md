@@ -170,7 +170,12 @@ CEP SHALL 为 **M-2(共享 VC + 证书)**提供**可执行判据面**:`status` �
       ⑤ 该实例 `vc_binding` 中的**每个** network N ⇒ **`(plane, N)` 对** SHALL 出现在 `certificate_scope` 内
       ⇒ 不在 ⇒ SHALL 判 **FAIL**,红因 SHALL 为「`(plane, network)` 不在 `certificate_scope` 内」
       (⛔ **不是**「plane 未登记」—— 那是 ②,两者**归因文本必须可区分**)
-- **AND** 本判据 SHALL 在 `certificate_scope` 项**循环之前**判定(⛔ 非循环内 —— 缺失项**根本不会被遍历到**)
+- **AND** 本判据 SHALL 在 `certificate_scope` 项**循环之后、`C-4` 之前**判定
+      (它是**声明级**判据 —— 遍历 `decl.plane_binding`,⛔ 不是遍历 scope 项)
+      > ⚠️ **⛔ 不放循环之前**:既有 `C-3` 的两条反向 fixture 采用「**改写** `certificate_scope[0].plane`」的变异形态
+      > ⇒ 循环前会让 `R1-c` **抢归因**(membership 因 plane 被改写而不成立)⇒ 既有 `C-3` 归因断言失效
+      > ⇒ 「循环后」是**既有 6 条反向 fixture 零改动**的硬约束(实测见 `.rddf/reviews/cpptlm-cep-transport-vc-consistency-oldnew-evidence.md`)
+      > ⚠️ **代价**:first-failure-wins ⇒ 若 scope 漏登记**同时**循环内有别的失败 ⇒ 先报循环内的失败 ⇒ scope 缺口**可能被遮蔽** ⇒ ⛔ 不得声称「一次失败报出全部问题」
 - **AND** **正控**:各绑定实例的 `(plane, network)` 对均在 `certificate_scope` 内 ⇒ PASS
 - **AND** **反向 fixture**(至少 **2** 条,归因 `[CP-03-VC-CERTIFICATE/R1-c]`,**精确相等**匹配):
       ① **scope 漏登记**:给某 `compute_noc` 上有 `vc_binding` 的实例**插** `plane_binding` 键

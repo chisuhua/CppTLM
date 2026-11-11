@@ -735,3 +735,57 @@ E.9 的「在 `collective_planes.json` 注入 `collective_plane_vc_binding` 块(
 **关联**: 台账 **Entry #209**(授权记录 + 落地订正)· #207(队列 #14 实现层归档)· #206(冻结面授权记录)
 · #193(SU#4 的授权记录)· `ADR-CEP-04` 2026-11-03 段(选型候选集 + 逐实例理由登记)
 · `include/tlm/cep/collective_plane_contract.hh`(V6-d + C-1′ 结构面)· `include/tlm/cep/fabric_collective_plane.hh`(C-3 运行级)
+
+## Status Update 2026-11-12(per 台账 Entry #347 / #351)—— **`R1-c` scope 完备性判据**签发(§E.3.3 的**适用域判据化**)
+
+> **性质**:末尾追加 SU(append-only)。⛔ **§E.1 ~ §E.12 正文与既有 SU 段逐字未变**;⛔ **新增 invariant 数 = 0**。
+> **触发**:`cpptlm-cep-transport-vc-consistency` change 的实施(台账 **Entry #347** 开工授权 · **#351** A4 并排取证)。
+
+### ① 背景 —— §E.3.3 只定义了「参照集」,**从未规定「哪些 network 需要被检查」**
+
+`§E.3.3` 定义了「参照集 = 两域并集」+「不一致 ⇒ 该网不得用 M-2」,但**未规定适用域如何声明与校验**。
+其后果是**作用域由自声明数据决定**(`collective_planes.json` 的 `certificate_scope` 是**人手写的清单**)⇒ 写漏一个 network ⇒ 判据**静默不覆盖**该网,且**没有任何闸会抱怨**。
+
+### ② 决策 —— 新增 **`R1-c`**(scope 完备性),归因 `[CP-03-VC-CERTIFICATE/R1-c]`
+
+**判据**:对 `plane_binding` 中**每一个**实例(按下列**固定顺序**判定):
+
+| 步 | 检查 | 结论 |
+|:--:|---|---|
+| s-1 | `plane_binding` 值为空串(loader 把显式 `null` 物化) | **跳过**(该实例**不启用** collective) |
+| s-2 | 该 plane **未在** plane 注册表登记 | **FAIL**(红因「plane 未登记」) |
+| s-3 | 该 plane 是**本地模型**(`is_local_model == true`) | **跳过**(不承载真实 fabric 集合流量) |
+| s-4 | 该实例**无任何** `vc_binding` | **FAIL**(M-2 **无主体**;⛔ 禁 vacuous PASS) |
+| s-5 | 该实例 `vc_binding` 中的**每个** network N ⇒ **`(plane, N)` 对**不在 `certificate_scope` 内 | **FAIL**(红因「**不在 `certificate_scope`** 内」) |
+
+**⛔ 归因区分**:s-2 与 s-5 的红因文本**必须可区分** —— s-5 ⛔ 不得报成「plane 未登记」。
+
+**⚠️ s-2 的诚实差异**:`V6-c` 的同类检查**只在 `status == "unavailable"` 时生效**;M-2 模式(`shared_no_isolation`)下 V6-c 为 **SKIP** ⇒ 若 `R1-c` 也跳过,「plane 未登记」在 M-2 下**无任何载体** ⇒ `R1-c` **自带**这半步(否则是覆盖洞)。
+
+### ③ ⛔ 明确不做的三件事
+
+1. ⛔ **不把 `compute_noc` 加入 `certificate_scope`** —— 它按 §E.3.3 **不属 M-2** ⇒ 允许其 VC 映射存在**合法协议差异**(`tilelink_c`);
+2. ⛔ **不改 `certificate_scope` / `plane_binding` / `vc_binding` / `ordering_assumption` 任一声明数据**;
+3. ⛔ **不在装配闸另造第二实现** —— 判据只在 `include/tlm/cep/collective_plane_contract.hh`。
+
+### ④ 已知边界(⛔ 不得引申为「已全覆盖」)
+
+| # | 边界 | 说明 |
+|:--:|---|---|
+| **R-1** | `plane_binding` **自身漏登记**(实例实际用 fabric 承载 plane,但值为 `null`)⇒ `R1-c` **漏判** | `plane_binding` 是**自声明数据**,无独立真源 ⇒ **不可判** |
+| **L-6** | `R1-c` 置于 scope 循环**之后** ⇒ 若 scope 漏登记**同时**循环内有别的失败 ⇒ **first-failure-wins** ⇒ scope 缺口可能被遮蔽 | ⛔ 不得声称「一次失败报出全部问题」 |
+| **L-7** | 空 `plane_binding` ⇒ `R1-c` **vacuous PASS**(零键 = 无主体) | ⛔ 语义**区别于** V6-c 的「零键 ⇒ SKIP」 |
+
+> ⚠️ **`R-1` 的地位**:它与 §E.3.4 的 `U-1` / `U-2` **不同** —— `U-1`/`U-2` 有 **C-4 的机器守门**(未被冒充成已满足);**`R-1` 没有**(纯文档级登记,见 `docs/architecture/cep/fabric-transport.md` 的「诚实边界」段)。
+> ⛔ **不得**让读者以为 `R-1` 有机器守门。
+
+### ⑤ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本 SU 已追加,且本 ADR 正文与**全部**既有 SU **逐字未变**
+- [ ] `R1-c` 的**决定性变异**:给某 `compute_noc` 上有 `vc_binding` 的实例**插** `plane_binding` 键(⚠️ 插键不是改值)⇒ 必红且红因含「不在 `certificate_scope`」、⛔ 不含「plane 未登记」
+- [ ] **旧绿 / 新红**并排:同一变异在**旧实现**上 PASS(旧实现 M-2 下**不读** `plane_binding`)⇒ 取证见 `.rddf/reviews/cpptlm-cep-transport-vc-consistency-oldnew-evidence.md`
+- [ ] **既有 C-3 两条反向 fixture 的归因前缀逐一不变**(「循环后」是它的硬约束)
+- [ ] **反向判据**:只改 `compute_noc` 的子映射 ⇒ **不得红**(⛔ scope 泄漏)
+- [ ] 冻结面五步授权链已执行(台账 Entry 授权 → 产物 commit → `cep_freeze_check.sh --update --authorized-by` → 清单 commit → 无参复验 rc=0;`artifact_count` 仍 **78**)
+
+**关联**:台账 **Entry #347**(开工授权)· **#350**(A3 实施回执)· **#351**(A4 并排取证)· **#344**(W0 方案 + K-2 裁决)· `ADR-CEP-12` 的 `Status Update 2026-11-12`(`R1-b` 的锚点)· `docs/architecture/cep/fabric-transport.md` R1 / R5 · `include/tlm/cep/collective_plane_contract.hh`(`R1-c` 实现)
