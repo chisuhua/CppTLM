@@ -1,5 +1,5 @@
 {
-  "artifact_count": 77,
+  "artifact_count": 78,
   "artifacts": {
     "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "2fcf4d498088e4a863b07f356f44193917510ad747428a88fec381b8ae7faf1b",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4db673d7d582ac6231c6b3fa26ff78ef02dbea4483261b3cfcd7f4403201bd26",
@@ -13,7 +13,7 @@
     "docs/adr/ADR-CEP-07A-06bis-artifact-disposition.md": "297bd349c7a176a0cbf9438090e7243cbabc7fd9e424fcd0dc0e1089d9b0020e",
     "docs/adr/ADR-CEP-08-ordering-point-portability.md": "53266fc901a451b7b53033b865534ed7521f5c1db56d0bce2d682617e1b88045",
     "docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md": "a4a06f49b3281d3e97a0904a583c534502a4491ce87cd2f84e7df14c2bc62695",
-    "docs/adr/ADR-CEP-11-protocol-version-locking.md": "82e1253cea94a77604c9e32a0d38a30cd2dc2efe8efcf3063a26f2508590c124",
+    "docs/adr/ADR-CEP-11-protocol-version-locking.md": "96f6343b78aa98f8920ffab5c08a890094a9ea2dafae0f79d32af68396362ef9",
     "docs/adr/ADR-CEP-12-protocol-engine-capability-map.md": "b9e2a770855f33c6d79bf97b13fbf0b752886e7b1e51dfbb2bdb5452562b384a",
     "docs/adr/ADR-CEP-13-coherence-domain-ownership.md": "1cf7d4f5fcda70b9d2886b41134cc0daad562ca2000c759a5580fce9909d66b8",
     "docs/adr/ADR-CEP-14-stub-contract-tests.md": "a3cd014acba44e5cfe7b0a71f83a6d2f3811a73e568f08c6b464fb3afffe9d58",
@@ -23,12 +23,13 @@
     "docs/adr/ADR-CEP-18-protocol-generation-scope.md": "0c9a20115a708768f00ec105cbbf22a0c9ea3b2bffd575995076ee5f99aa0ca6",
     "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": "919b3495cabc9537092ae84f36ef923f31161303ea1184cafef7169b3186cc36",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "a05fa8714645905057befa32580578c0041ef4cf9cc86e2ba22e3d7dce56f54c",
-    "docs/architecture/07-coherence-exploration-platform.md": "f41bf66b2c6fe522ffdc6246ff7458d895b459cbcdc0a11881670a3f34b5c53e",
+    "docs/architecture/07-coherence-exploration-platform.md": "3b8c30625b3decf737fbaf55168b38646b83b67a807ec0904b70a1ae4541b3e1",
     "docs/architecture/cep/coherence-interface.md": "6997124eb5f904a02dee90b38d5d8f4a536e94c7aeb3432c609aa10835f4f597",
     "docs/architecture/cep/collective-plane.md": "8de3e3c7a2af2f7908cb81c90d7912784e5214c9bc70fbd626d13c062f54d595",
     "docs/architecture/cep/core-traffic-gen.md": "469e533714183871a78e1d626c1124565f1a1d910c7c3d591474c070c01fee13",
     "docs/architecture/cep/directory-ordering.md": "08506f9d18dd727b75b50281afa449ec491f2a1708a7c688242a541181ba1de0",
     "docs/architecture/cep/fabric-transport.md": "257ebf2c426299d7327dd31b3e756316dcd766476e963553aab2ca2215f7d4ab",
+    "docs/architecture/cep/parity-baseline.md": "96688d82f30c5bc5dbdb5300764af578641e5851dc39d8cf27dd33a7d930c244",
     "docs/architecture/cep/protocol-engine.md": "34731f3168bd45c7109df4cf9268c0cc4163f0f4ecac86cce41bf956de3159d4",
     "docs/architecture/cep/simulation-and-experiment.md": "a167e042c3cbc0faba73074fe38ab2cd565b2c10f226e8a142620e035e8a2dd3",
     "docs/architecture/cep/stub-cache-core.md": "e813772eef6b39487b60acc06de6f8478f248003af38f6ee5d742bb73c997861",
@@ -79,10 +80,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #339",
+  "authorized_by": "Entry #341",
   "exclusions": [],
   "frozen_at": "2026-11-11",
-  "frozen_at_commit": "426756a8ed1d1e8e800a59f184eb947be17a9212",
+  "frozen_at_commit": "d32f6e5fd81cdb1a00015e3eb849e9beff5b13e5",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
