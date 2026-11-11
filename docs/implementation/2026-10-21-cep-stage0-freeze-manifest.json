@@ -23,7 +23,7 @@
     "docs/adr/ADR-CEP-18-protocol-generation-scope.md": "0c9a20115a708768f00ec105cbbf22a0c9ea3b2bffd575995076ee5f99aa0ca6",
     "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": "919b3495cabc9537092ae84f36ef923f31161303ea1184cafef7169b3186cc36",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "a05fa8714645905057befa32580578c0041ef4cf9cc86e2ba22e3d7dce56f54c",
-    "docs/architecture/07-coherence-exploration-platform.md": "b5dfddc374543d0eeb0581ea1ef5917382513e27fdfd29985d47ab71ee00c874",
+    "docs/architecture/07-coherence-exploration-platform.md": "f41bf66b2c6fe522ffdc6246ff7458d895b459cbcdc0a11881670a3f34b5c53e",
     "docs/architecture/cep/coherence-interface.md": "6997124eb5f904a02dee90b38d5d8f4a536e94c7aeb3432c609aa10835f4f597",
     "docs/architecture/cep/collective-plane.md": "8de3e3c7a2af2f7908cb81c90d7912784e5214c9bc70fbd626d13c062f54d595",
     "docs/architecture/cep/core-traffic-gen.md": "469e533714183871a78e1d626c1124565f1a1d910c7c3d591474c070c01fee13",
@@ -82,7 +82,7 @@
   "authorized_by": "Entry #339",
   "exclusions": [],
   "frozen_at": "2026-11-11",
-  "frozen_at_commit": "a72ebdeb73d40a6b4dabc058fc68c59bb17c12be",
+  "frozen_at_commit": "426756a8ed1d1e8e800a59f184eb947be17a9212",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
