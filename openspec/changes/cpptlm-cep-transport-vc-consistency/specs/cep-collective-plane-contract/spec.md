@@ -36,10 +36,12 @@ CEP SHALL 为 **M-2(共享 VC + 证书)**提供**可执行判据面**:`status` �
 > (字段 `certificate_scope`),⛔ **不新增**第 5 组。
 
 - **WHEN** `status == "shared_no_isolation"` 且 `certificate_scope` 非空
-- **THEN** SHALL 对 `certificate_scope` 的**每个** `(plane, network)` 逐条判定 **C-1′ / C-2 / C-3 / C-4 / R1-b / R1-c**
+- **THEN** SHALL 判定**六条**证书 —— **循环内**(逐 `(plane, network)`):**C-1′ / C-2 / R1-b / C-3**;**循环后**(声明级):**R1-c / C-4**
       —— **任一条** FAIL ⇒ `CP-03` 行 SHALL 判 **FAIL**;六条全绿 ⇒ `CP-03` 行 SHALL 判 **PASS**
-- **AND** `R1-c`(scope 完备性)SHALL 在 `certificate_scope` 项**循环之前**判定
-      (⛔ 非循环内 —— 缺失项**根本不会被遍历到**)
+- **AND** `R1-c`(scope 完备性)SHALL 在 `certificate_scope` 项**循环之后、`C-4` 之前**判定
+      (它是**声明级**判据 —— 遍历 `decl.plane_binding`,⛔ 不是遍历 scope 项)
+      > ⚠️ **⛔ 不放循环之前**:既有 `C-3` 的反向 fixture 采用「改写 `certificate_scope[0].plane`」的变异形态 ⇒
+      > 循环前会让 `R1-c` **抢归因** ⇒ 既有 `C-3` 归因断言失效 ⇒ 「循环后」是**既有 6 条反向 fixture 零改动**的硬约束
 - **AND** V6-d SHALL **折进 `CP-03` 行**(⛔ **不新增** `ContractRule`;`rule=` 字段**仍为** `CP-03`)
 - **AND** 失败时的 `detail` SHALL 以**精确前缀**表达是哪一条:
       `[CP-03-VC-CERTIFICATE/C-1′]` / `[CP-09-IC1]` / `[CP-03-VC-CERTIFICATE/C-3]` / `[CP-03-VC-CERTIFICATE/C-4]` /
@@ -125,8 +127,11 @@ CEP SHALL 为 **M-2(共享 VC + 证书)**提供**可执行判据面**:`status` �
 - **THEN** 该 network 上**全部有 `vc_binding` 的**实例 SHALL 声明 `ordering_assumption[network]`
       ⇒ 任一此类实例**缺**该声明 ⇒ SHALL 判 **FAIL**
       (⛔ **不得**以 `ordering_assumption` 为驱动 —— 那会把缺失实例**静默当子集排除**)
+      > ⚠️ **「有 `vc_binding`」的精确定义** = 该 network 的 `vc_binding` **至少含一个整数值**
+      > (⇒ 与 `C-1′` 的实例集合**同口径** —— 二者 MUST **逐字复刻**同一 loader push 条件)
 - **AND** 每个实例的 `ordering_assumption[network]` 的 **key 集合** SHALL 恰为 `0 .. vc_count-1`
       (⇒ 缺项 ⇒ FAIL;越界项 ⇒ FAIL)
+      > ⚠️ **判定次序 SHALL 为「越界 → 缺失」** —— 否则 `"3"` → `"4"` 的变异会误报为「完备性不足」⇒ 归因不稳
 - **AND** 每个实例的 `ordering_assumption[network]` 的 **key 形态** SHALL 为**规范十进制**
       ⇒ 非数字 / 前导零(如 `"04"`)⇒ SHALL 判 **FAIL**
       (⛔ schema 的 `propertyNames.pattern = ^[0-9]+$` **允许**前导零 ⇒ 判据须自带该检查)
@@ -173,9 +178,24 @@ CEP SHALL 为 **M-2(共享 VC + 证书)**提供**可执行判据面**:`status` �
       ② **无 VC 绑定**:令绑定 `FabricCollectivePlane` 的实例**无任何** `vc_binding` ⇒ 必红
 - **AND** ⛔ SHALL **NOT** 把 `compute_noc` 加入 `certificate_scope` 以求「全网一致」
       —— 它按 `ADR-CEP-01 §E.3.3` **不属 M-2** ⇒ 允许不一致(per `U-3` 裁决)
+- **AND** `plane_binding` 为**零键**时本判据 SHALL 判 **vacuous PASS**(无主体 ⇒ 无缺口可查)
+      ⇒ ⛔ **语义区别于** V6-c 的「零键 ⇒ SKIP」(后者 = 不适用)⇒ 二者**不得**混为一谈
 
 > **锚点**:`test/test_cep_ualink_inc.cc` 的 `R1-c` 断言 + 2 条反向 fixture
 > (+ 「旧实现必绿 / 新实现必红」并排取证:旧实现**不读** `plane_binding` ⇒ 旧绿是**平凡**的,取证时须逐字写明)
+
+#### Scenario: **既有证书的归因前缀 SHALL 逐一不变**
+
+> **为何单列**:新增子判据**可能**抢在既有判据之前触发 ⇒ 既有反向 fixture 的**归因前缀**被改写
+> ⇒ ⛔ 「仍绿」**不等于**「归因未变」(断言写错也可能仍绿)⇒ 必须**逐条比对前缀字符串**。
+
+- **WHEN** 既有 **6 条**反向 fixture 各自触发
+- **THEN** 其归因前缀 SHALL **逐字不变**:`[CP-03-VC-CERTIFICATE/C-1′]`(2 条)· `[CP-09-IC1]`(1 条)· `[CP-03-VC-CERTIFICATE/C-3]`(2 条)· `[CP-03-VC-CERTIFICATE/C-4]`(1 条)
+- **AND** 新 tag `[CP-03-VC-CERTIFICATE/R1-b]` / `[CP-03-VC-CERTIFICATE/R1-c]` SHALL **NOT** 被
+      `[CP-03-VC-CERTIFICATE]` 或 `[CP-03-VC-CERTIFICATE/C-1′]` 的**精确前缀**匹配命中
+      (⛔ 既有 fixture 用**带 `]`** 的 `rfind` ⇒ 结构上不可能互命中 ⇒ 仍须回归钉住)
+
+> **锚点**:`test/test_cep_ualink_inc.cc` 的 6 条反向 fixture 的前缀断言 + 新 tag 的隔离断言
 
 #### Scenario: **本 Requirement 的两条新判据 SHALL 在真实 gate 路径可触达**
 

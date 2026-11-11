@@ -19371,3 +19371,71 @@ graph LR
 **⑥ 关联**
 
 `Entry #344`(W0 + ⑨ K-1/K-2 裁决)· `#340`(排序裁决 + 串行执行序)· `#342` / `#343`(C1 实施 + 验收修补)· `.rddf/reviews/cep-c2-vc-consistency-decision.md`(§1~§12)· `.rddf/improvements/cpptlm-cep-transport-vc-consistency.md`(17 AC)
+
+### Entry #346 — 2026-11-12 [build](**C2 实施前 metis gap 分析的处置** —— 18 条建议全量落盘;**P0-1 是实施第一天会红的真缺陷**)
+
+**主题**:per 用户口令「@metis 给出下一步实施内容」⇒ 对刚立项的 `cpptlm-cep-transport-vc-consistency` 做**实施前 gap 分析**。metis 出 **18 条建议**(P0 7 · P1 8 · P2 3)⇒ **逐条核实后全量落盘**(4 个产物 + 本 Entry)。
+
+**① ⚠️ P0-1 = 实施第一天就会红的真缺陷(metis 抓到 · 已核实成立)**
+
+**事实**:既有 C-3 的两条反向 fixture(`test/test_cep_ualink_inc.cc:501-520`)采用「**改写** `certificate_scope[0].plane`」的变异形态
+⇒ 若 (C-1′-S) 按原 design(D-5/D-6)置于 **scope 循环之前**,它会**先于** C-3 判红(C-1′-S 的 membership 因 plane 被改写而不成立)
+⇒ 既有断言 `d.rfind("[CP-03-VC-CERTIFICATE/C-3]", 0) == 0` **必失败** ⇒ **既有 fixture 被抢归因**。
+
+**裁决**:把 (C-1′-S) 置于 **scope 循环之后、C-4 之前**(metis 的**方案 B**)⇒ **既有 6 条反向 fixture 零改动**,归因优先级 = `C-1′ → C-2 → R1-b → C-3 → R1-c → C-4`。
+> ✅ **代价已登记**(新增 **L-6**):R1-c 在循环后 ⇒ 若 scope 漏登记**同时**循环内有别的失败 ⇒ first-failure-wins ⇒ scope 缺口**可能被遮蔽** ⇒ ⛔ 不得声称「一次失败即报出全部问题」。
+> ⛔ **未采用** metis 的方案 A(改既有 C-3 fixture 为追加形态)—— 那会动既有测试的变异形态;方案 B 使既有 fixture **零改动**,更小。
+
+**② 其余 6 条 P0 的处置**
+
+| # | metis 建议 | 核实结果 | 处置 |
+|:--:|---|---|---|
+| **P0-2** | 并排取证的探针**不得引用新字段** | ✅ 成立 —— 旧 HEAD 的 `VcBindingSnapshot` **无** `per_network_orderings` ⇒ 「同一份毒化**快照**」**物理不可实现** | A4.1 / A4.2 改为「**同一份毒化输入文件** + **版本无关探针**」;证据落 `.rddf/reviews/cpptlm-cep-transport-vc-consistency-oldnew-evidence.md`(命令 + 输入 + 两端输出) |
+| **P0-3** | (b) 的实例集合口径与既有 loader 不一致 | ✅ 成立 —— 现有 push 条件是 `if (!mapping.empty())`(`collective_plane_contract.hh:691-692`)=「**至少含一个整数值**」,⛔ **不是**「`vc_binding` 有该 network 键」 | D-2 ② 钉死为「**逐字复刻** `per_network_mappings` 的 push 条件」⇒ (a)/(b) 实例集合不分叉 |
+| **P0-4** | AC-16「必红」与 AC-17「无机器守门」**逻辑矛盾** | ✅ 成立 —— 若要求「改成『已验证』⇒ 必红」就**必须**有机器检查 | 裁决:**不加**新闸(⛔ 不扩 `UntestedRegistry`、⛔ 不新建登记面 —— 比 K-1 **更保守**)⇒ AC-16 降为「**措辞核对**」并**删掉「必红」**;AC-17 同步 |
+| **P0-5** | A6 的 commit 含 delta spec,但 A7 在 A6 之后 | ✅ 成立 | 顺序改为 **A7 → A6**;`--authorized-by` 的占位符 `Entry #XXX` 改为**真实号 `Entry #346`**(闸的 `:131-139` 是**精确匹配**校验 ⇒ 占位符会被直接拒绝) |
+| **P0-6** | A9 的第二次五步链只有一句「另行触发」 | ✅ 成立 | A9.2 展开为 **5 步可勾选**(授权 Entry → 产物 commit → `--update` → 清单 commit → 无参复验 rc=0) |
+| **P0-7** | real gate 层用 `rfind(...,0)` 断言会**写错** | ✅ 成立 —— CP-03 行的 detail 是**拼接**的(`:1444-1453` 的 `d += " | " + cert`)⇒ 新前缀**不在位置 0** | A4.3 改为「遍历 `report.lines` + `detail.find(prefix) != npos`」+ 断言 `report.lines.size() == kContractRuleCount` |
+
+**③ P1 八条 + P2 三条(全部落盘,要点)**
+
+| # | 要点 | 落点 |
+|:--:|---|---|
+| **P1-8** | AC-5 的变异实例 MUST 用 `chi_rnf`(实测:`chi_rnf` / `cxl_2_0` / `cxl_3_0_symmetric` / `tilelink_c` **不在** `plane_binding` 里 ⇒ 真「插键」;⛔ **不用** `moesi_gpu` / `mesif`(它们**已在**里、值为 `null` ⇒ 那是「改值」) | A3.1 + proposal AC-5 |
+| **P1-9** | (b) MUST **先判越界再判缺失** ⇒ 否则 `"3"`→`"4"` 误报「完备性不足」 | D-3(b-2.5)+ A2.8 + delta R1-b |
+| **P1-10** | loader 的缺失 / 畸形口径未定义 | D-2 新增 6 行表(缺 `ordering_assumption` / 非对象 / 缺 `id` / `id` 重复 / key 溢出 / `vc_count` 未登记) |
+| **P1-11** | 补**快照正控断言**(真实数据下 `per_network_orderings["ualink_fabric"].size() == 3` 且每条 key 集合 == `{0,1,2,3}`)⇒ 防 loader 少收集 ⇒ (b) 退化成 L-1 空转而 AC-2 仍绿 | A1.6 + A4.3 + D-11(R-f) |
+| **P1-12** | 成功 detail 仍写「四条证书」(`:1006`)⇒ spec 写六条、运行时输出四条 | A2.6b(改为「六条证书」并补 `R1-b`/`R1-c`) |
+| **P1-13** | AC-13 只列 3 个 JSON,而 A0.3 / A6.5 / D-9 列 4 个(含 schema)⇒ **口径分叉** ⇒ schema 可被改而不被门禁发现 | AC-13 统一为 **4 个文件** |
+| **P1-14** | `fabric-transport.md` 的「四证书」**不止 R1/R5** ⇒ `:129`(R3 段)与 `:142`(R5 表)也有 | A5.7b 新增子项 |
+| **P1-15** | A8.2 / A8.3 写死基线数 ⇒ 新增测试后数会增加 ⇒ 误判 | 改为「**不低于改动前**」 |
+| **P2-16** | (b) 的 b-1「集合非空」分支**结构性不可达**(C-1′ 已先判并 return) | D-3(b-1) + A2.8 标注「仅作防御,⛔ 不得被读作一条独立判据」 |
+| **P2-17** | 空 `plane_binding` ⇒ C-1′-S 的行为未定义 | D-5 + A3.3b + 新增 **L-7**(vacuous PASS ⛔ 语义区别于 V6-c 的「零键 ⇒ SKIP」) |
+| **P2-18** | AC-16 的写入位置 | 随 P0-4 的裁决消失(不加闸 ⇒ 无写入位置) |
+
+**④ metis 的「隐藏意图」两条也落盘**
+
+| # | 隐含要求 | 落点 |
+|:--:|---|---|
+| 1 | 「仍绿」**不等于**「归因未变」⇒ 既有 6 条反向 fixture 的**归因前缀须逐一不变** | 新增 A4.4b + proposal AC-14 扩展 + delta 新增 Scenario「既有证书的归因前缀 SHALL 逐一不变」 |
+| 2 | 「零声明数据改动」隐含「**影子文件也算合规**」⇒ 须分清「改声明数据」与「用影子文件」 | D-10 的**影子文件纪律**段 + A4.3 |
+
+**⑤ 处置后实测闸(全绿)**
+
+| 面 | 实测 |
+|---|---|
+| `openspec validate cpptlm-cep-transport-vc-consistency --strict` | ✅ **valid** |
+| `openspec validate --changes --strict` | ✅ **1 passed / 0 failed** |
+| `bash scripts/test/docs_sync_check.sh --strict` | **rc=0** |
+| `python3 scripts/test/agents_md_lint.py` | **rc=0** |
+| 表格列数一致性(4 文件,识别转义 `\|`) | **0 处**不一致 |
+| metis 18 条建议落点核对 | **18 / 18** ✅ |
+| 路径引用 | 新写文本 **0 缺失**;剩余 12 处经逐项核实**全部无害**(3 处**假想文件/仓内不存在/待产出**已就地标注 + delta 既有段 9 处**与 main spec 同源逐字保留**) |
+
+**⑥ 本 Entry ⛔ 明确不做**
+
+⛔ 零实施代码(判据实现与反向 fixture 属实施期)· ⛔ 零 ADR 改动 · ⛔ 零声明数据改动 · ⛔ 零 main spec 改动 · ⛔ **未新增任何闸**(P0-4 的裁决 ⇒ 比 K-1 更保守)· ⛔ **未改既有 C-3 fixture 的变异形态**(方案 B 使其零改动)。
+
+**⑦ 关联**
+
+`Entry #345`(C2 立项)· **#344**(W0 + K-1/K-2)· metis 审查会话 `ses_e351691feffe8Pg9DLcm1xh1EW` · `openspec/changes/cpptlm-cep-transport-vc-consistency/{proposal,design,tasks}.md` + delta spec

@@ -45,7 +45,11 @@
 
 ```cpp
 /// network → **逐实例**的 `(instance_id, {vc(string) → ordering})`
-/// ⚠️ **收集口径 = 该 network 上「有 `vc_binding`」的实例**(与 `per_network_mappings` 同口径)
+/// ⚠️ **收集口径 = 该 network 上「有 `vc_binding`」的实例** ——「有」的定义 MUST **逐字复刻**
+///   `per_network_mappings` 的 push 条件(`collective_plane_contract.hh:691-692` 的
+///   `if (!mapping.empty())`)⇒ **该 network 的 `vc_binding` 至少含一个整数值**。
+///   ⛔ **不是**「`vc_binding` 有该 network 键」—— 值全非整数的条目会被现有 loader 跳过,
+///   两个口径分叉 ⇒ (a) 与 (b) 的实例集合不同 ⇒ L-1 空转 / AC-9 误报。
 ///   ⇒ **不以 `ordering_assumption` 为驱动** —— 否则「有 vc_binding 却缺 ordering_assumption」
 ///   的实例会被**静默排除**(per AC-9)。
 ///   ⇒ 某实例该 network 的 `ordering_assumption` 缺失时,其 entry 的 ordering 映射为**空**
@@ -64,6 +68,17 @@ std::map<std::string,
 
 **⛔ 快照层不做的事**:不判任何一致性(判据在 `evaluate_shared_mode_certificate`);不吞异常(`ordering_assumption` 缺失 = 数据缺失,由判据判红,⛔ 不是快照层的 `source_error`)。
 
+**loader 的缺失 / 畸形口径**(per metis P1-10 —— 逐条钉死,⛔ 不得静默):
+
+| 情形 | 口径 |
+|---|---|
+| `ordering_assumption` **整体缺失** | 该 network 的 ordering 映射为**空** ⇒ 由 (b) 的完备性判红(归 `R1-b`)⇒ **不是** `source_error` |
+| `ordering_assumption[network]` **非对象**(数组 / 字符串) | 按「**缺声明**」处理(同上一行)⇒ 红因文本须可区分「缺声明」与「值非法」 |
+| 实例**缺 `id`** / `id` **非字符串** | ⛔ **不静默排除** ⇒ 置 `source_error`(配置错误)⇒ 否则 `instance_id` 无法定位 ⇒ 红因指认不到人 |
+| `id` **重复** | 置 `source_error`(`vector` 会保留两条 ⇒ 报错无法指认) |
+| VC key 数值**溢出** `unsigned` | `from_chars` 返回 `result_out_of_range` ⇒ 归「**越界 FAIL**」⇒ ⛔ 不得抛异常、⛔ 不得当作 0 |
+| `vc_count` 该 network **未登记** | 由既有 C-2 判红并 return ⇒ (b) **不会**读到缺失的 `vc_count` |
+
 ---
 
 ## D-3 · (b) 判据形态:逐实例逐 VC **全等** + **每实例完备**
@@ -76,9 +91,9 @@ std::map<std::string,
 
 | 步 | 检查 | 失败红因(归 `R1-b`) |
 |:--:|---|---|
-| b-1 | 该 network 的 `per_network_orderings` **非空** | 无实例 ⇒ 无主体 ⇒ FAIL(⛔ 禁 vacuous PASS)—— 注:C-1′ 已先判同一情形并 return,此处为**防御性** |
+| b-1 | 该 network 的 `per_network_orderings` **非空** | 无实例 ⇒ 无主体 ⇒ FAIL(⛔ 禁 vacuous PASS)—— ⚠️ **结构性不可达**(C-1′ `:923-926` 已先判同一情形并 return)⇒ 保留**仅作防御**,⛔ **不得**被读作一条独立判据 |
 | b-2 | 每个 entry 的 ordering **key 形态**合法(见 D-4) | 「key 非规范十进制」 |
-| b-3 | 每个 entry 的 ordering **key 集合 == {0..vc_count-1}** | 「VC 完备性不足」(缺 ⇒ AC-4;越界 ⇒ AC-10③) |
+| b-3 | 每个 entry 的 ordering **key 集合 == {0..vc_count-1}** | 「VC 完备性不足」(缺 ⇒ AC-4)—— ⚠️ **必须先判越界再判缺失**:b-2 的形态校验之后**立即**判 `数值 >= vc_count` ⇒ 报「**越界**」(AC-10③);**然后**才判集合齐全 ⇒ 否则 `"3"` → `"4"` 的变异会误报成「完备性不足」⇒ 归因不稳 |
 | b-4 | 不同 entry 之间,**同一 vc 的 ordering 值全等** | 「同 VC 排序假设不一致」(⇒ AC-3) |
 | b-5 | ordering **值域**合法(`p2p_ordered` \| `unordered`) | 「值域非法」—— ⛔ **本仓既有闸已挡**(`scripts/test/cep_decl_alignment_check.sh` 用 `jsonschema` 全量校验 `include/tlm/cep/protocol_instance.schema.json`,其 `additionalProperties.enum` 已锁)⇒ **判据不重复实现值域**(禁双实现)⇒ **登记为已知残余**(见 D-8) |
 
@@ -125,7 +140,16 @@ std::map<std::string,
 
 **⛔ 方向不可颠倒**:本判据是「**声明 ⇒ scope 完备性**」方向(**声明了要在某 plane 上跑 ⇒ 该 plane 的相关 network 必须在 scope 内**),⛔ **不是**「scope 项 ⇒ 声明支持」方向 ⇒ 前者能检出「scope 漏登记」,后者不能。
 
-**落点**:scope 完备性是**全局**性质 ⇒ 判据置于 V6-d 的 **scope 项循环之前**(⛔ 不是循环内 —— 循环内每项都检查完备性 = 同一检查重复 N 次,且缺失项**根本不会被遍历到**)。
+**落点**:scope 完备性是**全局/声明级**性质(遍历 `decl.plane_binding`,⛔ 不是遍历 scope 项)⇒ 判据置于 V6-d 的 **scope 项循环之后、C-4 之前**(与同为声明级的 C-4 同级)。
+
+> ⚠️ **⛔ 为什么不是「循环之前」**(per metis P0-1 的**实测**证据 —— 本条是**修订**,原 design 写「循环前」):
+> 既有 C-3 的两条反向 fixture(`test/test_cep_ualink_inc.cc:501-520`)采用「**改写** `certificate_scope[0].plane`」的变异形态
+> ⇒ 若 R1-c 在循环前,它会**先于** C-3 判红(C-1′-S 的 membership 因 plane 被改写而不成立)⇒ 既有断言
+> `rfind("[CP-03-VC-CERTIFICATE/C-3]", 0) == 0` **必失败** ⇒ **既有 fixture 被抢归因**。
+> ⇒ 「循环后」使 **既有 6 条反向 fixture 零改动**且归因优先级为 `C-1′ → C-2 → R1-b → C-3 → R1-c → C-4`。
+> ✅ **代价登记**:R1-c 置于循环后 ⇒ 若 scope 漏登记**同时**循环内有别的失败,**先报循环内的失败**(first-failure-wins)⇒ scope 缺口**可能被遮蔽** ⇒ 见 **D-7 的 L-6**。
+
+**空 `plane_binding` 的口径**:零键 ⇒ C-1′-S **无主体** ⇒ **vacuous PASS**(与 V6-c 的「零键 ⇒ SKIP」**语义不同** —— V6-c 是「不适用」,C-1′-S 是「无缺口可查」)⇒ ⛔ 不得把二者混为一谈 ⇒ 登记进诚实边界段(per D-7 **L-7**)。
 
 ---
 
@@ -134,19 +158,23 @@ std::map<std::string,
 | 序 | 判据 | 位置 | 归因 |
 |:--:|---|---|---|
 | 0 | `status` / `certificate_scope` 非空 等既有前置 | `:891-909` | `[CP-03-VC-CERTIFICATE]` |
-| **1** | **(C-1′-S) scope 完备性** | **循环前** | `[CP-03-VC-CERTIFICATE/R1-c]` |
-| 2 | C-1′ 结构面(`collective_plane_vc_binding` 块) | 循环内 · 首 | `[CP-03-VC-CERTIFICATE/C-1′]` |
-| 3 | C-1′ 语义面(逐类相等) | 循环内 | `[CP-03-VC-CERTIFICATE/C-1′]` |
-| 4 | C-2 VC 覆盖完整 | 循环内 | `[CP-09-IC1]` |
-| **5** | **(b) 排序假设逐 VC 一致 + 完备** | 循环内 · C-2 之后 | `[CP-03-VC-CERTIFICATE/R1-b]` |
-| 6 | C-3 控制面与数据面互斥(声明级) | 循环内 · 末 | `[CP-03-VC-CERTIFICATE/C-3]` |
-| 7 | C-4 未检验项显式登记 | 循环后 | `[CP-03-VC-CERTIFICATE/C-4]` |
+| 1 | C-1′ 结构面(`collective_plane_vc_binding` 块) | 循环内 · 首 | `[CP-03-VC-CERTIFICATE/C-1′]` |
+| 2 | C-1′ 语义面(逐类相等) | 循环内 | `[CP-03-VC-CERTIFICATE/C-1′]` |
+| 3 | C-2 VC 覆盖完整 | 循环内 | `[CP-09-IC1]` |
+| **4** | **(b) 排序假设逐 VC 一致 + 完备** | 循环内 · C-2 之后 | `[CP-03-VC-CERTIFICATE/R1-b]` |
+| 5 | C-3 控制面与数据面互斥(声明级) | 循环内 · 末 | `[CP-03-VC-CERTIFICATE/C-3]` |
+| **6** | **(C-1′-S) scope 完备性** | **循环后 · C-4 之前** | `[CP-03-VC-CERTIFICATE/R1-c]` |
+| 7 | C-4 未检验项显式登记 | 循环后 · 末 | `[CP-03-VC-CERTIFICATE/C-4]` |
+
+> ⚠️ **R1-c 放在循环后而非循环前** —— 决定性依据见 **D-5 的修订说明**(既有 C-3 fixture 的归因抢占)。
+> ⚠️ **R1-b 放在 C-2 之后** —— (b) 的完备性基准 = `snap.vc_count[network]` ⇒ 需先由 C-2 保证该 network 已在 `include/tlm/cep/fabric.json` 登记。
+> ⚠️ **R1-b 放在 C-1′ 之后** —— AC-1 的变异(改**消息类**)必须红在 C-1′;AC-3 的变异(改**ordering**)不触碰 `vc_binding` ⇒ C-1′ 仍绿 ⇒ 落到 R1-b ⇒ 两个归因互不遮蔽。
 
 **为什么 (b) 在 C-2 之后**:(b) 的完备性基准 = `snap.vc_count[network]` ⇒ 需先由 C-2 保证该 network **已在 `include/tlm/cep/fabric.json` 登记**(`:950-953` 已判 ⇒ FAIL 并 return)⇒ 到 (b) 时 `vc_count` 必然存在且继承映射已全覆盖。
 
 **为什么 (b) 在 C-1′ 之后**:AC-1 的变异(改**消息类**)⇒ 必须红在 **C-1′** ⇒ C-1′ 必先;而 AC-3 的变异(改**ordering**)不触碰 `vc_binding` ⇒ C-1′ 仍绿 ⇒ 落到 (b) 红 ⇒ 两个归因互不遮蔽。
 
-**为什么 C-1′-S 在最前**:scope 完备性是**前置条件** —— scope 漏登记时,循环内各项检查的对象本身就是不完整的 ⇒ 先判完备性,红因才指向真正的问题。
+**为什么 C-1′-S 在循环后**:见 **D-5 的修订说明** —— 「循环前」会抢既有 C-3 fixture 的归因(实测);「循环后」使既有 6 条反向 fixture **零改动**。代价(first-failure-wins ⇒ scope 缺口可能被遮蔽)登记为 **L-6**。
 
 ---
 
@@ -159,6 +187,8 @@ std::map<std::string,
 | **L-3** | **`ordering_assumption` 值域非法**不在判据内(既有 schema 闸已挡,D-3 b-5) | 判据的 FAIL **只**覆盖形态 / 完备 / 一致三类;⛔ 不得声称「本判据验证了 ordering 取值合法」 |
 | **L-4** | **`plane_binding` 自身漏登记**(实例实际在用 fabric 承载 plane,但 `plane_binding` 为 `null`)⇒ C-1′-S **漏判** | `plane_binding` 是**自声明数据**,无独立真源 ⇒ 不可判 ⇒ **登记**(per K-1,落 `docs/architecture/cep/fabric-transport.md` 诚实边界段) |
 | **L-5** | **「不一致的 network 确实走了 M-1」不可判** | 本仓无 M-1 配置载体 ⇒ **登记**(per K-1,同上) |
+| **L-6** | **R1-c 置于循环后 ⇒ scope 缺口可能被遮蔽**:若 scope 漏登记**同时**循环内有别的失败 ⇒ first-failure-wins ⇒ 先报循环内的失败,scope 缺口**不在同一份 detail 里** | ⛔ 不得声称「一次失败即报出全部问题」⇒ 登记 |
+| **L-7** | **空 `plane_binding` ⇒ R1-c vacuous PASS**(零键 ⇒ 无主体) | 与 V6-c 的「零键 ⇒ SKIP」**语义不同**(前者 = 无缺口可查,后者 = 不适用)⇒ ⛔ 不得混为一谈 ⇒ 登记 |
 
 > ⚠️ **L-4 / L-5 ⛔ 无机器守门**:`U-1` / `U-2` 有 C-4 的机器守门(「未被冒充成已满足」);L-4 / L-5 是**文档级登记**,⛔ 不得让读者以为它们也有机器守门 ⇒ **文档须显式写明该地位差异**(per AC-17)。
 
@@ -221,12 +251,29 @@ std::map<std::string,
 
 | AC | 旧实现为何必绿 | 取证方式 |
 |---|---|---|
-| AC-3 | 旧实现**完全不读** `ordering_assumption`(`grep -c ordering_assumption include/tlm/cep/collective_plane_contract.hh` = **0**)⇒ 同一份毒化快照在旧实现下 PASS | 用 **git worktree** checkout 改动前的 HEAD,编译一个只调 `evaluate_shared_mode_certificate` 的探针 ⇒ 断言 PASS;新实现同一快照 ⇒ FAIL ⇒ **并排**证据落 `.rddf/reviews/` |
+| AC-3 | 旧实现**完全不读** `ordering_assumption`(`grep -c ordering_assumption include/tlm/cep/collective_plane_contract.hh` = **0**)⇒ 同一份毒化**输入**在旧实现下 PASS | 见下方「版本无关探针」 |
 | AC-12 | 旧实现**无 `R1-c` 判据** ⇒ AC-5 的同一变异在旧实现下 PASS(且旧实现连 `plane_binding` 都不读 ⇒ 不可能红) | 同上,并排 |
+
+> ⚠️ **⛔ 探针必须「版本无关」**(per metis P0-2 的**实测**约束):旧 HEAD 的 `VcBindingSnapshot` **没有** `per_network_orderings` 字段
+> ⇒ **不可能**把新结构体交给旧实现 ⇒ 「同一份毒化**快照**」在跨实现场景下**物理不可实现**。
+> ⇒ 正确形态 = **同一份毒化输入文件**(影子 `include/tlm/cep/protocol_instances.json`)+ **同一份不引用新字段的探针源码**:
+> **探针源码只允许**调用 `load_vc_binding_snapshot(影子 protocol_instances, 真实 fabric)` + `evaluate_shared_mode_certificate`
+> ⇒ ⛔ **不得**引用 `per_network_orderings`(否则旧 header 编译不过 ⇒ 取证退化为同实现内自证)。
+> ⇒ 旧/新分别编译(`g++ -std=c++17 -I<worktree>/include -I<worktree>/external/json/include probe.cc`),
+> **命令 + 输入影子文件 + 两端输出**三者落 `.rddf/reviews/<name>-oldnew-evidence.md` ⇒ ⛔ 不得只写一句「旧实现必绿」。
 
 > ⚠️ **AC-12 的「旧绿」有一个诚实边界**:旧实现读 `decl.plane_binding`?**不读** ⇒ 它既不因「plane 未登记」红、也不因「不在 scope」红 ⇒ 旧绿是**平凡**的。取证时**必须**如实写明这一点(⛔ 不得把它包装成「旧实现也检查了但更宽松」)。
 
 **AC-15(真实 gate 路径可达)**:变异**必须**经由 `run_collective_plane_contract`(约 `:1447` 的调用链)触发,⛔ 不得只在测试里手搓 `decl` 直调 `evaluate_shared_mode_certificate` ⇒ ⇒ **两套都要**:① 直调层(逐条归因的精细断言)② 真实 gate 层(可达性 + 折进 `CP-03` 行)。
+
+> ⚠️ **real gate 层的断言形态**(per metis P0-7 的**实测**约束):CP-03 行的 `detail` 是**拼接**的
+> (`include/tlm/cep/collective_plane_contract.hh:1444-1453`:`d += " | " + cert`)⇒ 新前缀**不在位置 0**
+> ⇒ ⛔ **不得**对 CP-03 行用 `rfind(prefix, 0) == 0`(那是**直调层**的写法)。
+> ⇒ real gate 层必须:**遍历 `report.lines`** ⇒ 找到 `line.rule == ContractRule::VcReservation` 的行
+> ⇒ 断言 `line.detail.find("[CP-03-VC-CERTIFICATE/R1-b] ") != npos`(用 `find`,⛔ 不用 `rfind(...,0)`)
+> ⇒ 并断言 `report.lines.size() == kContractRuleCount`(**锁 6 条规则**,⛔ 未新增第 7 条)。
+> ⇒ **影子文件纪律**:real gate 的变异必须通过 `paths.protocol_instances` / `paths.declaration` 指向**临时影子文件**
+> ⇒ ⛔ **不得**修改仓内 JSON(那是「改声明数据变绿」);baseline 正控继续用仓内真实路径。
 
 ---
 
@@ -239,7 +286,9 @@ std::map<std::string,
 | R-c | tag 前缀误命中 | AC-14 回归 + D-1 的「尾部空格」约定 |
 | R-d | 判据自证(测试里手搓数据 ⇒ 实现与 fixture 同源) | AC-15 的真实 gate 层 + 「旧绿/新红」并排(跨实现,非跨 fixture) |
 | R-e | 冻结链 3 处产物 ⇒ hash 变更面更大 | 三处同一次 `--update` 重算 + 产物 commit 先于 `--update` |
-| R-f | 快照字段加错 ⇒ (b) 恒绿(vacuous) | AC-2 基线 + AC-3/AC-4 双变异(值变 / 条目缺)⇒ 任一恒绿即实现错 |
+| R-f | 快照字段加错 ⇒ (b) 恒绿(vacuous) | AC-2 基线 + **快照正控断言**(真实数据下 `per_network_orderings["ualink_fabric"].size() == 3` 且每条 key 集合 == `{0,1,2,3}`)+ AC-3/AC-4 双变异(值变 / 条目缺)⇒ 任一恒绿即实现错 |
+| R-g | **归因抢占**:新判据先于既有判据触发 ⇒ 既有 6 条反向 fixture 的**归因前缀**被改写 ⇒ 既有测试失败或(更糟)**断言写错而仍绿** | AC-1 / AC-14 扩展为「**既有 6 条反向 fixture 的归因前缀逐一不变**」;R1-c 置于循环**后**(per **D-5** 的实测修订) |
+| R-h | **(b) 的实例集合与 (a) 分叉** ⇒ 两维度各判一组不同实例 | D-2 ② 的口径**逐字复刻** `per_network_mappings` 的 push 条件 |
 
 ---
 

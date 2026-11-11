@@ -56,6 +56,7 @@
 
 - [ ] **AC-5(决定性变异 · C-1′-S scope 完备性)**:把 `compute_noc` 上的某实例的 `plane_binding` **新增**为 `FabricCollectivePlane`(⚠️ 当前该实例**不在** `plane_binding` 里 ⇒ 是**插键**不是改值)⇒ **必红**,红因**必须是**「`(plane, network)` 不在 `certificate_scope`」并归因 `[CP-03-VC-CERTIFICATE/R1-c]`(⛔ **不是**「plane 未登记」)。
       > ⚠️ **判定顺序必须固定**:`find_collective_plane` 未登记 ⇒ FAIL(该情形**已由 V6-c `:830` 覆盖**)→ 已登记但 `(plane,network)` 不在 scope ⇒ FAIL(本判据)。否则归因不稳定。
+      > ⚠️ **变异实例 MUST 用 `chi_rnf`**(per metis **P1-8** 的实测):`chi_rnf` / `cxl_2_0` / `cxl_3_0_symmetric` / `tilelink_c` **不在** `plane_binding` 里 ⇒ 是真「**插键**」;⛔ **不用** `moesi_gpu` / `mesif`(它们**已在** `plane_binding` 里,值为 `null` ⇒ 那是「改值」)。
 
 - [ ] **AC-6(反 vacuous · 既有基线)**:`certificate_scope` 清空 ⇒ **必红**。⚠️ 本 AC 触发的是**既有** `:901-904` 的空早退,**不是** C-1′-S 的证词 ⇒ 只作回归基线,⛔ 不得用它证明新判据有牙。
 
@@ -72,15 +73,23 @@
 
 - [ ] **AC-12(C-1′-S 的「旧绿 / 新红」并排)**:AC-5 的同一变异在**旧实现上必绿**(旧实现无此判据)⇒ 并排取证,对称 AC-3。
 
-- [ ] **AC-13(声明数据零改动的机器证据)**:`git diff --exit-code -- include/tlm/cep/protocol_instances.json include/tlm/cep/collective_planes.json include/tlm/cep/fabric.json` 为**空**(防实施中顺手「修」`tilelink_c`)。
+- [ ] **AC-13(声明数据零改动的机器证据)**:`git diff --exit-code -- include/tlm/cep/protocol_instances.json include/tlm/cep/collective_planes.json include/tlm/cep/fabric.json include/tlm/cep/protocol_instance.schema.json` 为**空**(防实施中顺手「修」`tilelink_c` / 改 schema 的 description)。
+      > ⚠️ **4 个文件**(per metis **P1-13** 的口径统一):本 AC 原先只列 3 个 JSON,而 `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md` 的 A0.3 / A6.5 与 `openspec/changes/cpptlm-cep-transport-vc-consistency/design.md` 的 D-9 列 4 个(含 schema)⇒ ⛔ 若不统一,`include/tlm/cep/protocol_instance.schema.json` 可被改动而不被门禁发现。
 
-- [ ] **AC-14(归因 tag 精确前缀不冲突)**:新 tag `[CP-03-VC-CERTIFICATE/R1-b]` / `[CP-03-VC-CERTIFICATE/R1-c]` 不得被 `[CP-03-VC-CERTIFICATE/C-1′]`(带 `′] ` 终结)或 `[CP-03-VC-CERTIFICATE]` 的**精确前缀**误命中 ⇒ 加一条回归钉住(⚠️ 既有 `test/test_cep_ualink_inc.cc:465` 用**带 `]`** 的 `rfind` ⇒ 理论上安全,但需回归)。
+- [ ] **AC-14(归因 tag 精确前缀不冲突 + **既有归因不变**)**:新 tag `[CP-03-VC-CERTIFICATE/R1-b]` / `[CP-03-VC-CERTIFICATE/R1-c]` 不得被 `[CP-03-VC-CERTIFICATE/C-1′]`(带 `′] ` 终结)或 `[CP-03-VC-CERTIFICATE]` 的**精确前缀**误命中 ⇒ 加一条回归钉住(⚠️ 既有 `test/test_cep_ualink_inc.cc:465` 用**带 `]`** 的 `rfind` ⇒ 理论上安全,但需回归)。
+      > ⚠️ **更强的一条**:既有 **6 条**反向 fixture 的**归因前缀逐一不变**(C-1′ 2 · C-2 1 · C-3 2 · C-4 1)⇒ ⛔ 「仍绿」**不等于**「归因未变」(断言写错也可能仍绿)⇒ 逐条比对前缀字符串。
 
 - [ ] **AC-15(真实 gate 路径可达)**:新判据必须在**真实 gate**(`include/tlm/cep/collective_plane_contract.hh` 的 `run_collective_plane_contract` 调用链,`:1447` 附近)可触达,⛔ 不得只在测试里手搓 `decl` 直调 `evaluate_shared_mode_certificate`。
+      > ⚠️ **断言形态**(per metis **P0-7** 的实测):CP-03 行的 `detail` 是**拼接**的(`:1444-1453` 的 `d += " | " + cert`)⇒ 新前缀**不在位置 0** ⇒ real gate 层必须**遍历 `report.lines`** 并用 `detail.find(prefix) != npos` ⇒ ⛔ **不得**用 `rfind(prefix, 0) == 0`(那是**直调层**的写法);并断言 `report.lines.size() == kContractRuleCount`(锁 6 条)。
+      > ⚠️ **影子文件纪律**:real gate 的变异走**临时影子文件**(`paths.protocol_instances` / `paths.declaration`)⇒ ⛔ **不得**修改仓内 JSON。
 
-- [ ] **AC-16(`R-1` / `R-2` 登记的文字守门)**:`R-1` / `R-2` 在 `docs/architecture/cep/fabric-transport.md` 的「诚实边界」段**可 grep 命中**,且该段 **⛔ 不含「已验证 / 已满足」字样**(与 C-4 的 `untested_is_not_satisfied` 同型)。决定性变异:把 `R-1` 的表述改成「已验证」⇒ 必红。
+- [ ] **AC-16(`R-1` / `R-2` 登记的**措辞**核对)**:`R-1` / `R-2` 在 `docs/architecture/cep/fabric-transport.md` 的「诚实边界」段**可 grep 命中**,且该段 **⛔ 不含「已验证 / 已满足」字样**(与 C-4 的 `untested_is_not_satisfied` 同型)。
+      > ⚠️ **本 AC 是「措辞核对」,⛔ 不是红/绿闸**(per metis **P0-4** 的**逻辑矛盾**修正):AC-17 明写 `R-1`/`R-2`「**没有**机器守门」⇒ 若本 AC 同时要求「改成『已验证』⇒ **必红**」,就**必须**存在一个机器检查 ⇒ 二者不可兼得。
+      > ⇒ **裁决**:**不加**新的机器闸(⛔ 不扩 `UntestedRegistry`、⛔ 不新建登记面 —— per **K-1**);本 AC 以**人工逐字核对 + grep 命中**为判据 ⇒ ⛔ **不写「必红」**。
+      > ✅ **不与 K-1 冲突**:K-1 裁的是「**不进 C-4**」(不扩 `UntestedRegistry` 的语义面)⇒ 本 AC 连闸都不加 ⇒ **比 K-1 更保守**。
 
 - [ ] **AC-17(文档地位与映射)**:文档显式写明 ①「**`R1-a` ≡ `C-1′`**」映射 ②「**U-1/U-2 有 C-4 机器守门 / `R-1`/`R-2` 没有**(纯文档级)」的地位差异。逐字可核。
+      > ⚠️ 与 AC-16 的一致性:**两者都按「无机器守门」写**(per metis **P0-4**)⇒ ⛔ 文档**不得**出现「`R-1`/`R-2` 有闸」或「必红」类表述。
 
 ## Out of Scope
 
