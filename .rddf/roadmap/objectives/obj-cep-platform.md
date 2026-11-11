@@ -19094,3 +19094,37 @@ graph LR
 ### 13.8 关联
 
 台账 **Entry #340**(排序裁决 + 待用户项)· **#339**(收口批)· **#332**(口径 ④ MUST-FIX-1~4)· **#264**(B3b-2 终态裁决)· **#238 / #249 / #251**(T1~T4 · 选项戊 · B3 拆两行)· `.rddf/reviews/cep-governance-goal-scope-review.md`(architect 梳理)· `docs/guide/cep-usage.md` §12.8 · `docs/architecture/cep/fabric-transport.md` R1~R5 · `ADR-CEP-01` E.3.1 段 · `ADR-CEP-00` SU 2026-11-11
+
+### Entry #341 — 2026-11-11 [planner](**CEP 文档归位 A 方案开工授权** —— 14 号 → `docs/architecture/cep/parity-baseline.md` + 2 处标注修正)
+
+**主题**:per 用户裁决「**A · 仅 14 号移位 + 2 处标注修正**」⇒ 把 `docs/architecture/` 顶层最后一份**纯 CEP 专属**文档移入 `cep/` 子目录,使顶层只剩 **07 号** 1 份 CEP 文档(= AGENTS.md「1 主纲 + N 子文档」模型的直接落地)。
+
+**① 范围(实测依据;非「全部 CEP 内容」)**
+
+| 顶层文档 | 行数 | 裁决 | 理由 |
+|---|:--:|---|---|
+| `14-coherence-parity-baseline.md` | 362 | ✅ **移入 `cep/parity-baseline.md`** | **纯 CEP 专属**(标题即「CEP 一致性平台的对拍基准」;上游 = `obj R7 / H7 / M3`;定位 = 验证方法**判据类**) |
+| `06-inter-module-network.md` | 1587 | ⛔ **原地保留** | **通用协议中立基线**(真源 1),§2/§5/§6/§7/§12/§14/§16/§17/§18 共 800+ 行 **CEP 提及 = 0** ⇒ 不是 CEP 主题;搬它 = 37 活引用 + 16 不可变 ADR,**架构收益 ≈ 0** |
+| `06-bis-coherence-as-network-extension.md` | 903 | ⛔ **原地保留** | **历史件**(2026-10-21 起已被 07 号 supersede;7 项产物已按 `ADR-CEP-16 §2 决策 1` / `ADR-CEP-07A` 逐项处置完 ⇒ 零未结)⇒ 属 4 层模型第 3 层「历史保留」,进 `cep/` = 现行目录混入历史件 |
+| `07-coherence-exploration-platform.md` | 648 | ⛔ 不动 | 已是**总纲**(唯一入口) |
+
+**② 命名**:移入后**去数字前缀** ⇒ `cep/parity-baseline.md`(per 裁定表 §六 硬规则 ②「`cep/` 无数字前缀,避与顶层 01~14 撞车」)。
+
+**③ 连带修正(18 个活引用文件 + 3 处文档标注)**
+
+| 类 | 数 | 落点 |
+|---|:--:|---|
+| 绝对路径 `docs/architecture/14-coherence-parity-baseline` | 17 处 × 15 文件 | 改为 `docs/architecture/cep/parity-baseline.md`;**含 2 处代码注释**(`include/tlm/traffic_gen_tlm.hh:144` · `test/test_cep_cxl_state_spec.cc:6`)⇒ **须重新编译 + 跑测试** |
+| README 相对链接 | 1 | `[14-coherence-parity-baseline.md](./…)` → `[parity-baseline.md](./cep/parity-baseline.md)` |
+| research 裸文件名 | 1 | `14-coherence-parity-baseline.md` → `parity-baseline.md` |
+| **`ADR-CEP-11`** 2 处(纯路径,⛔ **不可变**) | 2 | ⇒ **末尾追加 SU** 声明新路径(⛔ 不改原引用) |
+| README 的 06-bis 状态行 | 1 | 「🟡 v0.3 修订中 (2026-10-19)」⇒ 「⛔ **已被 07 号 supersede** · 历史保留」(批 5 漏刷) |
+| **`AGENTS.md:157`** 的 06 号标注 | 1 | 「★ **CEP 真源章节**」⇒ 「**协议中立基线**(通用真源 1;CEP 的**引用源**映射见 `ADR-CEP-00A §3.1`)」(现行写法会让人误读成「06 号属 CEP」) |
+| 07 号的「文件性质声明」表 + 索引 C | 2 | 「`cep/` **8 篇**」⇒「**9 篇**」+ 索引 C 补对拍基准行 |
+
+**④ 冻结面**:14 号移入 `docs/architecture/cep/` ⇒ 被 `cep_freeze_check.sh` 的 glob `docs/architecture/cep/*.md` 纳入 ⇒ 冻结产物 **77 → 78** ⇒ **走五步授权链**(本 Entry = 步骤 1)。
+⛔ **不新增冻结内容的实质变更**:14 号的**正文逐字不动**(纯搬移 + 头部定位句)。
+
+**⑤ 明确不做**:⛔ 不动 06 号 / 06-bis 的正文 · ⛔ 不改 `ADR-CEP-11` 的既有引用文字(只追加 SU)· ⛔ 不改 14 号的判据内容(§2 三选项对比 / §3 裁决 / §4 对拍手段 / §7 成本分期 **全部原样**)· ⛔ 不新建 ADR · ⛔ 不动 `obj §6.2` 任何条目。
+
+**⑥ 关联**:**#340**(下一阶段任务梳理 + 实施路径)· **#339**(SU 收口批)· **#333**(批 1 授权 + 重定向表)· `ADR-CEP-11`(H7 的范围限定)· `ADR-CEP-16` / `ADR-CEP-07A`(06-bis 处置)· `ADR-CEP-00A §3.1 / §3.2 / §3.9`(三份文档的锚点表 owner)· `docs/architecture/cep/` 8 篇子文档 · `docs/architecture/06-inter-module-network.md` §11 / §15

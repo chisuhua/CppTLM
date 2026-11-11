@@ -1,34 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-11T23:00:00Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-12T00:05:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-10T06:52:00Z",
-      "by": "user",
-      "reason": "用户口令「继续 C3」⇒ C3 = id 债务 11 笔 ⇒ 切 architect 域:实测发现**决定性矛盾** —— 11 笔涉及的 ADR **全部已签发** ⇒ §3 append-only ⇒ 无法加新 invariant 编号 ⇒ 「建 id」路线在架构上不可行;且 66 分母硬编码 + 2 冻结件五步链 ⇒ 问 oracle C3 的目标该改成什么"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-10T06:58:41Z",
-      "by": "user",
-      "reason": "用户口令「继续 C3」⇒ oracle 裁决 C3′:**建 id 架构性不可行**(8 份已签发 ADR 的 Verification 章逐字写「⛔ 本章不新造 id」)⇒ 改为**分类收敛**(disposition 枚举 + ④b 三层机检 + 覆盖完备);V-行普查 71 行 0 条未登记 ⇒ 否决项解除 ⇒ Entry #326 已落 ⇒ 切 builder 实施"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-10T07:10:45Z",
-      "by": "user",
-      "reason": "用户口令「切architect裁决A1」⇒ A1 = 终态 DoD Go 口径裁决(四选项:甲/乙/丙/丁);属架构取舍 ⇒ architect 域 ⇒ oracle → critic 双审"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-10T16:20:00Z",
-      "by": "user",
-      "reason": "用户口令「按你建议顺序推进」⇒ 授权执行规划(cep-next-batch-plan-2026-11-10.md)的三角色序列:① builder 批 0.6(冻结闸 +1 glob / 快照豁免缩版)→ ② planner 前置 3/4/6/7 → ③ 回 architect 批 1。本回合 = ① builder 域:改 scripts/test/cep_freeze_check.sh 与 scripts/test/cep_doc_ref_check.sh(per 规划 §一 精确 diff)。"
-    },
     {
       "role": "planner",
       "at": "2026-11-10T17:05:00Z",
@@ -124,6 +100,30 @@
       "at": "2026-11-11T23:00:00Z",
       "by": "user",
       "reason": "用户口令「然后切planner对后续还有哪些任务内容都梳理一遍,再给出后续任务内容和实施路径」⇒ 本回合 = planner:① 回答 architect 报告 §六 的 3 个问题 ② 落 obj §12 下一阶段任务梳理 + 实施路径 ③ 落 Entry #340(排序裁决)。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-11T23:40:00Z",
+      "by": "user",
+      "reason": "用户问：是否继续治理 docs/architecture/ 下 CEP 相关内容,全部移入 docs/architecture/cep/,同时保持 docs/architecture 的清晰架构描述。本回合 = architect:实测现状 + 迁移成本/收益评估 + 给方案(不擅自动手)。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-11T23:55:00Z",
+      "by": "user",
+      "reason": "用户选 A 方案(仅 14 号移位 + 2 处标注修正)⇒ Phase 1 planner:Entry #341 授权 + .rddf/improvements + .rddf/plans 的 2 处路径改写。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-11T23:58:00Z",
+      "by": "user",
+      "reason": "Phase 2 architect:14 号移位 + cep/parity-baseline.md 头部 + README + 07 号(8篇→9篇 + 索引C) + ADR-CEP-11 追加 SU。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-12T00:05:00Z",
+      "by": "user",
+      "reason": "Phase 3 builder:AGENTS.md 标注修正 + 14 文件路径改写(含 2 处代码注释⇒须重编译) + 五步链(冻结集 77→78)。"
     }
   ],
   "auto_switch_window": null
