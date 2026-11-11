@@ -1,7 +1,7 @@
 # 架构设计文档 (通用基础架构)
 
-> **版本**: 1.2
-> **最后更新**: 2026-10-27 (v1.4 — 14-sm-operand-supply-design-target.md 迁出至 ArchForge（编号 33-）, 18 文档 + 5 归档)
+> **版本**: 1.3
+> **最后更新**: 2026-11-11 (v1.5 — **CEP 文档治理收口**（台账 Entry #333 ~ #339）：07 号 总纲 1440 → 642 行 + 8 篇按层子文档 + 状态标记刷新)
 > **变更**: 与 `docs/designs/` 分工明确（dGPU 应用架构已迁出）+ 真源 1 (通用基础架构) 索引同步
 
 > **⚠️ v0.4 X-11 cross-ref**: 本目录是 AGENTS.md §DOC HYGIENE 真源原则定义的"真源 1" (通用基础架构唯一真源). 文档状态与正文严格同步是治理成功的必要条件 (per critic 评审 B1+B2 BLOCKER). 任何修订必须先改这里 + 同步索引 (本 README) + 同步 ADR (docs/adr/) + 同步调研 (docs/research/).
@@ -34,15 +34,15 @@
 | [04-reset-checkpoint-architecture.md](./04-reset-checkpoint-architecture.md) | ✅ v1.0 已实施 | 复位与快照架构 (ResetConfig + save_snapshot, 2026-10-19 状态对齐) |
 | [06-inter-module-network.md](./06-inter-module-network.md) | 🟡 **v0.4 修订中** (2026-10-19) | 模块互联网络协议中立基线 + Bundle 二分类 + Python 拓扑契约 (详化 01 §1.1 6 层 + §1.2 Bundle 命名 + §4.7 simulation_mode, 双向 cross-ref) |
 | [06-bis-coherence-as-network-extension.md](./06-bis-coherence-as-network-extension.md) | 🟡 **v0.3 修订中** (2026-10-19) | Coherence 演进 seam 详化 (与 06 §15 + ArchForge coherence-protocol.md 跨仓引用, 不重发明) |
-| [07-coherence-exploration-platform.md](./07-coherence-exploration-platform.md) | 🟡 **v0.1 起草中** (2026-10-20) | Coherence Exploration Platform (CEP) 一致性互联仿真平台 — **总纲(唯一入口)**: 6 层架构 + canonical 10 流 + **§4 66 条守门 invariant(编号位 67 / 15 组,定义处)** + 演进路线 (per `ADR-CEP-00` 22 份 ADR 整合, **与 01 §1.1 L1-L6 正交**) · **按层拆分的 8 篇子文档见 [`cep/`](./cep/)** |
-| ↳ [`cep/stub-cache-core.md`](./cep/stub-cache-core.md) | 🟡 子文档 | 第 1 层:Stub Cache Core(§3.2 RN 侧投影 / §3.3 协议无关性) |
-| ↳ [`cep/coherence-interface.md`](./cep/coherence-interface.md) | 🟡 子文档 | 第 2 层:Coherence Interface(§3.1 canonical 10 流 / §5.4 Bundle 约束) |
-| ↳ [`cep/protocol-engine.md`](./cep/protocol-engine.md) | 🟡 子文档 | 第 3 层:Protocol Engine 与协议适配(§5.1 含 **5.1.5 转移表真源判定式**) |
-| ↳ [`cep/directory-ordering.md`](./cep/directory-ordering.md) | 🟡 子文档 | 第 4 层:Directory & Ordering Plane(§5.2) |
-| ↳ [`cep/collective-plane.md`](./cep/collective-plane.md) | 🟡 子文档 | 第 5 层:Fabric Collective Plane(§5.3) |
-| ↳ [`cep/fabric-transport.md`](./cep/fabric-transport.md) | 🟡 子文档 | **第 6 层:传输层**(§6.3 装配 seam + **§6.3.1「经网络」定义 / J-9 拓扑分档**) |
-| ↳ [`cep/simulation-and-experiment.md`](./cep/simulation-and-experiment.md) | 🟡 子文档 | 仿真语义 + 实验输出协议(§6.1/6.2/6.4 + §7 含 **7.2.2「全绿」两级**) |
-| ↳ [`cep/core-traffic-gen.md`](./cep/core-traffic-gen.md) | 🟡 骨架 | Core / TrafficGen 主干(A 类决策待批 4 落 ADR) |
+| [07-coherence-exploration-platform.md](./07-coherence-exploration-platform.md) | ✅ **v0.2 治理收口** (2026-11-11) | Coherence Exploration Platform (CEP) 一致性互联仿真平台 — **总纲(唯一入口)**: 6 层架构 + canonical 10 流 + **§4 66 条守门 invariant(编号位 67 / 15 组,定义处)** + 演进路线 (per `ADR-CEP-00` 22 份 ADR 整合, **与 01 §1.1 L1-L6 正交**) · **按层拆分的 8 篇子文档见 [`cep/`](./cep/)** · ⛔ **本文不承载实施状态**(→ 台账 `§4.0` / `§4.0-a` / `§6.2` / `§11`)、⛔ **不承载架构决策**(→ `docs/adr/ADR-CEP-*.md`);10 则历史 SU 已收敛为**归宿指针**(per 台账 Entry #339) |
+| ↳ [`cep/stub-cache-core.md`](./cep/stub-cache-core.md) | ✅ 子文档 | 第 1 层:Stub Cache Core(§3.2 RN 侧投影 / §3.3 协议无关性) |
+| ↳ [`cep/coherence-interface.md`](./cep/coherence-interface.md) | ✅ 子文档 | 第 2 层:Coherence Interface(§3.1 canonical 10 流 / §5.4 Bundle 约束) |
+| ↳ [`cep/protocol-engine.md`](./cep/protocol-engine.md) | ✅ 子文档 | 第 3 层:Protocol Engine 与协议适配(§5.1 含 **5.1.5 转移表真源判定式**) |
+| ↳ [`cep/directory-ordering.md`](./cep/directory-ordering.md) | ✅ 子文档 | 第 4 层:Directory & Ordering Plane(§5.2) |
+| ↳ [`cep/collective-plane.md`](./cep/collective-plane.md) | ✅ 子文档 | 第 5 层:Fabric Collective Plane(§5.3) |
+| ↳ [`cep/fabric-transport.md`](./cep/fabric-transport.md) | ✅ 子文档 | **第 6 层:传输层**(§6.3 装配 seam + **§6.3.1「经网络」定义 / J-9 拓扑分档**) |
+| ↳ [`cep/simulation-and-experiment.md`](./cep/simulation-and-experiment.md) | ✅ 子文档 | 仿真语义 + 实验输出协议(§6.1/6.2/6.4 + §7 含 **7.2.2「全绿」两级**) |
+| ↳ [`cep/core-traffic-gen.md`](./cep/core-traffic-gen.md) | ✅ 子文档 | Core / TrafficGen 主干(决策载体 = `ADR-CEP-19` SU 2026-11-11 的 ASM-1/3/4/7/8/9 + 既有 SU 的另 5 条;「经网络」定义 = `fabric-transport.md` §6.3.1) |
 | [08-metrics-collection-framework-v2.2.md](./08-metrics-collection-framework-v2.2.md) | ✅ v2.2.0 已实施 | 性能指标收集框架 (histogram + stats + streaming_reporter, 2026-10-19 状态对齐) |
 | [09-topology-visualization-pipeline.md](./09-topology-visualization-pipeline.md) | ✅ v2.0 已批准 | 配置生成 + 可视化架构 (Python `cpptlm/visualization/` + dashboard, 2026-10-19 状态对齐) |
 | [10-topology-generation-management-system.md](./10-topology-generation-management-system.md) | ✅ v3.0 已批准 | 拓扑生成管理系统 (mesh_cluster / ring_cluster + JSON Schema) |

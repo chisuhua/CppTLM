@@ -156,7 +156,11 @@ docs/
     01-hybrid-architecture-v2.1.md      # ★ 整体 NoC 架构
     06-inter-module-network.md          # ★ CEP 真源章节 (per ADR-CEP-00A §3.1)
     06-bis-coherence-as-network-extension.md  # CEP 一致性扩展真源
-    07-coherence-exploration-platform.md # CEP 平台总纲
+    07-coherence-exploration-platform.md # CEP 平台总纲(唯一入口;§4 invariant 定义处)
+    cep/                                # ★ CEP 按层子文档 8 篇(实体;节号以 07 号 为准)
+      stub-cache-core.md / coherence-interface.md / protocol-engine.md
+      directory-ordering.md / collective-plane.md / fabric-transport.md
+      simulation-and-experiment.md / core-traffic-gen.md
     02-04 / 08-13 ...                   # 其他架构决策（事务/错误/复位/指标/拓扑/相干/仪表板）
   designs/               # 真源 2: dGPU 应用架构 (Board 内部 + SoC 业务 + Driver 接口 三视角)
     README.md                           #   总入口（与 docs/architecture/ 分工说明）
@@ -508,7 +512,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 | 层 | 职责 | 路径 | 数量控制 | 修改门槛 |
 |----|------|------|---------|---------|
-| **第 1 层 长期维护架构文档** | 设计意图 + 现状真相 | `docs/architecture/` (真源 1) + `docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/` (真源 2) | 每主题 1-2 篇 | Oracle 评审 or ADR 触发 |
+| **第 1 层 长期维护架构文档** | 设计意图 + 现状真相 | `docs/architecture/` (真源 1) + `docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/` (真源 2) | **每主题 = 1 主纲 + N 子文档**（子文档**仅从主纲进入**;须服务**同一主纲的同一设计意图**;**子文档不计入篇数**。真源 1 的「唯一真源」是**目录级**约束,拆子文档不违反;先例 = `docs/designs/dgpu-soc/` 与 `docs/architecture/cep/`） | Oracle 评审 or ADR 触发 |
 | **第 2 层 架构决策记录** | 不可变决策 + Status Update | `docs/adr/ADR-*.md` (真源 3, 58 份) | 每个不可逆决策 1 篇 | 签发后不改，只追加 Status Update |
 | **第 3 层 OpenSpec change** | 实施变更提案 | `openspec/changes/<name>/{proposal,design,spec,tasks}.md` | 每个独立变更 1 个 | 标准 OpenSpec 工作流 |
 | **第 4 层 实施跟踪** | TDD 5 步 + 进度报告 | `docs/superpowers/plans/<name>.md` + `archive/` | 每个大 Phase 1 个 | 实施期短期，archive 后归档 |
