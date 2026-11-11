@@ -665,6 +665,117 @@ TEST_CASE("V6-d: R1-c scope 完备性(插键不在 scope / 绑定 plane 但无 V
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// V6-d —— **AC-15 真实 gate 路径可达**(per C2 · Entry #347 · A4.3)
+// ══════════════════════════════════════════════════════════════════════════
+// ⚠️ **为何单列**(metis 的 slop #6 / AC-15):⛔ 不得只在测试里手搓 `decl` 直调
+//   `evaluate_shared_mode_certificate` —— 那会「实现与 fixture 同源」⇒ 无法证明
+//   判据在**真实装配路径**上真的会被触发。
+// ⚠️ **断言形态**(metis P0-7 的实测约束):CP-03 行的 `detail` 是**拼接**的
+//   (`collective_plane_contract.hh` 的 `d += " | " + cert`)⇒ 新前缀**不在位置 0**
+//   ⇒ ⛔ **不得**用 `rfind(prefix, 0) == 0`(那是**直调层**写法)⇒ 必须**遍历
+//   `report.lines`** 并用 `detail.find(prefix) != npos`。
+// ⚠️ **影子文件纪律**:real gate 的变异走**临时影子文件**(`paths.protocol_instances` /
+//   `paths.declaration`)⇒ ⛔ **不得**修改仓内 JSON(那是「改声明数据变绿」)。
+TEST_CASE("V6-d: R1-b / R1-c 在真实 gate 路径可触达(折进 CP-03 行 + 规则数仍 6)",
+          "[cep][ualink-inc][certificate][real-gate]") {
+    constexpr const char* kR1b = "[CP-03-VC-CERTIFICATE/R1-b] ";
+    constexpr const char* kR1c = "[CP-03-VC-CERTIFICATE/R1-c] ";
+    const std::string root = CPPTLM_SOURCE_DIR;
+
+    // ── ① 基线:真实仓内路径 ⇒ 全绿 + 规则数恒 6 ──
+    {
+        cep::ContractPaths p;
+        p.root = root;
+        const auto rep = cep::run_collective_plane_contract(p);
+        REQUIRE(rep.lines.size() == cep::kContractRuleCount);
+        // 找 CP-03 行(VcReservation)⇒ 成功 detail 含「六条」
+        bool found = false;
+        for (const auto& line : rep.lines) {
+            if (line.rule != cep::ContractRule::VcReservation)
+                continue;
+            found = true;
+            REQUIRE(line.verdict == cep::ContractVerdict::PASS);
+            REQUIRE(line.detail.find("六条") != std::string::npos);
+        }
+        REQUIRE(found);
+    }
+
+    // ── ② 变异:影子 `protocol_instances`(毒化 mesif 的 ordering)⇒ CP-03 行 MUST FAIL ──
+    //    ⚠️ 结构 = 「遍历 lines 找 VcReservation + detail.find(R1-b) != npos」
+    //    ⚠️ 用临时目录写影子文件 ⇒ ⛔ 不碰仓内文件
+    {
+        const auto tmp = std::filesystem::temp_directory_path() / "cpptlm_c2_r1b_gate";
+        std::filesystem::create_directories(tmp);
+        // 读真实 protocol_instances ⇒ 改 mesif.ualink_fabric.vc3 = unordered ⇒ 写影子
+        {
+            std::ifstream in(std::string(root) + "/include/tlm/cep/protocol_instances.json");
+            REQUIRE(in);
+            nlohmann::json doc;
+            in >> doc;
+            bool poisoned = false;
+            for (auto& inst : doc["instances"]) {
+                if (inst.value("id", std::string{}) != "mesif")
+                    continue;
+                auto& oa = inst["ordering_assumption"]["ualink_fabric"];
+                REQUIRE(oa["3"].get<std::string>() == "p2p_ordered");
+                oa["3"] = "unordered";
+                poisoned = true;
+            }
+            REQUIRE(poisoned);
+            std::ofstream out(tmp / "protocol_instances.json");
+            out << doc.dump(2);
+        }
+        cep::ContractPaths p;
+        p.root = root;
+        p.protocol_instances = (tmp / "protocol_instances.json").string();
+        const auto rep = cep::run_collective_plane_contract(p);
+        REQUIRE(rep.lines.size() == cep::kContractRuleCount);  // ⛔ 未新增第 7 条
+        bool found = false;
+        for (const auto& line : rep.lines) {
+            if (line.rule != cep::ContractRule::VcReservation)
+                continue;
+            found = true;
+            REQUIRE(line.verdict == cep::ContractVerdict::FAIL);
+            // ⚠️ 用 find(⛔ 不用 rfind(...,0))—— detail 是拼接的,前缀不在位置 0
+            REQUIRE(line.detail.find(kR1b) != std::string::npos);
+        }
+        REQUIRE(found);
+        std::filesystem::remove_all(tmp);
+    }
+
+    // ── ③ 变异:影子 `declaration`(chi_rnf 插键)⇒ CP-03 行 MUST FAIL 且含 R1-c ──
+    {
+        const auto tmp = std::filesystem::temp_directory_path() / "cpptlm_c2_r1c_gate";
+        std::filesystem::create_directories(tmp);
+        {
+            std::ifstream in(std::string(root) + "/include/tlm/cep/collective_planes.json");
+            REQUIRE(in);
+            nlohmann::json doc;
+            in >> doc;
+            REQUIRE(doc["plane_binding"].count("chi_rnf") == 0u);
+            doc["plane_binding"]["chi_rnf"] = "FabricCollectivePlane";
+            std::ofstream out(tmp / "collective_planes.json");
+            out << doc.dump(2);
+        }
+        cep::ContractPaths p;
+        p.root = root;
+        p.declaration = (tmp / "collective_planes.json").string();
+        const auto rep = cep::run_collective_plane_contract(p);
+        REQUIRE(rep.lines.size() == cep::kContractRuleCount);
+        bool found = false;
+        for (const auto& line : rep.lines) {
+            if (line.rule != cep::ContractRule::VcReservation)
+                continue;
+            found = true;
+            REQUIRE(line.verdict == cep::ContractVerdict::FAIL);
+            REQUIRE(line.detail.find(kR1c) != std::string::npos);
+        }
+        REQUIRE(found);
+        std::filesystem::remove_all(tmp);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // V6-d —— 四条证书(C-1′ / C-2 / C-3 / C-4)
 // ══════════════════════════════════════════════════════════════════════════
 TEST_CASE("V6-d: M-2 共享模式证书全绿(C-1′/C-2/C-3/C-4)", "[cep][ualink-inc][certificate]") {

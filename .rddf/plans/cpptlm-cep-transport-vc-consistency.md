@@ -93,14 +93,14 @@
 
 ### WU-4 · 并排取证(G3 · A4)
 
-- [ ] **A4.1** **AC-3 并排 · 版本无关探针**(per metis **P0-2**):⛔ 探针**不得引用** `per_network_orderings`;旧/新 worktree 各编译一次;**同一份毒化输入文件**(影子 `include/tlm/cep/protocol_instances.json`)⇒ 旧 **PASS** / 新 **FAIL**(`R1-b`)
-- [ ] **A4.2** **AC-12 并排**:AC-5 的同一影子输入 ⇒ 旧 **PASS** / 新 **FAIL**(`R1-c`);⚠️ **逐字写明**旧实现的「旧绿」是**平凡**的(它**根本不读** `plane_binding`)
-- [ ] **A4.3** **AC-15 真实 gate 路径**:遍历 `report.lines` ⇒ 找 `line.rule == ContractRule::VcReservation` ⇒ 断言 `detail.find("[CP-03-VC-CERTIFICATE/R1-b] ") != npos`(⛔ **不用** `rfind(...,0)` —— CP-03 的 detail 是**拼接**的)+ 断言 `report.lines.size() == kContractRuleCount`;变异走**临时影子文件**(⛔ 不改仓内 JSON)
-- [ ] **A4.4** **AC-14 回归**:新 tag 不被既有两条 `rfind` 命中
-- [ ] **A4.4b** 既有 **6** 条反向 fixture 的**归因前缀逐一不变**
-- [ ] **A4.5** **AC-1 反向判据**:只改 `compute_noc` 子映射 + **必须用双网实例**(`moesi_gpu` / `mesif`)⇒ **不得红**
-- [ ] **A4.6** **AC-6 回归**:`certificate_scope` 清空 ⇒ 必红(⚠️ 触发的是**既有** `:901-904` 空早退,⛔ 不得用它证明新判据有牙)
-- [ ] **A4.7** **AC-2 基线**:`ualink_fabric` 侧未破坏 ⇒ **rc=0**
+- [x] **A4.1** **AC-3 并排 · 版本无关探针**(per metis **P0-2**):⛔ 探针**不得引用** `per_network_orderings`;旧/新 worktree 各编译一次;**同一份毒化输入文件**(影子 `include/tlm/cep/protocol_instances.json`)⇒ 旧 **PASS** / 新 **FAIL**(`R1-b`)
+- [x] **A4.2** **AC-12 并排**:AC-5 的同一影子输入 ⇒ 旧 **PASS** / 新 **FAIL**(`R1-c`);⚠️ **逐字写明**旧实现的「旧绿」是**平凡**的(它**根本不读** `plane_binding`)
+- [x] **A4.3** **AC-15 真实 gate 路径**:遍历 `report.lines` ⇒ 找 `line.rule == ContractRule::VcReservation` ⇒ 断言 `detail.find("[CP-03-VC-CERTIFICATE/R1-b] ") != npos`(⛔ **不用** `rfind(...,0)` —— CP-03 的 detail 是**拼接**的)+ 断言 `report.lines.size() == kContractRuleCount`;变异走**临时影子文件**(⛔ 不改仓内 JSON)
+- [x] **A4.4** **AC-14 回归**:新 tag 不被既有两条 `rfind` 命中
+- [x] **A4.4b** 既有 **6** 条反向 fixture 的**归因前缀逐一不变**
+- [x] **A4.5** **AC-1 反向判据**:只改 `compute_noc` 子映射 + **必须用双网实例**(`moesi_gpu` / `mesif`)⇒ **不得红**
+- [x] **A4.6** **AC-6 回归**:`certificate_scope` 清空 ⇒ 必红(⚠️ 触发的是**既有** `:901-904` 空早退,⛔ 不得用它证明新判据有牙)
+- [x] **A4.7** **AC-2 基线**:`ualink_fabric` 侧未破坏 ⇒ **rc=0**
 
 ### WU-5 · 文档同步(G4 前半 · A5)
 

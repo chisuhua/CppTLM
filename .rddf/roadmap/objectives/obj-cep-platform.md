@@ -19712,3 +19712,95 @@ graph LR
 **⑩ 关联**
 
 **Entry #347**(A0 授权)· **#348**(A1 快照字段)· **#349**(A2 判据 (b))· **#346**(metis gap 处置 —— **P0-1 在本条实测成立**、P1-8 的 `chi_rnf` 在本条落地)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-3)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A3 段)
+
+### Entry #351 — 2026-11-12 [build](**C2 · A4 并排取证 + 真实 gate 路径** —— ⭐「旧绿/新红」跨实现成立;探针入仓;**G3 门达成**)
+
+**主题**:per 用户口令「开 A4」⇒ 执行 `tasks.md` 的 **A4**(G3 门)。**⇒ G3 达成**。
+
+**① ⭐ AC-3 / AC-12 的「旧绿 / 新红」并排取证 —— **跨实现**成立**
+
+| 场景 | 旧实现(`0ceb0860`) | 新实现(当前 HEAD) |
+|---|---|---|
+| AC-3 基线(真实输入) | `PASS` | `PASS` |
+| **AC-3 同一毒化输入**(`mesif.ualink_fabric.vc3: p2p_ordered → unordered`) | **`PASS`** | **`FAIL`** —— `[CP-03-VC-CERTIFICATE/R1-b]` |
+| AC-12 基线(真实输入) | `PASS` | `PASS` |
+| **AC-12 同一毒化输入**(`plane_binding["chi_rnf"]="FabricCollectivePlane"`) | **`PASS`** | **`FAIL`** —— `[CP-03-VC-CERTIFICATE/R1-c]` |
+
+**取证形态(per metis P0-2)**:
+- **同一份探针源码**(`test/probes/c2_oldnew_probe.cc`,88 行)**在旧/新两个 header 下均编译成功** ⇒ 这本身证明其**版本无关**;
+- 探针 ⛔ **不引用** `per_network_orderings`(旧 `VcBindingSnapshot` 无该字段 ⇒ 引用则编译不过);
+- 只调两个**签名在旧/新完全相同**的 API:`load_vc_binding_snapshot` + `evaluate_shared_mode_certificate`;
+- **同一份毒化输入文件**(AC-3 毒化 `protocol_instances`,AC-12 毒化 `declaration`)⇒ 各自只改**一处**(实测差异实例 = `['mesif']` / 插键 = `chi_rnf`)。
+
+**② ⚠️ 「旧绿」的性质必须逐字写明(⛔ 不得包装成「旧实现检查得更宽松」)**
+
+| AC | 旧实现为何必绿 | 性质 |
+|:--:|---|---|
+| **AC-3** | 旧 header 的 `grep -c ordering_assumption` = **0** ⇒ **根本不读**该字段 | **结构性必然** |
+| **AC-12** | M-2 模式下旧实现**根本不读** `decl.plane_binding`(V6-c 的同类检查只在 `status == "unavailable"` 生效 ⇒ 该模式 SKIP) | **平凡** —— 连「plane 有无登记 / 在不在 scope」都**不看** |
+
+**③ AC-15 真实 gate 路径(A4.3)—— 新增用例 `[cep][ualink-inc][real-gate]`**
+
+| 断言 | 实测 |
+|---|---|
+| 基线:真实仓内路径 ⇒ CP-03 行 `PASS` + detail 含「**六条**」 | ✅ |
+| **规则数恒 6**:`report.lines.size() == kContractRuleCount` | ✅ 三个场景**均**成立(⛔ 未新增第 7 条) |
+| 影子 `protocol_instances` 毒化 ⇒ CP-03 行 `FAIL` 且 `detail.find(R1-b) != npos` | ✅ |
+| 影子 `declaration` 毒化 ⇒ CP-03 行 `FAIL` 且 `detail.find(R1-c) != npos` | ✅ |
+| **⛔ 不用 `rfind(prefix, 0)`** —— CP-03 的 detail 是**拼接**的(`d += " | " + cert`)⇒ 前缀**不在位置 0** ⇒ 必须遍历 `report.lines` + `find` | ✅ |
+| **影子文件纪律**:变异走 `std::filesystem::temp_directory_path()` 下的临时文件 ⇒ ⛔ 不碰仓内 JSON | ✅ |
+| 用例总断言数 | **17 assertions / 1 test case** |
+
+**④ AC-14 + A4.4b:既有归因前缀**逐一不变**(机器化核对)**
+
+| 核对 | 结果 |
+|---|---|
+| 旧版(`0ceb0860`)的前缀断言条数 | **8** 条(总前缀 1 + C-1′ 2 + C-2 1 + C-3 2 + C-4 2) |
+| 当前版 | **10** 条 |
+| **既有 8 条是否按相对顺序逐字保留** | ✅ **是**(子序列匹配:**缺失 0**) |
+| 新增的 2 条来源 | **仅**来自我新用例自己的基线断言(非既有 fixture 改动) |
+| 分组计数 `[CP-03-VC-CERTIFICATE/C-1′/CP-09-IC1/C-3/C-4]` | 旧 `1/2/1/2/2` == 新 `1/2/1/2/2` ✅ |
+
+> ⚠️ **为什么必须机器化核对**:⛔ 「测试仍绿」**不等于**「归因未变」—— 断言写错也可能仍绿(如把前缀写成子串匹配)。
+
+**⑤ AC-1 反向判据(AC-1 已在 Entry #350 做过,此处复述结论)**
+
+探针在 `compute_noc`(**scope 外**)上做 **6 种**破坏(改 ordering 值 / 删条目 / 非法 key / 越界 key / 改 `vc_binding` / 显式 `null` 绑定)⇒ **全部 `verdict=0`** ⇒ **failures = 0** ⇒ **无 scope 泄漏**。
+
+**⑥ 施工期修掉的一处 detail 反引号错配**
+
+`"... 在 vc" + std::to_string(vc) + "` 上 ..."` ⇒ 反引号只包住了**后半** ⇒ 输出成 ``vc3` ``(多一个反引号)⇒ **已修**为 `` `vc3` ``。
+> 📌 **教训**:`detail` 是长字符串拼接 ⇒ 反引号 / 引号的配对**必须**靠**实际输出**核对(⛔ 靠读代码数符号会漏)。本条同时是 A4 并排取证**顺带**发现的 —— 并排取证的价值不止于「旧绿新红」,**它也是 detail 文本的唯一实际检验途径**。
+
+**⑦ 实测闸(全绿)**
+
+| 面 | 实测 |
+|---|---|
+| `[cep][ualink-inc][real-gate]` | ✅ **17 assertions / 1 test case** |
+| `[cep]` | ✅ **512 cases / 11672 assertions**(A3 后 511/11655 ⇒ **+1 / +17**) |
+| `ctest --test-dir build -j4` | ✅ **169/169 passed, 0 failed**(145.52s) |
+| **35 个** `cep_*.sh` 闸 | ✅ **35/35 rc=0** |
+| `kContractRuleCount` | ✅ 仍 **6** |
+| 声明数据零改动 | ✅ `git diff --exit-code -- <4 文件>` **rc=0** |
+
+**⑧ G3 门达成**
+
+| 门 | 内容 | 状态 |
+|:--:|---|:--:|
+| **G3** | **A1 + A2 + A3 + A4**(两条判据落地 + **并排取证**) | ✅ **达成** —— 并排取证(AC-3 / AC-12)+ 真实 gate(AC-15)+ 归因不变(AC-14 / A4.4b)+ 反向判据(AC-1 6/6) |
+
+**⑨ 产出物**
+
+| # | 产出 | 位置 |
+|:--:|---|---|
+| 1 | **并排取证文档**(含**全部复现命令**) | `.rddf/reviews/cpptlm-cep-transport-vc-consistency-oldnew-evidence.md` |
+| 2 | **版本无关探针**(入仓,88 行) | `test/probes/c2_oldnew_probe.cc` |
+| 3 | 真实 gate 路径用例 | `test/test_cep_ualink_inc.cc`(`[cep][ualink-inc][real-gate]`) |
+
+**⑩ ⛔ 本 Entry 明确不做**
+
+⛔ 零 ADR 改动 · ⛔ 零声明数据改动(实测 `rc=0`)· ⛔ 零 main spec 改动 · ⛔ 未改既有 C-3 fixture 的变异形态 · ⛔ 未新增 `ContractRule` · ⛔ **未做 A5(文档同步)/ A6(冻结链)/ A7(delta)/ A8(验收)/ A9(归档)**。
+
+**⑪ 关联**
+
+**Entry #347**(A0 授权)· **#348**(A1)· **#349**(A2)· **#350**(A3)· **#346**(metis gap 处置 —— P0-2 的「版本无关探针」/ P0-7 的「`find` 而非 `rfind`」在本条**双落地**)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-4)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A4 段)

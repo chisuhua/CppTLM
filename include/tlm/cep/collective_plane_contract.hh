@@ -1120,7 +1120,7 @@ inline ContractVerdict evaluate_shared_mode_certificate(const CollectivePlaneDec
                         const auto pit = parsed.find(vc);
                         if (pit == parsed.end() || pit->second != ordering) {
                             detail = std::string(kR1b) + "网络 `" + entry.network + "` 的实例 `" +
-                                     instance_id + "` 在 vc" + std::to_string(vc) +
+                                     instance_id + "` 在 `vc" + std::to_string(vc) +
                                      "` 上的排序假设**与其它实例不一致** ⇒ 混排语义漂移";
                             return ContractVerdict::FAIL;
                         }

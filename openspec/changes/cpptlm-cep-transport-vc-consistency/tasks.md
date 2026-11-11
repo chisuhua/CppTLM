@@ -84,20 +84,23 @@
 
 > ⛔ **不得**用「同一份 fixture 在新旧两套代码上跑」冒充并排 —— 必须是**跨实现**的证据。
 
-- [ ] A4.1 **AC-3 并排 · 版本无关探针**(per metis **P0-2** 的实测约束):⛔ **探针源码不得引用 `per_network_orderings`**(旧 HEAD 的 `VcBindingSnapshot` 无此字段 ⇒ 引用则旧 header **编译不过** ⇒ 取证退化为同实现内自证)⇒ 探针**只**调 `load_vc_binding_snapshot(影子 protocol_instances, 真实 fabric)` + `evaluate_shared_mode_certificate`
+- [x] A4.1 **AC-3 并排 · 版本无关探针**(per metis **P0-2** 的实测约束):⛔ **探针源码不得引用 `per_network_orderings`**(旧 HEAD 的 `VcBindingSnapshot` 无此字段 ⇒ 引用则旧 header **编译不过** ⇒ 取证退化为同实现内自证)⇒ 探针**只**调 `load_vc_binding_snapshot(影子 protocol_instances, 真实 fabric)` + `evaluate_shared_mode_certificate`
       > 用 **git worktree** checkout 改动前的 HEAD ⇒ 旧/新分别编译(`g++ -std=c++17 -I<worktree>/include -I<worktree>/external/json/include probe.cc`)⇒ 用**同一份毒化输入文件**(影子 `include/tlm/cep/protocol_instances.json`):旧实现 **PASS** / 新实现 **FAIL**(`R1-b`)
       > **命令 + 输入影子文件 + 两端输出**三者落 `.rddf/reviews/cpptlm-cep-transport-vc-consistency-oldnew-evidence.md`（待产出） ⇒ ⛔ 不得只写一句「旧实现必绿」
-- [ ] A4.2 **AC-12 并排**：AC-5 的同一**影子输入文件**:旧实现 **PASS** / 新实现 **FAIL**(`R1-c`)⇒ 证据同上文件
+- [x] A4.2 **AC-12 并排**：AC-5 的同一**影子输入文件**:旧实现 **PASS** / 新实现 **FAIL**(`R1-c`)⇒ 证据同上文件
       > ⚠️ **诚实边界须逐字写明**:旧实现**根本不读** `decl.plane_binding` ⇒ 它的「旧绿」是**平凡**的 ⛔ 不得包装成「旧实现也检查了但更宽松」
-- [ ] A4.3 **AC-15 真实 gate 路径**：新增一条经 `run_collective_plane_contract` 调用链触发的用例(⛔ 不得只在测试里手搓 `decl` 直调)⇒ 断言新判据的结论**折进 `CP-03` 行**且 `rule=` 字段**仍为** `CP-03`(⛔ 未新增第 7 条 `ContractRule`)
+- [x] A4.3 **AC-15 真实 gate 路径**：新增一条经 `run_collective_plane_contract` 调用链触发的用例(⛔ 不得只在测试里手搓 `decl` 直调)⇒ 断言新判据的结论**折进 `CP-03` 行**且 `rule=` 字段**仍为** `CP-03`(⛔ 未新增第 7 条 `ContractRule`)
       > ⚠️ **断言形态**(per metis **P0-7** 的实测):CP-03 行的 `detail` 是**拼接**的(`include/tlm/cep/collective_plane_contract.hh:1444-1453` 的 `d += " | " + cert`)⇒ 新前缀**不在位置 0** ⇒ ⛔ **不得**用 `rfind(prefix, 0) == 0`(那是**直调层**写法)⇒ 必须:**遍历 `report.lines`** ⇒ 找 `line.rule == ContractRule::VcReservation` ⇒ 断言 `line.detail.find("[CP-03-VC-CERTIFICATE/R1-b] ") != npos`
       > ⚠️ **影子文件纪律**:real gate 的变异必须通过 `paths.protocol_instances` / `paths.declaration` 指向**临时影子文件** ⇒ ⛔ **不得**修改仓内 JSON(那是「改声明数据变绿」);baseline 正控继续用仓内真实路径
       > ⚠️ **规则数断言**:同时断言 `report.lines.size() == kContractRuleCount`(锁 6 条,per metis **P1-11**)
-- [ ] A4.4 **AC-14 回归**：新 tag 不被 `[CP-03-VC-CERTIFICATE]` 与 `[CP-03-VC-CERTIFICATE/C-1′]` 的**精确前缀** `rfind` 命中 + 既有 fixture 仍绿
-- [ ] A4.4b **既有 6 条反向 fixture 的归因前缀逐一不变**(per metis 的**隐藏意图** + **P1** 项):C-1′ 2 条 · C-2 1 条 · C-3 2 条 · C-4 1 条 ⇒ 各自的前缀断言**逐字不变** ⇒ ⛔ 「仍绿」不等于「归因未变」(断言写错也可能仍绿)
-- [ ] A4.5 **AC-1 反向判据**：只改 `compute_noc` 子映射、且**必须用同时拥有双网 `vc_binding` 的实例**(`moesi_gpu` / `mesif` —— `ualink_4` 只有 `ualink_fabric`,做不了这个反向)⇒ **不得红**;若红 ⇒ **判据实现错了**(scope 泄漏)⇒ 回到 `T-C2-⓪`,⛔ 不得改声明来"修"
-- [ ] A4.6 **AC-6 回归**：`certificate_scope` 清空 ⇒ 必红(⚠️ 触发的是**既有** `:901-904` 空早退,⛔ **不得**用它证明新判据有牙)
-- [ ] A4.7 **AC-2 基线**：`ualink_fabric` 侧未破坏 ⇒ **rc=0**
+- [x] A4.4 **AC-14 回归**：新 tag 不被 `[CP-03-VC-CERTIFICATE]` 与 `[CP-03-VC-CERTIFICATE/C-1′]` 的**精确前缀** `rfind` 命中 + 既有 fixture 仍绿
+- [x] A4.4b **既有 6 条反向 fixture 的归因前缀逐一不变**(per metis 的**隐藏意图** + **P1** 项):C-1′ 2 条 · C-2 1 条 · C-3 2 条 · C-4 1 条 ⇒ 各自的前缀断言**逐字不变** ⇒ ⛔ 「仍绿」不等于「归因未变」(断言写错也可能仍绿)
+- [x] A4.5 **AC-1 反向判据**：只改 `compute_noc` 子映射、且**必须用同时拥有双网 `vc_binding` 的实例**(`moesi_gpu` / `mesif` —— `ualink_4` 只有 `ualink_fabric`,做不了这个反向)⇒ **不得红**;若红 ⇒ **判据实现错了**(scope 泄漏)⇒ 回到 `T-C2-⓪`,⛔ 不得改声明来"修"
+- [x] A4.6 **AC-6 回归**：`certificate_scope` 清空 ⇒ 必红(⚠️ 触发的是**既有** `:901-904` 空早退,⛔ **不得**用它证明新判据有牙)
+- [x] A4.7 **AC-2 基线**：`ualink_fabric` 侧未破坏 ⇒ **rc=0**
+      > ✅ **A4 全项实测**:AC-3 并排(旧 PASS / 新 FAIL `R1-b`)· AC-12 并排(旧 PASS / 新 FAIL `R1-c`)· AC-15 真实 gate(17 assertions · `report.lines.size()==6`)· AC-14 + **既有 8 条前缀断言按相对顺序逐字保留** · AC-1 反向 6/6(见 Entry #350)· AC-6 既有 `:373` 覆盖 · AC-2 六条正控
+      > ✅ `[cep]` ⇒ **512 cases / 11672 assertions** · `ctest -j4` ⇒ **169/169** · 35 闸 ⇒ **35/35 rc=0** · 声明数据零 diff
+      > 📄 取证文档:`.rddf/reviews/cpptlm-cep-transport-vc-consistency-oldnew-evidence.md`(含复现命令)· 探针入仓:`test/probes/c2_oldnew_probe.cc`
 
 ---
 
