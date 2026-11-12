@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**(C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
+`openspec/changes/` 当前 **1 个 active**(C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 立项 ⇒ 占 1 slot,per 台账 Entry #379;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -21485,3 +21485,48 @@ T8 的退出判据(Entry #377 ②)只枚举了 **3 行**(`211/235/617`)⇒ 实�
 **⑦ 关联**
 
 **#378**(批 1 + backlog)· **#377**(批 2 分解)· **#358**(Q1 + 口径澄清)· **#319**(BSS-01 执行臂先例)· **#301** · architect 方案 `.rddf/reviews/cep-cli-iag-gate-alignment.md`(commit `e0c65b14`)· `.rddf/improvements/cpptlm-cep-iag-gate-execution-arm.md`
+
+### Entry #380 — 2026-11-12 [build](**D-2 实施** —— IAG 族执行臂两臂同补:装配路径臂(Step 0.26)+ 离线 CLI + target 第二段 + 对账闸)
+
+**主题**:per 台账 **#379** 的立项授权 ⇒ 实施 `cpptlm-cep-iag-gate-execution-arm`(只补执行臂,⛔ 不改判据口径)。
+
+**① 落盘产物(8 项)**
+
+| # | 文件 | 形态 |
+|:--:|---|---|
+| 1 | `include/tlm/cep/instance_assembly_loader.hh`(**新增**) | `load_instance_assembly_inputs(config)` = **共用加载规则**;诊断三态:`source_error`(显式源写错)/ `skip`(缺省源不可读=外部条件)/ `planes_unavailable`(⛔ 不阻断) |
+| 2 | `examples/cep_instance_assembly_gate.cc`(**新增**) | 离线 CLI;退出码 `0=PASS/SKIP · 1=FAIL/配置错 · 2=用法错` |
+| 3 | `src/core/module_factory.cc` | **Step 0.26** 装配路径臂 ⇒ FAIL ⇒ `return false`;errors 走 **stdout**(与 Step 0.25 同通道)⇒ 可按签名捕获 |
+| 4 | `scripts/CMakeLists.txt` | `CPPTLM_CEP_VALIDATION_CONFIGS`(9 份)+ `${CPPTLM_CEP_VALIDATION_COMMANDS}` ⇒ **单列第二段**(⛔ 不与通用 `${TOPOLOGY_VALIDATOR}` 混跑) |
+| 5 | `examples/CMakeLists.txt` | `add_executable(cep_instance_assembly_gate` + `add_test` |
+| 6 | `test/test_cep_iag_execution_arm.cc`(**新增**) | 3 个用例:正控绿 ⇒ `[IAG-02]`/`[IAG-06]` **按签名**红 ⇒ 还原绿;两臂结论一致 |
+| 7 | `scripts/test/cep_iag_gate_reconcile_check.sh`(**新增**) | 7 条判据 + **2 条决定性变异**;影子树复用 `cep_test_shadow.sh`(⛔ 自造复制) |
+| 8 | `test/CMakeLists.txt` · `scripts/README.md` | +1 `add_test`;守门表 **34 → 35** 行 |
+
+**② 判据取证(逐条工具证据)**
+
+| 项 | 实测 |
+|---|---|
+| 四件套 | `openspec validate --strict` **rc=0**;delta = **MODIFIED** `cep-instance-assembly`(既有 5 scenario **逐字保留** + 新增 4) |
+| CLI · 9 份 config | **8 PASS + 1 SKIP**(`cep_chi_rnf_e2e_a.json` = SKIP,`cep` 段无 `bridges` 键)⇒ 与 architect 预判**完全一致** |
+| `validate_topology` target | **rc=0**;命令面内 IAG CLI **实跑 9 次**(8 PASS + 1 SKIP)⇒ **AC-4 闭合**(挂点真跑,⛔ 非「存在但没调」) |
+| 装配路径臂有牙 | `[cep][assembly][iag]` **3 cases / 22 assertions** 全绿;`[IAG-02]`(未声明实例)与 `[IAG-06]`(桥引模块不在拓扑)**按签名**捕获 |
+| 对账闸 | **12/12**:C1~C7 全绿 + M1(破坏 config ⇒ `[IAG-02]` 红)+ M2(摘掉 IAG 段 ⇒ C6 红 `NO_IAG_SEGMENT`)+ 真实仓字节指纹不变 |
+| ctest 用例数 | **172 → 174**(+2:对账闸 + **CLI 自身**的 ctest 注册) |
+
+**③ ⚠️ 实施期实测订正(2 处 · ⛔ 不改裁决,只修已失效前提)**
+
+- **③-a 装配臂落点 Step 0.75 → Step 0.26**:architect 决策 **D-A1** 的理由是「IAG-06 需读 *topology 模块表* ⇒ 必须等 hierarchy 解析」—— **实测不成立**:`instance_assembly_gate.hh` 的 `module_declared()` 读的是 **config 的 `modules` 段**(静态声明),⛔ **不需要**已创建的对象 ⇒ IAG 族**纯 config 依赖** ⇒ 落点改为 **Step 0.26**(紧跟 Step 0.25)⇒ 比 Step 0.75 **更早**且同样零副作用。决策**目的**(早失败 + 零副作用)**不变**;对账闸 **C7** 以「臂行号 < `// 2. 创建所有模块实例` 行号」机械保证(实测 200 < 337)。design §D-6 已登记。
+- **③-b ctest 用例数 173 → 174**:improvement AC-6 原写 173 ⇒ 实测 **+2**(CLI **自身**也注册了 ctest)⇒ 判据**未放宽**,只订正记录值。design §D-7 + proposal AC-6 已订正。
+
+**④ 范围纪律(逐字遵守)**
+
+⛔ `instance_assembly_gate.hh` **零 diff**(对账闸 C4 机械保证)· ⛔ `protocol_instances.json` / `collective_planes.json` 内容未改 · ⛔ 无 ADR 变更 · ⛔ `B3b-2 = 0/4` 未动 · ⛔ 未加「体量数字」断言(backlog,per #378 ④)· ⛔ 未修 `nvlink_4` 的 IAG-05 覆盖缺口(仓内无对应 config ⇒ 登记不修)。
+
+**⑤ 下一步**
+
+全量 0 回归(ctest 174/174 + **40** 个 `cep_*.sh` + format / docs_sync / doc_ref / lint)⇒ 归档(✅ 已完成归档语义,delta **合并**进 `openspec/specs/cep-instance-assembly/`)⇒ KPI 回填 **0/3** ⇒ 切 verifier 验收。
+
+**⑥ 关联**
+
+**#379**(立项 + 4 条裁决 + 起草期纠正)· **#378**(批 1 + backlog)· **#377**(批 2)· **#358**(Q1 + 口径澄清)· **#319**(BSS-01 执行臂先例)· **#320** · architect 方案 `.rddf/reviews/cep-cli-iag-gate-alignment.md` · improvement `.rddf/improvements/cpptlm-cep-iag-gate-execution-arm.md`

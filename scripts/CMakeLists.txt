@@ -61,6 +61,36 @@ if(Python3_EXECUTABLE)
         set(CEP_GATE_DEPENDS cep_channel_dependency_gate)
     endif()
 
+    # ── CEP 实例级装配闸(IAG 族)的**离线挂点**(2026-11-12,per 台账 Entry #379)──
+    # 装配路径臂(`src/core/module_factory.cc` Step 0.26)与本 CLI 共用**同一份**判据实现
+    # ⇒ 两处结论必然一致(禁双实现)。
+    # ⚠️ **单列第二段**:上面的通用段每条 config 都跑 `${TOPOLOGY_VALIDATOR}`(通用拓扑校验);
+    #    CEP config 能否过该 validator **未实测** ⇒ ⛔ 不与通用段混跑(否则整条 target 可能红)。
+    #    本段每条 config **只**跑 IAG CLI。
+    # ⚠️ **清单派生**:本段从 `CPPTLM_CEP_VALIDATION_CONFIGS` 派生 ⇒ 两处不可能漂移
+    #    (per Entry #358 的结构性修复思路)。
+    set(CPPTLM_CEP_VALIDATION_CONFIGS
+        "${CMAKE_SOURCE_DIR}/configs/cep_chi_rnf_e2e_a.json"
+        "${CMAKE_SOURCE_DIR}/configs/cep_chi_rnf_e2e_b.json"
+        "${CMAKE_SOURCE_DIR}/configs/cep_chi_rnf_pe_minimal.json"
+        "${CMAKE_SOURCE_DIR}/configs/cep_cohif_pe_minimal.json"
+        "${CMAKE_SOURCE_DIR}/configs/cep_mesif_pe_minimal.json"
+        "${CMAKE_SOURCE_DIR}/configs/cep_moesi_gpu_pe_minimal.json"
+        "${CMAKE_SOURCE_DIR}/configs/cep_tilelink_pe_minimal.json"
+        "${CMAKE_SOURCE_DIR}/configs/cep_ualink_engine_pe_minimal.json"
+        "${CMAKE_SOURCE_DIR}/configs/cep_ualink_pe_minimal.json"
+    )
+
+    set(CPPTLM_CEP_VALIDATION_COMMANDS "")
+    if(TARGET cep_instance_assembly_gate)
+        foreach(_cep_cfg IN LISTS CPPTLM_CEP_VALIDATION_CONFIGS)
+            list(APPEND CPPTLM_CEP_VALIDATION_COMMANDS
+                COMMAND $<TARGET_FILE:cep_instance_assembly_gate> ${_cep_cfg})
+        endforeach()
+    else()
+        message(WARNING "[cep] cep_instance_assembly_gate 目标不存在 ⇒ validate_topology 的 IAG 段为空")
+    endif()
+
     # Create a combined validation target
     # ⛔ config 清单**从 CPPTLM_TOPOLOGY_VALIDATION_CONFIGS 派生**,不再手抄 ——
     #    手抄副本曾引用已删除文件 ⇒ 整条 target 跑不完 ⇒ 闸挂点从未执行。
@@ -72,6 +102,7 @@ if(Python3_EXECUTABLE)
 
     add_custom_target(validate_topology
         ${CPPTLM_TOPOLOGY_VALIDATION_COMMANDS}
+        ${CPPTLM_CEP_VALIDATION_COMMANDS}
         ${CEP_GATE_COMMAND}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Validating all topology configurations..."

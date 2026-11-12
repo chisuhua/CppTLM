@@ -141,6 +141,21 @@ add_test(NAME cep_channel_dependency_gate COMMAND cep_channel_dependency_gate)
 set_tests_properties(cep_channel_dependency_gate PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# ==============================================================================
+# CEP **实例级装配闸(IAG 族)**的离线挂点 CLI(2026-11-12,per 台账 Entry #379)
+# ==============================================================================
+# 与 `src/core/module_factory.cc` 的**装配路径臂**共用**同一份**判据实现
+# (`tlm::cep::run_instance_assembly_gate`)+ **同一份**加载规则
+# (`tlm::cep::load_instance_assembly_inputs`)⇒ 禁双实现。
+# 与 `cep_channel_dependency_gate` 的区别:后者判**声明层**(读 protocol_instances.json),
+# 本 CLI 判**装配完整性**(config + 声明层 + 平面层)。
+add_executable(cep_instance_assembly_gate cep_instance_assembly_gate.cc)
+target_link_libraries(cep_instance_assembly_gate PRIVATE cpptlm_core)
+target_include_directories(cep_instance_assembly_gate PRIVATE ${EXAMPLES_INCLUDE_DIRS})
+add_test(NAME cep_instance_assembly_gate COMMAND cep_instance_assembly_gate)
+set_tests_properties(cep_instance_assembly_gate PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # 队列 #5:collective plane 契约判据的离线挂点 CLI(per delta capability
 # `cep-collective-plane-contract`)。与 test 侧**同一份**判据实现
 # (`include/tlm/cep/collective_plane_contract.hh`)⇒ 守卫与被守卫对象不漂移。

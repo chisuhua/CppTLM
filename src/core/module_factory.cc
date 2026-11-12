@@ -64,6 +64,8 @@
 #include "sim_module.hh"
 #include "tlm/cep/bridge_module_membership.hh"
 #include "tlm/cep/channel_dependency_graph.hh"
+#include "tlm/cep/instance_assembly_gate.hh"
+#include "tlm/cep/instance_assembly_loader.hh"
 #include "tlm/cep/ordering_point_checker.hh"
 #include "tlm/cep/protocol_family.hh"
 #include "tlm/router_tlm.hh"
@@ -185,6 +187,53 @@ bool ModuleFactory::instantiateAll(const json& config) {
             ordering_gate.verdict == tlm::cep::GateVerdict::FAIL) {
             DPRINTF(MODULE, "[CEP GATE] assembly criteria failed, aborting instantiation\n");
             return false;
+        }
+    }
+
+    // ========================
+    // 0.26 CEP 实例级装配闸(IAG 族 · **执行臂**)
+    // ========================
+    // ⚠️ **2026-11-12 新增**(per 台账 Entry #379 的 D-2 / architect 方案
+    //    `.rddf/reviews/cep-cli-iag-gate-alignment.md`):IAG 族(`[IAG-01]`~`[IAG-08]`)
+    //    此前**只被测试侧调用** ⇒ 「只测不拦」⇒ 装配路径**不拦**。
+    //    本处补上**执行臂** ⇒ 与离线 CLI(`examples/cep_instance_assembly_gate.cc`)
+    //    **共用同一份判据实现**(`tlm::cep::run_instance_assembly_gate`)+
+    //    **同一份加载规则**(`tlm::cep::load_instance_assembly_inputs`)⇒ 禁双实现。
+    //
+    // ⚠️ **位置修正(实施期实测订正 architect 决策 D-A1)**:architect 原判「IAG-06 需读
+    //    *topology 模块表* ⇒ 必须等 hierarchy 解析 ⇒ 挂 Step 0.75」——
+    //    **实测不成立**:`module_declared()` 读的是 **config 的 `modules` 段**(静态声明),
+    //    ⛔ **不需要**已创建的对象 ⇒ IAG 族**纯 config 依赖**
+    //    ⇒ 挂 **Step 0.26**(紧跟 Step 0.25)比 Step 0.75 **更早**且同样「零副作用」。
+    //    ⇒ 决策**目的**(早失败 + 零副作用)**不变**,仅位置提前 ⇒ 见 design.md §D-6。
+    //
+    // ⚠️ **失败语义**:FAIL ⇒ 装配失败(`return false`)⇒ 此时**模块尚未创建**(Step 1 未到)
+    //    ⇒ **零副作用**(⛔ 不新增回滚机制,与既有 `bridge_failed` 早退路径同性质)。
+    if (final_config.is_object() && final_config.contains("cep")) {
+        const tlm::cep::InstanceAssemblyInputs iag_inputs =
+            tlm::cep::load_instance_assembly_inputs(final_config);
+        if (iag_inputs.skip) {
+            // 外部条件(缺省声明源在当前工作目录不可读)⇒ SKIP,不阻断装配。
+            DPRINTF(MODULE, "[CEP IAG] SKIP — %s\n", iag_inputs.skip_reason.c_str());
+        } else if (iag_inputs.source_error) {
+            // 显式声明源写错 ⇒ 判红(作者写错 ≠ 外部条件)。
+            std::fprintf(stderr, "[ModuleFactory] %s\n", iag_inputs.source_error_detail.c_str());
+            std::fprintf(stderr, "[ModuleFactory] CEP 实例级装配闸失败(声明源配置错误)\n");
+            return false;
+        } else {
+            const tlm::cep::InstanceAssemblyReport iag_report = tlm::cep::run_instance_assembly_gate(
+                final_config, iag_inputs.instances_doc, iag_inputs.planes_doc);
+            // ⚠️ **errors 走 stdout**(与 Step 0.25 的 gate log 同一通道)⇒
+            //    归因 tag(`[IAG-0x]`)可被测试按**签名**精确捕获(⛔ 不断言 rc≠0)。
+            std::fputs(iag_report.log.c_str(), stdout);
+            for (const auto& e : iag_report.errors) {
+                std::printf("[ModuleFactory] %s\n", e.c_str());
+            }
+            std::fflush(stdout);
+            if (iag_report.verdict == tlm::cep::InstanceAssemblyVerdict::FAIL) {
+                std::fprintf(stderr, "[ModuleFactory] CEP 实例级装配闸失败(IAG 族)\n");
+                return false;
+            }
         }
     }
 

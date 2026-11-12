@@ -792,3 +792,10 @@ add_test(NAME cep_index_position_check
 # 并配 10 条决定性变异(M1~M10 · 只在影子树)。
 add_test(NAME cep_dod_reading_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_dod_reading_check.sh)
+
+# ── 2026-11-13(per 台账 Entry #379 / change cpptlm-cep-iag-gate-execution-arm):**IAG 执行臂对账闸** ──
+# 「装配闸族(IAG)不再只测不拦」的对账载体:两臂(装配路径臂 + 离线 CLI 臂)存在且共用
+# 同一份判据实现与加载器 + 判据本体零 diff + CLI 已注册 + validate_topology 的 IAG
+# 第二段在命令面内 + CEP config 清单 == 磁盘实数;并配 2 条决定性变异。
+add_test(NAME cep_iag_gate_reconcile_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_iag_gate_reconcile_check.sh)
