@@ -20566,3 +20566,48 @@ metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state
 **⑧ 关联**
 
 **#360**(T1)· **#359**(D-1~D-5)· **#338**(R-c 授权)· **#355**(C2 · 五步链先例)· **#169**(拆分登记)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`(architect 三次 + oracle 4 条)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `:409-411`(② 三行)· `:415`(D1 四动作)· `:434`(R-c 缺口)· `07 号:569`(索引)· `:501`(旧规格)· `scripts/test/cep_adr_structural_check.sh:52-57`(shadow_reset)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)· `test/cep_adr_parser.hh:110`/`:169-173`/`:250`
+
+### Entry #362 — 2026-11-12 [planner](**C3-P0a 落地** —— improvement 5 段草稿 + `planner-handoff`(v1.2);HARD-GATE rc=0;2 处实测订正 + 1 处写者偏离登记)
+
+**主题**:per 用户「同意你的建议，请推进」⇒ 批准 C3-P0a 的 5 段草案 ⇒ 落 `.rddf/improvements/cpptlm-cep-invariant-gate-teeth.md` + `.rddf/state/.planner-handoff.json`。本 Entry 只登记**已发生的动作 + 2 处实测订正 + 1 处写者偏离**;⛔ **不新增任何裁决**(D-10 封盘)。
+
+**① 落盘产物（3 项）**
+
+| # | 文件 | 形态 | 取证 |
+|:--:|---|---|---|
+| 1 | `.rddf/improvements/cpptlm-cep-invariant-gate-teeth.md`（新增） | YAML frontmatter + **7 段**（`架构依据` / `范围` / `Why` / `What Changes` / `Acceptance` / `Capabilities` / `Impact`）+ 附 `已裁项(D-1~D-9)` + `处置对照(metis 12 条)` | `bash ~/.agents/skills/rdd-workflow-brainstorm/scripts/pre_create_brainstorm_check.sh <file> --project-root <root>` ⇒ **✅ HARD-GATE satisfied(rc=0)** |
+| 2 | `.rddf/state/.planner-handoff.json`（新增） | schema `planner-handoff-v1` / version 1 / owner `rdd-planner` / `recommended_route=complex` / `awaiting_builder=["add-cpptlm-cep-invariant-gate-teeth"]` / `proposals_ready=["cpptlm-cep-invariant-gate-teeth"]` | 由 **canonical 写者** `_lib/planner_handoff.write_planner_handoff()` 产出 ⇒ 非常规手搓 JSON |
+| 3 | `.rddf/improvement-suggestions.md`（+1 行） | 索引登记（`add-improve` Phase 2 第 3 步） | 表头 / 列序与既有 4 行一致 |
+
+**② ⚠️ 写者偏离登记（1 处 · 用户已批准的 B-3）**
+
+治理面「工件归属」规定 `.rddf/state/.planner-handoff.json` = **`rdd-planner` owns / 任何角色都不手写**;本次由 planner 在 **P0a** 产出,原因是 canonical wrapper 在此刻**结构上不可用**:
+
+| wrapper 前置 | 实测 | 处置 |
+|---|---|---|
+| `openspec/changes/<name>` 已存在 | ❌ 不存在(P0b = builder 的活) | 跳过 wrapper,直接调其内部 **canonical 写者**(同 env 契约: `PROPOSALS_READY` / `PROPOSALS_APPROVED_COUNT` / `FEATURES_ACTIVE` / `CURRENT_SPRINT` / `AWAITING_BUILDER` / `RECOMMENDED_ROUTE` / `ACTIVE_OBJECTIVES_JSON`) |
+| `.planner-state.json::recommended_route ≠ unknown` | ❌ `.planner-state.json` 不存在 ⇒ 取 `unknown` ⇒ exit 脚本**双门控会拒** | 显式写 `recommended_route=complex`（依据:Entry #359 估时 **3-5 人日** + **2 冻结面** + 五步链）⇒ **非伪造前置** |
+| `_lib` 可导入 | ✅ `~/.agents/skills/_lib` → symlink → `/workspace/main/rdd-workflow/_lib`（md5 相同） | cwd=`/workspace/main/rdd-workflow` + `PYTHONPATH=~/.agents/skills` ⇒ 产出与 wrapper **同 schema 同字段** |
+
+⇒ **收口步(B-3 第 2 拍)**:P0b(builder 建 `openspec/changes/cpptlm-cep-invariant-gate-teeth/`)后,由 planner 跑 `planner_stage_entry.sh` + `planner_stage_exit.sh` **幂等重发** handoff ⇒ 该偏离即闭合。
+
+**③ ⚠️ 实测订正（2 处 · 不回改已提交 Entry）**
+
+| # | 载于 | 原述 | 实测 | 处置 |
+|:--:|---|---|---|---|
+| **订正-1** | **#361 ⑥ P1-12** | 「新闸 ⇒ `AGENTS.md` 36→**37**」 | **不成立** —— `AGENTS.md:217` / `:231` / `:618` 三处**均写「数量以 `ls scripts/test/cep_*.sh` 为准」**,**无硬编码 36** | 真实需对齐者 = **仅** `scripts/README.md` 守门表(**32 → 33**);`AGENTS.md` **数字不动** |
+| **订正-2** | **#361 ⑤**「`--root` 只作用于文档语料,存在性/台账解析固定真实仓根」 | 字面读会与 **变异②**(影子树造 `ADR-CEP-02a-*.md` 必须能红)**冲突** —— 若 ADR glob 固定真实仓根,影子树里的拆出件永远看不见 ⇒ 变异② **永不红** | 拆成两组:① **文档语料**(ADR 集合 / 重述块 / §2 计数)⇒ `--root`(**影子**,变异可检出)② **被指物存在性 + 台账解析**(`os.path.exists` / `Entry #N` / ADR 短名 glob)⇒ **真实仓根** | 属**兼容读法澄清**(不改判据结果),已写死进 improvement 的 **AC-9~AC-13** 与 **P0-9 处置** |
+
+**④ 下一步（切 builder）**
+
+| 子步 | 谁 | 产出 |
+|:--:|---|---|
+| **P0b** | builder | `openspec/changes/cpptlm-cep-invariant-gate-teeth/{proposal,design,tasks}.md`（KPI **0/3 → 1/3**）;⛔ `design.md` 须与 **C3-B 的解析器同批定稿**「`### ⑥` 重述块」格式（per #361 ③ D-6 注：因 C3-C 写进冻结件后不可改） |
+
+**⑤ ⛔ 本 Entry 明确不做**
+
+⛔ 不改 §13.1~§13.8 · ⛔ 不改任何 ADR 正文 · ⛔ **不创建 openspec change** · ⛔ 不写实施代码 · ⛔ **不新增裁决**（D-10 封盘）· ⛔ **不 commit**（等用户确认）· ⛔ 不修 handoff `features_active` 的换行聚合（canonical 写者既有行为,非本 Entry 引入）· ⛔ 不动 `07 号` / `ADR-CEP-00`（C3-C / C3-D 由 builder 落）。
+
+**⑥ 关联**
+
+**#361**(D-6~D-9 + C3a/C3b 切片)· **#359**(D-1~D-5)· **#355**(C2 · 五步链先例)· `ADR-CEP-00:398`(⛔ 不新建 ADR)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md` §五 / §七 · `scripts/README.md:78`/`:81`(守门表自述数字 · D-5 的落点)· `AGENTS.md:217`/`:231`/`:618`(以 `ls` 为准)· `~/.agents/skills/_lib` ⇒ `/workspace/main/rdd-workflow/_lib`
