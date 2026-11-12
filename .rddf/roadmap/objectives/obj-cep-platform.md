@@ -469,7 +469,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**(`cpptlm-cep-invariant-gate-teeth` —— C3 治理机制机器化(R-c / R-d 两项残留登记的牙齿),2026-11-12 立项 ⇒ 占 1 个 slot,per 台账 **Entry #363**;实施期授权亦见 **Entry #363**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
+`openspec/changes/` 当前 **0 个 active**(`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -20566,6 +20566,63 @@ metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state
 **⑧ 关联**
 
 **#360**(T1)· **#359**(D-1~D-5)· **#338**(R-c 授权)· **#355**(C2 · 五步链先例)· **#169**(拆分登记)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`(architect 三次 + oracle 4 条)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `:409-411`(② 三行)· `:415`(D1 四动作)· `:434`(R-c 缺口)· `07 号:569`(索引)· `:501`(旧规格)· `scripts/test/cep_adr_structural_check.sh:52-57`(shadow_reset)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)· `test/cep_adr_parser.hh:110`/`:169-173`/`:250`
+
+### Entry #367 — 2026-11-12 [build](**C3 归档授权** —— `cpptlm-cep-invariant-gate-teeth` 归档(✅ 已完成归档语义)+ **第二次五步链授权**;KPI **1/3 → 0/3**)
+
+**主题**:C3 实施完成后执行 **A11 归档(M6)** —— delta 并入 main spec ⇒ **无条件**第二次 `--update` ⇒ `artifact_count` **78 → 79**。**⚠️ 本 Entry 是第二次五步链的 `--authorized-by` 依据**(per **C2 先例** Entry #354 =「归档授权 + 第二次五步链」/ #355 =「归档终态」)。
+
+**① 授权范围**
+
+| 面 | 授权内容 |
+|---|---|
+| **归档** | `openspec archive cpptlm-cep-invariant-gate-teeth -y` ⇒ 归档件入 `openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/`(**force-add 入库**,per `.gitignore:60-64`「不入库则引用必然断链」+ 历史先例) |
+| **契约** | delta **合并**进 `openspec/specs/cep-invariant-gate/spec.md`(✅ **已完成归档**语义 —— 能力确实落地 ⇒ ⛔ **不用** `--skip-specs`) |
+| **冻结面** | **无条件**第二次 `--update --authorized-by "Entry #367"` ⇒ 新 main spec 入 `openspec/specs/cep-*/spec.md` glob ⇒ `artifact_count` **78 → 79** |
+| **KPI** | 归档后 slot 释放 ⇒ Proposed **1/3 → 0/3**,同步**活文档当前态** |
+| **⛔ 不做** | ⛔ 不改任何 ADR 正文 · ⛔ 不改 main spec 正文(除归档合并)· ⛔ 不动 C4 · ⛔ 不做 T3 · ⛔ 不改台账 §13.1~§13.8 · ⛔ 不新增裁决 |
+
+**② 归档实测**
+
+| 项 | 实测 |
+|---|---|
+| `openspec list --json` | **0 active** ⇒ KPI slot **已释放** |
+| delta 合并 | `cep-invariant-gate`: **create** ⇒ `+ 1 added`;main spec 落 `openspec/specs/cep-invariant-gate/spec.md` |
+| 归档件 | `openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/`(4 件套 + delta) |
+
+**③ KPI 回填(Proposed 1/3 → 0/3 · 7 处活文档当前态)**
+
+| # | 文件 | 处置 |
+|:--:|---|---|
+| 1 | `.rddf/roadmap.md` | `当前真实 baseline = 1/3` → `0/3`(+ C3 归档释放 slot 的说明) |
+| 2 | `.rddf/roadmap/phases/phase-10.md` | 同上 |
+| 3 | `.rddf/roadmap/objectives/obj-cep-platform.md` §5.2 | 当前 active 改为 **0 个** + `并发 = 0/3` |
+| 4 | `.rddf/improvements/cpptlm-cep-umbrella.md` | `1/3` → `0/3` |
+| 5 | `.rddf/improvements/cpptlm-cep-nvlink-sharp.md`(`:31` + `:211`) | `当前实测 1/3` / `全局 baseline = 1/3` → `0/3` |
+| 6 | `AGENTS.md` | `实测基线 (2026-11-12) 1 个 active → 1/3` → `0 个 active → 0/3` |
+| 7 | `AGENTS.md` 归档计数 | ⛔ **不动**(本次归档**新增 1 份** ⇒ 135 → **136** 份;该数字**非** KPI 当前态表述,⛔ 不在本闸口径内 ⇒ 由 **T3(Q2 残)** 统一订正时一并处理) |
+
+⇒ `cep_docs_sync_check --strict` 的 KPI 断言:**✓ KPI baseline 数字一致(实测 0/3)**。
+
+> ⚠️ **只改「当前态」表述** —— 历史叙述(「旧值 → 新值」型迁移叙述)由 `§11` 台账承载(append-only)⇒ **不动**。
+
+**④ ⚠️ 归档后「预期双红」登记(per design D-10 拍 5)**
+
+归档与第二次 `--update` 之间,冻结面**必然红**:
+
+```
+✗ 新增未登记的冻结范围内产物: openspec/specs/cep-invariant-gate/spec.md
+✗ M1 冻结校验失败:0 缺失 / 0 被改 / 1 未登记
+```
+
+⇒ **登记为预期**(⛔ 不得当回归)⇒ 由第二次 `--update --authorized-by "Entry #367"` 闭合。
+
+**⑤ ⛔ 本 Entry 明确不做**
+
+⛔ 本 Entry **不含**第二次 `--update` 的**回执**(回执落 **Entry #368**「归档终态」)· ⛔ 不改任何 ADR 正文 · ⛔ 不动 C4 · ⛔ 不做 T3。
+
+**⑥ 关联**
+
+**#366**(闸侧占位路径归一)· **#365**(C3b + 第一次五步链)· **#364**(C3a)· **#363**(C3 开工授权 + 第一次五步链依据)· **#355**(C2 归档终态 · KPI 回填先例)· **#354**(C2 归档授权 · 第二次五步链先例)· `openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/` · `openspec/specs/cep-invariant-gate/spec.md`
 
 ### Entry #366 — 2026-11-12 [build](**闸侧归一** —— `cep_doc_ref_check` 的**模板占位路径**豁免;修 C3 引入的引用缺陷 ⇒ ctest 171/171)
 

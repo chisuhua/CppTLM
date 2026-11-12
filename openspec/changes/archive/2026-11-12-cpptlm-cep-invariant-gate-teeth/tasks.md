@@ -111,18 +111,18 @@
 
 ## A9 · 契约 delta
 
-- [ ] A9.1 `openspec/changes/cpptlm-cep-invariant-gate-teeth/specs/cep-invariant-gate/spec.md`(**ADDED** capability)
-- [ ] A9.2 `openspec validate cpptlm-cep-invariant-gate-teeth` 通过
+- [x] A9.1 `openspec/changes/cpptlm-cep-invariant-gate-teeth/specs/cep-invariant-gate/spec.md`(**ADDED** capability)
+- [x] A9.2 `openspec validate cpptlm-cep-invariant-gate-teeth` 通过
 
 ---
 
 ## A10 · 0 回归与验收(AC-21)
 
-- [ ] A10.1 `ctest --test-dir build -j4` **171/171**
-- [ ] A10.2 **全部** `cep_*.sh` 闸 rc=0(含新闸)
-- [ ] A10.3 `bash scripts/build/format.sh --check` rc=0
-- [ ] A10.4 `bash scripts/test/docs_sync_check.sh --strict` rc=0 + `python3 scripts/test/agents_md_lint.py` rc=0
-- [ ] A10.5 ⛔ **不变式复核**:真实仓**零**变异残留(`git status` 干净,变异只在影子树)
+- [x] A10.1 `ctest --test-dir build -j4` **171/171**
+- [x] A10.2 **全部** `cep_*.sh` 闸 rc=0(含新闸)
+- [x] A10.3 `bash scripts/build/format.sh --check` rc=0
+- [x] A10.4 `bash scripts/test/docs_sync_check.sh --strict` rc=0 + `python3 scripts/test/agents_md_lint.py` rc=0
+- [x] A10.5 ⛔ **不变式复核**:真实仓**零**变异残留(`git status` 干净,变异只在影子树)
 
 ---
 
