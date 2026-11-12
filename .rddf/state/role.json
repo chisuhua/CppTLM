@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-12T13:55:00Z",
+  "current_role": "architect",
+  "updated_at": "2026-11-12T14:20:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-12T12:00:00Z",
-      "by": "auto",
-      "reason": "verifier 验收 17/17 PASS · 0 BLOCKER · 1 SHOULD_FIX(F-1 探针未过 format --check)⇒ 回 builder 修 F-1 + 走 A9 归档。"
-    },
     {
       "role": "builder",
       "at": "2026-11-12T12:40:00Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-12T13:55:00Z",
       "by": "user",
       "reason": "用户确认「按建议推进直到完成所有任务」⇒ 执行批 1 的 T3/T8/T9(builder 域文档订正)。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-12T14:20:00Z",
+      "by": "user",
+      "reason": "用户确认「推进直到完成所有任务」⇒ 批 2 = D-2(装配闸 CLI 未挂 IAG 闸族);architect 先出方案(per #377 批 2 路径)。"
     }
   ],
   "auto_switch_window": null
