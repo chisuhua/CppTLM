@@ -147,15 +147,19 @@
 
 ## A8 · 0 回归与验收(AC-8)
 
-- [ ] A8.1 `cmake --build build -j$(nproc)` ⇒ 编译通过
-- [ ] A8.2 `ctest --test-dir build -j4` ⇒ **全绿** ⇒ **⛔ 断言「不低于改动前的 169/169」**(per metis **P1-15**:新增测试后 ctest 项数会增加 ⇒ 写死基线数会误判)
-- [ ] A8.3 `./build/bin/cpptlm_tests "[cep]"` ⇒ 全绿 ⇒ **⛔ 断言「不低于改动前的 508 cases / 11516 assertions」**(同上;case / assertion 数会因新增反向 fixture 增加)
-- [ ] A8.4 **35 个** `cep_*.sh` 闸 rc + ✗ 双判全绿
-- [ ] A8.5 `bash scripts/test/docs_sync_check.sh --strict` ⇒ rc=0
-- [ ] A8.6 `python3 scripts/test/agents_md_lint.py` ⇒ rc=0
-- [ ] A8.7 `bash scripts/test/cep_freeze_check.sh` 无参 ⇒ rc=0
-- [ ] A8.8 **17 条 AC 逐条判定**(每条带工具证据)⇒ 落 `.rddf/reviews/cpptlm-cep-transport-vc-consistency-verify.md`（待产出）
-- [ ] A8.9 **遗留清扫**:本次范围内 0 处 TODO / FIXME / 临时调试日志 / 被 skip 的测试 / 未替换的 mock / 注释掉的代码 / 临时 fallback 分支
+- [x] A8.1 `cmake --build build -j$(nproc)` ⇒ 编译通过
+- [x] A8.2 `ctest --test-dir build -j4` ⇒ **全绿** ⇒ **⛔ 断言「不低于改动前的 169/169」**(per metis **P1-15**:新增测试后 ctest 项数会增加 ⇒ 写死基线数会误判)
+- [x] A8.3 `./build/bin/cpptlm_tests "[cep]"` ⇒ 全绿 ⇒ **⛔ 断言「不低于改动前的 508 cases / 11516 assertions」**(同上;case / assertion 数会因新增反向 fixture 增加)
+- [x] A8.4 **35 个** `cep_*.sh` 闸 rc + ✗ 双判全绿
+- [x] A8.5 `bash scripts/test/docs_sync_check.sh --strict` ⇒ rc=0
+- [x] A8.6 `python3 scripts/test/agents_md_lint.py` ⇒ rc=0
+- [x] A8.7 `bash scripts/test/cep_freeze_check.sh` 无参 ⇒ rc=0
+- [x] A8.8 **17 条 AC 逐条判定**(每条带工具证据)⇒ 落 `.rddf/reviews/cpptlm-cep-transport-vc-consistency-verify.md`
+      > ✅ **verifier 独立验收**:**17 / 17 PASS** · **0 BLOCKER** · 1 SHOULD_FIX(F-1:新增探针未过 `format --check` ⇒ ⛔ 不阻断 ⇒ 已由 builder 单文件修)
+      > ✅ **独立复核**(不采信 builder 回执):verifier 自写探针跑出 8 条变异的**实际前缀** ⇒ 8/8 按正确原因红;自跑 scope 泄漏探针 ⇒ failures=0;独立复跑旧/新探针 ⇒ 旧 PASS/新 FAIL ×2;自跑子序列匹配 ⇒ 既有 8 条前缀断言缺失 0（待产出）
+- [x] A8.9 **遗留清扫**:本次范围内 0 处 TODO / FIXME / 临时调试日志 / 被 skip 的测试 / 未替换的 mock / 注释掉的代码 / 临时 fallback 分支
+      > ✅ **verifier 复核**:3 个改动文件 TODO/FIXME/XXX/HACK = **0** · skip 用例 = **0** · 调试残留 = **0** · 未替换 mock / 临时 fallback(`if (false)` / `#if 0` / 临时 `return true`)= **0**;仓内临时文件残留 = **0**(取证影子文件在 `/tmp/opencode/`)
+      > ⚠️ **范围外历史遗留**(仅记录,不清理):`scripts/build/format.sh --check` 报 11 个文件需格式化,其中 **9** 个**本次未改动** ⇒ 不属本 change 范围
 
 ---
 

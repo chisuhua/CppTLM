@@ -19932,3 +19932,44 @@ delta 的 `:41`(V6-d Scenario)已写 `R1-c` 在「循环**之后**、`C-4` 之�
 **⑨ 关联**
 
 **Entry #352**(A5 + A7 + 步骤①)· **#351**(A4 并排取证)· **#350**(A3)· **#349**(A2)· **#348**(A1)· **#347**(A0 授权 —— **本 change 的 `--authorized-by` 授权依据**)· `#342` / `#343`(C1 的五步链先例)· `.rddf/plans/cpptlm-cep-transport-vc-consistency.md`(WU-7)· `openspec/changes/cpptlm-cep-transport-vc-consistency/tasks.md`(A6 段)
+
+### Entry #354 — 2026-11-12 [build](**C2 归档授权** —— `cpptlm-cep-transport-vc-consistency` 归档;**第二次五步链步骤 ①**)
+
+**主题**:per 用户「自行推进直到完成」⇒ 执行 `tasks.md` 的 **A9**(归档)。**⛔ 本 Entry = 第二次五步链的**步骤 ①**(归档授权记录)**,归档产物与清单在后续 commit。
+
+**① 归档前状态(实测)**
+
+| 项 | 值 |
+|---|---|
+| active changes | **1**(`cpptlm-cep-transport-vc-consistency`)⇒ 归档后 **0** ⇒ KPI **1/3 → 0/3** |
+| `openspec/specs/cep-collective-plane-contract/spec.md`(归档前) | **244 行** ⇒ 归档后并入 delta 的 **3 个新 Scenario** |
+| tasks 勾选 | **66 / 70**(余 4 项 = A9 的 4 项) |
+| verifier 验收 | ✅ **17 / 17 AC PASS** · **0 BLOCKER** · 1 SHOULD_FIX(已修)—— `.rddf/reviews/cpptlm-cep-transport-vc-consistency-verify.md` |
+| 冻结面(第一次链,A6 已走完) | ✅ 3 处 hash 已更新;`artifact_count` = **78** |
+
+**② 第二次五步链(本 change 的归档链)**
+
+```
+① 本 Entry(#354) 归档授权  ← ✅ 本条(步骤 ①)
+② 产物 commit(openspec/specs/cep-collective-plane-contract/spec.md 合并后)
+③ bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #354"
+④ 清单 commit(docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json)
+⑤ 无参复验:bash scripts/test/cep_freeze_check.sh   ⇒ rc=0
+```
+
+> ⚠️ **第二次链的必要性**:`openspec/specs/cep-collective-plane-contract/spec.md` **在冻结集**(`openspec/specs/cep-*/spec.md` glob)⇒ 归档合并 ⇒ hash 变更 ⇒ **必须**再走一遍链。
+> ⚠️ **产物 commit 必须先于 `--update`**(per C1 先例)。
+> ⚠️ `artifact_count` 仍为 **78**(该 spec **已在**冻结集内 ⇒ 只改 hash)。
+
+**③ 归档语义**
+
+✅ **已完成归档**(`openspec archive` 默认语义)—— delta **合并**进 `openspec/specs/cep-collective-plane-contract/spec.md` ⇒ 断言该能力**已在契约内**。
+> ⚠️ **⛔ 不是「⏸ 暂存归档」** —— 17/17 AC PASS + 0 BLOCKER ⇒ 能力**确实落地** ⇒ 用**默认**归档(合并 delta)⇒ **⛔ 不用** `--skip-specs`。
+
+**④ ⛔ 本 Entry 明确不做**
+
+⛔ 归档动作本身在后续 commit(A9.1)· ⛔ 未跑 `--update` · ⛔ 未合并 delta(归档时自动合并)· 零实施代码改动。
+
+**⑤ 关联**
+
+**Entry #353**(A6 第一次五步链)· **#352**(A5/A7)· **#351**(A4 并排取证 + verifier 报告的来源)· **#347**(A0 授权 —— 本 change 的第一次链授权依据)· `.rddf/reviews/cpptlm-cep-transport-vc-consistency-verify.md`(verifier 验收报告)· `.rddf/reviews/cpptlm-cep-transport-vc-consistency-oldnew-evidence.md`(并排取证)· `openspec/changes/cpptlm-cep-transport-vc-consistency/`

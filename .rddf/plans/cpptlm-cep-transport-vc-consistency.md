@@ -128,8 +128,8 @@
 ### WU-8 · 0 回归与验收(A8)
 
 - [ ] **A8.1~A8.7** 编译 + `ctest -j4` 全绿(**⛔ 断言「不低于改动前的 169/169」**)· `[cep]` 全绿(**⛔ 不低于 508 cases / 11516 assertions**)· **35** 闸 rc + ✗ 双判全绿 · `docs_sync --strict` rc=0 · `agents_md_lint` rc=0 · `cep_freeze_check` 无参 rc=0
-- [ ] **A8.8** **17 条 AC 逐条判定**(每条带工具证据)⇒ 落 `.rddf/reviews/cpptlm-cep-transport-vc-consistency-verify.md`（待产出）
-- [ ] **A8.9** **遗留清扫**:本次范围内 0 处 TODO / FIXME / 临时调试日志 / 被 skip 的测试 / 未替换的 mock / 注释掉的代码 / 临时 fallback 分支
+- [x] **A8.8** **17 条 AC 逐条判定**(每条带工具证据)⇒ 落 `.rddf/reviews/cpptlm-cep-transport-vc-consistency-verify.md`（待产出）
+- [x] **A8.9** **遗留清扫**:本次范围内 0 处 TODO / FIXME / 临时调试日志 / 被 skip 的测试 / 未替换的 mock / 注释掉的代码 / 临时 fallback 分支
 
 ### WU-9 · 归档(M6 · A9)
 
