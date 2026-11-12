@@ -434,3 +434,62 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > ⚠️ **D0 堵法 ②(机器检查)尚未落地**:断言「架构真源含 3 份 ADR 的残留登记 + 3 条触发条件」的检查**当前不存在**(`scripts/test/` 与 `test/` 内无对应载体)⇒ **残留仍可被静默删除** ⇒ 登记为**待办**(独立 change,落非冻结面)。
 
 **关联**:台账 **Entry #338**(授权)· **#169**(拆分登记 + 计数口径)· **#139**(「不排期无边界」的先例与被补先例)· `ADR-CEP-01` D.3/D.4(取代范围范式)· `ADR-CEP-02`(4 决策 + 11 invariants)· `test/cep_adr_parser.hh`(`owner_specs()` —— owner 重映射的载体)· `07 号` §8.5(计数口径的镜像面)
+
+
+## Status Update 2026-11-12(per 台账 Entry #363)—— **决策块计数口径归一**(取代 §⑤ 的「5」)+ **R-c 机器检查落地** + 三份 ADR 全名重述
+
+> **性质**:末尾追加 SU(append-only)。⛔ **既有正文与既有 Status Update 段逐字未变**;⛔ **新增 invariant 数 = 0**;⛔ 本 SU 内**不得**出现 `### 决策 ` 标题(否则本 ADR 的 `^### 决策` 计数将由 **4** 变 **5** ⇒ 破坏 R-d 快照自洽)。
+> **上游**:台账 **Entry #359**(D-1 ~ D-5)+ **Entry #361**(D-6 ~ D-9 + C3a / C3b 切片)+ `.rddf/improvements/cpptlm-cep-invariant-gate-teeth.md`(22 条 AC)· change `cpptlm-cep-invariant-gate-teeth`(design D-1 ~ D-11)。
+
+### ① 取代声明(§⑤ 的规范地位与数值)
+
+本 SU **继承** `§⑤`(本文件 `:426` 起)的「**唯一规范载体**」地位;`§⑤` 文本**保留为历史**,⛔ **不回改**。
+
+⛔ **自本 SU 起作废的两处**:
+
+1. `§⑤` 中的「本口径 = **5** 块(1 主决策段 + 4 个 `### 决策 N`)」⇒ **作废**;现行口径 = **4**(见 ②)。
+2. `§⑤` 的「**已知不一致**」段(本文件 `:431`)⇒ **作废**;该差已由本 SU 归一(见 ② / ③),⛔ 不再作为「待办」挂着。
+
+⇒ **canonical 实现宿主** = `scripts/test/cep_decision_block_check.py`(本 change 新闸)的 Python 实现;本文件 `:431` 的「标题口径 4」升格为该实现的**文档镜像**;`test/cep_adr_parser.hh` 的 `decision_head` = **invariant-id 提取器、不计数**(⛔ 不改);`scripts/test/cep_docs_sync_check.sh` 的正则 = **历史形态**(⛔ 不追认、不改)。
+
+### ② 口径值 + 三值换算表
+
+**口径值**:`ADR-CEP-00` 的决策块数 = **4**。
+
+| ADR | §⑤ 原口径 | 现行口径(D-1 四步 · 标题口径) | 差异理由 |
+|---|:--:|:--:|---|
+| `ADR-CEP-01` | 3 | 3 | 一致 |
+| `ADR-CEP-02` | **4** | **3** | 其**章级 thesis**(`ADR-CEP-02:36`)已被 `### 决策 1(精简)`(`:88`)**完整重述** ⇒ 章级标题**非独立载体**(⛔ **不是**「流表 = 支撑物」—— `§2.0 选项对比表` 才是支撑物) |
+| `ADR-CEP-03` | 3 | 3 | 一致 |
+
+**第三个值(⛔ 不构成口径)**:本文件 `:30` 的 H2 标题「决策(锁定 **3** 件事)」= **历史措辞** ⇒ ⛔ **不得**作为任一计数来源。
+
+**取数口径(D-1 · 顺序不可换)**:① **先剥** ` ``` ` 围栏代码块 → ② **再取** §2 章范围 → ③ **仅** `###` 级 → ④ 匹配 `^###\s*决策\s*\d+(?:\.\d+)?`。**块 ID = 正则全匹配的编号串**(⛔ 禁前缀 / 子串 / 整数归一)。
+
+### ③ 机器判据(本 SU 的落地载体)
+
+| 段 | 闸 | 判据 | 期望值来源 |
+|---|---|---|---|
+| **R-d** | `scripts/test/cep_decision_block_check.py` | 22 份 ADR 的 §2 决策块计数**逐份** == 快照(`test/cep_decision_block_snapshot.json` · 22 键 + `total`=125)+ 两条显式红 + 围栏危险标记 | **闸外快照**(⛔ 禁从被检对象自身派生) |
+| **R-c** | 同上 | 双向对账:正向(三份精确 basename + **无同号拆出件**)+ 反向(本 SU 的 `### ⑥` 重述块)+ 触发条件表的可解析性 | **闸内源码常量**(⛔ 禁从 `NUMBER-MAP` 派生) |
+
+⇒ `§⑤` `:434` 自认的「**D0 堵法 ②(机器检查)尚未落地**…**残留仍可被静默删除**」⇒ **自本 SU 起已落地**(落地载体 = 上表两段 + `scripts/test/cep_decision_block_check.sh` 的决定性变异)。
+
+### ④ D1 路径的第 5 步(合法拆分 ⇒ 闸红 ⇒ 更新期望值 = 强制函数)
+
+`§⑤` `:415` 的 D1 执行路径原列 **4** 个动作;**第 5 步 = 同步更新 R-c 闸的期望值常量**(`ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03` 三份精确 basename + `### ⑥` 重述块的 3 个完整 token)。
+⇒ 触发 T1 / T2 / T3 时的红是**正确的红**(同 `cep_adr_structural_check.sh` 的 registry 先例)⇒ **更新期望值 = 强制函数**,⛔ 不得以「weaken 判据」消红。
+
+### ⑤ 触发条件表(3 条 · 逐条可解析)
+
+⚠️ 本段**只引用**,⛔ **不改** SU 2026-11-11 `### ②` 的原表(append-only):**T1 / T2 / T3** 三条触发条件与其「判定方式」列**原样有效**;其可解析性由 R-c 闸按 **4 类**(仓内路径 / `Entry #N` / ADR 短名 / 符号)校验。
+
+⚠️ **下一个 `### ⑥` 块的格式已冻结**(per change `cpptlm-cep-invariant-gate-teeth` 的 design **D-5.3**):**恰 3 条 bullet**、每条**唯一一个完整编号 token** ⇒ R-c 闸的**反向对账**按此定界取块 ⇒ ⛔ 改本块格式 = 改闸的判据面 ⇒ 须同批改闸 + 走授权。
+
+### ⑥ 三份 ADR 全名重述
+
+- `ADR-CEP-01` —— 承载 Coherence Interface 抽象事务流清单的「一决策一文档化」残余登记
+- `ADR-CEP-02` —— 承载 barrier 流语义澄清的「一决策一文档化」残余登记
+- `ADR-CEP-03` —— 承载 fabric collective plane 内部件的「一决策一文档化」残余登记
+
+**关联**:台账 **Entry #363**(C3 实施开工授权 + `--authorized-by` 依据)· **#364**(C3a:R-d 闸 + 快照 + helper)· **#361**(D-6 ~ D-9 + 切片)· **#359**(D-1 ~ D-5)· **#338**(R-c 授权 + SU 2026-11-11)· **#169**(拆分登记 + 计数口径)· change `cpptlm-cep-invariant-gate-teeth`(design D-1 ~ D-11 + 契约 delta `specs/cep-invariant-gate/spec.md`)· `scripts/test/cep_decision_block_check.{sh,py}` · `test/cep_decision_block_snapshot.json` · `scripts/test/cep_test_shadow.sh`
