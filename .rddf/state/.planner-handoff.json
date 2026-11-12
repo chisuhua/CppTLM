@@ -2,12 +2,16 @@
   "schema": "planner-handoff-v1",
   "version": 1,
   "owner": "rdd-planner",
-  "planner_complete_at": "2026-11-12T10:08:26.392083+00:00",
+  "planner_complete_at": "2026-11-12T11:50:48.213912+00:00",
   "current_sprint": "sprint-2026-11",
-  "proposals_ready": [],
+  "proposals_ready": [
+    "cpptlm-cep-dod-reading-consistency"
+  ],
   "proposals_approved_count": 0,
   "features_active": [],
-  "awaiting_builder": [],
-  "recommended_route": "unknown",
+  "awaiting_builder": [
+    "add-cpptlm-cep-dod-reading-consistency"
+  ],
+  "recommended_route": "complex",
   "active_objectives": []
 }

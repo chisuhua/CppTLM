@@ -20567,6 +20567,58 @@ metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state
 
 **#360**(T1)· **#359**(D-1~D-5)· **#338**(R-c 授权)· **#355**(C2 · 五步链先例)· **#169**(拆分登记)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`(architect 三次 + oracle 4 条)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `:409-411`(② 三行)· `:415`(D1 四动作)· `:434`(R-c 缺口)· `07 号:569`(索引)· `:501`(旧规格)· `scripts/test/cep_adr_structural_check.sh:52-57`(shadow_reset)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)· `test/cep_adr_parser.hh:110`/`:169-173`/`:250`
 
+### Entry #372 — 2026-11-12 [planner](**C4-P0a 落地** —— `cpptlm-cep-dod-reading-consistency` improvement 7 段草稿 + metis 1 轮处置 + **Q3 答复**(锚点重定位)+ **4 处实测订正**)
+
+**主题**:per 用户口令「起 C4 的 planner 立项(P0a 草案 → 批准 → 落文件)」⇒ 起草 C4 的 improvement 草稿并落盘。**⛔ 本 Entry 不创建 openspec change**(P0b = builder 的活)。
+
+**① 落盘产物(3 项)**
+
+| # | 文件 | 形态 | 取证 |
+|:--:|---|---|---|
+| 1 | `.rddf/improvements/cpptlm-cep-dod-reading-consistency.md`(**新增**) | YAML frontmatter + **7 段**(`架构依据`/`范围`/`Why`/`What Changes`/`Acceptance`/`Capabilities`/`Impact`)+ **锚点契约表** + **已裁项** + **起草期实测订正 4 处** + **metis 处置对照 13 条** | `pre_create_brainstorm_check.sh` ⇒ **✅ HARD-GATE satisfied(rc=0)** |
+| 2 | `.rddf/state/.planner-handoff.json`(**重发**) | `awaiting_builder = ["add-cpptlm-cep-dod-reading-consistency"]` · `recommended_route=complex` | 由 **canonical 写者**产出(同 C3 的 B-3 口径) |
+| 3 | `.rddf/improvement-suggestions.md`(+1 行) | 索引登记 | 表头 / 列序与既有 5 行一致 |
+
+**② ⛔ 范围纪律(逐字遵守 per Entry #340)**
+
+**只做 MUST-FIX-1 / MUST-FIX-2**;⛔ **MUST-FIX-3 / MUST-FIX-4 不并入**(待用户 ratify,per **Entry #340** 的 U-1);⛔ 不改 `B3b-2 = 0/4`;⛔ 不宣称口径 ④ 已生效;⛔ 不新建 ADR;⛔ 不改 `§4.0` 排期值。
+
+**③ Q3 的答复(planner 域 · b 报告 §六 给 planner 的问题)**
+
+**接受**「**内容锚 + 恰 1 命中断言**」替代行号锚(经 metis 修订为「**整行全等 + 唯一承载文件 + 行次数 == 1**」)⇒ 4 条锚与「变更前/后命中数」见 improvement 的**锚点契约表**。
+⇒ ⚠️ **子串锚一律不可用**(实测 `B3b-2 不得改写为` = **2 命中** = `obj:552` + `obj:18477` 引述 ⇒ 必红);整行锚实测唯一(尾句 `B3b-1 的 ✅ **仅**指…2 族` = **1 命中**)。
+
+**④ 4 处实测订正(⛔ 不新增裁决,只修已失效前提)**
+
+| # | 订正 | 实测依据 |
+|:--:|---|---|
+| 1 | **权威载体①已随治理批迁出** | `07 号` 现行版内「自欺 / 整行改写 / 宣称达成」**0 命中** ⇒ 现行唯一载体 = `docs/guide/cep-usage.md:162` 第 3 条(恰 1 命中)⇒ Entry #359 ⑤ 的「不得当锚」**仅对旧文本成立** |
+| 2 | **「选项丁否决」是活载体,⛔ 非化石**(metis P0-2 推翻本轮初版判定) | `07 号:520` 仍写「④ 对 DoD 的影响(**五选项 甲~戊**)→ **`Entry #249` ⑤**」⇒ 活载体经**指针链**存在;且 `Entry #332` ⑦ 自陈「口径 ④ 与丁同型 ⇒ **不能声称不撞**」⇒ 判据由「消解」**改回「适用结果登记」** |
+| 3 | **指针悬空**:手册第 3 条指向的「口径 ④ 本体新 SU（`Entry #332` ⑪ 落点）」**不存在**(口径 ④ 未 ratify ⇒ 该 SU 从未落地)⇒ C4 落地后必须改指 C4 自己的新 SU(⇒ AC-9 机器可核);⛔ 不创建「口径 ④ 本体 SU」 |
+| 4 | **`2030-Q1` 的两条要求互斥** | AC-4 拆为 4 小项:排期值**字段级 diff 0 变化** + 值行逐字不动 + 注记**不含该字面** + §4.0 自检 grep 的**相对快照相等**(基线 **9** 行;⚠️ 基线已脏 ⇒ 只作相对快照,不顺手修) |
+
+**⑤ metis 1 轮处置(P0×4 / P1×4 / P2×3 ⇒ 全部落盘)**
+
+| 级 | 条数 | 落点 |
+|:--:|:--:|---|
+| **P0** | 4 | 锚点契约改**整行全等 + 唯一承载** + 自指陷阱硬约束(台账 / improvements / openspec 内**只写指针**)· 丁由「消解」改回「**登记**」· 手册改为「**指针**」形态 + 保留「口径 ④ 未 ratify」半句 · `2030-Q1` 两条要求拆开 |
+| **P1** | 4 | AC-7 补 3 条变异(作用域子句缺失 / 绝对禁令复活 / append-only 违规)⇒ 共 **5** 条 · 旧/新文本字面固定(锚点契约表)· AC-5 **行数不敏感** · AC-13 枚举 **7 处** KPI |
+| **P2** | 3 | In-Scope 补到 **6 项**(含 `scripts/README.md` + `test/CMakeLists.txt`)· 禁表述扩到 **5 项** + 各附反例 · Impact 补**长期维护税** + **main spec 最小化占用**(仅 1 条文本 Requirement,禁复写作用域句) |
+
+**⑥ 下一步(切 builder)**
+
+| 子步 | 谁 | 产出 |
+|:--:|---|---|
+| **C4-P0b** | builder | `openspec/changes/cpptlm-cep-dod-reading-consistency/{proposal,design,tasks}.md` + `specs/cep-dod-reading-consistency/spec.md`(KPI **0/3 → 1/3**);⛔ `design.md` 须与**闸**的锚点常量**同批定稿**(4 条整行锚 + 5 条红因签名) |
+
+**⑦ ⛔ 本 Entry 明确不做**
+
+⛔ 不创建 openspec change · ⛔ 不写实施代码 · ⛔ 不改任何 ADR 正文 · ⛔ 不改台账 §13.1~§13.8 · ⛔ 不新增裁决 · ⛔ 不动 C3 的任何产物(已归档+验收通过)。
+
+**⑧ 关联**
+
+**#370**(C3 验收通过 · D1 槽位已释放)· **#368**(C3 归档终态)· **#361**(D-6~D-9)· **#359 ⑤**(C4 的 4 行判据 + 锚点纪律 + 「恰 1 命中」形态)· **#340**(C4 行 + 范围纪律 + U-1)· **#332 ⑧**(四 MUST-FIX 原文 + 三处重裁清单 + 验收判据)· **#251 ①**(用户裁决口径 = 戊)· **#249 ⑤**(DoD 五选项表 · 含丁)· **#333 / #339**(07 号治理批 · 判据正文迁指针)· b 报告 `.rddf/reviews/cep-goal-scope-review-2026-11-12b.md` §六 Q3 · `.rddf/improvements/cpptlm-cep-dod-reading-consistency.md`
+
 ### Entry #371 — 2026-11-12 [builder](**B-3 收口步** —— planner-handoff 重发为**归档后真实态**;原定 wrapper 形态**不可执行**,偏离登记)
 
 **主题**:兑现 **Entry #362 ②** 承诺的「B-3 第 2 拍:handoff 幂等重发」⇒ 在 C3 归档后重发为**真实态**,并登记**形态偏离**。
