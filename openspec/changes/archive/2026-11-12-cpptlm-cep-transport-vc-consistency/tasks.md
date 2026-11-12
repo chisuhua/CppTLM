@@ -165,12 +165,17 @@
 
 ## A9 · 归档(M6)
 
-- [ ] A9.1 `openspec archive cpptlm-cep-transport-vc-consistency` ⇒ delta 合并进 `openspec/specs/cep-collective-plane-contract/spec.md`
+- [x] A9.1 `openspec archive cpptlm-cep-transport-vc-consistency` ⇒ delta 合并进 `openspec/specs/cep-collective-plane-contract/spec.md`
       > ⚠️ 该 spec **在冻结集**(`openspec/specs/cep-*/spec.md` glob)⇒ **另行触发**第二次五步链(per metis **P0-6** 的展开)
-- [ ] A9.2 **第二次五步链**(逐步可勾选):① 归档授权 Entry(台账)→ ② 产物 commit(`openspec/specs/cep-collective-plane-contract/spec.md`)→ ③ `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #<归档授权 Entry>"` → ④ 清单 commit(`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`)→ ⑤ 无参复验 `bash scripts/test/cep_freeze_check.sh` ⇒ **rc=0**
+      > ✅ **实测**:归档为 **✅ 已完成归档**语义(默认;⛔ **不用** `--skip-specs` —— 17/17 AC PASS + 0 BLOCKER ⇒ 能力确实落地)⇒ 归档目录 `openspec/changes/archive/2026-11-12-cpptlm-cep-transport-vc-consistency/`(**force-add 入库**,per `.gitignore:60-63`「不入库则引用必然断链」+ 3 次历史先例)⇒ git 识别为 4 个 **rename**
+      > ✅ main spec **244 → 357 行**;Scenario **6 → 20**(本 change 的 4 个新 Scenario 全部并入);diff 实测恰 **7 处删除** = 全是「四条 → 六条」措辞替换
+- [x] A9.2 **第二次五步链**(逐步可勾选):① 归档授权 Entry(台账)→ ② 产物 commit(`openspec/specs/cep-collective-plane-contract/spec.md`)→ ③ `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #<归档授权 Entry>"` → ④ 清单 commit(`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`)→ ⑤ 无参复验 `bash scripts/test/cep_freeze_check.sh` ⇒ **rc=0**
       > ⚠️ **产物 commit 必须先于 `--update`**(per C1 已验证的顺序);⚠️ `artifact_count` 仍为 **78**(该 spec **已在**冻结集内 ⇒ 只改 hash)
-- [ ] A9.3 归档后 KPI 回填(Proposed **1/3 → 0/3**)+ 台账 Entry
-- [ ] A9.4 ⛔ **本 change 归档后**才可立项 **C3**(`R-c` + `R-d`)与 **C4**(MUST-FIX-1/2)
+- [x] A9.3 归档后 KPI 回填(Proposed **1/3 → 0/3**)+ 台账 Entry
+      > ✅ **实测**:`openspec list --json` = **0 active** ⇒ KPI **1/3 → 0/3**;同步 **5 处**活文档当前态(`roadmap.md` · `phase-10.md` · `obj` · `umbrella.md` · `nvlink-sharp.md`)⇒ `✓ KPI baseline 数字一致(实测 0/3)`;台账 Entry **#355** 落盘
+      > ⚠️ **台账 append-only 纪律**:同步时脚本误改了 **3 处历史叙述**(Entry #348 的记录)⇒ **已逐字还原** ⇒ 只改**当前态**表述,历史叙述不动
+- [x] A9.4 ⛔ **本 change 归档后**才可立项 **C3**(`R-c` + `R-d`)与 **C4**(MUST-FIX-1/2)
+      > ✅ **实测**:归档后 active = **0** ⇒ **D1 槽位已释放** ⇒ **C3 / C4 现在可立项**(per §13.6 的串行约束)
 
 ---
 
