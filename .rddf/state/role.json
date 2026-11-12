@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-13T02:10:00Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-13T03:30:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-12T22:55:00Z",
-      "by": "user",
-      "reason": "verifier 第 1 轮判定 AC-21 FAIL(implementation_gap)⇒ 回 builder 修:① cep_doc_ref_check 的 VIRTUAL_PATHS 补第 4 条同型豁免 ② 归档件 tasks 回填 6 项。"
-    },
-    {
-      "role": "verifier",
-      "at": "2026-11-12T23:10:00Z",
-      "by": "user",
-      "reason": "builder 已修 FAIL-1 + 遗留 S-1(Entry #369)⇒ 回 verifier 第 2 轮复验。"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-12T23:40:00Z",
-      "by": "user",
-      "reason": "用户口令「起 C4 的 planner 立项(P0a 草案 → 批准 → 落文件)」⇒ 切 planner 起草 C4 的 improvement 5 段草稿。"
-    },
     {
       "role": "builder",
       "at": "2026-11-12T12:20:00Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-13T02:10:00Z",
       "by": "user",
       "reason": "R-1 + R-4 完成 ⇒ planner 收口(投影订正 + 剩余任务定稿 + 台账回执)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-13T03:00:00Z",
+      "by": "user",
+      "reason": "为 R-3(全绿 run 缺口)创建 OpenSpec change(四件套);per 用户口令。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-13T03:20:00Z",
+      "by": "user",
+      "reason": "补 R-3 的 improvement 5 段草稿(planner 域;§4.7 转正路径要求:无草稿不得立项)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-13T03:30:00Z",
+      "by": "user",
+      "reason": "落 R-3 的实施授权 Entry(#394 = 五步链授权号)+ KPI 回填 1/3 + 提交 change。"
     }
   ],
   "auto_switch_window": null
