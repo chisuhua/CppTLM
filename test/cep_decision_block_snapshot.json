@@ -1,0 +1,30 @@
+{
+  "schema": "cep-decision-block-snapshot-v1",
+  "authorized_by": "Entry #363",
+  "count": 22,
+  "total": 125,
+  "files": {
+    "ADR-CEP-00-platform-charter-and-governance.md": 4,
+    "ADR-CEP-00A-real-source-anchor-map.md": 3,
+    "ADR-CEP-01-fabric-collective-plane.md": 3,
+    "ADR-CEP-02-coherence-barrier-semantics-clarification.md": 3,
+    "ADR-CEP-03-fabric-collective-plane-internals.md": 3,
+    "ADR-CEP-04-sharer-tracker-abstraction-redesign.md": 3,
+    "ADR-CEP-05-stub-cache-core-interface.md": 4,
+    "ADR-CEP-06-experiment-protocol.md": 7,
+    "ADR-CEP-07-simulation-and-integration-semantics.md": 9,
+    "ADR-CEP-07A-06bis-artifact-disposition.md": 4,
+    "ADR-CEP-08-ordering-point-portability.md": 7,
+    "ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md": 8,
+    "ADR-CEP-11-protocol-version-locking.md": 6,
+    "ADR-CEP-12-protocol-engine-capability-map.md": 10,
+    "ADR-CEP-13-coherence-domain-ownership.md": 6,
+    "ADR-CEP-14-stub-contract-tests.md": 6,
+    "ADR-CEP-15-cachetlm-alignment.md": 5,
+    "ADR-CEP-16-06-evolution-route-mapping.md": 5,
+    "ADR-CEP-17-ruby-slicc-protocol-family.md": 10,
+    "ADR-CEP-18-protocol-generation-scope.md": 6,
+    "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": 9,
+    "ADR-CEP-NUMBER-MAP.md": 4
+  }
+}

@@ -49,11 +49,13 @@ else
 fi
 
 # ── 影子树准备(⛔ 只复制,不动真实仓)────────────────────────────────
+# ⚠️ 2026-11-12(per 台账 Entry #361 ③ D-8 + Entry #363):影子树机制**已抽取**为
+#    共享 helper `scripts/test/cep_test_shadow.sh` ⇒ 本闸与 `cep_decision_block_check.sh`
+#    共用**唯一一份**实现 ⇒ ⛔ 本闸 SHALL NOT 再自带复制逻辑(第二份实现 = 隐性分叉)。
+#    本闸与新闸的差异复制项 = `test/cep_adr_structural_deferrals.json`(新闸不需要)。
+source "$(dirname "${BASH_SOURCE[0]}")/cep_test_shadow.sh"
 shadow_reset() {
-    rm -rf "$SHADOW"
-    mkdir -p "$SHADOW/docs" "$SHADOW/test"
-    cp -r docs/adr "$SHADOW/docs/adr"
-    cp test/cep_adr_structural_deferrals.json "$SHADOW/test/"
+    cep_shadow_reset "$SHADOW" test/cep_adr_structural_deferrals.json
 }
 
 echo ""

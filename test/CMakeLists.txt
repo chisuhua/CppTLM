@@ -281,6 +281,19 @@ add_test(NAME cep_adr_structural_check
 set_tests_properties(cep_adr_structural_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# CEP **治理判据闸**(per change `cpptlm-cep-invariant-gate-teeth` / 台账 Entry #363)
+# —— 把 `ADR-CEP-00` SU 2026-11-11 §⑤ 自认的两项「有登记、无牙齿」残留落为机器判据:
+#    [R-d] 22 份 ADR 的 §2 决策块计数**逐份** == 快照(D-1 四步 + D-3.2 块 ID 全匹配)
+#          + 显式红①(非 ### 级)②(编号非法)+ 围栏危险标记
+#    [R-c] 双向对账:正向(磁盘集合 / 无同号拆出件)+ 反向(新 SU 的 `### ⑥` 重述块)
+# 附 **决定性变异**(影子树 ⇒ 不动真实仓)证明闸有牙;每条变异按**固定签名**变红。
+# ⚠️ 影子树机制已抽取为共享 helper `scripts/test/cep_test_shadow.sh`
+#    ⇒ 与 `cep_adr_structural_check.sh` 共用**唯一一份**实现(per Entry #361 ③ D-8)。
+add_test(NAME cep_decision_block_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_decision_block_check.sh)
+set_tests_properties(cep_decision_block_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # CohIf 载体契约的**反向验证**(per change `cpptlm-cep-cohif-carrier` task 1.5~1.7)
 # —— 4 类毒化副本(第 6 个 flow_id / 混入网络层字段 / 字段宽度 +1 / 加虚函数)
 #    分别必须让「静态扫描」报红 / 让「编译期锁」编译失败。

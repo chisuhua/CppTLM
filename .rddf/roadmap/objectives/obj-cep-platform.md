@@ -469,7 +469,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**(`cpptlm-cep-transport-vc-consistency` —— C2 传输层 VC 语义一致性判据落地,2026-11-12 立项 ⇒ 占 1 个 slot,per 台账 **Entry #345**;实施期授权见 **Entry #347**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
+`openspec/changes/` 当前 **1 个 active**(`cpptlm-cep-invariant-gate-teeth` —— C3 治理机制机器化(R-c / R-d 两项残留登记的牙齿),2026-11-12 立项 ⇒ 占 1 个 slot,per 台账 **Entry #363**;实施期授权亦见 **Entry #363**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -20566,6 +20566,88 @@ metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state
 **⑧ 关联**
 
 **#360**(T1)· **#359**(D-1~D-5)· **#338**(R-c 授权)· **#355**(C2 · 五步链先例)· **#169**(拆分登记)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`(architect 三次 + oracle 4 条)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `:409-411`(② 三行)· `:415`(D1 四动作)· `:434`(R-c 缺口)· `07 号:569`(索引)· `:501`(旧规格)· `scripts/test/cep_adr_structural_check.sh:52-57`(shadow_reset)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)· `test/cep_adr_parser.hh:110`/`:169-173`/`:250`
+
+### Entry #364 — 2026-11-12 [build](**C3a 完成** —— R-d 决策块计数闸 + 共享影子树 helper + 计数快照 + ctest 注册(170→171);**KPI baseline 回填 7 处**(立项连带义务,⛔ 非闸引入))
+
+**主题**:执行 `tasks.md` 的 **A1 ~ A3**(C3a 零冻结面切片)—— 把 R-d(决策块计数口径)的机器判据落成**有牙的闸**,并把「影子树复用」从修辞变成**具名机制**。**⛔ 本 Entry 不改任何 ADR / 07 号**(C3-C / C3-D 属 C3b)。
+
+**① 产物(4 新增 + 3 修改)**
+
+| # | 文件 | 形态 |
+|:--:|---|---|
+| 1 | `scripts/test/cep_test_shadow.sh`(**新增**) | 共享影子树 helper:`cep_shadow_reset <shadow> [extra_cp...]`;必复制集合 = `docs/adr`;差异复制 = `[extra_cp...]` 参数化;头注登记**共享契约**(改动须同步两闸) |
+| 2 | `scripts/test/cep_decision_block_check.py`(**新增**) | 判据本体:R-d 段(D-1 四步 + D-3.2 块 ID 全匹配 + 显式红①② + 围栏危险标记 + 快照健康度);**受控重复登记**头注(C++ `read_section` 双实现自登记) |
+| 3 | `scripts/test/cep_decision_block_check.sh`(**新增**) | 驱动壳:基线正控 + **4 条 R-d 决定性变异** + 逐条还原 |
+| 4 | `test/cep_decision_block_snapshot.json`(**新增**) | 22 键 + `total`=125 + `authorized_by: "Entry #363"` |
+| 5 | `scripts/test/cep_adr_structural_check.sh`(**改**) | `shadow_reset` **抽取**到 helper(⛔ 行为零变化) |
+| 6 | `test/CMakeLists.txt`(**改**) | ctest 注册 `cep_decision_block_check` ⇒ 用例 **170 → 171** |
+| 7 | `scripts/README.md`(**改**) | 守门表 **+1 行**(32→33,含**新闸**;⛔ helper 非闸 ⇒ 不登记) |
+
+**② R-d 决定性变异(4 条 · 影子树 ⇒ 真实仓零改动)**
+
+| # | 变异 | 期望签名 | 实测 |
+|:--:|---|---|---|
+| 1 | §2 内插围栏块且**内容含行首 `## `** | `围栏内含行首 ##` | ✅ 按签名变红 + **还原后绿** |
+| 2 | §2 内插 `#### 决策 5:…`(非 `###` 级) | `决策块标题非 ### 级` | ✅ 按签名变红 + **还原后绿** |
+| 3 | §2 内插 `### 决策 Ⅻ`(非 ASCII 十进制) | `决策块编号非法` | ✅ 按签名变红 + **还原后绿** |
+| 4 | 删掉 `ADR-CEP-02` 的一个 `### 决策 N` 段 | `决策块计数快照偏离`(含文件名/期望/实得/差值) | ✅ 按签名变红 + **还原后绿** |
+
+⇒ 闸自测 **9/9 绿**(基线 + 4×(红 + 还原绿))。**⛔ 红因断言 = 签名**,⛔ 不仅凭 rc≠0。
+
+**③ A0.3 基线(机器证据)**
+
+| 项 | 实测 |
+|---|---|
+| 逐份计数 | 22 份与快照**逐份相等**;合计 **125** |
+| 三口径 | 全文件 / 先剥围栏取 §2 / 先取范围剥围栏 ⇒ **逐份相等**(125) |
+| 显式红 ①② | **0** |
+| 危险围栏 ③ | **0** ⇒ 围栏危险红**基线绿**,不产生历史债 |
+| 既有闸回归 | `cep_adr_structural_check.sh` **4/4 绿**(抽取后行为零变化) |
+
+**④ ⚠️ KPI baseline 回填(7 处 · 立项连带义务)**
+
+**根因**:C3 立项使 `openspec list --json` 的 active 由 **0 → 1** ⇒ `cep_docs_sync_check` 断言①(KPI baseline == 实测)要求**全部活文档的当前态表述**同步为 `1/3` ⇒ `ctest` 实测 **2 项失败**(`cep_docs_sync_check` + `cep_gate_selftest`)。
+**核实**:`git stash` 掉本次闸实现后**仍失败** ⇒ **⛔ 非闸引入** ⇒ 是**立项动作的连带义务**(per **Entry #345 ⑤** 的 C2 同型教训:「⛔ 立项 / 归档后必须跑全量 ctest」)。
+
+| # | 文件 | 位置 | 处置 |
+|:--:|---|---|---|
+| 1 | `.rddf/roadmap.md` | `:5` | `当前真实 baseline = 0/3` → `1/3`(+ C3 占位说明,保留 C2 / R-3 的历史叙述) |
+| 2 | `.rddf/roadmap/phases/phase-10.md` | `:209` | 同上 |
+| 3 | `.rddf/roadmap/objectives/obj-cep-platform.md` | `§5.2` 活口径段 | 当前 active 改指 `cpptlm-cep-invariant-gate-teeth`(C3)· `并发 = 1/3` |
+| 4 | `.rddf/improvements/cpptlm-cep-umbrella.md` | `:306` | `0/3` → `1/3` |
+| 5 | `.rddf/improvements/cpptlm-cep-nvlink-sharp.md` | `:31` + `:211` | `当前实测 0/3` / `全局 baseline = 0/3` → `1/3`(⛔ 该文件**不在** `docs_sync_check` 的 LIVE 清单 ⇒ **第 7 处漏检**,per Entry #186 ⑨ 同型 ⇒ 仍按诚实口径同步) |
+| 6 | `AGENTS.md` | `:487` | `实测基线 (2026-11-10) 0 个 active → 0/3` → `(2026-11-12) 1 个 active → 1/3`(+ C3 占位) |
+| 7 | `AGENTS.md` 归档计数 | — | ⛔ **不动**(已归档 change **135** 份在本次**未变**)⇒ 逐字保留 |
+
+> ⚠️ **只改「当前态」表述** —— 历史叙述(「旧值 → 新值」型迁移叙述)由 `§11` 台账承载(append-only)⇒ **不动**。
+
+**⑤ 实测闸**
+
+| 面 | 结果 |
+|---|---|
+| 新闸自测 | ✅ **9/9** |
+| `cep_adr_structural_check.sh` | ✅ **4/4** |
+| `cep_gate_selftest` | ✅ **Passed**(KPI 回填后;修前 7 项 fixture 红) |
+| `cep_docs_sync_check --strict` | ✅ **rc=0**(KPI baseline **1/3** 一致) |
+| `agents_md_lint.py` | ✅ **rc=0**(AGENTS.md 已改 ⇒ 复验) |
+| ctest 用例数 | **170 → 171**(`ctest -N` 见 `cep_decision_block_check` = #92) |
+| 守门表 / 磁盘 | 守门表 **32 → 33**;磁盘 `cep_*.sh` **36 → 38**(+1 闸 +1 **非闸** helper) |
+
+**⑥ 数字预登记(A3.3 · T3 对齐)**
+
+| 对象 | 现状 | 处置 |
+|---|---|---|
+| `scripts/README.md` 守门表 | **33 行** | ⛔ **本次不动自述数字**(`:78`「本表 31 个脚本」/ `:81`「29 → 31」**早已陈旧**,实测 32 → 现 33)⇒ **T3(D-5)** 统一订正 + 补「三表划分口径」说明 |
+| 磁盘 `cep_*.sh` | **38** | 与守门表差 **5** = 4 项他表登记 + **1 项新 helper**(`cep_test_shadow.sh`,**非闸**)⇒ 按 README `:81` 既有口径「表内计数 ≠ 磁盘实际,差异项以 `ls` 为准」⇒ **预期差异**,T3 登记 |
+| `AGENTS.md` 闸数 | 3 处均写「以 `ls` 为准」 | ⛔ **数字不动**(实测订正 per Entry #362 ③ 订正-1) |
+
+**⑦ ⛔ 本 Entry 明确不做**
+
+⛔ 不改任何 ADR / 07 号(C3-C / C3-D 属 C3b)· ⛔ 不写 R-c 段(属 C3b)· ⛔ 不做五步链(属 C3b)· ⛔ 不归档 · ⛔ 不做 T3 · ⛔ 不改台账 §13.1~§13.8 · ⛔ 不改 B3b-2 计数 · ⛔ 不新增裁决。
+
+**⑧ 关联**
+
+**#363**(C3 开工授权 + `--authorized-by` 依据)· **#362**(P0a + 2 处实测订正)· **#361**(D-6~D-9 + C3a/C3b 切片)· **#359**(D-1~D-5)· **#355**(C2 归档 · 五步链先例)· **#345 ⑤**(C2 立项的 KPI 同型教训 · 本条为其复现)· **#186 ⑨**(LIVE 清单漏检先例)· `openspec/changes/cpptlm-cep-invariant-gate-teeth/design.md`(D-1 ~ D-11)· `ADR-CEP-00:431`/`:434`· `07 号:569`
 
 ### Entry #362 — 2026-11-12 [planner](**C3-P0a 落地** —— improvement 5 段草稿 + `planner-handoff`(v1.2);HARD-GATE rc=0;2 处实测订正 + 1 处写者偏离登记)
 
