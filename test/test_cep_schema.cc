@@ -759,8 +759,8 @@ TEST_CASE("[cep][schema] 07 号 §5.1 的 adapter 实例数与表格行数一致
     // 2026-11-11 批 3 按层拆分:§5.1 实体已下沉到 `docs/architecture/cep/protocol-engine.md`
     //   ⇒ 表体与口径字样在该文件;标题层级因文件标题为 h1 而提升一级(h4 → h3)。
     //   ⛔ 总纲「07 号」仍保留 `### 5.1.x` 节号桩(节号体系不迁移),但**表体**在子文档。
-    const auto truth = read_file(
-        (repo_root() / "docs" / "architecture" / "cep" / "protocol-engine.md").string());
+    const auto truth =
+        read_file((repo_root() / "docs" / "architecture" / "cep" / "protocol-engine.md").string());
 
     // §5.1.1 工业硬件协议族: | **族** | 实例 | `Adapter` | 状态 | ... |
     const auto i511 = truth.find("### 5.1.1");

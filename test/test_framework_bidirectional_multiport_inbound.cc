@@ -51,125 +51,133 @@
 // ============================================================
 namespace {
 
-template <std::size_t N> class MockMultiPortModule : public ChStreamModuleBase {
-private:
-    std::array<cpptlm::InputStreamAdapter<bundles::NoCFlitBundle>, N> req_in_;
-    std::array<cpptlm::OutputStreamAdapter<bundles::NoCFlitBundle>, N> resp_out_;
-    cpptlm::StreamAdapterBase* adapter_ = nullptr;
+    template <std::size_t N> class MockMultiPortModule : public ChStreamModuleBase {
+    private:
+        std::array<cpptlm::InputStreamAdapter<bundles::NoCFlitBundle>, N> req_in_;
+        std::array<cpptlm::OutputStreamAdapter<bundles::NoCFlitBundle>, N> resp_out_;
+        cpptlm::StreamAdapterBase* adapter_ = nullptr;
 
-public:
-    MockMultiPortModule(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-
-    std::string get_module_type() const override { return "MockMultiPortModule"; }
-
-    void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override { adapter_ = adapter; }
-
-    void tick() override {
-        if (adapter_)
-            adapter_->tick();
-    }
-
-    void do_reset(const ResetConfig&) override {
-        for (auto& a : req_in_)
-            a.reset();
-        for (auto& a : resp_out_)
-            a.reset();
-    }
-
-    /// Credit 回收回调(`BidirectionalPortAdapter::tick()` 的 credit 接收路径会调它)
-    void receive_credit(unsigned /*in_port*/, unsigned /*vc*/) {}
-
-    std::array<cpptlm::InputStreamAdapter<bundles::NoCFlitBundle>, N>& req_in() { return req_in_; }
-    std::array<cpptlm::OutputStreamAdapter<bundles::NoCFlitBundle>, N>& resp_out() {
-        return resp_out_;
-    }
-};
-
-using MockN2 = MockMultiPortModule<2>;
-using MockN5 = MockMultiPortModule<5>;
-
-using AdapterN2 = cpptlm::BidirectionalPortAdapter<MockN2, bundles::NoCFlitBundle, 2>;
-using AdapterN5 = cpptlm::BidirectionalPortAdapter<MockN5, bundles::NoCFlitBundle, 5>;
-using RouterAdapterN5 =
-    cpptlm::BidirectionalPortAdapter<tlm::RouterTLM, bundles::NoCFlitBundle, 5>;
-
-/// 构造一个带唯一 tag 的 flit bundle
-/// ⚠️ tag 走 `transaction_id`(ch_uint<64>)⇒ 端口数 × tag 数不会溢出
-bundles::NoCFlitBundle make_flit(std::uint64_t tag) {
-    bundles::NoCFlitBundle b;
-    b.transaction_id.write(tag);
-    b.src_node.write(0);
-    b.dst_node.write(0);
-    b.vc_id.write(0);
-    b.flit_count.write(1);
-    b.size.write(1);
-    b.src_port.write(0);
-    return b;
-}
-
-/// 经**框架真实入口**(`ChStreamTargetPort::recvReq`)投递一个包
-/// ⚠️ `recvReq` 内部会把包还给 `PacketPool` ⇒ 调用方**不得**再 release
-void deliver(cpptlm::ChStreamTargetPort& target, std::uint64_t tag) {
-    Packet* pkt = PacketPool::get().acquire();
-    REQUIRE(pkt != nullptr);
-    pkt->payload->set_data_length(sizeof(bundles::NoCFlitBundle));
-    pkt->type = PKT_REQ;
-    const auto b = make_flit(tag);
-    REQUIRE(bundles::serialize_bundle(b, pkt->payload->get_data_ptr(),
-                                      pkt->payload->get_data_length()));
-    target.recvReq(pkt);
-}
-
-/// 端口持有者(`ChStreamTargetPort` / `ChStreamInitiatorPort` **不可默认构造**
-/// ⇒ 用 `vector<unique_ptr>` 持有)
-template <std::size_t N> struct PortSet {
-    EventQueue eq;
-    MockMultiPortModule<N> mod{"multiport", &eq};
-    cpptlm::BidirectionalPortAdapter<MockMultiPortModule<N>, bundles::NoCFlitBundle, N> adapter{
-        &mod};
-    std::vector<std::unique_ptr<cpptlm::ChStreamInitiatorPort>> req_out;
-    std::vector<std::unique_ptr<cpptlm::ChStreamTargetPort>> req_in;
-    std::vector<std::unique_ptr<cpptlm::ChStreamInitiatorPort>> resp_out;
-    std::vector<std::unique_ptr<cpptlm::ChStreamTargetPort>> resp_in;
-
-    PortSet() {
-        for (std::size_t i = 0; i < N; ++i) {
-            req_out.emplace_back(
-                std::make_unique<cpptlm::ChStreamInitiatorPort>("req_out", &eq));
-            req_in.emplace_back(std::make_unique<cpptlm::ChStreamTargetPort>(
-                "req_in", &adapter, &eq, static_cast<unsigned>(i)));
-            resp_out.emplace_back(
-                std::make_unique<cpptlm::ChStreamInitiatorPort>("resp_out", &eq));
-            resp_in.emplace_back(std::make_unique<cpptlm::ChStreamTargetPort>(
-                "resp_in", &adapter, &eq, static_cast<unsigned>(i)));
+    public:
+        MockMultiPortModule(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
         }
-        std::array<MasterPort*, N> ro{};
-        std::array<SlavePort*, N> ri{};
-        std::array<MasterPort*, N> so{};
-        std::array<SlavePort*, N> si{};
-        for (std::size_t i = 0; i < N; ++i) {
-            ro[i] = req_out[i].get();
-            ri[i] = resp_in[i].get();
-            so[i] = resp_out[i].get();
-            si[i] = req_in[i].get();
-        }
-        adapter.bind_ports_array(ro, ri, so, si);
-        mod.set_stream_adapter(&adapter);
-    }
-};
 
-/// 断言「只有端口 k 的桶收到 tag」
-template <std::size_t N>
-void require_only_bucket_k_has(MockMultiPortModule<N>& mod, std::size_t k, std::uint64_t tag) {
-    for (std::size_t j = 0; j < N; ++j) {
-        if (j == k) {
-            REQUIRE(mod.req_in()[j].valid());
-            REQUIRE(mod.req_in()[j].data().transaction_id.read() == tag);
-        } else {
-            REQUIRE_FALSE(mod.req_in()[j].valid());
+        std::string get_module_type() const override {
+            return "MockMultiPortModule";
+        }
+
+        void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
+            adapter_ = adapter;
+        }
+
+        void tick() override {
+            if (adapter_)
+                adapter_->tick();
+        }
+
+        void do_reset(const ResetConfig&) override {
+            for (auto& a : req_in_)
+                a.reset();
+            for (auto& a : resp_out_)
+                a.reset();
+        }
+
+        /// Credit 回收回调(`BidirectionalPortAdapter::tick()` 的 credit 接收路径会调它)
+        void receive_credit(unsigned /*in_port*/, unsigned /*vc*/) {
+        }
+
+        std::array<cpptlm::InputStreamAdapter<bundles::NoCFlitBundle>, N>& req_in() {
+            return req_in_;
+        }
+        std::array<cpptlm::OutputStreamAdapter<bundles::NoCFlitBundle>, N>& resp_out() {
+            return resp_out_;
+        }
+    };
+
+    using MockN2 = MockMultiPortModule<2>;
+    using MockN5 = MockMultiPortModule<5>;
+
+    using AdapterN2 = cpptlm::BidirectionalPortAdapter<MockN2, bundles::NoCFlitBundle, 2>;
+    using AdapterN5 = cpptlm::BidirectionalPortAdapter<MockN5, bundles::NoCFlitBundle, 5>;
+    using RouterAdapterN5 =
+        cpptlm::BidirectionalPortAdapter<tlm::RouterTLM, bundles::NoCFlitBundle, 5>;
+
+    /// 构造一个带唯一 tag 的 flit bundle
+    /// ⚠️ tag 走 `transaction_id`(ch_uint<64>)⇒ 端口数 × tag 数不会溢出
+    bundles::NoCFlitBundle make_flit(std::uint64_t tag) {
+        bundles::NoCFlitBundle b;
+        b.transaction_id.write(tag);
+        b.src_node.write(0);
+        b.dst_node.write(0);
+        b.vc_id.write(0);
+        b.flit_count.write(1);
+        b.size.write(1);
+        b.src_port.write(0);
+        return b;
+    }
+
+    /// 经**框架真实入口**(`ChStreamTargetPort::recvReq`)投递一个包
+    /// ⚠️ `recvReq` 内部会把包还给 `PacketPool` ⇒ 调用方**不得**再 release
+    void deliver(cpptlm::ChStreamTargetPort& target, std::uint64_t tag) {
+        Packet* pkt = PacketPool::get().acquire();
+        REQUIRE(pkt != nullptr);
+        pkt->payload->set_data_length(sizeof(bundles::NoCFlitBundle));
+        pkt->type = PKT_REQ;
+        const auto b = make_flit(tag);
+        REQUIRE(bundles::serialize_bundle(b, pkt->payload->get_data_ptr(),
+                                          pkt->payload->get_data_length()));
+        target.recvReq(pkt);
+    }
+
+    /// 端口持有者(`ChStreamTargetPort` / `ChStreamInitiatorPort` **不可默认构造**
+    /// ⇒ 用 `vector<unique_ptr>` 持有)
+    template <std::size_t N> struct PortSet {
+        EventQueue eq;
+        MockMultiPortModule<N> mod{"multiport", &eq};
+        cpptlm::BidirectionalPortAdapter<MockMultiPortModule<N>, bundles::NoCFlitBundle, N> adapter{
+            &mod};
+        std::vector<std::unique_ptr<cpptlm::ChStreamInitiatorPort>> req_out;
+        std::vector<std::unique_ptr<cpptlm::ChStreamTargetPort>> req_in;
+        std::vector<std::unique_ptr<cpptlm::ChStreamInitiatorPort>> resp_out;
+        std::vector<std::unique_ptr<cpptlm::ChStreamTargetPort>> resp_in;
+
+        PortSet() {
+            for (std::size_t i = 0; i < N; ++i) {
+                req_out.emplace_back(
+                    std::make_unique<cpptlm::ChStreamInitiatorPort>("req_out", &eq));
+                req_in.emplace_back(std::make_unique<cpptlm::ChStreamTargetPort>(
+                    "req_in", &adapter, &eq, static_cast<unsigned>(i)));
+                resp_out.emplace_back(
+                    std::make_unique<cpptlm::ChStreamInitiatorPort>("resp_out", &eq));
+                resp_in.emplace_back(std::make_unique<cpptlm::ChStreamTargetPort>(
+                    "resp_in", &adapter, &eq, static_cast<unsigned>(i)));
+            }
+            std::array<MasterPort*, N> ro{};
+            std::array<SlavePort*, N> ri{};
+            std::array<MasterPort*, N> so{};
+            std::array<SlavePort*, N> si{};
+            for (std::size_t i = 0; i < N; ++i) {
+                ro[i] = req_out[i].get();
+                ri[i] = resp_in[i].get();
+                so[i] = resp_out[i].get();
+                si[i] = req_in[i].get();
+            }
+            adapter.bind_ports_array(ro, ri, so, si);
+            mod.set_stream_adapter(&adapter);
+        }
+    };
+
+    /// 断言「只有端口 k 的桶收到 tag」
+    template <std::size_t N>
+    void require_only_bucket_k_has(MockMultiPortModule<N>& mod, std::size_t k, std::uint64_t tag) {
+        for (std::size_t j = 0; j < N; ++j) {
+            if (j == k) {
+                REQUIRE(mod.req_in()[j].valid());
+                REQUIRE(mod.req_in()[j].data().transaction_id.read() == tag);
+            } else {
+                REQUIRE_FALSE(mod.req_in()[j].valid());
+            }
         }
     }
-}
 
 } // namespace
 
@@ -248,8 +256,8 @@ TEST_CASE("Bidirectional adapter: RouterTLM 真装配下入向按端口分桶",
     std::vector<std::unique_ptr<cpptlm::ChStreamTargetPort>> resp_in;
     for (std::size_t i = 0; i < N; ++i) {
         req_out.emplace_back(std::make_unique<cpptlm::ChStreamInitiatorPort>("req_out", &eq));
-        req_in.emplace_back(std::make_unique<cpptlm::ChStreamTargetPort>(
-            "req_in", &adapter, &eq, static_cast<unsigned>(i)));
+        req_in.emplace_back(std::make_unique<cpptlm::ChStreamTargetPort>("req_in", &adapter, &eq,
+                                                                         static_cast<unsigned>(i)));
         resp_out.emplace_back(std::make_unique<cpptlm::ChStreamInitiatorPort>("resp_out", &eq));
         resp_in.emplace_back(std::make_unique<cpptlm::ChStreamTargetPort>(
             "resp_in", &adapter, &eq, static_cast<unsigned>(i)));
@@ -328,7 +336,7 @@ TEST_CASE("Bidirectional adapter: `port_idx == N` 越界 ⇒ no-op",
     const auto b = make_flit(999);
     REQUIRE(bundles::serialize_bundle(b, pkt->payload->get_data_ptr(),
                                       pkt->payload->get_data_length()));
-    fx.adapter.process_request_input(pkt, 2);  // == N ⇒ 越界
+    fx.adapter.process_request_input(pkt, 2); // == N ⇒ 越界
     PacketPool::get().release(pkt);
 
     for (std::size_t j = 0; j < 2; ++j)

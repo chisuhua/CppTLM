@@ -20406,3 +20406,66 @@ W5-a L1(格式化 10 文件,独立 commit)
 **⑧ 关联**
 
 **#356**(7 项盘点 · 被本 Entry 修订 3 处)· **#358**(Q1 修复)· **#355**(C2 归档 · KPI 0/3)· **#342/#343**(C1)· **#340**(排序裁决)· **#338**(R-c 的候选真源)· **#332**(口径 ④ MUST-FIX + 三处锚)· **#264**(B3b-2 终态)· **#357**(void —— 从未落盘)· `.rddf/reviews/cep-goal-scope-review-2026-11-12b.md`(architect 二次报告 + oracle 8 条)· `ADR-CEP-00:30/:409-411/:426/:428/:430/:431/:434` · `test/cep_adr_parser.hh:110`(不计数) · `scripts/test/cep_docs_sync_check.sh:156`(历史形态) · `scripts/README.md:25-:61/:65/:66/:72/:73/:78/:81` · `docs/guide/cep-usage.md` §12.8
+
+### Entry #360 — 2026-11-12 [build](**T1 · L1 完成** —— 10 文件 `clang-format` · 语义面零变化已三重验证 · 3 处历史锚漂移如实登记)
+
+**主题**:per 用户「直接开工 T1」= 兑现 Entry #359 ④ 的 T1(CI 红线)。**10 个文件的 `clang-format`**,独立 commit。
+**工具**:`Ubuntu clang-format version 22.1.6` · 命令 = `clang-format -style=file -i`(与 `scripts/build/format.sh` 同一条 ⇒ 判定与修复不脱钩)。
+
+**① 清单 + sha256(格式化前 → 后)**
+
+| # | 文件 | 行数 | sha256 (前 12 → 后 12) |
+|:--:|---|:--:|---|
+| 1 | `src/core/module_factory.cc` | 1211 → 1211 | `b6a0657f6d86` → `ce1e7307b3fe` |
+| 2 | `test/test_cep_bridge_reattach_guard.cc` | 151 → **149** | `4d95fabb57ad` → `da37560ef11a` |
+| 3 | `test/test_cep_schema.cc` | 835 → 835 | `6f085d7d4bda` → `74dc0917c8c4` |
+| 4 | `test/test_cep_simulation_mode_lock.cc` | 341 → **343** | `7c271a77400e` → `9721e690901c` |
+| 5 | `test/test_cep_stub_cache_e2e.cc` | 830 → 830 | `878d3fba3832` → `30009e9e02fa` |
+| 6 | `test/test_cep_stub_cache_emit.cc` | 197 → 197 | `cd7116667200` → `1b09864cbe0b` |
+| 7 | `test/test_cep_ualink_inc.cc` | 883 → **885** | `83445d893f1a` → `c3fd3336ae29` |
+| 8 | `test/test_dual_port_adapter.cc` | 313 → 313 | `4ccfc4a7fe25` → `88c6a060b6b0` |
+| 9 | `test/test_dual_port_inbound_dispatch.cc` | 223 → **236** | `0c3094ea5994` → `3d78df79cfef` |
+| 10 | `test/test_framework_bidirectional_multiport_inbound.cc` | 336 → **344** | `cffa1b3b5179` → `04967f6e1f1d` |
+
+> **行数变化与 Entry #359 ⑤ 的预测量逐条一致**(Δ0 / −2 / 0 / +2 / 0 / 0 / +2 / 0 / +13 / +8)⇒ 预测量本身已被验证。
+
+**② 语义面零变化的三重验证（⛔ 不靠「编译过了」单点）**
+
+| # | 判据 | 结果 |
+|:--:|---|---|
+| **①** | **非空白字符序列比较**(`re.sub(r'\s+','')` 后逐文件比对) | **9/10 完全相同**;第 10 个(`test_cep_simulation_mode_lock.cc`)唯一差异 = clang-format 把超长行拆成**两个相邻字面量** |
+| **②** | **字面量拼接后逐字比较** | `"[cep][simulation-mode] verification_mode "` + `"恰三档(...)且契约文本齐备"` 拼接 == 原单行字面量 ⇒ **完全相同**(空格保留在第一段末尾) |
+| **③** | **文本匹配依赖普查** | `grep 'verification_mode 恰三档'` 在 `.sh`/`.cmake`/`.txt`/`.md` **零命中** ⇒ 无脚本按该行文本匹配测试名(命中 3 处均为 JSON 字段名,与测试名无关) |
+
+> ⇒ **语义零变化**;该拆分只影响「按文本行 grep 测试名」,而该依赖不存在。
+
+**③ 锚漂移(如 Entry #359 ⑤ 所登记 · 现给实证)**
+
+| 对象 | 结论 |
+|---|---|
+| **`src/core/module_factory.cc`**(锚密度最高:30+ 活体 + 16 处 ADR 引用) | **Δ0 零漂移**;diff 仅在 `:827-835`(**行内重排**,9 行 → 9 行);抽样 `:173` / `:264` / `:297` / `:707` **全部同位** ✅ |
+| **`test_cep_simulation_mode_lock.cc`**(Δ+2) | **3 处历史锚漂移 +2**:`:186` / `:194` / `:203` 的原文现落 `:188` / `:196` / `:205`(已实证)。持有方 = `.rddf/reviews/cep-b2-*.md`(3 份)+ `ADR-CEP-06:252/:269` ⇒ **全部不可回改** |
+| 其余 8 文件 | 或被引用的锚全部同位(`test_cep_ualink_inc.cc` 的 `:470/:501/:520` 已在 :520 之后增量),或零引用 |
+
+⇒ **处置**:⛔ **不在 L1 内修** 那 3 处锚(持有方不可改 ⇒ 修不了;且顺手改 ADR/reviews = scope 越界)⇒ **如实登记为已存在的行号锚债**,L1 只是让它显形。
+
+**④ 冻结面复核**
+
+`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` 的 78 条 artifacts 中,**本次 10 文件命中 = 0** ⇒ 不触冻结 hash,`artifact_count` 仍 **78**(无需 `--update`)。
+
+**⑤ 回归(实测)**
+
+| 面 | 结果 |
+|---|---|
+| `bash scripts/build/format.sh --check` | **0 个待格式化**(修前 10 个) |
+| `cmake --build build -j` | ✅ rc=0(1m09s;含核心库 + 9 个测试 TU 重建) |
+| `ctest --test-dir build -j4` | ✅ **170 / 170 passed**(144.83s) |
+| 编译告警 | 仅既有 `stream_adapter_base.hh:64 unused parameter`(与本次无关) |
+
+**⑥ ⛔ 本 Entry 明确不做**
+
+⛔ 不改任何逻辑 / 注释语义(仅空白与换行) · ⛔ 不修 3 处历史锚(持有方不可改) · ⛔ 不顺手格式化清单外的文件 · ⛔ 不改 `format.sh` 的范围或口径 · ⛔ 不改任何 ADR / 冻结件 · ⛔ 不处理 `Entry #359` 的 C3/C4 内容(独立 task)。
+
+**⑦ 关联**
+
+**#359**(T1 的来源 + 行数预测 + 锚漂移登记)· **#274**(L1 首次登记)· **#355**(此前的「9 个」旧数)· `scripts/build/format.sh` · `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` · `.rddf/reviews/cep-b2-acceptance-verdict.md` / `cep-b2-mapping-audit.md` / `cep-b2-pending-batching-verdict.md`(3 处漂移锚的持有方) · `docs/adr/ADR-CEP-06-experiment-protocol.md:252`/`:269`

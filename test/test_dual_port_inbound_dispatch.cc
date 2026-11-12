@@ -39,92 +39,105 @@
 // ============================================================
 namespace {
 
-class MockDualPortModule : public ChStreamModuleBase {
-private:
-    cpptlm::InputStreamAdapter<bundles::CacheReqBundle> pe_req_in_;
-    cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> pe_resp_out_;
-    cpptlm::OutputStreamAdapter<bundles::CacheReqBundle> net_req_out_;
-    cpptlm::InputStreamAdapter<bundles::CacheRespBundle> net_resp_in_;
+    class MockDualPortModule : public ChStreamModuleBase {
+    private:
+        cpptlm::InputStreamAdapter<bundles::CacheReqBundle> pe_req_in_;
+        cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> pe_resp_out_;
+        cpptlm::OutputStreamAdapter<bundles::CacheReqBundle> net_req_out_;
+        cpptlm::InputStreamAdapter<bundles::CacheRespBundle> net_resp_in_;
 
-    cpptlm::StreamAdapterBase* adapter_ = nullptr;
+        cpptlm::StreamAdapterBase* adapter_ = nullptr;
 
-public:
-    MockDualPortModule(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
+    public:
+        MockDualPortModule(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
 
-    std::string get_module_type() const override { return "MockDualPortModule"; }
+        std::string get_module_type() const override {
+            return "MockDualPortModule";
+        }
 
-    void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override { adapter_ = adapter; }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
+            adapter_ = adapter;
+        }
 
-    void tick() override {
-        if (adapter_)
-            adapter_->tick();
+        void tick() override {
+            if (adapter_)
+                adapter_->tick();
+        }
+
+        void do_reset(const ResetConfig&) override {
+            pe_req_in_.reset();
+            pe_resp_out_.reset();
+            net_req_out_.reset();
+            net_resp_in_.reset();
+        }
+
+        // PE 侧
+        cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& pe_req_in() {
+            return pe_req_in_;
+        }
+        cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& pe_resp_out() {
+            return pe_resp_out_;
+        }
+
+        // Network 侧
+        cpptlm::OutputStreamAdapter<bundles::CacheReqBundle>& net_req_out() {
+            return net_req_out_;
+        }
+        cpptlm::InputStreamAdapter<bundles::CacheRespBundle>& net_resp_in() {
+            return net_resp_in_;
+        }
+    };
+
+    using TestDualAdapter =
+        cpptlm::DualPortStreamAdapter<MockDualPortModule, bundles::CacheReqBundle,
+                                      bundles::CacheRespBundle, bundles::CacheReqBundle,
+                                      bundles::CacheRespBundle>;
+
+    /// 构造「双端口适配器 + 两侧目标端口」的最小装配
+    struct DualPortFixture {
+        EventQueue eq;
+        MockDualPortModule mod{"dual_dispatch", &eq};
+        TestDualAdapter adapter{&mod};
+
+        cpptlm::ChStreamInitiatorPort pe_req_out{"pe_req_out", &eq};
+        cpptlm::ChStreamTargetPort pe_resp_in{"pe_resp_in", &adapter, &eq, 0};
+        cpptlm::ChStreamInitiatorPort pe_resp_out{"pe_resp_out", &eq};
+        cpptlm::ChStreamTargetPort pe_req_in{"pe_req_in", &adapter, &eq, 0};
+
+        cpptlm::ChStreamInitiatorPort net_req_out{"net_req_out", &eq};
+        cpptlm::ChStreamTargetPort net_resp_in{"net_resp_in", &adapter, &eq, 1};
+        cpptlm::ChStreamInitiatorPort net_resp_out{"net_resp_out", &eq};
+        cpptlm::ChStreamTargetPort net_req_in{"net_req_in", &adapter, &eq, 1};
+
+        DualPortFixture() {
+            adapter.bind_pe_ports(&pe_req_out, &pe_resp_in, &pe_resp_out, &pe_req_in);
+            adapter.bind_net_ports(&net_req_out, &net_resp_in, &net_resp_out, &net_req_in);
+            mod.set_stream_adapter(&adapter);
+        }
+    };
+
+    /// 经**框架真实入口**(`ChStreamTargetPort::recvReq`)投递一个包
+    /// ⚠️ `recvReq` 内部会把包还给 `PacketPool` ⇒ 调用方**不得**再 release
+    void deliver(cpptlm::ChStreamTargetPort& target, const bundles::CacheRespBundle& payload,
+                 PacketType type) {
+        Packet* pkt = PacketPool::get().acquire();
+        REQUIRE(pkt != nullptr);
+        pkt->payload->set_data_length(sizeof(bundles::CacheRespBundle));
+        pkt->type = type;
+        REQUIRE(bundles::serialize_bundle(payload, pkt->payload->get_data_ptr(),
+                                          pkt->payload->get_data_length()));
+        target.recvReq(pkt);
     }
 
-    void do_reset(const ResetConfig&) override {
-        pe_req_in_.reset();
-        pe_resp_out_.reset();
-        net_req_out_.reset();
-        net_resp_in_.reset();
+    bundles::CacheRespBundle make_resp(std::uint64_t txn, std::uint64_t data) {
+        bundles::CacheRespBundle r;
+        r.transaction_id.write(txn);
+        r.data.write(data);
+        r.is_hit.write(false);
+        r.error_code.write(0);
+        return r;
     }
-
-    // PE 侧
-    cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& pe_req_in() { return pe_req_in_; }
-    cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& pe_resp_out() { return pe_resp_out_; }
-
-    // Network 侧
-    cpptlm::OutputStreamAdapter<bundles::CacheReqBundle>& net_req_out() { return net_req_out_; }
-    cpptlm::InputStreamAdapter<bundles::CacheRespBundle>& net_resp_in() { return net_resp_in_; }
-};
-
-using TestDualAdapter =
-    cpptlm::DualPortStreamAdapter<MockDualPortModule, bundles::CacheReqBundle,
-                                  bundles::CacheRespBundle, bundles::CacheReqBundle,
-                                  bundles::CacheRespBundle>;
-
-/// 构造「双端口适配器 + 两侧目标端口」的最小装配
-struct DualPortFixture {
-    EventQueue eq;
-    MockDualPortModule mod{"dual_dispatch", &eq};
-    TestDualAdapter adapter{&mod};
-
-    cpptlm::ChStreamInitiatorPort pe_req_out{"pe_req_out", &eq};
-    cpptlm::ChStreamTargetPort pe_resp_in{"pe_resp_in", &adapter, &eq, 0};
-    cpptlm::ChStreamInitiatorPort pe_resp_out{"pe_resp_out", &eq};
-    cpptlm::ChStreamTargetPort pe_req_in{"pe_req_in", &adapter, &eq, 0};
-
-    cpptlm::ChStreamInitiatorPort net_req_out{"net_req_out", &eq};
-    cpptlm::ChStreamTargetPort net_resp_in{"net_resp_in", &adapter, &eq, 1};
-    cpptlm::ChStreamInitiatorPort net_resp_out{"net_resp_out", &eq};
-    cpptlm::ChStreamTargetPort net_req_in{"net_req_in", &adapter, &eq, 1};
-
-    DualPortFixture() {
-        adapter.bind_pe_ports(&pe_req_out, &pe_resp_in, &pe_resp_out, &pe_req_in);
-        adapter.bind_net_ports(&net_req_out, &net_resp_in, &net_resp_out, &net_req_in);
-        mod.set_stream_adapter(&adapter);
-    }
-};
-
-/// 经**框架真实入口**(`ChStreamTargetPort::recvReq`)投递一个包
-/// ⚠️ `recvReq` 内部会把包还给 `PacketPool` ⇒ 调用方**不得**再 release
-void deliver(cpptlm::ChStreamTargetPort& target, const bundles::CacheRespBundle& payload,
-             PacketType type) {
-    Packet* pkt = PacketPool::get().acquire();
-    REQUIRE(pkt != nullptr);
-    pkt->payload->set_data_length(sizeof(bundles::CacheRespBundle));
-    pkt->type = type;
-    REQUIRE(bundles::serialize_bundle(payload, pkt->payload->get_data_ptr(),
-                                      pkt->payload->get_data_length()));
-    target.recvReq(pkt);
-}
-
-bundles::CacheRespBundle make_resp(std::uint64_t txn, std::uint64_t data) {
-    bundles::CacheRespBundle r;
-    r.transaction_id.write(txn);
-    r.data.write(data);
-    r.is_hit.write(false);
-    r.error_code.write(0);
-    return r;
-}
 
 } // namespace
 

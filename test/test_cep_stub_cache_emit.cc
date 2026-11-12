@@ -123,11 +123,11 @@ TEST_CASE("E2E-01: E2E 装置产出 `metrics.json` + `simulation_config.json`(�
         if (m.latency.note_complete(s.issue_cycle, s.complete_cycle))
             ++completed_pairs;
     }
-    REQUIRE(completed_pairs > 0u);          // 回程可达 ⇒ 必有完成往返 ⇒ 延迟族非空真
+    REQUIRE(completed_pairs > 0u); // 回程可达 ⇒ 必有完成往返 ⇒ 延迟族非空真
     REQUIRE(m.latency.sample_count() == completed_pairs);
-    REQUIRE(m.latency.audit_balanced());   // 一发一收闭合
+    REQUIRE(m.latency.audit_balanced()); // 一发一收闭合
     REQUIRE(m.latency.underflow() == 0u);
-    REQUIRE(m.latency.p50() > 0u);         // ⛔ 非 0 值空真
+    REQUIRE(m.latency.p50() > 0u); // ⛔ 非 0 值空真
 
     // 实测 5 键
     m.measured.insert("total_cycles");

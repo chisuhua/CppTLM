@@ -336,8 +336,8 @@ TEST_CASE("SCE-09: 拓扑 A 装配 + **出向事务腿**(⛔ 判据不止 instan
     //   读进 PE 侧 ⇒ 真正抵达 wrapper 的 net 侧入向通道。
     REQUIRE(home->counters().completions_sent > 0u);
     REQUIRE(home->counters().completions_suppressed == 0u);
-    REQUIRE(w->counters().net_completions_in > 0u);  // 回程 Completion 抵达 wrapper
-    REQUIRE(w->counters().cpu_responses > 0u);       // 业务响应回到 PE 侧(闭环)
+    REQUIRE(w->counters().net_completions_in > 0u); // 回程 Completion 抵达 wrapper
+    REQUIRE(w->counters().cpu_responses > 0u);      // 业务响应回到 PE 侧(闭环)
 }
 
 TEST_CASE("SCE-10: 拓扑 B 装配 + 桥挂载(三模块同 `bridge_id`)+ 带延迟事务仍抵达对端",

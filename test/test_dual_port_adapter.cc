@@ -24,67 +24,67 @@
 // ============================================================
 namespace {
 
-class MockDualPortModule : public ChStreamModuleBase {
-private:
-    cpptlm::InputStreamAdapter<bundles::CacheReqBundle> pe_req_in_;
-    cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> pe_resp_out_;
-    cpptlm::InputStreamAdapter<bundles::CacheRespBundle> net_resp_in_;
-    cpptlm::OutputStreamAdapter<bundles::CacheReqBundle> net_req_out_;
+    class MockDualPortModule : public ChStreamModuleBase {
+    private:
+        cpptlm::InputStreamAdapter<bundles::CacheReqBundle> pe_req_in_;
+        cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> pe_resp_out_;
+        cpptlm::InputStreamAdapter<bundles::CacheRespBundle> net_resp_in_;
+        cpptlm::OutputStreamAdapter<bundles::CacheReqBundle> net_req_out_;
 
-    cpptlm::StreamAdapterBase* adapter_ = nullptr;
+        cpptlm::StreamAdapterBase* adapter_ = nullptr;
 
-public:
-    MockDualPortModule(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
-    }
+    public:
+        MockDualPortModule(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
 
-    std::string get_module_type() const override {
-        return "MockDualPortModule";
-    }
+        std::string get_module_type() const override {
+            return "MockDualPortModule";
+        }
 
-    void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
-        adapter_ = adapter;
-    }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
+            adapter_ = adapter;
+        }
 
-    void tick() override {
-        if (adapter_)
-            adapter_->tick();
-    }
+        void tick() override {
+            if (adapter_)
+                adapter_->tick();
+        }
 
-    void do_reset(const ResetConfig&) override {
-        pe_req_in_.reset();
-        pe_resp_out_.reset();
-        net_resp_in_.reset();
-        net_req_out_.reset();
-    }
+        void do_reset(const ResetConfig&) override {
+            pe_req_in_.reset();
+            pe_resp_out_.reset();
+            net_resp_in_.reset();
+            net_req_out_.reset();
+        }
 
-    // PE 侧访问器
-    cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& pe_req_in() {
-        return pe_req_in_;
-    }
-    cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& pe_resp_out() {
-        return pe_resp_out_;
-    }
+        // PE 侧访问器
+        cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& pe_req_in() {
+            return pe_req_in_;
+        }
+        cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& pe_resp_out() {
+            return pe_resp_out_;
+        }
 
-    // Network 侧访问器
-    cpptlm::InputStreamAdapter<bundles::CacheRespBundle>& net_resp_in() {
-        return net_resp_in_;
-    }
-    cpptlm::OutputStreamAdapter<bundles::CacheReqBundle>& net_req_out() {
-        return net_req_out_;
-    }
+        // Network 侧访问器
+        cpptlm::InputStreamAdapter<bundles::CacheRespBundle>& net_resp_in() {
+            return net_resp_in_;
+        }
+        cpptlm::OutputStreamAdapter<bundles::CacheReqBundle>& net_req_out() {
+            return net_req_out_;
+        }
 
-    cpptlm::StreamAdapterBase* get_adapter() const {
-        return adapter_;
-    }
-};
+        cpptlm::StreamAdapterBase* get_adapter() const {
+            return adapter_;
+        }
+    };
 
-// ============================================================
-// Adapter type alias for test convenience
-// ============================================================
-using TestDualAdapter =
-    cpptlm::DualPortStreamAdapter<MockDualPortModule, bundles::CacheReqBundle,
-                                  bundles::CacheRespBundle, bundles::CacheReqBundle,
-                                  bundles::CacheRespBundle>;
+    // ============================================================
+    // Adapter type alias for test convenience
+    // ============================================================
+    using TestDualAdapter =
+        cpptlm::DualPortStreamAdapter<MockDualPortModule, bundles::CacheReqBundle,
+                                      bundles::CacheRespBundle, bundles::CacheReqBundle,
+                                      bundles::CacheRespBundle>;
 
 } // namespace
 

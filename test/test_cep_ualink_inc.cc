@@ -644,7 +644,7 @@ TEST_CASE("V6-d: R1-c scope 完备性(插键不在 scope / 绑定 plane 但无 V
     //     **不在** `certificate_scope`(scope 只有 `ualink_fabric`)⇒ 必红。
     {
         auto poisoned = decl;
-        REQUIRE(poisoned.plane_binding.count("chi_rnf") == 0u);  // 确认是**插键**不是改值
+        REQUIRE(poisoned.plane_binding.count("chi_rnf") == 0u); // 确认是**插键**不是改值
         poisoned.plane_binding["chi_rnf"] = "FabricCollectivePlane";
         std::string d;
         REQUIRE(cep::evaluate_shared_mode_certificate(poisoned, snap,
@@ -653,7 +653,7 @@ TEST_CASE("V6-d: R1-c scope 完备性(插键不在 scope / 绑定 plane 但无 V
         REQUIRE(d.rfind(kR1c, 0) == 0);
         // 红因 MUST 含「不在 certificate_scope」⇒ ⛔ 不含「plane 未登记」
         REQUIRE(d.find("certificate_scope") != std::string::npos);
-        REQUIRE(d.find("未在") == std::string::npos);  // s-2 的红因措辞
+        REQUIRE(d.find("未在") == std::string::npos); // s-2 的红因措辞
     }
     // ── 变异② **AC-11**:绑 `FabricCollectivePlane` 的实例**无任何** `vc_binding` ──
     //   ⇒ M-2 **无主体** ⇒ 必红(对称 C-1′ 的「无实例 ⇒ FAIL」)。
@@ -714,7 +714,8 @@ TEST_CASE("V6-d: R1-b / R1-c 在真实 gate 路径可触达(折进 CP-03 行 + �
     //    ⚠️ 结构 = 「遍历 lines 找 VcReservation + detail.find(R1-b) != npos」
     //    ⚠️ 用临时目录写影子文件 ⇒ ⛔ 不碰仓内文件
     {
-        const auto tmp = std::filesystem::temp_directory_path() / ("cpptlm_c2_r1b_gate" + proc_token());
+        const auto tmp =
+            std::filesystem::temp_directory_path() / ("cpptlm_c2_r1b_gate" + proc_token());
         std::filesystem::create_directories(tmp);
         // 读真实 protocol_instances ⇒ 改 mesif.ualink_fabric.vc3 = unordered ⇒ 写影子
         {
@@ -739,7 +740,7 @@ TEST_CASE("V6-d: R1-b / R1-c 在真实 gate 路径可触达(折进 CP-03 行 + �
         p.root = root;
         p.protocol_instances = (tmp / "protocol_instances.json").string();
         const auto rep = cep::run_collective_plane_contract(p);
-        REQUIRE(rep.lines.size() == cep::kContractRuleCount);  // ⛔ 未新增第 7 条
+        REQUIRE(rep.lines.size() == cep::kContractRuleCount); // ⛔ 未新增第 7 条
         bool found = false;
         for (const auto& line : rep.lines) {
             if (line.rule != cep::ContractRule::VcReservation)
@@ -755,7 +756,8 @@ TEST_CASE("V6-d: R1-b / R1-c 在真实 gate 路径可触达(折进 CP-03 行 + �
 
     // ── ③ 变异:影子 `declaration`(chi_rnf 插键)⇒ CP-03 行 MUST FAIL 且含 R1-c ──
     {
-        const auto tmp = std::filesystem::temp_directory_path() / ("cpptlm_c2_r1c_gate" + proc_token());
+        const auto tmp =
+            std::filesystem::temp_directory_path() / ("cpptlm_c2_r1c_gate" + proc_token());
         std::filesystem::create_directories(tmp);
         {
             std::ifstream in(std::string(root) + "/include/tlm/cep/collective_planes.json");

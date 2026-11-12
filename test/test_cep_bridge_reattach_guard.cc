@@ -36,35 +36,34 @@
 
 namespace {
 
-/// 读一份拓扑 config(并把 `cep.protocol_instances` 改成绝对路径 —— 该字段是
-/// **相对路径** ⇒ 装配期按 CWD 解析 ⇒ 须绝对化,per `test_cep_stub_cache_e2e.cc`
-/// 的既有做法)
-nlohmann::json load_topology(const char* file) {
-    const auto path = std::filesystem::path(CPPTLM_SOURCE_DIR) / "configs" / file;
-    std::ifstream in(path);
-    REQUIRE(in.good());
-    nlohmann::json cfg = nlohmann::json::parse(in);
-    cfg["cep"]["protocol_instances"] =
-        (std::filesystem::path(CPPTLM_SOURCE_DIR) / "include" / "tlm" / "cep" /
-         "protocol_instances.json")
-            .string();
-    return cfg;
-}
+    /// 读一份拓扑 config(并把 `cep.protocol_instances` 改成绝对路径 —— 该字段是
+    /// **相对路径** ⇒ 装配期按 CWD 解析 ⇒ 须绝对化,per `test_cep_stub_cache_e2e.cc`
+    /// 的既有做法)
+    nlohmann::json load_topology(const char* file) {
+        const auto path = std::filesystem::path(CPPTLM_SOURCE_DIR) / "configs" / file;
+        std::ifstream in(path);
+        REQUIRE(in.good());
+        nlohmann::json cfg = nlohmann::json::parse(in);
+        cfg["cep"]["protocol_instances"] = (std::filesystem::path(CPPTLM_SOURCE_DIR) / "include" /
+                                            "tlm" / "cep" / "protocol_instances.json")
+                                               .string();
+        return cfg;
+    }
 
-/// 负向变换(与 SCE-12 **同一变换形态**):把 `w` 同时挂进**第二条** bridge entry
-nlohmann::json with_second_entry_repeating_w(nlohmann::json cfg) {
-    cfg["cep"]["bridges"].push_back({{"name", "cohif_noc_2"},
-                                     {"protocol_instance", "chi_rnf"},
-                                     {"bridge_id", 8},
-                                     {"modules", nlohmann::json::array({"w", "chi"})}});
-    return cfg;
-}
+    /// 负向变换(与 SCE-12 **同一变换形态**):把 `w` 同时挂进**第二条** bridge entry
+    nlohmann::json with_second_entry_repeating_w(nlohmann::json cfg) {
+        cfg["cep"]["bridges"].push_back({{"name", "cohif_noc_2"},
+                                         {"protocol_instance", "chi_rnf"},
+                                         {"bridge_id", 8},
+                                         {"modules", nlohmann::json::array({"w", "chi"})}});
+        return cfg;
+    }
 
-/// 负向变换(子情形 ②):**同一条** entry 的 `modules` 里重复列 `w`
-nlohmann::json with_single_entry_repeating_w(nlohmann::json cfg) {
-    cfg["cep"]["bridges"][0]["modules"] = nlohmann::json::array({"w", "chi", "w"});
-    return cfg;
-}
+    /// 负向变换(子情形 ②):**同一条** entry 的 `modules` 里重复列 `w`
+    nlohmann::json with_single_entry_repeating_w(nlohmann::json cfg) {
+        cfg["cep"]["bridges"][0]["modules"] = nlohmann::json::array({"w", "chi", "w"});
+        return cfg;
+    }
 
 } // namespace
 
@@ -88,9 +87,8 @@ TEST_CASE("CEP bridge reattach guard: 跨 entry 重叠 ⇒ instantiateAll 返回
     {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(
-                    with_second_entry_repeating_w(load_topology("cep_chi_rnf_e2e_b.json"))) ==
-                false);
+        REQUIRE(factory.instantiateAll(with_second_entry_repeating_w(
+                    load_topology("cep_chi_rnf_e2e_b.json"))) == false);
     }
 }
 
@@ -102,8 +100,8 @@ TEST_CASE("CEP bridge reattach guard: 单 entry 内重复 ⇒ instantiateAll 返
 
     EventQueue eq;
     ModuleFactory factory(&eq);
-    REQUIRE(factory.instantiateAll(with_single_entry_repeating_w(
-                load_topology("cep_chi_rnf_e2e_b.json"))) == false);
+    REQUIRE(factory.instantiateAll(
+                with_single_entry_repeating_w(load_topology("cep_chi_rnf_e2e_b.json"))) == false);
 }
 
 // ── 一致性:装配路径与装配闸对同一 config 结论**一致** ──────────────────

@@ -827,9 +827,9 @@ bool ModuleFactory::instantiateAll(const json& config) {
                     const auto conflicts = tlm::cep::find_bridge_module_conflicts(bsec);
                     if (!conflicts.empty()) {
                         for (const auto& [mod_name, n] : conflicts) {
-                            std::fprintf(stderr, "[ModuleFactory] %s\n",
-                                         tlm::cep::bridge_module_conflict_message(mod_name, n)
-                                             .c_str());
+                            std::fprintf(
+                                stderr, "[ModuleFactory] %s\n",
+                                tlm::cep::bridge_module_conflict_message(mod_name, n).c_str());
                         }
                         std::fprintf(stderr,
                                      "[ModuleFactory] 协议桥装配失败(同一模块属多个 bridge entry"

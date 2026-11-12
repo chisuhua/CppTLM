@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-12T14:30:00Z",
+  "updated_at": "2026-11-12T17:20:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-11T23:55:00Z",
-      "by": "user",
-      "reason": "用户选 A 方案(仅 14 号移位 + 2 处标注修正)⇒ Phase 1 planner:Entry #341 授权 + .rddf/improvements + .rddf/plans 的 2 处路径改写。"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-11T23:58:00Z",
-      "by": "user",
-      "reason": "Phase 2 architect:14 号移位 + cep/parity-baseline.md 头部 + README + 07 号(8篇→9篇 + 索引C) + ADR-CEP-11 追加 SU。"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-12T00:05:00Z",
-      "by": "user",
-      "reason": "Phase 3 builder:AGENTS.md 标注修正 + 14 文件路径改写(含 2 处代码注释⇒须重编译) + 五步链(冻结集 77→78)。"
-    },
     {
       "role": "planner",
       "at": "2026-11-12T01:00:00Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-12T14:30:00Z",
       "by": "user",
       "reason": "用户指令「现在修 Q1（validate_topology）」⇒ 切 builder 执行 W5-c。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-12T16:00:00Z",
+      "by": "user",
+      "reason": "用户口令「切 architect 对完成和后续任务进行梳理」⇒ 目标/理由/已完成/后续/当前任务复盘。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-12T16:40:00Z",
+      "by": "user",
+      "reason": "用户口令「切 planner 对后续还有哪些任务内容都梳理一遍，再给出后续任务内容和实施路径」。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-12T17:20:00Z",
+      "by": "user",
+      "reason": "用户口令「直接开工 T1」⇒ 切 builder 执行 L1（10 文件 clang-format）。"
     }
   ],
   "auto_switch_window": null
