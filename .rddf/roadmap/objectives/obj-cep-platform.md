@@ -1465,7 +1465,7 @@ W5-a  L1 (格式化 10 文件)          ← ⬜ 未做 · 零槽位 · 独立 co
   │     ├─▶ W5-c  Q1 (validate_topology)  ← ✅ 已修复(#358 · commit 26a827c9)· 零槽位
   │     └─▶ W5-d  Q2 残(README 自述数字 + 三表划分)  ← ⬜ 排在 W7 之后(C3 加闸会让数字再变)
   │
-  └─▶ W6  C3 立项 ──▶ 实施 ──▶ 五步链① ──▶ 归档 ──▶ 五步链② (条件性)
+  └─▶ W6  C3 立项 ──▶ 实施 ──▶ 五步链① ──▶ 归档 ──▶ 五步链② (无条件) ← 🔄 实施中(2026-11-12 · Entry #363 授权)
         │
         └─▶ W7  C4 立项 ──▶ 实施 ──▶ 五步链
 ```
@@ -20611,3 +20611,47 @@ metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state
 **⑥ 关联**
 
 **#361**(D-6~D-9 + C3a/C3b 切片)· **#359**(D-1~D-5)· **#355**(C2 · 五步链先例)· `ADR-CEP-00:398`(⛔ 不新建 ADR)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md` §五 / §七 · `scripts/README.md:78`/`:81`(守门表自述数字 · D-5 的落点)· `AGENTS.md:217`/`:231`/`:618`(以 `ls` 为准)· `~/.agents/skills/_lib` ⇒ `/workspace/main/rdd-workflow/_lib`
+
+### Entry #363 — 2026-11-12 [build](**C3 实施开工授权** —— `cpptlm-cep-invariant-gate-teeth` 进入实施期;**同时是冻结面五步链的 `--authorized-by` 依据**)
+
+**主题**:per 用户「同意你的建议，请推进」+「启动 C3 实施」⇒ 执行 `tasks.md` 的 **A0 授权门(G1)** —— 授权 `cpptlm-cep-invariant-gate-teeth` 进入实施期。**⛔ 本 Entry 不含任何实施代码**。
+
+> ⚠️ **授权号 = `Entry #363`** —— 同时充当 **A8.3 / A11.3** 两次 `--update --authorized-by` 的授权依据(C1 先例:Entry #342 =「C1 开工授权 + 实施回执」;C2 先例:Entry #347 =「C2 实施开工授权 + 五步链授权依据」)。
+> ⚠️ **⛔ 不是 `#361`** —— `#361` 是**设计裁决**(D-6~D-9),⛔ 不是实施授权。
+
+**① 授权范围**
+
+| 面 | 授权内容 |
+|---|---|
+| **实施** | `openspec/changes/cpptlm-cep-invariant-gate-teeth/` 的 **A1 ~ A11** 全部任务 |
+| **新脚本** | `scripts/test/cep_decision_block_check.{sh,py}`(新闸)· `scripts/test/cep_test_shadow.sh`(**helper · 非闸 · 不注册 ctest**) |
+| **新数据** | `test/cep_decision_block_snapshot.json`(22 键 + `total`=125 · 闸**只读**) |
+| **既有闸** | `scripts/test/cep_adr_structural_check.sh` 的 `shadow_reset` **抽取**到 helper(⛔ **行为零变化**,回归须绿) |
+| **冻结面(2 处)** | `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` · `docs/architecture/07-coherence-exploration-platform.md` ⇒ ⛔ **只允许末尾追加 `## Status Update`**(`07 号` 的 SU **必须插在 `:569` 索引之前**) |
+| **登记** | `test/CMakeLists.txt`(+1 ctest ⇒ 170→171)· `scripts/README.md`(守门表 +1 行) |
+| **契约** | `openspec/changes/cpptlm-cep-invariant-gate-teeth/specs/cep-invariant-gate/spec.md` 的 delta;⛔ **不改** main spec(归档时才合并 ⇒ 触发**第二次** `--update`) |
+| **⛔ 冻结面外** | **零** ADR 正文改动 · **零** `test/cep_adr_parser.hh` 改动 · **零** `cep_docs_sync_check.sh` 正则改动 · **零**声明数据改动 · **零**既有 fixture 变异形态改动 |
+
+**② A0 门四项的实测回执**
+
+| # | 任务 | 实测 |
+|:--:|---|---|
+| **A0.1** | 授权 Entry | ✅ 本条(**Entry #363**)—— 授权号落定;`tasks.md` A6.1 / A8.1 / A11.3 的 `--authorized-by` 均指向它 |
+| **A0.2** | P0a 载荷 | ✅ `.rddf/improvements/cpptlm-cep-invariant-gate-teeth.md`(HARD-GATE **rc=0**)· `.rddf/state/.planner-handoff.json`(canonical 写者)· 台账 **Entry #362** |
+| **A0.3** | **D-1 四步口径**基线 | ✅ 22 份**逐份**计数与快照值全等,合计 **125**;**三口径**(全文件 / 先剥围栏取 §2 / 先取范围剥围栏)**逐份相等**;显式红 **0**;**危险围栏 0** ⇒ 新增的围栏危险红**基线绿**,不产生历史债 |
+| **A0.4** | 立项 | ✅ `openspec/changes/cpptlm-cep-invariant-gate-teeth/{proposal,design,tasks}.md` + `specs/cep-invariant-gate/spec.md`;`openspec validate` ⇒ **valid**(rc=0);`openspec status` ⇒ **4/4 artifacts**;KPI **0/3 → 1/3** |
+
+**③ §13.9 同步(W6 → 实施中)**
+
+| 行 | 变更 |
+|:--:|---|
+| `W6  C3 立项 ──▶ 实施 ──▶ 五步链① ──▶ 归档 ──▶ 五步链② (条件性)` | ⇒ `… 五步链② (无条件) ← 🔄 实施中(2026-11-12 · Entry #363 授权)` |
+| **「条件性」→「无条件」** | ⚠️ **事实订正**(per **Entry #361 ④ F**):`FROZEN_GLOBS` 含 `openspec/specs/cep-*/spec.md` **全量 glob** ⇒ 归档**必然**触 ⇒ 第二次 `--update` 是**无条件**的;本 change 的 delta 落在 `cep-invariant-gate` ⇒ 归档后新 main spec 入 glob ⇒ `artifact_count` **78 → 79** |
+
+**④ ⛔ 本 Entry 明确不做**
+
+⛔ 不含任何实施代码 · ⛔ 不改任何 ADR 正文 · ⛔ 不改 `ADR-CEP-00` / `07 号`(C3-C / C3-D 由后续 Entry 落)· ⛔ 不改台账 §13.1~§13.8 · ⛔ 不改 B3b-2 计数 · ⛔ 不动 C4 · ⛔ 不做 T3(Q2 残)· ⛔ 不 commit 实施代码(实施 commit 随 C3a 落)。
+
+**⑤ 关联**
+
+**#362**(P0a 落账 + 2 处实测订正 + 写者偏离登记)· **#361**(D-6~D-9 + C3a/C3b 切片 + metis 12 条)· **#359**(D-1~D-5)· **#347**(C2 开工授权先例)· **#342**(C1 开工授权先例)· `openspec/changes/cpptlm-cep-invariant-gate-teeth/`(proposal / design / tasks / delta)· `.rddf/improvements/cpptlm-cep-invariant-gate-teeth.md`(22 条 AC)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `07 号:569`(索引)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)
