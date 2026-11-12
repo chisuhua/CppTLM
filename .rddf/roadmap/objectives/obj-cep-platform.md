@@ -20567,6 +20567,54 @@ metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state
 
 **#360**(T1)· **#359**(D-1~D-5)· **#338**(R-c 授权)· **#355**(C2 · 五步链先例)· **#169**(拆分登记)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`(architect 三次 + oracle 4 条)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `:409-411`(② 三行)· `:415`(D1 四动作)· `:434`(R-c 缺口)· `07 号:569`(索引)· `:501`(旧规格)· `scripts/test/cep_adr_structural_check.sh:52-57`(shadow_reset)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)· `test/cep_adr_parser.hh:110`/`:169-173`/`:250`
 
+### Entry #368 — 2026-11-12 [build](**C3 归档终态** —— ✅ 已完成归档语义 · 第二次五步链全绿 · `artifact_count` **78 → 79** · 新 main spec **strict-valid**;**D1 槽位已释放 ⇒ C4 可立项**)
+
+**主题**:C3-F(A11 归档)**完成** —— delta 并入 main spec ⇒ **无条件**第二次 `--update` ⇒ 冻结集 **78 → 79**;`openspec list` 归零 ⇒ **D1 槽位释放**。
+
+**① 归档终态回执**
+
+| 项 | 实测 |
+|---|---|
+| 归档语义 | ✅ **已完成归档**语义(默认;⛔ **不用** `--skip-specs` —— 能力确实落地)⇒ 归档件 `openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/`(**force-add 入库**) |
+| 契约合并 | `cep-invariant-gate`:**create** ⇒ `openspec/specs/cep-invariant-gate/spec.md`(**+ 1 Requirement / 7 个 Scenario**) |
+| 第二次五步链 | 拍 1 授权(**Entry #367**)→ 拍 2 产物 commit(`3063d06b`,**先于** `--update`)→ 拍 3 `--update --authorized-by "Entry #367"` ⇒ 清单 **79 个产物**· `frozen_at_commit` = `3063d06b8af3` → 拍 4 清单 commit → 拍 5 无参复验 **rc=0** |
+| **artifact_count** | **78 → 79** ⇒ 新 main spec 入 `openspec/specs/cep-*/spec.md` glob ⇒ **必然触**(per **Entry #361 ④ F** 的「**无条件**」) |
+| 归档后「预期双红」 | ✅ **已闭合**:「新增未登记的冻结范围内产物: `openspec/specs/cep-invariant-gate/spec.md`」⇒ 第二次 `--update` 后 `cep_freeze_check` + `cep_docs_sync_check` 双 **rc=0** |
+| KPI | `openspec list --json` = **0 active** ⇒ Proposed **1/3 → 0/3**(同步 **7 处**活文档当前态,per **Entry #367 ③**) |
+
+**② ⚠️ 一处归档后必补的项:新 main spec 的 `## Purpose` 占位**
+
+`openspec archive` 为**新建** capability 自动写入的 Purpose = 「TBD - created by archiving change … Update Purpose after archive.」⇒ 是**占位句**,⛔ 不是该 capability 的用途陈述。
+⇒ **补写真 Purpose**(与归档 delta **同批**补,保证「源」与「产物」一致)⇒ `openspec validate cep-invariant-gate --type spec --strict` ⇒ **rc=0**(✅ **Specification 'cep-invariant-gate' is valid**)。
+
+> ⚠️ **口径澄清**:该 main spec **在**冻结集 ⇒ 补写改动了冻结产物 ⇒ **第三次 `--update`**(授权 = 本 Entry)重算其 hash;`artifact_count` **仍 = 79**(⛔ 无新增件,只改 hash)。
+> 📌 **全库基线对照**:实测 `openspec validate --specs --strict` 在**改动前**即 **37 passed / 87 failed(124 items)** ⇒ 全库 strict 大面积不达标是**既有状态**,⛔ 非本 change 引入;但**本 change 新建的** capability 已做到 strict-valid。
+
+**③ 验收态(交 verifier)**
+
+| 面 | 结果 |
+|---|---|
+| 新闸自测 | ✅ **16/16**(基线 + R-d 4×2 + R-c 3×2 + 双闸并验) |
+| `ctest --test-dir build -j4` | ✅ **171/171**(修 `cep_doc_ref_check` 后复跑) |
+| **38 个** `cep_*.sh` 闸 | ✅ **38/38 rc=0** |
+| `cep_freeze_check.sh`(无参) | ✅ **rc=0**(79 产物 hash 全一致 + provenance 自检通过) |
+| `cep_docs_sync_check.sh --strict` | ✅ **rc=0**(KPI baseline **0/3** 一致) |
+| `agents_md_lint.py` · `format.sh --check` | ✅ **rc=0** |
+| `openspec validate <change>` / `--specs`(本 capability) | ✅ **rc=0** |
+
+**④ D1 槽位**
+
+⇒ 归档后 active = **0** ⇒ **D1 槽位已释放** ⇒ **C4**(MUST-FIX-1/2)现在可立项(per **Entry #355 A9.4** 的 C2 同型结论 + §13.9 W7 行)。
+⇒ ⛔ **T3**(Q2 残 / README 自述数字 + 三表划分说明)**仍排在 C4 之后**(per **Entry #359 ④** 的硬顺序:C3 加闸会让守门表数字再变 ⇒ 排前面必做两遍)。
+
+**⑤ ⛔ 本 Entry 明确不做**
+
+⛔ 不宣布 C3「验收通过」—— **由 verifier 角色逐条验 AC-1 ~ AC-22**并出报告(per 审查配对:builder 的产出由 verifier 验)· ⛔ 不立项 C4 · ⛔ 不做 T3 · ⛔ 不改任何 ADR 正文 · ⛔ 不新增裁决。
+
+**⑥ 关联**
+
+**#367**(归档授权 + 第二次五步链 + KPI 回填)· **#366**(闸侧占位路径归一)· **#365**(C3b + 第一次五步链)· **#364**(C3a)· **#363**(C3 开工授权)· **#361**(C3a/C3b 切片 + metis 12 条)· **#359**(D-1~D-5 + 任务全量清单)· **#355**(C2 归档终态 · KPI 回填 + 槽位释放先例)· **#354**(C2 归档授权)· change `cpptlm-cep-invariant-gate-teeth`(归档件)· `openspec/specs/cep-invariant-gate/spec.md` · `scripts/test/cep_decision_block_check.{sh,py}` · `scripts/test/cep_test_shadow.sh` · `test/cep_decision_block_snapshot.json`
+
 ### Entry #367 — 2026-11-12 [build](**C3 归档授权** —— `cpptlm-cep-invariant-gate-teeth` 归档(✅ 已完成归档语义)+ **第二次五步链授权**;KPI **1/3 → 0/3**)
 
 **主题**:C3 实施完成后执行 **A11 归档(M6)** —— delta 并入 main spec ⇒ **无条件**第二次 `--update` ⇒ `artifact_count` **78 → 79**。**⚠️ 本 Entry 是第二次五步链的 `--authorized-by` 依据**(per **C2 先例** Entry #354 =「归档授权 + 第二次五步链」/ #355 =「归档终态」)。

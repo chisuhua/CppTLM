@@ -1,7 +1,22 @@
 # cep-invariant-gate Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-invariant-gate-teeth. Update Purpose after archive.
+
+CEP 治理线的**机制机器化**能力:把 `ADR-CEP-00` SU 2026-11-11 §⑤ 自认的两项「有登记、无牙齿」残留
+—— **R-c**(「一决策一文档化」残余登记 + 3 条触发条件**无机器检查**)与 **R-d**(决策块计数口径
+**三个互不相等的实现**)—— 落为**有牙齿的机器判据**,使「残留被静默删除」「口径被漂移」两类
+**静默失效**在提交前即报红。
+
+判据由**单一闸**承载(`scripts/test/cep_decision_block_check.{sh,py}`),含两个**独立段**:
+**R-d 段**(决策块计数快照;期望值 = **闸外快照**)与 **R-c 段**(双向对账;期望值 = **闸内源码常量**)。
+两段**互不耦合**(R-c ⛔ 不用决策块数);每条判据均配**决定性变异**(破坏 ⇒ 按**固定签名**红 ⇒ 还原 ⇒ 绿),
+且影子树机制由**共享 helper**(`scripts/test/cep_test_shadow.sh`)承载 ⇒ ⛔ 不存在第二份实现。
+
+> **演进方式**:本 spec 经由 OpenSpec delta(**ADDED / MODIFIED / REMOVED / RENAMED**)演进,**不直接改写**本文件
+> **归档前形态**(被评审与冻结的对象):`openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/specs/cep-invariant-gate/spec.md`
+> **规范载体**:决策块计数口径 = `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` 的 `## Status Update 2026-11-12`;
+> **canonical 实现** = 本闸的 Python 实现(`ADR-CEP-00:431` 的「标题口径 4」= 其文档镜像)
+
 
 ## Requirements
 
