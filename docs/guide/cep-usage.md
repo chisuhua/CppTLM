@@ -190,15 +190,20 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 | **ADR 归因**(18 条) | `condition_unmet` 2 · `carrier_buildable_id_blocked` 10 · `carrier_present_id_absent` 2 · `doc_layer_manual_review` 4 | `test/cep_adr_structural_deferrals.json` | 见逐条 `disposition` | **建 id 架构性不可行** ⇒ 归类收敛(per Entry #326/#331);⛔ 不新建 id |
 | **口径 ④ 实施轮** | MUST-FIX-1 / MUST-FIX-2 | 台账 Entry #332 ⑧ | **裁决后必须先做**(⛔ **不受 ratify 门阻塞** —— MUST-FIX-1 是 Entry #332 ① 的事实订正,MUST-FIX-2 是禁令作用域重裁) | 随**口径 ④ 实施轮**(新 SU 落地时)执行;⚠️ **重裁落地前 §12.7 禁写 #3 按绝对禁令执行** |
 | | MUST-FIX-3 / MUST-FIX-4 | 台账 Entry #332 ⑧ | 待 **用户 ratify** / 归档形态定义 | ratify 后方可执行 |
-| **闸强度缺口** | `cep_b3b2_deferral_check.sh` 的族名校验强度缺口(grep `$DECL` **自身** ⇒ 恒真;缺集合覆盖 + 逐族锚校验) | 同脚本 + 台账 Entry #332 ⑫ SF-1 | backlog | 独立 change + 决定性变异(某族同时列入两侧 ⇒ 必红) |
-| **守门软点** | `cep_b4_observation_keys_check.sh` 自合成 `trace.h5` | 同脚本 + 本节 **§12.4** 尾注 | backlog | 见 **§12.4** 尾注 |
-| **登记处不完整** | 闸清单的登记处互不一致且缺项(实测 `cep_index_position_check.sh` 与 `cep_e2e_reconcile_check.sh` **均未**登记;`AGENTS.md` 写「25 个」⇒ 实为 35);索引位置闸**不校验索引 A 标题计数**(曾 47→48→49 静默漂移) | 三处登记文档 + `scripts/test/cep_index_position_check.sh` | backlog | 独立 change 补齐登记 + 给索引闸加「标题计数 == 行数」断言 |
-| **工具 backlog** | 索引生成器**不在仓内** ⇒ 索引靠手工同步 | `07 号` §末 文档索引 | backlog | 落 `scripts/` |
+| ~~**闸强度缺口**~~ | ✅ **已闭合 2026-11-12**(per 台账 Entry #342)—— `cep_b3b2_deferral_check.sh` 的恒真 grep 段(grep `$DECL` **自身**)已删,改为**集合覆盖 + 逐族锚校验**;⛔ 本表状态判定以**载体文件与台账**为准 | 同脚本 | ✅ 已闭合 | 决定性变异:删 1 族 / 同族加第 2 条 ⇒ 必红 |
+| ~~**守门软点**~~ | ✅ **已闭合 2026-11-12**(per 台账 Entry #342)—— `cep_b4_observation_keys_check.sh` 的自合成 `trace.h5` 已加 `[synthetic-fixture]` **显式标注**且 exit 0 ⇒ 强度可被 grep 观测,⛔ 不欺 | 同脚本 + 本节 **§12.4** 尾注 | ✅ 已闭合 | 闸头注释写明「本闸 = 文件级」 |
+| ~~**登记处不完整**~~ | ✅ **已闭合 2026-11-12**(per 台账 Entry #342)—— `cep_index_position_check.sh` / `cep_e2e_reconcile_check.sh` 已登记进 `scripts/README.md` 守门表;`AGENTS.md` 的闸数已改为「以 `ls scripts/test/cep_*.sh` 为准」;索引位置闸已强化为**三合一**(实际 `## ` 数 == 自述 == 表行数 + 行号逐行 + 标题覆盖) | 三处登记文档 + `scripts/test/cep_index_position_check.sh` | backlog | 独立 change 补齐登记 + 给索引闸加「标题计数 == 行数」断言 |
+| ~~**工具 backlog**~~ | ✅ **已闭合 2026-11-12**(per 台账 Entry #342)—— 索引生成器已落仓 `scripts/cep/generate_doc_index.py`(连跑 2 次逐字相同 ⇒ 幂等);索引 A 28 行 + 索引 B 15 行全量 + 行号实测 | `07 号` §末 文档索引 | ✅ 已闭合 | 对账闸 `cep_index_position_check.sh`(ctest 注册) |
 | **范围外既有状态** | 非 CEP 线归档件 delta 无对应 main spec | `openspec/changes/archive/` | — | ⛔ **不属 CEP 线** ⇒ 不影响 `§8.3` ①;**明细见台账 Entry #332 ⑫ SF-4**(⛔ 计数随归档增长 ⇒ 本节不复述数字) |
 
 > ⚠️ **本清单不含**下列两项 —— 二者的**状态判据不在本清单**,处置见各自出处:
 > - **「全绿 run」缺口**(SU · 十五 ①)—— ⚠️ **至今未闭合**:SU · 十六 ① 只闭合了「回程腿在拓扑级不可达」这个**子项**,并逐字声明「**仍不承载全绿 run**」(IC3 仍 ⚪ 不适用)⇒ 「全绿未达成」结论不变;
 > - **装配闸未挂 `validate_topology` CLI 的不对称**(SU · 十七 ② 末条)—— 已登记为 backlog。
+>   ⚠️ **口径澄清(2026-11-12,per 台账 Entry #358)**:该「不对称」指 **CLI 未挂 IAG 闸族**
+>   ⇒ `instantiateAll` 与 CLI 对同一 config 的结论**可能不一致** —— **⛔ 仍未闭合**。
+>   ⛔ **勿与本轮 Q1 修复的事项混淆**:Q1 修的是「**组合 target 引用已删除文件 ⇒ 整条 target
+>   跑不完 ⇒ 其后 4 条拓扑校验 + 装配闸 CLI 挂点全部从未执行**」(静默 20 天)⇒ 该项**已闭合**;
+>   两者是**不同**的缺陷(前者 = 挂点未执行;后者 = 挂点已执行但判据族不全)。
 
 ---
 

@@ -208,13 +208,13 @@ examples/                # C++ example_*.cc + Python demo_*.py
 cpptlm/                  # Python 库 (pyproject.toml): cli/topo/config/simulation/analysis
 
 openspec/                # 变更提案工作流 (changes/<name>/{proposal.md,specs/,tasks.md})
-  changes/              # 实际 proposals (当前 1 active: T3 映射锚点普查; 122 份已归档于 changes/archive/)
-  specs/                # main specs (116 份: cep-* 30 + 其他 86)
+  changes/              # 实际 proposals (当前 0 active; 136 份已归档于 changes/archive/)
+  specs/                # main specs (123 份: cep-* 37 + 其他 86)
 
 scripts/                 # 工具脚本 (详见 scripts/README.md)
   build/                # 构建 + 格式化 (build.sh / build_ptx_emu.sh / format.sh)
   test/                 # 测试 + 守门脚本 (docs_sync_check.sh + agents_md_lint.py
-                        #   + 35 个 cep_*.sh 契约闸 + 17 个 cep_* probe .cc)
+                        #   + cep_*.sh 契约闸（数量以 `ls scripts/test/cep_*.sh` 为准）+ 17 个 cep_* probe .cc)
   topology/ pipeline/ stats/ cep/    # 拓扑 / 流水线 / 统计 / CEP 辅助
 
 external/                # git submodule (CppHDL, json, PTX-EMU 等)
@@ -228,11 +228,11 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 |------|------|
 | **CEP 治理宪章 + 真源锚点** | `docs/adr/ADR-CEP-00-platform-charter-and-governance.md`（跨仓归口 + 准入门槛）+ `docs/adr/ADR-CEP-00A-real-source-anchor-map.md`（**引用任何 CEP 章节前必查该表**，禁凭记忆写节号） |
 | **CEP 实现层** | `include/tlm/cep/`（43 个 header-only 文件：protocol engine / adapter / state spec / JSON schema） |
-| **CEP 契约守门脚本** | `scripts/test/cep_*.sh`（35 个 shell 闸：冻结面校验 / 实验运行器 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture；另有 17 个 `cep_*_probe.cc` 编译探针） |
+| **CEP 契约守门脚本** | `scripts/test/cep_*.sh`（shell 闸，数量以 `ls scripts/test/cep_*.sh` 为准：冻结面校验 / 实验运行器 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture；另有 17 个 `cep_*_probe.cc` 编译探针） |
 | **CEP 契约一致性** | `scripts/test/cep_docs_sync_check.sh`（22 份 ADR 的不变量 ↔ owner ADR 实际定义条数一致）+ `scripts/test/cep_doc_ref_check.sh`（对外文档引用节号校验） |
 | **CEP 实验 4 件套** | `scripts/test/cep_experiment_run.sh`（H2/H3/H4/H6 产出与契约校验）+ `scripts/test/cep_freeze_check.sh`（产物冻结先于解读） |
 | **CEP 真实 IP 对齐** | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`（ArchForge 接口对齐清单，§6 C-4 / §7 漂移检测） |
-| **CEP 开放规格** | `openspec/specs/cep-*/`（37 份 main spec）+ `openspec/changes/archive/`（132 份已归档 change） |
+| **CEP 开放规格** | `openspec/specs/cep-*/`（37 份 main spec）+ `openspec/changes/archive/`（136 份已归档 change） |
 | **CEP 测试** | `test/test_cep_*.cc`（标签 `[cep]`，规模最大的测试集） |
 
 ### ★ PCIe EP 微架构 (2026-2027 主体)
@@ -405,7 +405,11 @@ python3 examples/demo_pcie_full_e2e.py       # PCIe EP ↔ Host demo
 ./scripts/test/docs_sync_check.sh --strict
 cat docs/docs_audit_report.md
 
-# 拓扑验证（CMake target）
+# 拓扑验证（CMake target）—— 4 条拓扑校验 + CEP 装配闸 CLI 挂点
+# ⚠️ 2026-11-12(per 台账 Entry #358):该 target 此前首条命令引用**已被物理删除**的
+#    config ⇒ 整条 target 跑不完 ⇒ 其后所有命令(含装配闸挂点)**静默 20 天从未执行**。
+#    修法 = 组合 target 的 config 清单从**单一真源**派生 + 新增对账闸
+#    `scripts/test/cep_validate_topology_reconcile_check.sh`(ctest 注册)。
 cmake --build build --target validate_topology
 ```
 
@@ -610,10 +614,10 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | **治理** | `ADR-CEP-00`（跨仓归口 + 准入门槛）+ `ADR-CEP-00A`（真源章节锚点表） |
 | **ADR** | 22 份 `ADR-CEP-*`（fabric / coherence / protocol / experiment / ownership 各域） |
 | **实现** | `include/tlm/cep/` 43 个 header-only 文件 + `test/test_cep_*.cc` |
-| **OpenSpec** | 37 份 `cep-*` main spec；**0 active** change；132 份已归档 change |
-| **守门** | `scripts/test/cep_*.sh` 35 个契约闸 + 17 个 `.cc` 编译探针（冻结面 / 实验 4 件套 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture） |
+| **OpenSpec** | 37 份 `cep-*` main spec；**0 active** change；136 份已归档 change |
+| **守门** | `scripts/test/cep_*.sh` 契约闸（数量以 `ls scripts/test/cep_*.sh` 为准）+ 17 个 `.cc` 编译探针（冻结面 / 实验 4 件套 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture） |
 | **测试** | `[cep]` —— 规模最大的测试集 |
-| **状态** | 队列 #3~#14 已全部归档（2026-10-26 ~ 2026-11-04）; 当前 1 个 active change（T3 映射锚点普查,per Entry #241） |
+| **状态** | 队列 #3~#14 已全部归档（2026-10-26 ~ 2026-11-04）; 当前 0 个 active change |
 
 ### ★ PCIe EP 微架构 (2026-2027, 7 阶段全部交付)
 

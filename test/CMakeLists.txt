@@ -558,6 +558,16 @@ add_test(NAME cep_archforge_alignment_check
 set_tests_properties(cep_archforge_alignment_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# `validate_topology` target 的对账闸(per 台账 Entry #358)。
+# ⚠️ 该 target 此前首条命令引用**已被物理删除**的 config ⇒ 整条 target 跑不完 ⇒
+#    其后 4 条拓扑校验 + CEP 装配闸 CLI 挂点**全部从未执行**(静默 20 天)。
+#    ⛔ ctest 侧的 `cep_channel_dependency_gate` 用例**独立注册** ⇒ 即使挂点消失
+#    它仍绿 ⇒ 本闸是把该失效**变可见**的唯一手段。
+add_test(NAME cep_validate_topology_reconcile_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_validate_topology_reconcile_check.sh)
+set_tests_properties(cep_validate_topology_reconcile_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # ArchForge 协议实例声明 ↔ 本仓 schema/fabric 的**对齐检查**(放行判据 C-4 的机器化)
 # —— ArchForge 仓不在本环境时该检查**优雅跳过**(不视为失败;但输出标 [SKIP],
 #    与「跑过」可区分 —— 判据 C-4 的机器化不应被一个跳过态当作已验证)

@@ -1449,7 +1449,7 @@ P4 登记项(非实施轨) ─────────────────�
 | **Q3** | **台账 §13.1 的 C3 冻结面登记错误**(该行写「冻结面 = 无」;实测 R-d 修法要改 `ADR-CEP-00:428` 而该文件 ∈ M1 冻结集) | planner | 追加 Entry 声明「C3 冻结面 = 是」+ `git diff` 对 §13.1 段 **0 行差** | **§13.x 快照不可回改** ⇒ 只能追加 | ❌ 否 |
 | **Q2** | **登记处 / 数字陈旧**:手册 §12.8 **4 行** stale(C1 已闭合 R-e/R-f/R-g/R-a 但表格仍写 backlog)· `AGENTS.md` **4 处**数字(`:211`/`:212`/`:235`/`:613`)· 台账 §10 **B 组 8 项**(⛔ **未定义**,须先定义再动) | planner + builder | 逐条对齐实测值 + `docs_sync --strict` rc=0 + `agents_md_lint.py` rc=0 | **§11 / §13.x append-only** · **§10 可就地同步**(先例 Entry #148/#219) | ❌ 否 |
 | **L1** | **CI 红线**:`format --check` 实测 **10** 个文件未过 clang-format(登记 #274 写 13 · #355 写 9 ⇒ **三个数都过时**)· 首次加入 2025-09-18 ~ 2026-11-10 ⇒ **纯历史债** | builder | `format --check` rc=0 + `ctest` **169/169** 仍绿 + 文件清单 sha 化入 Entry | 独立 commit(⛔ 清单 ∩ 冻结集 = **∅** · ∩ C3/C4 编辑面 = **∅** ⇒ 不污染冻结 hash) | ❌ 否 |
-| **Q1** | **`validate_topology` target 跑不完**:`scripts/CMakeLists.txt:47-48` 首条命令引用 `${CMAKE_BINARY_DIR}/configs/dgpu_board_v1_mvp.json`(源仓亦无)⇒ 实测 FileNotFoundError ⇒ 其后 **4 条**拓扑校验 + 末位闸挂点**全部从未执行**。⛔ **已登记 20 天**(ADR-CEP-00:320 + 本表 :4855/:4908)⇒ 兑现登记不是新立项 | builder | target rc=0 且**真跑完 4 条校验 + 闸**(⛔ 须能区分「跑了」与「被 `if(TARGET)` 跳过」)+ 对账闸有决定性变异 + `AGENTS.md:409` 教学行订正 | 兑现 `ADR-CEP-00:320` 的登记 · **不新建 ADR** | ❌ 否 |
+| **Q1** | ✅ **已修复 2026-11-12**(per **Entry #358**)—— 原：**`validate_topology` target 跑不完**:`scripts/CMakeLists.txt:47-48` 首条命令引用 `${CMAKE_BINARY_DIR}/configs/dgpu_board_v1_mvp.json`(源仓亦无)⇒ 实测 FileNotFoundError ⇒ 其后 **4 条**拓扑校验 + 末位闸挂点**全部从未执行**。⛔ **已登记 20 天**(ADR-CEP-00:320 + 本表 :4855/:4908)⇒ 兑现登记不是新立项 | builder | target rc=0 且**真跑完 4 条校验 + 闸**(⛔ 须能区分「跑了」与「被 `if(TARGET)` 跳过」)+ 对账闸有决定性变异 + `AGENTS.md:409` 教学行订正 | 兑现 `ADR-CEP-00:320` 的登记 · **不新建 ADR** | ❌ 否 |
 | **C3** | **治理不变式的机器化**:R-c(D0 堵法 ② 机器检查未落地;规格改指 `ADR-CEP-00`)+ R-d(决策块计数口径归一) | builder | ① R-c 决定性变异(删 ADR 残留登记 ⇒ 必红)② R-d 决定性变异(删某 ADR 一个 `### 决策 N` ⇒ 必红)③ `decision_head` 行为零变化 ④ 新门槛注册处同步 ⑤ **第二次** `--update`(归档时 delta 并入 main spec ⇒ glob 冻结集自动扩)⑥ `artifact_count` 78→79 登记 | **ADR 只追加 SU** · **冻结面五步链**(各一条,物理串行) | ✅ **是** |
 | **C4** | **DoD 读法口径订正**:MUST-FIX-1(事实订正)+ MUST-FIX-2(禁令作用域重裁三处) | builder | 逐字可核 + 三处锚**重定位** + `cep-usage.md:162` 指向同步改 | **五步链**(改 07 号 + 手册;⛔ 手册不在冻结集 ⇒ 不产生清单变更) | ✅ **是** |
 | **B3b-2** | **受限族 4 项** | — | ⛔ **外部**(ECA 解除 / 联盟可读规范 / NVIDIA 条款级规范)⇒ 保持 ⭕ 登记诚实 | ⛔ **不改计数** · ⛔ **不补引擎**(推理填空) | ⭕ 周期项 |
@@ -20215,3 +20215,87 @@ W5-a L1(格式化 10 文件,独立 commit)
 **⑨ 关联**
 
 **#357**(R-d 修法边界)· **#358**(Q1 修复授权)· **#359**(C3 立项)· **#355**(C2 归档终态)· **#354** · **#353** · **#352** · **#351** · **#350** · **#349** · **#348** · **#347** · **#346** · **#345** · **#344** · **#343** · **#342** · **#340**(排序裁决)· **#332**(口径 ④)· **#274**(L1~L5 登记)· **#264**(B3b-2 终态裁决)· `.rddf/reviews/cep-goal-scope-review-2026-11-12.md`
+
+### Entry #358 — 2026-11-12 [build](**Q1 修复** —— `validate_topology` target 跑不完 ⇒ **静默 20 天**的闸挂点首次被执行;根因从「手抄清单」结构性消除)
+
+**主题**:per 用户口令「现在修 Q1(validate_topology)」。**Q1 = 兑现 `ADR-CEP-00` 2026-10-25 SU 已登记的「修复需单独决策」**(静默 20 天)⇒ 是**兑现登记**不是新立项;⛔ 不新建 ADR(builder 域 · 构建脚本层)。
+
+**① 根因(实测,非文本推断)**
+
+| 项 | 实测 |
+|---|---|
+| **症状** | `cmake --build build --target validate_topology` ⇒ `FileNotFoundError: build/configs/dgpu_board_v1_mvp.json` |
+| **根因** | 组合 target(`scripts/CMakeLists.txt:46-61`)**手抄**了一份 config 清单,首条引用 `${CMAKE_BINARY_DIR}/configs/dgpu_board_v1_mvp.json`;该文件已被 **T-bs-5(commit `569917d`)物理删除**(根 `CMakeLists.txt:93-94` 注释)⇒ **首条命令即失败 ⇒ 其后 4 条拓扑校验 + CEP 装配闸 CLI 挂点全部从未执行** |
+| **隐蔽性** | ⛔ **ctest 侧的同名用例 `cep_channel_dependency_gate` 独立注册**(`examples/CMakeLists.txt:140`)⇒ 即使 target 的挂点失效,ctest 仍**全绿** ⇒ **该失效在既有 169 个测试里完全不可见** |
+| **§13.1 的数字订正** | 原写「其后 5 条拓扑校验」⇒ 实测 = **1 条失效 + 4 条有效 + 1 闸挂点**(per metis P0-3)⇒ 修后为「**4 条 + 闸**」 |
+
+**② 修法(两层 —— 结构消除 + 对账闸)**
+
+| # | 改动 | 说明 |
+|:--:|---|---|
+| **1** | **单一真源**:`CPPTLM_TOPOLOGY_VALIDATION_PAIRS`(`"<target 名>\|<config 路径>"`)⇒ **个体 target 与组合 target 均由此派生** | ⛔ 两处都不再手抄 ⇒ 「手抄副本引用已删文件」这类漂移在**结构上不可能再发生** |
+| **2** | **删失效命令**:`${CMAKE_BINARY_DIR}/configs/dgpu_board_v1_mvp.json` 那条已随 ① 消失 | ⛔ 不是「注释掉」,是不存在 |
+| **3** | **新增对账闸** `scripts/test/cep_validate_topology_reconcile_check.sh`(ctest 注册) | 见 ③ |
+
+**③ 对账闸的五条判据(全部可机器判;期望值来自**外部可推导**的三方,⛔ 非自证)**
+
+| # | 判据 | 防什么 |
+|:--:|---|---|
+| **①** | 组合 target 引用的每个 config **必须存在于磁盘** | 本次 bug 的直接形态 |
+| **②** | 组合 target **禁手抄** config 路径(须从 `CPPTLM_TOPOLOGY_VALIDATION_COMMANDS` 派生) | 本次 bug 的**结构性根因** |
+| **③** | 装配闸挂点 `${CEP_GATE_COMMAND}` **必须在组合 target 命令面内** + 其赋值含 `$<TARGET_FILE:cep_channel_dependency_gate>` + 赋值在 `if(TARGET ...)` 守卫内 + 该 target 被 `add_executable` 定义 | 挂点静默失效(**ctest 侧仍绿**的假绿) |
+| **④** | pairs 循环内**必须**调用 `add_topology_validation` + 追加 `CPPTLM_TOPOLOGY_VALIDATION_CONFIGS` | 个体/组合两方脱钩 |
+| **⑤** | 组合 target 命令面**必须**由遍历 `CPPTLM_TOPOLOGY_VALIDATION_CONFIGS` 派生 | 命令面来源不可推导 |
+
+**④ 决定性变异(6 条 · 全部按**正确原因**红)**
+
+| # | 变异 | 红因(实测) |
+|:--:|---|---|
+| **①** | config 路径指向不存在的文件 | `config ... 在磁盘**不存在** ⇒ 该 target 首条即失败` |
+| **②** | 组合 target 内手抄一条 config 路径 | `组合 target 内**手抄**了 config 路径 [...] —— 必须经单一真源派生` |
+| **③** | 挂点行被**注释掉** | `命令面**不含** \`${CEP_GATE_COMMAND}\` ⇒ 装配闸离线挂点静默失效` |
+| **④** | 闸 target 未被 `add_executable` 定义 | `未被 add_executable 定义 ⇒ if(TARGET ...) 恒假 ⇒ 挂点永远为空` |
+| **⑤** | 挂点整行删除 | 同 ③ |
+| **⑥** | **整体移除** `if(TARGET)` 块 + 组合 target 引用 | 同时命中 3 条(挂点不在命令面 / 赋值不含 `$<TARGET_FILE>` / 守卫缺失)⇒ **且实测 ctest 侧 `cep_channel_dependency_gate` 仍 Passed** ⇒ **证明「无本闸则该失效不可见」** |
+
+> ⚠️ **变异 ③ 首轮**用「注释掉挂点行」**没红**(闸只查字面量)⇒ **闸自身有假绿** ⇒ 已修为「只看**有效行**(去 CMake 注释)」⇒ 复测红。这是本轮闸的**自我证伪**,已如实登记。
+
+**⑤ target 现在真跑什么(实测)**
+
+| 段 | 实测 |
+|---|---|
+| `TopologyValidator` | **4** 段(mesh_2x2 / mesh_4x4 / ring_8 / hierarchical_2x2) |
+| `ALL VALIDATIONS PASSED` | **4** 次 |
+| 装配闸 `[PASS]` | **2** 段(`cep channel dependency gate` + `cep assembly gate`) |
+| `FAIL` | **0** |
+
+**⑥ 登记处同步(本轮连带 · ⛔ 均为**因 Q1 而陈旧**者)**
+
+| 处 | 改动 |
+|---|---|
+| `scripts/README.md` | 守门表补登新闸(**31 → 32** 行) |
+| `AGENTS.md` | ① 三处「35 个闸」⇒ **「以 `ls scripts/test/cep_*.sh` 为准」**(per AGENTS.md 自身 :600 的「不固化精确值」先例 ⇒ ⛔ 防复发)· ② 教学行 `:408` 加「4 条拓扑校验 + 装配闸挂点」+ 失效史 · ③ **4 处陈旧数字**(`:211` 1→0 active / 122→136 归档;`:212` 116→123 份 main spec + cep-* 30→37;`:235`/`:613` 132→136 归档;`:620` 1→0 active) |
+| `docs/guide/cep-usage.md` §12.8 | ① **4 行 stale 订正**(C1 已闭合 R-e/R-f/R-g/R-a 但表格仍写 backlog)② 表外第 2 项**加口径澄清** |
+
+> ⚠️ **口径澄清(重要,防误判已闭合)**:手册 :201 的「装配闸未挂 `validate_topology` CLI 的不对称」是**另一个缺陷**(CLI **未挂 IAG 闸族** ⇒ `instantiateAll` 与 CLI 对同一 config 结论不一致)⇒ **⛔ 仍未闭合**。Q1 修的是「**挂点从未被执行**」⇒ 两者不同 ⇒ 已在手册逐字写明区分。
+
+**⑦ 回归(实测)**
+
+| 面 | 实测 |
+|---|---|
+| `cmake --build build` | ✅ rc=0 |
+| `ctest --test-dir build -j4` | ✅ **170 / 170 passed**(169 + 新增对账闸 1) |
+| **36 个** `cep_*.sh` 闸 | ✅ **36 / 36 rc=0**;✗ 总数 **1**(唯一 1 条在 `cep_freeze_reverse_verify.sh` 的「故意破坏」步内 = **预期证据**) |
+| `docs_sync_check.sh --strict` | ✅ rc=0 |
+| `agents_md_lint.py` | ✅ rc=0 |
+| `cep_doc_ref_check.sh` | ✅ rc=0 |
+| `cep_docs_sync_check.sh` | ✅ rc=0 |
+| `format --check` | ⚠️ **10 个**文件报待格式化 ⇒ **全部历史遗留**(首次加入 2025-09-18 ~ 2026-11-10)· **不含本轮任何改动** ⇒ 属 **L1** 独立批次 |
+
+**⑧ ⛔ 本 Entry 明确不做**
+
+⛔ 不新建 ADR · ⛔ 不改 `ADR-CEP-00` 正文(仅兑现其 :320 的登记)· ⛔ 不修「CLI 未挂 IAG 闸族」的不对称(独立缺陷)· ⛔ 不扩 `validate_topology` 的校验覆盖面(只修「跑不完」)· ⛔ 不清理 10 个历史 format 债(**L1** 独立批次)· ⛔ 不改任何 CEP 契约 / 声明数据。
+
+**⑨ 关联**
+
+**#356**(路径裁决 · Q1 = W5-c)· **#357**(R-d 修法边界 —— 尚未落,本 Entry 不涉及)· `ADR-CEP-00` 2026-10-25 SU(:320 Q1 遗留登记)· `scripts/CMakeLists.txt`(:29-74)· `scripts/test/cep_validate_topology_reconcile_check.sh`(新增)· `test/CMakeLists.txt`(:556 起注册)· `scripts/README.md`(:60)· `AGENTS.md`(:217/:231/:408/:614 + 4 处数字)· `docs/guide/cep-usage.md` §12.8
