@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**(C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
+`openspec/changes/` 当前 **1 个 active**(C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 立项 ⇒ 占 1 slot,per 台账 Entry #394;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -22075,3 +22075,36 @@ builder 实施(闸断言 + 数字订正 + 变异)⇒ 0 回归 ⇒ 归档(✅ 已
 **⑤ 关联**
 
 **#392**(R-6 订正 + R-3 根因首定位)· **#391**(收口盘点)· **#390** · **#389** · **#387** · **#381** · **#379** · **#383** · **#332 ⑧** · **#264** · **#228**(B4 达成 + 证据设备)· **#222**(Entry #222 ④ 不得写裸 0)· `.rddf/reviews/cep-full-green-run-gap-rootcause.md`(§五 订正)
+
+### Entry #394 — 2026-11-13 [build](**R-3 立项落地** —— `cpptlm-cep-full-green-run-evidence` 四件套 + improvement 5 段;本 Entry = **实施开工授权**与**五步链授权号**)
+
+**主题**:per 用户口令「给 R-3 任务创建 openspec change」⇒ 立项 `cpptlm-cep-full-green-run-evidence`(只建 change,⛔ 本 Entry **不实施**)。
+
+**① 落盘产物(2 组)**
+
+| # | 载体 | 形态 |
+|:--:|---|---|
+| 1 | `openspec/changes/cpptlm-cep-full-green-run-evidence/` | 四件套:**proposal.md**(Why / What Changes / **9 条 AC** / 成本收益 / 诚实边界 / Out of Scope)· **design.md**(D-1 现状实测 / **D-2 三处待定位** / D-3 场景扩写判据 / D-4 4 件套 / **D-5 新闸 G1~G5** / D-6 冻结面 / **D-7 五条硬边界** / D-8 不可约残余 + 铁律 5 条)· **tasks.md**(A0~A9 · 6 个门 · **A1/A2 = 前置核对与定位,⛔ 未完成不得改代码**)· **specs/cep-full-green-run-evidence/spec.md**(delta = **ADDED** · 1 条 Requirement · 5 个 Scenario) |
+| 2 | `.rddf/improvements/cpptlm-cep-full-green-run-evidence.md` | planner 域 **5 段草稿**(Why / What Changes / **9 条 AC** / Capabilities / Impact)+ 已裁项(per §4.7 转正路径「无草稿不得立项」) |
+
+**② 校验**
+
+`openspec validate cpptlm-cep-full-green-run-evidence --strict` ⇒ **rc=0**;`openspec list` ⇒ **1 个 active** ⇒ KPI **0/3 → 1/3**(活口径 **7 处**已回填:AGENTS.md · `.rddf/roadmap.md` · `phases/phase-10.md` · `obj §5.2` · `cep-umbrella.md` · `cep-nvlink-sharp.md`(**2 处**))。
+
+**③ 授权(本 Entry 的作用)**
+
+- **实施开工授权**:builder 实施本 change(占 **1 个** Proposed 槽位;当前 **0/3** ⇒ 可占);
+- **五步链授权号**:`cep_freeze_check.sh --update --authorized-by "Entry #394"`(冻结面 **1 处** = `07 号` 新 SU)⇒ 归档前的 `--update` 与归档后的**第二次** `--update` 均用本号。
+
+**④ ⛔ 本 Entry 明确不做**
+
+⛔ **未实施**(本 Entry 只立项)· ⛔ 不改 IC3 判据 / 阈值 / 预登记 / `metrics.schema.json` / retention 条款 · ⛔ 不改 `B3b-2 = 0/4` · ⛔ 不新建 ADR · ⛔ 不动 `§4.0` 排期值。
+
+**⑤ 下一步(实施期顺序 · 硬约束)**
+
+**A1 前置核对**(P-2 retention 登记形态 · P-3 「全绿 run」完整判据范围)⇒ **A2 定位**(检测器挂载点 · E2E 真实内存读写路径 · **「真实 run vs 合成 fixture」的文件形态可区分性**)⇒ **A3 场景扩写 + 检测器挂载** ⇒ A4 真跑 + 4 件套 ⇒ A5 IC3 通过态 ⇒ A6 `07 号` 新 SU + 五步链 ⇒ A7 `obj §6.2` 证据行 ⇒ A8 新闸 + 变异 ⇒ A9 0 回归 + 归档 + KPI 0/3。
+⚠️ **三条硬边界**(proposal Out of Scope + design §D-7):⛔ 实测 > 0 ⇒ **停止**并按缺陷另立处置 · ⛔ 不用合成 fixture 冒充真实 run · ⛔ 不得删 `not_collected` 的登记而不接产出者(裸 0 假绿,per Entry #222 ④)。
+
+**⑥ 关联**
+
+**#393**(P-1 核对 + 根因精化)· **#392**(根因首定位)· **#391**(收口盘点)· **#383**(R-3 归因)· **#264** · **#228**(B4 达成 + 证据设备)· **#222**(④ 不得写裸 0)· architect 方案 `.rddf/reviews/cep-full-green-run-gap-rootcause.md`
