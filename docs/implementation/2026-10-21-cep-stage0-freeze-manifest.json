@@ -1,5 +1,5 @@
 {
-  "artifact_count": 80,
+  "artifact_count": 81,
   "artifacts": {
     "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "64364ed7d1d9def7919c8bce2e7f3c9e35c31c1b93bf252dc8ec4aff1f24fe95",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4db673d7d582ac6231c6b3fa26ff78ef02dbea4483261b3cfcd7f4403201bd26",
@@ -23,7 +23,7 @@
     "docs/adr/ADR-CEP-18-protocol-generation-scope.md": "0c9a20115a708768f00ec105cbbf22a0c9ea3b2bffd575995076ee5f99aa0ca6",
     "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": "919b3495cabc9537092ae84f36ef923f31161303ea1184cafef7169b3186cc36",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "a05fa8714645905057befa32580578c0041ef4cf9cc86e2ba22e3d7dce56f54c",
-    "docs/architecture/07-coherence-exploration-platform.md": "d69a1d37c3e54f56f62f90d94abc2f2c20f1ec88bbbbccbefceaa11185a0e3b5",
+    "docs/architecture/07-coherence-exploration-platform.md": "7d25676fec2a4f64fa65611ef833e88237e4943d4f4b31e1c9a7dbcdce031fb7",
     "docs/architecture/cep/coherence-interface.md": "6997124eb5f904a02dee90b38d5d8f4a536e94c7aeb3432c609aa10835f4f597",
     "docs/architecture/cep/collective-plane.md": "8de3e3c7a2af2f7908cb81c90d7912784e5214c9bc70fbd626d13c062f54d595",
     "docs/architecture/cep/core-traffic-gen.md": "469e533714183871a78e1d626c1124565f1a1d910c7c3d591474c070c01fee13",
@@ -40,6 +40,7 @@
     "include/tlm/cep/protocol_instance.schema.json": "45f44277a4b2c03384bf91302d35df9ea51acdeaf9d139225e408a0c0191a9b9",
     "openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md": "da03d46603e6a54807cbf2d1ff3f043b59214e6512e264fd65af5e5f44e35c18",
     "openspec/specs/cep-adapter-schema-contracts/spec.md": "4cf5c4ca9e4ac15951439073eddc133d7ed8b1366daed3d610e3473372f1a344",
+    "openspec/specs/cep-b3b2-archive-form/spec.md": "ce05a3a794cca691a6799b10f147fc142dc3d8225704d6f49a4e7a2af1e5bea8",
     "openspec/specs/cep-basis-source-kind/spec.md": "d174f5d506d1c411e10ffa365315d3562ddfe59842b9e6eff45eee8f46a08f87",
     "openspec/specs/cep-canonical-flow-parser-scope/spec.md": "09eade1c4c2f4f478a6483ddac7a425949af1bfd552e054eaafddae50b120082",
     "openspec/specs/cep-channel-dependency-gate/spec.md": "c2bc8b77ae40addf06ba6de8e78cf797b12804022a674aac72b167c13090c2c8",
@@ -84,8 +85,8 @@
   },
   "authorized_by": "Entry #385",
   "exclusions": [],
-  "frozen_at": "2026-11-12",
-  "frozen_at_commit": "0a1ab06ea365f148413cbee3846aaf1560a1b2e3",
+  "frozen_at": "2026-11-13",
+  "frozen_at_commit": "ce2ae57934468bf464e68748e42169cdfc7d05af",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
