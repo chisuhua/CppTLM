@@ -31,28 +31,28 @@ namespace cep = tlm::cep;
 
 namespace {
 
-std::string read_file(const std::string& path) {
-    std::ifstream in(path);
-    if (!in)
-        return {};
-    std::ostringstream ss;
-    ss << in.rdbuf();
-    return ss.str();
-}
-
-const char* verdict_name(cep::ContractVerdict v) {
-    switch (v) {
-    case cep::ContractVerdict::PASS:
-        return "PASS";
-    case cep::ContractVerdict::FAIL:
-        return "FAIL";
-    case cep::ContractVerdict::SKIP:
-        return "SKIP";
+    std::string read_file(const std::string& path) {
+        std::ifstream in(path);
+        if (!in)
+            return {};
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        return ss.str();
     }
-    return "?";
-}
 
-}  // namespace
+    const char* verdict_name(cep::ContractVerdict v) {
+        switch (v) {
+        case cep::ContractVerdict::PASS:
+            return "PASS";
+        case cep::ContractVerdict::FAIL:
+            return "FAIL";
+        case cep::ContractVerdict::SKIP:
+            return "SKIP";
+        }
+        return "?";
+    }
+
+} // namespace
 
 int main(int argc, char** argv) {
     if (argc < 4) {
@@ -71,8 +71,8 @@ int main(int argc, char** argv) {
     const auto decl = cep::parse_collective_plane_declaration(nlohmann::json::parse(decl_text));
 
     // ① 唯一允许的 loader 调用 —— fabric 始终用**真实**文件
-    const auto snap = cep::load_vc_binding_snapshot(proto_path,
-                                                    root + "/include/tlm/cep/fabric.json");
+    const auto snap =
+        cep::load_vc_binding_snapshot(proto_path, root + "/include/tlm/cep/fabric.json");
     if (snap.source_error) {
         std::cout << "SOURCE_ERROR=" << snap.source_error_detail << "\n";
         return 4;
@@ -80,8 +80,8 @@ int main(int argc, char** argv) {
 
     // ② 唯一允许的判定调用 —— 签名在旧/新版本完全相同
     std::string detail;
-    const auto v = cep::evaluate_shared_mode_certificate(decl, snap,
-                                                         cep::default_untested_registry(), detail);
+    const auto v =
+        cep::evaluate_shared_mode_certificate(decl, snap, cep::default_untested_registry(), detail);
     std::cout << "VERDICT=" << verdict_name(v) << "\n";
     std::cout << "DETAIL=" << detail << "\n";
     return 0;
