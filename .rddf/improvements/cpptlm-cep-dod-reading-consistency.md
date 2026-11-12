@@ -5,7 +5,7 @@ phase: phase-10
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 依赖:
   - ADR-CEP-00
-状态: "🟡 待实施（2026-11-12 起草;per 台账 Entry #340 的 C4 行（范围纪律：只做 MUST-FIX-1/2）+ Entry #332 ⑧（四 MUST-FIX 原文）+ Entry #359 ⑤（C4 判据四行）;metis 1 轮已过（P0×4 / P1×4 / P2×3 ⇒ 全部落盘，见文末「metis 处置对照」）;⚠️ 起草期实测发现 2 处记录前提失效 + 1 处指针悬空 ⇒ 见「起草期实测订正」）"
+状态: "✅ 已归档（2026-11-12 起草 → 实施 → 归档;per 台账 **Entry #375** 归档回执 —— ✅ 已完成归档语义 · delta 已合并进 openspec/specs/cep-dod-reading-consistency/;verifier 验收 **15/15 AC PASS / 0 BLOCKER**,per **Entry #376**);原立项依据:台账 Entry #340 的 C4 行（范围纪律：只做 MUST-FIX-1/2）+ Entry #332 ⑧（四 MUST-FIX 原文）+ Entry #359 ⑤（C4 判据四行）;metis 1 轮已过（P0×4 / P1×4 / P2×3 ⇒ 全部落盘，见文末「metis 处置对照」）;⚠️ 起草期实测发现 2 处记录前提失效 + 1 处指针悬空 ⇒ 见「起草期实测订正」）"
 created: 2026-11-12
 ---
 
@@ -13,7 +13,7 @@ created: 2026-11-12
 
 **主题**: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 
-> **状态**: 🟡 待实施 —— 范围**已裁**(per **Entry #340** 的 C4 行:只做 MUST-FIX-1 / MUST-FIX-2;⛔ MUST-FIX-3 / MUST-FIX-4 **待用户 ratify** ⇒ **不并入**)。
+> **状态**: ✅ **已归档**（2026-11-12,per 台账 **Entry #375** 归档回执 + **Entry #376** 验收 15/15 PASS）—— 范围**已裁并实施完毕**(per **Entry #340** 的 C4 行:只做 MUST-FIX-1 / MUST-FIX-2);⛔ MUST-FIX-3 / MUST-FIX-4 **仍待用户 ratify** ⇒ 未并入。
 > **上游**:台账 **Entry #340**(C4 行 + 范围纪律 + U-1)· **#332 ⑧**(四个 MUST-FIX 原文 + MUST-FIX-2 三处重裁清单 + 验收判据)· **#359 ⑤**(C4 的 4 条判据:逐字可核 / 不矛盾 / 锚点纪律 /「恰 1 命中」形态)· architect 二次报告 `.rddf/reviews/cep-goal-scope-review-2026-11-12b.md` **§六 Q3**(给 planner 的 4 问之③:C4 三处锚的重定位)。
 > **审查**:metis **1 轮**(P0×4 / P1×4 / P2×3 ⇒ **全部落盘**,见文末「metis 处置对照」;其中 **P0-2 推翻了本草案初版的 1 处判定** ⇒ 已按实测改写)。
 > ⚠️ **本草案只把已裁内容落成可执行形态**,⛔ **不新增裁决**;含 **3 处起草期实测订正**(2 处记录前提失效 + 1 处指针悬空)+ **1 处 metis 订正**(第三处锚由「消解」改回「登记」)。

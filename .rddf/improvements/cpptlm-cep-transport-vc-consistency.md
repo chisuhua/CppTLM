@@ -6,7 +6,7 @@ phase: phase-10
 依赖:
   - ADR-CEP-01
   - ADR-CEP-12
-状态: 🟡 **待实施**（2026-11-12 起草;per 台账 **Entry #344** 的 W0 方案 + 用户「选 A」认可;metis gap 分析 1 轮已过（P0 6 / P1 5 / P2 3 **全部落盘**）;K-1 / K-2 两个阻塞前置**已由 architect 裁定、用户认可**（per `.rddf/reviews/cep-c2-vc-consistency-decision.md` §9 / §10））
+状态: ✅ **已归档**（2026-11-12 起草 → 实施 → 归档;per 台账 **Entry #355** 归档终态 —— ✅ 已完成归档语义 · delta 已合并进 main spec;验收回执 **Entry #351**(A4 并排取证 + verifier 验收);原立项依据:台账 **Entry #344** 的 W0 方案 + 用户「选 A」认可;metis gap 分析 1 轮已过（P0 6 / P1 5 / P2 3 **全部落盘**）;K-1 / K-2 两个阻塞前置**已由 architect 裁定、用户认可**（per `.rddf/reviews/cep-c2-vc-consistency-decision.md` §9 / §10））
 created: 2026-11-12
 ---
 
@@ -14,7 +14,7 @@ created: 2026-11-12
 
 **主题**: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台 —— 传输层 VC 语义一致性判据落地
 
-> **状态**: 🟡 **待实施** —— 两个阻塞前置 `K-1` / `K-2` **已裁**（见下「已裁项」）;metis 的 14 条建议已全量落盘。**可立项**。
+> **状态**: ✅ **已归档**（2026-11-12,per 台账 **Entry #355** 归档终态 + **Entry #351** verifier 验收）—— 两个阻塞前置 `K-1` / `K-2` **已裁并满足**（见下「已裁项」）;metis 的 14 条建议已全量落盘;本 change 已归档 ⇒ 本草案转归档态,⛔ 不再是规划输入。
 > **关联路线图**: [`phase-10`](../roadmap/phases/phase-10.md)(in-progress)+ [`objective-cep-platform`](../roadmap/objectives/obj-cep-platform.md)(**§13.3** C2 定义 · **§13.6** W2 · **Entry #340** 排序裁决 · **Entry #344** W0 + ⑨ K-1/K-2 裁决)
 > **上游决策（已裁决，本草案⛔ 不重新讨论）**: `T-C2-⓪` = **条件化口径** · `T-C2-①` = **扩展 C-1′ 适用域** · `U-3` = `compute_noc` 上 `tilelink_c` 的差异是**合法协议差异**、⛔ 不改声明（per Entry #344）· **K-1** = `R-1`/`R-2` 落 `docs/architecture/cep/fabric-transport.md` 诚实边界段 · **K-2** = tag `R1-b`/`R1-c` + 锚点拆两处
 > **metis 审查**: 1 轮，6 节全出;本草案已按其 **P0（6）/ P1（5）/ P2（3）** 逐条修订（见文末「处置对照」）

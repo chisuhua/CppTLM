@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "verifier",
-  "updated_at": "2026-11-12T12:45:00Z",
-  "updated_by": "auto",
+  "current_role": "planner",
+  "updated_at": "2026-11-12T13:40:00Z",
+  "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-12T07:00:00Z",
-      "by": "user",
-      "reason": "用户口令「切architect对完成和后续任务进行梳理」⇒ 架构级全景梳理：目标/为什么/已完成/后续/为什么这么做/当前任务。"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-12T08:10:00Z",
-      "by": "user",
-      "reason": "用户口令「切planner对后续还有哪些任务内容都梳理一遍，再给出后续任务内容和实施路径」⇒ 全量任务盘点 + 实施路径。"
-    },
     {
       "role": "builder",
       "at": "2026-11-12T08:40:00Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-12T12:45:00Z",
       "by": "auto",
       "reason": "用户口令「按 C3 的同一条链继续」⇒ builder 自查通过(39/39 闸 + ctest 172/172)⇒ 自动切 verifier 逐条验 AC-1~AC-15。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-12T13:10:00Z",
+      "by": "user",
+      "reason": "用户口令：切 architect 梳理 CEP 目标 / 已完成 / 后续路径；随后切 planner 梳理后续任务与实施路径。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-12T13:40:00Z",
+      "by": "user",
+      "reason": "用户口令：切 planner 梳理后续任务内容并给实施路径（承接 architect 梳理：G5/G6 已达成，剩余 = C 收尾批 / D backlog / B ratify / A 外部 / E 推送）。"
     }
   ],
   "auto_switch_window": null

@@ -8,7 +8,7 @@ phase: phase-10
   - ADR-CEP-01
   - ADR-CEP-02
   - ADR-CEP-03
-状态: "🟡 待实施（2026-11-12 起草;per 台账 Entry #359 的 D-1~D-5 + Entry #361 的 D-6~D-9 与 C3a/C3b 切片;architect 三次报告 §五 4 处裁决 + oracle 1 轮判定;metis 1 轮 12 条已逐条落盘，见文末处置对照）"
+状态: "✅ 已归档（2026-11-12 起草 → 实施 → 归档;per 台账 **Entry #368** 归档终态 —— ✅ 已完成归档语义 · delta 已合并进 main spec;verifier 验收 **22/22 AC PASS / 0 BLOCKER**,per **Entry #370**);原立项依据:台账 Entry #359 的 D-1~D-5 + Entry #361 的 D-6~D-9 与 C3a/C3b 切片;architect 三次报告 §五 4 处裁决 + oracle 1 轮判定;metis 1 轮 12 条已逐条落盘，见文末处置对照"
 created: 2026-11-12
 ---
 
@@ -16,7 +16,7 @@ created: 2026-11-12
 
 **主题**: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 
-> **状态**: 🟡 待实施 —— 设计已定死（Entry #361 ③④）；本草案**不重新设计**，只做 5 段打包。
+> **状态**: ✅ **已归档**（2026-11-12,per 台账 **Entry #368** 归档终态 + **Entry #370** 验收 22/22 PASS）—— 设计已定死（Entry #361 ③④）并已实施归档;本草案转归档态,⛔ 不再是规划输入。
 > **上游**: architect 三次报告 `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`（§五 4 处裁决 + §七 oracle 4 条判定）+ 台账 Entry #359（D-1~D-5）/ #361（D-6~D-9 + C3a/C3b 切片）。
 > **审查**: metis **1 轮**（对象 = D-6~D-9 设计，Entry #361 ⑥ 的 12 条已逐条处置）⇒ 本 improvement 的 metis 预算 1 轮**已消耗**，不新增第 2 轮（D-10 封盘）。
 > **统一判据纪律**: 每条变异 = 「破坏 ⇒ 按**正确原因**红（红因**有签名**，⛔ 不以 rc≠0 充数）⇒ 还原 ⇒ 绿」+ **先跑基线正控**（未改前必须绿）；⛔ 不用关键词匹配（per §13.1：硬造关键词闸 = P6 闸教训重演）；⛔ 期望值不得从被检对象自身或 `NUMBER-MAP` 派生（= 自证复燃）。
