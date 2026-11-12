@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-12T15:00:00Z",
+  "current_role": "verifier",
+  "updated_at": "2026-11-12T15:50:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-12T14:00:00Z",
-      "by": "auto",
-      "reason": "architect 梳理产出已落 .rddf/reviews/cep-goal-scope-review-2026-11-12.md ⇒ 切 planner 做后续任务全量盘点 + 实施路径。"
-    },
     {
       "role": "builder",
       "at": "2026-11-12T14:30:00Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-12T15:00:00Z",
       "by": "user",
       "reason": "D-2 实施(per Entry #379 授权):建 change 四件套 + 离线 CLI + 装配路径臂 + target 第二段 + 决定性变异。"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-12T15:50:00Z",
+      "by": "user",
+      "reason": "D-2 实施完成(全链闭合)⇒ 切 verifier 逐条验收 AC-1~AC-7(用户已授权 C3/C4 后自动切 verifier 的同一条链)。"
     }
   ],
   "auto_switch_window": null

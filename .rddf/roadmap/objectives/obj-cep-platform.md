@@ -21572,3 +21572,31 @@ T8 的退出判据(Entry #377 ②)只枚举了 **3 行**(`211/235/617`)⇒ 实�
 **⑥ 关联**
 
 **#380**(实施)· **#379**(立项 + 4 条裁决)· **#378**(批 1 + backlog)· **#377**(批 2)· **#358**(Q1 + 口径澄清)· **#319**(BSS-01 执行臂先例)· architect 方案 `.rddf/reviews/cep-cli-iag-gate-alignment.md`
+
+### Entry #382 — 2026-11-12 [verifier](**D-2 验收通过** —— **AC-1 ~ AC-7 全满足** · **0 BLOCKER** · 2 条已登记的实施期订正)
+
+**主题**:`cpptlm-cep-iag-gate-execution-arm` 第 **1 轮**验收。判据来源 = proposal 的 **7 条 AC** + architect 方案的 6 条判据 + Entry **#379**/#380/#381;执行者 = verifier(**只读 + 运行验证**,⛔ 未改实现)。
+
+**① 结论**
+
+| 维度 | 实测 |
+|---|---|
+| AC 通过 | **7/7 满足** |
+| BLOCKER | **0** |
+| 判据有牙 | `[IAG-02]` / `[IAG-06]` **按签名**断言(dup2 捕获 stdout,⛔ 非 rc≠0);M1 破坏 config ⇒ 红;M2 摘 IAG 段 ⇒ C6 红 ⇒ 均还原绿 |
+| 影响面 | `git diff --stat 49e8b5e7..HEAD` = **18 文件 / +859 / −25**;判据本体 / 声明 JSON / 平面 JSON **各 0 行**;`docs/adr/` **0 变更** |
+| 0 回归 | `ctest` **174/174** · `cep_*.sh` **40/40** · format / docs_sync / doc_ref / lint / freeze **全 rc=0** |
+| 遗留清扫 | TODO / 注释代码 / skip / 临时日志 / 调试分支 **全 0** |
+
+**② 2 条已登记的实施期实测订正**
+
+① **装配臂落点 Step 0.75 → Step 0.26**(architect D-A1 的**理由**实测不成立:`module_declared()` 读 config 的 `modules` 段 ⇒ IAG 族纯 config 依赖)⇒ 决策**目的**不变,C7 机械保证「臂行号 200 < 模块创建段 337」。
+② **ctest 173 → 174**(CLI 自身也注册 ctest)⇒ 判据未放宽,只订正记录值。
+
+**③ 报告**
+
+`.rddf/reviews/cpptlm-cep-iag-gate-execution-arm-verify.md`(逐条 AC 判定 + 证据 + 有牙性复核 + 遗留清扫 + 复核命令清单)。
+
+**④ 关联**
+
+**#381**(归档回执)· **#380**(实施)· **#379**(立项 + 4 条裁决)· **#378**(批 1 + backlog)· **#377**(批 2)· **#358**(Q1 + 口径澄清)· **#319**(BSS-01 执行臂先例)
