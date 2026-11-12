@@ -1,7 +1,6 @@
-# cep-dod-reading-consistency Specification (delta)
+# cep-dod-reading-consistency Specification
 
 ## Purpose
-
 CEP 的 **DoD 读法**（B3b-2 何时可登记为达成 · Stage 4+ 何时算进入）此前分散在三处载体上，
 且**同一禁令有两个互斥读法** ⇒ N = 1 之日无人可裁。本 capability 把「**唯一权威声明处 +
 其余载体只写指针**」这一形态**契约化**，并使其实例由**单一闸**机器守住。
@@ -16,7 +15,7 @@ CEP 的 **DoD 读法**（B3b-2 何时可登记为达成 · Stage 4+ 何时算进
 > **规范载体**：`docs/architecture/07-coherence-exploration-platform.md` 的 `## Status Update 2026-11-13`
 > **canonical 实现**：`scripts/test/cep_dod_reading_check.{sh,py}`
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-dod-reading-single-authority
 

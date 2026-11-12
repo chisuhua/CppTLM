@@ -1,7 +1,7 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-13T00:05:00Z",
+  "updated_at": "2026-11-12T12:20:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
@@ -121,7 +121,7 @@
     },
     {
       "role": "builder",
-      "at": "2026-11-13T00:05:00Z",
+      "at": "2026-11-12T12:20:00Z",
       "by": "user",
       "reason": "用户口令「按 C3 的同一条链继续」⇒ 切 builder 执行 C4：P0b 立项 → 实施 → 五步链 → 归档 → 切 verifier。"
     }
