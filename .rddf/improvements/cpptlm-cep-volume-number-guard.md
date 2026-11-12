@@ -5,7 +5,7 @@ phase: phase-10
 主题: Coherence Exploration Platform(CEP)— 体量数字(归档数 / main spec 数 / 闸数)的机器守
 依赖:
   - ADR-CEP-00
-状态: "🟡 待实施（2026-11-12 起草;per 台账 **Entry #378** ④ 的 backlog 登记 + **Entry #383** 的 R-4 归因;⛔ 前提实测:AGENTS.md 的体量数字**实测已错 4 处**(135/138/37/39 vs 实测 140/40/41)⇒ 缺口成立)）"
+状态: "✅ 已实施并验收**（2026-11-12 起草 → 实施 → 验收;per 台账 **Entry #389** 实施回执 + **Entry #390** 验收 6/6 AC PASS / 0 BLOCKER);⚠️ **零槽位批路径**(per Entry #389 ①):产物 = 闸断言 + 文档数字 ⇒ ⛔ 未建 openspec change ⇒ **不占 KPI slot**(per C1 先例);⚠️ 实施期 2 处订正:动作宾语排除 + 实测不可得⇒跳过"
 created: 2026-11-13
 ---
 

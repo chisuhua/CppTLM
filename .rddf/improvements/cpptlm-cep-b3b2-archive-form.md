@@ -5,7 +5,7 @@ phase: phase-10
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台 —— B3b-2 归档形态(MUST-FIX-3)+ 回滚路径(MUST-FIX-4)
 依赖:
   - ADR-CEP-00
-状态: "🟡 待实施（2026-11-12 起草;per 台账 **Entry #383** 的 R-1 + architect 决策 `.rddf/reviews/cep-mustfix-3-4-archive-form-decision.md`(6 项定义 + 回滚路径 + V1~V7 判据);用户已拍板 2 个开放点(② 按终局分支自动选用 / ① 原地保留 + append-only 归档态段);⛔ 本 change **不执行归档**(终局未触发)—— 只定义形态)）"
+状态: "✅ 已归档（2026-11-12 起草 → 实施 → 归档 → 验收;per 台账 **Entry #386** 归档回执 —— ✅ 已完成归档语义 · delta **ADDED** 合并进 openspec/specs/cep-b3b2-archive-form/;verifier 验收 **8/8 AC PASS / 0 BLOCKER**,per **Entry #387**);原立项依据:台账 **Entry #384** 的立项 + **用户拍板 2 点**(② 按终局分支自动选用 / ① 原地保留 + append-only 归档态段);architect 决策 `.rddf/reviews/cep-mustfix-3-4-archive-form-decision.md`;⛔ 本 change **未执行归档**(终局未触发)—— 只定义形态"
 created: 2026-11-12
 ---
 
