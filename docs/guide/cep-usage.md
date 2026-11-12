@@ -179,6 +179,8 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 > **本清单只列「机器可查载体已存在」的未结项**;其余未结讨论散落在台账 §11 与各 SU,⛔ **不在此复述**。
 >
 > ⚠️ **状态判定不在本表** —— 各行的「当前是否仍成立」以**载体文件与台账**为准(本表是**导航**,不是状态源)⇒ 各项闭合后本表即过期 ⇒ ⛔ **不得**把本表读作「实时状态」。
+> ⚠️ **定位精化**(2026-11-12,per 台账 **Entry #377** 的 T9)——本表 = **导航 + 历史登记**;表内的删除线行 = **历史闭合标记**(per 台账 Entry #342),⛔ **同样不是状态源**。
+> ⇒ **唯一状态源** = OpenSpec change 的 `tasks.md` 勾选 + `proposal.md` 状态行(per `obj-cep-platform §4.7` 硬规则 1);⛔ 本表**不引入状态列**(加状态列 = 造出第二状态源)。
 
 | 类别 | 项 | 载体(机器可查) | 阻塞类型 | 解除触发 |
 |------|-----|---------------|---------|---------|
@@ -188,7 +190,7 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 | | UALink | 同上 | **external** | Evaluation Copy 约束解除 / 联盟发布公开规范 |
 | **invariant ⏭**(5 条) | `CEN-Ib8` / `INV-CEP-08-IC1` / `INV-CEP-09-IC2` / `INV-CEP-13-IC1` / `INV-CEP-13-IC3` | `test/cep_invariant_deferrals.json` | 能力未建模 | 逐条 `trigger_condition` |
 | **ADR 归因**(18 条) | `condition_unmet` 2 · `carrier_buildable_id_blocked` 10 · `carrier_present_id_absent` 2 · `doc_layer_manual_review` 4 | `test/cep_adr_structural_deferrals.json` | 见逐条 `disposition` | **建 id 架构性不可行** ⇒ 归类收敛(per Entry #326/#331);⛔ 不新建 id |
-| **口径 ④ 实施轮** | MUST-FIX-1 / MUST-FIX-2 | 台账 Entry #332 ⑧ | **裁决后必须先做**(⛔ **不受 ratify 门阻塞** —— MUST-FIX-1 是 Entry #332 ① 的事实订正,MUST-FIX-2 是禁令作用域重裁) | 随**口径 ④ 实施轮**(新 SU 落地时)执行;⚠️ **重裁落地前 §12.7 禁写 #3 按绝对禁令执行** |
+| **口径 ④ 实施轮** | MUST-FIX-1 / MUST-FIX-2 | 台账 Entry #332 ⑧ | ✅ **已完成**(2026-11-12,change `cpptlm-cep-dod-reading-consistency` 已归档;⛔ 未 ratify 的 MUST-FIX-3/4 **未并入** —— 回执 per 台账 **Entry #375** 归档回执 + **Entry #376** 验收 15/15 AC PASS) | —(已闭合) |新 SU 落地时)执行;⚠️ **重裁落地前 §12.7 禁写 #3 按绝对禁令执行** |
 | | MUST-FIX-3 / MUST-FIX-4 | 台账 Entry #332 ⑧ | 待 **用户 ratify** / 归档形态定义 | ratify 后方可执行 |
 | ~~**闸强度缺口**~~ | ✅ **已闭合 2026-11-12**(per 台账 Entry #342)—— `cep_b3b2_deferral_check.sh` 的恒真 grep 段(grep `$DECL` **自身**)已删,改为**集合覆盖 + 逐族锚校验**;⛔ 本表状态判定以**载体文件与台账**为准 | 同脚本 | ✅ 已闭合 | 决定性变异:删 1 族 / 同族加第 2 条 ⇒ 必红 |
 | ~~**守门软点**~~ | ✅ **已闭合 2026-11-12**(per 台账 Entry #342)—— `cep_b4_observation_keys_check.sh` 的自合成 `trace.h5` 已加 `[synthetic-fixture]` **显式标注**且 exit 0 ⇒ 强度可被 grep 观测,⛔ 不欺 | 同脚本 + 本节 **§12.4** 尾注 | ✅ 已闭合 | 闸头注释写明「本闸 = 文件级」 |

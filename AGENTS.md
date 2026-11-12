@@ -4,7 +4,7 @@
 
 ## WHAT THIS IS
 
-TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**（由 PCIe Endpoint IP + GPGPU Cluster + Memory Cluster + NoC Interconnect + 多层 SimModule 容器等 IP 构成）。2026-2027 年完成 **7 阶段 PCIe EP 微架构**全链路交付（链路层 → 编码 → PHY 数字控制 → SR-IOV → AXI Stream Adapter → AXI4Mapper → Host Bypass + RC → 整合），**Phase 1-7 全部通过 Oracle 评审放行；Phase 8 整合交付完成**。2026-10 起承载 **CEP 平台**（Coherence Exploration Platform —— 跨协议一致性探索平台：22 份 ADR + 37 份 main spec + 35 个契约闸），同时继承既有 GPGPU 端（GPU CU / TPC / GPC / GPU Cluster 多层 + DMA/Doorbell/CommandProcessor/CompletionRing MVP）与顶层 ApuSoC 容器。
+TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**（由 PCIe Endpoint IP + GPGPU Cluster + Memory Cluster + NoC Interconnect + 多层 SimModule 容器等 IP 构成）。2026-2027 年完成 **7 阶段 PCIe EP 微架构**全链路交付（链路层 → 编码 → PHY 数字控制 → SR-IOV → AXI Stream Adapter → AXI4Mapper → Host Bypass + RC → 整合），**Phase 1-7 全部通过 Oracle 评审放行；Phase 8 整合交付完成**。2026-10 起承载 **CEP 平台**（Coherence Exploration Platform —— 跨协议一致性探索平台：22 份 ADR + 39 份 main spec + 39 个契约闸（闸数**以 `ls scripts/test/cep_*.sh` 为准**;2026-11-12 实测）），同时继承既有 GPGPU 端（GPU CU / TPC / GPC / GPU Cluster 多层 + DMA/Doorbell/CommandProcessor/CompletionRing MVP）与顶层 ApuSoC 容器。
 
 **First read** for new agents: `docs/ONBOARDING.md` (knowledge-graph-generated ramp-up)。
 Architecture 必读:
@@ -208,8 +208,8 @@ examples/                # C++ example_*.cc + Python demo_*.py
 cpptlm/                  # Python 库 (pyproject.toml): cli/topo/config/simulation/analysis
 
 openspec/                # 变更提案工作流 (changes/<name>/{proposal.md,specs/,tasks.md})
-  changes/              # 实际 proposals (当前 0 active; 136 份已归档于 changes/archive/)
-  specs/                # main specs (123 份: cep-* 37 + 其他 86)
+  changes/              # 实际 proposals (当前 0 active; 138 份已归档于 changes/archive/ —— 2026-11-12 实测 `ls -d openspec/changes/archive/*/ | wc -l`)
+  specs/                # main specs (125 份: cep-* 39 + 其他 86 —— 2026-11-12 实测)
 
 scripts/                 # 工具脚本 (详见 scripts/README.md)
   build/                # 构建 + 格式化 (build.sh / build_ptx_emu.sh / format.sh)
@@ -232,7 +232,7 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 | **CEP 契约一致性** | `scripts/test/cep_docs_sync_check.sh`（22 份 ADR 的不变量 ↔ owner ADR 实际定义条数一致）+ `scripts/test/cep_doc_ref_check.sh`（对外文档引用节号校验） |
 | **CEP 实验 4 件套** | `scripts/test/cep_experiment_run.sh`（H2/H3/H4/H6 产出与契约校验）+ `scripts/test/cep_freeze_check.sh`（产物冻结先于解读） |
 | **CEP 真实 IP 对齐** | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`（ArchForge 接口对齐清单，§6 C-4 / §7 漂移检测） |
-| **CEP 开放规格** | `openspec/specs/cep-*/`（37 份 main spec）+ `openspec/changes/archive/`（136 份已归档 change） |
+| **CEP 开放规格** | `openspec/specs/cep-*/`（39 份 main spec）+ `openspec/changes/archive/`（138 份已归档 change）—— 2026-11-12 实测 |
 | **CEP 测试** | `test/test_cep_*.cc`（标签 `[cep]`，规模最大的测试集） |
 
 ### ★ PCIe EP 微架构 (2026-2027 主体)
@@ -614,7 +614,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | **治理** | `ADR-CEP-00`（跨仓归口 + 准入门槛）+ `ADR-CEP-00A`（真源章节锚点表） |
 | **ADR** | 22 份 `ADR-CEP-*`（fabric / coherence / protocol / experiment / ownership 各域） |
 | **实现** | `include/tlm/cep/` 43 个 header-only 文件 + `test/test_cep_*.cc` |
-| **OpenSpec** | 37 份 `cep-*` main spec；**0 active** change；136 份已归档 change |
+| **OpenSpec** | 39 份 `cep-*` main spec；**0 active** change；138 份已归档 change（2026-11-12 实测） |
 | **守门** | `scripts/test/cep_*.sh` 契约闸（数量以 `ls scripts/test/cep_*.sh` 为准）+ 17 个 `.cc` 编译探针（冻结面 / 实验 4 件套 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture） |
 | **测试** | `[cep]` —— 规模最大的测试集 |
 | **状态** | 队列 #3~#14 已全部归档（2026-10-26 ~ 2026-11-04）; 当前 0 个 active change |
