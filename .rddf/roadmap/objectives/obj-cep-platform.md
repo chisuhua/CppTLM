@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**(C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-12 立项 ⇒ 占 1 slot,per 台账 Entry #384;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
+`openspec/changes/` 当前 **0 个 active**(C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -21797,3 +21797,40 @@ builder 建四件套 + KPI 回填 **1/3** ⇒ 实施(⑤ 项)⇒ 0 回归(ctest 
 **⑤ 关联**
 
 **#384**(立项 + 用户拍板 2 点)· **#383**(R-1 归因)· **#332 ⑧**(MUST-FIX 原文 + 终局三分支)· **#264** · architect 决策 `.rddf/reviews/cep-mustfix-3-4-archive-form-decision.md`
+
+### Entry #386 — 2026-11-13 [build](**R-1 归档回执** —— ✅ 已完成归档语义 · delta **ADDED** 合并 · 冻结面 **81 产物** · KPI **0/3**)
+
+**主题**:`cpptlm-cep-b3b2-archive-form` 收口(MUST-FIX-3 归档形态 6 项 + MUST-FIX-4 回滚路径)。
+
+**① 归档**
+
+| 项 | 实测 |
+|---|---|
+| `openspec archive --yes` | rc=0;`+ 1 added` ⇒ delta **ADDED** 合并进 `openspec/specs/cep-b3b2-archive-form/spec.md` |
+| 归档目录 | `openspec/changes/archive/2026-11-13-cpptlm-cep-b3b2-archive-form`(⚠️ `.gitignore:64` 覆盖 ⇒ 本地留存不入库,既有约定) |
+| KPI | `openspec list` ⇒ **No active changes found** ⇒ **0/3**;活口径 **7 处**已回填 |
+| 冻结面 | **81 产物**(新 main spec 入 glob)· provenance `ce2ae579` · 无参 **rc=0** |
+
+**② 落地效果(本 change 的实质)**
+
+| MUST-FIX-3 项 | 载体 | 状态 |
+|---|---|---|
+| ① 归档路径形态 | `obj §14.1` | ✅ 原地保留 + append-only 归档态段(用户拍板) |
+| ② 归档语义选用 | `obj §14.2` | ✅ 按终局分支自动选用(Ⅰ→✅ / Ⅱ→不归档 / Ⅲ→用户裁 / Ⅳ→⏸)(用户拍板) |
+| ③ 义务转移载体 | `obj §14.3` | ✅ 真源 = deferrals JSON + 闸;`07 号` / 手册只写指针 |
+| ④ LEDGER 重定向 | `obj §14.4` + `test/cep_b3b2_ledger_redirect.json` | ✅ 归档时**只改表、不改闸代码** |
+| ⑤ 逐族锚解析 | `obj §14.5` + 闸 | ✅ **行首标题匹配**(⛔ 旧全文子串已降级)· JSON 零 diff |
+| ⑥ `07 号` 维护态段 | `obj §14.6` + `07 号` §12 指针句 | ✅ 单向指针(冻结件,走五步链) |
+| **MUST-FIX-4** 回滚 | `obj §14.7` + `§14.7.1` | ✅ 双载体 + 成对可判 + 触发 3 条 + **粒度**默认只撤回口径 ④ 登记形态 |
+
+**③ 回归取证**
+
+`ctest` **175/175** · `cep_*.sh` **41/41** rc=0 · format / docs_sync / doc_ref / lint / cep_docs_sync 全 rc=0 · `cep_index_position_check` 绿(§12 追加 2 行 ⇒ 索引行号位移 ⇒ **机重写** 5 删 5 增)· 冻结面 81 产物无参 rc=0。
+
+**④ ⛔ 明确不做**
+
+⛔ **未执行归档**(终局未触发;`## §14` 段首显式声明「形态定义,非归档已发生」)· ⛔ `B3b-2` 仍 **0/4** · ⛔ deferrals JSON **零 diff** · ⛔ 无 ADR 变更 · ⛔ 未回改既有 Entry / SU · ⛔ `§4.0` 未动。
+
+**⑤ 关联**
+
+**#385**(实施 + 冻结链拍 0)· **#384**(立项 + 用户拍板 2 点)· **#383**(R-1 归因)· **#332 ⑧**(MUST-FIX 原文 + 终局三分支)· **#264** · architect 决策 `.rddf/reviews/cep-mustfix-3-4-archive-form-decision.md`
