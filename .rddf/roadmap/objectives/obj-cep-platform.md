@@ -20567,6 +20567,37 @@ metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state
 
 **#360**(T1)· **#359**(D-1~D-5)· **#338**(R-c 授权)· **#355**(C2 · 五步链先例)· **#169**(拆分登记)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`(architect 三次 + oracle 4 条)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `:409-411`(② 三行)· `:415`(D1 四动作)· `:434`(R-c 缺口)· `07 号:569`(索引)· `:501`(旧规格)· `scripts/test/cep_adr_structural_check.sh:52-57`(shadow_reset)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)· `test/cep_adr_parser.hh:110`/`:169-173`/`:250`
 
+### Entry #369 — 2026-11-12 [build](**verifier 第 1 轮 FAIL-1 修复** —— `cep_doc_ref_check` 的**第 4 条同型豁免** + 归档件 tasks **6 项回填**;回切 verifier 第 2 轮)
+
+**主题**:verifier 第 1 轮判定 **AC-21 FAIL**(1 项 `implementation_gap`)+ 遗留清扫 S-1 ⇒ 回 builder 修复(⛔ verifier 不改实现,per 审查配对)。
+
+**① FAIL-1 的修复(VIRTUAL_PATHS 第 4 条同型豁免)**
+
+| 项 | 内容 |
+|---|---|
+| 现象 | `ctest --test-dir build -j4` = **170/171** ⇒ `cep_doc_ref_check` 红:`✗ obj-cep-platform.md: 引用不存在的文件 openspec/changes/cpptlm-cep-invariant-gate-teeth/`(3 处) |
+| 归因 | 台账 **Entry #367 / #368**(本 change 自己的归档登记)引用**归档前的 active 路径**;该目录已迁至 `openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/` ⇒ 引用确实指向**不存在的路径** ⇒ **闸判红是正确的** |
+| 修法 | `scripts/test/cep_doc_ref_check.sh` 的 `VIRTUAL_PATHS` 追加 **1 条**:`"openspec/changes/cpptlm-cep-invariant-gate-teeth"`(注释写明「2026-11-12 归档 → `2026-11-12-cpptlm-cep-invariant-gate-teeth`;append-only 台账不可回改 ⇒ 豁免其 active 路径形态」) |
+| **同型先例** | 既有 **3 条**完全同构的登记(`cpptlm-cep-umbrella` / `cpptlm-cep-poc-spike` / `cpptlm-cep-stub-cache-core` / `cpptlm-cep-directory-ordering-plane` —— 均为「change 归档后其 active 路径仍被 append-only 台账引述」)⇒ 本次是**同机制的第 4+ 条**,⛔ **不是新增豁免类别** |
+| ⛔ 不放宽的证明 | 该子串**不匹配**归档后路径(`openspec/changes/archive/2026-11-12-...` 中间多出 `archive/2026-11-12-`)⇒ **归档件本身仍被逐条检查**;闸的判据逻辑与语义断言(42 条)/负向断言(4 条)/自动检测(755 处)**均未改** |
+| 实测 | `bash scripts/test/cep_doc_ref_check.sh` ⇒ **rc=0** |
+
+**② 遗留清扫 S-1 的修复(归档件 tasks 6 项回填)**
+
+| 项 | 内容 |
+|---|---|
+| 发现 | 归档件 tasks.md 的 `A6.2` + `A11.1` ~ `A11.5` = **6 项**仍为 `- [ ]`(事实已完成,载体未回填) |
+| 根因 | ⚠️ 上次回填脚本的 `old` 文本写成 `**A11.1**`(带粗体)而实际文本是 `A11.1` ⇒ **assert 中止 ⇒ 整体未生效**(⛔ 非部分生效)⇒ 本次**逐项按实际文本**回填 + 附实测回执 |
+| 实测 | `grep -c '^- \[ \]' <归档件>/tasks.md` = **0** ⇒ 全勾 |
+
+**③ ⛔ 本 Entry 明确不做**
+
+⛔ 不改闸的判据逻辑 · ⛔ 不改台账已提交 Entry(append-only)· ⛔ 不改归档件内容(仅 tasks 勾选 + 回执)· ⛔ 不新增豁免类别 · ⛔ 不动 C4 / T3 · ⛔ 不新增裁决。
+
+**④ 关联**
+
+**#368**(归档终态)· **#367**(归档授权)· **#366**(闸侧占位路径归一 · **同类的第 1 次修法**)· **#365**(C3b)· **#364**(C3a)· verifier 报告 `.rddf/reviews/cpptlm-cep-invariant-gate-teeth-verify.md`(第 1 轮:AC-21 FAIL · 已用轮次 1/3)
+
 ### Entry #368 — 2026-11-12 [build](**C3 归档终态** —— ✅ 已完成归档语义 · 第二次五步链全绿 · `artifact_count` **78 → 79** · 新 main spec **strict-valid**;**D1 槽位已释放 ⇒ C4 可立项**)
 
 **主题**:C3-F(A11 归档)**完成** —— delta 并入 main spec ⇒ **无条件**第二次 `--update` ⇒ 冻结集 **78 → 79**;`openspec list` 归零 ⇒ **D1 槽位释放**。

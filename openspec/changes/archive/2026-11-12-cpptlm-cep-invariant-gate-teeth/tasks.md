@@ -82,7 +82,8 @@
 ## A6 · 冻结件 commit(五步链 拍 2)
 
 - [x] A6.1 落 **builder 自己的 C3 台账 entry**(五步链 拍 0 的前置;⛔ 不改 `#361`)
-- [ ] A6.2 `git commit` **2 件冻结件**(⚠️ **产物 commit 必须先于 `--update`**)
+- [x] A6.2 `git commit` **2 件冻结件**(⚠️ **产物 commit 必须先于 `--update`**)
+      > ✅ **实测**:commit `f0faa178`(C3-C/C3-D 两件冻结件)⇒ **先于** 第一次 `--update`(拍 3)
 
 ---
 
@@ -128,11 +129,16 @@
 
 ## A11 · 归档(M6 · AC-20)
 
-- [ ] A11.1 `openspec archive cpptlm-cep-invariant-gate-teeth` ⇒ delta 并入 `openspec/specs/cep-invariant-gate/spec.md`
-- [ ] A11.2 ⚠️ 归档后 `cep_freeze_check` + `cep_docs_sync_check` **预期双红** ⇒ 登记为**预期**,⛔ 不得当回归
-- [ ] A11.3 **无条件第二次 `--update --authorized-by "Entry #N"`** ⇒ `artifact_count` **78 → 79**
-- [ ] A11.4 **commit**(manifest + 归档产物)
-- [ ] A11.5 `openspec validate --specs --strict` 通过 + 落 **verifier 验收报告** `.rddf/reviews/cpptlm-cep-invariant-gate-teeth-verify.md`
+- [x] A11.1 `openspec archive cpptlm-cep-invariant-gate-teeth` ⇒ delta 并入 `openspec/specs/cep-invariant-gate/spec.md`
+      > ✅ **实测**:归档为 **✅ 已完成归档**语义(默认;⛔ **不用** `--skip-specs` —— 能力确实落地)⇒ 归档件 `openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/`(**force-add 入库**)⇒ `openspec/specs/cep-invariant-gate/spec.md` 实测 **+ 1 added**
+- [x] A11.2 ⚠️ 归档后 `cep_freeze_check` + `cep_docs_sync_check` **预期双红** ⇒ 登记为**预期**,⛔ 不得当回归
+      > ✅ **实测**:归档后冻结面红 =「新增未登记的冻结范围内产物: `openspec/specs/cep-invariant-gate/spec.md`」⇒ 由 A11.3 的第二次 `--update` 闭合 ⇒ **拍 5 后 rc=0**
+- [x] A11.3 **无条件第二次 `--update --authorized-by "Entry #N"`** ⇒ `artifact_count` **78 → 79**
+      > ✅ **实测**:授权 = `Entry #367`(归档授权,per **Entry #368** ② 的第三次 `--update` 补记)⇒ 清单 **79 个产物**;无参复验 **rc=0**(79 hash 全一致 + provenance 自检通过)
+- [x] A11.4 **commit**(manifest + 归档产物)
+      > ✅ 归档产物 commit = `3063d06b`(拍 2,**先于** `--update`);manifest commit = `195c6edb`(拍 4)
+- [x] A11.5 `openspec validate --specs --strict` 通过 + 落 **verifier 验收报告** `.rddf/reviews/cpptlm-cep-invariant-gate-teeth-verify.md`
+      > ✅ `openspec validate cep-invariant-gate --type spec --strict` ⇒ **rc=0**(`Specification 'cep-invariant-gate' is valid`);⚠️ 全库 `--specs --strict` 的 **37 passed / 87 failed** 为**既有状态**(实测 `git stash` 前后同值)⇒ ⛔ 非本 change 引入;验收报告落 `.rddf/reviews/cpptlm-cep-invariant-gate-teeth-verify.md`
 
 ---
 

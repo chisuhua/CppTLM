@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-12T21:05:00Z",
+  "updated_at": "2026-11-12T22:55:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-12T04:10:00Z",
-      "by": "user",
-      "reason": "用户口令「切 architect 起 ②」⇒ 执行台账 §13.6 的 W0 = 出 C2 方案（T-C2-⓪ 判据作用域 + T-C2-① 实现路径）+ 裁 U-3。"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-12T04:40:00Z",
-      "by": "user",
-      "reason": "用户口令「选A」⇒ 落 W0 方案到 .rddf/reviews/（architect 无权写该目录，按角色矩阵由 builder 落盘）+ 随后 C2 立项。"
-    },
     {
       "role": "planner",
       "at": "2026-11-12T05:10:00Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-12T21:05:00Z",
       "by": "user",
       "reason": "用户任务书明列 P0b/C3a/C3b/C3-F = builder 步；且用户授权「全链 commit」+「自动切 verifier 验收」⇒ 由 planner 切 builder 执行 C3 实施链。"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-12T22:40:00Z",
+      "by": "user",
+      "reason": "用户授权「自动切 verifier 验收」⇒ 对 cpptlm-cep-invariant-gate-teeth 的 AC-1~AC-22 逐条取证(只验不改)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-12T22:55:00Z",
+      "by": "user",
+      "reason": "verifier 第 1 轮判定 AC-21 FAIL(implementation_gap)⇒ 回 builder 修:① cep_doc_ref_check 的 VIRTUAL_PATHS 补第 4 条同型豁免 ② 归档件 tasks 回填 6 项。"
     }
   ],
   "auto_switch_window": null
