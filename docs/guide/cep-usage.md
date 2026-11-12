@@ -200,9 +200,8 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 
 > ⚠️ **本清单不含**下列两项 —— 二者的**状态判据不在本清单**,处置见各自出处:
 > - **「全绿 run」缺口**(SU · 十五 ①)—— ⚠️ **至今未闭合**:SU · 十六 ① 只闭合了「回程腿在拓扑级不可达」这个**子项**,并逐字声明「**仍不承载全绿 run**」(IC3 仍 ⚪ 不适用)⇒ 「全绿未达成」结论不变;
-> - **装配闸未挂 `validate_topology` CLI 的不对称**(SU · 十七 ② 末条)—— 已登记为 backlog。
->   ⚠️ **口径澄清(2026-11-12,per 台账 Entry #358)**:该「不对称」指 **CLI 未挂 IAG 闸族**
->   ⇒ `instantiateAll` 与 CLI 对同一 config 的结论**可能不一致** —— **⛔ 仍未闭合**。
+> - **装配闸未挂 `validate_topology` CLI 的不对称**(SU · 十七 ② 末条)—— ✅ **已闭合 2026-11-13**(per 台账 **Entry #381** 归档 + **Entry #387** 验收):IAG 族**两臂同补** —— ① 装配路径臂(`src/core/module_factory.cc` **Step 0.26**,FAIL ⇒ 装配失败且**零副作用**)② 离线 CLI 臂(`examples/cep_instance_assembly_gate.cc` + `validate_topology` 的**单列第二段**,9 份 CEP config)⇒ 两臂**共用同一份**判据实现与加载规则 ⇒ `instantiateAll` 与 CLI 对同一 config 的结论**必然一致**。
+>   ⚠️ **口径订正(2026-11-13,per 台账 Entry #379 ②)**:原登记(Entry #358)称「CLI 未挂 IAG 闸族 ⇒ 两侧结论**可能不一致**」—— **实测偏窄**:IAG 族在 `instantiateAll` 侧**原本也没有**执行臂(`module_factory.cc` 全文 0 命中 `run_instance_assembly_gate`)⇒ 实为「**两侧一致地都不挂**」⇒ 缺陷面更宽 ⇒ 修法必须**两臂同补**(已按此实施)。
 >   ⛔ **勿与本轮 Q1 修复的事项混淆**:Q1 修的是「**组合 target 引用已删除文件 ⇒ 整条 target
 >   跑不完 ⇒ 其后 4 条拓扑校验 + 装配闸 CLI 挂点全部从未执行**」(静默 20 天)⇒ 该项**已闭合**;
 >   两者是**不同**的缺陷(前者 = 挂点未执行;后者 = 挂点已执行但判据族不全)。

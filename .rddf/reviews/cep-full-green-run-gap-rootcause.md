@@ -1,0 +1,83 @@
+# architect 方案 —— R-3「全绿 run」缺口的根因定位与闭合路径
+
+> **主题**:per 台账 **Entry #383** / **#391** 的 R-3(`docs/guide/cep-usage.md` §12.8 表外第 1 项 + `07 号` SU · 十五 ①)——「全绿 run」缺口。
+> **状态**:✅ **根因已定位** + **闭合路径已定**;⛔ **本轮不实施**(需独立 change + 冻结面五步链)⇒ 登记为**下一批**。
+> **上游**:**Entry #332 ⑧**(口径 ④ 预登记)· **#264**(B4 达成证据形态)· **#228**(B4 的证据设备落地)· **#391**(R-3 归因)
+
+---
+
+## 一 · 根因(实测,非文本推断)
+
+### 1.1 判据侧
+
+IC3 = `deadlock_violations == 0 && memory_violations == 0`(per `07 号` §4 的 IC3 口径 + `scripts/test/cep_ic3_report_states_check.sh`)。
+⇒ **两个键都必须实测为 0**,任一为 `not-collected` ⇒ IC3 = ⚪ **不适用**(永不可判)。
+
+### 1.2 数据侧(实测两个已有 run)
+
+| run | `deadlock_violations` | `memory_violations` | IC3 |
+|---|---|---|---|
+| `experimental/run-2026-11-09-cep-e2e`(拓扑 A) | **0** ✅ 已采集 | **`"not-collected"`** ⛔ | ⚪ 不适用 |
+| `experimental/run-2026-11-09-cep-e2e-b` | **0** ✅ 已采集 | **`"not-collected"`** ⛔ | ⚪ 不适用 |
+
+⇒ **缺口只差一个键**:`memory_violations`。其余 13 必纳键里 `coherence_stalls` 已实测(260 / 86),`collective_stalls` / `directory_misses` 为 `not-collected` 但属**非违例类**(per B4 口径:违例类必须**实测为 0**,非违例类可为 `not-collected` 且 ⊆ 预登记)。
+
+### 1.3 采集面(已存在,不是「缺功能」)
+
+| 事实 | 落点 |
+|---|---|
+| 采集点 | `test/cep_experiment_harness.hh:430` — `metric_json("memory_violations", violations.total())` |
+| 「未采集」的显式声明机制 | `test/test_cep_experiment_emit.cc:148` — 本 run 未采集 ⇒ 须显式声明(⇒ 现有 run 的 `not-collected` 是**诚实声明**,不是 bug) |
+| **装置**(使单个 run 同时实测两类违例类) | `test/cep_consistency_completion_model.hh` — B4 的证据设备(per **Entry #228**) |
+| 反向 fixture(IC3 三态渲染) | `scripts/test/cep_ic3_report_states_check.sh` |
+
+⇒ **结论**:R-3 **不是「缺能力」,而是「装置已有、真实 run 未跑」** —— 与 B4 当时的形态**同型**(装置 + 合成 fixture 的通过态实例已有,**真实 run 实例缺**)。
+
+---
+
+## 二 · 闭合路径(4 步)
+
+| 步 | 内容 | 产物 | 门 |
+|:--:|---|---|---|
+| **1** | **装置接入真实 E2E**:用 `cep_consistency_completion_model.hh` 的装置跑拓扑 **B**(`configs/cep_chi_rnf_e2e_b.json`,**带 bridge** ⇒ 有违例类样本面) | 一个 run 目录(4 件套) | `memory_violations` **实测为 0** |
+| **2** | **IC3 三态判定**:该 run 的 `report.html` 渲染「**✓ 一致性闸门通过**」 | 判据更新 | `cep_ic3_report_states_check.sh` 绿 |
+| **3** | **证据登记**:按 ADR-CEP-06 的 retention 口径登记(⚠️ `trace.h5` **不入库** ⇒ 登记形态须先核) | 实施笔记 + `07 号` 新 SU | 冻结件 ⇒ **五步链** |
+| **4** | **DoD 读法**:把「IC3 在真实 run 上达成通过态」写进 `obj §6.2` B4 的证据行(append-only) | 台账 Entry | `cep_docs_sync_check` 绿 |
+
+### ⚠️ 三条硬边界(不可让步)
+
+1. **⛔ 不得为凑 IC3 而掩盖真实违例** —— 若第 1 步实测 `memory_violations > 0` ⇒ **立即停止**,按**缺陷**另立处置(不得改判据、不得改阈值、不得改预登记来「让它变绿」);
+2. **⛔ 不得用合成 fixture 冒充真实 run** —— B4 当时的通过态实例是**合成**的,本项要求的正是**真实 run**;
+3. **⛔ 不得把「装置接入」写成「能力新增」** —— 装置、采集点、三态 fixture **均已存在**;本项是**接线 + 取证**,⛔ 不是新功能。
+
+### ⚠️ 未实测的前置(实施期必须先核,⛔ 不许假设)
+
+| # | 前置 | 若不成立的后果 |
+|:--:|---|---|
+| P-1 | 拓扑 B 上装置能否**真的采到** `memory_violations` 样本(而非仍然 `not-collected`) | 步骤 1 直接失败 ⇒ 缺口另有根因 |
+| P-2 | ADR-CEP-06 的 retention 口径是否允许「4 件套齐备但 `trace.h5` 不入库」的**登记形态** | 步骤 3 无合法登记形态 ⇒ 需先裁决口径 |
+| P-3 | 「全绿 run」是否还要求**其它**条件(如 H2/H3/H6 假设全覆盖) | 步骤 2 的判据范围会被低估 |
+
+---
+
+## 三 · 规模与排期
+
+| 项 | 估时 | 说明 |
+|---|---|---|
+| 实施(4 步) | ≈1-2 人日 | 主体是**接线 + 真跑 + 取证**,⛔ 不是新功能 |
+| 冻结面 | **1 处**(`07 号` 新 SU)⇒ **五步链** | 另涉 `obj §6.2` 证据行(append-only) |
+| KPI slot | ✅ 占 1 个(当前 **0/3**) | |
+| 前置核对 | ≈0.5 人日 | P-1 / P-2 / P-3 三条**必须先核** |
+
+⚠️ **本轮不实施的理由**:① 需独立 change + 冻结面五步链 + 归档 + 独立验收(四角色链);② **P-1/P-2/P-3 三条前置尚未实测**,⛔ 先立项再发现前置不成立 = 白占一个 slot;③ 本仓纪律要求「⛔ 半成品」——宁可登记清楚,不做半截。
+
+---
+
+## 四 · 已登记的旁证(可复核)
+
+- `experimental/run-2026-11-09-cep-e2e{,-b}/metrics.json` —— 两 run 的 `deadlock_violations` = 0、`memory_violations` = `not-collected`;
+- `test/cep_experiment_harness.hh:430` —— 采集点;
+- `test/cep_consistency_completion_model.hh` —— 装置(B4 证据设备,per Entry #228);
+- `scripts/test/cep_ic3_report_states_check.sh` —— IC3 三态 fixture。
+
+**关联**:台账 **#391**(R-3 归因)· **#383** · **#332 ⑧** · **#264** · **#228**(B4 达成)· **#250** · `docs/guide/cep-usage.md` §12.8 · `07 号` SU · 十五 ①
