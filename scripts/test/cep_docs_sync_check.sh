@@ -1412,6 +1412,94 @@ else:
     else:
         print("  \033[0;32m✓\033[0m S1 有效期未届满(队列 #6 的 perm 演进未归档 / schema 无 perm 形态字段)")
 
+# ── 断言 ⑨:体量数字(归档数 / main spec 数 / 闸数)↔ 实测 ──────────────────
+#   背景(per 台账 Entry #388 / Entry #378 ④ 的 backlog):体量数字此前**无机器守**
+#   ⇒ 只能人工同步 ⇒ C4 / C5 / C6 三个 change 各自新增闸与 main spec 之后,
+#   `AGENTS.md` 的体量数字**实测已错 4 类**(135/138/37/39 vs 实测 140/40/41)。
+#   扫描集 = **当前态文档**(⛔ **不含台账 obj**:其 §11 Entry 区是 append-only 历史,
+#   记录旧数是合法叙述 ⇒ 纳入会误伤;台账 §5.2 活口径不含体量数字 ⇒ 无覆盖损失)。
+#   判据 = 文本形态命中 ⇒ 数值必须 == 实测(与断言 ① 的 KPI 口径同源思路)。
+_VOL_DOCS = [
+    "AGENTS.md",
+    ".rddf/roadmap.md",
+    ".rddf/roadmap/phases/phase-10.md",
+    ".rddf/improvements/cpptlm-cep-umbrella.md",
+    ".rddf/improvements/cpptlm-cep-nvlink-sharp.md",
+]
+
+
+def _count_dirs(_d):
+    try:
+        return len([n for n in os.listdir(_d) if os.path.isdir(os.path.join(_d, n))])
+    except OSError:
+        return None
+
+
+_arch_n = _count_dirs(os.path.join(root, "openspec/changes/archive"))
+try:
+    _specs = os.listdir(os.path.join(root, "openspec/specs"))
+except OSError:
+    _specs = []
+_cep_n = len([n for n in _specs if n.startswith("cep-")])
+_spec_all = len(_specs)
+try:
+    _gate_n = len([n for n in os.listdir(os.path.join(root, "scripts/test"))
+                   if n.startswith("cep_") and n.endswith(".sh")])
+except OSError:
+    _gate_n = None
+_VOL_PATS = [
+    ("归档 change 数", re.compile(r"(\d{2,3})\s*份已归档"), _arch_n),
+    ("归档 change 数", re.compile(r"已归档 change\s*\*\*(\d{2,3})\*\*\s*份"), _arch_n),
+    ("cep-* main spec 数", re.compile(r"(\d{1,3})\s*份\s*(?:`?cep-\*`?\s*)?main\s*spec"), _cep_n),
+    ("契约闸数", re.compile(r"(\d{1,3})\s*个\s*(?:契约闸|`?cep_\*\.sh`?)"), _gate_n),
+]
+_vol_errs = []
+_vol_hits = 0
+_vol_skipped = 0
+for _f in _VOL_DOCS:
+    _p = os.path.join(root, _f)
+    if not os.path.isfile(_p):
+        continue
+    for _i, _line in enumerate(open(_p, encoding="utf-8", errors="ignore").read().split("\n"), 1):
+        if "历史快照" in _line:
+            continue
+        for _label, _pat, _exp in _VOL_PATS:
+            for _m in _pat.finditer(_line):
+                # ⚠️ **动作宾语排除**:「22 Scenario 并入 3 份 main spec」里的「3 份」是
+                #    **某次归档并入的份数**(动作宾语)⇒ ⛔ 不是「仓内总量」⇒ 跳过。
+                #    判据 = 数字**紧前** 14 字内出现动作动词(并入/合入/落入/并合/合并/新增/归档进)。
+                _pre = _line[max(0, _m.start(1) - 14):_m.start(1)]
+                if re.search(r"(并入|合入|落入|并合|合并|新增|归档进)", _pre):
+                    continue
+                if _exp is None:
+                    # ⚠️ **实测不可得 ⇒ 跳过**(⛔ 不是 FAIL):本断言的回归 fixture 在
+                    #    **仓外副本**里运行(`cep_gate_selftest.sh` 把闸复制到临时目录)⇒
+                    #    `scripts/test/` 不在其中 ⇒ 闸数不可数。
+                    #    语义与闸族既有 SKIP 一致:外部条件缺失 ⇒ 本项**不适用**。
+                    _vol_skipped += 1
+                    continue
+                _vol_hits += 1
+                _got = int(_m.group(1))
+                if _got != _exp:
+                    _vol_errs.append(f"{_f}:{_i} 体量数字漂移[{_label}]: 写 {_got},实测 {_exp}")
+        # 形态:「main specs (N 份: cep-* M + 其他 K)」⇒ 总数与 cep-* 数分别校验
+        for _m in re.finditer(r"main specs \((\d{1,3}) 份: cep-\* (\d{1,3})", _line):
+            if _spec_all == 0:
+                _vol_skipped += 1
+                continue
+            _vol_hits += 1
+            _tot, _cep = int(_m.group(1)), int(_m.group(2))
+            if _tot != _spec_all:
+                _vol_errs.append(f"{_f}:{_i} 体量数字漂移[main spec 总数]: 写 {_tot},实测 {_spec_all}")
+            if _cep != _cep_n:
+                _vol_errs.append(f"{_f}:{_i} 体量数字漂移[cep-* spec 数]: 写 {_cep},实测 {_cep_n}")
+if _vol_errs:
+    for _e in _vol_errs:
+        failed.append(_e)
+else:
+    print(f"  \033[0;32m✓\033[0m 体量数字 == 实测(归档 {_arch_n} / cep-* spec {_cep_n} / 闸 {_gate_n};"
+          f"命中 {_vol_hits} 处,跳过 {_vol_skipped} 处(实测不可得))")
+
 if failed:
     for f in failed:
         print("  \033[0;31m✗\033[0m " + f)
