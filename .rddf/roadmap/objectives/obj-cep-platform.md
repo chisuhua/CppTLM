@@ -21426,3 +21426,62 @@ T8 的退出判据(Entry #377 ②)只枚举了 **3 行**(`211/235/617`)⇒ 实�
 **⑥ 关联**
 
 **#377**(盘点 + T7 + 批 1 分解)· **#376**(C4 验收)· **#375**(C4 归档)· **#342**(Entry #342 的 README 订正先例 · §12.8 删除线历史标记)· **#343** · **#278** · **#184**
+
+### Entry #379 — 2026-11-12 [planner](**D-2 立项** —— IAG 装配闸族执行臂补齐;architect 方案 4 条决策 + improvement 7 段 + 7 条 AC)
+
+**主题**:per 用户口令「按建议推进直到完成所有任务」⇒ 执行 **Entry #377** 的**批 2**(D-2)。本 Entry = D-2 的**立项授权**(planner 域),并落 architect 方案的 4 条裁决。
+
+**① 上游产物**
+
+| 产物 | 落点 | 状态 |
+|---|---|---|
+| architect 方案 | `.rddf/reviews/cep-cli-iag-gate-alignment.md` | ✅ 已落盘(commit `e0c65b14`)—— 缺口精确表述 + **4 条决策** + 9 份 config 影响面实测 + 6 条验收判据 + 4 条不可约残余 |
+| improvement 草稿 | `.rddf/improvements/cpptlm-cep-iag-gate-execution-arm.md` | ✅ 已落盘 —— 5 段 + **7 条 AC** + 范围纪律 + 已裁项 |
+
+**② ⚠️ 起草期实测纠正(1 处 · 纠正既有登记的窄化)**
+
+既有登记(`cep-usage.md §12.8` 表外第 2 项 + **Entry #358** 口径澄清)称:
+「装配闸未挂 `validate_topology` CLI 的**不对称**」=「**CLI 未挂 IAG 闸族**」⇒ `instantiateAll` 与 CLI 对同一 config 的结论**可能不一致**。
+
+**实测**:`grep -n 'run_instance_assembly_gate' src/core/module_factory.cc` ⇒ **0 命中** ⇒ IAG 族在**装配路径侧也没有**执行臂;唯一调用点 = `test/test_cep_instance_assembly.cc` + `test/test_cep_bridge_reattach_guard.cc` ⇒ **只测不拦**。
+仓内**已有明文自认**:`test/test_cep_bridge_reattach_guard.cc:22-27`「契约侧判据 `[BSS-01]` 早已存在…… 但它只被**测试侧**调用 ⇒「只测不拦」⇒ 装配路径**不拦**」;`:30-32`「SCE-12 判的是**装配闸**(`run_instance_assembly_gate`)⇒ 本文件判的是**装配路径**(`instantiateAll`)⇒ 两者**互补**」。
+
+⇒ **正确表述 = 「两侧一致地都不挂 IAG 族」**(缺陷面**比登记更宽**)⇒ 修法**必须两臂同补**;⛔ 只补 CLI 臂会制造**反向不一致**(CLI 报红、真实装配放行)。
+⇒ **既有登记文本不改**(append-only)⇒ 差异以本 Entry 登记。
+
+**③ architect 的 4 条裁决(实施期不得临场改口径)**
+
+| # | 裁决 | 内容 |
+|:--:|---|---|
+| **D-A1** | **装配路径臂挂 Step 0.75** | IAG-06 需读 topology 模块表 ⇒ ⛔ 不能挂 Step 0.25(只有 config);⛔ 不挂 Step 7.5(模块已创建 + adapter 已注入 ⇒ `:815-819` 明文「不新增回滚机制」)⇒ Step 0.75(topology 就绪 **且** 零副作用)⇒ FAIL ⇒ `return false` |
+| **D-A2** | **新建独立 CLI** `cep_instance_assembly_gate` | ⛔ **不扩** `cep_channel_dependency_gate`(后者 = **声明层**闸,无 config 概念;IAG 需 config + instances + planes)⇒ 新 CLI 与装配臂**共用** `run_instance_assembly_gate`(禁双实现) |
+| **D-A3** | **target 单列第二段** | 组合 target 现有 4 个 config = **非 CEP** ⇒ IAG 全 SKIP ⇒ 必须纳入 CEP config;但通用 `${TOPOLOGY_VALIDATOR}` 能否吃 CEP config **未实测** ⇒ ⛔ 不混跑 ⇒ 单列 `CPPTLM_CEP_VALIDATION_CONFIGS`(9 份) |
+| **D-A4** | **`required_plane_instances` 传空集合** | 语义(per `instance_assembly_gate.hh:180-206`):不在集合 + 绑定 null = **不判红**;⛔ 取 `plane_binding` 全集会让 `moesi_gpu`/`mesif`(绑定 = **null**)被 `[IAG-04]` **误伤** ⇒ 装配路径传空,专项场景由调用方显式传 |
+
+**④ 影响面预判(architect 实测 · 9 份 CEP config)**
+
+| config | bridges | 实例 | plane 绑定 | 预期 |
+|---|---|---|---|---|
+| `cep_chi_rnf_e2e_a.json` | **无该键** | — | — | **SKIP**(`cep` 段只有 `protocol_instances`;其 `description` 亦自述「装配闸 `SKIP`」) |
+| `cep_chi_rnf_e2e_b.json` / `cep_chi_rnf_pe_minimal.json` | 1 | `chi_rnf` | ∉ | **PASS** |
+| `cep_cohif_pe_minimal.json` / `cep_moesi_gpu_pe_minimal.json` | 1 | `moesi_gpu` | **null** | **PASS**(记 log 不判红) |
+| `cep_mesif_pe_minimal.json` | 1 | `mesif` | **null** | **PASS** |
+| `cep_tilelink_pe_minimal.json` | 1 | `tilelink_c` | ∉ | **PASS** |
+| `cep_ualink_pe_minimal.json` / `cep_ualink_engine_pe_minimal.json` | 1 | `ualink_4` | `FabricCollectivePlane`(**已登记**,`collective_plane.hh:803`) | **PASS** |
+
+⇒ **既有 config 无一会被新执行臂判红**;⚠️ 装配路径臂是**新增拦截点** ⇒ 实施期必须跑全量 `[cep]` + ctest,并逐条记录「由绿转红」的 config。
+
+**⑤ 授权与下一步**
+
+- **授权**:builder 实施 `cpptlm-cep-iag-gate-execution-arm`(四件套由 builder 建 —— planner ⛔ 不能创建 `openspec/changes/`,per #359 ③ 的既登记缺口)。
+- **KPI 时序(⛔ 踩过)**:change 目录**建成之后**才回填活口径 **1/3**(实测 `openspec list` = 0 时先写 1/3 ⇒ `cep_docs_sync_check` 立刻红 ⇒ 本轮已撤回 ⇒ 改在 builder 的 P0b commit 内一次完成)。
+- **冻结面**:❌ **零命中**(改动全在 `src/` / `examples/` / `scripts/` / `test/`)⇒ ⛔ **不触发五步链**、清单零变更。
+- **下一步**:builder 建四件套 + KPI 回填 → 实施(离线 CLI / 装配臂 / target 第二段 / 决定性变异 / ctest)→ 0 回归 → 归档 → KPI 回填 0/3 → verifier 验收。
+
+**⑥ ⛔ 本 Entry 明确不做**
+
+⛔ 不改任何 ADR 正文 · ⛔ 不新建 ADR · ⛔ 不改 `instance_assembly_gate.hh` 的判据文本 · ⛔ 不改 `protocol_instances.json` / `collective_planes.json` 内容 · ⛔ 不改 `B3b-2 = 0/4` · ⛔ 不加「体量数字」机器守(backlog,per #378 ④)· ⛔ 不代用户 ratify MUST-FIX-3/4。
+
+**⑦ 关联**
+
+**#378**(批 1 + backlog)· **#377**(批 2 分解)· **#358**(Q1 + 口径澄清)· **#319**(BSS-01 执行臂先例)· **#301** · architect 方案 `.rddf/reviews/cep-cli-iag-gate-alignment.md`(commit `e0c65b14`)· `.rddf/improvements/cpptlm-cep-iag-gate-execution-arm.md`

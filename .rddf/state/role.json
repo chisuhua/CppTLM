@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-11-12T14:20:00Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-12T14:45:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-12T12:40:00Z",
-      "by": "auto",
-      "reason": "verifier 验收已完成（17/17 PASS · 0 BLOCKER）⇒ 回 builder 修台账断链引用 + 走 A9 归档收尾。"
-    },
     {
       "role": "architect",
       "at": "2026-11-12T13:00:00Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-12T14:20:00Z",
       "by": "user",
       "reason": "用户确认「推进直到完成所有任务」⇒ 批 2 = D-2(装配闸 CLI 未挂 IAG 闸族);architect 先出方案(per #377 批 2 路径)。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-12T14:45:00Z",
+      "by": "user",
+      "reason": "D-2 立项(planner 域:improvement 5 段草稿 + 台账立项授权)。"
     }
   ],
   "auto_switch_window": null
