@@ -19188,7 +19188,7 @@ graph LR
 | **W0**(architect 出 C2 方案) | ✅ **完成** | Entry #344 ①~⑧(T-C2-⓪ / T-C2-① / U-3)+ ⑨(K-1 / K-2) |
 | **W1**(C1 闸强度与工具补齐) | ✅ **完成并通过独立验收** | Entry #342(实施回执)· #343(F-1/F-2/F-4 修补)· verifier 报告 **9/9 AC PASS / 0 BLOCKER**(第 2 轮复验)· 实测 `ctest` **169/169** · `[cep]` **508 cases / 11516 assertions** · **35 闸 35/35 rc=0** · `artifact_count` 仍 **78** |
 | **W2**(C2 实施) | ✅ **完成并归档**(2026-11-12) | **Entry #355**(归档终态 + KPI 回填)· **#354**(归档授权 + 第二次五步链)· **#353**(A6 第一次五步链)· **#352**(A5/A7)· **#351**(A4 并排取证 + verifier 验收)· **#350**(A3)· **#349**(A2)· **#348**(A1)· **#347**(A0 授权)· **#346**(metis gap 处置)· 归档件 `openspec/changes/archive/2026-11-12-cpptlm-cep-transport-vc-consistency/` · KPI 槽位 **0/3** |
-| **W3**(C3)· **W4**(C4) | ⛔ **待立项**(D1 串行 ⇒ 须待 W2 归档) | — |
+| **W3**(C3)· **W4**(C4) | **W3 ✅ 完成并归档**(2026-11-12)· **W4 🟡 已立项**(2026-11-13) | **C3**:Entry #362(P0a)→ #364/#365(实施)→ #368(归档)→ #370(验收 22/22 PASS)· **C4**:Entry #372(P0a)→ **#373**(P0b 四件套 + 开工授权) |
 | **W5**(零槽位批) | 🟡 **待执行**(2026-11-12 planner 盘点) | Entry **#356**(本轮路径裁决)· **#357**(R-d 修法边界)· **#358**(validate_topology 修复授权)· **#359**(C3 立项) |
 
 > ⚠️ **C1 无 OpenSpec change**:C1 的产物 = 脚本 + 文档 ⇒ per 先例 `cpptlm-cep-b3b2-d4-trigger-probe` ⇒ **不占 KPI slot**(§13.1 的 C1 行「冻结面 = 无」与实际不符 —— C1 实际改了 `07 号` 索引段并**走了五步链**;该行是 2026-11-11 快照的表述,⛔ 不回改)。
@@ -21108,3 +21108,56 @@ metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state
 **⑤ 关联**
 
 **#362**(P0a 落账 + 2 处实测订正 + 写者偏离登记)· **#361**(D-6~D-9 + C3a/C3b 切片 + metis 12 条)· **#359**(D-1~D-5)· **#347**(C2 开工授权先例)· **#342**(C1 开工授权先例)· `openspec/changes/cpptlm-cep-invariant-gate-teeth/`(proposal / design / tasks / delta)· `.rddf/improvements/cpptlm-cep-invariant-gate-teeth.md`(22 条 AC)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `07 号:569`(索引)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)
+
+### Entry #373 — 2026-11-13 [build](**C4-P0b 落盘 + 实施开工授权** —— `cpptlm-cep-dod-reading-consistency` 四件套 + 锚文本单源 + 10 条变异契约)
+
+**主题**:per 用户口令「按 C3 的同一条链继续」⇒ 切 builder 后先做 **P0b**(建 change + 四件套),本 Entry **同时是**该 change 的实施开工授权(五步链 `--authorized-by` 的唯一合法依据)。
+
+**① 落盘产物(4 项)**
+
+| # | 文件 | 形态 | 取证 |
+|:--:|---|---|---|
+| 1 | `openspec/changes/cpptlm-cep-dod-reading-consistency/proposal.md` | Why / What Changes / **15 条 AC**(与 improvement 同源,⛔ 不新增不放宽)/ 成本收益 / 诚实边界 / Out of Scope | `openspec validate --strict` |
+| 2 | `.../design.md` | **D-1~D-10** + 铁律 8 条;**§D-2 的 4 条整行锚** + **§D-4 的 9 条红因签名** + **§D-6 的 10 条变异** + **§D-8 的三份语料正文** | 同上 |
+| 3 | `.../tasks.md` | **A0~A11**(7 个门 / 6 个里程碑)+ **A6 逐字登记**(旧文/新文,AC-2 的判据载体) | 同上 |
+| 4 | `.../specs/cep-dod-reading-consistency/spec.md` | **ADDED** capability · **1 条文本 Requirement** · 4 个 Scenario · **只写指针**(⛔ 不复写作用域正文) | 同上 |
+
+⇒ `openspec validate cpptlm-cep-dod-reading-consistency --strict` **rc=0**;`openspec list` ⇒ KPI **0/3 → 1/3**。
+
+**② 授权(本 Entry 的作用)**
+
+授权 `cpptlm-cep-dod-reading-consistency` 进入实施期,**并**作为:
+- 五步链 `cep_freeze_check.sh --update --authorized-by "Entry #373"` 的授权号(冻结面 = **1 处**:`docs/architecture/07-coherence-exploration-platform.md`);
+- 归档后**第二次** `--update` 的授权号(§4.0 之外的唯一可复用授权源)。
+
+**③ 实施前基线(A0.4 · 逐项 == design §D-3 的「变更前」列)**
+
+| 项 | 实测 |
+|---|---|
+| A1(`obj` §6.2 禁令行**整行**) | **1** |
+| A2 / A3 / A4 整行 | **0 / 0 / 0** |
+| A3_old(手册第 3 条现文) | **1** |
+| `2030-Q1\|2028-Q4` 外部 grep(排除 `obj` + `docs/implementation/`) | **9** |
+| ctest / 磁盘 `cep_*.sh` | **171** / **38** |
+
+**④ 技术决策(2 条,均写入 design)**
+
+1. **锚文本单源**:4 条整行锚 + SU 全文 + 3 条 bullet **只在 `design.md` 的 fenced block 定义一次**(marker `C4-A1` ~ `C4-OBJ62`),再由脚本提取注入 docs 与闸常量 ⇒ ⛔ 手抄。理由:A2 长 168 字,手抄必然漂移,而判据是**逐字节整行全等** ⇒ 漂移即首日红。
+2. **单根语义**(与 C3 的有意差异):本闸**无**「被指物存在性」解析需求(不解析仓内路径 / 台账 Entry)⇒ 全部读取走 `--root`,⛔ 不复制 C3 的双根机制。理由:本闸只判文本形态,引入双根会造出**无用的第二套语义**。
+
+**⑤ 实测订正(第 5 处 · ⛔ 不改裁决,只修已失效前提)**
+
+improvement 的 **AC-9 ⑤** 称「`obj` §6.2 写『权威源 = `07 号` :1262』而该处已不存在 ⇒ 必须一并改指,否则是环路」—— **实测不成立**:该行引用的是 `07 号` 的 `Status Update 2026-11-04 ①`,而该 SU **存活**(`07 号` 现行版),且其 ① 自述「本条 ① 的**现行载体**即台账 §6.2」⇒ **该环本来就闭合**。
+⇒ 「改指」落地为「**新增取代指针 + 断言环闭合**」;⛔ **不改 A1 行**(append-only)。design §D-10 第 6 条已登记。
+
+**⑥ 范围纪律(逐字遵守 per Entry #340)**
+
+**只做 MUST-FIX-1 / MUST-FIX-2**;⛔ MUST-FIX-3 / MUST-FIX-4 **待用户 ratify** ⇒ 不并入;⛔ 不改 `B3b-2 = 0/4`;⛔ 不宣称口径 ④ 已生效;⛔ 不新建 ADR;⛔ 不改 `§4.0` 排期值(⇒ 不触发「五处同改」)。
+
+**⑦ 下一步(A1~A11,顺序依赖倒置)**
+
+先写**锚文本提取器**(读 design,不读目标文件)⇒ 写闸(S1~S7)+ 10 条变异 ⇒ 落 `07 号` 新 SU + 手册 + 台账(闸断言的是**最终文本**)⇒ 冻结链四拍 ⇒ delta ⇒ 0 回归(172/172 + 39 闸)⇒ 归档 + **无条件**第二次 `--update`(79→80)⇒ KPI 回填 **7 处**。
+
+**⑧ 关联**
+
+**#372**(C4-P0a · Q3 答复 + 4 处实测订正)· **#340**(C4 行 + 范围纪律 + U-1)· **#332 ⑧**(MUST-FIX 原文 + 三处重裁清单)· **#359 ⑤**(四行判据 · 锚点纪律)· **#370/#368**(C3 验收 / 归档)· `ADR-CEP-00` SU 2026-11-12(C3 闸先例)· `.rddf/improvements/cpptlm-cep-dod-reading-consistency.md`
