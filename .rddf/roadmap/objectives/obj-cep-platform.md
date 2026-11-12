@@ -21834,3 +21834,30 @@ builder 建四件套 + KPI 回填 **1/3** ⇒ 实施(⑤ 项)⇒ 0 回归(ctest 
 **⑤ 关联**
 
 **#385**(实施 + 冻结链拍 0)· **#384**(立项 + 用户拍板 2 点)· **#383**(R-1 归因)· **#332 ⑧**(MUST-FIX 原文 + 终局三分支)· **#264** · architect 决策 `.rddf/reviews/cep-mustfix-3-4-archive-form-decision.md`
+
+### Entry #387 — 2026-11-13 [verifier](**R-1 验收通过** —— **AC-1 ~ AC-8 全满足** · **0 BLOCKER** · 1 条 `proposal_drift` 非阻断)
+
+**主题**:`cpptlm-cep-b3b2-archive-form` 第 **1 轮**验收(MUST-FIX-3 归档形态 6 项 + MUST-FIX-4 回滚路径)。判据来源 = proposal 的 **8 条 AC** + architect 决策的 6 项定义 + V1~V7 判据;执行者 = verifier(**只读 + 运行验证**,⛔ 未改实现)。
+
+**① 结论**
+
+| 维度 | 实测 |
+|---|---|
+| AC 通过 | **8/8 满足** |
+| BLOCKER | **0** |
+| 判据有牙 | M1(破坏 deferrals ⇒ 按签名 `ledger_entry` 红)· M2(降级锚解析 ⇒ **V2 对影子树判红**)⇒ 均还原绿;真实仓 5 文件字节指纹不变 |
+| 影响面 | `docs/adr/` **0 变更** · `B3b-2` 仍 **0/4** · deferrals JSON **零 diff** · `§4.0` 区间**逐行相等** |
+| 0 回归 | `ctest` **175** · `cep_*.sh` **41** · format / docs_sync / doc_ref / lint / cep_docs_sync / index_position / freeze **全 rc=0** |
+| 遗留清扫 | TODO / 注释代码 / skip / 临时日志 / 调试分支 **全 0** |
+
+**② 唯一 finding(非阻断 · 路由 planner)**
+
+**AC-8** 的字面判据「§14 段**不含**「已归档」表述」**过宽** ⇒ 它会把**防误读声明**(「⇒ 本段的存在**不表示** objective 已归档」)判红。替代表述应是「不含『objective **已**归档』的**肯定**表述」。⇒ **实现本身正确**(实测:§14 段内「已归档」唯一出现处为否定句)⇒ 不入 build 返工队列;建议随 improvement 下一版订正 AC 文本。
+
+**③ 报告**
+
+`.rddf/reviews/cpptlm-cep-b3b2-archive-form-verify.md`(逐条 AC 判定 + 有牙性复核 + 遗留清扫 + 复核命令清单)。
+
+**④ 关联**
+
+**#386**(归档回执)· **#385**(实施 + 冻结链拍 0)· **#384**(立项 + 用户拍板 2 点)· **#383**(R-1 归因)· **#332 ⑧**(MUST-FIX 原文 + 终局三分支)· **#264** · architect 决策 `.rddf/reviews/cep-mustfix-3-4-archive-form-decision.md`
