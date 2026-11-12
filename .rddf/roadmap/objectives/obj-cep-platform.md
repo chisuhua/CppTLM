@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**(C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-13 立项 ⇒ 占 1 slot,per 台账 Entry #373;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
+`openspec/changes/` 当前 **0 个 active**(C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -19191,7 +19191,7 @@ graph LR
 | **W0**(architect 出 C2 方案) | ✅ **完成** | Entry #344 ①~⑧(T-C2-⓪ / T-C2-① / U-3)+ ⑨(K-1 / K-2) |
 | **W1**(C1 闸强度与工具补齐) | ✅ **完成并通过独立验收** | Entry #342(实施回执)· #343(F-1/F-2/F-4 修补)· verifier 报告 **9/9 AC PASS / 0 BLOCKER**(第 2 轮复验)· 实测 `ctest` **169/169** · `[cep]` **508 cases / 11516 assertions** · **35 闸 35/35 rc=0** · `artifact_count` 仍 **78** |
 | **W2**(C2 实施) | ✅ **完成并归档**(2026-11-12) | **Entry #355**(归档终态 + KPI 回填)· **#354**(归档授权 + 第二次五步链)· **#353**(A6 第一次五步链)· **#352**(A5/A7)· **#351**(A4 并排取证 + verifier 验收)· **#350**(A3)· **#349**(A2)· **#348**(A1)· **#347**(A0 授权)· **#346**(metis gap 处置)· 归档件 `openspec/changes/archive/2026-11-12-cpptlm-cep-transport-vc-consistency/` · KPI 槽位 **0/3** |
-| **W3**(C3)· **W4**(C4) | **W3 ✅ 完成并归档**(2026-11-12)· **W4 🟡 已立项**(2026-11-13) | **C3**:Entry #362(P0a)→ #364/#365(实施)→ #368(归档)→ #370(验收 22/22 PASS)· **C4**:Entry #372(P0a)→ **#373**(P0b 四件套 + 开工授权) |
+| **W3**(C3)· **W4**(C4) | **W3 ✅ 完成并归档**(2026-11-12)· **W4 ✅ 完成并归档**(2026-11-12) | **C3**:Entry #362(P0a)→ #364/#365(实施)→ #368(归档)→ #370(验收 22/22 PASS)· **C4**:Entry #372(P0a)→ #373(P0b)→ #374(实施)→ **#375**(归档回执 + KPI 0/3 + 日期标识说明) |
 | **W5**(零槽位批) | 🟡 **待执行**(2026-11-12 planner 盘点) | Entry **#356**(本轮路径裁决)· **#357**(R-d 修法边界)· **#358**(validate_topology 修复授权)· **#359**(C3 立项) |
 
 > ⚠️ **C1 无 OpenSpec change**:C1 的产物 = 脚本 + 文档 ⇒ per 先例 `cpptlm-cep-b3b2-d4-trigger-probe` ⇒ **不占 KPI slot**(§13.1 的 C1 行「冻结面 = 无」与实际不符 —— C1 实际改了 `07 号` 索引段并**走了五步链**;该行是 2026-11-11 快照的表述,⛔ 不回改)。
@@ -21210,3 +21210,66 @@ improvement 的 **AC-9 ⑤** 称「`obj` §6.2 写『权威源 = `07 号` :1262�
 **⑥ 关联**
 
 **#373**(开工授权)· **#372**(P0a)· **#340** / **#332 ⑧** / **#359 ⑤** · **#370/#368**(C3 先例)· change `cpptlm-cep-dod-reading-consistency`
+
+### Entry #375 — 2026-11-12 [build](**C4 归档回执** —— ✅ 已完成归档语义 · 第二次 `--update` **80 产物** · KPI **0/3** · 日期标识说明)
+
+**主题**:C4(`cpptlm-cep-dod-reading-consistency`)收口:归档 + 冻结清单第二次重算 + KPI 回填 + 两处事实订正登记。本 Entry 同时是 **A11 的授权锚**(KPI 回填理由里的 `Entry #375`)。
+
+**① 归档(✅ 已完成归档语义)**
+
+| 项 | 实测 |
+|---|---|
+| `openspec archive --yes` | rc=0;`Specs updated: +1 added` ⇒ delta **已合并**进 `openspec/specs/cep-dod-reading-consistency/spec.md` |
+| 归档目录 | `openspec/changes/archive/2026-11-12-cpptlm-cep-dod-reading-consistency`(⚠️ `.gitignore:64` 覆盖该目录 ⇒ 本地留存、不入库 —— 既有约定,C3 同) |
+| KPI | `openspec list` ⇒ **No active changes found** ⇒ **0/3** |
+| 归档时 tasks 状态 | 47/58(⛔ `--yes` 前的 11 项未勾 = A10/A11 自身 ⇒ 归档后已回填,见 ④) |
+
+**② 冻结链第二次 `--update`(无条件)**
+
+- 第一次(冻结件 SU 落盘 + 产物 commit 后):**79 产物** · provenance = `cede8643` · 无参 rc=0。
+- 归档后第二次:**80 产物**(新 main spec 入 `openspec/specs/cep-*` glob:38 → **39** 份)· provenance = `ba1ca3de` · 无参 **rc=0**。
+- ⚠️ 顺序教训:provenance 要求**产物先 commit 再 `--update`** ⇒ 归档产物 commit(`ba1ca3de`)必须先于第二次 `--update`;否则报「provenance 不成立」而不失败(⚠️ 该告警**不置非零退出码**,易被漏读)。
+
+**③ KPI 回填(**两次**)**
+
+| 次 | 时点 | 值 | 原因 |
+|:--:|---|:--:|---|
+| 1 | 立项后 | **1/3** | `cep_docs_sync_check` 的 KPI 断言要求「活口径 == 实测」⇒ 立项即不一致 ⇒ 必须此刻回填(⛔ 留到归档会立刻红) |
+| 2 | 归档后 | **0/3** | 7 处枚举:AGENTS.md · `.rddf/roadmap.md` · `phases/phase-10.md` · `obj §5.2` · `cep-umbrella.md` · `cep-nvlink-sharp.md`(**2 处**) |
+
+**④ ⚠️ 日期标识说明(⛔ 不是笔误掩盖,是登记)**
+
+- `07 号` 新 SU 的标识 = **`Status Update 2026-11-13`**,源自**立项计划日**(前序会话跨日假设);
+- **实际落地 / 归档日 = 2026-11-12**(系统日期实测;`openspec` 归档目录前缀即 `2026-11-12-`);
+- **⛔ 不回改标识**的理由:① 该标识是 **4 条整行锚**中 A3(手册指针行)的**逐字节**组成,改它须同时改 15+ 处(含已提交 Entry #373/#374 与 15 条 AC 文本),而台账 **append-only** 禁止回改 Entry ⇒ 改标识只能造出**两套标识并存**,风险远大于收益;② 标识的作用是**指向唯一性**(闸已守住「恰 1 命中」),⛔ 不是「落地时间戳」的证据。
+- **已订正的真错**:`.rddf/state/role.json` 的 `updated_at` 原为**未来时间戳** `2026-11-13T00:05:00Z` ⇒ 已改为实测 `2026-11-12T12:20:00Z`(状态文件,非台账)。
+- ⚠️ 后续任何「按日期定位本 SU」的检索,SHALL 用**标识 `2026-11-13`**;按落地日检索 = **2026-11-12**。
+
+**⑤ 最终回归取证**
+
+| 项 | 实测 |
+|---|---|
+| 新闸 | **22/22**(1 基线 + 10×(红+还原) + 1 真实仓字节不变)· ctest 内 **4.62s** |
+| `ctest` | **172/172** |
+| `cep_*.sh` 闸 | **39/39 rc=0** |
+| `format.sh --check` / `docs_sync --strict` / `agents_md_lint` | **rc=0 / rc=0 / rc=0** |
+| `cep_index_position_check` | rc=0 · **30/17** · 索引行 637 |
+| `cep_doc_ref_check --strict` / `cep_decision_block_check` | rc=0 / rc=0 |
+| 冻结面 | **80 产物** · provenance `ba1ca3de` · 无参 rc=0 |
+| `obj` 的 `git diff -U0` | **零删除行**(append-only) |
+
+**⑥ ⛔ 本 Entry 明确不做**
+
+⛔ MUST-FIX-3 / MUST-FIX-4(待用户 ratify)· ⛔ 改 `B3b-2 = 0/4` · ⛔ 宣称口径 ④ 已生效 · ⛔ 回改已提交 Entry(#373/#374 的 `2026-11-13` 标识保留)· ⛔ 改任何 ADR 正文 · ⛔ 改 `§4.0` 排期值。
+
+**⑥' AC-3 口径细化 + 1 处闸侧豁免(实施期实测,⛔ 非放宽)**
+
+- **AC-3 的删除行口径**：初稿写「`obj` **全文件零 `-` 行**」= **过宽代理**。实测本 change 的删除行恰 **2 处**,且都属**按定义必须就地更新**的行 —— ① **KPI 活口径行**(`当前 **N 个 active**` / `当前 Proposed 并发`)由 **AC-13** 授权;② **`§13.9` 看板行**由台账纪律「§13.1~§13.8 不可回改,**§13.9 可更新**」授权。
+  ⇒ 现行口径:**删除行只允许落在上述两类**,`§4.0` / `§4.5` / `§4.6` / `§6.2` 四区域**零删除**。禁改面的真正载体 = **A1 禁令行**,已由新闸的「**整行全等 + 恰 1 命中**」**独立守住**(无需全文件代理)。
+  ⇒ 取证命令:`git diff -U0 -- .rddf/roadmap/objectives/obj-cep-platform.md | grep '^-[^-]'` ⇒ **恰 2 行**(1 KPI + 1 §13.9),无第三行。
+- **闸侧豁免(1 处 · 与 C3 同型)**：`cep_doc_ref_check` 报「引用不存在的文件 `openspec/changes/cpptlm-cep-dod-reading-consistency/proposal.md`」—— 该路径是**归档前**的 active 路径(归档后文件移入 `changes/archive/`,而该目录被 `.gitignore:64` 覆盖)。
+  ⇒ 修复走**既有机制**:`VIRTUAL_PATHS` 追加 1 条(带理由 + 归档语义 + 引用者 Entry 号),⛔ 不改台账历史 Entry(append-only)。⛔ 不是消音:条目写清了「已归档 + delta 合并目标 + 引用者」。
+
+**⑦ 关联**
+
+**#374**(实施)· **#373**(开工授权)· **#372**(P0a)· **#340** / **#332 ⑧** / **#359 ⑤** · **#370/#368**(C3 先例)· change(归档)`openspec/changes/archive/2026-11-12-cpptlm-cep-dod-reading-consistency`
