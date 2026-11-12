@@ -54,7 +54,7 @@
     "openspec/specs/cep-cxl-nonsymmetric/spec.md": "8fcca578c016bc2400684f7344793817674cf3b9f0d3fee5c776b75c7abbdb26",
     "openspec/specs/cep-dod-reading-consistency/spec.md": "6885a243748bc1825e023bbe4cd274a94b011544cee51ffc4e8bae223c35d84a",
     "openspec/specs/cep-hierarchical-directory/spec.md": "729f8e7b9eda0a8a8d8e1f748857287824745526e427f67182dd870b1d2f222f",
-    "openspec/specs/cep-instance-assembly/spec.md": "4ac00b888c8bafcaa9f8ff5cd35a40fe3b06b569c8d88a9b22697689441ec6e0",
+    "openspec/specs/cep-instance-assembly/spec.md": "adc53f76debba83760f4dfc4effe4ff15a813687907538acecb44dcea53bda06",
     "openspec/specs/cep-instance-authority-partition/spec.md": "8fa4011df2ea90cb70f18a5f46a360f2b33c4b0823de10b55083c35dbcf171d6",
     "openspec/specs/cep-invariant-gate/spec.md": "72192bf4a378177b96cb6572286a958eee76729f7d2a7bc7a4db847894882777",
     "openspec/specs/cep-mesif-adapter/spec.md": "79643d8760bbde17b95b1818116671b5b023892bc18ad8a63df81a4e530a18d2",
@@ -82,10 +82,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #374",
+  "authorized_by": "Entry #381",
   "exclusions": [],
   "frozen_at": "2026-11-12",
-  "frozen_at_commit": "ba1ca3deecdc43f34345efadce2d4fca88245e41",
+  "frozen_at_commit": "4780deb39b42814eb64393066cbc33b4ec8e8c9f",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
