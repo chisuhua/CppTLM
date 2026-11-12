@@ -20469,3 +20469,100 @@ W5-a L1(格式化 10 文件,独立 commit)
 **⑦ 关联**
 
 **#359**(T1 的来源 + 行数预测 + 锚漂移登记)· **#274**(L1 首次登记)· **#355**(此前的「9 个」旧数)· `scripts/build/format.sh` · `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` · `.rddf/reviews/cep-b2-acceptance-verdict.md` / `cep-b2-mapping-audit.md` / `cep-b2-pending-batching-verdict.md`(3 处漂移锚的持有方) · `docs/adr/ADR-CEP-06-experiment-protocol.md:252`/`:269`
+
+### Entry #361 — 2026-11-12 [planner](**C3 前置裁决落账** —— D-6~D-9 + **C3a/C3b 切片** + 12 处 metis 修正;用户说「开工」后 planner 先落 P0a)
+
+**主题**:per 用户口令（第 3 次同题）「切 architect 梳理 ⇒ 切 planner 梳理」。architect 三次报告 = `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`（oracle 1 轮）;本 Entry 落 **4 处 C3 设计裁决** + **C3 切片** + 给 builder 的开工载荷。
+**增量定位**:#359 = 路径裁决（D-1~D-5）;#361 = **C3 的设计裁决（D-6~D-9）** + 执行切片。两者不重叠。
+
+---
+
+**① 上游审查(2 轮)**
+
+| 审查者 | 结论 | 处置 |
+|---|---|---|
+| **oracle**(1 轮 · 4 条) | D-6 有条件成立 / D-7 成立 / D-8 有条件成立 / D-9 成立 | 已并入 architect 报告 §五、§七 |
+| **metis**(1 轮 · 6 类 12 条) | **P0 × 7 / P1 × 7 / P2 × 4** | 逐条处置见 ⑥;**其中 1 条是「操作层根本无法开工」**(见 ②) |
+
+**② ⚠️ 一处操作性纠正：「C3 可直接立项」在当前状态下**不成立****
+
+metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state/.planner-handoff.json` **不存在** ⇒ `rdd-builder` 的两条 canonical precondition **均未满足**。
+⇒ **纠正**:C3-P0 **必须拆两步**,且 **P0a 由 planner 做**(这是本角色唯一被授权可写、且已获授权的产物):
+
+| 子步 | 谁 | 产出 | 触发条件 |
+|:--:|---|---|---|
+| **C3-P0a** | **planner** | `.rddf/improvements/cpptlm-cep-invariant-gate-teeth.md`（5 段）+ `.rddf/state/.planner-handoff.json`（schema `planner-handoff-v1`） | **用户说「开工」+ design 经其批准**（`add-improve` 的 HARD-GATE） |
+| **C3-P0b** | builder | `openspec/changes/cpptlm-cep-invariant-gate-teeth/{proposal,design,tasks}.md` | P0a 已落 |
+
+> ⛔ 本 Entry **不写** improvement 草案（HARD-GATE 要求先过 brainstorm + 用户批准设计）。
+
+**③ 4 处裁决落定（C3 的开工依据;含 metis 修正后的形态）**
+
+| # | 裁决 | 可执行形态 |
+|:--:|---|---|
+| **D-6** | **R-c = 双向对账 + 闸内常量** | **正向**:`ADR-CEP-01/02/03` 三份**精确 basename** 存在 + **无拆出件**（命中 `^ADR-CEP-0[123](?![0-9])` 但不属三份精确名 ⇒ 红；`A/a` 后缀视为拆出件）· **反向**:C3-C 新 SU 的 **`### ⑥ 三份 ADR 全名重述`** 块内三个**完整编号** token 各 ≥1 · **触发条件**:heading 含 `2026-11-11` 的 SU 内、`### ②` 之下**第一张表**，表头含「判定方式」列 + 恰 **3 数据行** + 每行该列含 ≥1 个 code span 且按 **4 类**可解析 |
+| **D-7** | **C3 冻结面 = 2 处**（订正 #359 的 1 处） | `ADR-CEP-00` 追加 SU 2026-11-12 · `07 号` 追加 SU 2026-11-12（**插在 `## §末 文档索引`（现 :569）之前**，⛔ 不是文末！）· **两处同一次** `--update` |
+| **D-8** | **新建闸 + 钉死共享 helper** | 新 `scripts/test/cep_decision_block_check.{sh,py}`;**抽 `scripts/test/cep_test_shadow.sh`**（`reset <shadow> [extra_cp...]`）两闸 `source`（⛔ 不再保留「自带 4 行」选项 —— 那正是 oracle 判为隐性分叉的路径）;§2 提取在 Python **登记为受控重复** |
+| **D-9** | **R-c 不用决策块数** | 只用「文件存在 + 无拆出件 + 重述块」⇒ 与 R-d 口径**彻底解耦**;invariant 集快照登记为 C3 之后的可选增强 |
+
+**D-6 的 4 类解析（metis P0-2 修正；原三类会首日红）**
+
+| 类 | 判据 | 今日实测 |
+|:--:|---|---|
+| (a) 仓内路径 | `os.path.exists`（**固定真实仓根**，⛔ 不随 `--root` 影子） | T3 行 `test/cep_adr_parser.hh` ✅ |
+| (b) `Entry #N` | 台账存在 `^### Entry #N` | — |
+| **(c) ADR 短名** | `ADR-CEP-NN` → glob `docs/adr/ADR-CEP-NN-*.md`（**新增类，缺它 T1 行首日红**） | T1 行 `ADR-CEP-01` ✅ · T2 行 `ADR-CEP-01` ✅ |
+| (d) 符号 | 同格内**最后一个**路径 + 在该文件命中定义式（如 `^\s*(?:T|auto|bool|void|[\w:<>]+)\s+NAME\s*\(`） | T3 行 `owner_specs()` ✅ |
+
+> ⚠️ **oracle 判「今日全绿」是错的**:T1 行唯一 code span = `ADR-CEP-01`，按原三类（路径/Entry/符号）**不可解析** ⇒ **首日红**。metis 抓对，补 (c) 类后全绿。
+> ⚠️ **重述块必须定界**（metis P0-1）:ADR-CEP-00 **全文**今已含三个 token（01:12 / 02:5 / 03:6 处）⇒ 若闸做全文 grep，则「删重述块一行」**永不红**（闸无牙）。⇒ 块 = `### ⑥` 标题至下一个 `###`/`##`，且**恰 3 行 bullet、每行含唯一一个完整 token**。因 C3-C 写进冻结件后不可改，**块格式必须与 C3-B 的解析器在同一份 design.md 同批定稿**。
+
+**④ C3 任务分解（含切片）**
+
+**change 名 = `cpptlm-cep-invariant-gate-teeth`**（占 D1 槽:**KPI 0/3 → 1/3**，立项即占）。切片是为「1 天可见绿」,⛔ 不是两个 change:
+
+| 片 | 序 | 子任务 | 载体 | 退出判据 |
+|:--:|:--:|---|---|---|
+| **C3a**（零冻结面） | A | **R-d 闸**:`cep_decision_block_check.{sh,py}` + `cep_test_shadow.sh` | 新脚本（∉ 冻结集） | ① 快照 `test/cep_decision_block_snapshot.json`（22 键 + `total`）**相等**，闸**只读不写**，更新须带台账 entry id ② **基线正控**先绿 ③ **4 条变异**各带红因签名 + 还原即绿 ④ **ctest 注册**：`ctest -N` 见该名 + 总数 **170→171** |
+| **C3b**（触冻结面） | B | **R-c 闸**:双向对账（同脚本） | 同上 | D-6 的 **3 条变异**;变异②（造 `ADR-CEP-02a-*.md`）须**同时**验 `cep_adr_structural_check.sh` 也红，两条闸各报各的签名;判据形态不成立 ⇒ **红**（⛔ 不得跳过） |
+| | C | `ADR-CEP-00` 追加 SU 2026-11-12 | 冻结件 ① | 取代声明（§⑤ 的 5 与 `:431` 作废）+ D-3 换算表 + **`### ⑥` 重述块** + **D1 第 5 步（更新闸常量 **和** 重述块两处）**;⛔ 新 SU 内**不得**出现 `### 决策 ` 标题 ⇒ AC = ADR-CEP-00 的 `^### 决策` 计数**仍 = 4**、22 份合计**仍 = 125** |
+| | D | `07 号` 追加 SU 2026-11-12 | 冻结件 ② | **插在 `:569` 之前** + `python3 scripts/cep/generate_doc_index.py --write` + `cep_index_position_check.sh` **rc=0** + 自述 **28/15 → 29/16** + 同步 `.rddf/improvements/cpptlm-cep-gate-strength-tooling.md:117` 的 `07 号:575` 引用 |
+| | E | 五步链（2 冻结件同一次） | — | **四拍**:0) 先落 builder 自己的 C3 台账 entry（⛔ 不用 #361 授权）1) 编辑 2 件 2) **commit 两件** 3) `--update --authorized-by "Entry #N"` 4) **commit manifest**（`frozen_at_commit ≠ HEAD` 时的 ⚠️ 是预期） |
+| | F | 归档 | `openspec/specs/cep-*` | **无条件**第二次 `--update`（`FROZEN_GLOBS` 含 `openspec/specs/cep-*/spec.md` 全量 glob ⇒ 必然触）· `artifact_count` **78 → 79** · 归档到 `--update` 之间 `cep_freeze_check` + `cep_docs_sync_check` **预期双红** |
+
+**⑤ 给 builder 的开工载荷**
+
+| 时机 | 动作 |
+|---|---|
+| **立项前** | Python 跑 22 份 §2 提取（D-1 四步）确认合计 = **125**（实测**三种口径全一致**:全文件 `^### 决策` = §2 范围 = 剥围栏后 = **125**，无差异文件）;⛔ 不回头对齐台账 `:895` 的 3/4/3 |
+| **立项前** | 定 `cep_test_shadow.sh` 的接口（`reset <shadow> [extra_cp...]`）并**抽取**（⛔ 不复制）;`--root` 只作用于**文档语料**，存在性/台账解析**固定真实仓根** |
+| **C3a 后** | 基线正控证据（变异前 rc=0）落 entry |
+| **C3b 后** | 变异② 双闸双签名证据 |
+| **C3-D 后** | `cep_index_position_check.sh` rc=0 + 索引 28/15→29/16 证据 |
+| **C3-E 前** | 确认 2 冻结件同一次 `--update`（C2 先例:3 处同一次） |
+
+**⑥ metis 1 轮的逐条处置（12 条）**
+
+| # | finding | 判定 | 处置 |
+|:--:|---|---|---|
+| **P0-1** | 重述块不定界 ⇒ 反向对账恒真（全文今已含三 token） | ✅ 成立 | ③ 定界为 `### ⑥` + 恰 3 bullet + 每行唯一 token |
+| **P0-2** | 「三类解析」首日红（T1 行唯一 span 是 `ADR-CEP-01`） | ✅ 成立（**oracle 的「今日全绿」被推翻**） | 补 (c) ADR 短名 glob 类 ⇒ 今日全绿且非恒真 |
+| **P0-3** | 「符号」无边界（一格里两个路径 ⇒ 归属二义） | ✅ 成立 | 规则写死:同格**最后一个**路径 + 定义式命中 |
+| **P0-4** | 快照的存储/维护/授权全缺 | ✅ 成立 | 落 `test/cep_decision_block_snapshot.json`，闸只读，更新须 entry id |
+| **P0-5** | 125 vs 124 自相矛盾 / 与 D-1 口径可能冲突 | 🟡 **部分成立** | **实测三口径全 = 125**（无差异文件）⇒ 冲突不存在;`#359` 处置表里「合计 124」是笔误的叙述，本 Entry 以 **125** 为准（#359 已 commit,⛔ 不回改） |
+| **P0-6** | **C3-P0 把 planner 的活推给 builder** | ✅ 成立 | ② 拆 P0a(planner)/P0b(builder) |
+| **P0-7** | 无 ctest 注册 AC / C3-E 缺 commit 次序 / C3-F 错写「条件性」 | ✅ 成立 | ④ A/E/F 三行逐条补 |
+| **P0-8** | `07 号` 追加到文末 ⇒ **索引闸立刻红** | ✅ **成立且实锤**（索引在 `:569`，之后现 **0** 个 `## `） | C3-D 改为**插在 `:569` 之前** + 重生成索引 + 自述 28/15→29/16 |
+| **P0-9** | 影子树双根未定义 ⇒ 变异③按错误原因红 | ✅ 成立 | ⑤ 写死:文档语料 = `--root`，存在性/台账 = 真实仓根 |
+| **P1-10** | 「自带 4 行」是被否决路径，不该留成选项 | ✅ 成立 | D-8 钉死「抽 helper」 |
+| **P1-11** | 缺「不扰动 R-d 快照」的 AC | ✅ 成立 | C3-C 加「新 SU ⛔ 含 `### 决策 `」+ 计数仍 4 / 合计仍 125 |
+| **P1-12** | 缺文档数字滞后的**预登记** | ✅ 成立 | 下方预登记:新闸 ⇒ `AGENTS.md` 36→**37**、`scripts/README.md` 守门表 32→33 行 ⇒ **T3 对齐，期间不算回归** |
+| **P2** | 封盘 / proposal 成本收益 / 07 号 措辞诚实边界 | ✅ 成立 | ⑧ 加封盘;**proposal 须含一行「2 冻结面 + 1 KPI 槽 vs 防 6 行登记被静默删除」的成本收益**;C3-D 措辞改为「新增内容不位移内容锚,索引区整体后移;`07 号:684` 越界是既有债、不在 C3 修」 |
+
+**⑦ ⛔ 本 Entry 明确不做**
+
+⛔ 不改 §13.1~§13.8 · ⛔ 不改任何 ADR 正文 · ⛔ **不写 improvement 草案**（HARD-GATE）· ⛔ 不创建 openspec change · ⛔ 不写实施代码 · ⛔ 不改 B3b-2 计数 · ⛔ 不代用户 ratify MUST-FIX-3/4 · ⛔ 不用关键词匹配 · ⛔ 不在 R-c 用决策块数 · ⛔ **D-10 起不再新增裁决**（决策条目数已 > 任务条目数;未决项按「最小可逆默认 + 登记」落地）。
+
+**⑧ 关联**
+
+**#360**(T1)· **#359**(D-1~D-5)· **#338**(R-c 授权)· **#355**(C2 · 五步链先例)· **#169**(拆分登记)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`(architect 三次 + oracle 4 条)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `:409-411`(② 三行)· `:415`(D1 四动作)· `:434`(R-c 缺口)· `07 号:569`(索引)· `:501`(旧规格)· `scripts/test/cep_adr_structural_check.sh:52-57`(shadow_reset)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)· `test/cep_adr_parser.hh:110`/`:169-173`/`:250`
