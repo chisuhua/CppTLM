@@ -785,3 +785,10 @@ add_test(NAME cep_e2e_reconcile_check
 # 的**机器可判**载体:索引之后零个 `## ` + 索引计数自述与实际逐个相等。
 add_test(NAME cep_index_position_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_index_position_check.sh)
+
+# ── 2026-11-13(per 台账 Entry #373 / change cpptlm-cep-dod-reading-consistency):**DoD 读法闸** ──
+# 「唯一权威声明处 + 其余载体只写指针」纪律的机器可判载体:4 条整行锚(整行全等 + 唯一承载
+# 文件 + 行次数==1)+ 旧文零命中 + 作用域要素 + 绝对禁令不复活 + 5 条禁表述 + 指针目标存在,
+# 并配 10 条决定性变异(M1~M10 · 只在影子树)。
+add_test(NAME cep_dod_reading_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_dod_reading_check.sh)

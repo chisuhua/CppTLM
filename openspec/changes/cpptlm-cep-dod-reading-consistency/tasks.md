@@ -16,7 +16,7 @@
       > ⚠️ **授权号 = 本 change 的 builder Entry**（A7.3 的 `--authorized-by` 指向它）⇒ ⛔ 不用 `#372`（那是 P0a 立项）
 - [ ] A0.2 `.rddf/improvements/cpptlm-cep-dod-reading-consistency.md` 已落盘 + **HARD-GATE rc=0**（per Entry #372 ①）
 - [ ] A0.3 `.rddf/state/.planner-handoff.json` 已由 **canonical 写者**产出（`awaiting_builder=["add-cpptlm-cep-dod-reading-consistency"]` / `recommended_route=complex`）
-- [ ] A0.4 基线与 design §D-3 的「变更前」列**逐项相符**（A1=1 / A2=A3=A4=0 / A3_old=1 / 外部 grep=9）
+- [ ] A0.4 基线与 design §D-3 的「变更前」列**逐项相符**（A1=1 / A2=A3=A4=0 / A3_old=1 / 外部 grep=**13**(见 design §D-3 的实测订正)）
 - [ ] A0.5 `git status` 仅本 change 的产物 + A0.1 的台账 Entry
 
 ## A1 · 锚文本提取器（per design §D-2 / §D-8 / 铁律 1）
@@ -66,7 +66,7 @@
 - [ ] A6.3 台账 `§4.5` 尾**新增** `C4-OBJ45` bullet；`§4.6` 尾**新增** `C4-OBJ46` bullet（⛔ 标题与值行逐字不动）
 - [ ] A6.4 台账 `§6.2` 禁令行之后**新增子 bullet** `C4-OBJ62`（⛔ 不碰 A1 行）
 - [ ] A6.5 AC-3 取证：`git diff -U0 -- .rddf/roadmap/objectives/obj-cep-platform.md` **零 `-` 行**
-- [ ] A6.6 AC-4 取证：`§4.0` 字段级 diff **0 行**；`2030-Q1|2028-Q4` 外部 grep **仍 9 行**；新文本内 `2030-Q1` 字面 **0 次**
+- [ ] A6.6 AC-4 取证：`§4.0` 字段级 diff **0 行**；`2030-Q1|2028-Q4` 外部 grep **仍 13 行**；新文本内 `2030-Q1` 字面 **0 次**
 
 ### A6 逐字登记（AC-2 的判据载体 · ⛔ 本节即「逐字可核」的证据）
 

@@ -59,6 +59,7 @@
 | `cep_e2e_reconcile_check.sh` | **双向对账闸**(per 台账 Entry #295 裁定 2 = retention **丙**;Entry #303):台账条目 ↔ 仓内**已提交** run 产物 —— ① 零 orphan(双向)② `metrics_sha256` 相等 ③ 7 字段齐备 ④ verdict 三态词表(⛔ 不得二值绿/红) | ✅ 生效（ctest 注册） |
 | `cep_validate_topology_reconcile_check.sh` | **`validate_topology` target 对账闸**(per 台账 Entry #358):① 组合 target 引用的每个 config **必须存在于磁盘**(此前首条引用已被物理删除的文件 ⇒ 整条 target 跑不完 ⇒ 其后 4 条校验 + CEP 装配闸 CLI 挂点**静默 20 天从未执行**)② 组合 target **禁手抄** config 清单(须从单一真源 `CPPTLM_TOPOLOGY_VALIDATION_PAIRS` 派生)③ 装配闸挂点`cep_channel_dependency_gate` **必须在命令面内**(⛔ ctest 侧同名用例独立注册 ⇒ 挂点消失时它仍绿 ⇒ 本闸是该失效的唯一可见点) | ✅ 生效（ctest 注册） |
 | `cep_decision_block_check.sh` | CEP **治理判据闸**(per change `cpptlm-cep-invariant-gate-teeth` / 台账 Entry #363):把 `ADR-CEP-00` SU 2026-11-11 §⑤ 自认的两项「有登记、无牙齿」残留落为机器判据 —— ① **R-d** = 22 份 ADR 的 §2 决策块计数**逐份** == 快照(`test/cep_decision_block_snapshot.json`,22 键 + total=125;口径 = D-1 四步 + D-3.2 块 ID 全匹配;期望值 = **闸外快照**,⛔ 禁自证)② **R-c** = 双向对账(正向:三份精确 basename + **无同号拆出件**;反向:新 SU 的 `### ⑥` 重述块;期望值 = **闸内常量**)。附**决定性变异**(影子树 ⇒ 不动真实仓),每条按**固定签名**变红(⛔ 「rc≠0」不构成红因) | ✅ 生效（ctest 注册） |
+| `cep_dod_reading_check.sh` | CEP **DoD 读法闸**(per change `cpptlm-cep-dod-reading-consistency` / 台账 Entry #373):① **4 条整行锚**(A1~A4)**整行全等** + 唯一承载文件 + 该文件内行次数 == 1(⛔ 子串锚 —— 实测必红)② 旧文(手册第 3 条现文)**零命中** ③ 作用域 **5 要素**齐备 + `07 号` 内**绝对禁令不复活**④ 新文本面**5 条禁表述**零命中 ⑤ 指针目标存在 + 取代指针存在;配 **10 条决定性变异**(M1~M10,**只作用于影子树**,按固定签名红 ⇒ 还原 ⇒ 绿) | ✅ 生效（ctest 注册） |
 ### 季度复审脚本（守门性质，**刻意不注册 ctest**）
 
 | 脚本 | 作用 |
