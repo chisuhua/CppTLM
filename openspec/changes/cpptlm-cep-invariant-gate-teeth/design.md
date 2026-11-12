@@ -29,27 +29,30 @@
 **文件**：`scripts/test/cep_test_shadow.sh`（**新增 · 非闸 · 不注册 ctest**）
 
 ```bash
-# 用法: reset <shadow_dir> [extra_cp...]
+# 用法: cep_shadow_reset <shadow_dir> [extra_cp...]
 #   <shadow_dir>  = 影子树根（⛔ 会被 rm -rf 后重建）
 #   extra_cp...   = 额外复制项（相对真实仓根），形如 test/cep_adr_structural_deferrals.json
-reset() {
+cep_shadow_reset() {
     local shadow="$1"; shift
+    local extra
     rm -rf "$shadow"
     mkdir -p "$shadow/docs" "$shadow/test"
-    cp -r docs/adr "$shadow/docs/adr"          # ← 两闸共用的必复制集合
-    local extra
+    cp -r "$SHADOW_HELPER_ROOT/docs/adr" "$shadow/docs/adr"   # ← 两闸共用的必复制集合
     for extra in "$@"; do
         mkdir -p "$shadow/$(dirname "$extra")"
-        cp "$extra" "$shadow/$extra"
+        cp "$SHADOW_HELPER_ROOT/$extra" "$shadow/$extra"
     done
 }
 ```
+
+> ⚠️ 函数名取 `cep_shadow_reset`（**不取** `reset`）—— `source` 进既有闸脚本后，通用名 `reset` 有**命名碰撞**风险（shell 无模块系统 ⇒ 全局函数表共享）⇒ 前缀化是共享 helper 的必要纪律。
+> ⚠️ helper 以**自身位置**推导真实仓根（`SHADOW_HELPER_ROOT`）⇒ 调用方的 CWD 无关。
 
 | 契约点 | 规定 |
 |---|---|
 | **必复制集合** | `docs/adr`（两闸都要）⇒ **单一真源**，⛔ 不得各闸自定 |
 | **差异复制** | `extra_cp...` 参数化（structural 需 `test/cep_adr_structural_deferrals.json`;新闸不需要 ⇒ **⛔ 不得把 deferrals 复制进新闸的影子**） |
-| **抽取方向** | 由 `cep_adr_structural_check.sh:52-57` 的 `shadow_reset` **提取** ⇒ 该文件改为 `source scripts/test/cep_test_shadow.sh` + 调 `reset "$SHADOW" test/cep_adr_structural_deferrals.json` ⇒ **两份复制集合由同一实现参数化**（消除隐性分叉） |
+| **抽取方向** | 由 `cep_adr_structural_check.sh:52-57` 的 `shadow_reset` **提取** ⇒ 该文件改为 `source scripts/test/cep_test_shadow.sh` + 调 `cep_shadow_reset "$SHADOW" test/cep_adr_structural_deferrals.json` ⇒ **两份复制集合由同一实现参数化**（消除隐性分叉） |
 | **共享契约登记** | helper 头注显式写「本文件是 `cep_adr_structural_check.sh` 与 `cep_decision_block_check.sh` 的**共享影子树机制** ⇒ 改动须同步两闸」 |
 | **⛔ 禁止** | 新闸**自带** 4 行复制逻辑（= 被 oracle 判为隐性分叉的路径，per D-8） |
 
@@ -169,7 +172,9 @@ RESIDUAL_TOKENS = ["ADR-CEP-01", "ADR-CEP-02", "ADR-CEP-03"]   # 反向对账的
 
 > ⚠️ **定界理由**（metis P0-1）：`ADR-CEP-00` **全文**今已含 `ADR-CEP-01`（12 处）/ `ADR-CEP-02`（5 处）/ `ADR-CEP-03`（6 处）⇒ 若闸做全文 grep，删掉重述块一行**永不红**（闸无牙）⇒ 必须定界到 `### ⑥` 块。
 
-### D-5.4 触发条件（**真实仓根** · carrier）
+### D-5.4 触发条件（**表**取文档语料根 · **引用解析**取真实仓根）
+
+> ⚠️ **双根读法**（per D-7 的兼容澄清，登记于台账 **Entry #362 ③ 订正-2**）：**表本身**在 carrier ADR 内 ⇒ 属**文档语料** ⇒ 取 `--root`（否则「清空某行判定方式」的变异**永不红**）;而表内 code span 的**被指物存在性** ⇒ 取**真实仓根**（影子树不含 `test/` 与台账 ⇒ 在影子根解析会**恒红**）。
 
 | 步 | 规则 |
 |:--:|---|
@@ -203,7 +208,7 @@ DEF_RE = r'^\s*[\w:<>,\s\*&~]*?\b' + re.escape(name) + r'\s*\([^)]*\)\s*(?:const
 
 | 语料类别 | 根 | 理由 |
 |---|---|---|
-| **文档语料** = ADR 集合（`docs/adr/**`）· 重述块 · §2 计数 | **`--root`（影子树）** | 否则影子树里的 `ADR-CEP-02a-*.md` **永远看不见** ⇒ AC-13 的变异② **永不红** ⇒ 闸无牙 |
+| **文档语料** = ADR 集合（`docs/adr/**`）· 重述块 · §2 计数 · **触发条件表** | **`--root`（影子树）** | 否则影子树里的 `ADR-CEP-02a-*.md` **永远看不见** ⇒ AC-13 的变异② **永不红** ⇒ 闸无牙;同理「清空某行判定方式」的变异③ 也**永不红** |
 | **被指物存在性** = (a) 仓内路径 · (b) 台账 · (c) ADR 短名 glob · (d) 符号定义式 | **真实仓根 `REAL_ROOT`** | 影子树**只含** `docs/adr`（+ 可选 `test/`），⛔ 不含台账与闸外文件 ⇒ 若在影子根解析 ⇒ 全部不可解析 ⇒ 恒红 |
 | **快照读取** | **真实仓根** | 快照是**闸外**的期望值载体，⛔ 不是语料 |
 

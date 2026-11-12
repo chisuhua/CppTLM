@@ -102,6 +102,40 @@ open(p, "w", encoding="utf-8").write(new)
 PYEOF
 }
 
+mutate_drop_residual() {  # R-c 变异①:删掉重述块的一行(反向缺项)
+    python3 - "$1" <<'PYEOF'
+import sys
+p = sys.argv[1]
+lines = open(p, encoding="utf-8").read().splitlines(keepends=True)
+out, n = [], 0
+for line in lines:
+    if line.startswith("- `ADR-CEP-02`"):
+        n += 1
+        continue
+    out.append(line)
+assert n == 1, f"变异体:预期删掉 1 行重述 bullet,实得 {n}"
+open(p, "w", encoding="utf-8").write("".join(out))
+PYEOF
+}
+
+mutate_blank_trigger() {   # R-c 变异③:把某行「判定方式」清空(引用解析缺失)
+    python3 - "$1" <<'PYEOF'
+import sys
+p = sys.argv[1]
+lines = open(p, encoding="utf-8").read().splitlines(keepends=True)
+n = 0
+for i, line in enumerate(lines):
+    if line.startswith("| **T1** |"):
+        parts = line.rstrip("\n").split("|")
+        assert len(parts) >= 5, f"变异体:表格列数异常 {len(parts)}"
+        parts[3] = " "
+        lines[i] = "|".join(parts) + "\n"
+        n += 1
+assert n == 1, f"变异体:预期命中 1 行 T1,实得 {n}"
+open(p, "w", encoding="utf-8").write("".join(lines))
+PYEOF
+}
+
 # run_shadow <期望签名> <描述>:跑影子树闸 ⇒ 绿则失败;红则须命中签名
 run_shadow_expect_red() {
     local expect="$1" label="$2" out rc
@@ -123,6 +157,23 @@ run_shadow_expect_green() {
         ok "$label 还原后绿"
     else
         ng "$label 还原后仍红(rc=$rc)"
+        echo "$out" | sed 's/^/    /'
+    fi
+}
+
+# 双闸并验:同一影子树下,新闸与 ADR 结构闸**各报各的签名**(⛔ 不得互相掩盖)
+#   · 新闸      = `cep_decision_block_check.py --root <shadow>`
+#   · 结构闸    = `cep_adr_structural_check.py --root <shadow> --registry <真实仓的登记表>`
+#   ⚠️ 登记表**不复制**进新闸的影子(per D-2)⇒ 结构闸用 `--registry` 显式指真实仓文件。
+run_structural_expect_red() {
+    local expect="$1" label="$2" out rc
+    out="$(python3 scripts/test/cep_adr_structural_check.py --root "$SHADOW" \
+            --registry test/cep_adr_structural_deferrals.json 2>&1)"
+    rc=$?
+    if [[ $rc -ne 0 ]] && grep -q "$expect" <<< "$out"; then
+        ok "$label 结构闸按签名变红:$expect"
+    else
+        ng "$label 结构闸未按预期变红(rc=$rc)"
         echo "$out" | sed 's/^/    /'
     fi
 }
@@ -168,6 +219,32 @@ mutate_drop_decision "$SH_ADR_02"
 run_shadow_expect_red "决策块计数快照偏离" "R-d 变异④"
 shadow_reset
 run_shadow_expect_green "R-d 变异④"
+
+echo ""
+echo "══ ③ R-c 决定性变异 ══"
+
+# 变异①:删掉重述块的一行 ⇒ 反向对账缺项
+shadow_reset
+mutate_drop_residual "$SHADOW/docs/adr/ADR-CEP-00-platform-charter-and-governance.md"
+run_shadow_expect_red "重述块缺项" "R-c 变异①"
+shadow_reset
+run_shadow_expect_green "R-c 变异①"
+
+# 变异②:影子树造同号拆出件 ⇒ 正向「无拆出件」不成立
+#   ⚠️ 双闸并验:ADR 结构闸的 ① 分区完整性**也必须红**(两条闸各报各的签名)
+shadow_reset
+printf '# ADR-CEP-02a: 变异体(同号拆出件)\n' > "$SHADOW/docs/adr/ADR-CEP-02a-mutation-split.md"
+run_shadow_expect_red "存在同号拆出件" "R-c 变异②"
+run_structural_expect_red "未归类的 ADR 文件" "R-c 变异②"
+shadow_reset
+run_shadow_expect_green "R-c 变异②"
+
+# 变异③:某行「判定方式」清空 ⇒ 引用解析缺失
+shadow_reset
+mutate_blank_trigger "$SHADOW/docs/adr/ADR-CEP-00-platform-charter-and-governance.md"
+run_shadow_expect_red "引用解析缺失" "R-c 变异③"
+shadow_reset
+run_shadow_expect_green "R-c 变异③"
 
 echo ""
 echo "════════════════════════════════════════"

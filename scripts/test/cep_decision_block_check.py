@@ -301,6 +301,202 @@ def check_snapshot_totals(corpus_root):
     return (per_file, total), reds
 
 
+# ── R-c 段的闸内常量(per design D-5.1 —— 期望值的唯一来源)────────────────
+CARRIER_ADR = "ADR-CEP-00-platform-charter-and-governance.md"
+CANONICAL = [
+    "ADR-CEP-01-fabric-collective-plane.md",
+    "ADR-CEP-02-coherence-barrier-semantics-clarification.md",
+    "ADR-CEP-03-fabric-collective-plane-internals.md",
+]
+RESIDUAL_TOKENS = ["ADR-CEP-01", "ADR-CEP-02", "ADR-CEP-03"]
+SU_RESIDUAL_DATE = "2026-11-12"   # C3-C 新 SU(承载 `### ⑥` 重述块)
+SU_TRIGGER_DATE = "2026-11-11"    # 既有 SU(承载 `### ②` 的 3 条触发条件表)
+TOKEN_RE = re.compile(r"ADR-CEP-0[123](?![0-9])")
+SPLIT_RE = re.compile(r"^ADR-CEP-0[123](?![0-9])")
+PATH_RE = re.compile(r"^[\w./-]+\.(?:md|hh|cc|h|py|sh|json|tsv|yaml|yml|txt)$")
+ENTRY_RE = re.compile(r"^Entry #(\d+)$")
+ADR_SHORT_RE = re.compile(r"^ADR-CEP-[0-9A-Z]+$")
+SYMBOL_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\(\)$")
+
+
+def find_su_block(text, date_str, sub_heading):
+    """定位 SU(标题含 date_str)与其下 `### <sub_heading>` 块 ⇒ (su_range, block_range)
+
+    su_range   = (SU 标题行号, SU 结束行号)   —— SU 结束 = 下一个 `^## `
+    block_range= (`###` 标题行号, 块结束行号) —— 块结束 = 下一个 `^#{2,3}\\s`
+    """
+    lines = text.splitlines()
+    su_start = None
+    for i, line in enumerate(lines):
+        if line.startswith("## Status Update") and date_str in line:
+            su_start = i
+            break
+    if su_start is None:
+        return None, None
+    su_end = len(lines)
+    for j in range(su_start + 1, len(lines)):
+        if re.match(r"^##\s", lines[j]):
+            su_end = j
+            break
+    sub_re = re.compile(r"^###\s+" + re.escape(sub_heading))
+    sub_start = None
+    for j in range(su_start + 1, su_end):
+        if sub_re.match(lines[j]):
+            sub_start = j
+            break
+    if sub_start is None:
+        return (su_start, su_end), None
+    block_end = su_end
+    for j in range(sub_start + 1, su_end):
+        if re.match(r"^#{2,3}\s", lines[j]):
+            block_end = j
+            break
+    return (su_start, su_end), (sub_start, block_end)
+
+
+def read_text(path):
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
+
+
+# ── R-c 段 ────────────────────────────────────────────────────────────────
+def check_rc_forward(corpus_root):
+    """D-5.2 正向:三份精确 basename 存在 + **无同号拆出件**(语料 = --root)"""
+    reds = []
+    adr_dir = os.path.join(corpus_root, "docs", "adr")
+    if not os.path.isdir(adr_dir):
+        return [(SIG_MISSING_ADR, f"语料缺少 docs/adr: {corpus_root}")]
+    names = sorted(
+        n for n in os.listdir(adr_dir) if n.startswith("ADR-CEP-") and n.endswith(".md")
+    )
+    for canon in CANONICAL:
+        if canon not in names:
+            reds.append((SIG_MISSING_ADR, f"{canon}: 语料内缺失"))
+    for name in names:
+        if SPLIT_RE.match(name) and name not in CANONICAL:
+            reds.append((SIG_SPLIT_ADR, f"{name}: 同号拆出件(不属三份精确 basename)"))
+    return reds
+
+
+def check_rc_residual(corpus_root):
+    """D-5.3 反向:新 SU 的 `### ⑥` 重述块(恰 3 bullet · 每行唯一 token · 三 token 各 ≥1)"""
+    path = os.path.join(corpus_root, "docs", "adr", CARRIER_ADR)
+    if not os.path.isfile(path):
+        return [(SIG_RESIDUAL_FMT, f"{CARRIER_ADR}: 语料内缺失")]
+    text = read_text(path)
+    lines = text.splitlines()
+    _, block = find_su_block(text, SU_RESIDUAL_DATE, "⑥")
+    if block is None:
+        return [
+            (
+                SIG_RESIDUAL_FMT,
+                f"{CARRIER_ADR}: 定位不到 SU {SU_RESIDUAL_DATE} 的 '### ⑥' 重述块",
+            )
+        ]
+    bs, be = block
+    bullets = [l for l in lines[bs + 1: be] if l.startswith("- ")]
+    reds = []
+    if len(bullets) != 3:
+        reds.append((SIG_RESIDUAL_FMT, f"重述块 bullet 数 = {len(bullets)}(期望恰 3)"))
+    counts = {t: 0 for t in RESIDUAL_TOKENS}
+    for bullet in bullets:
+        found = TOKEN_RE.findall(bullet)
+        if len(found) != 1:
+            reds.append(
+                (
+                    SIG_RESIDUAL_FMT,
+                    f"重述块 bullet 的完整 token 数 = {len(found)}(期望 1): {bullet.strip()[:56]}",
+                )
+            )
+            continue
+        counts[found[0]] = counts.get(found[0], 0) + 1
+    for token in RESIDUAL_TOKENS:
+        if counts.get(token, 0) < 1:
+            reds.append((SIG_RESIDUAL_MISS, f"重述块缺完整编号 token: {token}"))
+    return reds
+
+
+def resolve_reference(span, cell):
+    """D-6:4 类引用的可解析判定(⛔ 被指物存在性恒取**真实仓根**)"""
+    if ADR_SHORT_RE.match(span):                                   # (c) ADR 短名
+        import glob as _glob
+        return bool(_glob.glob(os.path.join(ROOT, "docs", "adr", span + "-*.md")))
+    m = ENTRY_RE.match(span)                                       # (b) 台账 Entry
+    if m:
+        ledger = os.path.join(ROOT, LEDGER_REL)
+        if not os.path.isfile(ledger):
+            return False
+        return (
+            re.search(rf"^### Entry #{m.group(1)}\b", read_text(ledger), re.M) is not None
+        )
+    if PATH_RE.match(span):                                        # (a) 仓内路径
+        return os.path.exists(os.path.join(ROOT, span))
+    if SYMBOL_RE.match(span):                                      # (d) 符号
+        name = span[:-2]
+        paths = [s for s in re.findall(r"`([^`]+)`", cell) if PATH_RE.match(s)]
+        if not paths:
+            return False
+        target = os.path.join(ROOT, paths[-1])
+        if not os.path.isfile(target):
+            return False
+        def_re = re.compile(
+            r"^\s*[\w:<>,\s\*&~]*?\b" + re.escape(name) + r"\s*\([^)]*\)\s*(?:const\s*)?(?:\{|;|->)",
+            re.M,
+        )
+        return def_re.search(read_text(target)) is not None
+    return False
+
+
+def check_rc_trigger(corpus_root):
+    """D-5.4 触发条件:SU 2026-11-11 的 `### ②` 之下第一张表(表在**语料根**;引用解析取**真实仓根**)"""
+    path = os.path.join(corpus_root, "docs", "adr", CARRIER_ADR)
+    if not os.path.isfile(path):
+        return [(SIG_TRIGGER_FMT, f"{CARRIER_ADR}: 语料内缺失")]
+    text = read_text(path)
+    lines = text.splitlines()
+    _, block = find_su_block(text, SU_TRIGGER_DATE, "②")
+    if block is None:
+        return [
+            (
+                SIG_TRIGGER_FMT,
+                f"{CARRIER_ADR}: 定位不到 SU {SU_TRIGGER_DATE} 的 '### ②' 触发条件段",
+            )
+        ]
+    bs, be = block
+    table = []
+    started = False
+    for line in lines[bs + 1: be]:
+        if line.strip().startswith("|"):
+            table.append(line)
+            started = True
+        elif started:
+            break
+    if not table:
+        return [(SIG_TRIGGER_FMT, "'### ②' 之下无 Markdown 表")]
+    header = [c.strip() for c in table[0].strip().strip("|").split("|")]
+    col = next((i for i, h in enumerate(header) if "判定方式" in h), None)
+    if col is None:
+        return [(SIG_TRIGGER_FMT, f"表头无「判定方式」列: {header}")]
+    rows = []
+    for line in table[2:]:                       # 跳表头 + 分隔行
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) > col:
+            rows.append(cells[col])
+    if len(rows) != 3:
+        return [(SIG_TRIGGER_FMT, f"触发条件数据行数 = {len(rows)}(期望恰 3)")]
+    reds = []
+    for idx, cell in enumerate(rows, 1):
+        spans = re.findall(r"`([^`]+)`", cell)
+        if not spans:
+            reds.append((SIG_REF_UNRESOLVED, f"第 {idx} 行「判定方式」列无 inline code span"))
+            continue
+        if not any(resolve_reference(s, cell) for s in spans):
+            reds.append(
+                (SIG_REF_UNRESOLVED, f"第 {idx} 行「判定方式」列无可解析引用: {spans}")
+            )
+    return reds
+
+
 # ── 主流程 ────────────────────────────────────────────────────────────────
 def run(corpus_root, list_only=False):
     if list_only:
@@ -310,11 +506,17 @@ def run(corpus_root, list_only=False):
         print("  [R-d] 显式红②:决策编号非 ASCII 十进制 / 非全匹配")
         print("  [R-d] 围栏危险标记:§2 内围栏内容含行首 '## '")
         print("  [R-d] 快照健康度:schema / count / total / authorized_by(台账 Entry 必须存在)")
+        print("  [R-c] 正向:三份精确 basename 存在 + 无同号拆出件")
+        print("  [R-c] 反向:新 SU 的 '### ⑥' 重述块(恰 3 bullet · 每行唯一 token)")
+        print("  [R-c] 触发条件:SU '### ②' 之下第一张表(恰 3 数据行 · 4 类引用可解析)")
         return 0
 
     reds = check_rd(corpus_root)
     evidence, ev_reds = check_snapshot_totals(corpus_root)
     reds.extend(ev_reds)
+    reds.extend(check_rc_forward(corpus_root))
+    reds.extend(check_rc_residual(corpus_root))
+    reds.extend(check_rc_trigger(corpus_root))
 
     if evidence is not None:
         per_file, total = evidence
