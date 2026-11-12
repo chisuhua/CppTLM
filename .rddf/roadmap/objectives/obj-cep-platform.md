@@ -20567,6 +20567,59 @@ metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state
 
 **#360**(T1)· **#359**(D-1~D-5)· **#338**(R-c 授权)· **#355**(C2 · 五步链先例)· **#169**(拆分登记)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`(architect 三次 + oracle 4 条)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `:409-411`(② 三行)· `:415`(D1 四动作)· `:434`(R-c 缺口)· `07 号:569`(索引)· `:501`(旧规格)· `scripts/test/cep_adr_structural_check.sh:52-57`(shadow_reset)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)· `test/cep_adr_parser.hh:110`/`:169-173`/`:250`
 
+### Entry #370 — 2026-11-12 [verifier](**C3 验收通过** —— **AC-1 ~ AC-22 全 PASS(22/22)**;新闸 16/16 · ctest **171/171** · 38 闸全 rc=0 · 冻结面 79 产物无参 rc=0)
+
+**主题**:change `cpptlm-cep-invariant-gate-teeth` 的 **verifier 验收**(2 轮,上限 3)—— 逐条对 **22 条 AC** 取工具证据。**⛔ verifier 只验不改**;第 1 轮的失败项由 builder 修(Entry #369),verifier 只复验。
+
+**① 验收结论**
+
+| 项 | 结果 |
+|---|---|
+| 判定 | ✅ **通过** —— **AC-1 ~ AC-22 全 PASS(22/22)** |
+| 轮次 | **2 / 3** ⇒ 未触上限 |
+| 报告 | `.rddf/reviews/cpptlm-cep-invariant-gate-teeth-verify.md`(判据来源 / 逐条判定 + 证据 / 轮次记录 / 遗留清扫 / 结论) |
+
+**② 关键取证(终态)**
+
+| 面 | 实测 |
+|---|---|
+| 新闸自测 | ✅ **16/16**(基线 + R-d 4×2 + R-c 3×2 + **双闸各报各的签名**) |
+| R-d 独立复算(不走闸) | ✅ 22 份**逐份相等**;合计 **125**;`ADR-CEP-00` = **4**;新 SU 内 `### 决策 ` = **0** |
+| `ctest --test-dir build -j4` | ✅ **171/171**(162.59s) |
+| `cep_*.sh` 闸 | ✅ **38/38 rc=0** |
+| 冻结面 | ✅ 79 产物无参复验 rc=0 + provenance 自检通过;`artifact_count` **78 → 79** |
+| `07 号` 索引 | ✅ SU 在 **:569** / 索引在 **:600** ⇒ SU 在前;索引闸 **29/16** rc=0 |
+| main spec | ✅ `openspec validate cep-invariant-gate --type spec --strict` ⇒ **rc=0** |
+
+**③ 两轮的关键判据**
+
+| 轮 | 结果 | 要点 |
+|:--:|---|---|
+| 第 1 轮 | ❌ 21/22 | `cep_doc_ref_check` 判台账 **Entry #367/#368** 引用**归档前的 active 路径**(已迁)⇒ **闸判红正确** ⇒ 分类 `implementation_gap` ⇒ 路由 builder(⛔ verifier 不改实现) |
+| 第 2 轮 | ✅ 22/22 | 修法 = `VIRTUAL_PATHS` 追加**第 4+ 条同型**登记(与既有 4 条「change 归档后 active 路径仍被 append-only 台账引述」同机制)⇒ ⛔ 该子串**不匹配**归档后路径 ⇒ 归档件仍逐条检查;闸的判据逻辑 / 语义断言 42 条 / 负向断言 4 条 / 自动检测 755 处**均未改** |
+
+**④ 遗留清扫**
+
+| # | 项 | 结果 |
+|:--:|---|---|
+| 1 | TODO / FIXME / XXX / HACK / skip / 未替换 mock / 临时调试残留 | **0** |
+| 2 | 归档件 tasks.md 未勾选项 | 第 1 轮 **6 项** ⇒ 第 2 轮 **0 项**(根因 = 回填脚本 `old` 文本写成 `**A11.1**` 而实际为 `A11.1` ⇒ assert 中止 ⇒ **整体未生效**) |
+| 3 | `AGENTS.md` 已归档 change 计数(135 → 136) | **已如实登记**(Entry #367 ③)⇒ 交 **T3** 统一订正 ⇒ 非本 change 遗留 |
+
+**⑤ 治理结论**
+
+⇒ 治理线 **G5「机制有牙齿」闭合** —— R-c(残余登记 + 3 条触发条件**无机器检查**)与 R-d(决策块计数口径**三个互不相等的实现**)由「**有登记**」升级为「**有牙齿的机器判据**」;`ADR-CEP-00` §⑤ 的「唯一规范载体」由其 SU 2026-11-12 继承(口径 **5 → 4**),`:431` 的「已知不一致」段**作废**。
+⇒ **D1 槽位已释放** ⇒ **C4**(MUST-FIX-1/2)现在可立项(per §13.9 W7 行)。
+⇒ 后续队列:**C4** → **T3**(Q2 残)⇒ **T6**(推送;本地 **ahead 12**)。
+
+**⑥ ⛔ 本 Entry 明确不做**
+
+⛔ verifier **不宣布**治理线整体收口 · ⛔ 不立项 C4 · ⛔ 不做 T3 · ⛔ 不推送 · ⛔ 不改任何实现 · ⛔ 不新增裁决。
+
+**⑦ 关联**
+
+**#369**(第 1 轮 FAIL-1 修复 + S-1 清扫)· **#368**(归档终态)· **#367**(归档授权 + KPI 回填)· **#366**(闸侧占位路径归一)· **#365**(C3b + 第一次五步链)· **#364**(C3a + KPI 立项回填)· **#363**(C3 开工授权)· **#362**(P0a 落账)· **#361**(D-6~D-9 + C3a/C3b 切片 + metis 12 条)· **#359**(D-1~D-5)· verifier 报告 `.rddf/reviews/cpptlm-cep-invariant-gate-teeth-verify.md`
+
 ### Entry #369 — 2026-11-12 [build](**verifier 第 1 轮 FAIL-1 修复** —— `cep_doc_ref_check` 的**第 4 条同型豁免** + 归档件 tasks **6 项回填**;回切 verifier 第 2 轮)
 
 **主题**:verifier 第 1 轮判定 **AC-21 FAIL**(1 项 `implementation_gap`)+ 遗留清扫 S-1 ⇒ 回 builder 修复(⛔ verifier 不改实现,per 审查配对)。

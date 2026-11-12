@@ -1,8 +1,9 @@
 # 验收报告 —— `cpptlm-cep-invariant-gate-teeth`
 
-> **作者**: build agent(verifier mode) · **日期**: 2026-11-12
+> **作者**: build agent(verifier mode) · **日期**: 2026-11-12 · **轮次**: **2 / 3**
 > **被验对象**: change `cpptlm-cep-invariant-gate-teeth`(已归档:`openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/`)
-> **角色边界**: verifier **只验不改**;⛔ 本报告不修改任何实现。
+> **角色边界**: verifier **只验不改**;⛔ 第 1 轮的失败项由 **builder** 修(Entry #369),verifier **只复验**。
+> **终态**: ✅ **通过** —— **AC-1 ~ AC-22 全 PASS(22/22)**。
 
 ---
 
@@ -19,15 +20,15 @@
 
 ---
 
-## ② 验证顺序与结论
+## ② 验证顺序与结论(终态)
 
 | 步 | 内容 | 结果 |
 |:--:|---|---|
 | 1 | 静态检查(lint / 格式) | ✅ `agents_md_lint.py` rc=0 · `format.sh --check` rc=0 |
 | 2 | 单元 / 闸自测 | ✅ 新闸 **16/16** · 38 个 `cep_*.sh` **38/38 rc=0** |
-| 3 | 集成 / 端到端 | ❌ `ctest --test-dir build -j4` ⇒ **170/171**(`cep_doc_ref_check` 红)⇒ **FAIL** |
+| 3 | 集成 / 端到端 | ✅ `ctest --test-dir build -j4` ⇒ **171/171**(第 2 轮) |
 | 4 | 边界与错误路径 | ✅ 7 条决定性变异**各按固定签名红** + 逐条还原即绿(影子树 ⇒ 真实仓零改动) |
-| 5 | 遗留清扫 | ❌ 2 项未闭(见 ⑤)⇒ **随 AC-21 一并路由** |
+| 5 | 遗留清扫 | ✅ **2 项全闭**(S-1 归档件 tasks 6 项回填;S-2 已如实登记 ⇒ 非遗留) |
 
 ---
 
@@ -55,50 +56,61 @@
 | **AC-18** | `07 号` SU **插在索引之前** + 索引重生成 + 索引闸 rc=0 + **29/16** | ✅ | `grep -n` ⇒ SU 在 **:569**、索引在 **:600** ⇒ SU 在前;`cep_index_position_check.sh` ⇒ `索引行 600 · 一级节 A=29/自述29/实际29 · SU B=16/自述16/实际16 · 问题 0`,rc=**0** |
 | **AC-19** | 五步链:同一次 `--update` + 精确 `authorized_by` + 无参复验 rc=0 | ✅ | manifest `authorized_by = Entry #368` 且台账存在该 Entry = **True**;`cep_freeze_check.sh` 无参 ⇒ `✓ M1 产物冻结校验通过:79 个产物 hash 全部一致` + `✓ provenance 自检通过`,rc=**0** |
 | **AC-20** | 归档 + **无条件**第二次 `--update` ⇒ `artifact_count` **78 → 79** | ✅ | manifest `artifact_count = 79`;`openspec list` ⇒ `No active changes found.`;归档件 + `openspec/specs/cep-invariant-gate/spec.md` 均在;`openspec validate cep-invariant-gate --type spec --strict` ⇒ **rc=0** |
-| **AC-21** | 0 回归:ctest **171/171** + 38 闸 rc=0 + format + docs_sync | ❌ | **ctest 实测 170/171** ⇒ `cep_doc_ref_check` Failed(38 闸 / format / docs_sync / lint 均 ✅)。⇒ **FAIL** |
+| **AC-21** | 0 回归:ctest **171/171** + 38 闸 rc=0 + format + docs_sync | ✅ | **第 2 轮**:`ctest --test-dir build -j4` ⇒ `100% tests passed, 0 tests failed out of 171`(162.59s);`cep_doc_ref_check` 单跑 rc=0 / `100% tests passed, 0 tests failed out of 1`;38 个 `cep_*.sh` **38/38 rc=0**;`format.sh --check` rc=0;`docs_sync_check.sh --strict` rc=0;`agents_md_lint.py` rc=0 |
 | **AC-22** | 数字预登记:守门表 +1 行(32→33);磁盘 36→38;`AGENTS.md` 数字不动 | ✅ | 守门表实测 **33 行**;磁盘 `cep_*.sh` = **38**;`AGENTS.md` 3 处均写「以 `ls` 为准」⇒ 无数字改动 |
 
-**判定汇总**:✅ **21 / 22**;❌ **1**(AC-21)⇒ **不通过**(verifier 第 1 轮)。
+**判定汇总**:✅ **22 / 22 PASS** ⇒ **验收通过**。
 
 ---
 
-## ④ 失败项与路由建议
+## ④ 轮次记录
 
-### ❌ FAIL-1(AC-21)—— `implementation_gap`
+### 第 1 轮 —— ❌ 不通过(21/22)
 
 | 项 | 内容 |
 |---|---|
-| **现象** | `ctest --test-dir build -j4` ⇒ **170/171**;失败用例 = **`cep_doc_ref_check`**(#145) |
-| **红因(实测)** | `✗ obj-cep-platform.md: 引用不存在的文件 openspec/changes/cpptlm-cep-invariant-gate-teeth/`(3 处:目录 / `design.md` / `specs/cep-invariant-gate/spec.md`) |
-| **归因** | 台账 **Entry #367 / #368**(本 change 自己的归档登记)引用了**归档前的 active 路径**;该目录在归档时已迁至 `openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/` ⇒ 引用指向**已不存在的路径** ⇒ **闸判红是正确的** |
-| **⛔ 非闸缺陷** | 闸的判据本身无误(路径确实不存在);同型先例 = `cep_doc_ref_check.sh` 的 VIRTUAL_PATHS 已有 **3 条**同构登记(`cpptlm-cep-stub-cache-core` / `cpptlm-cep-poc-spike` / `cpptlm-cep-cxl-nonsymmetric-state-spec` —— 均为「change 归档后其 active 路径仍被 append-only 台账引述」)⇒ **本次是第 4 条同型**,机制已存在,只是**未登记本 change 的那一条** |
-| **建议修法** | 在 `scripts/test/cep_doc_ref_check.sh` 的 `VIRTUAL_PATHS` 追加 1 条(`openspec/changes/cpptlm-cep-invariant-gate-teeth`),注释写明「**归档后 active 路径已迁至 `openspec/changes/archive/2026-11-12-...`**」⇒ 与既有 3 条先例**同型同机制**;⛔ **不改闸的判据逻辑**,⛔ **不改台账已提交 Entry**(append-only) |
-| **复现命令** | `bash scripts/test/cep_doc_ref_check.sh` ⇒ 修前 rc=1(3 处)⇒ 修后期望 rc=0;`ctest --test-dir build -R cep_doc_ref_check` ⇒ 期望 Passed |
-| **路由** | **builder**(implementation_gap)—— ⛔ verifier 不改 |
+| **FAIL-1(AC-21)** | `ctest` = **170/171** ⇒ `cep_doc_ref_check` 红:`✗ obj-cep-platform.md: 引用不存在的文件 openspec/changes/cpptlm-cep-invariant-gate-teeth/`(3 处)⇒ 台账 **Entry #367 / #368** 引用**归档前的 active 路径**(已迁至 `openspec/changes/archive/2026-11-12-...`)⇒ **闸判红正确**,⛔ 非闸缺陷 |
+| **分类** | `implementation_gap`(豁免登记缺 1 条 + 归档件 tasks 回填未生效)—— ⛔ **非** `proposal_drift`(22 条 AC 中 21 条已过) |
+| **路由** | **builder**(⛔ verifier 不改实现)⇒ 台账 **Entry #369** |
+| **遗留 S-1** | 归档件 tasks.md 的 `A6.2` + `A11.1`~`A11.5` = **6 项**仍 `- [ ]` ⇒ 根因 = 上次回填脚本 `old` 文本写成 `**A11.1**` 而实际为 `A11.1` ⇒ **assert 中止 ⇒ 整体未生效** ⇒ 第 2 轮逐项按实际文本回填 ⇒ 实测 **0** 项未勾 |
+| **遗留 S-2** | `AGENTS.md` 的「已归档 change **135** 份」⇒ 本次归档后为 **136** 份,但该数字**不在** KPI 当前态口径内 ⇒ **已在 Entry #367 ③ 显式登记**「由 T3 统一订正」⇒ **如实登记 ⇒ 非遗留** ⇒ 不路由 |
 
-### 遗留清扫 2 项(随 FAIL-1 一并路由)
+### 第 2 轮 —— ✅ 通过(22/22)
 
-| # | 发现 | 事实 | 建议 |
-|:--:|---|---|---|
-| **S-1** | **归档件 tasks.md 的 6 项未勾选** | `A6.2`(commit 2 件冻结件)+ `A11.1` ~ `A11.5` = **6 项**仍为 `- [ ]` ⇒ 事实已完成(commit `f0faa178` / 归档已完成 / 第二次 `--update` 已跑 / manifest 已 commit / validate 已过),**载体未回填** | 回填 6 项勾选 + 附实测回执(⚠️ 上次回填脚本因 `**A11.1**` 与实际文本 `A11.1` 不匹配而 **assert 中止 ⇒ 整体未生效** ⇒ 本次须逐项核对文本后再写) |
-| **S-2** | 台账 `#367` 的 KPI 回填第 7 项(已归档 change 计数) | `AGENTS.md` 的「已归档 change **135** 份」在本次归档后变为 **136** 份,但该数字**不在** KPI 当前态口径内(闸不抓)⇒ 已在 Entry #367 ③ 显式登记「由 **T3** 统一订正」 | ⛔ 本 change **不改**(已登记;避免与 T3 重复改同一行) |
-
-> **S-2 已如实登记** ⇒ 非遗留 ⇒ 不路由。
-> **S-1 + FAIL-1** ⇒ **路由回 builder**,修完由 verifier 复验(第 2 轮)。
-
----
-
-## ⑤ 已用轮次与后续
-
-| 项 | 值 |
+| 项 | 内容 |
 |---|---|
-| **已用轮次** | **1 / 3**(上限 3,per `RDDF_VERIFIER_MAX_LOOPS=3`) |
-| **判定** | **不通过**(AC-21 FAIL) |
-| **失败分类** | `implementation_gap`(闸的豁免登记缺 1 条 + 归档件 tasks 回填未生效)—— ⛔ **不是** `proposal_drift`(判据与实现一致,22 条 AC 中 21 条已过) |
-| **下一步** | 回 **builder**:① 登记 VIRTUAL_PATHS 第 4 条同型豁免 ② 回填归档件 tasks 的 6 项 ③ commit ⇒ 切 **verifier** 第 2 轮复验 `cep_doc_ref_check` + `ctest` |
+| **FAIL-1 复验** | `bash scripts/test/cep_doc_ref_check.sh` ⇒ **rc=0**;`ctest -R cep_doc_ref_check` ⇒ `100% tests passed, 0 tests failed out of 1`;修法 = `VIRTUAL_PATHS` 追加第 4+ 条**同型**登记(`openspec/changes/cpptlm-cep-invariant-gate-teeth`)⇒ ⛔ 该子串**不匹配**归档后路径 ⇒ 归档件本身仍被逐条检查;闸的判据逻辑 / 语义断言 42 条 / 负向断言 4 条 / 自动检测 755 处**均未改** |
+| **S-1 复验** | `grep -c '^- \\[ \\]' <归档件>/tasks.md` = **0** ⇒ 全勾 |
+| **全量复验** | `ctest --test-dir build -j4` ⇒ **171/171**(162.59s) |
+| **已用轮次** | **2 / 3** ⇒ 未触上限 |
 
 ---
 
-## ⑥ 关联
+## ⑤ 遗留清扫结果
 
-台账 **Entry #368**(归档终态)· **#367**(归档授权)· **#366**(闸侧占位路径归一)· **#365**(C3b)· **#364**(C3a)· **#363**(C3 开工授权)· `.rddf/improvements/cpptlm-cep-invariant-gate-teeth.md`(22 条 AC)· `openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/`(proposal / design / tasks / delta)
+| # | 对象 | 结果 |
+|:--:|---|---|
+| 1 | TODO / FIXME / XXX / HACK(本 change 的 5 个新产物) | **0** |
+| 2 | 被 skip 的测试 / 未替换的 mock | **0** |
+| 3 | 临时调试残留(`static FILE* diag` 等) | **0**(全仓 `scripts/test/` + `include/` 无命中) |
+| 4 | 归档件 tasks.md 的未勾选项 | **0**(第 2 轮回填后) |
+| 5 | 闸内 `print`/`echo` | **正常判据输出**(闸的存在目的),⛔ 非调试残留 |
+| 6 | `AGENTS.md` 已归档 change 计数(135 → 136) | **已如实登记**(Entry #367 ③)⇒ 交 **T3** 统一订正,⛔ 非本 change 遗留 |
+| 7 | **本 change 引入的已知债** | **0**(全链无 TODO 残留、无半截实现、无临时 fallback) |
+
+---
+
+## ⑥ 验收结论
+
+> ✅ **通过** —— `cpptlm-cep-invariant-gate-teeth` 的 **AC-1 ~ AC-22 全 PASS(22/22)**;
+> 新闸自测 **16/16**、`ctest` **171/171**、38 个 CEP 闸 **全 rc=0**、冻结面 **79 产物** 无参复验 rc=0。
+> ⇒ 治理线 G5「机制有牙齿」**闭合**(R-c / R-d 两项残留由「有登记」升级为「有牙齿的机器判据」);
+> **D1 槽位已释放** ⇒ **C4**(MUST-FIX-1/2)现在可立项(per §13.9 W7 行)。
+
+**后续队列(⛔ 本验收不代做)**:**C4**(MUST-FIX-1/2)→ **T3**(Q2 残 / README 自述数字 + 三表划分说明)⇒ **T6**(推送;当前本地 **ahead 12**)。
+
+---
+
+## ⑦ 关联
+
+台账 **Entry #369**(第 1 轮修复)· **#368**(归档终态)· **#367**(归档授权)· **#366**(闸侧占位路径归一)· **#365**(C3b)· **#364**(C3a)· **#363**(C3 开工授权)· **#362**(P0a)· `.rddf/improvements/cpptlm-cep-invariant-gate-teeth.md`(22 条 AC)· `openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/`(proposal / design / tasks / delta)· `openspec/specs/cep-invariant-gate/spec.md`
