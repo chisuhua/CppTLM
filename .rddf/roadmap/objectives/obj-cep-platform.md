@@ -20567,6 +20567,30 @@ metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state
 
 **#360**(T1)· **#359**(D-1~D-5)· **#338**(R-c 授权)· **#355**(C2 · 五步链先例)· **#169**(拆分登记)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`(architect 三次 + oracle 4 条)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `:409-411`(② 三行)· `:415`(D1 四动作)· `:434`(R-c 缺口)· `07 号:569`(索引)· `:501`(旧规格)· `scripts/test/cep_adr_structural_check.sh:52-57`(shadow_reset)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)· `test/cep_adr_parser.hh:110`/`:169-173`/`:250`
 
+### Entry #371 — 2026-11-12 [builder](**B-3 收口步** —— planner-handoff 重发为**归档后真实态**;原定 wrapper 形态**不可执行**,偏离登记)
+
+**主题**:兑现 **Entry #362 ②** 承诺的「B-3 第 2 拍:handoff 幂等重发」⇒ 在 C3 归档后重发为**真实态**,并登记**形态偏离**。
+
+**① 事实**
+
+| 项 | 内容 |
+|---|---|
+| P0a 写入 | `planner-handoff v1.2` · `proposals_ready` / `awaiting_builder` = `["cpptlm-cep-invariant-gate-teeth"]` · `recommended_route=complex` |
+| 归档后 | 该 change **已归档** ⇒ 「待 builder 接手」已**不成立** ⇒ 文件内容**陈旧**(仍写 awaiting C3) |
+| **原定形态不可执行** | B-3 第 2 拍写的是「P0b 后由 planner 跑 `planner_stage_entry.sh` + `planner_stage_exit.sh` 幂等重发」⇒ ⛔ 两个脚本**均要求 `openspec/changes/<name>` 目录存在** ⇒ 重发时该目录**已迁至 `openspec/changes/archive/2026-11-12-...`** ⇒ **前置不成立**(实测 `active change 目录已不存在`) |
+| 实际做法 | 改由 **canonical 写者**(`_lib/planner_handoff.write_planner_handoff`,与 wrapper **同函数同 env 契约**)直发**归档后真实态**:`proposals_ready` = `[]` · `awaiting_builder` = `[]` · `recommended_route` = `unknown` |
+| `unknown` 的含义 | per ADR-0048 双门控,`unknown` = 「planner 未算 advisory」⇒ 在**当下无待立项 change** 的状态是**诚实值**(⛔ 不编造 route) |
+| 写入方确认 | 输出 `planner-handoff v1.2 written: … (recommended_route=unknown, active_objectives=0)`;落点 = 本仓 `.rddf/state/.planner-handoff.json`(git diff 核对:`proposals_ready` / `awaiting_builder` 均 `[]`) |
+| ⚠️ 一次误判的自纠 | 首轮核对时用了**相对路径** `.rddf/state/.planner-handoff.json` 而工作目录在 `/workspace/main/rdd-workflow` ⇒ 读到的是**rdd-workflow 仓自己的** handoff(wave3 项)⇒ 误判为「被覆盖」;改用**绝对路径**核对后确认本仓文件为正确重发值 ⇒ **登记此项以免后人重蹈** |
+
+**② ⛔ 本 Entry 明确不做**
+
+⛔ 不手写 JSON(仍走 canonical 写者)· ⛔ 不编造 `recommended_route` · ⛔ 不改 handoff 的 schema · ⛔ 不动 C4 / T3 · ⛔ 不新增裁决。
+
+**③ 关联**
+
+**#370**(C3 验收通过)· **#369**(第 1 轮修复)· **#368**(归档终态)· **#367**(归档授权)· **#362 ②**(写者偏离登记 + B-3 两拍的承诺)· `~/.agents/skills/_lib` ⇒ `/workspace/main/rdd-workflow/_lib`
+
 ### Entry #370 — 2026-11-12 [verifier](**C3 验收通过** —— **AC-1 ~ AC-22 全 PASS(22/22)**;新闸 16/16 · ctest **171/171** · 38 闸全 rc=0 · 冻结面 79 产物无参 rc=0)
 
 **主题**:change `cpptlm-cep-invariant-gate-teeth` 的 **verifier 验收**(2 轮,上限 3)—— 逐条对 **22 条 AC** 取工具证据。**⛔ verifier 只验不改**;第 1 轮的失败项由 builder 修(Entry #369),verifier 只复验。
