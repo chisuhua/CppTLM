@@ -102,10 +102,10 @@
 
 ## A8 · 冻结面五步链(G5)
 
-- [ ] A8.1 拍 3:`bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #N"`(**2 冻结件同一次**)
-- [ ] A8.2 拍 4:**commit manifest**(`frozen_at_commit ≠ HEAD` 的 ⚠️ 是**预期**)
-- [ ] A8.3 **无参复验** `cep_freeze_check.sh` **rc=0** + `authorized_by` 精确匹配(AC-19)
-- [ ] A8.4 ⚠️ `artifact_count` 此时**仍 = 78**(无新增件)⇒ 78→79 只发生在 A11
+- [x] A8.1 拍 3:`bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #N"`(**2 冻结件同一次**)
+- [x] A8.2 拍 4:**commit manifest**(`frozen_at_commit ≠ HEAD` 的 ⚠️ 是**预期**)
+- [x] A8.3 **无参复验** `cep_freeze_check.sh` **rc=0** + `authorized_by` 精确匹配(AC-19)
+- [x] A8.4 ⚠️ `artifact_count` 此时**仍 = 78**(无新增件)⇒ 78→79 只发生在 A11
 
 ---
 

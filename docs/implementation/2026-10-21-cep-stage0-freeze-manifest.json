@@ -1,7 +1,7 @@
 {
   "artifact_count": 78,
   "artifacts": {
-    "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "2fcf4d498088e4a863b07f356f44193917510ad747428a88fec381b8ae7faf1b",
+    "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "64364ed7d1d9def7919c8bce2e7f3c9e35c31c1b93bf252dc8ec4aff1f24fe95",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4db673d7d582ac6231c6b3fa26ff78ef02dbea4483261b3cfcd7f4403201bd26",
     "docs/adr/ADR-CEP-01-fabric-collective-plane.md": "442a6897a8f8ab7050f1d36c5049de12beef02eda62f97c3c60751cc117d8ca7",
     "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md": "3af276426885019fc474621e72a8db963b38e477acfacf0ffaca60a979824398",
@@ -23,7 +23,7 @@
     "docs/adr/ADR-CEP-18-protocol-generation-scope.md": "0c9a20115a708768f00ec105cbbf22a0c9ea3b2bffd575995076ee5f99aa0ca6",
     "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": "919b3495cabc9537092ae84f36ef923f31161303ea1184cafef7169b3186cc36",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "a05fa8714645905057befa32580578c0041ef4cf9cc86e2ba22e3d7dce56f54c",
-    "docs/architecture/07-coherence-exploration-platform.md": "e236a97384f80aa97b90f617068b184cecd232cd6f01b2ec32e7962d2a6f7240",
+    "docs/architecture/07-coherence-exploration-platform.md": "f10f954bf26dbaf03aa2c998b509e63e627e8385a40849ead8b0b0ef29880d7e",
     "docs/architecture/cep/coherence-interface.md": "6997124eb5f904a02dee90b38d5d8f4a536e94c7aeb3432c609aa10835f4f597",
     "docs/architecture/cep/collective-plane.md": "8de3e3c7a2af2f7908cb81c90d7912784e5214c9bc70fbd626d13c062f54d595",
     "docs/architecture/cep/core-traffic-gen.md": "469e533714183871a78e1d626c1124565f1a1d910c7c3d591474c070c01fee13",
@@ -80,10 +80,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #354",
+  "authorized_by": "Entry #363",
   "exclusions": [],
   "frozen_at": "2026-11-12",
-  "frozen_at_commit": "5c6f2699f4212773331aed11befe948e3b877e79",
+  "frozen_at_commit": "cba5e31c31a73e278f2bcb7d76c1a7da744459f7",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
