@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**(C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
+`openspec/changes/` 当前 **1 个 active**(C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-12 立项 ⇒ 占 1 slot,per 台账 Entry #384;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -19197,6 +19197,74 @@ graph LR
 > ⚠️ **C1 无 OpenSpec change**:C1 的产物 = 脚本 + 文档 ⇒ per 先例 `cpptlm-cep-b3b2-d4-trigger-probe` ⇒ **不占 KPI slot**(§13.1 的 C1 行「冻结面 = 无」与实际不符 —— C1 实际改了 `07 号` 索引段并**走了五步链**;该行是 2026-11-11 快照的表述,⛔ 不回改)。
 > ⚠️ **W2 的五步链是 3 处**(per K-2 的代价):`docs/architecture/cep/fabric-transport.md` + `docs/adr/ADR-CEP-01-*.md` + `docs/adr/ADR-CEP-12-*.md` ⇒ 三处可在**同一次** `--update --authorized-by` 内重算,但**产物 commit 必须先于 `--update`**。
 
+## §14 · 归档态(形态定义 · MUST-FIX-3 / MUST-FIX-4)
+
+> ⚠️ **本段是「形态定义」,⛔ 不是「归档已发生」** —— 归档的触发条件(终局 Ⅰ / Ⅳ)**均未满足**(per §6.2 B3b-2 = **0/4**)。
+> ⇒ **本段的存在不表示 objective 已归档**;⛔ 任何文档不得把它读作归档事件。
+> **来源**:per 台账 **Entry #332 ⑧**(MUST-FIX-3 / MUST-FIX-4 原文)· **Entry #384**(立项)· 用户拍板 2026-11-12 · architect 决策 `.rddf/reviews/cep-mustfix-3-4-archive-form-decision.md`。
+> **append-only**:本段为**新增**,⛔ 不改写任何既有段 / 既有 Entry。
+
+### §14.1 · MUST-FIX-3 ① 归档路径与文件存续形态
+
+- **形态**:台账 `obj-cep-platform.md` **不移动、不改名**;收尾时**追加**本 `## §14` 段(append-only)⇒ 该段是归档的唯一新增载体。
+- **理由**:闸 `cep_b3b2_deferral_check.sh` 的台账根集合**主根即本文件现路径** ⇒ MUST-FIX-3 ④⑤ 的风险**直接归零**;台账本就是 append-only 单文件,只增不减是既有形态。
+- **代价**:本文件已 21k 行,归档态段再增 ≈40 行 ⇒ 可接受。
+
+### §14.2 · MUST-FIX-3 ② 归档语义选用规则(**按终局分支自动选用**)
+
+| 终局 | 归档语义 | 触发条件 |
+|---|---|---|
+| **Ⅰ 达成归档** | ✅ **已完成归档** | N ≥ 1 达成 **且** `§8.3` ④ 已补齐(受 ratify 门约束) |
+| **Ⅱ 维持挂起** | **不归档**(维持口径 ② + 季度复审) | N = 0 且 D-4 ①② 未命中 |
+| **Ⅲ 用户改判** | **由用户裁决**(⛔ 不预判) | 用户行使 `Entry #264` 判定句保留的改判授权 |
+| **Ⅳ 暂存归档** | ⏸ **暂存归档** | 终局 Ⅱ 持续 ≥ 4 次季度复审(≈1 年)且无 D-4 命中、剩余 ⏭ 全属「外部条件 + 人力资源」 |
+
+- ⚠️ **硬约束(恒成立)**:「**objective 归档 ≠ B3b-2 关闭**」⇒ N = 1 时仍有 M = 3 族义务开放 ⇒ ⛔ 不得径直标「✅ 已完成归档」。
+
+### §14.3 · MUST-FIX-3 ③ 义务转移载体
+
+| 义务 | 转移后的真源 | 形态 |
+|---|---|---|
+| B3b-2 逐族判定 | `test/cep_b3b2_deferrals.json`(4 族 × 6 字段) | **判据真源** |
+| B3b-2 判定闸 | `scripts/test/cep_b3b2_deferral_check.sh` | **机器执行** |
+| 读者入口 | `07 号` §12(Stage 4+ 维护态交接段) | **单向指针** |
+| 导航 | `docs/guide/cep-usage.md` §12.8 | **导航**(既有定位,不改) |
+| 索引 | 本 `## §14` 段 | 指向以上三者 |
+
+⇒ **单一真源纪律**:判定规则**只**在 JSON + 闸;`07 号` 与手册**只写指针** ⇒ ⛔ 不产生第二权威源。
+
+### §14.4 · MUST-FIX-3 ④ 闸的 `LEDGER` 路径重定向规则
+
+- **主形态**(原地保留,当前采用):台账根集合**主根 = 本文件现路径** ⇒ 闸**零变更**即可。
+- **重定向形态**(为「将来若移动」预留):根集合来自 ① `test/cep_b3b2_ledger_redirect.json`(**唯一真源**)② 环境变量 `CEP_LEDGER_PATH` ③ 缺省主台账路径 ⇒ **台账归档时只改表、不改闸代码**。
+- ⛔ **禁止**用「排除自身路径」等消音式实现(会连带屏蔽真回归)。
+
+### §14.5 · MUST-FIX-3 ⑤ 逐族锚在新位置的解析规则
+
+- **判据 = 行首标题匹配**:存在以 `### <ref>` **开头**的行即命中(逐根检查,任一根命中即通过)。
+- **强度**:⛔ 旧实现是**全文子串**匹配 ⇒ 台账正文里的**引述**也会命中 ⇒ 假绿面已消除。
+- **向后兼容**:现值 `Entry #249` ⇒ 命中 `### Entry #249 — 2026-11-06 [go-decision](…)` ⇒ `test/cep_b3b2_deferrals.json` **零 diff**。
+
+### §14.6 · MUST-FIX-3 ⑥ `07 号` 维护态段
+
+- **载体已存在**:`07 号` §12「CEP 使用手册(Stage 4+ 维护态交接)」**已是入口指针**形态 ⇒ **无需新建载体**。
+- **落地形态**:该段追加**单向指针**一句(维护态的 B3b-2 判定规则 = deferrals JSON + 闸;⛔ 本文件不复写规则)⇒ **冻结件 ⇒ 走五步授权链**。
+
+### §14.7 · MUST-FIX-4 回滚路径
+
+- **形态(双载体,⛔ 不得靠删除)**:① `07 号` **新 SU 显式撤销**(追加一则 SU,指明被撤销的 SU 标识 + 理由;⛔ **不删**被撤销的 SU)② 本台账 **append-only 撤回标记**(本段的「撤回标记」小节 + 追加台账 Entry;⛔ 台账不可删改)。
+- **触发条件(3 条)**:① 用户不 ratify 口径 ④ ⇒ 回落 interim 口径 乙 ② N = 1 登记出错 ③ 三处重裁被证明不可行。
+- ⚠️ **粒度**:默认**只撤回「新增的登记形态」(口径 ④)**,⛔ **不撤销** `07 号` SU 2026-11-13 ②(禁令作用域重裁)—— 作用域重裁与「口径 ④ 是否启用」是**两件事**;**仅当**触发条件 ③ 明确指向「三处重裁不可行」才动 ② ⇒ 届时须由新 SU 显式撤销。
+- **撤回标记(成对可判)**:本小节须**成对**记录「**被撤回的 SU 标识**」+「**撤回 Entry 号**」⇒ 缺一即红(机器可判)。
+- **当前状态**:**无撤回发生**(尚未 ratify 口径 ④、尚未触发任何条件)⇒ 下列为**空占位**。
+
+#### §14.7.1 · 撤回标记登记(当前为空)
+
+| 被撤回的 SU 标识 | 撤回 Entry 号 | 撤回理由 | 生效日 |
+|---|---|---|---|
+| *(暂无 —— 尚未触发任何回滚条件)* | — | — | — |
+
+
 ### Entry #341 — 2026-11-11 [planner](**CEP 文档归位 A 方案开工授权** —— 14 号 → `docs/architecture/cep/parity-baseline.md` + 2 处标注修正)
 
 **主题**:per 用户裁决「**A · 仅 14 号移位 + 2 处标注修正**」⇒ 把 `docs/architecture/` 顶层最后一份**纯 CEP 专属**文档移入 `cep/` 子目录,使顶层只剩 **07 号** 1 份 CEP 文档(= AGENTS.md「1 主纲 + N 子文档」模型的直接落地)。
@@ -21693,3 +21761,39 @@ builder 建四件套 + KPI 回填 **1/3** ⇒ 实施(⑤ 项)⇒ 0 回归(ctest 
 **⑦ 关联**
 
 **#383**(R-1 归因)· **#332 ⑧**(MUST-FIX 原文 + 终局三分支 + ⑬)· **#264**(终态 Go 挂起 + 季度复审)· architect 决策 `.rddf/reviews/cep-mustfix-3-4-archive-form-decision.md` · `.rddf/improvements/cpptlm-cep-b3b2-archive-form.md`
+
+### Entry #385 — 2026-11-12 [build](**R-1 实施** —— MUST-FIX-3 归档形态 6 项 + MUST-FIX-4 回滚路径落地;闸升级(锚 = 行首标题匹配)+ 重定向表 + `07 号` 指针 + 台账 §14 段 + 新闸)
+
+**主题**:per 台账 **#384** 的立项授权 ⇒ 实施 `cpptlm-cep-b3b2-archive-form`。本 Entry = 冻结链**拍 0**(授权号)。
+
+**① 落盘产物(7 项)**
+
+| # | 文件 | 形态 |
+|:--:|---|---|
+| 1 | `scripts/test/cep_b3b2_deferral_check.sh` | 台账根集合(重定向表 + `CEP_LEDGER_PATH` + 缺省,去重);锚匹配 ⇒ **行首标题匹配**(⛔ 旧全文子串已降级) |
+| 2 | `test/cep_b3b2_ledger_redirect.json`(**新增**) | `{"roots": ["<台账现路径>"]}` ⇒ 归档时**只改表、不改闸代码** |
+| 3 | `docs/architecture/07-coherence-exploration-platform.md` §12 | **单向指针**一句(⛔ 不复写规则)⇒ **冻结件 ⇒ 五步链** |
+| 4 | `.rddf/roadmap/objectives/obj-cep-platform.md` | **追加** `## §14 · 归档态` 段:§14.1~§14.7 + §14.7.1 撤回登记(空占位) |
+| 5 | `scripts/test/cep_b3b2_archive_form_check.sh`(**新增**) | V1~V6 + **2 条决定性变异**;影子树复用 `cep_test_shadow.sh` |
+| 6 | `test/CMakeLists.txt` · `scripts/README.md` | +1 `add_test`;守门表 **35 → 36** 行 |
+| 7 | `openspec/changes/cpptlm-cep-b3b2-archive-form/` | 四件套;delta = **ADDED** `cep-b3b2-archive-form` |
+
+**② 判据取证**
+
+| 项 | 实测 |
+|---|---|
+| 闸升级后既有 4 条 | **绿**(`4 deferrals, all fields present, ledger entries resolvable`)⇒ 行首匹配**兼容** `Entry #249` ⇒ deferrals JSON **零 diff** |
+| 新闸 | **9/9**:V1(七项齐备)· V2(锚未降级)· V3(重定向表)· V4(`07 号` 指针)· V5(撤回成对)· M1(破坏 deferrals ⇒ 按签名 `ledger_entry` 红)· M2(降级锚解析 ⇒ V2 对影子树判红)+ 真实仓字节指纹不变 |
+| `openspec validate --strict` | **rc=0** |
+
+**③ 范围纪律**
+
+⛔ **未执行归档**(`## §14` 段首显式声明「形态定义,非归档已发生」)· ⛔ `B3b-2` 仍 **0/4** · ⛔ deferrals JSON **零 diff** · ⛔ 无 ADR 变更 · ⛔ 未回改任何既有 Entry / SU · ⛔ `§4.0` 未动。
+
+**④ 下一步**
+
+冻结链五步(拍 0 = 本 Entry → 产物 commit → `--update --authorized-by "Entry #385"` → 清单 commit → 无参复验)⇒ 0 回归(ctest **175** + **41** 闸)⇒ 归档(✅ 已完成归档语义)⇒ **第二次** `--update`(新 main spec 入 glob)⇒ KPI **0/3** ⇒ verifier 验收。
+
+**⑤ 关联**
+
+**#384**(立项 + 用户拍板 2 点)· **#383**(R-1 归因)· **#332 ⑧**(MUST-FIX 原文 + 终局三分支)· **#264** · architect 决策 `.rddf/reviews/cep-mustfix-3-4-archive-form-decision.md`

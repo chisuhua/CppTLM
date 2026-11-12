@@ -6,7 +6,8 @@
 # 校验 4 条:
 #   ① JSON 可解析 + 4 族齐全(cxl_2_0 / cxl_3_0_symmetric / nvlink / ualink)
 #   ② 每条字段齐备(disposition / blocking_type / reason / trigger_condition / ledger_entry)
-#   ③ 每条的 ledger_entry 在台账(obj-cep-platform.md)中**真实存在**
+#   ③ 每条的 ledger_entry 在台账根集合中**真实存在** —— 判据 = **行首标题匹配**
+#      (须存在以 `### <ref>` **开头**的行;⛔ 旧实现是全文子串 ⇒ 引述也会命中,已升级)
 #   ④ 族名单与**外部真源** `obj-cep-platform.md §6.2` 的 **B3b-2 行**族枚举**一致**(防登记与真源漂移)
 #
 # ⚠️ 本闸只校验**登记的完整性**,⛔ **不**改 B3b-2 的计数(仍 0/4)——
@@ -17,15 +18,45 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT" || exit 2
 
 DECL="test/cep_b3b2_deferrals.json"
-LEDGER=".rddf/roadmap/objectives/obj-cep-platform.md"
+# ── 台账根集合(per MUST-FIX-3 ④ · 台账 Entry #384)────────────────────────
+# ⚠️ **不再硬编码单一路径**:台账若归档(移动 / 改名),闸必须仍能解析 ⇒ 根集合来自
+#    ① `test/cep_b3b2_ledger_redirect.json`(重定向表,**唯一真源**)
+#    ② 环境变量 `CEP_LEDGER_PATH`(临时覆盖 / 调试)
+#    ③ 缺省主台账路径
+#    ⇒ **台账归档时只改表、不改闸代码**。
+LEDGER_DEFAULT=".rddf/roadmap/objectives/obj-cep-platform.md"
+LEDGER_ROOTS_FILE="test/cep_b3b2_ledger_redirect.json"
+LEDGER_ROOTS_STR="$(python3 - "$LEDGER_ROOTS_FILE" "${CEP_LEDGER_PATH:-}" "$LEDGER_DEFAULT" <<'PY'
+import json, os, sys
+table, env, default = sys.argv[1], sys.argv[2], sys.argv[3]
+roots = []
+if os.path.isfile(table):
+    try:
+        roots.extend(json.load(open(table, encoding='utf-8')).get('roots', []))
+    except Exception:
+        pass
+if env:
+    roots.insert(0, env)
+roots.append(default)
+seen, out = set(), []
+for r in roots:
+    if r and r not in seen:
+        seen.add(r)
+        out.append(r)
+print('\n'.join(out))
+PY
+)"
+mapfile -t LEDGER_ROOTS <<<"$LEDGER_ROOTS_STR"
+LEDGER="${LEDGER_ROOTS[0]}"
 pass=0
 fail=0
 ok() { echo "  ✅ $1"; pass=$((pass + 1)); }
 ng() { echo "  ❌ $1"; fail=$((fail + 1)); }
 
-out="$(python3 - "$DECL" "$LEDGER" <<'PY'
+out="$(python3 - "$DECL" "${LEDGER_ROOTS[@]}" <<'PY'
 import json, re, sys
-decl_path, ledger_path = sys.argv[1], sys.argv[2]
+decl_path = sys.argv[1]
+roots = sys.argv[2:]
 doc = json.load(open(decl_path, encoding='utf-8'))
 rows = doc.get('deferrals', [])
 expected = ['cxl_2_0', 'cxl_3_0_symmetric', 'nvlink', 'ualink']
@@ -34,14 +65,26 @@ errs = []
 if sorted(fams) != sorted(expected):
     errs.append('family set mismatch: got %s expected %s' % (sorted(fams), sorted(expected)))
 required = ['disposition', 'blocking_type', 'reason', 'trigger_condition', 'ledger_entry']
-ledger = open(ledger_path, encoding='utf-8').read()
+# 台账根集合(per MUST-FIX-3 ④)—— 逐根读取;不可读的根跳过但**全部不可读**时报错
+texts = []
+for r in roots:
+    try:
+        texts.append(open(r, encoding='utf-8').read())
+    except OSError:
+        pass
+if not texts:
+    errs.append('no readable ledger root: %s' % roots)
 for r in rows:
     for k in required:
         if not r.get(k):
             errs.append('%s: missing field %s' % (r.get('family'), k))
     le = str(r.get('ledger_entry', ''))
-    if le and le not in ledger:
-        errs.append('%s: ledger_entry %s not found in ledger' % (r.get('family'), le))
+    if le:
+        # ⚠️ **行首标题匹配**(per MUST-FIX-3 ⑤):必须存在以 `### <ref>` **开头**的行
+        #    ⇒ 「引述台账正文里的同一串」**不再**误命中(旧实现是全文子串,⛔ 已升级)。
+        hit = any(any(l.startswith('### ' + le) for l in t.splitlines()) for t in texts)
+        if not hit:
+            errs.append('%s: ledger_entry %s not found as an Entry heading in ledger roots' % (r.get('family'), le))
 if errs:
     print('\n'.join(errs)); sys.exit(1)
 print('%d deferrals, all fields present, ledger entries resolvable' % len(rows))
@@ -58,9 +101,10 @@ fi
 #       ⇒ 恒真(真源侧零校验)⇒ 已删除;上方 python 段的集合判据保留作回归基线。
 #    ⚠️ 为什么不是 `07 号` SU·六:收口批(Entry #339)已把 SU 正文改为**归宿指针** ⇒ 该段**不再含族枚举**;
 #       现存真源 = `obj §6.2` 的 `- **B3b-2. …**` 行(4 族枚举 + 分母 4)。
-out4="$(python3 - "$DECL" "$LEDGER" <<'PY'
+out4="$(python3 - "$DECL" "${LEDGER_ROOTS[@]}" <<'PY'
 import json, re, sys
-decl_path, ledger_path = sys.argv[1], sys.argv[2]
+decl_path = sys.argv[1]
+roots = sys.argv[2:]
 # 族名 ↔ 真源 token 映射(真源 = `obj §6.2` 的 B3b-2 行,逐字)
 TOKENS = {
     'cxl_2_0': 'CXL 2.0',
@@ -68,8 +112,15 @@ TOKENS = {
     'nvlink': 'NVLink',
     'ualink': 'UALink',
 }
-lines = open(ledger_path, encoding='utf-8').read().splitlines()
-hits = [l for l in lines if re.match(r'^- \*\*B3b-2\.', l)]
+hits = []
+for _r in roots:
+    try:
+        _lines = open(_r, encoding='utf-8').read().splitlines()
+    except OSError:
+        continue
+    for _l in _lines:
+        if re.match(r'^- \*\*B3b-2\.', _l):
+            hits.append(_l)
 if len(hits) != 1:
     print('真源定位失败: `obj §6.2` 的 B3b-2 行命中 %d 条(应恰好 1)' % len(hits))
     sys.exit(1)

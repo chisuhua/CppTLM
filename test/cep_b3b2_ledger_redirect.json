@@ -1,0 +1,7 @@
+{
+  "schema": "cep-b3b2-ledger-redirect/v1",
+  "note": "台账根集合 —— 主台账 + (将来可能的)归档台账。闸 `cep_b3b2_deferral_check.sh` 按本表的顺序逐根校验;「台账归档」时**只改本表**即可,⛔ 不改闸代码(per MUST-FIX-3 ④)。roots[0] 必须是现行主台账路径(新闸 `cep_b3b2_archive_form_check.sh` 断言)。⚠️ ⛔ 不得用「排除自身路径」等消音式实现(会连带屏蔽真回归)。",
+  "roots": [
+    ".rddf/roadmap/objectives/obj-cep-platform.md"
+  ]
+}

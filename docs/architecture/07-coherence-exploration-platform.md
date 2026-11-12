@@ -566,6 +566,8 @@ group-scoped completion     → Fabric Collective Plane
 > **本节在架构文档中只保留入口指针** —— 操作步骤不属架构蓝图(per `AGENTS.md §DOC HYGIENE` 真源原则)。
 > ⚠️ **本标题保留「CEP 使用手册」字样** —— `objective-cep-platform §8.3` ④ 的判定命令 `grep -rln "CEP 使用手册"` 依赖它(per 台账 Entry #334 ②)。
 
+
+> 📌 **维护态的 B3b-2 判定规则**(per 台账 **Entry #384** / MUST-FIX-3 ⑥):真源 = `test/cep_b3b2_deferrals.json` + 闸 `scripts/test/cep_b3b2_deferral_check.sh`;⛔ **本文件不复写规则**(只写指针 ⇒ 避免第二权威源)。
 ## Status Update 2026-11-12(per 台账 Entry #363)—— **R-c 机器检查已落地**(D0 堵法 ② 兑现)+ 收口指针改指新闸
 
 > **性质**:本则**追加**于本文件 `## §末 文档索引` **之前**(per 该索引的新纪律:「此后**新增段落 SHALL 插在本索引之前** ⇒ 新增内容永不使既有 `path:line` 锚点位移」)⇒ **本索引区整体后移**,既有正文锚点**不位移**。
