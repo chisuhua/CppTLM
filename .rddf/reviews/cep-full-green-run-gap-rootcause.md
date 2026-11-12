@@ -81,3 +81,18 @@ IC3 = `deadlock_violations == 0 && memory_violations == 0`(per `07 号` §4 的 
 - `scripts/test/cep_ic3_report_states_check.sh` —— IC3 三态 fixture。
 
 **关联**:台账 **#391**(R-3 归因)· **#383** · **#332 ⑧** · **#264** · **#228**(B4 达成)· **#250** · `docs/guide/cep-usage.md` §12.8 · `07 号` SU · 十五 ①
+
+---
+
+## 五 · ⚠️ 订正(2026-11-13 · P-1 前置核对后 · append-only,⛔ 原文不改)
+
+**§一 与 §二 的两处表述需精化**:
+
+| # | 原表述 | 订正 |
+|:--:|---|---|
+| ① | 「**不是缺能力**……采集点与装置均已存在 ⇒ R-3 = **接线 + 真实 run 取证**」 | ⇒ **能力确实已存在**(违例检测器 `SwmrDataValueDetector` 在 harness 内:`ViolationCounts.swmr` / `.data_value` 桶 + :169 / :182 的递增点);但 ⛔ **装置 `ConsistencyCompletionModel` 与 E2E harness 不在同一条运行链**(装置的调用方只有 `test_cep_b4_evidence_device.cc` 与 `test_cep_experiment_emit.cc`)。⇒ R-3 = **在真实 E2E 场景里挂上检测器 + 提供内存操作样本 + 取证** ⇒ 规模由「纯接线」上调为「**接线 + 场景扩写**」 |
+| ② | 「`memory_violations` 未采集 ⇒ 缺口只差一个键」 | ⇒ **精确机制**:该键的 `not-collected` 是**具体实验装置的诚实声明** —— `test/test_cep_experiment_emit.cc:345-348`「本装置**无内存一致性语义** ⇒ 不挂检测器 ⇒ 登记为未采集(per Entry #222 ④:不得写裸 0 而不声明)」· `test/test_cep_stub_cache_emit.cc:146`「本 run **无内存操作样本** ⇒ 无可检样本」。⇒ **不是采集点缺失**,而是「**没有装置同时满足『挂了检测器』+『有内存操作样本』**」 |
+
+⇒ **更新后的闭合路径第 1 步**:⛔ 不是「用装置跑拓扑 B」(措辞不准确)⇒ 而是「**在真实 E2E 场景中挂 `SwmrDataValueDetector` + 产生真实内存操作样本 ⇒ 该 run 的 `memory_violations` 从 `not-collected` 变为实测值**」⇒ **P-1 的答案 = 当前 E2E 场景均不满足 ⇒ 需扩写场景**(规模 ≈1-2 人日,比原估 +0.5 人日)。
+⇒ ⚠️ 三条硬边界**不变**(尤其「⛔ 不得为凑 IC3 掩盖真实违例」)。
+
