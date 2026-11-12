@@ -6,7 +6,7 @@ phase: phase-10
 依赖:
   - ADR-CEP-09
   - ADR-CEP-05
-状态: "🟡 待实施（2026-11-12 起草;per 台账 **Entry #377** 的批 2(D-2)+ **Entry #378** 的批 1 收口;architect 方案 `.rddf/reviews/cep-cli-iag-gate-alignment.md`(4 条决策 + 影响面实测 + 验收判据);⚠️ 起草期实测**纠正**既有登记的窄化 —— 不是「两侧不一致」而是「两侧一致地都不挂 IAG 族」,故修法必须**两臂同补**）"
+状态: "✅ 已归档（2026-11-12 起草 → 实施 → 归档 → 验收;per 台账 **Entry #381** 归档回执 —— ✅ 已完成归档语义 · delta **MODIFIED** 合并进 openspec/specs/cep-instance-assembly/;verifier 验收 **7/7 AC PASS / 0 BLOCKER**,per **Entry #382**);原立项依据:台账 **Entry #377** 的批 2(D-2)+ **Entry #378** 的批 1 收口;architect 方案 `.rddf/reviews/cep-cli-iag-gate-alignment.md`(4 条决策 + 影响面实测 + 验收判据);⚠️ 起草期实测**纠正**既有登记的窄化 —— 不是「两侧不一致」而是「两侧一致地都不挂 IAG 族」,故修法必须**两臂同补**"
 created: 2026-11-12
 ---
 

@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "verifier",
-  "updated_at": "2026-11-12T15:50:00Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-12T16:10:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-12T14:30:00Z",
-      "by": "user",
-      "reason": "用户指令「现在修 Q1（validate_topology）」⇒ 切 builder 执行 W5-c。"
-    },
     {
       "role": "architect",
       "at": "2026-11-12T16:00:00Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-12T15:50:00Z",
       "by": "user",
       "reason": "D-2 实施完成(全链闭合)⇒ 切 verifier 逐条验收 AC-1~AC-7(用户已授权 C3/C4 后自动切 verifier 的同一条链)。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-12T16:10:00Z",
+      "by": "user",
+      "reason": "批 1 + 批 2 全部完成 ⇒ planner 收口盘点(投影订正 + 剩余任务定稿 + 台账回执)。"
     }
   ],
   "auto_switch_window": null
