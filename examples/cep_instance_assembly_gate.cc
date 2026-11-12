@@ -12,7 +12,8 @@
 //   · 本 CLI —— `validate_topology` target 上的**离线闸**(人工 / CI 一键跑)
 //   两处**必须**调用**同一组**函数与**同一份**加载规则:
 //     判据实现 = `tlm::cep::run_instance_assembly_gate`(include/tlm/cep/instance_assembly_gate.hh)
-//     加载规则 = `tlm::cep::load_instance_assembly_inputs`(include/tlm/cep/instance_assembly_loader.hh)
+//     加载规则 =
+//     `tlm::cep::load_instance_assembly_inputs`(include/tlm/cep/instance_assembly_loader.hh)
 //   ⇒ **禁双实现**(per `src/core/module_factory.cc:173` 的同族纪律)。
 //
 // ── 退出码(红绿分离)────────────────────────────────────────────────────
@@ -38,19 +39,18 @@
 
 namespace {
 
-/// 缺省 config(相对仓库根)
-constexpr const char* kDefaultConfigPath = "configs/cep_chi_rnf_pe_minimal.json";
+    /// 缺省 config(相对仓库根)
+    constexpr const char* kDefaultConfigPath = "configs/cep_chi_rnf_pe_minimal.json";
 
-void print_usage(const char* argv0) {
-    std::printf(
-        "用法: %s [<config.json>]\n\n"
-        "  (无参数)       用缺省 config %s\n"
-        "  <config.json>  显式 config —— 不可读 / JSON 畸形 ⇒ 退出码 1\n\n"
-        "退出码: 0 = PASS 或 SKIP · 1 = 判据红 / 配置错 · 2 = 用法错误\n",
-        argv0, kDefaultConfigPath);
-}
+    void print_usage(const char* argv0) {
+        std::printf("用法: %s [<config.json>]\n\n"
+                    "  (无参数)       用缺省 config %s\n"
+                    "  <config.json>  显式 config —— 不可读 / JSON 畸形 ⇒ 退出码 1\n\n"
+                    "退出码: 0 = PASS 或 SKIP · 1 = 判据红 / 配置错 · 2 = 用法错误\n",
+                    argv0, kDefaultConfigPath);
+    }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char* argv[]) {
     if (argc > 1) {
@@ -79,8 +79,7 @@ int main(int argc, char* argv[]) {
     }
 
     // ── 加载三层输入(**与装配路径臂共用同一加载器**)──────────────────────
-    const tlm::cep::InstanceAssemblyInputs inputs =
-        tlm::cep::load_instance_assembly_inputs(config);
+    const tlm::cep::InstanceAssemblyInputs inputs = tlm::cep::load_instance_assembly_inputs(config);
     if (inputs.source_error) {
         std::printf("[FAIL] cep instance assembly gate: 声明源配置错误 —— %s\n",
                     inputs.source_error_detail.c_str());

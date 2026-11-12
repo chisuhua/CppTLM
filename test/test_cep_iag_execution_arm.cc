@@ -21,12 +21,12 @@
 //    ⚠️ 两臂的**加载规则**亦共用 `tlm::cep::load_instance_assembly_inputs`
 //    (include/tlm/cep/instance_assembly_loader.hh)⇒ ⛔ 不得各自实现。
 
+#include <unistd.h>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <functional>
 #include <string>
-#include <unistd.h>
 
 #include <nlohmann/json.hpp>
 
@@ -40,75 +40,74 @@
 
 namespace {
 
-/// 读一份拓扑 config(把 `cep.protocol_instances` 改成**绝对路径** —— 该字段是相对路径
-/// ⇒ 装配期按 CWD 解析 ⇒ 须绝对化,per `test_cep_bridge_reattach_guard.cc` 的既有做法)
-nlohmann::json load_topology(const char* file) {
-    const auto path = std::filesystem::path(CPPTLM_SOURCE_DIR) / "configs" / file;
-    std::ifstream in(path);
-    REQUIRE(in.good());
-    nlohmann::json cfg = nlohmann::json::parse(in);
-    cfg["cep"]["protocol_instances"] =
-        (std::filesystem::path(CPPTLM_SOURCE_DIR) / "include" / "tlm" / "cep" /
-         "protocol_instances.json")
-            .string();
-    return cfg;
-}
-
-/// 负向变换 ①:bridge 指向**未声明**的实例 ⇒ `[IAG-02]`
-nlohmann::json with_undeclared_instance(nlohmann::json cfg) {
-    cfg["cep"]["bridges"][0]["protocol_instance"] = "not_declared_xyz";
-    return cfg;
-}
-
-/// 负向变换 ②:bridge 引用的模块**不在拓扑里** ⇒ `[IAG-06]`
-/// (⚠️ 该形态若无 IAG 臂,会一路走到**模块解析**阶段才失败 ⇒ 因此本条对「臂是否在位」
-///    **有鉴别力**:错误签名是 `[IAG-06]` 而非「模块不存在」类解析错误)
-nlohmann::json with_module_not_in_topology(nlohmann::json cfg) {
-    cfg["cep"]["bridges"][0]["modules"] = nlohmann::json::array({"__no_such_module__"});
-    return cfg;
-}
-
-/// 捕获 stdout(C++ `printf`/`fputs` 通道)⇒ 供**按签名**断言。
-/// ⚠️ 装配臂把 IAG 的 log 与 errors 都写 stdout(与 Step 0.25 的 gate log 同通道)。
-std::string capture_stdout(const std::function<void()>& fn) {
-    std::fflush(stdout);
-    const int saved = ::dup(fileno(stdout));
-    FILE* tmp = std::tmpfile();
-    REQUIRE(tmp != nullptr);
-    ::dup2(fileno(tmp), fileno(stdout));
-    fn();
-    std::fflush(stdout);
-    ::dup2(saved, fileno(stdout));
-    ::close(saved);
-    std::rewind(tmp);
-    std::string out;
-    char buf[4096];
-    size_t n = 0;
-    while ((n = std::fread(buf, 1, sizeof(buf), tmp)) > 0) {
-        out.append(buf, n);
+    /// 读一份拓扑 config(把 `cep.protocol_instances` 改成**绝对路径** —— 该字段是相对路径
+    /// ⇒ 装配期按 CWD 解析 ⇒ 须绝对化,per `test_cep_bridge_reattach_guard.cc` 的既有做法)
+    nlohmann::json load_topology(const char* file) {
+        const auto path = std::filesystem::path(CPPTLM_SOURCE_DIR) / "configs" / file;
+        std::ifstream in(path);
+        REQUIRE(in.good());
+        nlohmann::json cfg = nlohmann::json::parse(in);
+        cfg["cep"]["protocol_instances"] = (std::filesystem::path(CPPTLM_SOURCE_DIR) / "include" /
+                                            "tlm" / "cep" / "protocol_instances.json")
+                                               .string();
+        return cfg;
     }
-    std::fclose(tmp);
-    return out;
-}
 
-/// 跑一次真装配,返回 {成功?, 输出}
-struct AssembleResult {
-    bool ok = false;
-    std::string out;
-};
+    /// 负向变换 ①:bridge 指向**未声明**的实例 ⇒ `[IAG-02]`
+    nlohmann::json with_undeclared_instance(nlohmann::json cfg) {
+        cfg["cep"]["bridges"][0]["protocol_instance"] = "not_declared_xyz";
+        return cfg;
+    }
 
-AssembleResult assemble(const nlohmann::json& cfg) {
-    AssembleResult r;
-    r.out = capture_stdout([&] {
-        REGISTER_CHSTREAM;
-        EventQueue eq;
-        ModuleFactory factory(&eq);
-        r.ok = factory.instantiateAll(cfg);
-    });
-    return r;
-}
+    /// 负向变换 ②:bridge 引用的模块**不在拓扑里** ⇒ `[IAG-06]`
+    /// (⚠️ 该形态若无 IAG 臂,会一路走到**模块解析**阶段才失败 ⇒ 因此本条对「臂是否在位」
+    ///    **有鉴别力**:错误签名是 `[IAG-06]` 而非「模块不存在」类解析错误)
+    nlohmann::json with_module_not_in_topology(nlohmann::json cfg) {
+        cfg["cep"]["bridges"][0]["modules"] = nlohmann::json::array({"__no_such_module__"});
+        return cfg;
+    }
 
-}  // namespace
+    /// 捕获 stdout(C++ `printf`/`fputs` 通道)⇒ 供**按签名**断言。
+    /// ⚠️ 装配臂把 IAG 的 log 与 errors 都写 stdout(与 Step 0.25 的 gate log 同通道)。
+    std::string capture_stdout(const std::function<void()>& fn) {
+        std::fflush(stdout);
+        const int saved = ::dup(fileno(stdout));
+        FILE* tmp = std::tmpfile();
+        REQUIRE(tmp != nullptr);
+        ::dup2(fileno(tmp), fileno(stdout));
+        fn();
+        std::fflush(stdout);
+        ::dup2(saved, fileno(stdout));
+        ::close(saved);
+        std::rewind(tmp);
+        std::string out;
+        char buf[4096];
+        size_t n = 0;
+        while ((n = std::fread(buf, 1, sizeof(buf), tmp)) > 0) {
+            out.append(buf, n);
+        }
+        std::fclose(tmp);
+        return out;
+    }
+
+    /// 跑一次真装配,返回 {成功?, 输出}
+    struct AssembleResult {
+        bool ok = false;
+        std::string out;
+    };
+
+    AssembleResult assemble(const nlohmann::json& cfg) {
+        AssembleResult r;
+        r.out = capture_stdout([&] {
+            REGISTER_CHSTREAM;
+            EventQueue eq;
+            ModuleFactory factory(&eq);
+            r.ok = factory.instantiateAll(cfg);
+        });
+        return r;
+    }
+
+} // namespace
 
 // ── AC-1 · 正控绿 ⇒ 破坏红(按签名)⇒ 还原绿 ────────────────────────────
 TEST_CASE("CEP IAG execution arm: 未声明实例 ⇒ 装配路径按 [IAG-02] 失败(并可还原)",
@@ -145,8 +144,7 @@ TEST_CASE("CEP IAG execution arm: 桥引模块不在拓扑 ⇒ 按 [IAG-06] 失�
 }
 
 // ── AC-2 · 装配路径与装配闸结论一致(禁双实现的落地证明)────────────────
-TEST_CASE("CEP IAG execution arm: 装配路径与装配闸对同一 config 结论一致",
-          "[cep][assembly][iag]") {
+TEST_CASE("CEP IAG execution arm: 装配路径与装配闸对同一 config 结论一致", "[cep][assembly][iag]") {
     // ⚠️ 加载规则**共用** `load_instance_assembly_inputs`(⛔ 不得各自实现)⇒
     //    闸与装配路径喂给判据的输入必然相同。
     const auto cfg = load_topology("cep_chi_rnf_pe_minimal.json");
