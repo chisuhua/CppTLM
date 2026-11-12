@@ -46,7 +46,7 @@
     "openspec/specs/cep-chi-rnf-subset/spec.md": "85ec7d65db8f498a73162f9c1f83e246ff1258a5f8f1a32d3b458f6989fad248",
     "openspec/specs/cep-cohif-carrier/spec.md": "039c11cb5a1a9fb6dac933a392c514f9cf4011eb21f034b81c71420eac970013",
     "openspec/specs/cep-collective-plane-base/spec.md": "e5c1864fe98b98faafc7d9d3296c4d80fe187d3b8d4bb3680af8c026663578f7",
-    "openspec/specs/cep-collective-plane-contract/spec.md": "affdb14586a7cdb1e2e4015bbc8d54facdd126c9ebffc182cc4374a3bf992ee0",
+    "openspec/specs/cep-collective-plane-contract/spec.md": "21e7fde426d5626e6fa90fafb340bc6c18b3ade548bc1ed5b3ae31f9635ab41e",
     "openspec/specs/cep-core-contracts/spec.md": "3251c9856e34c164c1ac7a59ba2d3dc382ebbc1940bdf8867a476376becc397e",
     "openspec/specs/cep-cxl-dcoh-symmetric-state-spec/spec.md": "92d83edc4769709d919aa0462c04f11cf631a27c8b5fdf9ffbfdaab46853ed39",
     "openspec/specs/cep-cxl-dcoh-symmetric/spec.md": "a7c9c40db428dda18ab8610b24dd5d87a27c1b4999b54fd7a43ecd942c3ab080",
@@ -80,10 +80,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #347",
+  "authorized_by": "Entry #354",
   "exclusions": [],
   "frozen_at": "2026-11-12",
-  "frozen_at_commit": "b03c693bfbd0d36bf917e416dafd27b8fcf5bb35",
+  "frozen_at_commit": "5c6f2699f4212773331aed11befe948e3b877e79",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
