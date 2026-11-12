@@ -20567,6 +20567,40 @@ metis 实测:`ls .rddf/improvements/` **26 个文件但无 C3 的**;`.rddf/state
 
 **#360**(T1)· **#359**(D-1~D-5)· **#338**(R-c 授权)· **#355**(C2 · 五步链先例)· **#169**(拆分登记)· `.rddf/reviews/cep-goal-scope-review-2026-11-12c.md`(architect 三次 + oracle 4 条)· `ADR-CEP-00:396-:436`(SU ①~⑤)· `:409-411`(② 三行)· `:415`(D1 四动作)· `:434`(R-c 缺口)· `07 号:569`(索引)· `:501`(旧规格)· `scripts/test/cep_adr_structural_check.sh:52-57`(shadow_reset)· `scripts/test/cep_freeze_check.sh:30-47`(FROZEN_GLOBS)· `test/cep_adr_parser.hh:110`/`:169-173`/`:250`
 
+### Entry #366 — 2026-11-12 [build](**闸侧归一** —— `cep_doc_ref_check` 的**模板占位路径**豁免;修 C3 引入的引用缺陷 ⇒ ctest 171/171)
+
+**主题**:`ctest --test-dir build -j4` 实测 **170/171**,唯一失败 = `cep_doc_ref_check`(#145)⇒ **归因 + 修复**。
+
+**① 归因(实测)**
+
+| # | 项 | 事实 |
+|:--:|---|---|
+| 1 | 失败判据 | `[2/4] 本仓 path / path:line 引用可达性` ⇒ `obj-cep-platform.md: 引用不存在的文件 openspec/changes/<name>` |
+| 2 | 引用出处 | 台账 **Entry #362 ②** 的表内单元格:「`openspec/changes/<name>` 已存在 | ❌ 不存在(P0b = builder 的活)」—— ⛔ **本 Entry 引入**(C3-P0a 的写者偏离登记里写了模板占位路径) |
+| 3 | 为何既有同类引用不红 | `scripts/test/cep_doc_ref_check.sh` 的 `VIRTUAL_PATHS` **早已**登记该占位符的**带尾斜杠**规范写法 `"openspec/changes/<name>/"`(:159)⇒ 而本处写的是**无尾斜杠**形态 ⇒ `is_virtual_path()` 的子串匹配**不命中** ⇒ 被判「引用不存在的文件」 |
+| 4 | 既有同型引用 | 台账 `:450` / `:1552` / `:5892` 的 `openspec/changes/<name>/tasks.md` / `openspec/changes/<name>/` ⇒ **均带尾斜杠或后缀** ⇒ 一直未被判红 |
+
+**② 修复(闸侧 · 提取层归一 · ⛔ 非「放宽判据」)**
+
+`extract_path_refs()` 增加一条排除:`grep -vE '<[^>]+>'` ⇒ **含 `<...>` 的反引号引用 = 模板占位,不是「某个具体文件」的引用** ⇒ 不做字面存在性检查(与既有 `*` glob 形态豁免**同理**)。
+
+| 判据 | 状态 |
+|---|---|
+| 豁免**类别**是否新增 | ⛔ **否** —— 同一占位符(模板形态)已在 VIRTUAL_PATHS 登记(带尾斜杠写法)⇒ 本条覆盖其**无尾斜杠写法** |
+| 语义断言(42 条) | ✅ 仍全部成立 |
+| 字面量仍在断言(42 条) | ✅ 仍全部成立 |
+| 负向断言(4 条) | ✅ 仍全部成立 |
+| 自动检测引用 | ✅ **755 处**「<别名> §N」引用 —— 目标节全部存在(未受影响) |
+| 闸总判定 | ✅ **rc=0** |
+
+**③ ⛔ 本 Entry 明确不做**
+
+⛔ 不改台账 **Entry #362** 已提交正文(append-only ⇒ ⛔ 不回改)· ⛔ 不删任何引用 · ⛔ 不扩 VIRTUAL_PATHS(⛔ 走提取层归一)· ⛔ 不改该闸的语义 / 负向断言逻辑 · ⛔ 不新增裁决。
+
+**④ 关联**
+
+**#365**(C3b + 五步链)· **#364**(C3a)· **#363**(C3 开工授权)· **#362**(P0a;**本条缺陷的出处**)· `scripts/test/cep_doc_ref_check.sh`(:94 `VIRTUAL_PATHS` · :159 占位符登记 · `:252` `extract_path_refs`)
+
 ### Entry #365 — 2026-11-12 [build](**C3b 完成** —— R-c 双向对账段 + 2 处冻结件 SU + 索引重生成 + **冻结面五步链闭合**;新闸自测 **16/16**)
 
 **主题**:执行 `tasks.md` 的 **A4 ~ A8**(C3b 触冻结面切片)—— 落 R-c 的**反向对账**判据、给 2 处冻结件各追加 1 则 SU、走完五步链。**⛔ 不改任何 ADR 正文**(只追加 SU)。
