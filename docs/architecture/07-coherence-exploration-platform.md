@@ -677,9 +677,9 @@ group-scoped completion     → Fabric Collective Plane
 | 25 | Status Update(2026-11-08 · 十三,per 台账 Entry #293)—— **声明面落点裁定回填**(= **甲**)+ **D-9 元数据字段增补**(F-12) | 551 |
 | 26 | Status Update(2026-11-08 · 十四,per 台账 Entry #295)—— **F-08 残余裁定**(索引**移到文末** + 新纪律 + 具名闸)+ **retention 裁定 = 丙**(指针) | 556 |
 | 27 | 12. CEP 使用手册(Stage 4+ 维护态交接) | 561 |
-| 28 | Status Update 2026-11-12(per 台账 Entry #363)—— **R-c 机器检查已落地**(D0 堵法 ② 兑现)+ 收口指针改指新闸 | 569 |
-| 29 | Status Update 2026-11-13(per 台账 Entry #373)—— **DoD 读法口径订正**(MUST-FIX-1 = Stage 4+ 准入按事件 · MUST-FIX-2 = 禁令作用域重裁) | 600 |
-| 30 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 637 |
+| 28 | Status Update 2026-11-12(per 台账 Entry #363)—— **R-c 机器检查已落地**(D0 堵法 ② 兑现)+ 收口指针改指新闸 | 571 |
+| 29 | Status Update 2026-11-13(per 台账 Entry #373)—— **DoD 读法口径订正**(MUST-FIX-1 = Stage 4+ 准入按事件 · MUST-FIX-2 = 禁令作用域重裁) | 602 |
+| 30 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 639 |
 
 ### 索引 B · Status Update(17 · 2026-10-28 起)
 
@@ -700,8 +700,8 @@ group-scoped completion     → Fabric Collective Plane
 | 13 | 2026-11-08 | Status Update(2026-11-08 · 十二,per 台账 Entry #292)—— **4 项决策面勘误与补充**(D-0 定位改写 / `:71` 撤销理由 / 状态追认 / 拓扑分档判据 **J-9**) | Entry #292 | 543 |
 | 14 | 2026-11-08 | Status Update(2026-11-08 · 十三,per 台账 Entry #293)—— **声明面落点裁定回填**(= **甲**)+ **D-9 元数据字段增补**(F-12) | Entry #293 | 551 |
 | 15 | 2026-11-08 | Status Update(2026-11-08 · 十四,per 台账 Entry #295)—— **F-08 残余裁定**(索引**移到文末** + 新纪律 + 具名闸)+ **retention 裁定 = 丙**(指针) | Entry #295 | 556 |
-| 16 | 2026-11-12 | Status Update 2026-11-12(per 台账 Entry #363)—— **R-c 机器检查已落地**(D0 堵法 ② 兑现)+ 收口指针改指新闸 | Entry #363 | 569 |
-| 17 | 2026-11-13 | Status Update 2026-11-13(per 台账 Entry #373)—— **DoD 读法口径订正**(MUST-FIX-1 = Stage 4+ 准入按事件 · MUST-FIX-2 = 禁令作用域重裁) | Entry #373 | 600 |
+| 16 | 2026-11-12 | Status Update 2026-11-12(per 台账 Entry #363)—— **R-c 机器检查已落地**(D0 堵法 ② 兑现)+ 收口指针改指新闸 | Entry #363 | 571 |
+| 17 | 2026-11-13 | Status Update 2026-11-13(per 台账 Entry #373)—— **DoD 读法口径订正**(MUST-FIX-1 = Stage 4+ 准入按事件 · MUST-FIX-2 = 禁令作用域重裁) | Entry #373 | 602 |
 
 ### 索引 C · 关键表指针(高频查阅)
 

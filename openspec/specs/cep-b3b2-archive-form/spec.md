@@ -1,7 +1,6 @@
-# cep-b3b2-archive-form Specification (delta)
+# cep-b3b2-archive-form Specification
 
 ## Purpose
-
 B3b-2(受限族 **0/4**)的**归档形态**(MUST-FIX-3)与**回滚路径**(MUST-FIX-4)此前只存在于裁决文本,
 仓内**无载体** ⇒ 终局 Ⅰ / Ⅳ(依赖归档形态)**不可执行**。
 
@@ -14,7 +13,7 @@ B3b-2(受限族 **0/4**)的**归档形态**(MUST-FIX-3)与**回滚路径**(MUST-
 > **规范载体**:`.rddf/roadmap/objectives/obj-cep-platform.md` 的 `## §14 · 归档态`
 > **canonical 实现**:`scripts/test/cep_b3b2_archive_form_check.sh` + `scripts/test/cep_b3b2_deferral_check.sh`
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-b3b2-archive-form
 
