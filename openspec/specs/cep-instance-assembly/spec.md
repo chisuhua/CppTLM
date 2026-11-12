@@ -7,13 +7,8 @@ TBD - created by archiving change cpptlm-cep-ualink-instance-assembly. Update Pu
 
 ### Requirement: cep-instance-assembly
 
-CEP 协议实例的**实例级装配** SHALL 由**三层证据**共同判定 —— ① **声明层**:实例出现在 `protocol_instances.json` 的 `instances[]` 且其 `family` **可解析**(缺 `family` 键 ⇒ SHALL 判红);② **拓扑层**:实例出现在某配置的 `cep.bridges[].protocol_instance`,且该 bridge 的 `modules` **非空**且**逐个确实在拓扑中**,且 `bridge_id` **存在且唯一**(缺 `modules` / `bridge_id` ⇒ SHALL 判红);③ **平面层**:实例在 `collective_planes.json` 的 `plane_binding` 中的绑定 —— **非空**时 SHALL 已在 plane 注册表登记(否则 `[IAG-05]`);**为 null / 空**时 SHALL 解释为「该实例**不启用 collective**」(合法状态,如 `moesi_gpu` / `mesif`)⇒ **不判红**;**仅当**该实例被调用方经 `required_plane_instances` **显式要求绑定**时,空 / 缺失绑定 SHALL 判 `[IAG-04]`。
-
-判定 SHALL 由**装配闸**(`instance_assembly_gate.hh`)执行,归因 tag 为 `[IAG-01]` ~ `[IAG-07]` **与 `[BSS-01]`**,且 SHALL 具备**反向 fixture**(每条判据都有「按正确原因红」的负控)。⚠️ 本闸只判**装配完整性**,⛔ 不判协议语义(语义判据在 collective plane 契约面 CP-03 与 channel dependency 闸)。
-
-⚠️ **`[BSS-01]` 的判定口径**:同一模块名 SHALL 不出现在多个 bridge entry 的 `modules` 展开序列中 —— 口径 = 「模块名在**全部** entry 的 `modules` 展开序列中计数 > 1」,**无 entry 内去重** ⇒ **两个子情形都命中**:① **跨 entry 重叠**(模块出现在 ≥2 条 entry 的 `modules` 中);② **单 entry 内重复**(同一 entry 的 `modules` 列出同一模块名两次)。命中时 SHALL 判红并输出 `[BSS-01] module in multiple bridge entries: <name> (<count>)`(**携带计数**)。⛔ **不得**复用 `[IAG-08]`(该 tag 已被「装配闭环与既有闸一致」用例占用)。
-
-⚠️ **required 清单的权威**:闸 SHALL **不自行推断**哪些实例「应当」启用 collective —— 该清单由**调用方**经 `required_plane_instances` 显式传入;当前唯一权威调用点 = `test/test_cep_instance_assembly.cc` 的 IAG-01 正控(`ualink_4` **required**)与 `test/test_cep_moesi_gpu_engine.cc` 的 MGE-05(`moesi_gpu` **不** required)⇒ 避免「判据可被调用方静默稀释」。
+CEP 的实例级装配闸 SHALL **在装配路径上执行**,且其**离线挂点** SHALL 与装配路径臂
+**共用同一份**判据实现与加载规则。
 
 #### Scenario: IAG-01 —— 三层证据齐备 ⇒ 装配闭合
 
@@ -47,3 +42,31 @@ CEP 协议实例的**实例级装配** SHALL 由**三层证据**共同判定 —
 - **AND** 装配路径 SHALL 在**桥挂载循环之前**执行该检查 ⇒ 挂载循环**不进入** ⇒ **零桥挂载**(桥挂载槽不被后挂的桥覆盖)
 - ⚠️ **失败原子性边界**:该失败发生在对象已创建之后 ⇒ **不新增回滚机制**;⛔ **不得**表述为「零副作用」
 - ⚠️ **诊断优先级**:该检查**短路** ⇒ 同一 config 若同时违反其它桥校验条件,**只报** `[BSS-01]` 一类原因 ⇒ **结构性关口先于逐条桥校验**
+
+#### Scenario: IAG 族 —— 装配路径 SHALL 执行同一判据(执行臂)
+
+- **WHEN** 某个 `cep.bridges[]` 指向**未声明**的实例、或引用**不在拓扑内**的模块
+- **THEN** `ModuleFactory::instantiateAll()` SHALL **失败**(`return false`)
+- **AND** 失败 SHALL 发生于**模块创建之前** ⇒ **零副作用**
+- **AND** 诊断 SHALL 含**可精确匹配的归因 tag**(`[IAG-02]` / `[IAG-06]` 等)⇒ ⛔ 不得只以「非零退出」表达
+
+#### Scenario: 两臂 SHALL 共用同一份判据实现与加载规则
+
+- **WHEN** 校验装配路径臂与离线 CLI 臂
+- **THEN** 两处 SHALL 均调用 `tlm::cep::run_instance_assembly_gate`
+- **AND** 两处 SHALL 均调用 `tlm::cep::load_instance_assembly_inputs` ⇒ ⛔ **禁双实现**
+- **AND** `include/tlm/cep/instance_assembly_gate.hh` SHALL **零 diff**(判据口径不变)
+
+#### Scenario: 离线挂点 SHALL 真在命令面内
+
+- **WHEN** 执行 `cmake --build build --target validate_topology`
+- **THEN** 命令面 SHALL 含**全部 CEP config**(清单 == 磁盘实数)的 IAG CLI 调用
+- **AND** 摘掉该段 SHALL **必红**(⛔ 不得是「挂点存在但命令面没调」)
+
+#### Scenario: 判据 SHALL 声明其不可约残余
+
+- **WHEN** 交付本能力
+- **THEN** SHALL 显式记录:① IAG 族只覆盖**装配期结构**,不覆盖运行时一致性;
+      ② 离线臂对**非 CEP config** = SKIP ⇒「离线闸全绿」不等于「所有 config 都过了 CEP 判据」;
+      ③ 装配路径臂是**新增拦截点** ⇒ 可能拦住过去能装配(但结构违规)的 config
+- **AND** ⛔ SHALL NOT 把「不可判 / 不空转」表述为「已覆盖 / 已证明」

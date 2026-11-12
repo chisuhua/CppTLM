@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**(C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 立项 ⇒ 占 1 slot,per 台账 Entry #379;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
+`openspec/changes/` 当前 **0 个 active**(C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -21530,3 +21530,45 @@ T8 的退出判据(Entry #377 ②)只枚举了 **3 行**(`211/235/617`)⇒ 实�
 **⑥ 关联**
 
 **#379**(立项 + 4 条裁决 + 起草期纠正)· **#378**(批 1 + backlog)· **#377**(批 2)· **#358**(Q1 + 口径澄清)· **#319**(BSS-01 执行臂先例)· **#320** · architect 方案 `.rddf/reviews/cep-cli-iag-gate-alignment.md` · improvement `.rddf/improvements/cpptlm-cep-iag-gate-execution-arm.md`
+
+### Entry #381 — 2026-11-12 [build](**D-2 归档回执** —— ✅ 已完成归档语义 · delta **MODIFIED** 合并进 `cep-instance-assembly` · KPI **0/3** · 冻结清单待重算)
+
+**主题**:`cpptlm-cep-iag-gate-execution-arm` 收口。本 Entry 同时是**冻结清单 `--update` 的授权号**。
+
+**① 归档**
+
+| 项 | 实测 |
+|---|---|
+| `openspec archive --yes` | rc=0;`Totals: + 0, ~ 1, - 0` ⇒ delta **MODIFIED** 合并进 `openspec/specs/cep-instance-assembly/spec.md`(既有 5 scenario 逐字保留 + 新增 4) |
+| 归档目录 | `openspec/changes/archive/2026-11-12-cpptlm-cep-iag-gate-execution-arm`(⚠️ `.gitignore:64` 覆盖 ⇒ 本地留存、不入库 —— 既有约定,C3 / C4 同) |
+| KPI | `openspec list` ⇒ **No active changes found** ⇒ **0/3**;活口径 **7 处**已回填 |
+| tasks | 归档前 **28/28** 全勾(逐项核对实际文本后再勾) |
+
+**② 最终回归取证(A8)**
+
+| 项 | 实测 |
+|---|---|
+| `ctest` | **174/174**(含新对账闸 + CLI 自身) |
+| `cep_*.sh` | **40/40 rc=0** |
+| `format.sh --check` / `docs_sync --strict` / `cep_doc_ref_check.sh --strict` / `agents_md_lint.py` | **rc=0 / rc=0 / rc=0 / rc=0** |
+| `validate_topology` target | rc=0 · IAG CLI **实跑 9 次**(8 PASS + 1 SKIP) |
+| 装配路径臂 | `[cep][assembly][iag]` **3 cases / 22 assertions** 全绿(`[IAG-02]` / `[IAG-06]` 按签名) |
+| 对账闸 | **12/12** |
+
+**③ 冻结链(归档触发)**
+
+⚠️ **main spec 在冻结集内** ⇒ delta 合并改变了 `openspec/specs/cep-instance-assembly/spec.md` 的 hash ⇒ 必须走五步链:
+拍 0 = 本 Entry(授权号)→ 拍 1+2 = **产物 commit**(main spec 变更 + change 目录移除 + KPI 回填 + 本 Entry)→ 拍 3 = `--update --authorized-by "Entry #381"` → 拍 4 = **清单 commit** → 无参复验。
+
+**④ ⚠️ 2 处实施期实测订正(承接 #380 ③)**
+
+① **装配臂落点 Step 0.75 → Step 0.26**(architect D-A1 的**理由**实测不成立:`module_declared()` 读 config 的 `modules` 段 ⇒ IAG 族纯 config 依赖 ⇒ 可更早);决策**目的**不变。
+② **ctest 173 → 174**(CLI **自身**也注册了 ctest)⇒ 判据未放宽,只订正记录值。
+
+**⑤ ⛔ 本 Entry 明确不做**
+
+⛔ 不改判据口径(`instance_assembly_gate.hh` 零 diff)· ⛔ 不改声明/平面 JSON 内容 · ⛔ 不新建 ADR · ⛔ 不改 `B3b-2 = 0/4` · ⛔ 不加「体量数字」断言(backlog,per #378 ④)· ⛔ 不修 `nvlink_4` 覆盖缺口。
+
+**⑥ 关联**
+
+**#380**(实施)· **#379**(立项 + 4 条裁决)· **#378**(批 1 + backlog)· **#377**(批 2)· **#358**(Q1 + 口径澄清)· **#319**(BSS-01 执行臂先例)· architect 方案 `.rddf/reviews/cep-cli-iag-gate-alignment.md`
