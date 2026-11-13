@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-13T14:08:19Z",
-  "updated_by": "user",
+  "current_role": "architect",
+  "updated_at": "2026-11-13T14:27:27Z",
+  "updated_by": "auto",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-12T15:00:00Z",
-      "by": "user",
-      "reason": "D-2 实施(per Entry #379 授权):建 change 四件套 + 离线 CLI + 装配路径臂 + target 第二段 + 决定性变异。"
-    },
     {
       "role": "verifier",
       "at": "2026-11-12T15:50:00Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-13T14:08:19Z",
       "by": "user",
       "reason": "per 用户口令「切 planner 对后续还有哪些任务内容都梳理一遍,再给出后续任务内容和实施路径」⇒ 承接 architect 梳理(Entry #407):做 T1 档 2 的 U-1/U-2 读码 + gap 分析 + improvement 草稿 + 立项。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-13T14:27:27Z",
+      "by": "auto",
+      "reason": "planner 阶段的 metis 第 2 轮(正式审查)挖出 3 个结构性死锁(预登记↔4 件套 / deadlock_violations↔ic3_verdict / 观测点↔data 写入点)⇒ 属架构取舍,回 architect 追加裁决 R1~R8(不改任何已签批 ADR)。"
     }
   ],
   "auto_switch_window": null

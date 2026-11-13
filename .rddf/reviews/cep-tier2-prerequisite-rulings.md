@@ -82,3 +82,91 @@
 4. 本裁决**未改变**任何已签批 ADR —— 若后续要把权限维纳入(需新 invariant)⇒ **必须**走 ADR(取代/新增)。
 
 **关联**:台账 **Entry #403**(授权)· `.rddf/reviews/cep-evidence-tier2-scale-assessment.md`(U-1~U-3 的提出处)· `ADR-CEP-20` 决策 3a / 4 / 5 · `ADR-CEP-12` 决策 2/3/4 · `ADR-CEP-06` IC5 · `include/bundles/cep_coherence_bundles_tlm.hh:102/114` · `include/tlm/cep/sharer_tracker.hh`
+
+---
+
+## C′-bis · 追加裁决(2026-11-13 · per 台账 Entry #408)—— metis 第 2 轮(正式审查)引出的 **3 个结构性死锁**与 **R1~R8**
+
+> **性质**:architect **追加裁决**(⛔ **不改**任何已签批 ADR · ⛔ **未新增** invariant · ⛔ 本段**细化/修正** C′ 段的两条裁决(版本口径 · 检测器归属)⇒ 按 `ADR-CEP-20` 决策 5 的登记路由处理).
+> **触发**:planner 阶段的 **metis 第 2 轮(正式审查)** 在 improvement 草稿 `.rddf/improvements/cep-evidence-tier2-minimal-slice.md` 上挖出 3 个**结构��死锁** —— 即「按草稿原样实施 ⇒ 必然在实施期返工或产出空洞」.
+> **本段裁决对象**:C′ 段的 **U-3(不变)** 与 **版本口径(被 R1 修正)** + 草稿的 **Q1/Q2/Q3/Q4/Q5**.
+
+### 0 · 三个死锁(先摆事实,再裁决)
+
+| # | 死锁 | 一手事实链 |
+|:--:|---|---|
+| **DL-1** | **预登记 ↔ 4 件套 ↔ 冻结面** 三方互斥 | `tools/render_report.py:178-184` **无条件**要求 run 的 `hypothesis_id` 在 `experimental/preregistration.json` 有登记行且非 `pending`;`scripts/test/cep_experiment_run.sh:156,177` 用 `render_report.py --check` 做 4 件套校验 ⇒ **无登记行 ⇒ 4 件套产不出来**;而 `experimental/preregistration.json` **在冻结面**(manifest `:38`)⇒ 改它须 `--update` 授权 + 改真源 `objective §9.1 ②`(`cep_prereg_drift_check.sh:172-174` 要求两侧同 PR 同改)⇒ **草稿的 AC-7「`preregistration.json` 零 diff」与 AC-5「产 4 件套」直接互斥** |
+| **DL-2** | **`deadlock_violations` ↔ `ic3_verdict` ↔ H3 预登记** 三方互斥 | `test/cep_experiment_harness.hh:551-555`:`ic3_verdict()` 在**任一违例类 `not-collected`** ⇒ 直接返 `⚪ 不适用`(⛔ 不记「绿」);引擎**明确不建模在飞 snoop 集合**(`mesif_protocol_engine.hh:469` 注释)⇒ 引擎面**无死锁形态** ⇒ 只能 `not-collected` ⇒ **verdict 必 ⚪** ⇒ 「档 2 通过态」**不可得**;若改写实测 0 ⇒ **人造 0**(违反 H3 预登记「`deadlock_violations` 移出 out-of-scope ⇒ 必须实测」的收紧方向 + `ADR-CEP-06` 的「⛔ 不得写裸 0 而不声明」) |
+| **DL-3** | **观测点 ↔ 行数据写入点** | `mesif_protocol_engine.hh:325-346` 的 `apply_event` 只改 `lines_[addr].state`、**不改 data**;data 的**唯一**写入点是 `on_completion` 的 `:442` ⇒ 在 `apply_event` 入口采到的 `data_after` **恒为旧值** ⇒ 草稿 What Changes #1/#2 的 `data_after` **结构性错误**;且 WRITEBACK 完成时 `apply_event` 被调 **2 次**(`:439` + `:441`)**都早于** `:442` |
+
+### 1 · R1 —— data-value 判据路径 + **版本口径**(修正 C′ 段)
+
+- **C′ 段的裁决**(版本 = 引擎内部写序)**被本段修正**:metis 实测指出 —— per-engine 私有写序在「**自读自写**」下是**恒等式** ⇒ data-value **恒 0** ⇒ **不构成判据**;且「最新写值」的持有者问题**并未**因「用 data 值代替版本号」而消失(引擎侧各记各的 ⇒ 跨引擎不可比)。
+- ⇒ **R1 裁决**:档 2 最小切片的 data-value 维 **采纳「注入陈旧副本」形态** ⇒ **仅在负控下可达** ⇒ ⛔ **生产流恒 0 登记为「本装置无该形态」**(与档 0 的诚实边界**同型**,⛔ 不得称「检测力已证」);**版本维整体不进本切片** ⇒ C′ 段的「引擎内部写序」裁决 **降级为「不实施」**(⛔ 不是被推翻,是**证伪其判别力** ⇒ 不再需要 architect 追加「共享写序」口径 ⇒ 草稿的 Q2 随之**消解**)。
+- ⇒ 观测面**仍记** `data_before` / `data_after`(观测事实,供负控断言)⛔ 但**不作判据**。
+- ⇒ **归因声明(逐字)**:data-value 负控的归因对象 = **注入的陈旧副本构造**,⛔ **不是**「引擎未保持一致性」。
+
+### 2 · R2 —— 检测器归属(修正 C′ 段的实现硬约束)
+
+- **R2 裁决**:采纳**仓内既有先例**(`include/tlm/cep/stub_cache_endpoint.hh:68-83`「原始观测事实(⛔ 不做聚合 —— 判定归 `test/` 的 harness)」)⇒ **实现侧只出原始事实,判定留在 `test/` 侧 harness**。
+- ⇒ ⛔ **撤回** 草稿的硬约束「检测器不在 test 侧」;⛔ **不动** `test/cep_experiment_harness.hh`(⇒ 消除 metis 指出的「薄委托不可机械实现」+「归因问题下沉进实现」+「改存量语义却无差异化判据」三项风险);⇒ AC-10 由「档 1 零削弱」简化为「**档 1 既有负控逐字绿(零改动)**」。
+
+### 3 · R3 —— **档 2 的载体形态**(本轮最重裁决;同时消解 DL-1 与 DL-2)
+
+**四条「产 4 件套 run」的路逐条走死**:
+
+| 路 | 断点 |
+|:--:|---|
+| **a. 复用 `hypothesis_id = h3`** | H3 的 `out_of_scope` = `['coherence_stalls','collective_stalls','directory_misses']` ⇒ `deadlock_violations` **必须实测** ⇒ 引擎面无死锁形态 ⇒ 只��写**人造 0** ⇒ 违反 H3 的收紧方向 + `ADR-CEP-06`「⛔ 不得写裸 0 而不声明」 ⇒ **断** |
+| **b. 新增假设行(H9)** | 改 `experimental/preregistration.json`(冻结面)+ 真源 `objective §9.1 ②` ⇒ **B7 分母 8 → 9**,而 H9 的 verdict 因 DL-2 **必为 ⚪**(⚪ ≠ 「有实验结论」)⇒ ⇒ **DoD 从 8/8 退到 8/9** ⇒ **断**(代价:终态 DoD 退步) |
+| **c. 产 run 且 `deadlock_violations = not-collected`** | DL-2 ⇒ verdict 必 ⚪ ⇒ 「档 2 通过态」不可得 ⇒ **产了 run 也没有「通过态」** ⇒ **断** |
+| **d. 产 run 且写实测 0** | = 人造 0 ⇒ 同 a ⇒ **断** |
+
+⇒ ⇒ **R3 裁决:档 2 的载体 = 「协议级观测面 + 契约级断言」,⛔ 不产 4 件套 run。**
+
+**四条随之落定的后果(逐条)**:
+
+| # | 后果 |
+|:--:|---|
+| **C-1** | ⛔ **不改** `experimental/preregistration.json` · `experimental/metrics.schema.json` · `tools/render_report.py`(三者皆冻结面)⇒ **零冻结面变更** ⇒ **B7 分母不变** ⇒ **DoD 不退步** |
+| **C-2** | ⛔ **不产 run** ⇒ `hypothesis_id` / `ic3_verdict` / `deadlock_violations` / `not-collected` **四个议题一并消解** ⇒ DL-1 / DL-2 **闭合** |
+| **C-3** | ⚠️ **档 2 与档 0 / 档 1 的载体形态不同**(前两者是 run,档 2 是「观测面 + 契约级断言」)⇒ **档位阶梯表须显式登记「档 2 = 非 run 载体」** ⇒ ⛔ 不得让读者以为档 2 有 run / 有「通过态」;⇒ 档 2 的登记面 = **新表**(如 `test/cep_evidence_tiers.json`)⇒ ⛔ **不进** `test/cep_e2e_run_tiers.json`(该表**只登记 run**,且**不在**冻结面) |
+| **C-4** | ⚠️ **阶梯的「强度」列须按实际收敛**:档 2 当前 = 「协议语义(天花板档 · **仅 sharer 可见性维**)」⇒ ⛔ **不得**宣称「档 2 强度 > 档 1」(档 1 = 模型级三负控 + 耦合探针)⇒ ⛔ 不得称「档 2 通过态」;⇒ 阶梯表的排序语义 = 「**档位 = 装置归属层级**,⛔ **不是** 强度全序」 |
+
+### 4 · R4 —— 观测点必须覆盖**两个点**(消解 DL-3)
+
+- **R4 裁决**:观测面 = **两处**落点,记录带 `kind` 枚举 —— ① `kind = transition`:`apply_event` 入口(状态迁移;`sharers_snapshot` = **迁移前**视图,`view_of` 口径)② `kind = fill`:`on_completion` 的 `lines_[addr].data = data` **之后**(`mesif_protocol_engine.hh:442`)。
+- ⇒ ⛔ 不改协议语义 · ⛔ 不改 bundle · ⛔ 不动 `sharer_tracker.hh` ⇒ 「`data_after` 恒旧」的结构性错误**消解**。
+
+### 5 · R5 —— 观测面的字段表(定死,供 implementation 直接引用)
+
+`{ kind, addr, event, from, to, origin, data_before, data_after, sharers_snapshot, self_mask, self_mask_valid, level, node }` —— ⛔ **无 version 字段**(R1)· `sharers_snapshot` / `self_mask` 用 `std::uint64_t`(**⛔ 不用 `responder_set_t`** ⇒ 基类**不新增**对 `sharer_tracker.hh` 的依赖,保 M2 的 seam 面窄)· 结构名 **`EventObservation`**(⛔ 不用 `TxnObservation` —— 它是 per-event 不是 per-txn)。
+
+### 6 · R6 —— `observation_invalid` 的载体(修正 metis 的 P1-15)
+
+- **R6 裁决**:因不产 run ⇒ `metrics.json` 顶层键**不适用** ⇒ 改为**观测面自身的状态位**(`EventObservation` 流的一个计数 + 断言)⇒ ⛔ **不进** `memory_violation_kinds`(`metrics.schema.json:196` `additionalProperties: false` + 冻结)。
+
+### 7 · R7 —— 跨档聚合隔离(作废 metis 的 P1-11 T7 提案)
+
+- 因 R3(不产 run)⇒ 无跨档 `hypothesis_id` 复用 ⇒ **T7 提案作废** ⇒ C8 已落地的 `evidence_scope` + tiers 表**不受影响** ⇒ ⛔ 不改 `test/cep_e2e_run_tiers.json`(C8 产物,本切片零改动)。
+
+### 8 · R8 —— 范围与估时(收敛)
+
+| 项 | 草稿 v1 | **裁决后** | 说明 |
+|---|---|---|---|
+| 判据维 | sharer + data-value + **版本** | **sharer(可判)+ data-value(仅负控可达)** | R1 去版本维 |
+| 载体形态 | 4 件套 run | **观测面 + 契约级断言** | R3 |
+| 检测器 | 搬进 `include/` | **留 `test/` 侧** | R2 |
+| 冻结面变更 | 84 → 85(两次 `--update`) | **仅 `07 号` 新 SU + 新 main spec**(⇒ 84 → 85,**一次** `--update`) | C-1 |
+| 新增闸判据 | T4/T5/T6/T7 | **T4/T5(档 2 登记面)+ 断线三连判据** | R3 / R7 |
+| 估时 | 7-9 人日 | **≈ 5-7 人日** | 消除 4 件套 / runner / 预登记 / 检测器搬迁四项 |
+
+### 9 · 本段的边界声明
+
+1. ⛔ 本段**不改**任何已签批 ADR(全部落在 `.rddf/reviews/` + 台账);
+2. ⛔ **档 2 不产 run** ⇒ ⛔ 不得宣称「档 2 有通过态」· ⛔ 不得宣称「档 2 强度 > 档 1」· ⛔ 不得把档 2 的 0 与档 0/档 1 的 0 并列引用;
+3. ⚠️ **C′ 段的「版本口径 = 引擎内部写序」被 R1 降级为「不实施」** —— 理由是**证伪其判别力**(恒等式 ⇒ 恒 0),⛔ **不是**推翻该裁决的方向(方向仍是「不引入协议级版本字段」);
+4. ⚠️ U-3(权限维可判但需另立 ADR / 标签维须 ArchForge)**维持不变**;
+5. ⚠️ **本段不证明**档 2 可实施 —— 实施期的非空洞判据(AC-1)若不成立 ⇒ ⛔ 停手(不立项优于立项)。
+
+**关联**:台账 **Entry #408**(本段)· **#407**(architect 梳理)· **#406**(C′ 段)· **#403**(档 2 评估)· `.rddf/improvements/cep-evidence-tier2-minimal-slice.md`(草稿 v1 · 待按本段改 v2)· `.rddf/reviews/cep-evidence-tier2-scale-assessment.md` · `ADR-CEP-20` 决策 3a/4/5/6 · `ADR-CEP-06` SU#4 ② · `test/cep_experiment_harness.hh:551-555` · `tools/render_report.py:161-185` · `include/tlm/cep/stub_cache_endpoint.hh:68-83` · `include/tlm/cep/mesif_protocol_engine.hh:325-346,442,469` · `experimental/preregistration.json`(H3 行)
