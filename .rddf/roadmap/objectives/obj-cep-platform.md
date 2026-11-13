@@ -22856,3 +22856,21 @@ KPI 活口径 **1/3 → 0/3**(`AGENTS.md` + 台账 §5.2 + `phase-10.md` + 2 份
 **档 2 ⭔ 不产 4 件套 run** ⇒ ⛔ **无 `ic3_verdict` / 无「通过态」**;**data-value 生产流恒 0** = 「**本装置无该形态**」⇒ ⛔ 不得称「检测力已证」;档 2 与档 1 **正交**(⛔ 非强弱序)⇒ ⛔ 不得宣称「档 2 强于档 1」;档位排序语义 = 「**装置归属层级,强度不可跨档比较**」(已签批);**单族(mesif)/ 单拓扑 / 一次实例**;「**不可判**」⛔ **不等于**「零违例」;档 2 判别力 **≠** 协议语义全覆盖(权限维 / 标签维被排除)。
 
 **⑦ 关联**:**#411**(五次链授权)· **#410**(A0~A3 实施回执)· **#409**(草稿 v2)· **#408**(architect 裁决 R1~R8 + 勘误)· `openspec/changes/archive/2026-11-14-cep-evidence-tier2-minimal-slice/` · `openspec/specs/cep-evidence-tier2-observation/spec.md` · `ADR-CEP-20` 决策 5 / 6 · `ADR-CEP-06` SU#4 ②
+
+### Entry #413 — 2026-11-14 [builder](**档 2 归档后的指针链登记** + 一项**既有债**的只读登记)
+
+**主题**:per 用户口令「A4→A5→A6 收尾归档」的收尾 ⇒ 本 Entry = **指针链登记**(防读者误读) + **范围外既有债的只读登记**(不改)。
+
+**① 指针链(为何 main spec 里仍写着「尚无载体」)**
+
+| 载体 | 写的是什么 | 读法 |
+|---|---|---|
+| `openspec/specs/cep-evidence-tier2-observation/spec.md` 的 **Purpose** | 「档 2 在本仓**尚无载体**」+ 引用 `07 号:696` 的「⭕ 观测面未建(另立 change 评估)」 | ⛔ 这是 **delta spec 的引入前描述**(OpenSpec 标准语义)—— 该 main spec 由 `openspec/changes/archive/2026-11-14-cep-evidence-tier2-minimal-slice/` 的 delta 合并产出 ⇒ **不改**(归档契约) |
+| `docs/architecture/07-coherence-exploration-platform.md:696`(阶梯表档 2 行) | 「⭕ 观测面**未建**(另立 change 评估)」 | ⛔ **逐字保留**(append-only 纪律 —— 新增内容永不使既有 `path:line` 锚点位移 ⇒ 本次新 SU 插在文末索引**之前** ⇒ **:696 未漂移**,已实测) |
+| ⭕ **现行载体 cell** | 「**协议级观测面 + 契约级断言(⭕ 无 run / 无通过态)**」 | ✅ 落 `07 号` 的 `Status Update 2026-11-14` 的 §①(台账 Entry #412 ② 登记)⇒ **读档 2 的现行载体请看这一处** |
+
+**② 范围外既有债(只读登记 · ⛔ 本次不改)**
+
+`openspec validate --archived` 的**全库**统计 = **70 passed / 73 failed**(143 items)⇒ 其中 **73 项失败全部为历史归档件**的 tasks 未全勾(⛔ 含非 CEP change)⇒ **本 change 已转绿**(`✓ change/2026-11-14-cep-evidence-tier2-minimal-slice`)⇒ 该 73 项属**跨 change 的工具级历史遗留**,**不在本 change 范围** ⇒ 按「存量不追溯」**只登记、不改** ⇒ 若要清理,需单独立项(⛔ 不可在本 change 内顺手做)。
+
+**③ 关联**:**#412**(归档回执 + 第三次 `--update` 授权)· **#411**(五步链授权)· **#410**(A0~A3 实施回执)· `openspec/specs/cep-evidence-tier2-observation/spec.md` · `docs/architecture/07-coherence-exploration-platform.md`(`Status Update 2026-11-14` §① · 阶梯表档 2 行 `:696`)
