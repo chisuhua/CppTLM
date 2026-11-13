@@ -50,8 +50,8 @@
 ## A6 · 证据登记 + 五步链(G4)
 - [x] A6.1 `07 号` **新 SU**(插在 `## §末 文档索引` **之前**;⛔ 不改正文)⇒ 索引重生成 ✅(⚠️ **口径订正**:07 号 自身**无**「不承载全绿 run」的陈述可取代 ⇒ 本则**新增**拓扑级 IC3 通过态事实 + **指向**真正持有该陈述的三处载体(`ADR-CEP-19` SU 2026-11-09·一 ② / `cep-usage.md` §12.8 / config A `description`);⚠️ **指针漂移已登记为残余** —— 仓内引用的「`07 号` SU · 十五/十六 ①」在当前 07 号 **不可解析**(实测 `grep "十五"` 0 命中;17 则 SU 的索引 B 序号与标题内「则/·N」标签互不对应)⇒ 三处 SU 一律用**可解析锚点**)· `generate_doc_index.py --write` + `--check` 均 rc=0
 - [x] A6.2 `ADR-CEP-19` **一则 Status Update**(⛔ 不改决策 / 正文)⇒ 取代其 SU ② 的「⛔ 拓扑级未闭合『全绿 run』」状态陈述;**且** `ADR-CEP-06` **一则 Status Update**(⛔ 不改决策 / 正文)⇒ 订正其 SU 2026-11-09 §② 的「框架验证 run 证据边界」五句(本次装置形态转变的如实登记,per design §D-6) ✅ 两则均已追加(append-only,原文逐字未动)
-- [ ] A6.3 五步链:Entry 先落 → 产物 commit → `--update --authorized-by` → 清单 commit → 无参复验 ⇒ ⏭ **步 1 已完成**(Entry #397);步 2 = 本 commit;步 3~5 见 A6.4
-- [ ] A6.4 冻结清单 provenance 成立(冻结面 = **3 处**;⚠️ 归档后新 main spec 自动入集 ⇒ 第二次 `--update`)
+- [x] A6.3 五步链:Entry 先落 → 产物 commit → `--update --authorized-by` → 清单 commit → 无参复验 ⇒ ✅ **五步全绿**:① Entry #397(`3e08536f`)② 产物(`51cf7f16`:三处 SU + 07 号索引重生成 + A7.1)③ `--update --authorized-by "Entry #394"`(授权校验通过 · 81 产物)④ 清单单独 commit(`2555fb03` · provenance = `51cf7f16`)⑤ **无参复验 rc=0**(81 产物 hash 全部一致)
+- [x] A6.4 冻结清单 provenance 成立(冻结面 = **3 处**;⚠️ 归档后新 main spec 自动入集 ⇒ 第二次 `--update`)⇒ ✅ 3 处 sha256 已更新(ADR-CEP-06 → 49a2f31a… / ADR-CEP-19 → b58a4a53… / 07 号 → 5c637db0…);产物数 81 不变;`authorized_by = "Entry #394"`(范围以 Entry #395 追记为准)
 
 ## A7 · DoD 读法 + 活文本同步
 - [x] A7.1 `obj §6.2` B4 证据行**追加**(append-only)「IC3 在**拓扑级 E2E run** 上达成通过态」+ 指向新 SU 与 run 目录 ⇒ ⚠️ 须带「拓扑级/E2E」限定词(与既有行「首个真实 run 实例」并存不冲突) ⇒ ✅ 已追加(📌 2026-11-13 追加(拓扑级档位)· 含 run 目录 / `Entry #396` / `07 号` 新 SU / 口径限定 / 「不改既有『首个真实 run 实例』表述」)
