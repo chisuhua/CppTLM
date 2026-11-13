@@ -28,12 +28,22 @@
 // ── 已登记的建模决策(⚠️ 无 ArchForge 真源 ⇒ 逐条 `pending`,挂跨仓追认债)──────
 //   | # | 决策 | 依据 | 待追认 |
 //   |---|------|------|:-----:|
-//   | E-1 | `F` 在 **wire** 上投影为 `LineState::S` + `dirty = 0`(`perm` 仍取 `F` 的投影 `WRITEBACK`) | `CohIfBundle::line_state` 只有 `NONE`/`I`/`S`/`E`/`M`,**无 F**;而 `F` 语义是「已写回 ⇒ 非脏」⇒ 只发 `S` 才不会让对端误记脏位(发 `M` 会违反「`M` ⇒ `dirty`」这条别处依赖的不变量) | ✅ |
-//   | E-2 | `SnoopType::CLEAN` 与 `SnoopType::FORWARD` **都**映射为 `Event::SnpShared` | 规约只有 6 事件(`Rd`/`RdUnique`/`Wr`/`Upgrade`/`SnpShared`/`SnpUnique`)**没有**「降级为 S」的独立事件 ⇒ 「降到 S」与「成为转发点」在事件层不可分辨(这是 6 事件词表的表达能力缺口,不是本类省略) | ✅ |
-//   | E-3 | `on_request`(线缆上收到请求)只**记账**不迁移;本地请求由 `submit_local_request()` 发起 | 本引擎建模的是**节点侧**(目录在 PE 之外)⇒ 请求的**响应**由 home 以 `on_completion` 回来;若在收到请求时就地迁态,等于把 home 的行为塞进节点侧 | ✅ |
-//   | E-4 | `on_completion(perm = WRITEBACK)` ⇒ `RdUnique` **后接** `Wr`(两次表查询,快照留最后一次) | `E + Wr → M` 是本规约的**静默升级**(`is_silent_upgrade`);直接用一次迁移跳 `M` 会绕过该路径的记账 | ✅ |
-//   | E-5 | `on_snoop_resp` / `on_forward_data` / `on_barrier` / `on_snoop_completion_ack` 只**记账** | 本引擎不建模「在飞的 snoop 集合」与屏障域(Stage 2);只记账 ⇒ 不会产出虚假行为 | ✅ |
-//   | E-6 | VC 路由只记**意图**,不写进 Bundle | `CohIfBundle` **无** `vc` 字段(VC 由 fabric 按 `vc_binding` 分配)⇒ 引擎只能回答「按声明该走哪个 `(network, vc)`」 | ✅ |
+//   | E-1 | `F` 在 **wire** 上投影为 `LineState::S` + `dirty = 0`(`perm` 仍取 `F` 的投影
+//   `WRITEBACK`) | `CohIfBundle::line_state` 只有 `NONE`/`I`/`S`/`E`/`M`,**无 F**;而 `F`
+//   语义是「已写回 ⇒ 非脏」⇒ 只发 `S` 才不会让对端误记脏位(发 `M` 会违反「`M` ⇒
+//   `dirty`」这条别处依赖的不变量) | ✅ | | E-2 | `SnoopType::CLEAN` 与 `SnoopType::FORWARD`
+//   **都**映射为 `Event::SnpShared` | 规约只有 6
+//   事件(`Rd`/`RdUnique`/`Wr`/`Upgrade`/`SnpShared`/`SnpUnique`)**没有**「降级为 S」的独立事件 ⇒
+//   「降到 S」与「成为转发点」在事件层不可分辨(这是 6 事件词表的表达能力缺口,不是本类省略) | ✅ |
+//   | E-3 | `on_request`(线缆上收到请求)只**记账**不迁移;本地请求由 `submit_local_request()` 发起 |
+//   本引擎建模的是**节点侧**(目录在 PE 之外)⇒ 请求的**响应**由 home 以 `on_completion`
+//   回来;若在收到请求时就地迁态,等于把 home 的行为塞进节点侧 | ✅ | | E-4 | `on_completion(perm =
+//   WRITEBACK)` ⇒ `RdUnique` **后接** `Wr`(两次表查询,快照留最后一次) | `E + Wr → M`
+//   是本规约的**静默升级**(`is_silent_upgrade`);直接用一次迁移跳 `M` 会绕过该路径的记账 | ✅ | |
+//   E-5 | `on_snoop_resp` / `on_forward_data` / `on_barrier` / `on_snoop_completion_ack` 只**记账**
+//   | 本引擎不建模「在飞的 snoop 集合」与屏障域(Stage 2);只记账 ⇒ 不会产出虚假行为 | ✅ | | E-6 |
+//   VC 路由只记**意图**,不写进 Bundle | `CohIfBundle` **无** `vc` 字段(VC 由 fabric 按 `vc_binding`
+//   分配)⇒ 引擎只能回答「按声明该走哪个 `(network, vc)`」 | ✅ |
 //
 // ── 边界 ────────────────────────────────────────────────────────────────
 //   · **不注册** 23 ABI · **不改** frozen header · **不扩** `CohIfBundle` 字段
@@ -63,7 +73,12 @@ namespace tlm::cep {
     inline constexpr std::size_t kMesifMessageClassCount = MesifAdapter::kMessageClassCount;
 
     inline constexpr std::array<const char*, kMesifMessageClassCount> kMesifMessageClasses = {{
-        "request", "response", "snoop", "snoop_resp", "atomic", "query",
+        "request",
+        "response",
+        "snoop",
+        "snoop_resp",
+        "atomic",
+        "query",
     }};
 
     /// 消息类名 → 下标(未知 ⇒ `kMesifMessageClassCount`,越界哨兵)
@@ -88,28 +103,28 @@ namespace tlm::cep {
     // ══════════════════════════════════════════════════════════════════════
     struct MesifEngineCounters {
         // ── MA-06 ⑥:区分「走了 adapter 表」与「空转」─────────────────
-        std::uint64_t adapter_transitions = 0;  ///< 表查询次数(**每次**迁移 +1)
-        std::uint64_t local_events = 0;         ///< 本地事件(`Rd`/`RdUnique`/`Wr`/`Upgrade`)
-        std::uint64_t remote_events = 0;        ///< 远端事件(`SnpShared`/`SnpUnique`)
+        std::uint64_t adapter_transitions = 0; ///< 表查询次数(**每次**迁移 +1)
+        std::uint64_t local_events = 0;        ///< 本地事件(`Rd`/`RdUnique`/`Wr`/`Upgrade`)
+        std::uint64_t remote_events = 0;       ///< 远端事件(`SnpShared`/`SnpUnique`)
         // ── 10 流覆盖(逐流记账 ⇒ 「哪条流被真正驱动」可分辨)──────────
         std::array<std::uint64_t, kCanonicalFlowCount> flow_events{};
         std::array<std::uint64_t, kMesifMessageClassCount> by_class{};
         // ── 行 / 完成 ─────────────────────────────────────────────────
-        std::uint64_t line_fills = 0;              ///< 由 `on_completion` 装行
-        std::uint64_t completion_errors = 0;       ///< 带 `error` 的完成
-        std::uint64_t completion_unknown_txn = 0;  ///< 完成找不到请求侧登记(收敛:不静默装错行)
+        std::uint64_t line_fills = 0;             ///< 由 `on_completion` 装行
+        std::uint64_t completion_errors = 0;      ///< 带 `error` 的完成
+        std::uint64_t completion_unknown_txn = 0; ///< 完成找不到请求侧登记(收敛:不静默装错行)
         // ── 发射 ──────────────────────────────────────────────────────
         std::uint64_t snoop_resp_emitted = 0;
         std::uint64_t request_emitted = 0;
         std::uint64_t atomic_accepted = 0;
-        std::uint64_t atomic_rejected = 0;  ///< 声明不支持 / 无 VC 声明 ⇒ **拒绝**(不静默降级)
+        std::uint64_t atomic_rejected = 0; ///< 声明不支持 / 无 VC 声明 ⇒ **拒绝**(不静默降级)
         std::uint64_t egress_backpressure = 0;
         // ── 拒绝闸(声明 `flow_support = false` ⇒ 拒)──────────────────
         std::uint64_t unsupported_flow_rejected = 0;
         // ── R-3 写回接线(MA-07)───────────────────────────────────────
-        std::uint64_t tracker_feeds = 0;    ///< 把本地态同步给目录的次数
-        std::uint64_t tracker_missing = 0;  ///< 需同步但**未接线**(缺口观测:断接线 ⇒ 这里涨)
-        std::uint64_t writebacks_cleared = 0;  ///< `M + SnpShared → F` 触发写回的次数
+        std::uint64_t tracker_feeds = 0;      ///< 把本地态同步给目录的次数
+        std::uint64_t tracker_missing = 0;    ///< 需同步但**未接线**(缺口观测:断接线 ⇒ 这里涨)
+        std::uint64_t writebacks_cleared = 0; ///< `M + SnpShared → F` 触发写回的次数
     };
 
     // ══════════════════════════════════════════════════════════════════════
@@ -125,7 +140,8 @@ namespace tlm::cep {
         using Perm = MesifAdapter::Perm;
         /// 平台侧 4 值(`tlm::cep::Perm`,经 CohIf 腿)——
         /// ⚠️ 与 `MesifAdapter::Perm` 是**两个不同枚举**(值逐值相等,见下方 static_assert)
-        ///    ⇒ canonical 流签名**必须**用平台侧,否则 `override` 不成立(编译器不警告「参数类型不同」)。
+        ///    ⇒ canonical 流签名**必须**用平台侧,否则 `override`
+        ///    不成立(编译器不警告「参数类型不同」)。
         using PlatformPerm = tlm::cep::Perm;
         using Counters = MesifEngineCounters;
 
@@ -156,39 +172,45 @@ namespace tlm::cep {
         //    **不可审计的散文** ⇒ 做成与 `HierarchicalDirectory::kBehaviorDecisions`
         //    同款的**可判据**载体(逐条 `basis` 非空 + `pending` 全 true)。
         struct EngineDecision {
-            const char* id;      ///< 决策编号(`E-1` …)
-            const char* topic;   ///< 决策点
-            const char* basis;   ///< 推导依据(**非空**;缺失 ⇒ 判据必红)
-            bool        pending; ///< 待追认标记(**全部为 true**)
+            const char* id;    ///< 决策编号(`E-1` …)
+            const char* topic; ///< 决策点
+            const char* basis; ///< 推导依据(**非空**;缺失 ⇒ 判据必红)
+            bool pending;      ///< 待追认标记(**全部为 true**)
         };
 
         /// 逐条引擎侧建模决策(per 本 change 的 design `D-λ` + 跨仓债 #3)
         static constexpr EngineDecision kEngineDecisions[] = {
             {"E-1", "F 态在 wire 上投影为 LineState::S + dirty = 0(perm 仍取 WRITEBACK)",
              "CohIfBundle::line_state 只有 NONE/I/S/E/M,无 F;而 F 语义是「已写回 ⇒ 非脏」"
-             " ⇒ 发 S 才不让对端误记脏位(发 M 会违反「M ⇒ dirty」这条别处依赖的不变量)", true},
+             " ⇒ 发 S 才不让对端误记脏位(发 M 会违反「M ⇒ dirty」这条别处依赖的不变量)",
+             true},
             {"E-2", "SnoopType::CLEAN 与 SnoopType::FORWARD 都映射为 Event::SnpShared",
              "规约的 6 事件词表(Rd/RdUnique/Wr/Upgrade/SnpShared/SnpUnique)没有「降级为 S」的"
-             "独立事件 ⇒「降到 S」与「成为转发点」在事件层不可分辨(6 事件的表达能力缺口)", true},
+             "独立事件 ⇒「降到 S」与「成为转发点」在事件层不可分辨(6 事件的表达能力缺口)",
+             true},
             {"E-3", "on_request(线缆上收到请求)只记账不迁态;本地请求由 submit_local_request 发起",
              "本引擎建模的是节点侧(目录在 PE 之外)⇒ 请求的响应由 home 以 on_completion 回来;"
-             "收到请求就地迁态等于把 home 的行为塞进节点侧", true},
+             "收到请求就地迁态等于把 home 的行为塞进节点侧",
+             true},
             {"E-4", "on_completion(perm = WRITEBACK) ⇒ RdUnique 后接 Wr(两次表查询)",
-             "E + Wr → M 是本规约的静默升级(is_silent_upgrade);一次直接跳 M 会绕过该路径的记账", true},
+             "E + Wr → M 是本规约的静默升级(is_silent_upgrade);一次直接跳 M 会绕过该路径的记账",
+             true},
             {"E-5", "on_snoop_resp / on_forward_data / on_barrier / on_snoop_completion_ack 只记账",
              "本引擎不建模在飞 snoop 集合与屏障域(归 Stage 2)⇒ 只记账不会产出虚假行为", true},
             {"E-6", "VC 路由只记意图(last_atomic_network / last_atomic_vc),不写进 Bundle",
              "CohIfBundle 无 vc 字段(VC 由 fabric 按 vc_binding 分配)⇒ 引擎只能回答「按声明"
-             "该走哪个 (network, vc)」;扩字段会破 CohIfBundle 零改动边界", true},
+             "该走哪个 (network, vc)」;扩字段会破 CohIfBundle 零改动边界",
+             true},
         };
 
         /// 引擎侧决策条数
         static constexpr std::size_t kEngineDecisionCount =
             sizeof(kEngineDecisions) / sizeof(kEngineDecisions[0]);
 
-        /// 引擎侧决策表的**自洽谓词**(可变异形态 ⇒ 反向 fixture 可传「删了一条 / basis 置空」的副本)
+        /// 引擎侧决策表的**自洽谓词**(可变异形态 ⇒ 反向 fixture 可传「删了一条 / basis
+        /// 置空」的副本)
         static constexpr bool engine_decisions_are_consistent(const EngineDecision* list,
-                                                               std::size_t n) noexcept {
+                                                              std::size_t n) noexcept {
             for (std::size_t i = 0; i < n; ++i) {
                 if (list[i].id == nullptr || list[i].id[0] == '\0')
                     return false;
@@ -216,9 +238,11 @@ namespace tlm::cep {
 
         /// 声明侧能力(默认 = `mesif` 的声明值;`set_support` 供反向 fixture 覆写)
         struct Support {
-            bool atomic = true;                            ///< `atomic.supported`
-            std::array<bool, kCanonicalFlowCount> flow{};   ///< `flow_support` 逐流
-            Support() { flow.fill(true); }
+            bool atomic = true;                           ///< `atomic.supported`
+            std::array<bool, kCanonicalFlowCount> flow{}; ///< `flow_support` 逐流
+            Support() {
+                flow.fill(true);
+            }
         };
 
         /// 一条 VC 路由(`vc_binding[network][message_class] = vc`)
@@ -228,16 +252,27 @@ namespace tlm::cep {
             unsigned vc = 0;
         };
 
-        explicit MesifProtocolEngine(const std::string& name, EventQueue* eq) : Base(name, eq) {}
+        explicit MesifProtocolEngine(const std::string& name, EventQueue* eq) : Base(name, eq) {
+        }
         ~MesifProtocolEngine() override = default;
 
-        const Counters& counters() const { return ctr_; }
-        const TransitionSnapshot& last_transition() const { return snap_; }
-        std::uint64_t adapter_transitions() const { return ctr_.adapter_transitions; }
+        const Counters& counters() const {
+            return ctr_;
+        }
+        const TransitionSnapshot& last_transition() const {
+            return snap_;
+        }
+        std::uint64_t adapter_transitions() const {
+            return ctr_.adapter_transitions;
+        }
 
         // ── 声明侧能力(装配期设置;默认 = 声明值)───────────────────────
-        void set_support(const Support& s) { support_ = s; }
-        const Support& support() const { return support_; }
+        void set_support(const Support& s) {
+            support_ = s;
+        }
+        const Support& support() const {
+            return support_;
+        }
 
         // ══════════════════════════════════════════════════════════════
         //  VC 路由(声明装载后注入 ⇒ 声明是唯一真源)
@@ -272,13 +307,15 @@ namespace tlm::cep {
                 if (r.message_class != message_class)
                     continue;
                 if (hit != nullptr)
-                    return nullptr;  // 歧义
+                    return nullptr; // 歧义
                 hit = r.network.c_str();
             }
             return hit;
         }
 
-        std::size_t route_count() const { return routes_.size(); }
+        std::size_t route_count() const {
+            return routes_.size();
+        }
 
         // ══════════════════════════════════════════════════════════════
         //  目录接线(R-3 的补偿路径;`nullptr` = **未接线**)
@@ -317,7 +354,9 @@ namespace tlm::cep {
             if (tracker != nullptr && tracker->caps.completeness != Completeness::EXACT)
                 mark_observation_invalid();
         }
-        bool tracker_wired() const { return tracker_ != nullptr; }
+        bool tracker_wired() const {
+            return tracker_ != nullptr;
+        }
 
         // ══════════════════════════════════════════════════════════════
         //  行状态 + 事件驱动(本类的**核心**行为)
@@ -340,7 +379,9 @@ namespace tlm::cep {
             out = it->second.data;
             return true;
         }
-        std::size_t line_count() const { return lines_.size(); }
+        std::size_t line_count() const {
+            return lines_.size();
+        }
 
         /// 应用一次**协议事件** —— 表驱动迁移 + 快照 + 目录同步(写回接线在此)
         ///
@@ -428,19 +469,23 @@ namespace tlm::cep {
             last_atomic_vc_ = static_cast<unsigned>(vc);
 
             Bundle b;
-            b.flow_id = bundles::CohIfFlowId::Request;  // atomic 走 request 槽(6 类词表口径)
+            b.flow_id = bundles::CohIfFlowId::Request; // atomic 走 request 槽(6 类词表口径)
             b.transaction_id.write(txn_id);
             b.address.write(addr);
             b.data.write(data);
             b.perm.write(static_cast<std::uint8_t>(perm));
-            b.atomic.write(1);  ///< 意图位(与 `perm` **正交**,per CEN-Ib11)
+            b.atomic.write(1); ///< 意图位(与 `perm` **正交**,per CEN-Ib11)
             txn_addr_[txn_id] = addr;
             return write_to_egress(b);
         }
 
         /// 最近一次 atomic 的**路由意图**(VC 不进 Bundle,per 决策 E-6)
-        const std::string& last_atomic_network() const { return last_atomic_network_; }
-        unsigned last_atomic_vc() const { return last_atomic_vc_; }
+        const std::string& last_atomic_network() const {
+            return last_atomic_network_;
+        }
+        unsigned last_atomic_vc() const {
+            return last_atomic_vc_;
+        }
 
         // ══════════════════════════════════════════════════════════════
         //  canonical 10 流(CohIf ingress 侧)
@@ -467,7 +512,7 @@ namespace tlm::cep {
             }
             const auto it = txn_addr_.find(txn_id);
             if (it == txn_addr_.end()) {
-                ++ctr_.completion_unknown_txn;  // 收敛:不猜地址(猜错会装脏行)
+                ++ctr_.completion_unknown_txn; // 收敛:不猜地址(猜错会装脏行)
                 return;
             }
             const std::uint64_t addr = it->second;
@@ -481,15 +526,15 @@ namespace tlm::cep {
 
             if (perm == PlatformPerm::NONE) {
                 apply_event_as(EventObservation::Origin::CompletionFill, addr,
-                                Event::SnpUnique);  // 无权 ⇒ 本地失效
+                               Event::SnpUnique); // 无权 ⇒ 本地失效
                 txn_addr_.erase(it);
                 return;
             }
             apply_event_as(EventObservation::Origin::CompletionFill, addr,
-                            (perm == PlatformPerm::READ) ? Event::Rd : Event::RdUnique);
+                           (perm == PlatformPerm::READ) ? Event::Rd : Event::RdUnique);
             if (perm == PlatformPerm::WRITEBACK)
                 apply_event_as(EventObservation::Origin::CompletionFill, addr,
-                                Event::Wr);  // `E + Wr → M` 静默升级(决策 E-4)
+                               Event::Wr); // `E + Wr → M` 静默升级(决策 E-4)
             lines_[addr].data = data;
             ++ctr_.line_fills;
             // ── 观测记录(fill)──
@@ -519,7 +564,7 @@ namespace tlm::cep {
             line_data(addr, payload);
             const bool was_dirty = (pre == State::M);
             apply_event_as(EventObservation::Origin::RemoteSnoop, addr,
-                            e);  // 内含 `M + SnpShared → F` 的写回接线
+                           e); // 内含 `M + SnpShared → F` 的写回接线
             emit_snoop_resp(addr, /*hit=*/true, state_of(addr), was_dirty, payload, txn_id);
         }
 
@@ -540,7 +585,7 @@ namespace tlm::cep {
             if (state_of(addr) == State::I)
                 return;
             apply_event_as(EventObservation::Origin::Writeback, addr,
-                            Event::SnpUnique);  // 写回后本地无副本
+                           Event::SnpUnique); // 写回后本地无副本
         }
 
         /// 流 6 —— 转发数据:只记账(决策 E-5)
@@ -558,8 +603,7 @@ namespace tlm::cep {
             ++ctr_.flow_events[static_cast<std::size_t>(CanonicalFlow::BackInvalidate)];
             if (state_of(addr) == State::I)
                 return;
-            apply_event_as(EventObservation::Origin::BackInvalidate, addr,
-                            Event::SnpUnique);
+            apply_event_as(EventObservation::Origin::BackInvalidate, addr, Event::SnpUnique);
         }
 
         /// 流 8 —— 地址解析:最小诚实语义(解析为请求者自身,**不**做一致性声称)
@@ -590,7 +634,9 @@ namespace tlm::cep {
         // ══════════════════════════════════════════════════════════════
         //  周期推进
         // ══════════════════════════════════════════════════════════════
-        void tick() override { Base::tick(); }
+        void tick() override {
+            Base::tick();
+        }
 
         // ══════════════════════════════════════════════════════════════
         //  值域映射(表驱动 ⇒ 判据可对拍)
@@ -598,16 +644,16 @@ namespace tlm::cep {
         /// `F` 的 wire 投影(决策 E-1):`CohIfBundle::line_state` **无 F** ⇒ 投影为 `S`
         static constexpr LineState wire_state(State s) {
             switch (s) {
-                case State::I:
-                    return LineState::I;
-                case State::S:
-                    return LineState::S;
-                case State::E:
-                    return LineState::E;
-                case State::M:
-                    return LineState::M;
-                case State::F:
-                    return LineState::S;  // 已写回 ⇒ 非脏;发 `M` 会让对端误记脏位
+            case State::I:
+                return LineState::I;
+            case State::S:
+                return LineState::S;
+            case State::E:
+                return LineState::E;
+            case State::M:
+                return LineState::M;
+            case State::F:
+                return LineState::S; // 已写回 ⇒ 非脏;发 `M` 会让对端误记脏位
             }
             return LineState::NONE;
         }
@@ -615,15 +661,15 @@ namespace tlm::cep {
         /// 本地请求事件 → 请求 `perm`(表驱动:事件决定要什么权限)
         static constexpr Perm perm_requested_by(Event e) {
             switch (e) {
-                case Event::Rd:
-                    return Perm::READ;
-                case Event::RdUnique:
-                case Event::Upgrade:
-                    return Perm::UNIQUE;
-                case Event::Wr:
-                case Event::SnpShared:
-                case Event::SnpUnique:
-                    return Perm::WRITEBACK;
+            case Event::Rd:
+                return Perm::READ;
+            case Event::RdUnique:
+            case Event::Upgrade:
+                return Perm::UNIQUE;
+            case Event::Wr:
+            case Event::SnpShared:
+            case Event::SnpUnique:
+                return Perm::WRITEBACK;
             }
             return Perm::NONE;
         }
@@ -661,25 +707,25 @@ namespace tlm::cep {
                 return;
             }
             switch (to) {
-                case State::I:
-                    tracker_->clear_sharer(addr, node_id_, level_);
-                    break;
-                case State::S:
-                case State::F:
-                    tracker_->set_sharer(addr, node_id_, level_, SnoopState::S);
-                    break;
-                case State::E:
-                    tracker_->set_sharer(addr, node_id_, level_, SnoopState::E);
-                    break;
-                case State::M:
-                    tracker_->set_sharer(addr, node_id_, level_, SnoopState::M);
-                    break;
+            case State::I:
+                tracker_->clear_sharer(addr, node_id_, level_);
+                break;
+            case State::S:
+            case State::F:
+                tracker_->set_sharer(addr, node_id_, level_, SnoopState::S);
+                break;
+            case State::E:
+                tracker_->set_sharer(addr, node_id_, level_, SnoopState::E);
+                break;
+            case State::M:
+                tracker_->set_sharer(addr, node_id_, level_, SnoopState::M);
+                break;
             }
             ++ctr_.tracker_feeds;
         }
 
-        void emit_snoop_resp(std::uint64_t addr, bool hit, State st, bool dirty,
-                             std::uint64_t data, std::uint64_t txn_id) {
+        void emit_snoop_resp(std::uint64_t addr, bool hit, State st, bool dirty, std::uint64_t data,
+                             std::uint64_t txn_id) {
             Bundle b;
             b.flow_id = bundles::CohIfFlowId::SnoopResp;
             b.transaction_id.write(txn_id);
@@ -729,7 +775,7 @@ namespace tlm::cep {
                 if (dit != lines_.end())
                     obs.data_before = dit->second.data;
             }
-            obs.data_after = obs.data_before;  // transition **不改** data
+            obs.data_after = obs.data_before; // transition **不改** data
             // ⚠️ sharer 快照 = **迁移前**视图
             // ⚠️ ⛔ **必须**用 `view_of`(const 纯查询)—— ⛔ **不得**用 `lookup`
             //    (它有副作用:首次 forward 时 `dir_.emplace` + 记 `AllocateOnFirstForward`
@@ -758,7 +804,7 @@ namespace tlm::cep {
             obs.event = static_cast<std::int32_t>(e);
             const State st = state_of(addr);
             obs.from = static_cast<std::int32_t>(st);
-            obs.to = static_cast<std::int32_t>(st);  // 装行**不改**状态
+            obs.to = static_cast<std::int32_t>(st); // 装行**不改**状态
             obs.data_before = data_before;
             obs.data_after = data_after;
             if (tracker_ != nullptr)
@@ -777,7 +823,7 @@ namespace tlm::cep {
         std::vector<Route> routes_;
         std::unordered_map<std::uint64_t, Line> lines_;
         std::unordered_map<std::uint64_t, std::uint64_t> txn_addr_;
-        HierarchicalDirectory* tracker_ = nullptr;  // 非拥有
+        HierarchicalDirectory* tracker_ = nullptr; // 非拥有
         node_id_t node_id_ = 0;
         std::size_t level_ = 0;
         std::string last_atomic_network_{};
@@ -785,6 +831,6 @@ namespace tlm::cep {
         std::size_t next_port_ = 0;
     };
 
-}  // namespace tlm::cep
+} // namespace tlm::cep
 
-#endif  // TLM_CEP_MESIF_PROTOCOL_ENGINE_HH
+#endif // TLM_CEP_MESIF_PROTOCOL_ENGINE_HH

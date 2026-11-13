@@ -1,6 +1,7 @@
 // test/test_cep_tier2_observation.cc
 // 档 2(协议级)**观测面 + 契约级断言** —— change `cep-evidence-tier2-minimal-slice`
-// per openspec/changes/cep-evidence-tier2-minimal-slice/specs/cep-evidence-tier2-observation/spec.md
+// per
+// openspec/changes/cep-evidence-tier2-minimal-slice/specs/cep-evidence-tier2-observation/spec.md
 //     Requirement: cep-evidence-tier2-observation
 // 作者: CppTLM Team / 日期: 2026-11-13
 //
@@ -49,8 +50,8 @@ namespace {
     struct Tier2Verdict {
         std::size_t swmr_violations = 0;
         std::size_t data_value_violations = 0;
-        std::size_t write_episodes = 0;  ///< 判定行数(写 episode 数)
-        std::size_t fill_records = 0;    ///< 装行记录数
+        std::size_t write_episodes = 0; ///< 判定行数(写 episode 数)
+        std::size_t fill_records = 0;   ///< 装行记录数
         bool invalid = false;           ///< 观测面**不可判**(⛔ 不是「0 违例」)
         std::string invalid_reason;
     };
@@ -108,7 +109,7 @@ namespace {
         e.on_completion(txn, data, perm, false);
     }
 
-}  // namespace
+} // namespace
 
 // ══════════════════════════════════════════════════════════════════════
 //  AC-1 · 非空洞判据 —— 正控:独占写 ⇒ 写时无他人 sharer ⇒ 违例 0

@@ -59,267 +59,298 @@
 
 namespace tlm::cep {
 
-// ══════════════════════════════════════════════════════════════════════
-//  canonical 10 流(per `ADR-CEP-02` §2 的流表)
-// ══════════════════════════════════════════════════════════════════════
-//
-// ⚠️ **本枚举是 canonical 10 流的全集** —— 而 `bundles::CohIfBundle::flow_id`
-//    的域**只有 5 值**(跨 Stub↔PE 边界的 RN-side 流,per `ADR-CEP-19` 决策 2)。
-//    另 5 条(`forward_data` / `back_invalidate` / `address_resolve` /
-//    `barrier` / `snoop_completion_ack`)在 PE 内部终结或对接 Directory &
-//    Ordering Plane ⇒ **不经 CohIf 腿**。
-enum class CanonicalFlow : std::uint8_t {
-    Request = 0,
-    Completion = 1,
-    Snoop = 2,
-    SnoopResp = 3,
-    Writeback = 4,
-    ForwardData = 5,
-    BackInvalidate = 6,
-    AddressResolve = 7,
-    Barrier = 8,
-    SnoopCompletionAck = 9,
-};
-
-/// canonical 10 流数(per `ADR-CEP-02` §2)
-inline constexpr std::size_t kCanonicalFlowCount = 10;
-
-/// canonical 10 流的**名**(与 `protocol_instance.schema.json` 的 `flow_support`
-/// 的 10 个 required key 逐字一致 —— 交叉核对由测试层做,per ADR-CEP-12 §4 抓取点 4)
-inline constexpr std::array<const char*, kCanonicalFlowCount> kCanonicalFlowNames = {{
-    "request", "completion", "snoop", "snoop_resp", "writeback",
-    "forward_data", "back_invalidate", "address_resolve", "barrier",
-    "snoop_completion_ack",
-}};
-
-/// canonical 10 流中**跨 Stub↔PE 边界**的 5 条(⇒ `CohIfBundle.flow_id` 的域)
-inline constexpr std::size_t kCohIfFlowCount = 5;
-
-// ══════════════════════════════════════════════════════════════════════
-//  值域交叉断言(`bundles::CohIfBundle` ↔ `tlm::cep` 平台枚举)
-// ══════════════════════════════════════════════════════════════════════
-//
-// `include/bundles/` 是**最底层**、**不**反向依赖 `include/tlm/cep/` ⇒ 值域对应
-// 关系无法在 bundle 头内断言。此处(上层)做**编译期交叉断言** —— 任何一侧改动
-// 值序都会**编译失败**,而不是静默错配。
-static_assert(static_cast<std::uint8_t>(Perm::NONE) == bundles::CohIfBundle::PERM_NONE,
-              "值域漂移:tlm::cep::Perm::NONE != bundles::CohIfBundle::PERM_NONE");
-static_assert(static_cast<std::uint8_t>(Perm::READ) == bundles::CohIfBundle::PERM_READ,
-              "值域漂移:tlm::cep::Perm::READ != bundles::CohIfBundle::PERM_READ");
-static_assert(static_cast<std::uint8_t>(Perm::UNIQUE) == bundles::CohIfBundle::PERM_UNIQUE,
-              "值域漂移:tlm::cep::Perm::UNIQUE != bundles::CohIfBundle::PERM_UNIQUE");
-static_assert(static_cast<std::uint8_t>(Perm::WRITEBACK) == bundles::CohIfBundle::PERM_WRITEBACK,
-              "值域漂移:tlm::cep::Perm::WRITEBACK != bundles::CohIfBundle::PERM_WRITEBACK");
-static_assert(static_cast<std::uint8_t>(SnoopType::INVALIDATE) ==
-                  bundles::CohIfBundle::SNOOP_INVALIDATE,
-              "值域漂移:tlm::cep::SnoopType::INVALIDATE != CohIfBundle::SNOOP_INVALIDATE");
-static_assert(static_cast<std::uint8_t>(SnoopType::CLEAN) == bundles::CohIfBundle::SNOOP_CLEAN,
-              "值域漂移:tlm::cep::SnoopType::CLEAN != CohIfBundle::SNOOP_CLEAN");
-static_assert(static_cast<std::uint8_t>(SnoopType::FORWARD) == bundles::CohIfBundle::SNOOP_FORWARD,
-              "值域漂移:tlm::cep::SnoopType::FORWARD != CohIfBundle::SNOOP_FORWARD");
-static_assert(static_cast<std::uint8_t>(LineState::NONE) == bundles::CohIfBundle::STATE_NONE,
-              "值域漂移:tlm::cep::LineState::NONE != CohIfBundle::STATE_NONE");
-static_assert(static_cast<std::uint8_t>(LineState::I) == bundles::CohIfBundle::STATE_I,
-              "值域漂移:tlm::cep::LineState::I != CohIfBundle::STATE_I");
-static_assert(static_cast<std::uint8_t>(LineState::S) == bundles::CohIfBundle::STATE_S,
-              "值域漂移:tlm::cep::LineState::S != CohIfBundle::STATE_S");
-static_assert(static_cast<std::uint8_t>(LineState::E) == bundles::CohIfBundle::STATE_E,
-              "值域漂移:tlm::cep::LineState::E != CohIfBundle::STATE_E");
-static_assert(static_cast<std::uint8_t>(LineState::M) == bundles::CohIfBundle::STATE_M,
-              "值域漂移:tlm::cep::LineState::M != CohIfBundle::STATE_M");
-
-// ══════════════════════════════════════════════════════════════════════
-//  地址解析结果(per `ADR-CEP-07` 决策 4 的 `address_resolve` 出参)
-// ══════════════════════════════════════════════════════════════════════
-//
-// ⚠️ **形态细化**:ADR 决策 4 的草图用两个出参(`&home_node` / `&coherent`);
-//    本实现改用**结果 struct** —— 语义等价,但避免「出参可被部分写入」的中间态。
-struct AddressResolveResult {
-    std::uint64_t home_node = 0;
-    bool coherent = false;
-};
-
-// ══════════════════════════════════════════════════════════════════════
-//  EventObservation —— 协议级**观测记录**(per change `cep-evidence-tier2-minimal-slice`)
-// ══════════════════════════════════════════════════════════════════════
-//
-// ⚠️ **定位**:档 2(协议级)的**原始观测事实**载体 —— 实现侧只出事实,
-//    **判定归 `test/` 侧**(沿用 `stub_cache_endpoint.hh:68-83` 的既有先例)。
-//    ⛔ 本结构**不做任何聚合 / 判定**。
-//
-// ⚠️ **per-event 不是 per-txn**:`apply_event` 无 `txn_id`;且 WRITEBACK 完成
-//    一次 = **2 条 transition + 1 条 fill** ⇒ 计数必须按 `(addr, write-episode)`
-//    归并(⛔ 不得按原始行计)。
-//
-// ⛔ **无 version 字段**(per architect 裁决 R1:per-engine 私有写序在自读自写下
-//    是恒等式 ⇒ 恒 0 ⇒ 证伪判别力 ⇒ 版本维不实施)。
-//
-// ⛔ **字段表定死**(per 裁决 R5):`sharers_snapshot` / `self_mask` 用
-//    `std::uint64_t`(**⛔ 不用 `responder_set_t`** ⇒ 本基类**不新增**对
-//    `tlm/cep/sharer_tracker.hh` 的依赖,保「4 受限族可复用」的 seam 面窄)。
-struct EventObservation {
-    /// 记录种类 —— 两处落点(per 裁决 R4)
-    enum class Kind : std::uint8_t {
-        Transition = 0,  ///< 状态迁移(`apply_event` 入口);`sharers_snapshot` = **迁移前**视图
-        Fill = 1,        ///< 行数据装入(`on_completion` 装行**之后**)
-    };
-
-    /// 归因来源(per 裁决 R5 §c)—— `DirectInject` ⛔ **不计入**任何生产流判据
-    enum class Origin : std::uint8_t {
-        LocalRequest = 0,
-        CompletionFill = 1,
-        RemoteSnoop = 2,
-        Writeback = 3,
-        BackInvalidate = 4,
-        DirectInject = 5,
-    };
-
-    Kind kind = Kind::Transition;
-    Origin origin = Origin::LocalRequest;
-    std::uint64_t addr = 0;
-    std::int32_t event = 0;  ///< 协议中立事件码(派生类给)
-    std::int32_t from = 0;   ///< 迁移前态(协议中立编码)
-    std::int32_t to = 0;     ///< 迁移后态(协议中立编码)
-    std::uint64_t data_before = 0;
-    std::uint64_t data_after = 0;
-    std::uint64_t sharers_snapshot = 0;  ///< 该地址的 sharer 位掩码(**迁移前**视图)
-    std::uint64_t self_mask = 0;         ///< 本节点的 sharer 位
-    bool self_mask_valid = false;        ///< `self_mask` 是否可用(节点未映射 ⇒ false)
-    std::size_t level = 0;               ///< 目录层级(0 = 最细)
-    std::uint32_t node = 0;              ///< 本节点 id
-};
-
-/// **逐字相等**(per AC-8「同一流跑两遍 ⇒ 观测记录逐字相等」)
-inline bool operator==(const EventObservation& a, const EventObservation& b) {
-    return a.kind == b.kind && a.origin == b.origin && a.addr == b.addr && a.event == b.event &&
-           a.from == b.from && a.to == b.to && a.data_before == b.data_before &&
-           a.data_after == b.data_after && a.sharers_snapshot == b.sharers_snapshot &&
-           a.self_mask == b.self_mask && a.self_mask_valid == b.self_mask_valid &&
-           a.level == b.level && a.node == b.node;
-}
-inline bool operator!=(const EventObservation& a, const EventObservation& b) { return !(a == b); }
-
-// ══════════════════════════════════════════════════════════════════════
-//  ProtocolEngineBase —— ProtocolEngine 的 ChStream 端口面
-// ══════════════════════════════════════════════════════════════════════
-//
-// `N` = 端口数(编译期)。`static_assert(N > 1)`:N=1 会落 ModuleFactory 的
-// single 分支 → `bidirectional_port_adapter.hh` 的 `bind_ports` 是**空操作 shim**
-// ⇒ **静默不绑定**(per `design.md D-β` + tasks 4.3 的同一理由)。
-template <std::size_t N>
-class ProtocolEngineBase : public ChStreamModuleBase {
-    static_assert(N > 1, "ProtocolEngine 端口数必须 > 1(N=1 会落 bind_ports 空 shim ⇒ 静默不绑定)");
-
-public:
-    using Bundle = bundles::CohIfBundle;
-    using ReqAdapter = cpptlm::InputStreamAdapter<Bundle>;
-    using RespAdapter = cpptlm::OutputStreamAdapter<Bundle>;
-
-    /// 端口数(编译期常量;派生类可覆写以支持**动态**端口拓扑 —— 但那样 adapter 的
-    /// 模板参数 N 必须同步,否则两侧分歧)
-    static constexpr std::size_t kPortCount = N;
-
-    ProtocolEngineBase(const std::string& name, EventQueue* eq) : ChStreamModuleBase(name, eq) {}
-    ~ProtocolEngineBase() override = default;
-
-    // ── 端口访问器(照 `router_tlm.hh:139-141` 范式)────────────────────
-    std::array<ReqAdapter, N>& req_in() { return req_in_; }
-    std::array<RespAdapter, N>& resp_out() { return resp_out_; }
-    const std::array<ReqAdapter, N>& req_in() const { return req_in_; }
-    const std::array<RespAdapter, N>& resp_out() const { return resp_out_; }
-
-    // ── ChStreamModuleBase 接口 ──────────────────────────────────────
-    void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override { adapter_ = adapter; }
-    unsigned num_ports() const override { return static_cast<unsigned>(N); }
-
-    /// 已注入的 StreamAdapter(**类型擦除**)—— 派生类可用它做 `static_cast`
-    /// 到自己的 `BidirectionalPortAdapter<Derived, CohIfBundle, N>`(照
-    /// `RouterTLM::set_stream_adapter` 的做法)。
-    cpptlm::StreamAdapterBase* stream_adapter() const { return adapter_; }
-
-    // ── 协议桥(类型擦除;**非拥有**)───────────────────────────────
-    // 生命周期由 ModuleFactory / 装配链负责(per tasks 3.6「注册与消费成对」)
-    // ⇒ 本基类**不**持有所有权、不删除指针。
+    // ══════════════════════════════════════════════════════════════════════
+    //  canonical 10 流(per `ADR-CEP-02` §2 的流表)
+    // ══════════════════════════════════════════════════════════════════════
     //
-    // ⚠️ Phase 2 落地时此处是**前向声明**;Phase 3 交付了
-    //    `include/framework/protocol_bridge.hh` 的完整定义 ⇒ 改为直接 include。
-    void set_bridge(cpptlm::ProtocolBridgeEr* bridge) { bridge_ = bridge; }
-    cpptlm::ProtocolBridgeEr* bridge() const { return bridge_; }
+    // ⚠️ **本枚举是 canonical 10 流的全集** —— 而 `bundles::CohIfBundle::flow_id`
+    //    的域**只有 5 值**(跨 Stub↔PE 边界的 RN-side 流,per `ADR-CEP-19` 决策 2)。
+    //    另 5 条(`forward_data` / `back_invalidate` / `address_resolve` /
+    //    `barrier` / `snoop_completion_ack`)在 PE 内部终结或对接 Directory &
+    //    Ordering Plane ⇒ **不经 CohIf 腿**。
+    enum class CanonicalFlow : std::uint8_t {
+        Request = 0,
+        Completion = 1,
+        Snoop = 2,
+        SnoopResp = 3,
+        Writeback = 4,
+        ForwardData = 5,
+        BackInvalidate = 6,
+        AddressResolve = 7,
+        Barrier = 8,
+        SnoopCompletionAck = 9,
+    };
 
-    /// 装配期挂载点(per `ChStreamModuleBase::attach_protocol_bridge`)——
-    /// ModuleFactory 在 Step 7.5 调用它把桥注入本 PE。
-    bool attach_protocol_bridge(cpptlm::ProtocolBridgeEr* bridge) override {
-        set_bridge(bridge);
-        return true;
+    /// canonical 10 流数(per `ADR-CEP-02` §2)
+    inline constexpr std::size_t kCanonicalFlowCount = 10;
+
+    /// canonical 10 流的**名**(与 `protocol_instance.schema.json` 的 `flow_support`
+    /// 的 10 个 required key 逐字一致 —— 交叉核对由测试层做,per ADR-CEP-12 §4 抓取点 4)
+    inline constexpr std::array<const char*, kCanonicalFlowCount> kCanonicalFlowNames = {{
+        "request",
+        "completion",
+        "snoop",
+        "snoop_resp",
+        "writeback",
+        "forward_data",
+        "back_invalidate",
+        "address_resolve",
+        "barrier",
+        "snoop_completion_ack",
+    }};
+
+    /// canonical 10 流中**跨 Stub↔PE 边界**的 5 条(⇒ `CohIfBundle.flow_id` 的域)
+    inline constexpr std::size_t kCohIfFlowCount = 5;
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  值域交叉断言(`bundles::CohIfBundle` ↔ `tlm::cep` 平台枚举)
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // `include/bundles/` 是**最底层**、**不**反向依赖 `include/tlm/cep/` ⇒ 值域对应
+    // 关系无法在 bundle 头内断言。此处(上层)做**编译期交叉断言** —— 任何一侧改动
+    // 值序都会**编译失败**,而不是静默错配。
+    static_assert(static_cast<std::uint8_t>(Perm::NONE) == bundles::CohIfBundle::PERM_NONE,
+                  "值域漂移:tlm::cep::Perm::NONE != bundles::CohIfBundle::PERM_NONE");
+    static_assert(static_cast<std::uint8_t>(Perm::READ) == bundles::CohIfBundle::PERM_READ,
+                  "值域漂移:tlm::cep::Perm::READ != bundles::CohIfBundle::PERM_READ");
+    static_assert(static_cast<std::uint8_t>(Perm::UNIQUE) == bundles::CohIfBundle::PERM_UNIQUE,
+                  "值域漂移:tlm::cep::Perm::UNIQUE != bundles::CohIfBundle::PERM_UNIQUE");
+    static_assert(static_cast<std::uint8_t>(Perm::WRITEBACK) ==
+                      bundles::CohIfBundle::PERM_WRITEBACK,
+                  "值域漂移:tlm::cep::Perm::WRITEBACK != bundles::CohIfBundle::PERM_WRITEBACK");
+    static_assert(static_cast<std::uint8_t>(SnoopType::INVALIDATE) ==
+                      bundles::CohIfBundle::SNOOP_INVALIDATE,
+                  "值域漂移:tlm::cep::SnoopType::INVALIDATE != CohIfBundle::SNOOP_INVALIDATE");
+    static_assert(static_cast<std::uint8_t>(SnoopType::CLEAN) == bundles::CohIfBundle::SNOOP_CLEAN,
+                  "值域漂移:tlm::cep::SnoopType::CLEAN != CohIfBundle::SNOOP_CLEAN");
+    static_assert(static_cast<std::uint8_t>(SnoopType::FORWARD) ==
+                      bundles::CohIfBundle::SNOOP_FORWARD,
+                  "值域漂移:tlm::cep::SnoopType::FORWARD != CohIfBundle::SNOOP_FORWARD");
+    static_assert(static_cast<std::uint8_t>(LineState::NONE) == bundles::CohIfBundle::STATE_NONE,
+                  "值域漂移:tlm::cep::LineState::NONE != CohIfBundle::STATE_NONE");
+    static_assert(static_cast<std::uint8_t>(LineState::I) == bundles::CohIfBundle::STATE_I,
+                  "值域漂移:tlm::cep::LineState::I != CohIfBundle::STATE_I");
+    static_assert(static_cast<std::uint8_t>(LineState::S) == bundles::CohIfBundle::STATE_S,
+                  "值域漂移:tlm::cep::LineState::S != CohIfBundle::STATE_S");
+    static_assert(static_cast<std::uint8_t>(LineState::E) == bundles::CohIfBundle::STATE_E,
+                  "值域漂移:tlm::cep::LineState::E != CohIfBundle::STATE_E");
+    static_assert(static_cast<std::uint8_t>(LineState::M) == bundles::CohIfBundle::STATE_M,
+                  "值域漂移:tlm::cep::LineState::M != CohIfBundle::STATE_M");
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  地址解析结果(per `ADR-CEP-07` 决策 4 的 `address_resolve` 出参)
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // ⚠️ **形态细化**:ADR 决策 4 的草图用两个出参(`&home_node` / `&coherent`);
+    //    本实现改用**结果 struct** —— 语义等价,但避免「出参可被部分写入」的中间态。
+    struct AddressResolveResult {
+        std::uint64_t home_node = 0;
+        bool coherent = false;
+    };
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  EventObservation —— 协议级**观测记录**(per change `cep-evidence-tier2-minimal-slice`)
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // ⚠️ **定位**:档 2(协议级)的**原始观测事实**载体 —— 实现侧只出事实,
+    //    **判定归 `test/` 侧**(沿用 `stub_cache_endpoint.hh:68-83` 的既有先例)。
+    //    ⛔ 本结构**不做任何聚合 / 判定**。
+    //
+    // ⚠️ **per-event 不是 per-txn**:`apply_event` 无 `txn_id`;且 WRITEBACK 完成
+    //    一次 = **2 条 transition + 1 条 fill** ⇒ 计数必须按 `(addr, write-episode)`
+    //    归并(⛔ 不得按原始行计)。
+    //
+    // ⛔ **无 version 字段**(per architect 裁决 R1:per-engine 私有写序在自读自写下
+    //    是恒等式 ⇒ 恒 0 ⇒ 证伪判别力 ⇒ 版本维不实施)。
+    //
+    // ⛔ **字段表定死**(per 裁决 R5):`sharers_snapshot` / `self_mask` 用
+    //    `std::uint64_t`(**⛔ 不用 `responder_set_t`** ⇒ 本基类**不新增**对
+    //    `tlm/cep/sharer_tracker.hh` 的依赖,保「4 受限族可复用」的 seam 面窄)。
+    struct EventObservation {
+        /// 记录种类 —— 两处落点(per 裁决 R4)
+        enum class Kind : std::uint8_t {
+            Transition = 0, ///< 状态迁移(`apply_event` 入口);`sharers_snapshot` = **迁移前**视图
+            Fill = 1,       ///< 行数据装入(`on_completion` 装行**之后**)
+        };
+
+        /// 归因来源(per 裁决 R5 §c)—— `DirectInject` ⛔ **不计入**任何生产流判据
+        enum class Origin : std::uint8_t {
+            LocalRequest = 0,
+            CompletionFill = 1,
+            RemoteSnoop = 2,
+            Writeback = 3,
+            BackInvalidate = 4,
+            DirectInject = 5,
+        };
+
+        Kind kind = Kind::Transition;
+        Origin origin = Origin::LocalRequest;
+        std::uint64_t addr = 0;
+        std::int32_t event = 0; ///< 协议中立事件码(派生类给)
+        std::int32_t from = 0;  ///< 迁移前态(协议中立编码)
+        std::int32_t to = 0;    ///< 迁移后态(协议中立编码)
+        std::uint64_t data_before = 0;
+        std::uint64_t data_after = 0;
+        std::uint64_t sharers_snapshot = 0; ///< 该地址的 sharer 位掩码(**迁移前**视图)
+        std::uint64_t self_mask = 0;        ///< 本节点的 sharer 位
+        bool self_mask_valid = false;       ///< `self_mask` 是否可用(节点未映射 ⇒ false)
+        std::size_t level = 0;              ///< 目录层级(0 = 最细)
+        std::uint32_t node = 0;             ///< 本节点 id
+    };
+
+    /// **逐字相等**(per AC-8「同一流跑两遍 ⇒ 观测记录逐字相等」)
+    inline bool operator==(const EventObservation& a, const EventObservation& b) {
+        return a.kind == b.kind && a.origin == b.origin && a.addr == b.addr && a.event == b.event &&
+               a.from == b.from && a.to == b.to && a.data_before == b.data_before &&
+               a.data_after == b.data_after && a.sharers_snapshot == b.sharers_snapshot &&
+               a.self_mask == b.self_mask && a.self_mask_valid == b.self_mask_valid &&
+               a.level == b.level && a.node == b.node;
+    }
+    inline bool operator!=(const EventObservation& a, const EventObservation& b) {
+        return !(a == b);
     }
 
-    // ── canonical 10 流接口(per `ADR-CEP-02` §2 + `ADR-CEP-07` 决策 4)──
+    // ══════════════════════════════════════════════════════════════════════
+    //  ProtocolEngineBase —— ProtocolEngine 的 ChStream 端口面
+    // ══════════════════════════════════════════════════════════════════════
     //
-    // **全部为纯虚** ⇒ 任何 ProtocolEngine 派生类**必须**实现全部 10 条流
-    // (per `ADR-CEP-07` 决策 4 草图注释「必须全 10 流」+ oracle v0.4 B6 修订)
-    // ⇒ 「10 流覆盖」由**类型系统**保证,而非运行期纪律。
-    //
-    // ⚠️ 其中 5 条(`forward_data` / `back_invalidate` / `address_resolve` /
-    //    `barrier` / `snoop_completion_ack`)**不经 CohIf 腿** —— 它们是 PE
-    //    **内部**接口(PE 内部终结 / 对接 Directory & Ordering Plane)。
-    virtual void on_request(std::uint64_t addr, Perm perm, std::uint64_t txn_id) = 0;
-    virtual void on_completion(std::uint64_t txn_id, std::uint64_t data, Perm perm,
-                               bool error) = 0;
-    virtual void on_snoop(std::uint64_t addr, SnoopType type, std::uint64_t txn_id) = 0;
-    virtual void on_snoop_resp(std::uint64_t addr, bool hit, LineState state, bool dirty,
-                               std::uint64_t data, std::uint64_t txn_id) = 0;
-    virtual void on_writeback(std::uint64_t addr, std::uint64_t data, bool dirty) = 0;
-    virtual void on_forward_data(std::uint64_t src_addr, std::uint64_t dst_addr,
-                                 std::uint64_t data, Perm perm, std::uint64_t txn_id) = 0;
-    virtual void on_back_invalidate(std::uint64_t addr, SnoopType type,
-                                    std::uint64_t txn_id) = 0;
-    virtual void on_address_resolve(std::uint64_t pa, std::uint64_t node_id,
-                                    AddressResolveResult& out) = 0;
-    virtual void on_barrier(std::uint64_t domain, std::uint64_t txn_id) = 0;
-    virtual void on_snoop_completion_ack(std::uint64_t addr, std::uint64_t node_id,
-                                         std::uint64_t txn_id) = 0;
+    // `N` = 端口数(编译期)。`static_assert(N > 1)`:N=1 会落 ModuleFactory 的
+    // single 分支 → `bidirectional_port_adapter.hh` 的 `bind_ports` 是**空操作 shim**
+    // ⇒ **静默不绑定**(per `design.md D-β` + tasks 4.3 的同一理由)。
+    template <std::size_t N> class ProtocolEngineBase : public ChStreamModuleBase {
+        static_assert(N > 1,
+                      "ProtocolEngine 端口数必须 > 1(N=1 会落 bind_ports 空 shim ⇒ 静默不绑定)");
 
-    // ── 周期推进(通用 ingress 处理)──────────────────────────────────
-    //
-    /// 逐端口取 `req_in` 中已就绪的 Bundle,按 `flow_id` 分派到对应的
-    /// canonical 流处理方法。**协议特有**的处理仍在派生类的 `on_*` 里 ——
-    /// 本方法只做「取包 + 分派」。
-    ///
-    /// ⚠️ 这是**协议中立**的通用骨架:任何 PE 派生类若不需要额外行为,直接继承即可。
-    void tick() override {
-        // ① 先消费 ingress(分派到 canonical 流)—— 派生类在此产出 egress 数据
-        for (std::size_t i = 0; i < N; ++i) {
-            auto& in = req_in_[i];
-            if (!in.valid())
-                continue;
-            dispatch_cohif(in.data());
-            in.consume();
+    public:
+        using Bundle = bundles::CohIfBundle;
+        using ReqAdapter = cpptlm::InputStreamAdapter<Bundle>;
+        using RespAdapter = cpptlm::OutputStreamAdapter<Bundle>;
+
+        /// 端口数(编译期常量;派生类可覆写以支持**动态**端口拓扑 —— 但那样 adapter 的
+        /// 模板参数 N 必须同步,否则两侧分歧)
+        static constexpr std::size_t kPortCount = N;
+
+        ProtocolEngineBase(const std::string& name, EventQueue* eq) : ChStreamModuleBase(name, eq) {
         }
-        // ② 再驱动 StreamAdapter(发送 egress + 回收 credit)—— 与 `RouterTLM::tick()`
-        //    的惯例一致(模块负责驱动 adapter,`ModuleFactory::startAllTicks()` 只调
-        //    模块的 `tick()`)
-        if (adapter_)
-            adapter_->tick();
-    }
+        ~ProtocolEngineBase() override = default;
 
-    /// Credit 回收回调(per `BidirectionalPortAdapter::tick()` 的 credit 接收路径)
-    ///
-    /// ⚠️ **默认空实现 ⇒ 零波及** —— `BidirectionalPortAdapter` 在收到 credit 时
-    ///    会调 `module_->receive_credit(port, vc)` ⇒ 任何用该 adapter 的模块
-    ///    **必须**提供此方法(否则编译不过)。
-    ///    `ProtocolEngineBase` 提供**默认空实现**(CEP 的协议引擎暂不建模链路
-    ///    credit 回收)⇒ 派生类可按需覆写。
-    virtual void receive_credit(unsigned /*port*/, unsigned /*vc*/) {}
+        // ── 端口访问器(照 `router_tlm.hh:139-141` 范式)────────────────────
+        std::array<ReqAdapter, N>& req_in() {
+            return req_in_;
+        }
+        std::array<RespAdapter, N>& resp_out() {
+            return resp_out_;
+        }
+        const std::array<ReqAdapter, N>& req_in() const {
+            return req_in_;
+        }
+        const std::array<RespAdapter, N>& resp_out() const {
+            return resp_out_;
+        }
 
-    // ── CohIf 分派(ingress 侧)──────────────────────────────────────
-    //
-    /// 把 ingress 收到的 `CohIfBundle` 按 `flow_id` 分派到对应的 canonical 流
-    /// 处理方法。**流语义由 `flow_id` 决定**(per `design.md D-ε`)。
-    ///
-    /// @return true = 已分派;false = `flow_id` 越界(防御性;正常路径不可能 ——
-    ///         `CohIfFlowId` 是强类型,域外值只能来自 `static_cast` 伪造)。
-    bool dispatch_cohif(const Bundle& b) {
-        switch (b.flow_id) {
+        // ── ChStreamModuleBase 接口 ──────────────────────────────────────
+        void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
+            adapter_ = adapter;
+        }
+        unsigned num_ports() const override {
+            return static_cast<unsigned>(N);
+        }
+
+        /// 已注入的 StreamAdapter(**类型擦除**)—— 派生类可用它做 `static_cast`
+        /// 到自己的 `BidirectionalPortAdapter<Derived, CohIfBundle, N>`(照
+        /// `RouterTLM::set_stream_adapter` 的做法)。
+        cpptlm::StreamAdapterBase* stream_adapter() const {
+            return adapter_;
+        }
+
+        // ── 协议桥(类型擦除;**非拥有**)───────────────────────────────
+        // 生命周期由 ModuleFactory / 装配链负责(per tasks 3.6「注册与消费成对」)
+        // ⇒ 本基类**不**持有所有权、不删除指针。
+        //
+        // ⚠️ Phase 2 落地时此处是**前向声明**;Phase 3 交付了
+        //    `include/framework/protocol_bridge.hh` 的完整定义 ⇒ 改为直接 include。
+        void set_bridge(cpptlm::ProtocolBridgeEr* bridge) {
+            bridge_ = bridge;
+        }
+        cpptlm::ProtocolBridgeEr* bridge() const {
+            return bridge_;
+        }
+
+        /// 装配期挂载点(per `ChStreamModuleBase::attach_protocol_bridge`)——
+        /// ModuleFactory 在 Step 7.5 调用它把桥注入本 PE。
+        bool attach_protocol_bridge(cpptlm::ProtocolBridgeEr* bridge) override {
+            set_bridge(bridge);
+            return true;
+        }
+
+        // ── canonical 10 流接口(per `ADR-CEP-02` §2 + `ADR-CEP-07` 决策 4)──
+        //
+        // **全部为纯虚** ⇒ 任何 ProtocolEngine 派生类**必须**实现全部 10 条流
+        // (per `ADR-CEP-07` 决策 4 草图注释「必须全 10 流」+ oracle v0.4 B6 修订)
+        // ⇒ 「10 流覆盖」由**类型系统**保证,而非运行期纪律。
+        //
+        // ⚠️ 其中 5 条(`forward_data` / `back_invalidate` / `address_resolve` /
+        //    `barrier` / `snoop_completion_ack`)**不经 CohIf 腿** —— 它们是 PE
+        //    **内部**接口(PE 内部终结 / 对接 Directory & Ordering Plane)。
+        virtual void on_request(std::uint64_t addr, Perm perm, std::uint64_t txn_id) = 0;
+        virtual void on_completion(std::uint64_t txn_id, std::uint64_t data, Perm perm,
+                                   bool error) = 0;
+        virtual void on_snoop(std::uint64_t addr, SnoopType type, std::uint64_t txn_id) = 0;
+        virtual void on_snoop_resp(std::uint64_t addr, bool hit, LineState state, bool dirty,
+                                   std::uint64_t data, std::uint64_t txn_id) = 0;
+        virtual void on_writeback(std::uint64_t addr, std::uint64_t data, bool dirty) = 0;
+        virtual void on_forward_data(std::uint64_t src_addr, std::uint64_t dst_addr,
+                                     std::uint64_t data, Perm perm, std::uint64_t txn_id) = 0;
+        virtual void on_back_invalidate(std::uint64_t addr, SnoopType type,
+                                        std::uint64_t txn_id) = 0;
+        virtual void on_address_resolve(std::uint64_t pa, std::uint64_t node_id,
+                                        AddressResolveResult& out) = 0;
+        virtual void on_barrier(std::uint64_t domain, std::uint64_t txn_id) = 0;
+        virtual void on_snoop_completion_ack(std::uint64_t addr, std::uint64_t node_id,
+                                             std::uint64_t txn_id) = 0;
+
+        // ── 周期推进(通用 ingress 处理)──────────────────────────────────
+        //
+        /// 逐端口取 `req_in` 中已就绪的 Bundle,按 `flow_id` 分派到对应的
+        /// canonical 流处理方法。**协议特有**的处理仍在派生类的 `on_*` 里 ——
+        /// 本方法只做「取包 + 分派」。
+        ///
+        /// ⚠️ 这是**协议中立**的通用骨架:任何 PE 派生类若不需要额外行为,直接继承即可。
+        void tick() override {
+            // ① 先消费 ingress(分派到 canonical 流)—— 派生类在此产出 egress 数据
+            for (std::size_t i = 0; i < N; ++i) {
+                auto& in = req_in_[i];
+                if (!in.valid())
+                    continue;
+                dispatch_cohif(in.data());
+                in.consume();
+            }
+            // ② 再驱动 StreamAdapter(发送 egress + 回收 credit)—— 与 `RouterTLM::tick()`
+            //    的惯例一致(模块负责驱动 adapter,`ModuleFactory::startAllTicks()` 只调
+            //    模块的 `tick()`)
+            if (adapter_)
+                adapter_->tick();
+        }
+
+        /// Credit 回收回调(per `BidirectionalPortAdapter::tick()` 的 credit 接收路径)
+        ///
+        /// ⚠️ **默认空实现 ⇒ 零波及** —— `BidirectionalPortAdapter` 在收到 credit 时
+        ///    会调 `module_->receive_credit(port, vc)` ⇒ 任何用该 adapter 的模块
+        ///    **必须**提供此方法(否则编译不过)。
+        ///    `ProtocolEngineBase` 提供**默认空实现**(CEP 的协议引擎暂不建模链路
+        ///    credit 回收)⇒ 派生类可按需覆写。
+        virtual void receive_credit(unsigned /*port*/, unsigned /*vc*/) {
+        }
+
+        // ── CohIf 分派(ingress 侧)──────────────────────────────────────
+        //
+        /// 把 ingress 收到的 `CohIfBundle` 按 `flow_id` 分派到对应的 canonical 流
+        /// 处理方法。**流语义由 `flow_id` 决定**(per `design.md D-ε`)。
+        ///
+        /// @return true = 已分派;false = `flow_id` 越界(防御性;正常路径不可能 ——
+        ///         `CohIfFlowId` 是强类型,域外值只能来自 `static_cast` 伪造)。
+        bool dispatch_cohif(const Bundle& b) {
+            switch (b.flow_id) {
             case bundles::CohIfFlowId::Request:
                 on_request(b.address.read(), perm_of(b), b.transaction_id.read());
                 return true;
@@ -337,118 +368,132 @@ public:
             case bundles::CohIfFlowId::Writeback:
                 on_writeback(b.address.read(), b.data.read(), b.dirty.read() != 0);
                 return true;
+            }
+            return false; // 越界(防御性分支)
         }
-        return false;  // 越界(防御性分支)
-    }
 
-    // ── 值域映射(Bundle → 平台枚举)─────────────────────────────────
-    // 上方的编译期 `static_assert` 已保证两侧值**逐值相等** ⇒ 此处可安全
-    // `static_cast`;但仍走**具名**函数而非裸 cast,便于阅读与调试。
-    static Perm perm_of(const Bundle& b) {
-        return static_cast<Perm>(b.perm.read());
-    }
-    static SnoopType snoop_type_of(const Bundle& b) {
-        return static_cast<SnoopType>(b.snoop_type.read());
-    }
-    static LineState line_state_of(const Bundle& b) {
-        return static_cast<LineState>(b.line_state.read());
-    }
-
-    // ── 协议级观测面(per change `cep-evidence-tier2-minimal-slice`)──────
-    //
-    // ⚠️ **默认关闭**(`observations_enabled_ == false`)⇒ 既有测试与既有性能
-    //    **零影响**;只有显式 `enable_observations(true)` 的用例才会产生记录。
-    //
-    // ⚠️ **实现侧只出原始事实,判定归 `test/` 侧**(沿用
-    //    `stub_cache_endpoint.hh:68-83` 的既有先例)⇒ 本基类**无任何判定逻辑**。
-    void enable_observations(bool on) { observations_enabled_ = on; }
-    bool observations_enabled() const { return observations_enabled_; }
-    const std::vector<EventObservation>& observations() const { return observations_; }
-    std::size_t observation_count() const { return observations_.size(); }
-    /// **丢弃计数**(缓冲溢出时 +1)—— 非零 ⇒ 该 run 的观测**不完整** ⇒ 判「不可判」
-    std::uint64_t dropped_observations() const { return dropped_observations_; }
-    /// **观测面自身失效**计数(装配期硬断言失败时 +1)—— 非零 ⇒ 判「不可判」(⛔ 不是 0)
-    std::uint64_t observation_invalid() const { return observation_invalid_; }
-
-protected:
-    /// 落一条观测记录(⛔ 观测面关闭 ⇒ 零成本返回)
-    void record_observation(EventObservation obs) {
-        if (!observations_enabled_)
-            return;
-        if (observations_.size() >= kObservationCapacity) {
-            ++dropped_observations_;  // ⛔ 有界:溢出即计数(不静默丢)
-            return;
+        // ── 值域映射(Bundle → 平台枚举)─────────────────────────────────
+        // 上方的编译期 `static_assert` 已保证两侧值**逐值相等** ⇒ 此处可安全
+        // `static_cast`;但仍走**具名**函数而非裸 cast,便于阅读与调试。
+        static Perm perm_of(const Bundle& b) {
+            return static_cast<Perm>(b.perm.read());
         }
-        observations_.push_back(obs);
-    }
+        static SnoopType snoop_type_of(const Bundle& b) {
+            return static_cast<SnoopType>(b.snoop_type.read());
+        }
+        static LineState line_state_of(const Bundle& b) {
+            return static_cast<LineState>(b.line_state.read());
+        }
 
-    /// 标记观测面**不可判**(装配期硬断言失败 / 前提不成立)
-    void mark_observation_invalid() { ++observation_invalid_; }
+        // ── 协议级观测面(per change `cep-evidence-tier2-minimal-slice`)──────
+        //
+        // ⚠️ **默认关闭**(`observations_enabled_ == false`)⇒ 既有测试与既有性能
+        //    **零影响**;只有显式 `enable_observations(true)` 的用例才会产生记录。
+        //
+        // ⚠️ **实现侧只出原始事实,判定归 `test/` 侧**(沿用
+        //    `stub_cache_endpoint.hh:68-83` 的既有先例)⇒ 本基类**无任何判定逻辑**。
+        void enable_observations(bool on) {
+            observations_enabled_ = on;
+        }
+        bool observations_enabled() const {
+            return observations_enabled_;
+        }
+        const std::vector<EventObservation>& observations() const {
+            return observations_;
+        }
+        std::size_t observation_count() const {
+            return observations_.size();
+        }
+        /// **丢弃计数**(缓冲溢出时 +1)—— 非零 ⇒ 该 run 的观测**不完整** ⇒ 判「不可判」
+        std::uint64_t dropped_observations() const {
+            return dropped_observations_;
+        }
+        /// **观测面自身失效**计数(装配期硬断言失败时 +1)—— 非零 ⇒ 判「不可判」(⛔ 不是 0)
+        std::uint64_t observation_invalid() const {
+            return observation_invalid_;
+        }
 
-private:
-    /// 观测缓冲上限(⛔ 有界 —— 防止长 run 无界增长)
-    static constexpr std::size_t kObservationCapacity = 4096;
+    protected:
+        /// 落一条观测记录(⛔ 观测面关闭 ⇒ 零成本返回)
+        void record_observation(EventObservation obs) {
+            if (!observations_enabled_)
+                return;
+            if (observations_.size() >= kObservationCapacity) {
+                ++dropped_observations_; // ⛔ 有界:溢出即计数(不静默丢)
+                return;
+            }
+            observations_.push_back(obs);
+        }
 
-    std::array<ReqAdapter, N> req_in_;
-    std::array<RespAdapter, N> resp_out_;
-    cpptlm::StreamAdapterBase* adapter_ = nullptr;
-    cpptlm::ProtocolBridgeEr* bridge_ = nullptr;  // 非拥有
+        /// 标记观测面**不可判**(装配期硬断言失败 / 前提不成立)
+        void mark_observation_invalid() {
+            ++observation_invalid_;
+        }
 
-    bool observations_enabled_ = false;
-    std::vector<EventObservation> observations_;
-    std::uint64_t dropped_observations_ = 0;
-    std::uint64_t observation_invalid_ = 0;
-};
+    private:
+        /// 观测缓冲上限(⛔ 有界 —— 防止长 run 无界增长)
+        static constexpr std::size_t kObservationCapacity = 4096;
 
-// ══════════════════════════════════════════════════════════════════════
-//  NullProtocolEngine —— ProtocolEngine 的默认实现
-// ══════════════════════════════════════════════════════════════════════
-//
-// per `ADR-CEP-07` 决策 4 + `INV-CEP-07-IC2`「`NullProtocolEngine` 是
-// ProtocolEngine 默认实现,…用于解耦测试」。
-//
-// ── 10 流覆盖矩阵(单一真源 = `kNullFlowMatrix`)────────────────────────
-// 逐流行为 per `07 号 §6.4`:
-//   流 1/3/4/5/6/7/10 = **no-op**
-//   流 2 = **immediate-complete**
-//   流 8 = **immediate-resolve**
-//   流 9 = **immediate-complete**
-//
-// ⚠️ **矩阵用 C 数组 + 显式 size**(非 `std::array<T,10>`)—— 理由:反向 fixture
-//    「**缺 1 流**」必须表现为「size 变成 9」并被**覆盖完整性**断言抓到;
-//    若用 `std::array<T,10>`,少一个元素会**编译不过**(理由不对:不是「覆盖
-//    矩阵断言」抓到的,而是初始化器个数不对)⇒ 判据会「因错误的原因红」。
-enum class NullFlowBehavior : std::uint8_t {
-    NoOp = 0,             // 不产生任何协议动作
-    ImmediateComplete = 1, // 立即完成(不引入任何协议延迟)
-    ImmediateResolve = 2,  // 立即解析(不引入任何协议延迟)
-};
+        std::array<ReqAdapter, N> req_in_;
+        std::array<RespAdapter, N> resp_out_;
+        cpptlm::StreamAdapterBase* adapter_ = nullptr;
+        cpptlm::ProtocolBridgeEr* bridge_ = nullptr; // 非拥有
 
-struct NullFlowMatrixEntry {
-    CanonicalFlow flow;
-    NullFlowBehavior behavior;
-};
+        bool observations_enabled_ = false;
+        std::vector<EventObservation> observations_;
+        std::uint64_t dropped_observations_ = 0;
+        std::uint64_t observation_invalid_ = 0;
+    };
 
-inline constexpr NullFlowMatrixEntry kNullFlowMatrix[] = {
-    {CanonicalFlow::Request, NullFlowBehavior::NoOp},              // 流 1
-    {CanonicalFlow::Completion, NullFlowBehavior::ImmediateComplete},  // 流 2
-    {CanonicalFlow::Snoop, NullFlowBehavior::NoOp},                // 流 3
-    {CanonicalFlow::SnoopResp, NullFlowBehavior::NoOp},            // 流 4
-    {CanonicalFlow::Writeback, NullFlowBehavior::NoOp},            // 流 5
-    {CanonicalFlow::ForwardData, NullFlowBehavior::NoOp},          // 流 6
-    {CanonicalFlow::BackInvalidate, NullFlowBehavior::NoOp},       // 流 7
-    {CanonicalFlow::AddressResolve, NullFlowBehavior::ImmediateResolve},  // 流 8
-    {CanonicalFlow::Barrier, NullFlowBehavior::ImmediateComplete}, // 流 9
-    {CanonicalFlow::SnoopCompletionAck, NullFlowBehavior::NoOp},   // 流 10
-};
+    // ══════════════════════════════════════════════════════════════════════
+    //  NullProtocolEngine —— ProtocolEngine 的默认实现
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // per `ADR-CEP-07` 决策 4 + `INV-CEP-07-IC2`「`NullProtocolEngine` 是
+    // ProtocolEngine 默认实现,…用于解耦测试」。
+    //
+    // ── 10 流覆盖矩阵(单一真源 = `kNullFlowMatrix`)────────────────────────
+    // 逐流行为 per `07 号 §6.4`:
+    //   流 1/3/4/5/6/7/10 = **no-op**
+    //   流 2 = **immediate-complete**
+    //   流 8 = **immediate-resolve**
+    //   流 9 = **immediate-complete**
+    //
+    // ⚠️ **矩阵用 C 数组 + 显式 size**(非 `std::array<T,10>`)—— 理由:反向 fixture
+    //    「**缺 1 流**」必须表现为「size 变成 9」并被**覆盖完整性**断言抓到;
+    //    若用 `std::array<T,10>`,少一个元素会**编译不过**(理由不对:不是「覆盖
+    //    矩阵断言」抓到的,而是初始化器个数不对)⇒ 判据会「因错误的原因红」。
+    enum class NullFlowBehavior : std::uint8_t {
+        NoOp = 0,              // 不产生任何协议动作
+        ImmediateComplete = 1, // 立即完成(不引入任何协议延迟)
+        ImmediateResolve = 2,  // 立即解析(不引入任何协议延迟)
+    };
 
-inline constexpr std::size_t kNullFlowMatrixSize =
-    sizeof(kNullFlowMatrix) / sizeof(kNullFlowMatrix[0]);
+    struct NullFlowMatrixEntry {
+        CanonicalFlow flow;
+        NullFlowBehavior behavior;
+    };
 
-/// 矩阵项的**期望**行为(per `07 号 §6.4` 的逐流口径,编码为**规则**而非第二份表
-/// ⇒ 避免「矩阵」与「期望表」两份数据互相漂移)
-constexpr NullFlowBehavior expected_null_behavior(CanonicalFlow flow) {
-    switch (flow) {
+    inline constexpr NullFlowMatrixEntry kNullFlowMatrix[] = {
+        {CanonicalFlow::Request, NullFlowBehavior::NoOp},                    // 流 1
+        {CanonicalFlow::Completion, NullFlowBehavior::ImmediateComplete},    // 流 2
+        {CanonicalFlow::Snoop, NullFlowBehavior::NoOp},                      // 流 3
+        {CanonicalFlow::SnoopResp, NullFlowBehavior::NoOp},                  // 流 4
+        {CanonicalFlow::Writeback, NullFlowBehavior::NoOp},                  // 流 5
+        {CanonicalFlow::ForwardData, NullFlowBehavior::NoOp},                // 流 6
+        {CanonicalFlow::BackInvalidate, NullFlowBehavior::NoOp},             // 流 7
+        {CanonicalFlow::AddressResolve, NullFlowBehavior::ImmediateResolve}, // 流 8
+        {CanonicalFlow::Barrier, NullFlowBehavior::ImmediateComplete},       // 流 9
+        {CanonicalFlow::SnoopCompletionAck, NullFlowBehavior::NoOp},         // 流 10
+    };
+
+    inline constexpr std::size_t kNullFlowMatrixSize =
+        sizeof(kNullFlowMatrix) / sizeof(kNullFlowMatrix[0]);
+
+    /// 矩阵项的**期望**行为(per `07 号 §6.4` 的逐流口径,编码为**规则**而非第二份表
+    /// ⇒ 避免「矩阵」与「期望表」两份数据互相漂移)
+    constexpr NullFlowBehavior expected_null_behavior(CanonicalFlow flow) {
+        switch (flow) {
         case CanonicalFlow::Completion:
             return NullFlowBehavior::ImmediateComplete;
         case CanonicalFlow::AddressResolve:
@@ -457,154 +502,158 @@ constexpr NullFlowBehavior expected_null_behavior(CanonicalFlow flow) {
             return NullFlowBehavior::ImmediateComplete;
         default:
             return NullFlowBehavior::NoOp;
-    }
-}
-
-/// 覆盖**完整性**:canonical 10 流**各出现恰好一次**且总数为 10
-constexpr bool null_flow_matrix_is_complete() {
-    if (kNullFlowMatrixSize != kCanonicalFlowCount)
-        return false;
-    for (std::size_t i = 0; i < kNullFlowMatrixSize; ++i) {
-        std::size_t hits = 0;
-        for (std::size_t j = 0; j < kNullFlowMatrixSize; ++j) {
-            if (kNullFlowMatrix[i].flow == kNullFlowMatrix[j].flow)
-                ++hits;
         }
-        if (hits != 1)
+    }
+
+    /// 覆盖**完整性**:canonical 10 流**各出现恰好一次**且总数为 10
+    constexpr bool null_flow_matrix_is_complete() {
+        if (kNullFlowMatrixSize != kCanonicalFlowCount)
             return false;
-    }
-    return true;
-}
-
-/// 逐流行为**与期望一致**(per `07 号 §6.4`)
-constexpr bool null_flow_matrix_behaviors_are_expected() {
-    for (std::size_t i = 0; i < kNullFlowMatrixSize; ++i) {
-        if (kNullFlowMatrix[i].behavior != expected_null_behavior(kNullFlowMatrix[i].flow))
-            return false;
-    }
-    return true;
-}
-
-// 两条编译期锁 —— 各自对应一个**反向 fixture**(tasks 2.6 / 2.7):
-//   缺 1 流 ⇒ 第一条触发;某流语义退化 ⇒ 第二条触发。
-static_assert(null_flow_matrix_is_complete(),
-              "INV-CEP-07-IC2: NullProtocolEngine 的 10 流覆盖矩阵必须恰好覆盖 canonical 10 流");
-static_assert(null_flow_matrix_behaviors_are_expected(),
-              "INV-CEP-07-IC2: NullProtocolEngine 的逐流行为必须与 07 号 §6.4 口径一致");
-
-/// Null 引擎的可观测状态(per 判据纪律:观测点必须能**区分**行为差异 —— 只记
-/// 「调用次数」的计数器无法区分 no-op 与 immediate-complete ⇒ 不算有判别力)
-struct NullProtocolEngineCounters {
-    std::array<std::uint64_t, kCanonicalFlowCount> per_flow{};  // 每流处理次数
-    std::uint64_t no_op = 0;              // 走 no-op 的次数
-    std::uint64_t immediate_complete = 0;  // 走 immediate-complete 的次数
-    std::uint64_t immediate_resolve = 0;   // 走 immediate-resolve 的次数
-    std::uint64_t out_of_domain = 0;       // `flow_id` 越界(防御性计数)
-};
-
-template <std::size_t N>
-class NullProtocolEngine : public ProtocolEngineBase<N> {
-public:
-    using Base = ProtocolEngineBase<N>;
-    using Counters = NullProtocolEngineCounters;
-
-    NullProtocolEngine(const std::string& name, EventQueue* eq) : Base(name, eq) {}
-    ~NullProtocolEngine() override = default;
-
-    const Counters& counters() const { return ctr_; }
-
-    /// 最近一次 `address_resolve` 的结果(immediate-resolve 的可观测形态)
-    const AddressResolveResult& last_resolve() const { return last_resolve_; }
-
-    // ── canonical 10 流实现(逐流查矩阵 —— 矩阵是唯一真源)───────────
-    void on_request(std::uint64_t addr, Perm perm, std::uint64_t txn_id) override {
-        (void)addr;
-        (void)perm;
-        (void)txn_id;
-        apply(CanonicalFlow::Request);
-    }
-    void on_completion(std::uint64_t txn_id, std::uint64_t data, Perm perm,
-                       bool error) override {
-        (void)txn_id;
-        (void)data;
-        (void)perm;
-        (void)error;
-        apply(CanonicalFlow::Completion);
-    }
-    void on_snoop(std::uint64_t addr, SnoopType type, std::uint64_t txn_id) override {
-        (void)addr;
-        (void)type;
-        (void)txn_id;
-        apply(CanonicalFlow::Snoop);
-    }
-    void on_snoop_resp(std::uint64_t addr, bool hit, LineState state, bool dirty,
-                       std::uint64_t data, std::uint64_t txn_id) override {
-        (void)addr;
-        (void)hit;
-        (void)state;
-        (void)dirty;
-        (void)data;
-        (void)txn_id;
-        apply(CanonicalFlow::SnoopResp);
-    }
-    void on_writeback(std::uint64_t addr, std::uint64_t data, bool dirty) override {
-        (void)addr;
-        (void)data;
-        (void)dirty;
-        apply(CanonicalFlow::Writeback);
-    }
-    void on_forward_data(std::uint64_t src_addr, std::uint64_t dst_addr, std::uint64_t data,
-                         Perm perm, std::uint64_t txn_id) override {
-        (void)src_addr;
-        (void)dst_addr;
-        (void)data;
-        (void)perm;
-        (void)txn_id;
-        apply(CanonicalFlow::ForwardData);
-    }
-    void on_back_invalidate(std::uint64_t addr, SnoopType type,
-                            std::uint64_t txn_id) override {
-        (void)addr;
-        (void)type;
-        (void)txn_id;
-        apply(CanonicalFlow::BackInvalidate);
-    }
-    void on_address_resolve(std::uint64_t pa, std::uint64_t node_id,
-                            AddressResolveResult& out) override {
-        (void)pa;
-        apply(CanonicalFlow::AddressResolve);
-        // Null 解析口径(**最小诚实语义**):无真实目录 ⇒ 解析为「请求者自身」
-        // (`home_node = node_id`),且**不做任何一致性声称**(`coherent = false`)。
-        out.home_node = node_id;
-        out.coherent = false;
-        last_resolve_ = out;
-    }
-    void on_barrier(std::uint64_t domain, std::uint64_t txn_id) override {
-        (void)domain;
-        (void)txn_id;
-        apply(CanonicalFlow::Barrier);
-    }
-    void on_snoop_completion_ack(std::uint64_t addr, std::uint64_t node_id,
-                                 std::uint64_t txn_id) override {
-        (void)addr;
-        (void)node_id;
-        (void)txn_id;
-        apply(CanonicalFlow::SnoopCompletionAck);
-    }
-
-private:
-    /// 逐流行为派发 —— **矩阵是唯一真源**(行为与矩阵不一致 ⇒ 编译期已红)
-    void apply(CanonicalFlow flow) {
-        const auto idx = static_cast<std::size_t>(flow);
-        if (idx >= kCanonicalFlowCount) {
-            ++ctr_.out_of_domain;
-            return;
-        }
-        ++ctr_.per_flow[idx];
         for (std::size_t i = 0; i < kNullFlowMatrixSize; ++i) {
-            if (kNullFlowMatrix[i].flow != flow)
-                continue;
-            switch (kNullFlowMatrix[i].behavior) {
+            std::size_t hits = 0;
+            for (std::size_t j = 0; j < kNullFlowMatrixSize; ++j) {
+                if (kNullFlowMatrix[i].flow == kNullFlowMatrix[j].flow)
+                    ++hits;
+            }
+            if (hits != 1)
+                return false;
+        }
+        return true;
+    }
+
+    /// 逐流行为**与期望一致**(per `07 号 §6.4`)
+    constexpr bool null_flow_matrix_behaviors_are_expected() {
+        for (std::size_t i = 0; i < kNullFlowMatrixSize; ++i) {
+            if (kNullFlowMatrix[i].behavior != expected_null_behavior(kNullFlowMatrix[i].flow))
+                return false;
+        }
+        return true;
+    }
+
+    // 两条编译期锁 —— 各自对应一个**反向 fixture**(tasks 2.6 / 2.7):
+    //   缺 1 流 ⇒ 第一条触发;某流语义退化 ⇒ 第二条触发。
+    static_assert(
+        null_flow_matrix_is_complete(),
+        "INV-CEP-07-IC2: NullProtocolEngine 的 10 流覆盖矩阵必须恰好覆盖 canonical 10 流");
+    static_assert(null_flow_matrix_behaviors_are_expected(),
+                  "INV-CEP-07-IC2: NullProtocolEngine 的逐流行为必须与 07 号 §6.4 口径一致");
+
+    /// Null 引擎的可观测状态(per 判据纪律:观测点必须能**区分**行为差异 —— 只记
+    /// 「调用次数」的计数器无法区分 no-op 与 immediate-complete ⇒ 不算有判别力)
+    struct NullProtocolEngineCounters {
+        std::array<std::uint64_t, kCanonicalFlowCount> per_flow{}; // 每流处理次数
+        std::uint64_t no_op = 0;                                   // 走 no-op 的次数
+        std::uint64_t immediate_complete = 0;                      // 走 immediate-complete 的次数
+        std::uint64_t immediate_resolve = 0;                       // 走 immediate-resolve 的次数
+        std::uint64_t out_of_domain = 0;                           // `flow_id` 越界(防御性计数)
+    };
+
+    template <std::size_t N> class NullProtocolEngine : public ProtocolEngineBase<N> {
+    public:
+        using Base = ProtocolEngineBase<N>;
+        using Counters = NullProtocolEngineCounters;
+
+        NullProtocolEngine(const std::string& name, EventQueue* eq) : Base(name, eq) {
+        }
+        ~NullProtocolEngine() override = default;
+
+        const Counters& counters() const {
+            return ctr_;
+        }
+
+        /// 最近一次 `address_resolve` 的结果(immediate-resolve 的可观测形态)
+        const AddressResolveResult& last_resolve() const {
+            return last_resolve_;
+        }
+
+        // ── canonical 10 流实现(逐流查矩阵 —— 矩阵是唯一真源)───────────
+        void on_request(std::uint64_t addr, Perm perm, std::uint64_t txn_id) override {
+            (void)addr;
+            (void)perm;
+            (void)txn_id;
+            apply(CanonicalFlow::Request);
+        }
+        void on_completion(std::uint64_t txn_id, std::uint64_t data, Perm perm,
+                           bool error) override {
+            (void)txn_id;
+            (void)data;
+            (void)perm;
+            (void)error;
+            apply(CanonicalFlow::Completion);
+        }
+        void on_snoop(std::uint64_t addr, SnoopType type, std::uint64_t txn_id) override {
+            (void)addr;
+            (void)type;
+            (void)txn_id;
+            apply(CanonicalFlow::Snoop);
+        }
+        void on_snoop_resp(std::uint64_t addr, bool hit, LineState state, bool dirty,
+                           std::uint64_t data, std::uint64_t txn_id) override {
+            (void)addr;
+            (void)hit;
+            (void)state;
+            (void)dirty;
+            (void)data;
+            (void)txn_id;
+            apply(CanonicalFlow::SnoopResp);
+        }
+        void on_writeback(std::uint64_t addr, std::uint64_t data, bool dirty) override {
+            (void)addr;
+            (void)data;
+            (void)dirty;
+            apply(CanonicalFlow::Writeback);
+        }
+        void on_forward_data(std::uint64_t src_addr, std::uint64_t dst_addr, std::uint64_t data,
+                             Perm perm, std::uint64_t txn_id) override {
+            (void)src_addr;
+            (void)dst_addr;
+            (void)data;
+            (void)perm;
+            (void)txn_id;
+            apply(CanonicalFlow::ForwardData);
+        }
+        void on_back_invalidate(std::uint64_t addr, SnoopType type, std::uint64_t txn_id) override {
+            (void)addr;
+            (void)type;
+            (void)txn_id;
+            apply(CanonicalFlow::BackInvalidate);
+        }
+        void on_address_resolve(std::uint64_t pa, std::uint64_t node_id,
+                                AddressResolveResult& out) override {
+            (void)pa;
+            apply(CanonicalFlow::AddressResolve);
+            // Null 解析口径(**最小诚实语义**):无真实目录 ⇒ 解析为「请求者自身」
+            // (`home_node = node_id`),且**不做任何一致性声称**(`coherent = false`)。
+            out.home_node = node_id;
+            out.coherent = false;
+            last_resolve_ = out;
+        }
+        void on_barrier(std::uint64_t domain, std::uint64_t txn_id) override {
+            (void)domain;
+            (void)txn_id;
+            apply(CanonicalFlow::Barrier);
+        }
+        void on_snoop_completion_ack(std::uint64_t addr, std::uint64_t node_id,
+                                     std::uint64_t txn_id) override {
+            (void)addr;
+            (void)node_id;
+            (void)txn_id;
+            apply(CanonicalFlow::SnoopCompletionAck);
+        }
+
+    private:
+        /// 逐流行为派发 —— **矩阵是唯一真源**(行为与矩阵不一致 ⇒ 编译期已红)
+        void apply(CanonicalFlow flow) {
+            const auto idx = static_cast<std::size_t>(flow);
+            if (idx >= kCanonicalFlowCount) {
+                ++ctr_.out_of_domain;
+                return;
+            }
+            ++ctr_.per_flow[idx];
+            for (std::size_t i = 0; i < kNullFlowMatrixSize; ++i) {
+                if (kNullFlowMatrix[i].flow != flow)
+                    continue;
+                switch (kNullFlowMatrix[i].behavior) {
                 case NullFlowBehavior::NoOp:
                     ++ctr_.no_op;
                     break;
@@ -614,16 +663,16 @@ private:
                 case NullFlowBehavior::ImmediateResolve:
                     ++ctr_.immediate_resolve;
                     break;
+                }
+                return;
             }
-            return;
+            ++ctr_.out_of_domain; // 矩阵缺该流(编译期已红;此处仅防御)
         }
-        ++ctr_.out_of_domain;  // 矩阵缺该流(编译期已红;此处仅防御)
-    }
 
-    Counters ctr_;
-    AddressResolveResult last_resolve_;
-};
+        Counters ctr_;
+        AddressResolveResult last_resolve_;
+    };
 
-}  // namespace tlm::cep
+} // namespace tlm::cep
 
-#endif  // TLM_CEP_PROTOCOL_ENGINE_BASE_HH
+#endif // TLM_CEP_PROTOCOL_ENGINE_BASE_HH
