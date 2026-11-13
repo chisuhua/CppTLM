@@ -22704,3 +22704,48 @@ KPI 活口径 **1/3 → 0/3**(7 处;C8 条目改为「归档 ⇒ slot 已释放,
 **⑤ ⚠️ 边界(随引用重复)**:⛔ 档 2 **不产 run** ⇒ ⛔ 不得宣称「档 2 有通过态」· ⛔ 不得宣称「档 2 强于档 1」· ⛔ 不得把档 2 的 0 与档 0/1 的 0 并列引用;⛔ 「档位 = 装置归属层级」(已签批语义);⚠️ 本裁决**不证明**档 2 可实施 —— AC-1 非空洞判据不成立 ⇒ **停手**(不立项优于立项);⚠️ metis 预算已用满(planner 该 improvement **总计 1 轮**)⇒ v2 由 architect 裁决 + oracle 复核 + planner 自查承担(偏离已登记)。
 
 **⑥ 关联**:**#407**(architect 梳理)· **#406**(C′ 段)· **#403**(档 2 评估)· `.rddf/reviews/cep-tier2-prerequisite-rulings.md`(C′-bis + C′-bis-ter)· `.rddf/improvements/cep-evidence-tier2-minimal-slice.md`(v1 → 待改 v2)· `ADR-CEP-20` 决策 3a/4/5/6 · `ADR-CEP-06` SU#4 ② + `:697`
+
+### Entry #409 — 2026-11-13 [planner](**档 2 的 improvement 草稿 v2** —— 按 architect 裁决 R1~R8 + 勘误收敛范围 · metis 正式审查 19 条逐条处置)
+
+**主题**:per 用户口令「切 planner 对后续任务内容都梳理一遍,给出实施路径」⇒ 承接 architect 裁决(**Entry #408**)⇒ 把 improvement 草稿由 v1 改 **v2**(范围收敛)⇒ 本 Entry = **planner 域的 gap 分析 + 草稿 v2 落盘**。
+
+**① 草稿载体**:`.rddf/improvements/cep-evidence-tier2-minimal-slice.md`(**v2** · 5 段 · 状态「🟡 待实施」)。
+
+**② metis 正式审查(planner 的固定审查者 · 本 improvement **总计 1 轮** · 已在 v2 全部处置)**
+
+| # | metis 发现 | 处置 |
+|:--:|---|---|
+| 1 | **预登记 ↔ 4 件套 ↔ 冻结面 死锁**(`render_report.py:178-184` 强制登记行 + `preregistration.json` 在冻结面 ⇒ AC-7「零 diff」与「产 4 件套」互斥) | ✅ architect **R3** ⇒ **不产 run** ⇒ 零冻结面变更 + B7 分母不变 |
+| 2 | **`deadlock_violations` ↔ `ic3_verdict` 死锁**(违例类 `not-collected` ⇒ verdict 必 ⚪ ⇒ 档 2 无「通过态」) | ✅ R3 ⇒ 议题消解;⚠️ oracle 复核指出「第五条路」存在(harness 层 watchdog 可测死锁)⇒ **R3 结论维持、理由改述为「定价后排除」**(C′-bis-ter §1) |
+| 3 | **观测点 ↔ 行数据写入点**(`apply_event` 不改 data ⇒ `data_after` 恒旧) | ✅ **R4** ⇒ 增 `kind = fill` 落点(`:442` 之后) |
+| 4 | SWMR 三判据 M1/M2/M3 | ⚠️ M2 进切片 · M3 仅负控可达 · **M1 撤回**(生产路径结构不可达 ⇒ 无合法实现形态,勘误 §2) |
+| 5 | 版本维是**恒等式**(自读自写 ⇒ 恒 0) | ✅ **R1** ⇒ 版本维**不实施** |
+| 6 | 检测器归属与仓内先例冲突 | ✅ **R2** ⇒ 留 `test/` 侧 ⇒ 不动 `test/cep_experiment_harness.hh` |
+| 7 | 六条约束原样适用 = 造假 | ✅ 改为**映射表 + 偏离登记**(AC-14) |
+| 8 | 档 2 条目机器面(v3 schema 会让既有闸 TypeError) | ✅ 改用**新表** `test/cep_evidence_tiers.json` + T4/T5 ⇒ `run_tiers` **零改动** |
+| 9 | 档 2 run 不得复用 `h3` | ✅ 消解(不产 run) |
+| 10 | 负控「错标完成域」无对应物 | ✅ 替换为「观测面自身失效」类 |
+| 11 | 假阴 9 类 / 假阳 3 类 / 时序 4 类 | ✅ 逐条进 design + AC-1/AC-4/AC-8 |
+| 12 | `TxnObservation` 命名 / 基类新增 `sharer_tracker.hh` 依赖 | ✅ **R5** ⇒ 改名 `EventObservation` + sharers 用 `std::uint64_t` |
+| 13 | `observation_invalid` 载体 | ✅ **R6** ⇒ 观测面自身状态位 |
+| 14 | 跨档聚合隔离(T7) | ✅ **R7 作废**(不产 run) |
+| 15 | AC-7 的 `grep "test/"` 假阳(实测 13 处命中) | ✅ 改为「`#include` 层面的 test 依赖 == 0」 |
+
+**③ 范围收敛(v1 → v2)**
+
+| 项 | v1 | **v2** |
+|---|---|---|
+| 判据维 | sharer + data-value + **版本** | **sharer 可见性(可判)+ data-value(仅负控可达)** |
+| 载体形态 | 4 件套 run | **观测面 + 契约级断言** |
+| 检测器 | 搬进 `include/` | **留 `test/` 侧** |
+| 冻结面 | 84→85(两次 `--update`) | **84→85(一次)** |
+| 闸判据 | T4/T5/T6/T7 | **T4/T5** |
+| 估时 | 7-9 人日 | **5-7 人日** |
+
+**④ 实施路径(交 builder)**:`S1` 基类观测面 + 字段表 → `S2` mesif 两处观测点 + 装配期硬断言 → `S3` **无版本维**(⛔ 步骤作废)→ `S4` 判定器(留 test 侧)→ `S5` 非空洞判据 + provenance + 3 负控 + 按 episode 归并计数 → `S6` 档 2 登记面(新表 + T4/T5)+ 总纲 SU + 手册 + **一次** `--update` ⇒ 建 change 四件套实施。
+
+**⑤ ⚠️ 偏离登记**:`metis` 预算 = 本 improvement **总计 1 轮**,已用于正式审查 ⇒ ⛔ **不采纳** oracle 建议的「v2 后再过 metis 第 3 轮」⇒ v2 的质量承担 = **architect 裁决 + oracle 复核 + planner 自查**三方(per oracle 澄清 f / Entry #408 §⑤)。
+
+**⑥ 边界(随引用重复)**:⛔ 档 2 **不产 run / 无通过态** · ⛔ 档 2 与档 1 **正交**(非强弱序)· ⛔ 不得宣称「档 2 强于档 1」· ⛔ data-value 生产流恒 0 = 「本装置无该形态」· ⛔ **AC-1 不成立即停手**(⛔ 不立项优于立项)· ⚠️ **M3(R-4 降级)可绕过 AC-1** ⇒ AC-1 ④ 的 provenance 判据兜底。
+
+**⑦ 关联**:**#408**(裁决 R1~R8 + 勘误)· **#407**(architect 梳理)· **#406**(C′ 段)· **#403**(档 2 评估)· `.rddf/improvements/cep-evidence-tier2-minimal-slice.md`(v2)· `.rddf/reviews/cep-tier2-prerequisite-rulings.md`(C′ / C′-bis / C′-bis-ter)
