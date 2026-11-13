@@ -22488,7 +22488,7 @@ R-3「全绿 run」缺口 **闭合**:`cpptlm-cep-full-green-run-evidence` 已归
 
 | # | 载体 | 形态 |
 |:--:|---|---|
-| 1 | `openspec/changes/cep-evidence-tier-declaration/` | 四件套:proposal(Why 3 项 / What Changes 3 项 / Out of Scope 6 条 / **AC-1~AC-9** / 诚实边界 5 条)· design(D-1 实测基座 8 条 / D-2 三处实施面 / **D-3 判据 T1~T4 + W1~W2 + R1** / D-4 **两次 `--update`** / D-5 硬边界 6 条 / D-6 残余 5 条 / 铁律 5 条)· tasks(A0~A8 · 6 门)· **specs/`cep-evidence-tier-registry`**(delta **ADDED** · 1 Requirement · **6 Scenario**) |
+| 1 | `openspec/changes/archive/2026-11-13-cep-evidence-tier-declaration/` | 四件套:proposal(Why 3 项 / What Changes 3 项 / Out of Scope 6 条 / **AC-1~AC-9** / 诚实边界 5 条)· design(D-1 实测基座 8 条 / D-2 三处实施面 / **D-3 判据 T1~T4 + W1~W2 + R1** / D-4 **两次 `--update`** / D-5 硬边界 6 条 / D-6 残余 5 条 / 铁律 5 条)· tasks(A0~A8 · 6 门)· **specs/`cep-evidence-tier-registry`**(delta **ADDED** · 1 Requirement · **6 Scenario**) |
 | 2 | `.rddf/improvements/cep-evidence-tier-declaration.md` | 5 段 + **metis 首轮逐条处置表**(4 条 P0 全采纳) |
 
 **③ ⚠️ metis 首轮 REJECT 后的**实质降级**(本 Entry 必须留痕)
