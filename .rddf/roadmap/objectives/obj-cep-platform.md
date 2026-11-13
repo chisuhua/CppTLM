@@ -22311,3 +22311,52 @@ builder 实施(闸断言 + 数字订正 + 变异)⇒ 0 回归 ⇒ 归档(✅ 已
 ⚠️ **该 0 的语义边界**:本装置**无 sharer 语义** ⇒ SWMR 结构上不可达;写数据**恒 0** + home 只回显 ⇒ 无版本语义 ⇒ data-value 无判别力 ⇒ 该 0 是「**本装置无该形态**」的 0,⛔ **不得**称「检测力已证」,⛔ **不得**与 B4 装置(三负控 + 耦合探针)证据等同;⛔ **一次通过态实例 ≠**「所有协议族 / 所有拓扑达成」;⛔ **不得**读成「B4 被推翻」。
 
 **⑦ 关联**:**#397**(A6 授权 + 三处落盘清单)· **#396**(A4 真跑 + 7 字段)· **#395**(A0/A1 + 冻结面 1→3 处追记 + P-2/P-3 结论)· **#394**(立项 + 五步链授权号)· **#373**(DoD 读法口径订正)· **#338**(ADR-19 上一则 SU)· **#314**(ADR-06 签发)· **#304**(框架验证 run 证据边界 / retention 丙 字面追认)· **#295**(retention 丙)· **#228**(B4 达成)· **#222**(④ 不得写裸 0)· `openspec/specs/cep-full-green-run-evidence/spec.md` · `scripts/test/cep_full_green_run_check.sh` · `test/cep_e2e_runs.jsonl`
+
+### Entry #399 — 2026-11-13 [build](**R-3 归档后第 4 轮 critic 复审(archive 档)结论 + 残余登记** —— APPROVE_WITH_CONDITIONS · mergeable=yes · **0 BLOCKER** ⇒ 放行)
+
+**主题**:per 用户口令「选择K1, 同时批准第4轮critic」⇒ 在 A9 归档 + 第二次冻结清单 + KPI/体量回填 + 引用路径同步之后,补跑**第 4 轮 critic(archive 档:delta vs 实现)**⇒ 本 Entry 落**复审结论** + **3 条 SHOULD_FIX / 2 条 NITS 的残余登记**(⛔ 按治理规则「只有 BLOCKER 触发返工与复审」⇒ 0 BLOCKER ⇒ **放行**,残余入 backlog)。
+
+**① 复审结论**
+
+| 项 | 结果 |
+|---|---|
+| 结论 | **APPROVE_WITH_CONDITIONS** · `mergeable: yes` · `scope_exceeded: false` |
+| BLOCKER | **0** ⇒ 上一轮(第 1 轮)的 3 个 BLOCKER **仍然闭合**(前提订正 / C4 拓扑链身份锚 / C1' 样本活性见证) |
+| focus 1 · **delta vs 实现** | 4 条 delta 条款**逐条「与实现一致」**:样本活性见证(载体 = 去重地址列表,闸判 len>0)· 证据资格(`hypothesis_id="h3"` + 两字段移除 + `evidence_scope` 改写)· 拓扑链身份锚(C4 四项)· 单一闸六判据(C1/C1'/C2/C3/C4/C5 **一一对应**) |
+| focus 2 · **口径限定** | **5 处齐备**(main spec Purpose + 残余 Scenario · `07 号` SU ③ · `ADR-CEP-06` SU ③ · `ADR-CEP-19` SU · obj §6.2 追加行)且**无一处强于实际强度** |
+| focus 3 · **归档面** | **自洽**:归档目录 + main spec 入冻结集(82 产物)· KPI **0/3**(7 处)· 体量数字(归档 141 / specs 127 / cep-* 41 / 闸 42)· 旧路径引用 **0 命中** |
+
+**② 残余登记(3 SHOULD_FIX + 2 NITS · ⛔ 本次不修)**
+
+| # | 位置 | 问题 | 性质 | 最小修法与代价 |
+|:--:|---|---|---|---|
+| **S-1** | `ADR-CEP-06` 新 SU 触发行(≈ :1076) | 称「`run_class` / `not_an_experiment_run` / `evidence_scope` **三字段移除**」⇒ 实测 `evidence_scope` **仍存在**(被改写)⇒ 同 SU 表格(:1083)自称「两字段已移除」⇒ **同一 SU 内自相矛盾** | **假陈述**(冻结件内) | 修法 = 追加 `ADR-CEP-06` **「订正二」SU**(append-only ⇒ 不可回改)⇒ 需**再开 1 次冻结链**(1 处)· 代价 ≈1 次 `--update` + 清单 commit + 复验 |
+| **S-2** | `ADR-CEP-06` 新 SU §① 表格 | 旧 SU 2026-11-09 ② 的**五句**边界(非 B4 / 非一致性安全断言 / 不改 hypothesis 结论 / 用途仅可对账 / **不在受监管 emit 路径上**)⇒ 新表覆盖其中 **4 句** + 2 个额外行 ⇒ **漏第 5 句** | **完备性缺口**(该句**仍为真**:拓扑级 run 仍走专用标签 `[cep][e2e][framework-emit]` + `CEP_EXP_ID` 守卫) | 同 S-1 ⇒ 并入「订正二」SU 一次处理 |
+| **S-3** | main spec「证据资格」Scenario | 「⛔ 仍带该自陈的 run SHALL NOT 计入」在闸 C1~C5 中**无直接判据**(C1~C5 不读那 3 个字段)⇒ 覆盖**间接**(经 C3 报告层) | 契约面覆盖强度弱于措辞 | ⚠️ **补闸判据(如 C6)会造成 main spec 的「六条判据」与实现漂移** ⇒ 净负 ⇒ 修法 = 走 **OpenSpec delta** 改 main spec 措辞 + 闸同步 ⇒ 需**新 change + 1 个 KPI slot** |
+| **N-1** | main spec Requirement 括注 | 「装置自陈**允许作一致性安全断言证据**」缺「拓扑级」限定词(单读是最弱读点) | 措辞 | 同 S-3(delta) |
+| **N-2** | main spec「样本计数」措辞 | 实为「**去重地址数**」(本 run 20 交易 → 20 去重地址,两值巧合同数)⇒ 严格说不是「样本操作数」 | 措辞 | 同 S-3(delta) |
+
+⇒ ⛔ **本次不修的理由**:① 治理规则 —— **0 BLOCKER ⇒ 放行**,SHOULD_FIX / NITS 记 backlog;② S-1 / S-2 的修法受 **ADR append-only** 约束 ⇒ 只能追加 SU ⇒ **须再开冻结链**;③ S-3 / N-1 / N-2 的修法受 **main spec 契约面** 约束 ⇒ 须走 **OpenSpec delta**(新 change + slot)⇒ 而**给闸补 C6 会先造成 delta↔实现漂移** ⇒ 得不偿失。
+
+**③ 放行结论**
+
+R-3「全绿 run」缺口 **闭合**:`cpptlm-cep-full-green-run-evidence` 已归档(✅ 已完成归档语义 · 带 delta)· 实现已落地并被 `scripts/test/cep_full_green_run_check.sh`(6 判据 + 6 条决定性变异)守住 · ctest **176/176** · 冻结 **82** 产物 provenance 成立 ⇒ **本条线收口**。
+
+**④ 遗留(本 change 新开)**
+
+| # | 遗留 | 归属 | 备注 |
+|:--:|---|---|---|
+| L-1 | 「该 0 无判别力」的**升级路径**:写侧非恒定数据 + 版本字段 + 注入式负控 | **backlog**(能力新增) | ⛔ 需**另立 change**(且需 architect 先裁「要不要这个强度」)⇒ 现状交付的是「**该档位首次有通过态实例且可机判**」,**不是**「证明了什么」 |
+| L-2 | S-1 / S-2(`ADR-CEP-06` 订正二 SU) | **backlog**(措辞 + 1 次冻结链) | ⛔ 需**再开 1 个 change**(占 slot)或并入下一批 CEP 变更的冻结链 |
+| L-3 | S-3 / N-1 / N-2(main spec 措辞 + 闸判据面) | **backlog**(delta) | ⚠️ 须走 OpenSpec delta;⚠️ 闸补 C6 **必须**与 main spec 措辞**同批**落地(否则制造 delta↔实现漂移) |
+| L-4 | 「`07 号` SU · 十五/十六 ①」指针**不可解析**的存量外部引用 | **backlog**(指针漂移) | 已在 `07 号` 新 SU ② 登记为残余;⛔ 存量引用改写属**范围外**(跨多文档) |
+| L-5 | `cep_test_shadow.sh` 在磁盘但**不在** `scripts/README.md` 三表 | **backlog**(登记缺口) | 已在 A9.2 登记;⛔ 不在本 change 内修 |
+| L-6 | 「H3 **双装置**」的引用纪律(模型级 `ConsistencyCompletionModel` + 拓扑级 `StubCacheEndpointTLM`) | **backlog**(引用纪律) | 已在 `ADR-CEP-06` 新 SU ② 登记;⇒ 引用 H3 结论时须指明装置 |
+
+**⑤ 平台侧未变项(不因本 change 改变)**
+
+- **终态 DoD Go 仍挂起**:§6.2 的 B1~B8 **唯一未达成 = `B3b-2` = 0/4**(解除条件 **100% 在仓外**:CXL 2.0 / CXL 3.0 / NVLink / UALink 规范不可得)⇒ 本 change **不改变**该结论;
+- **R-2 push** 仍在**用户域**(本地 ahead 持续增加 ⇒ 按既有约定**未 push**);
+- **R-5**(`nvlink_4` IAG-05 无真实 config)维持**登记不修**(补 config 属新增能力)。
+
+**⑥ 关联**:**#398**(归档回执)· **#397**(A6 授权 + 三处落盘清单)· **#396**(A4 真跑 + 7 字段)· **#395**(A0/A1 + 冻结面 1→3 处追记)· **#394**(立项 + 五步链授权号)· **#391**(收口盘点:R-3 本条闭合)· **#388**(体量数字守)· **#304**/**#295**/**#228**/**#222** · `openspec/specs/cep-full-green-run-evidence/spec.md` · `scripts/test/cep_full_green_run_check.sh`
