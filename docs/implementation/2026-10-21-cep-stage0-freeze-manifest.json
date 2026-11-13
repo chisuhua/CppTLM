@@ -24,7 +24,7 @@
     "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": "b58a4a53534159e371115250bebba83a5e36b7bfcd21fc32535c0fe4e1cdb805",
     "docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md": "73eb122a8a9400ed7c35762365c8736add0ca2ee0cf2bf7d0503dbc61be56473",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "a05fa8714645905057befa32580578c0041ef4cf9cc86e2ba22e3d7dce56f54c",
-    "docs/architecture/07-coherence-exploration-platform.md": "ec3a3e1445a2d795318529c98ac0cdd50142c4cb3c51f7b7ae298778aed94952",
+    "docs/architecture/07-coherence-exploration-platform.md": "b025d2f1dfd98cbff6744bd9a31e52c56e33c9fe39c0866be4fb8f8cc6442bb6",
     "docs/architecture/cep/coherence-interface.md": "6997124eb5f904a02dee90b38d5d8f4a536e94c7aeb3432c609aa10835f4f597",
     "docs/architecture/cep/collective-plane.md": "8de3e3c7a2af2f7908cb81c90d7912784e5214c9bc70fbd626d13c062f54d595",
     "docs/architecture/cep/core-traffic-gen.md": "469e533714183871a78e1d626c1124565f1a1d910c7c3d591474c070c01fee13",
@@ -87,10 +87,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #411",
+  "authorized_by": "Entry #412",
   "exclusions": [],
   "frozen_at": "2026-11-14",
-  "frozen_at_commit": "35869ba729b5f6db160ebb4329dcb9c41a9facbe",
+  "frozen_at_commit": "e9ab7ef091dc53cca5c68577f84c89f2aea1ec1c",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
