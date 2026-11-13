@@ -199,7 +199,7 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 | **范围外既有状态** | 非 CEP 线归档件 delta 无对应 main spec | `openspec/changes/archive/` | — | ⛔ **不属 CEP 线** ⇒ 不影响 `§8.3` ①;**明细见台账 Entry #332 ⑫ SF-4**(⛔ 计数随归档增长 ⇒ 本节不复述数字) |
 
 > ⚠️ **本清单不含**下列两项 —— 二者的**状态判据不在本清单**,处置见各自出处:
-> - **「全绿 run」缺口**(SU · 十五 ①)—— ⚠️ **至今未闭合**:SU · 十六 ① 只闭合了「回程腿在拓扑级不可达」这个**子项**,并逐字声明「**仍不承载全绿 run**」(IC3 仍 ⚪ 不适用)⇒ 「全绿未达成」结论不变;
+> - **「全绿 run」缺口**(SU · 十五 ①)—— ✅ **拓扑级已闭合(2026-11-13)**:`experimental/run-20261113-151310-cep-full-green/`(`run_id = cep-full-green-2026-11-13`,`hypothesis_id = h3`)的 `ic3_verdict = ✓ 通过`(两违例类**均实测**为 0)· 载体 = 台账 **Entry #396**(7 字段)+ `test/cep_e2e_runs.jsonl` 第 3 条;⚠️ **口径(⛔ 随引用重复)**:本装置**无 sharer 语义** ⇒ SWMR 结构上不可达;写数据**恒 0** ⇒ 无版本语义 ⇒ data-value 无判别力 ⇒ 该 0 是「**本装置无该形态**」的 0(⛔ 不得称「检测力已证」);⚠️ **非**「所有协议族 / 所有拓扑达成」;
 > - **装配闸未挂 `validate_topology` CLI 的不对称**(SU · 十七 ② 末条)—— ✅ **已闭合 2026-11-13**(per 台账 **Entry #381** 归档 + **Entry #387** 验收):IAG 族**两臂同补** —— ① 装配路径臂(`src/core/module_factory.cc` **Step 0.26**,FAIL ⇒ 装配失败且**零副作用**)② 离线 CLI 臂(`examples/cep_instance_assembly_gate.cc` + `validate_topology` 的**单列第二段**,9 份 CEP config)⇒ 两臂**共用同一份**判据实现与加载规则 ⇒ `instantiateAll` 与 CLI 对同一 config 的结论**必然一致**。
 >   ⚠️ **口径订正(2026-11-13,per 台账 Entry #379 ②)**:原登记(Entry #358)称「CLI 未挂 IAG 闸族 ⇒ 两侧结论**可能不一致**」—— **实测偏窄**:IAG 族在 `instantiateAll` 侧**原本也没有**执行臂(`module_factory.cc` 全文 0 命中 `run_instance_assembly_gate`)⇒ 实为「**两侧一致地都不挂**」⇒ 缺陷面更宽 ⇒ 修法必须**两臂同补**(已按此实施)。
 >   ⛔ **勿与本轮 Q1 修复的事项混淆**:Q1 修的是「**组合 target 引用已删除文件 ⇒ 整条 target

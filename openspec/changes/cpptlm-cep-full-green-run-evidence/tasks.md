@@ -43,9 +43,9 @@
 - [x] A4.4 **入库 + 对账**:`metrics.json` + `simulation_config.json` **已入库**(git tracked)· `test/cep_e2e_runs.jsonl` 追加 1 条(**必填 9 键**齐备,per `cep_e2e_reconcile_check.sh` 的 `required`:`run_id` / `config_sha256` / `metrics_sha256` / `metrics_13` / `verification_mode` / `verification_scope` / `ic3_verdict` / `hypothesis_id` / `topology_tag`)+ `ic3_verdict` ∈ 三态词表 + `metrics_13` 逐键结论 ⇒ `cep_e2e_reconcile_check.sh` **双向闸绿**(⛔ 只 commit 不加条目 ⇒ 零 orphan 判红);**且** **台账散文段**已落(obj §11 一条 Entry 描述该 run 的 7 字段 —— per `ADR-CEP-06` SU 2026-11-09 ③「载体 = 两处并存」⇒ ⛔ 只落 jsonl 即不满足该 SU,机器闸不兜底 ⇒ 须人工核对)⇒ ✅ 条目已加(`run_id = cep-full-green-2026-11-13` · `ic3_verdict = "✓ 通过"`)· 双向闸 **3 条目 ↔ 3 run · 0 问题** · 台账散文段 = **Entry #396**
 
 ## A5 · IC3 通过态(G3)
-- [ ] A5.1 两违例类实测值 **== 0**(⚠️ **> 0 ⇒ 停止**并按缺陷另立处置 —— 硬边界 1)
-- [ ] A5.2 `report.html` 渲染「**✓ 一致性闸门通过**」
-- [ ] A5.3 `cep_ic3_report_states_check.sh` 绿
+- [x] A5.1 两违例类实测值 **== 0**(⚠️ **> 0 ⇒ 停止**并按缺陷另立处置 —— 硬边界 1)⇒ ✅ `deadlock_violations = 0` · `memory_violations = 0`(swmr=0 / data_value=0)
+- [x] A5.2 `report.html` 渲染「**✓ 一致性闸门通过**」⇒ ✅ 逐字实测 `<strong>✓ 一致性闸门通过</strong>`(命中 1 次)
+- [x] A5.3 `cep_ic3_report_states_check.sh` 绿 ⇒ ✅ **4/4**(F1 通过 / F2 不适用 / F3 违例 / F4 连带洞);另 `render_report.py --check` 走**通过**分支(⛔ 非「不适用」分支)· rc=0
 
 ## A6 · 证据登记 + 五步链(G4)
 - [ ] A6.1 `07 号` **新 SU**(插在 `## §末 文档索引` **之前**;⛔ 不改正文;⛔ 须**显式取代** SU·十五 ① 的「不承载全绿 run」口径)⇒ 索引重生成
@@ -54,9 +54,9 @@
 - [ ] A6.4 冻结清单 provenance 成立(冻结面 = **3 处**;⚠️ 归档后新 main spec 自动入集 ⇒ 第二次 `--update`)
 
 ## A7 · DoD 读法 + 活文本同步
-- [ ] A7.1 `obj §6.2` B4 证据行**追加**(append-only)「IC3 在**拓扑级 E2E run** 上达成通过态」+ 指向新 SU 与 run 目录 ⇒ ⚠️ 须带「拓扑级/E2E」限定词(与既有行「首个真实 run 实例」并存不冲突)
-- [ ] A7.2 `cep_docs_sync_check.sh --strict` 绿
-- [ ] A7.3 **活文本同步清单**逐条同步或显式登记不改:`configs/cep_chi_rnf_e2e_{a,b}.json` 的 `description` · `docs/guide/cep-usage.md` §12.8 · `AGENTS.md` 的 main spec 计数
+- [ ] A7.1 `obj §6.2` B4 证据行**追加**(append-only)「IC3 在**拓扑级 E2E run** 上达成通过态」+ 指向新 SU 与 run 目录 ⇒ ⚠️ 须带「拓扑级/E2E」限定词(与既有行「首个真实 run 实例」并存不冲突) ⏸ **依赖 A6.1 的 SU 指针**(本行要求「指向新 SU」⇒ SU 未落则指针悬空)⇒ **随 A6 一并完成**
+- [x] A7.2 `cep_docs_sync_check.sh --strict` 绿 ⇒ ✅ rc=0
+- [x] A7.3 **活文本同步清单**逐条同步或显式登记不改:`configs/cep_chi_rnf_e2e_{a,b}.json` 的 `description` · `docs/guide/cep-usage.md` §12.8 · `AGENTS.md` 的 main spec 计数 ⇒ ✅ 逐条处置:**A 的 description** 已改(原「仍不承载全绿 run:IC3 = ⚪ 不适用」已成假 ⇒ 改为「现承载拓扑级 IC3 通过态」+ 口径限定);**B 的 description** **无需改**(其 `description` 无假陈述 —— ADR 侧「B 不承载全绿」指的是 **canonical 10 流的无损投影**,与本 run 无关);**`cep-usage` §12.8** 已改(「至今未闭合」→「拓扑级已闭合」+ 载体指针 + 口径限定);**`AGENTS.md` main spec 计数** ⏸ **随 A9 归档执行**(归档前新增 main spec 尚未存在,现在改会写错)
 
 ## A8 · 新闸 + 变异(G5)
 - [ ] A8.1 `scripts/test/cep_full_green_run_check.sh`:**C1 / C1' / C2 / C3 / C4 / C5**(共 6 条判据)

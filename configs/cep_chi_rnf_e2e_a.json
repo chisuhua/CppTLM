@@ -1,6 +1,6 @@
 {
   "name": "cep_chi_rnf_e2e_a",
-  "description": "拓扑 A(直连 / 全零延迟)—— G2 两拓扑之一。① `cep.bridges` 键**缺省** ⇒ 装配闸 `SKIP`;② 全部 connection `latency = 0`;③ 业务流量(TrafficGen)→ 端口面 wrapper(`StubCacheEndpointTLM`)→ home 简化模型(`CohIfResponderTLM`)。④ home 侧 `emit_completions = true` ⇒ **回程腿在拓扑级闭合**(per change `cpptlm-cep-dual-port-inbound-dispatch`:双端口适配器的入向改为**按端口组**路由 ⇒ net 组入向落 `net_resp_in()` ⇒ 回程 `Completion` 不再被当成业务请求读进 PE 侧)。⚠️ 本拓扑**仍不承载「全绿 run」**:IC3 = ⚪ 不适用(违例类 `memory_violations` 无样本,per 07 号 SU · 十五 ①)⇒ 只闭合**延迟族 5 键**。",
+  "description": "拓扑 A(直连 / 全零延迟)—— G2 两拓扑之一。① `cep.bridges` 键**缺省** ⇒ 装配闸 `SKIP`;② 全部 connection `latency = 0`;③ 业务流量(TrafficGen)→ 端口面 wrapper(`StubCacheEndpointTLM`)→ home 简化模型(`CohIfResponderTLM`)。④ home 侧 `emit_completions = true` ⇒ **回程腿在拓扑级闭合**(per change `cpptlm-cep-dual-port-inbound-dispatch`:双端口适配器的入向改为**按端口组**路由 ⇒ net 组入向落 `net_resp_in()` ⇒ 回程 `Completion` 不再被当成业务请求读进 PE 侧)。✅ **本拓扑现承载「拓扑级 IC3 通过态」**(2026-11-13,run `cep-full-green-2026-11-13`,per 台账 Entry #396):两违例类**均实测**为 0 ⇒ `ic3_verdict = ✓ 通过`。⚠️ **口径(⛔ 随引用重复)**:本装置**无 sharer 语义** ⇒ SWMR 违例结构上不可达;`TrafficGenTLM` 写数据**恒 0** + home 只回显 ⇒ **无版本语义** ⇒ data-value 检查**无判别力** ⇒ 该 0 是「**本装置无该形态**」的 0,⛔ **不得**称「检测力已证」。",
   "modules": [
     {
       "name": "tg",
