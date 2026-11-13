@@ -1,0 +1,40 @@
+{
+  "schema": "cep-evidence-tiers/v1",
+  "note": "CEP 一致性证据的**档位登记面 · 非 run 载体部分**(per `ADR-CEP-20` 决策 6 · change `cep-evidence-tier2-minimal-slice`)。⚠️ **为什么与 `test/cep_e2e_run_tiers.json` 分表**:该表登记的是 **run 级**档位(run_id → tier);而档 2 ⭔ **不产 4 件套 run**(per architect 裁决 R3)⇒ 档 2 的载体是「**协议级观测面 + 契约级断言**」⇒ ⛔ **无 run_id / 无 `ic3_verdict` / 无「通过态」** ⇒ 塞进 run 表会逼出一个假的 run 身份 ⇒ 故**另立本表**。⚠️ 档位词真源 = `scripts/test/cep_e2e_reconcile_check.sh` 的 `TIER_WORDS`(定义出处 = `ADR-CEP-20` 决策 6 的能力阶梯表)。⛔ 本表**不得**登记档 0 / 档 1 的 run(那属 `test/cep_e2e_run_tiers.json`)⇒ 跨档并列由闸 **T5b** 拦截。",
+  "evidence_tiers": {
+    "mesif-observation": {
+      "tier": 2,
+      "family": "mesif",
+      "carrier_kind": "protocol-engine-observation",
+      "version_caliber": "no-version-dimension",
+      "version_caliber_note": "档 2 **无版本维**(per architect 裁决 R1:per-engine 私有写序在「自读自写」下是**恒等式** ⇒ 恒 0 ⇒ 证伪判别力)⇒ ⛔ **非**协议语义版本;观测面记录的数据前后值是**实现侧真实状态**,⛔ 不是版本代理",
+      "coverage_scope": {
+        "families": ["mesif"],
+        "topologies": ["single-topology"],
+        "instances": 1,
+        "note": "**单族(mesif)/ 单拓扑 / 一次实例** ⇒ ⛔ 一次通过态实例 ≠ 所有族 / 所有拓扑达成"
+      },
+      "attribution": "sharer 可见性维的归因 = **home 侧可见性**(run 内 home 行为);data-value 维的归因 = **run 内 home 行为** ⇒ ⛔ 二者**都不是**「引擎实现错误」的证据",
+      "evidence_scope": "档 2(协议级)观测面 + 契约级断言 —— 协议级 sharer 可见性判据(单族 mesif / 单拓扑);⭕ **无 run / 无 verdict / 无通过态**;data-value 生产流恒 0 = 「**本装置无该形态**」⇒ ⛔ 不构成「检测力已证」",
+      "run_produced": false,
+      "has_verdict": false,
+      "can_claim": [
+        "协议级 sharer 可见性判据可机判(写时该地址是否仍被他人持有)",
+        "不可判形态可与零违例严格区分(observation_invalid / dropped_observations)",
+        "判定口径按写 episode 归并(2 transition + 1 fill ⇒ 计 1)"
+      ],
+      "cannot_claim": [
+        "不得宣称档 2 存在「通过态」(本档位不产 run ⇒ 无 verdict)",
+        "不得宣称档 2 强于档 1(两者正交:协议引擎状态机与目录可见性 ↔ 完成域模型)",
+        "不得宣称 data-value 维在生产流可达(恒 0 = 本装置无该形态)",
+        "不得宣称协议语义全覆盖(权限维与标签维不在本档位范围内)"
+      ],
+      "carrier_files": [
+        "include/tlm/cep/protocol_engine_base.hh",
+        "include/tlm/cep/mesif_protocol_engine.hh",
+        "test/test_cep_tier2_observation.cc"
+      ],
+      "non_empty_gate": "scripts/test/cep_e2e_reconcile_check.sh"
+    }
+  }
+}

@@ -32,6 +32,16 @@
 #   bash scripts/test/cep_e2e_reconcile_check.sh               # 基线正控(真实仓)
 #   bash scripts/test/cep_e2e_reconcile_check.sh --mutations   # + 4 条决定性变异(影子副本)
 #   CEP_RECONCILE_JSONL=... CEP_RECONCILE_TIERS=... bash ...   # 影子副本模式(变异用)
+#
+# ── 2026-11-14(change `cep-evidence-tier2-minimal-slice` / per `ADR-CEP-20` 决策 6):
+#    **档 2 的非 run 载体登记面**判据(**T4** / **T5**)—— 补「跨档聚合禁令」在新载体上的机器面
+#      · **T4** 档 2 条目字段齐备(含档位词 + 载体文件**实际存在** + `run_produced == false`)
+#        ⇒ 否则 `档 2 登记字段缺失` / `档 2 载体文件不存在` / `档 2 产 run(与裁决 R3 冲突)`
+#      · **T5a** 禁止**肯定式**「通过态」表述(否定语境豁免)⇒ 否则 `肯定式通过态表述`
+#      · **T5b** 禁止夸大短语(`检测力已证` / `全族达成` / `所有族` / `强于档 1`)⇒ 否则 `夸大表述`
+#      · **T5c** 档 2 条目**不得引用**档 0 / 档 1 的 run_id(跨档并列的机器形态)
+#        ⇒ 否则 `跨档 run 引用`
+#    ⚠️ 本组判据**独立于** run 闸的早退分支(档 2 ⭔ 不产 run ⇒ 不得依赖 run 存在)。
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -39,11 +49,144 @@ cd "$REPO_ROOT"
 
 LEDGER="${CEP_RECONCILE_JSONL:-test/cep_e2e_runs.jsonl}"
 TIERS="${CEP_RECONCILE_TIERS:-test/cep_e2e_run_tiers.json}"
+EVIDENCE_TIERS="${CEP_RECONCILE_EVIDENCE_TIERS:-test/cep_evidence_tiers.json}"
 MUTATIONS=0
 [[ "${1:-}" == "--mutations" ]] && { MUTATIONS=1; shift; }
 problems=0
 
 fail() { echo "✗ $*" >&2; problems=$((problems + 1)); }
+
+# ── 档 2 的**非 run 载体**登记面(T4 / T5)───────────────────────────────
+# ⚠️ **独立于**下面的 run 闸 ⇒ 档 2 ⭔ 不产 run(per 裁决 R3)时本组判据**仍**执行。
+python3 - "$EVIDENCE_TIERS" "$TIERS" <<'PYT'
+import json, os, sys
+
+ev_path = sys.argv[1]
+run_tiers_path = sys.argv[2]
+
+# 档位词真源单点 = 主判据块内的 TIER_WORDS(⛔ 本块**只引用**不复制定义)
+TIER_WORDS_2 = ("档 2", "协议级")
+
+# 禁止短语(肯定式)—— 否定语境豁免(见 `has_negation_context`)
+FORBIDDEN = ("检测力已证", "全族达成", "所有族", "强于档 1", "通过态")
+
+# 否定语境标记(命中短语**之前**的窗口内出现任一 ⇒ 豁免)
+# ⚠️ 「⛔」(U+26D4)与「⭕」(U+2B50)是**不同字符** ⇒ 两者都要列
+#    (踩坑记录:只列「⭕」时,正文用「⛔」的否定句会被误判为肯定式 ⇒ 假红)。
+NEG_MARKERS = ("不", "无", "非", "缺", "禁", "否", "⭕", "⛔", "≠")
+
+
+def has_negation_context(text, idx, window=16):
+    head = text[max(0, idx - window):idx]
+    return any(m in head for m in NEG_MARKERS)
+
+
+def iter_strings(node, path=""):
+    """逐个产出 (json 路径, 文本值)"""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield from iter_strings(v, f"{path}.{k}" if path else str(k))
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            yield from iter_strings(v, f"{path}[{i}]")
+    elif isinstance(node, str):
+        yield path, node
+
+
+problems = 0
+try:
+    with open(ev_path, encoding="utf-8") as fh:
+        doc = json.load(fh)
+except FileNotFoundError:
+    print(f"✗ 缺少档 2 登记面: {ev_path}", file=sys.stderr)
+    sys.exit(1)
+except json.JSONDecodeError as exc:
+    print(f"✗ {ev_path} 不是合法 JSON: {exc}", file=sys.stderr)
+    sys.exit(1)
+
+entries = doc.get("evidence_tiers") if isinstance(doc, dict) else None
+if not isinstance(entries, dict) or not entries:
+    print(f"✗ {ev_path} 的 evidence_tiers 必须是非空 object", file=sys.stderr)
+    sys.exit(1)
+
+# 档 0 / 档 1 的 run_id 集合(供 T5c 跨档引用检查)
+other_run_ids = set()
+try:
+    with open(run_tiers_path, encoding="utf-8") as fh:
+        _rt = json.load(fh).get("run_tiers") or {}
+    other_run_ids = {rid for rid, tier in _rt.items() if tier != 2}
+except Exception:
+    pass
+
+REQUIRED = ("tier", "family", "carrier_kind", "version_caliber", "coverage_scope",
+            "attribution", "evidence_scope", "run_produced", "has_verdict",
+            "can_claim", "cannot_claim", "carrier_files")
+
+for cid, e in entries.items():
+    # ── T4:字段齐备 ──
+    for key in REQUIRED:
+        if key not in e or e[key] in (None, "", [], {}):
+            print(f"✗ {ev_path} 档 2 登记字段缺失: carrier_id={cid!r} 缺 {key}", file=sys.stderr)
+            problems += 1
+    if e.get("tier") != 2:
+        print(f"✗ {ev_path} 档 2 登记档位非法: carrier_id={cid!r} tier={e.get('tier')!r}(须 2)",
+              file=sys.stderr)
+        problems += 1
+    scope = str(e.get("evidence_scope") or "")
+    if scope and not any(w in scope for w in TIER_WORDS_2):
+        print(f"✗ {ev_path} 档位声明缺失: carrier_id={cid!r} 的 evidence_scope 不含 {TIER_WORDS_2!r}",
+              file=sys.stderr)
+        problems += 1
+    files = e.get("carrier_files")
+    if isinstance(files, list):
+        if not files:
+            print(f"✗ {ev_path} 档 2 登记字段缺失: carrier_id={cid!r} carrier_files 为空",
+                  file=sys.stderr)
+            problems += 1
+        for f in files:
+            if not os.path.isfile(f):
+                print(f"✗ {ev_path} 档 2 载体文件不存在: carrier_id={cid!r} {f!r}", file=sys.stderr)
+                problems += 1
+    if e.get("run_produced") is not False:
+        print(f"✗ {ev_path} 档 2 产 run(与裁决 R3 冲突 ⭔ 不产 4 件套 run): carrier_id={cid!r}",
+              file=sys.stderr)
+        problems += 1
+    if e.get("has_verdict") is not False:
+        print(f"✗ {ev_path} 档 2 带 verdict(⭔ 无 verdict / 无通过态): carrier_id={cid!r}",
+              file=sys.stderr)
+        problems += 1
+
+    # ── T5a / T5b:表述层(夸大 / 肯定式通过态)──
+    for path, text in iter_strings(e, cid):
+        for phrase in FORBIDDEN:
+            start = 0
+            while True:
+                idx = text.find(phrase, start)
+                if idx < 0:
+                    break
+                if not has_negation_context(text, idx):
+                    label = "肯定式通过态表述" if phrase == "通过态" else "夸大表述"
+                    print(f"✗ {ev_path} {label}: carrier_id={cid!r} 字段 {path} 命中 {phrase!r}",
+                          file=sys.stderr)
+                    problems += 1
+                start = idx + len(phrase)
+
+    # ── T5c:跨档 run 引用(跨档并列的机器形态)──
+    for path, text in iter_strings(e, cid):
+        for rid in other_run_ids:
+            if rid and rid in text:
+                print(f"✗ {ev_path} 跨档 run 引用: carrier_id={cid!r} 字段 {path} 引用了 "
+                      f"档 0/1 的 run_id {rid!r}", file=sys.stderr)
+                problems += 1
+
+print(f"[evidence-tiers] 档 2 非 run 载体登记 {len(entries)} 条 · 问题 {problems}")
+sys.exit(1 if problems else 0)
+PYT
+_ev_rc=$?
+if [[ $_ev_rc -ne 0 ]]; then
+  fail "档 2 登记面判据未通过(见上)"
+  exit 1
+fi
 
 if [[ ! -f "$LEDGER" ]]; then
   echo "✗ 缺少台账清单: $LEDGER" >&2
@@ -216,17 +359,18 @@ echo "✓ CEP E2E 双向闸通过(台账 ↔ 仓内 run 产物)"
 # ── 4 条决定性变异(⛔ 只在影子副本上做;每条须**按签名红**)──────────────
 if [[ $MUTATIONS -eq 1 ]]; then
   echo "── 决定性变异(影子副本)──────────────────────────────"
-  FP_BEFORE="$(sha256sum "$LEDGER" "$TIERS")"
+  FP_BEFORE="$(sha256sum "$LEDGER" "$TIERS" "$EVIDENCE_TIERS")"
   MF=0
   mutate() {  # $1=签名 $2=编号 $3=说明
     local sig="$1" no="$2" desc="$3" out rc
     local SHD; SHD="$(mktemp -d)"
     cp "$LEDGER" "$SHD/ledger.jsonl"; cp "$TIERS" "$SHD/tiers.json"
+    cp "$EVIDENCE_TIERS" "$SHD/evidence_tiers.json"
     python3 - "$SHD" "$no" <<'PYM'
 import json, sys
 from pathlib import Path
 shd, no = Path(sys.argv[1]), sys.argv[2]
-led = shd / "ledger.jsonl"; tir = shd / "tiers.json"
+led = shd / "ledger.jsonl"; tir = shd / "tiers.json"; evt = shd / "evidence_tiers.json"
 rows = [json.loads(l) for l in led.read_text(encoding="utf-8").splitlines() if l.strip()]
 tiers = json.loads(tir.read_text(encoding="utf-8"))
 TARGET = "cep-full-green-2026-11-13"
@@ -243,10 +387,23 @@ elif no == "d":    # 删 evidence_scope 键
     for r in rows:
         if r.get("run_id") == TARGET:
             r.pop("evidence_scope", None)
+elif no == "e":    # 档 2 条目写成**肯定式**「通过态」
+    ev = json.loads(evt.read_text(encoding="utf-8"))
+    _e = ev["evidence_tiers"]["mesif-observation"]
+    # ⚠️ 整段替换为**纯肯定式**文本 —— 若只替换局部,前文的否定语境
+    #    (如「⭕ 无 run / 无 verdict / 无通过态」)会把「通过态」豁免掉 ⇒ 变异不会红。
+    _e["evidence_scope"] = "档 2(协议级)观测面 —— 通过态已达成"
+    evt.write_text(json.dumps(ev, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+elif no == "f":    # 档 2 条目**引用**档 0 的 run_id(跨档并列)
+    ev = json.loads(evt.read_text(encoding="utf-8"))
+    ev["evidence_tiers"]["mesif-observation"]["attribution"] += \
+        " (对照档 0 的 run cep-full-green-2026-11-13)"
+    evt.write_text(json.dumps(ev, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 led.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
 tir.write_text(json.dumps(tiers, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PYM
     out="$(CEP_RECONCILE_JSONL="$SHD/ledger.jsonl" CEP_RECONCILE_TIERS="$SHD/tiers.json" \
+           CEP_RECONCILE_EVIDENCE_TIERS="$SHD/evidence_tiers.json" \
            bash "$REPO_ROOT/scripts/test/cep_e2e_reconcile_check.sh" 2>&1)" && rc=0 || rc=$?
     if [[ $rc -eq 0 ]]; then
       printf '✗ 变异 %s 未变红(基线仍绿)\n' "$no"; MF=$((MF + 1))
@@ -261,13 +418,15 @@ PYM
   mutate "档位未登记"                 b "删档位表里的 run_id"
   mutate "僵尸档位登记"               c "档位表加 jsonl 不存在的 run_id"
   mutate "必填键缺失:evidence_scope"  d "删 evidence_scope 键"
+  mutate "肯定式通过态表述"             e "档 2 条目写成肯定式「通过态已达成」"
+  mutate "跨档 run 引用"                f "档 2 条目引用档 0 的 run_id"
 
-  FP_AFTER="$(sha256sum "$LEDGER" "$TIERS")"
+  FP_AFTER="$(sha256sum "$LEDGER" "$TIERS" "$EVIDENCE_TIERS")"
   if [[ "$FP_BEFORE" != "$FP_AFTER" ]]; then
     echo "✗ 真实仓字节指纹前后**不等** ⇒ 变异污染了真实仓"; exit 1
   fi
   echo "  ✓ 真实仓字节指纹前后相等"
   [[ $MF -ne 0 ]] && { echo "✗ $MF 条变异未按签名红"; exit 1; }
-  echo "✓ 4 条决定性变异全部按签名红 + 还原绿"
+  echo "✓ 6 条决定性变异全部按签名红 + 还原绿"
 fi
 exit 0

@@ -233,3 +233,36 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 
 ---
 
+
+📌 档 2(协议级)的**载体形态**与**读法边界** ⇒ **新 §12.10**
+
+## 12.10 档 2(协议级)载体与读法(`ADR-CEP-20` 决策 5 / 6 · change `cep-evidence-tier2-minimal-slice`)
+
+> **一句话**:档 2 = **协议级**;本仓的档 2 载体是「**协议级观测面 + 契约级断言**」,⭔ **不产 4 件套 run** ⇒ ⛔ **无 verdict / 无「通过态」**。
+
+### 载体与登记面
+
+| 项 | 值 |
+|---|---|
+| 观测面 | `include/tlm/cep/protocol_engine_base.hh` 的 `EventObservation`(per-event 原始事实,⛔ 无版本字段) |
+| 落点 | `include/tlm/cep/mesif_protocol_engine.hh` 的两处:状态迁移(`apply_event` 入口,sharer 快照 = **迁移前**视图)+ 行数据装入(`on_completion` 装行**之后**) |
+| 判据载体 | `test/test_cep_tier2_observation.cc`(判定在 **test 侧** ⇒ 实现侧只出事实) |
+| 登记面 | `test/cep_evidence_tiers.json`(**旁挂**)· 闸 `scripts/test/cep_e2e_reconcile_check.sh` 的 **T4 / T5** |
+| ⚠️ 与 run 档位表**分表** | `test/cep_e2e_run_tiers.json` 只登记 **run 级**档位;档 2 ⭔ 不产 run ⇒ 塞进去会逼出一个假 run 身份 |
+
+### 怎么读一条档 2 结论(⛔ 四条硬边界)
+
+1. ⛔ **档 2 无「通过态」** —— 不产 run ⇒ 无 verdict ⇒ 不得写「档 2 已通过」;
+2. ⛔ **data-value 生产流恒 0** = 「**本装置无该形态**」⇒ 不得写「检测力已证」;
+3. ⛔ **档 2 与档 1 正交**(协议引擎状态机与目录可见性 ↔ 完成域模型)⇒ 不得写「档 2 强于档 1」;跨档强度**不可比**;
+4. ✅ **「不可判」≠「零违例」** —— 装配前提不成立(目录未接线 / 节点未映射到 sharer 位 / 层级越界)或观测被丢弃 ⇒ 判「**不可判**」。
+
+### 加一个新协议族时
+
+观测面只依赖协议中立字段(`addr` / 事件码 / 迁移前后态 / 数据前后值 / sharer 快照 / 归因)⇒ **基类无需改动**;派生引擎只需:① 在状态迁移入口落一条 `transition` 记录 ② 在行数据写入点落一条 `fill` 记录 ③ 装配期核对「目录已接线 / 节点已映射到 sharer 位 / 层级在界内」⇒ 任一不成立即判「不可判」。
+
+⚠️ **前置未知(全族推广前必须解决)**:sharer 位掩码当前只映射 **4 个节点** ⇒ 超出即静默失效 ⇒ 多节点族的 sharer 维度在**数据表示**上就不可承载 ⇒ 属**能力缺口**,非工时问题。
+
+### 关联
+
+`ADR-CEP-20` 决策 5 / 6 · `docs/architecture/07-coherence-exploration-platform.md` 的 `Status Update 2026-11-14` · `openspec/specs/cep-evidence-tier2-observation/spec.md` · `test/cep_evidence_tiers.json` · `scripts/test/cep_e2e_reconcile_check.sh`(T4 / T5)

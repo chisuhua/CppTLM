@@ -41,15 +41,15 @@
 - [x] A3.9 ⛔ `test/cep_experiment_harness.hh` 零 diff ⇒ 档 1 既有负控逐字绿(AC-10) ⇒ ✅ 零 diff;`[cep]` 523 cases 全绿
 
 ## A4 · 档 2 登记面(新表 + T4/T5)
-- [ ] A4.1 新增 `test/cep_evidence_tiers.json`(档 2 的**非 run** 载体登记) ⇒ ⛔ **不进** `test/cep_e2e_run_tiers.json`(只登记 run)
-- [ ] A4.2 `cep_e2e_reconcile_check.sh` 增 **T4**(档 2 条目字段齐备 ∧ 含档位词)· **T5**(跨档聚合检查:不得与档 0/1 的 0 并列 / 不含「通过态」表述)
-- [ ] A4.3 T4/T5 的**反向 fixture**各 1 条(影子树 + `CEP_RECONCILE_*` 覆盖)⇒ 按签名红 + 还原绿
+- [x] A4.1 新增 `test/cep_evidence_tiers.json`(档 2 的**非 run** 载体登记) ⇒ ⛔ **不进** `test/cep_e2e_run_tiers.json`(只登记 run) ⇒ ✅ `test/cep_evidence_tiers.json`(schema `cep-evidence-tiers/v1`;1 条档 2 非 run 载体登记)
+- [x] A4.2 `cep_e2e_reconcile_check.sh` 增 **T4**(档 2 条目字段齐备 ∧ 含档位词)· **T5**(跨档聚合检查:不得与档 0/1 的 0 并列 / 不含「通过态」表述) ⇒ ✅ `cep_e2e_reconcile_check.sh` 增 **T4**(字段齐备 + 载体文件存在 + `run_produced/has_verdict` 纪律)· **T5a**(肯定式「通过态」)· **T5b**(夸大表述)· **T5c**(跨档 run 引用)
+- [x] A4.3 T4/T5 的**反向 fixture**各 1 条(影子树 + `CEP_RECONCILE_*` 覆盖)⇒ 按签名红 + 还原绿 ⇒ ✅ 变异 **e**(肯定式通过态)· **f**(跨档 run 引用)按签名红 + 真实仓字节指纹相等 ⇒ 共 **6** 条变异全绿
 
 ## A5 · 总纲 SU + 手册
-- [ ] A5.1 `07 号` **末尾追加** SU(⛔ 不改正文;5 条标题约束逐条满足;阶梯表档 2 行载体 cell 更新为「协议级观测面 + 契约级断言(⭕ 无 run / 无通过态)」)
-- [ ] A5.2 `scripts/cep/generate_doc_index.py` 重生成 + `cep_index_position_check` 绿
-- [ ] A5.3 `docs/guide/cep-usage.md` 新节落盘(档 2 的读法 + 不可判语义 + 跨档防夸大)
-- [ ] A5.4 诚实边界逐字登记(AC-14 的 5 条)
+- [x] A5.1 `07 号` **末尾追加** SU(⛔ 不改正文;5 条标题约束逐条满足;阶梯表档 2 行载体 cell 更新为「协议级观测面 + 契约级断言(⭕ 无 run / 无通过态)」) ⇒ ✅ `07 号` 新 SU「Status Update 2026-11-14(档 2 协议级观测面 · per 台账 Entry #410)」(4 节 + 6 条读法边界 + 阶梯表档 2 行现行 cell)
+- [x] A5.2 `scripts/cep/generate_doc_index.py` 重生成 + `cep_index_position_check` 绿 ⇒ ✅ `generate_doc_index.py --write` 重生成(一级节 **33** / SU **20**,三合一一致)+ `cep_index_position_check` rc=0
+- [x] A5.3 `docs/guide/cep-usage.md` 新节落盘(档 2 的读法 + 不可判语义 + 跨档防夸大) ⇒ ✅ `docs/guide/cep-usage.md` **新 §12.10**(载体与登记面 / 四条硬边界 / 新族接入步骤 / 前置未知)+ §12.9 末尾**一行导航**
+- [x] A5.4 诚实边界逐字登记(AC-14 的 5 条) ⇒ ✅ 诚实边界 6 条逐字落 SU ② + 手册 §12.10(数据维恒 0 / 无通过态 / 单族单拓扑 / 正交非强弱 / 非全覆盖 / 不可判≠零违例)
 
 ## A6 · 冻结五步链 + 归档(G6)
 - [ ] A6.1 授权 Entry 先落台账 ⇒ 五步链:Entry → 产物 commit → `--update --authorized-by "Entry #N"`(**一次**,归档前)→ 清单单独 commit → 无参复验 rc=0 ⇒ 冻结 **84 → 85**

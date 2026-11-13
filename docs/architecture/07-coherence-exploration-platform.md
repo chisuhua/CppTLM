@@ -716,9 +716,55 @@ group-scoped completion     → Fabric Collective Plane
 
 **关联**:`ADR-CEP-20` 决策 6 / §5 抓取点 6 · 台账 **Entry #404** / **#403** / **#402** · `ADR-CEP-06` SU#4 ② · `ADR-CEP-12` · `docs/guide/cep-usage.md` §12.9 · `test/cep_e2e_run_tiers.json`
 
+## Status Update 2026-11-14(档 2 协议级观测面 · per 台账 Entry #410)—— 天花板档的**载体形态**与**读法边界**
+
+> **性质**:纯**追加** SU(append-only)。⛔ 不改本文件正文与任何既有 SU —— **逐字保留不回改**;新增 invariant 数 = **0**。
+> **依据**:`ADR-CEP-20`(v1.0 · 决策 5 / 6)· change `cep-evidence-tier2-minimal-slice` · 台账 **Entry #408**(architect 裁决 R1~R8 + 勘误)/ **#409**(草稿 v2)/ **#410**(实施回执)
+> ⚠️ 本则**不改**任何已签批 ADR。
+
+### ① 档 2 的载体(现行)
+
+档 2 = **协议级**(per 决策 6 的三档阶梯)。本则登记其**载体形态**:
+
+| 项 | 现行值 |
+|---|---|
+| 载体 | **协议级观测面 + 契约级断言** —— `include/tlm/cep/protocol_engine_base.hh` 的 `EventObservation` + `include/tlm/cep/mesif_protocol_engine.hh` 的两处观测落点 + `test/test_cep_tier2_observation.cc` |
+| 载体种类 | `protocol-engine-observation`(**非 run**) ⇒ ⭔ **无 `run_id` / 无 `ic3_verdict` / 无「通过态」** |
+| 覆盖范围 | **单族(`mesif`)/ 单拓扑 / 一次实例** |
+| 版本口径 | **无版本维** —— per-engine 私有写序在「自读自写」下是恒等式 ⇒ 恒 0 ⇒ 证伪判别力 ⇒ ⛔ **非**协议语义版本 |
+| 登记面 | `test/cep_evidence_tiers.json`(**旁挂**;与 `test/cep_e2e_run_tiers.json` **分表** —— 后者只登记 run 级档位)· 闸 `scripts/test/cep_e2e_reconcile_check.sh` 的 **T4 / T5** |
+
+⚠️ **阶梯表档 2 行的现行载体 cell** = 「**协议级观测面 + 契约级断言(⭕ 无 run / 无通过态)**」—— 取代本文件附录 SU「证据档位阶梯」节里档 2 行的「⭕ 观测面未建(另立 change 评估)」;⛔ 既有行**逐字保留**,本则只给**现行值**。
+
+### ② 读法边界(⛔ 随引用重复)
+
+1. ⛔ **档 2 无「通过态」** —— 本档位不产 4 件套 run ⇒ 无 verdict ⇒ **不得**宣称「档 2 已通过」;
+2. ⛔ **data-value 维在生产流恒 0** = 「**本装置无该形态**」(本模型无本地缓存数据版本)⇒ ⛔ **不得**称「检测力已证」;其可达形态**仅限**「注入陈旧副本」的负控;
+3. ⛔ **档 2 与档 1 正交** —— 档 2 判**协议引擎状态机 + 目录可见性**;档 1 判**完成域模型** ⇒ ⛔ **不得**宣称「档 2 强于档 1」;档位排序语义 = 「**装置归属层级**」(已签批,per 本文件同节引用的阶梯表)⇒ 跨档强度**不可比**;
+4. ⛔ **档 2 判别力 ≠ 协议语义全覆盖** —— 权限维与标签维不在本档位范围内;
+5. ⛔ **一次实例 ≠ 所有族 / 所有拓扑达成**;
+6. ✅ **「不可判」与「零违例」严格区分** —— 装配前提不成立(目录未接线 / 节点未映射到 sharer 位 / 目录层级越界)或观测记录被丢弃 ⇒ 判「**不可判**」⇒ ⛔ 不得记为零违例。
+
+### ③ 判据口径(协议级)
+
+- **SWMR 判定行** = 「状态迁移落点 + 写事件 + 迁移后为脏态」;装行落点**显式豁免**(同一次写产生 2 条迁移记录 + 1 条装行记录 ⇒ 逐行计数会重复计数);
+- **违例条件** = 「写时该地址的 sharer 快照中除本节点外仍有其他持有者」⇒ 归因 = **home 侧可见性**(run 内 home 行为);
+- **计数**按「写 episode」归并后计 ⇒ ⛔ 不按原始行计。
+
+### ④ Verification(可勾选 · 前瞻)
+
+- [x] 本则已追加,且本文件正文与**全部**既有 SU **逐字未变**;新增 invariant 数 = **0**
+- [x] ① 的载体形态 / 覆盖范围 / 版本口径 / 登记面四项齐备
+- [x] ② 的六条读法边界齐备
+- [x] ③ 的判定口径与 design 的 D-3 一致
+- [x] 登记面机器面可机判(`test/cep_evidence_tiers.json` + T4 / T5 + 2 条决定性变异)
+- [x] 索引已重生成(`scripts/cep/generate_doc_index.py --write`)
+
+**关联**:`ADR-CEP-20` 决策 5 / 6 · 台账 **Entry #410** / **#409** / **#408** · `openspec/changes/cep-evidence-tier2-minimal-slice/` · `openspec/specs/cep-evidence-tier2-observation/spec.md` · `include/tlm/cep/protocol_engine_base.hh` · `include/tlm/cep/mesif_protocol_engine.hh` · `test/test_cep_tier2_observation.cc` · `test/cep_evidence_tiers.json` · `scripts/test/cep_e2e_reconcile_check.sh` · `docs/guide/cep-usage.md` §12.10
+
 ## §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295)
 
-> **用途**:本文件已 **32 个一级节 / 19 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
+> **用途**:本文件已 **33 个一级节 / 20 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
 
 > ⚠️ **新纪律(per 台账 Entry #295,逐字)**:本索引**永久置于文末**;此后**新增段落 SHALL 插在本索引之前** ⇒ **新增内容永不使既有 `path:line` 锚点位移**;⚠️ **最新 SU 在本索引之前**(⛔ 勿在本文末找最新段)。
 
@@ -726,7 +772,7 @@ group-scoped completion     → Fabric Collective Plane
 
 > ⚠️ **2026-11-12 起**:索引 A / 索引 B **全量列出**(⛔ 不再有「另有 N 个未列入」的 `## ` 标题);自述数 == 索引行数 == 文件**实际** `## ` / SU 数(`cep_index_position_check.sh` 三合一判据 + 行号逐行判据)。⚠️ **待人工判断的导航标注不在索引 A / B**(索引 A/B 是机械视图)⇒ 见索引 C 与 `§11` / `§12` 的正文说明。
 
-### 索引 A · 一级节(32)
+### 索引 A · 一级节(33)
 
 | # | 章节 | 行 |
 |---|---|---|
@@ -761,9 +807,10 @@ group-scoped completion     → Fabric Collective Plane
 | 29 | Status Update 2026-11-13(per 台账 Entry #373)—— **DoD 读法口径订正**(MUST-FIX-1 = Stage 4+ 准入按事件 · MUST-FIX-2 = 禁令作用域重裁) | 602 |
 | 30 | 附录 · Status Update 2026-11-13(拓扑级 IC3 通过态 · per 台账 Entry #396 + #397)—— 拓扑级「全绿 run」的**证据面登记** | 639 |
 | 31 | 附录 · Status Update 2026-11-13(证据档位阶梯 · per 台账 Entry #404)—— 三档阶梯 + 档位声明义务 + 跨档聚合禁令 | 685 |
-| 32 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 719 |
+| 32 | Status Update 2026-11-14(档 2 协议级观测面 · per 台账 Entry #410)—— 天花板档的**载体形态**与**读法边界** | 719 |
+| 33 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 765 |
 
-### 索引 B · Status Update(19 · 2026-10-28 起)
+### 索引 B · Status Update(20 · 2026-10-28 起)
 
 | # | 日期 | 主题 | 台账 | 行 |
 |---|---|---|---|---|
@@ -786,6 +833,7 @@ group-scoped completion     → Fabric Collective Plane
 | 17 | 2026-11-13 | Status Update 2026-11-13(per 台账 Entry #373)—— **DoD 读法口径订正**(MUST-FIX-1 = Stage 4+ 准入按事件 · MUST-FIX-2 = 禁令作用域重裁) | Entry #373 | 602 |
 | 18 | 2026-11-13 | 附录 · Status Update 2026-11-13(拓扑级 IC3 通过态 · per 台账 Entry #396 + #397)—— 拓扑级「全绿 run」的**证据面登记** | Entry #396 | 639 |
 | 19 | 2026-11-13 | 附录 · Status Update 2026-11-13(证据档位阶梯 · per 台账 Entry #404)—— 三档阶梯 + 档位声明义务 + 跨档聚合禁令 | Entry #404 | 685 |
+| 20 | 2026-11-14 | Status Update 2026-11-14(档 2 协议级观测面 · per 台账 Entry #410)—— 天花板档的**载体形态**与**读法边界** | Entry #410 | 719 |
 
 ### 索引 C · 关键表指针(高频查阅)
 

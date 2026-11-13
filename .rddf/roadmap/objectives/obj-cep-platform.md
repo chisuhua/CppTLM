@@ -22792,3 +22792,24 @@ KPI 活口径 **1/3 → 0/3**(7 处;C8 条目改为「归档 ⇒ slot 已释放,
 **档 2 ⭔ 不产 4 件套 run** ⇒ ⛔ **无 `ic3_verdict` / 无「通过态」**;**data-value 生产流恒 0** = 「**本装置无该形态**」⇒ ⛔ **不得**称「检测力已证」;档 2 与档 1 **正交**(⛔ 非强弱序)⇒ ⛔ 不得宣称「档 2 强于档 1」;档位排序语义 = 「**装置归属层级,强度不可跨档比较**」(已签批,per `07 号:690`);档 2 判别力 **≠** 协议语义全覆盖(权限维 / 标签维被排除);**单族(mesif)/ 单拓扑**;⛔ 本轮**未证明**档 2 可实施 —— AC-1 的 provenance 判据仍待下轮以**反 fixture** 形态落实。
 
 **⑦ 关联**:**#409**(草稿 v2)· **#408**(裁决 R1~R8 + 勘误)· **#407**(architect 梳理)· **#406**(C′ 段)· **#403**(档 2 评估)· `.rddf/improvements/cep-evidence-tier2-minimal-slice.md`(v2)· `.rddf/reviews/cep-tier2-prerequisite-rulings.md` · `ADR-CEP-20` 决策 5/6 · `ADR-CEP-06` SU#4 ② · `07 号:690,696` · `include/tlm/cep/protocol_engine_base.hh` · `include/tlm/cep/mesif_protocol_engine.hh`
+
+### Entry #411 — 2026-11-13 [builder](**A6 冻结五步链授权** —— 档 2 change 收尾归档 · **两次** `--update`(授权号 = 本 Entry))
+
+**主题**:per 用户口令「A4→A5→A6 收尾归档」⇒ 本 Entry = **A6 的冻结面五步链授权**(先落台账 ⇒ 再 commit 产物 ⇒ 再 `--update` ⇒ 清单单独 commit ⇒ 无参复验)。
+
+**① 授权内容**
+
+| 项 | 值 |
+|---|---|
+| 授权号 | **Entry #411**(⇒ `--authorized-by "Entry #411"`) |
+| 授权范围 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #411"` · **两次**:① 归档前(`07 号` 新 SU 已入冻结集)② 归档后(新 main spec 自动入集) |
+| 落盘清单(本次会入冻结集的产物) | ① `docs/architecture/07-coherence-exploration-platform.md`(新 SU「Status Update 2026-11-14(档 2 协议级观测面)」)② `openspec/specs/cep-evidence-tier2-observation/spec.md`(**归档合并产出** —— 由 `openspec/changes/cep-evidence-tier2-minimal-slice/specs/` 的 delta spec 合并) |
+| 冻结产物数 | **84 → 85** |
+| ⛔ 不在授权范围 | `docs/adr/ADR-CEP-*`(零改动)· `experimental/**` · `tools/render_report.py` · `include/tlm/cep/protocol_instance.schema.json` · `include/tlm/cep/fabric*.json` —— 全部**零 diff**(per AC-7) |
+| ⛔ 变更登记 | 本次**不改**任何已签批 ADR;新增 invariant 数 = **0** |
+
+**② 冻结面之外的产物(不入冻结集,仅随 commit 落盘)**
+
+`test/cep_evidence_tiers.json`(档 2 登记面 · 新增)· `scripts/test/cep_e2e_reconcile_check.sh`(T4 / T5 + 变异 e / f)· `docs/guide/cep-usage.md`(§12.10)· `test/test_cep_tier2_observation.cc` · `include/tlm/cep/protocol_engine_base.hh` · `include/tlm/cep/mesif_protocol_engine.hh`。
+
+**③ 关联**:**#410**(A0~A3 实施回执)· **#409**(草稿 v2)· **#408**(裁决 R1~R8 + 勘误)· `openspec/changes/cep-evidence-tier2-minimal-slice/` · `ADR-CEP-20` 决策 5 / 6
