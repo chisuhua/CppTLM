@@ -27,7 +27,8 @@
     "ADR-CEP-16-06-evolution-route-mapping.md",
     "ADR-CEP-17-ruby-slicc-protocol-family.md",
     "ADR-CEP-18-protocol-generation-scope.md",
-    "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md"
+    "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md",
+    "ADR-CEP-20-topology-ic3-evidence-strength.md"
   ],
   "excluded": [
     {
@@ -232,6 +233,14 @@
       "blocked_by": "docs/adr/ADR-CEP-18-protocol-generation-scope.md",
       "carrier_anchor": "scripts/",
       "next_action": "建 license-header 扫描闸（无 id）"
+    },
+    {
+      "adr": "ADR-CEP-20-topology-ic3-evidence-strength.md",
+      "chapter": "V-20-6",
+      "disposition": "doc_layer_manual_review",
+      "rationale": "**跨档聚合禁令**的机器面(registry 校验 `evidence_scope` 档位词)尚未落地 ⇒ 载体 = `backlog: cep-evidence-tier-declaration` ⇒ ⛔ 落地前**禁当作鉴别力判据**。",
+      "review_ledger_entry": "Entry #402",
+      "next_action": "backlog change `cep-evidence-tier-declaration` 落地后补机器载体"
     }
   ]
 }

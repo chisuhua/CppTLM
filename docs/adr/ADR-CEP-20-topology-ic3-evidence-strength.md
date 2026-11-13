@@ -1,12 +1,13 @@
 # ADR-CEP-20: 拓扑级 IC3 证据的强度边界与能力阶梯
 
-> **状态**: 🟡 **Proposed**(v0.4,2026-11-13 —— per 台账 **Entry #401** 授权;已吸收 oracle 首轮 F1~F6 + 复审 2 处 + critic 首轮 BLOCKER-1 的宪章误引重建;critic 复审后方可签发)
+> **状态**: 🟡 **Proposed**✅ **已签发**(v1.0,2026-11-13 —— per 台账 **Entry #401** 授权;oracle 2 轮 + critic 2 轮双审闭合,详见文末 **Status Update**)`
+> ~~🟡 Proposed(v0.4~~ ⇒ 状态转换记录见文末 Status Update
 > **日期**: 2026-11-13
 > **作者**: CppTLM build agent(architect mode)
 > **作用域**: **CEP 一致性证据的档位与强度边界** —— 拓扑级 E2E 装置 / 模型级载体 / 协议级引擎 三者的证据强度阶梯,以及「违例类要有判别力」这一诉求的**可实现性裁决与路由**
 > **关联真源**:
 > - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.2 §4(66 条守门 invariant 总表)· §7.2.2(「全绿」两级判定 —— 实体见 `docs/architecture/cep/simulation-and-experiment.md` §7.2.2)
-> - 真源 3:`ADR-CEP-06`(决策 1 = 4 件套 · SU#4 ② 六条非空洞性约束 · SU 2026-11-08·二 retention 丙 · SU 2026-11-09 ② 五句证据边界 · SU 2026-11-13 ③ 四条强度限定)· `ADR-CEP-19`(决策 9 = 端口面 wrapper + home 简化模型 · ASM-8 ① = 拓扑级 run 的 `hypothesis_id` 须绑定 H3 · SU 2026-11-13 口径段)· `ADR-CEP-00`(治理宪章:跨仓归口 + 准入门槛)
+> - 真源 3:`ADR-CEP-06`(决策 1 = 4 件套 · SU#4 ② 六条非空洞性约束 · SU 2026-11-08·二 retention 丙 · SU 2026-11-09 ② 五句证据边界 · SU 2026-11-13 ③ 四条强度限定)· `ADR-CEP-19`(决策 9 = 端口面 wrapper 形态;**「home 简化模型」定位出自其 SU 2026-11-08 · 二 ③** · ASM-8 ① = 拓扑级 run 的 `hypothesis_id` 须绑定 H3 · SU 2026-11-13 口径段)· `ADR-CEP-00`(治理宪章:跨仓归口 + 准入门槛)
 >
 > **一手锚点**(全部实测,逐 `file:line` 核实):
 > - `include/tlm/cep/stub_cache_core.hh:339` / `:359` —— `struct CachedLine` + `std::map<uint64_t, CachedLine> lines_` ⇒ **该类 sharer 命中 0 / version 命中 0**(实测 grep)
@@ -75,7 +76,7 @@ change `cpptlm-cep-full-green-run-evidence`(已归档,台账 Entry #398)达成:*
 ### 决策 4 —— ⛔ **拒绝**「让拓扑级承载真实一致性语义」
 
 **主理由(两条各自独立成立 · ⚠️ v0.4 重建)**:
-1. **`ADR-CEP-19` 决策 9 已把该装置签批为「端口面 wrapper + home **简化模型**」** ⇒ 让它承载真实一致性语义 = **改决策 9**(须走 ADR 取代流程)⇒ ⛔ 不得以「加一个装置特性」的名义实施;
+1. **`ADR-CEP-19` 决策 9 已把该装置签批为「端口面 wrapper」形态,其 SU 2026-11-08 · 二 ③ 进一步把 home 定为**简化模型** ⇒ 让它承载真实一致性语义 = **改决策 9**(须走 ADR 取代流程)⇒ ⛔ 不得以「加一个装置特性」的名义实施;
 2. **协议语义的「设计权威」归 ArchForge**(`ADR-CEP-00` 决策 1 的**定性分层** + `:120` 的「设计权威 → 实施」**单向门**)⇒ 给拓扑装置**新造**一套一致性语义(sharer 可见性 + 版本)属**新协议语义设计** ⇒ 须先取 ArchForge 的设计权威。
 
 ⚠️ **明确纠正(v0.3 及以前的错误论据)**:⛔ **不是**因为「协议 IP 归 ArchForge 仓」—— `ADR-CEP-00` 决策 1 明写 **代码归口 = CppTLM**(全部 C++ 实现),决策 4 的边界对照表亦逐条判定「ProtocolEngine 插件机制 | **CppTLM**」「5 个具体协议语义建模 | ArchForge(**可选**)· **不是** CEP ADR 签发依赖」⇒ 结论「CEP 核心框架归属 CppTLM,**不触发**边界条款」。本仓**可以**也**已经**实施协议级语义(`include/tlm/cep/*_protocol_engine.hh` 6 个引擎 + `ADR-CEP-12`)⇒ ⇒ 「本仓不能承载协议级语义」**是错的**;正确的是「本仓**不新造**协议语义的**设计**,但**可以实施**既有设计」。
@@ -162,7 +163,7 @@ change `cpptlm-cep-full-green-run-evidence`(已归档,台账 Entry #398)达成:*
 
 | # | 抓取点 | 载体 | 载体状态 |
 |---|---|---|---|
-| 1 | 档位限定的**逐字登记**(8 处载体对账表,决策 6(iii)) | `ADR-CEP-06` SU 2026-11-13 ③ · `07 号` 附录 SU ③ · `obj §6.2` · `ADR-CEP-19` SU 2026-11-13 · `cep-usage.md` §12.8 · `cep_e2e_runs.jsonl` 第 3 条 · `test_cep_stub_cache_emit.cc` 文件头 · 本 ADR | ⚠️ **文档层**(实测**无任何闸 grep 限定句**)⇒ 人工评审;⇒ 登记于 `test/cep_adr_structural_deferrals.json` 的 `invariant_attribution_dispositions`(disposition = `doc_layer_manual_review`) |
+| 1 | 档位限定的**逐字登记**(8 处载体对账表,决策 6(iii)) | `ADR-CEP-06` SU 2026-11-13 ③ · `07 号` 附录 SU ③ · `obj §6.2` · `ADR-CEP-19` SU 2026-11-13 · `cep-usage.md` §12.8 · `cep_e2e_runs.jsonl` 第 3 条 · `test_cep_stub_cache_emit.cc` 文件头 · 本 ADR | ⚠️ **文档层**(实测**无任何闸 grep 限定句**)⇒ 人工评审;✅ 归因 id 已复用(见 V-20-1)⇒ **无 id 债务** |
 | 2 | 样本通路活性(档 0 的唯一机器判据) | `scripts/test/cep_full_green_run_check.sh` **C1'** + `observation_keys.memory_ops_checked_addrs` | ✅ **可执行**(6 条决定性变异含「删样本计数键 ⇒ 必红」) |
 | 3 | 「档 0 闸不含语义判据形态」的流程禁令 | `scripts/test/cep_full_green_run_check.sh` 的 6 条变异集 | ⚠️ **文档层**(⛔ 机器不判「闸里有没有语义判据」)⇒ 人工评审 |
 | 4 | 档 1 的语义判据(六条非空洞性约束) | `ADR-CEP-06` SU#4 ② 六条 + `test/test_cep_b4_evidence_device.cc` 三负控 + 耦合探针 | ✅ 可执行(**本 ADR 不改**) |
@@ -206,9 +207,9 @@ change `cpptlm-cep-full-green-run-evidence`(已归档,台账 Entry #398)达成:*
 
 | # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红) | 归因 id |
 |---|---|---|---|---|
-| **V-20-1** | 档位限定的**逐字登记**覆盖 8 处载体(决策 6(iii) 对账表) | §5 抓取点 1 的 8 处 | ⚠️ **文档层**(实测**无任何闸 grep 限定句**)⇒ **人工评审**;反向 fixture **无** ⇒ ⛔ **禁**当作鉴别力判据 ⇒ 登记 `test/cep_adr_structural_deferrals.json` 的 `invariant_attribution_dispositions`(disposition = `doc_layer_manual_review`) | `INV-CEP-06-IC3`(IC3 判定口径 owner `ADR-CEP-06`;**贴合度**:判的是「档位限定语是否在载体面齐备」,归因落在 IC3 口径面) |
-| **V-20-2** | **能力阶梯三档**与**档位声明义务**已登记 | `07 号` §4 / 新 SU · 本 ADR §2 决策 6 | ⚠️ **文档层** ⇒ 人工评审;反向 fixture **无** ⇒ ⛔ 禁当鉴别力判据 ⇒ 同上登记 | `INV-CEP-06-IC3`(IC3 判定口径 owner `ADR-CEP-06`;**贴合度**:档位声明是 **IC3 结论的读法约束** ⇒ 归该口径 owner;⚠️ 原拟挂 `INV-CEP-12-IC1` **已更正** —— 该 id 语义是「协议实例记录必含 7 字段组 / 13 顶层属性」,与阶梯登记无关) |
-| **V-20-3** | 档 0 闸**只**判样本通路活性,⛔ **不含**语义判据形态 | `scripts/test/cep_full_green_run_check.sh`(C1' + 6 条变异) | ⚠️ **文档层**(⛔ 机器不判「闸里有没有语义判据」)⇒ 人工评审;反向 fixture **无** ⇒ ⛔ 禁当鉴别力判据 | `INV-CEP-06-IC5`(SWMR + data-value 双不变量 owner `ADR-CEP-06`;**贴合度**:该 id 正是「违例类语义面」的 owner ⇒ 禁止闸越界到该面) |
+| **V-20-1** | 档位限定的**逐字登记**覆盖 8 处载体(决策 6(iii) 对账表) | §5 抓取点 1 的 8 处 | ⚠️ **文档层**(实测**无任何闸 grep 限定句**)⇒ **人工评审**;反向 fixture **无** ⇒ ⛔ **禁**当作鉴别力判据;✅ 归因 id **已复用**既有体系 ⇒ **无 id 债务**(⛔ 不产生 `invariant_attribution_dispositions` 登记) | `INV-CEP-06-IC3`(IC3 判定口径 owner `ADR-CEP-06`;**贴合度**:判的是「档位限定语是否在载体面齐备」,归因落在 IC3 口径面) |
+| **V-20-2** | **能力阶梯三档**与**档位声明义务**已登记 | `07 号` §4 / 新 SU · 本 ADR §2 决策 6 | ⚠️ **文档层** ⇒ 人工评审;反向 fixture **无** ⇒ ⛔ 禁当鉴别力判据;✅ 归因 id 已复用 ⇒ **无 id 债务** | `INV-CEP-06-IC3`(IC3 判定口径 owner `ADR-CEP-06`;**贴合度**:档位声明是 **IC3 结论的读法约束** ⇒ 归该口径 owner;⚠️ 原拟挂 `INV-CEP-12-IC1` **已更正** —— 该 id 语义是「协议实例记录必含 7 字段组 / 13 顶层属性」,与阶梯登记无关) |
+| **V-20-3** | 档 0 闸**只**判样本通路活性,⛔ **不含**语义判据形态 | `scripts/test/cep_full_green_run_check.sh`(C1' + 6 条变异) | ⚠️ **文档层**(⛔ 机器不判「闸里有没有语义判据」)⇒ 人工评审;反向 fixture **无** ⇒ ⛔ 禁当鉴别力判据;✅ 归因 id 已复用 ⇒ **无 id 债务** | `INV-CEP-06-IC5`(SWMR + data-value 双不变量 owner `ADR-CEP-06`;**贴合度**:该 id 正是「违例类语义面」的 owner ⇒ 禁止闸越界到该面) |
 | **V-20-4** | 档 1 的语义判据**未被削弱**(六条非空洞性约束原样) | `ADR-CEP-06` SU#4 ② · `test/test_cep_b4_evidence_device.cc` | 削弱任一条 ⇒ `test_cep_b4_evidence_device` 必红(注入违例 ⇒ 计数必 > 0) | `INV-CEP-06-IC5` |
 | **V-20-5** | 本 ADR **零 diff** 判据面(`preregistration.json` / `metrics.schema.json` / `ADR-CEP-06` 决策 1~5) | `cep_prereg_drift_check` + `cep_freeze_check` | 改动其一 ⇒ 必红 | `INV-CEP-06-IC1`(4 件套) |
 | **V-20-6** | **跨档聚合禁令**的机器面已落地(reconcile 闸校验 `evidence_scope` 档位词) | `backlog: cep-evidence-tier-declaration` | ⏭ **待落地** ⇒ 本 ADR 只登记义务 ⇒ 落地后方有反向 fixture(毒化:删 jsonl 第 3 条的 `evidence_scope` ⇒ 必红)⇒ ⛔ 在 backlog change 落地前**禁**当作鉴别力判据 | 归因 id **待建立** ⇒ 登记 `invariant_attribution_dispositions` |
@@ -229,3 +230,26 @@ change `cpptlm-cep-full-green-run-evidence`(已归档,台账 Entry #398)达成:*
 | v0.2 | 2026-11-13 | 吸收 oracle 首轮审稿 MUST-FIX **F1~F3** + SHOULD_FIX **F4~F6**:① 决策 2 的 C1' 语义降称(实测 `emit:126` 与 `harness:176-177` ⇒ C1' **不**证明「检测力已见证」);② §4.1 删「未观测到违例」⇒ 改「样本活性在 + 计数器未动」(与决策 2 禁令句自洽);③ 「新闸 C1'」正名为 `scripts/test/cep_full_green_run_check.sh` 的 C1'(闸已随 change 归档 ⇒ 签发后不可变 ADR 不得写「新闸」);④ 决策 6 增「跨档聚合禁令」(实测 `cep_e2e_runs.jsonl` 唯一 `✓ 通过` 是档 0)+ **8 处载体对账表**;⑤ 选项表增 **B′**(✅ 采纳 · 产出侧负控见证 · **形态经更正**:属产出侧,⛔ 非新闸判据)与 **E1**(⛔ considered-rejected · 理由 = 治理成本 + 须用户裁决);⑥ 决策 4 的**主理由改引宪章域界**,「重叠」降为次要理由(「同居一仓」不构成不可行);⑦ V-20-1 / V-20-2 / V-20-3 的反向 fixture 去「⇒ 判红」(实测无机器闸 grep 限定句)⇒ 改标**文档层 + 禁当鉴别力判据** + `doc_layer_manual_review` 登记;⑧ §4.2 增「注册表对档位盲」代价;⑨ §4.3 R-1 的缓解措辞修正(机器**连「限定语在场」也保证不了**) | oracle 首轮审稿(F1~F6)· 本 ADR §8 v0.2 行 |
 
 > ⛔ **本 ADR 未签发**:oracle + critic 双审完成且 BLOCKER 全闭前,⛔ 不得进入「已签发」状态、⛔ 不得走冻结面授权链。
+
+---
+
+## Status Update 2026-11-13(per 台账 Entry #401 / #402)—— **签发**(v1.0)
+
+> **性质**:本则 = **签发登记**(append-only;⛔ 不改 §1~§8 正文与既有内容)。
+
+| 项 | 值 |
+|---|---|
+| 状态 | 🟡 Proposed(v0.1~v0.4)→ ✅ **已签发**(v1.0,2026-11-13) |
+| 审稿 | **oracle 2 轮**:首轮 **REJECT**(3 MUST-FIX F1~F3)⇒ 复审 **PASS-WITH-NOTES**(F1~F6 6/6 闭合 · 0 新 BLOCKER)· **critic 2 轮**:首轮 **REJECT**(1 BLOCKER:`ADR-CEP-00` 宪章域界**误引**)⇒ 复审 **APPROVE**(0 BLOCKER · 0 SHOULD_FIX · 2 NITS,其一已吸收) |
+| 审稿报告 | `.rddf/reviews/ADR-CEP-20-review.md` |
+| 登记 | `test/cep_adr_structural_deferrals.json`(`decision_adrs` +1;**仅 V-20-6**(归因 id 待建立)的 `doc_layer_manual_review` 登记 —— V-20-1~V-20-5 的归因 id **均已复用**既有体系 ⇒ **无 id 债务**)· `scripts/test/cep_docs_sync_check.sh` 的 `NO_INV` 白名单 +1(新增 invariant 数 = **0**) |
+| 冻结面 | `docs/adr/ADR-CEP-20-*.md` 入 M1 冻结集 ⇒ 冻结产物 82 → **83** ⇒ `cep_freeze_check.sh --update --authorized-by "Entry #401"` |
+| 关联 change | `backlog: cep-evidence-tier-declaration`(**未立项**;立项后回填指针 + AC 映射) |
+| 新增 invariant 数 | **0** |
+
+### 签发后的边界(逐字)
+
+- ⛔ **决策内容自此不可改**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链;
+- ⛔ 本 ADR **不改**任何判据 / 阈值 / 预登记 / `experimental/metrics.schema.json` / retention 条款;
+- ⛔ 本 ADR **不改** B4 的达成结论(台账 Entry #228 ③)· ⛔ **不改** `B3b-2 = 0/4`;
+- ⚠️ **两条遗留交叉引用(⛔ 非本 ADR 义务)**:① *可选* —— 在 `ADR-CEP-06` 追加一条 SU 交叉引用本 ADR(critic NIT;签发后由任意后续批次执行);② 决策 6(iii) 的 8 处载体中,`docs/guide/cep-usage.md` §12.8 与 `ADR-CEP-06` SU 2026-11-13 ③ 的**可达性**由 `cep_doc_ref_check` 兜底,⛔ 但它们**是否仍逐字携带口径**无机器闸(见 V-20-1 的文档层标注)。

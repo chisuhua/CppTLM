@@ -22427,3 +22427,46 @@ R-3「全绿 run」缺口 **闭合**:`cpptlm-cep-full-green-run-evidence` 已归
 ⛔ 不改 IC3 判据 / 阈值 / 预登记 / `metrics.schema.json` / retention 条款 · ⛔ **新增 invariant 数 = 0** · ⛔ 不改 B4 的达成结论(Entry #228 ③)· ⛔ 不改 `B3b-2 = 0/4` · ⛔ 不改既有 ADR 的决策 / 正文(仅追加)· ⛔ **不实施**档 2(跨仓)。
 
 **⑤ 关联**:**#400**(R-2 push 回执)· **#399**(R-3 第 4 轮复审 + 遗留 L-1)· **#398**(R-3 归档回执)· **#396**(A4 真跑 + 7 字段)· **#391**(收口盘点)· **#316**(ADR-CEP-12 授权先例)· **#228**(B4 达成)· `ADR-CEP-06` SU#4 ② · `ADR-CEP-19` 决策 9 / ASM-8 ① · `ADR-CEP-00`(跨仓归口)
+
+### Entry #402 — 2026-11-13 [architect](**ADR-CEP-20 签发回执** —— 拓扑级 IC3 证据的强度边界与能力阶梯(v1.0)· oracle 2 轮 + critic 2 轮双审闭合 · 冻结面 82 → 83)
+
+**主题**:per 台账 **Entry #401** 授权 ⇒ ADR-CEP-20 完成双审并**签发**(🟡 Proposed → ✅ 已签发 v1.0)⇒ 本 Entry = **签发回执** + **归因债务登记**(V-20-6)。
+
+**① 签发对象**
+
+| 项 | 值 |
+|---|---|
+| ADR | `docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md`(v1.0 · **8 章正文** + Verification + 签发 SU) |
+| 审稿 | **oracle 2 轮**:首轮 **REJECT**(3 MUST-FIX F1~F3:① 决策 6 的防线与所防失败模式结构性断层[实测注册表唯一 `✓ 通过` 是**档 0** + 三态词表不分档]② V-20-1 的**假 fixture** ③ 三处措辞[C1' 语义降称 / §4.1 自相矛盾 / 「新闸」自腐])⇒ 复审 **PASS-WITH-NOTES**(F1~F6 **6/6 闭合** · 0 新 BLOCKER;另查出**自检 ⑤ 虚报**并修正) |
+| | **critic 2 轮**:首轮 **REJECT**(**1 BLOCKER**:决策 4 援引 `ADR-CEP-00` 的「域界」**不成立** —— 宪章决策 1 = **代码归口 CppTLM**、决策 4 边界表「ProtocolEngine 插件机制 = CppTLM」、`:120` 是「**设计权威** → 实施」单向门 ⇒ 「本仓不能承载协议级语义」**是错的**)⇒ 复审 **APPROVE**(0 BLOCKER · 0 SHOULD_FIX · 2 NITS) |
+| 审稿报告 | `.rddf/reviews/ADR-CEP-20-review.md`(architect 收口时誊写) |
+| 冻结面 | 新 ADR 入 `FROZEN_GLOBS` 的 `docs/adr/ADR-CEP-*.md` ⇒ 冻结产物 **82 → 83** ⇒ `cep_freeze_check.sh --update --authorized-by "Entry #401"` |
+| 登记 | `test/cep_adr_structural_deferrals.json`:`decision_adrs` +1(→ **20**)· `invariant_attribution_dispositions` **+1**(**仅 V-20-6**)· `scripts/test/cep_docs_sync_check.sh` 的 `NO_INV` +1 |
+| 新增 invariant 数 | **0** |
+
+**② 决策要点(v1.0)**
+
+拓扑级 E2E 装置 = **框架级观测面**(不承载一致性语义)· 其违例类的唯一合法语义 = **样本通路活性**判据(⛔ 非语义)· ⛔ 拒绝装置**语义级**局部升级(概念错误:版本与 sharer 在装置语义面不存在)· ✅ 采纳**产出侧负控见证(B′)**进 backlog · ⛔ 拒绝拓扑级承载真实一致性语义(主理由 ① `ADR-CEP-19` 决策 9 + SU 2026-11-08·二 ③ 已签批为「端口面 wrapper + home **简化模型**」⇒ 升级 = 改决策 9;② 协议语义「**设计**」权威归 ArchForge 单向门;⚠️ **⛔ 非「协议 IP 归 ArchForge」**)· ✅ 判别力**强度上限在本仓的协议引擎面**(6 个 `*_protocol_engine.hh` + `ADR-CEP-12`;⛔ 非「跨仓专属」)· **能力阶梯**三档 + **档位声明义务** + **跨档聚合禁令**。
+
+**③ 归因债务登记(单条 · per 结构闸 [4b-d] 防批量盖章)**
+
+| ADR | 章 | disposition | review_ledger_entry | 说明 |
+|---|---|---|---|---|
+| `ADR-CEP-20` | **V-20-6** | `doc_layer_manual_review` | **本 Entry** | 跨档聚合禁令的机器面(`registry` 校验 `evidence_scope` 档位词)尚未落地 ⇒ 载体 = `backlog: cep-evidence-tier-declaration` ⇒ ⛔ 落地前**禁当作鉴别力判据** |
+| — | V-20-1 / -2 / -3 | ⛔ **不登记** | — | 归因 id **已复用**既有体系(`INV-CEP-06-IC3` / `INV-CEP-06-IC5`)⇒ **无 id 债务**;⚠️ 但为**文档层判据**(⛔ 无机器载体 ⇒ 人工评审) |
+
+⚠️ **为何一条 Entry 只服务 V-20-6**:结构闸 [4b-d] 明令「同一 `review_ledger_entry` 不得服务 >1 条人工评审(防批量盖章)」;而 [4b-c] 已接受「有归因 id」的 V 行 ⇒ ⇒ V-20-1/2/3 **不产生登记义务**(初版曾误登记 4 条 ⇒ 被该闸拦下并修正)。
+
+**④ 遗留(⛔ 不在本 ADR 内做)**
+
+| # | 遗留 | 归属 |
+|:--:|---|---|
+| 1 | 决策 3b 的**产出侧负控见证(B′)** · 决策 6(ii) 的**注册表档位词检查** · 能力阶梯入 `07 号` | `backlog: cep-evidence-tier-declaration` |
+| 2 | **档 2** 的协议引擎不变量观测面(**本仓可达**;工程量级另裁) | 另立 change 评估 |
+| 3 | 可选:在 `ADR-CEP-06` 追加 SU 交叉引用本 ADR(critic NIT 2) | 后续任意批次 |
+
+**⑤ ⛔ 本 ADR 明确不改**
+
+⛔ 不改任何判据 / 阈值 / 预登记 / `experimental/metrics.schema.json` / retention 条款 · ⛔ **新增 invariant 数 = 0** · ⛔ 不改 B4 达成结论(Entry #228 ③)· ⛔ 不改 `B3b-2 = 0/4` · ⛔ 不改既有 ADR 的决策与正文。
+
+**⑥ 关联**:**#401**(起草授权 + 冻结面授权号)· **#399**(遗留 L-1,本 ADR 的由来)· **#398**/**#396**(R-3 归档与真跑)· **#400**(R-2 push 回执)· **#316**(ADR-CEP-12 授权先例)· **#327**(V-15-4 文档层登记先例)· `ADR-CEP-00` · `ADR-CEP-06` · `ADR-CEP-12` · `ADR-CEP-19` · `.rddf/reviews/ADR-CEP-20-review.md`
