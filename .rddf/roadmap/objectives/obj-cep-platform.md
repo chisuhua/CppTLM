@@ -22758,7 +22758,7 @@ KPI 活口径 **1/3 → 0/3**(7 处;C8 条目改为「归档 ⇒ slot 已释放,
 
 | 项 | 值 |
 |---|---|
-| change | `openspec/changes/cep-evidence-tier2-minimal-slice/`(四件套:proposal / design / tasks / delta spec `cep-evidence-tier2-observation`) |
+| change | `openspec/changes/archive/2026-11-14-cep-evidence-tier2-minimal-slice/`(四件套:proposal / design / tasks / delta spec `cep-evidence-tier2-observation`) |
 | 校验 | `openspec validate cep-evidence-tier2-minimal-slice --strict` **rc=0** |
 | KPI | **0/3 → 1/3**(`openspec list --json` 实测 active = 1)⇒ `AGENTS.md` 3 处 + 台账 §5.2 已回填 |
 | 状态 | 🟡 **in-progress**(tasks **28/39** 全勾至 A3)⇒ ⛔ **未归档**(tasks 未全勾 ⇒ 不得归档,per §4.7.2) |
@@ -22803,7 +22803,7 @@ KPI 活口径 **1/3 → 0/3**(7 处;C8 条目改为「归档 ⇒ slot 已释放,
 |---|---|
 | 授权号 | **Entry #411**(⇒ `--authorized-by "Entry #411"`) |
 | 授权范围 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #411"` · **两次**:① 归档前(`07 号` 新 SU 已入冻结集)② 归档后(新 main spec 自动入集) |
-| 落盘清单(本次会入冻结集的产物) | ① `docs/architecture/07-coherence-exploration-platform.md`(新 SU「Status Update 2026-11-14(档 2 协议级观测面)」)② `openspec/specs/cep-evidence-tier2-observation/spec.md`(**归档合并产出** —— 由 `openspec/changes/cep-evidence-tier2-minimal-slice/specs/` 的 delta spec 合并) |
+| 落盘清单(本次会入冻结集的产物) | ① `docs/architecture/07-coherence-exploration-platform.md`(新 SU「Status Update 2026-11-14(档 2 协议级观测面)」)② `openspec/specs/cep-evidence-tier2-observation/spec.md`(**归档合并产出** —— 由 `openspec/changes/archive/2026-11-14-cep-evidence-tier2-minimal-slice/specs/` 的 delta spec 合并) |
 | 冻结产物数 | **84 → 85** |
 | ⛔ 不在授权范围 | `docs/adr/ADR-CEP-*`(零改动)· `experimental/**` · `tools/render_report.py` · `include/tlm/cep/protocol_instance.schema.json` · `include/tlm/cep/fabric*.json` —— 全部**零 diff**(per AC-7) |
 | ⛔ 变更登记 | 本次**不改**任何已签批 ADR;新增 invariant 数 = **0** |
@@ -22812,4 +22812,47 @@ KPI 活口径 **1/3 → 0/3**(7 处;C8 条目改为「归档 ⇒ slot 已释放,
 
 `test/cep_evidence_tiers.json`(档 2 登记面 · 新增)· `scripts/test/cep_e2e_reconcile_check.sh`(T4 / T5 + 变异 e / f)· `docs/guide/cep-usage.md`(§12.10)· `test/test_cep_tier2_observation.cc` · `include/tlm/cep/protocol_engine_base.hh` · `include/tlm/cep/mesif_protocol_engine.hh`。
 
-**③ 关联**:**#410**(A0~A3 实施回执)· **#409**(草稿 v2)· **#408**(裁决 R1~R8 + 勘误)· `openspec/changes/cep-evidence-tier2-minimal-slice/` · `ADR-CEP-20` 决策 5 / 6
+**③ 关联**:**#410**(A0~A3 实施回执)· **#409**(草稿 v2)· **#408**(裁决 R1~R8 + 勘误)· `openspec/changes/archive/2026-11-14-cep-evidence-tier2-minimal-slice/` · `ADR-CEP-20` 决策 5 / 6
+
+### Entry #412 — 2026-11-14 [builder](**C′ 档 2 change 归档回执** —— `cep-evidence-tier2-minimal-slice` ✅ 已完成归档(带 delta)· KPI **1/3 → 0/3** · 冻结 **84 → 85** · **第三次 `--update` 授权**)
+
+**主题**:per 用户口令「A4→A5→A6 收尾归档」⇒ 本 Entry = **归档回执** + **第三次 `--update` 授权**(⚠️ 第三次是**归档后引用同步**引发的,per Entry #411 声明的两次之外)。
+
+**① 归档**
+
+| 项 | 值 |
+|---|---|
+| `openspec archive` | rc=0 · `archivedAs = 2026-11-14-cep-evidence-tier2-minimal-slice` · `specsUpdated: true` · **added 1** |
+| delta 合并 | `openspec/specs/cep-evidence-tier2-observation/spec.md`(1 Requirement · **6 Scenario**) |
+| 语义 | **✅ 已完成归档**(实现已落地 · 契约已在系统内)· ⛔ 未用 `--skip-specs` · 新增 invariant 数 = **0** |
+
+**② A4 / A5 交付面**
+
+| 面 | 内容 |
+|---|---|
+| **A4 登记面** | `test/cep_evidence_tiers.json`(**新表** · schema `cep-evidence-tiers/v1` · 1 条档 2 **非 run** 载体登记)+ `cep_e2e_reconcile_check.sh` 增 **T4**(字段齐备 + 载体文件**实际存在** + `run_produced == false` + `has_verdict == false`)· **T5a**(禁止**肯定式**「通过态」表述,否定语境豁免)· **T5b**(禁止夸大短语)· **T5c**(档 2 条目**不得引用**档 0/1 的 run_id)—— **独立于** run 闸的早退分支;决定性变异 **e**(肯定式通过态)· **f**(跨档 run 引用)按签名红 ⇒ 共 **6** 条变异全绿 + 真实仓字节指纹相等 |
+| **A5 文档面** | `07 号` **新 SU**「Status Update 2026-11-14(档 2 协议级观测面 · per 台账 Entry #410)」(载体形态 / **6 条读法边界** / 判定口径 / Verification)+ 索引重生成(**33** 一级节 / **20** SU · 三合一一致);`docs/guide/cep-usage.md` **新 §12.10**(载体与登记面 / 四条硬边界 / 新族接入步骤 / 全族前置未知)+ §12.9 末尾**一行导航** |
+
+**③ KPI + 体量数字**
+
+KPI 活口径 **1/3 → 0/3**(`AGENTS.md` + 台账 §5.2 + `phase-10.md` + 2 份 improvement + `.rddf/roadmap.md` 共 **9 处**);体量数字:cep-* main spec **42 → 43** · main spec 总数 **128 → 129** · 归档 change **142 → 143**(`AGENTS.md` **4 处**)。
+
+**④ 冻结面(三次 `--update`)**
+
+| 次 | 时机 | 产物数 | 授权 |
+|:--:|---|:--:|---|
+| ① | 归档前(`07 号` 新 SU 已在集内 ⇒ 仅刷新 hash) | 84 | Entry #411 |
+| ② | 归档后(新 main spec 命中 `openspec/specs/cep-*/spec.md` glob ⇒ 自动入集) | **85** | Entry #411 |
+| ③ | **归档后引用同步**(归档把 change 目录迁走 ⇒ 旧路径引用悬空 ⇒ `07 号` 与台账的引用改指归档路径 ⇒ `07 号` 属冻结面 ⇒ 需再刷一次 hash) | 85 | **本 Entry** |
+
+⇒ 无参复验:**85 个产物 hash 全部一致**。
+
+**⑤ 0 回归**
+
+`ctest` **177/177** 全绿 · 全部 `scripts/test/cep_*.sh` 逐个 rc=0 · `docs_sync --strict` / `agents_md_lint` / `format --check` / `openspec validate --strict` 全 rc=0 · 工作区干净。
+
+**⑥ ⚠️ 口径(随引用重复 · 本 change 不改变它)**
+
+**档 2 ⭔ 不产 4 件套 run** ⇒ ⛔ **无 `ic3_verdict` / 无「通过态」**;**data-value 生产流恒 0** = 「**本装置无该形态**」⇒ ⛔ 不得称「检测力已证」;档 2 与档 1 **正交**(⛔ 非强弱序)⇒ ⛔ 不得宣称「档 2 强于档 1」;档位排序语义 = 「**装置归属层级,强度不可跨档比较**」(已签批);**单族(mesif)/ 单拓扑 / 一次实例**;「**不可判**」⛔ **不等于**「零违例」;档 2 判别力 **≠** 协议语义全覆盖(权限维 / 标签维被排除)。
+
+**⑦ 关联**:**#411**(五次链授权)· **#410**(A0~A3 实施回执)· **#409**(草稿 v2)· **#408**(architect 裁决 R1~R8 + 勘误)· `openspec/changes/archive/2026-11-14-cep-evidence-tier2-minimal-slice/` · `openspec/specs/cep-evidence-tier2-observation/spec.md` · `ADR-CEP-20` 决策 5 / 6 · `ADR-CEP-06` SU#4 ②

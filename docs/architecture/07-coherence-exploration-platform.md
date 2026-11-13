@@ -760,7 +760,7 @@ group-scoped completion     → Fabric Collective Plane
 - [x] 登记面机器面可机判(`test/cep_evidence_tiers.json` + T4 / T5 + 2 条决定性变异)
 - [x] 索引已重生成(`scripts/cep/generate_doc_index.py --write`)
 
-**关联**:`ADR-CEP-20` 决策 5 / 6 · 台账 **Entry #410** / **#409** / **#408** · `openspec/changes/cep-evidence-tier2-minimal-slice/` · `openspec/specs/cep-evidence-tier2-observation/spec.md` · `include/tlm/cep/protocol_engine_base.hh` · `include/tlm/cep/mesif_protocol_engine.hh` · `test/test_cep_tier2_observation.cc` · `test/cep_evidence_tiers.json` · `scripts/test/cep_e2e_reconcile_check.sh` · `docs/guide/cep-usage.md` §12.10
+**关联**:`ADR-CEP-20` 决策 5 / 6 · 台账 **Entry #410** / **#409** / **#408** · `openspec/changes/archive/2026-11-14-cep-evidence-tier2-minimal-slice/` · `openspec/specs/cep-evidence-tier2-observation/spec.md` · `include/tlm/cep/protocol_engine_base.hh` · `include/tlm/cep/mesif_protocol_engine.hh` · `test/test_cep_tier2_observation.cc` · `test/cep_evidence_tiers.json` · `scripts/test/cep_e2e_reconcile_check.sh` · `docs/guide/cep-usage.md` §12.10
 
 ## §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295)
 
