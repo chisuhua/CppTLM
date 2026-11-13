@@ -171,6 +171,11 @@ namespace cpptlm {
                 // scripts/test/cep_docs_sync_check.sh 的 NO_INV
                 // 白名单**同步登记**(两处规则重复,修一处必须记得改另一处)。
                 "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md",
+                // 2026-11-13(Entry #402):ADR-CEP-20 = 证据档位与强度边界(纯**读法约束**;
+                // **新增 invariant 数 = 0**,per 其决策 1~6)⇒ 与 scripts/test/cep_docs_sync_check.sh
+                // 的 NO_INV 白名单**同步登记**(两处规则重复,修一处必须记得改另一处 ——
+                // 本行即教训:只改了 shell 侧时 cep_canonical_invariant 必红)。
+                "ADR-CEP-20-topology-ic3-evidence-strength.md",
             };
             return v;
         }

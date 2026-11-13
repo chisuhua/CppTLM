@@ -238,6 +238,8 @@ VIRTUAL_PATHS=(
   "openspec/changes/archive/*cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md"  # 冻结 glob(同上)
   "openspec/specs/cep-core-contracts/*.md"          # main spec 通配(同上)
   "tools/*.py"                                      # 工具族通配(台账 Entry #29 ④ 引述)
+  "docs/adr-dgpu-05-09-driver-business-arch"      # **非路径**:它是**本地分支名**(2026-11-13,per 台账 Entry #400 §④ 的「未 push 其它分支」登记)⇒ 形如路径但不指向文件;⛔ 台账 append-only 不可回改 ⇒ 闸侧豁免
+  "docs/designs-migration-dgpu-arch-v2.2"          # **非路径**:同上(本地分支名,台账 Entry #400 §④)
 )
 
 is_virtual_path() {
