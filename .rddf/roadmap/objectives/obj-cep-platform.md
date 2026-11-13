@@ -22509,3 +22509,33 @@ KPI 活口径 **0/3 → 1/3**(7 处回填;C8 条目 per 本 Entry)· `openspec v
 ⛔ 未实施(只立项)· ⛔ 不改 `ADR-CEP-20` 决策 · ⛔ 不改任何判据 / 阈值 / 预登记 / `metrics.schema.json` / retention · ⛔ 不改 `test/cep_adr_structural_deferrals.json` · ⛔ 不改 `test/cep_e2e_runs.jsonl` · ⛔ 新增 invariant = 0 · ⛔ 不实施档 2。
 
 **⑥ 关联**:**#402**(ADR 签发回执)· **#401**(ADR 授权)· **#399**(遗留 L-1)· **#396**/**#398**(R-3)· `ADR-CEP-20` 决策 6 + §5 抓取点 6 · `ADR-CEP-06` SU#4 ② · `test/test_cep_stub_cache_emit.cc` · `scripts/test/cep_e2e_reconcile_check.sh`
+
+### Entry #404 — 2026-11-13 [build](**C8 实施——A2/A3/A4/A5** —— 喂料映射见证 + 档位登记机器面 + 总纲阶梯 SU + 手册 §12.9;本 Entry = **五步链授权**)
+
+**主题**:per 用户口令「A′→B′→C′」⇒ 实施 `cep-evidence-tier-declaration` 的 **A2~A5**;本 Entry = **五步链授权**与**落盘清单**(⛔ 未做 A6 的五步执行 / A8 归档)。
+
+**① 落盘清单**
+
+| # | 载体 | 内容 |
+|:--:|---|---|
+| 1 | `test/test_cep_stub_cache_emit.cc` | **`feed()` 单实现源**(生产 E2E-01 与见证用例共用);新 `TEST_CASE("[cep][exp][evidence-tier]…[synthetic-fixture]")`:**正负配对**(同一 vector 仅切 `read` 观测值 ⇒ 负控 `data_value==1` / 正控 `==0`)+ **结构事实锁**(10 次重复写 ⇒ `swmr==0`,证明喂料通路对 SWMR **无通道**) |
+| 2 | `test/cep_e2e_run_tiers.json`(**新增**) | 旁挂档位表(schema v2):`run_tiers`(3 条全档 0)+ `declaration_required`(1 条)+ **`grandfathered`**(2 条,**逐条给理由** —— 早于 ADR-CEP-20 且台账 append-only 不可回改) |
+| 3 | `scripts/test/cep_e2e_reconcile_check.sh` | `CEP_RECONCILE_JSONL` / `CEP_RECONCILE_TIERS` 覆盖;`evidence_scope` **入 `required`**(缺键 ⇒ `必填键缺失:evidence_scope`);**T1**(档位未登记)· **T2**(档位声明缺失,仅对 `declaration_required`)· **T2b**(档 0 run 必落两表之一,⛔ 不得静默跳过 + grandfathered 须非空理由)· **T3**(僵尸档位登记);**`--mutations`** 模式(4 条 · 影子副本 · 按签名红 · 指纹相等) |
+| 4 | `docs/architecture/07-coherence-exploration-platform.md` | **新 SU**「附录 · Status Update 2026-11-13(证据档位阶梯 · per 台账 Entry #404)」:① 三档阶梯 ② 两条义务 ③ 档 0 口径 ④ Verification;索引重生成(**30→? 见实测**) |
+| 5 | `docs/guide/cep-usage.md` | **新 §12.9**(档位阶梯 + 两条义务 + 档 0 口径);§12.8 加**一行导航**(⛔ 不加表行/状态列) |
+| 6 | `test/CMakeLists.txt` | +1 ctest = `cep_e2e_reconcile_mutations` |
+
+**② 五步链授权**
+
+- **冻结面 1 处**:`07 号` 新 SU ⇒ `cep_freeze_check.sh --update --authorized-by "Entry #404"`(产物数**不变 = 83**;⚠️ 归档合并新 main spec 后**第二次** `--update` 亦用本号 ⇒ 83 → 84);
+- 顺序:本 Entry(`--authorized-by` 已校验通过)⇒ 产物 commit ⇒ `--update` ⇒ 清单 commit ⇒ 无参复验。
+
+**③ 实测(闸)**
+
+`cep_full_green_run_check`(C1'~C5)· `cep_dod_reading_check`(S7 唯一性)· `cep_index_position_check` · `cep_docs_sync_check` · `cep_doc_ref_check` · `cep_e2e_reconcile_check`(含 T1~T3/T2b)· `cep_adr_structural_check` · `docs_sync --strict` · `markdown_link_check` **全 rc=0**;`cep_e2e_reconcile_check --mutations` **4/4 按签名红 + 指纹相等**;`open` 新用例 **3/3 断言绿**;E2E-01 产物**逐项不变**(20 地址 / `memory_violations=0`)。
+
+**④ ⛔ 本 Entry 明确不做**
+
+⛔ 未做**归档**(A8)· ⛔ 未改 `ADR-CEP-20` 决策 · ⛔ 未改任何判据 / 阈值 / 预登记 / `metrics.schema.json` / retention · ⛔ 未改 `test/cep_e2e_runs.jsonl`(append-only)· ⛔ 未改 `test/cep_adr_structural_deferrals.json` · ⛔ 新增 invariant = 0 · ⛔ 未产出 SWMR 见证(结构不可达)· ⛔ 未动 `B3b-2` / B4 结论。
+
+**⑤ 关联**:**#403**(立项)· **#402**(ADR 签发回执)· `ADR-CEP-20` 决策 6 / §5 抓取点 6 · `ADR-CEP-06` SU#4 ② · `ADR-CEP-12`
