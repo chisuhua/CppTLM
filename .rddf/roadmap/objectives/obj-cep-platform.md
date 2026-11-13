@@ -22223,3 +22223,48 @@ builder 实施(闸断言 + 数字订正 + 变异)⇒ 0 回归 ⇒ 归档(✅ 已
 ⛔ 不实施 A5(`cep_ic3_report_states_check` 的绿判据)/ A6(冻结面 3 处五步链)/ A7(A8/A9)· ⛔ 不改 IC3 判据 / 阈值 / 预登记(`preregistration.json` **零 diff**) / `metrics.schema.json` / retention 条款 · ⛔ 不改任何 ADR 决策 / 正文 · ⛔ 不改 `B3b-2 = 0/4` · ⛔ KPI **1/3 不变**(change 仍 active)。
 
 **关联**:**#395**(A0/A1)· **#394**(立项 + 五步链授权号)· **#304**(retention 丙 字面追认 + 框架验证 run 证据边界)· **#303**(首批 run 入库 + 双向闸 + 7 字段台账)· **#295**(retention 丙)· **#228**(B4 达成)· `ADR-CEP-19` ASM-8 ① + SU ② · `ADR-CEP-06` SU 2026-11-08·二 / SU 2026-11-09 ③ · `test/cep_e2e_runs.jsonl` · `scripts/test/cep_experiment_run.sh`
+
+### Entry #397 — 2026-11-13 [build](**R-3 A6 证据登记 + 冻结面五步链授权** —— `07 号` 新 SU + `ADR-CEP-19` SU + `ADR-CEP-06` SU(三处)· 含「`07 号` SU · 十五/十六 ①」指针漂移登记)
+
+**主题**:per 用户口令「同意,选择H1」⇒ 执行 change `cpptlm-cep-full-green-run-evidence` 的 **A6**(证据登记 + 五步链)与 **A7.1**(B4 证据行 append)⇒ 本 Entry = **五步链的授权 + 落盘清单 + 口径登记**;⛔ **产物 commit / 清单 commit / 无参复验**三步在**本 Entry 之后**执行(见 ③)。
+
+**① 三处冻结面 + 落盘清单(授权号沿用 `Entry #394`,范围以 **Entry #395** 的追记为准)**
+
+| # | 冻结件 | 动作 | 取代/订正对象 |
+|:--:|---|---|---|
+| 1 | `docs/architecture/07-coherence-exploration-platform.md` | **新增**一则 `## Status Update`(插在 `## §末 文档索引` **之前**)⇒ 索引 A/B + 自述数由 `scripts/cep/generate_doc_index.py --write` **重生成** | ⛔ 07 号 当前**无**「不承载全绿 run」的陈述可取代 ⇒ 本则**新增**拓扑级 IC3 通过态事实,并**指向**真正持有该陈述的三处载体(见 ②) |
+| 2 | `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md` | **追加**一则 SU | 取代其 **SU 2026-11-09 · 一 ②** 的「⚠️『全绿』未达成(残余):IC3 = ⚪ 不适用 ⇒ ⛔ 拓扑级未闭合『全绿 run』」状态陈述(原文保留) |
+| 3 | `docs/adr/ADR-CEP-06-experiment-protocol.md` | **追加**一则 SU | 订正其 **SU 2026-11-09(Entry #304)②** 的「框架验证 run 证据边界」**五句**(逐句取代/保留判定)—— 本次**装置形态转变**的唯一登记处 |
+
+**② 真正持有「不承载全绿 run / IC3 = ⚪ 不适用」陈述的三处载体(逐处处置)**
+
+| 载体 | 原陈述 | 处置 |
+|---|---|---|
+| `ADR-CEP-19` SU 2026-11-09 · 一 ② | 「⚠️『全绿』未达成(残余)」 | ⇒ 由 ADR-19 新 SU **取代**(原文逐字保留) |
+| `docs/guide/cep-usage.md` §12.8 | 「⚠️ **至今未闭合**」 | ⇒ **已改**(per Entry #396 所在批次) |
+| `configs/cep_chi_rnf_e2e_a.json` 的 `description` | 「⚠️ 本拓扑**仍不承载「全绿 run」**:IC3 = ⚪ 不适用」 | ⇒ **已改**(同上) |
+
+**③ ⚠️ 指针漂移登记(本次核对浮出)**
+
+仓内多处文档(含本 change 的 A6.1 原文)引用「**`07 号` SU · 十五 ①**」/「**`07 号` SU · 十六 ①**」⇒ **实测当前 `07 号` 无这两个编号标签**(`grep "十五"` **0 命中**);其 17 则 SU 的**索引 B 序号**与标题内「则 / ·N」标签**互不对应**(例:索引 B 第 3 行标题含「第十六则」、第 15 行标题含「· 十四」)⇒ ⇒ 该类外部指针**当前不可机械解析**。
+⇒ ⇒ 本次三处 SU 一律使用**可解析锚点**(标题文本 + 台账 Entry + run 目录),⛔ **不**再引用「SU · 十五/十六 ①」;该漂移**登记为残余**(⛔ 不在本次改写存量外部引用 —— 范围外)。
+
+**④ 五步链(执行顺序;授权号 = `Entry #394`)**
+
+| 步 | 动作 | 状态 |
+|:--:|---|---|
+| 1 | **Entry 先落**(本 Entry) | ✅ 本 commit |
+| 2 | **产物 commit**(三处 SU + `07 号` 索引重生成 + `obj §6.2` B4 证据行(A7.1)+ change 文档) | ⏭ 下一 commit |
+| 3 | `cep_freeze_check.sh --update --authorized-by "Entry #394"` | ⏭ |
+| 4 | **清单 commit**(冻结清单) | ⏭ |
+| 5 | **无参复验**(`cep_freeze_check.sh` 无参 ⇒ provenance 通过) | ⏭ |
+
+**⑤ 口径(⛔ 随任何引用重复 · 三处 SU 均须含)**
+
+本装置**无 sharer 语义**(无 directory / sharer tracker)⇒ **SWMR 违例结构上不可达**;`TrafficGenTLM` 写数据**恒 0** + home 回程只回显 ⇒ **无版本语义** ⇒ data-value 检查**无判别力** ⇒ ⇒ 该 `memory_violations = 0` 是「**本装置无该形态**」的 0,⛔ **不得**表述为「已证明协议层无违例」,⛔ **不得**称「检测力已证」,⛔ **不得**与 B4 装置(三负控 + 耦合探针)证据**等同**;⛔ **一次通过态实例 ≠**「所有协议族 / 所有拓扑达成」;⛔ **不得**读成「B4 被推翻」(B4 由模型级 h3 v2 run 达成,per Entry #228 ③)。
+
+**⑥ ⛔ 本 Entry 明确不做**
+
+⛔ 不实施 A8(新闸 + 变异 + ctest 注册)/ A9(归档 + KPI)· ⛔ 不改任何 ADR **决策 / 正文**(仅追加 SU)· ⛔ 不改 IC3 判据 / 阈值 / 预登记 / `metrics.schema.json` / retention 条款 · ⛔ 不改 `B3b-2 = 0/4` · ⛔ KPI **1/3 不变**。
+
+**关联**:**#396**(A4 真跑 + 7 字段)· **#395**(A0/A1 + 冻结面 1→3 处追记)· **#394**(立项 + 五步链授权号)· **#373**(`07 号` 上一则 SU)· **#338**(ADR-19 上一则 SU)· **#314**(ADR-06 签发)· **#304**(框架验证 run 证据边界 / retention 丙 字面追认)· **#295**(retention 丙)· **#228**(B4 达成)· `scripts/cep/generate_doc_index.py` · `scripts/test/cep_freeze_check.sh`
