@@ -24,7 +24,7 @@
 - [ ] A2.2 定位 E2E 场景里**真实内存读写**的产生路径(`stub_cache_core` 的 `memory_read/memory_write` 等)
 - [ ] A2.3 **「拓扑级身份」的可承载性三问**(design §D-2 A2.3):① 该 run 绑定了哪个**已登记**假设行(`tools/render_report.py:178-183` 硬要求)② `not_an_experiment_run` / `run_class` 的自陈现状 ③ `evidence_scope` 是否允许作一致性安全断言证据 ⇒ 三问**现状均为「不合格」** ⇒ 须逐条给出「改点」
 - [ ] A2.4 判定「拓扑链身份锚」(C4)在**入库后**是否可机判(`test/cep_e2e_runs.jsonl` 的 `config_file` / `config_sha256` / `simulation_config_sha256` + `experimental/preregistration.json` 的已登记行)⇒ ⛔ 若不可判 ⇒ **停**并回报(⛔ 不得用「我说是真的」作判据)
-- [ ] A2.5 定位 **`hypothesis_id` 绑定点** + `not_an_experiment_run` / `run_class` / `evidence_scope` 三处自陈字段的改点(per `ADR-CEP-19` **ASM-8 ①**)⇒ 确认**绑定 H3 不需要改 `experimental/preregistration.json`** ⇒ ⚠️ **以真实 `tools/render_report.py --check` 复验**(既有 run-b 的延迟族 5 键已为实测值 ⇒ 绑定 H3 后 `--check` 不会因延迟族 `not-collected` 越界判红)⇒ ⛔ 若需改预登记 / `--check` 判红 ⇒ **停**并回报
+- [ ] A2.5 定位 **`hypothesis_id` 绑定点** + `not_an_experiment_run` / `run_class` / `evidence_scope` 三处自陈字段的改点(per `ADR-CEP-19` **ASM-8 ①**)⇒ 确认**绑定 H3 不需要改 `experimental/preregistration.json`** ⇒ ⚠️ **A3 之前可做一次探测性 `tools/render_report.py --check`**(既有 run-b:延迟族 5 键**已实测** ⇒ 延迟族不越界;但其 `memory_violations` 仍 `not-collected` ⇒ H3 的 `out_of_scope` 只含 3 键 ⇒ **预登记越界检查必判红 ⇒ 该红是 A3 要消除的「预期内红」,⛔ 不是停点**)⇒ ⛔ **判绿判据在 A4.3**(A3 之后);⛔ 若 **A4.3** 仍判红 ⇒ **停**并回报
 - [ ] A2.6 ⛔ 若 A2.4 / A2.5 的结论为「不可实现」⇒ **停**并回报
 
 ## A3 · 场景扩写 + 检测器挂载 + 样本见证(G2)
