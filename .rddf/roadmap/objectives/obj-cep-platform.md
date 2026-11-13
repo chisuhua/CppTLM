@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**(C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
+`openspec/changes/` 当前 **1 个 active**(C8 `cep-evidence-tier-declaration` 于 2026-11-13 立项 ⇒ 占 1 slot,per 台账 Entry #403;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -22470,3 +22470,42 @@ R-3「全绿 run」缺口 **闭合**:`cpptlm-cep-full-green-run-evidence` 已归
 ⛔ 不改任何判据 / 阈值 / 预登记 / `experimental/metrics.schema.json` / retention 条款 · ⛔ **新增 invariant 数 = 0** · ⛔ 不改 B4 达成结论(Entry #228 ③)· ⛔ 不改 `B3b-2 = 0/4` · ⛔ 不改既有 ADR 的决策与正文。
 
 **⑥ 关联**:**#401**(起草授权 + 冻结面授权号)· **#399**(遗留 L-1,本 ADR 的由来)· **#398**/**#396**(R-3 归档与真跑)· **#400**(R-2 push 回执)· **#316**(ADR-CEP-12 授权先例)· **#327**(V-15-4 文档层登记先例)· `ADR-CEP-00` · `ADR-CEP-06` · `ADR-CEP-12` · `ADR-CEP-19` · `.rddf/reviews/ADR-CEP-20-review.md`
+
+### Entry #403 — 2026-11-13 [build](**C8 立项** —— `cep-evidence-tier-declaration` 四件套 + improvement v2(per ADR-CEP-20 决策 6)· KPI **0/3 → 1/3**)
+
+**主题**:per 用户口令「按你建议的顺序推进」⇒ 落 **`ADR-CEP-20`(v1.0)的未落地义务** ⇒ 立项 C8 `cep-evidence-tier-declaration`(占 1 slot)。
+
+**① 立项依据**
+
+| 依据 | 内容 |
+|---|---|
+| **ADR-CEP-20**(已签发 v1.0) | **决策 6(ii)** 跨档聚合禁令须有机器面 · **决策 6** 能力阶梯显式化 · **决策 3b** 档 0 的检测力见证(**注明:metis 实测后**降级**,见 ③**) |
+| 台账 **Entry #402** | 签发回执 · 遗留 ① = 本 change;遗留 ② = 档 2 另立 change |
+| 台账 **Entry #399** | 遗留 L-1(该 0 无判别力 ⇒ 升级路径) |
+| improvement | `.rddf/improvements/cep-evidence-tier-declaration.md`(**v2**) |
+
+**② 落盘产物**
+
+| # | 载体 | 形态 |
+|:--:|---|---|
+| 1 | `openspec/changes/cep-evidence-tier-declaration/` | 四件套:proposal(Why 3 项 / What Changes 3 项 / Out of Scope 6 条 / **AC-1~AC-9** / 诚实边界 5 条)· design(D-1 实测基座 8 条 / D-2 三处实施面 / **D-3 判据 T1~T4 + W1~W2 + R1** / D-4 **两次 `--update`** / D-5 硬边界 6 条 / D-6 残余 5 条 / 铁律 5 条)· tasks(A0~A8 · 6 门)· **specs/`cep-evidence-tier-registry`**(delta **ADDED** · 1 Requirement · **6 Scenario**) |
+| 2 | `.rddf/improvements/cep-evidence-tier-declaration.md` | 5 段 + **metis 首轮逐条处置表**(4 条 P0 全采纳) |
+
+**③ ⚠️ metis 首轮 REJECT 后的**实质降级**(本 Entry 必须留痕)
+
+| metis P0 | 原稿 | v2 |
+|:--:|---|---|
+| **1** item 1 **零增量** | 「写负控见证检测器」 | ⚠️ **实测推翻**:`test/test_cep_stub_cache_emit.cc:126-128` 对写事件**只**调 `detector.write(...)`;`SwmrDataValueDetector::write()` **不累加 `swmr`** ⇒ **喂料通路结构上无法表达 SWMR 违例** ⇒ ⇒ **SWMR 降为「结构不可达」登记**(⛔ 不产出见证);另 5 处存量负控(`test_cep_experiment_harness.cc:87-130` 等)已覆盖正控/负控/红绿分离 ⇒ ⛔ 不重写;⇒ **真实增量 = data-value 的「喂料映射被走过」**(正负配对,同一 vector 仅切观测值) |
+| **2** `hypothesis_id == "h3"` **不是档位键** | 用它做判据 | ⇒ 改**旁挂档位表** `test/cep_e2e_run_tiers.json`(3 条全登)+ 3 判据 + **反向零 orphan** + `CEP_RECONCILE_*` 影子覆盖 + `evidence_scope` **入 `required`**(否则 `KeyError` 无签名) |
+| **3** 冻结面数字错 | 「83 不变」 | ⇒ **83 → 84**(ADDED 合并新 main spec)+ **两次** `--update` |
+| **4** V-20-6 条件句空头 | 「若…⇒」 | ⇒ **移出**(⛔ 不改 `cep_adr_structural_deferrals.json`;留给档 2 change) |
+
+**④ KPI + 体量**
+
+KPI 活口径 **0/3 → 1/3**(7 处回填;C8 条目 per 本 Entry)· `openspec validate cep-evidence-tier-declaration --strict` **rc=0** · `cep_docs_sync_check` 的 KPI baseline(实测 **1/3**)与体量数字守(归档 141 / cep-* spec 41 / 闸 42)均绿。
+
+**⑤ ⛔ 本 Entry 明确不做**
+
+⛔ 未实施(只立项)· ⛔ 不改 `ADR-CEP-20` 决策 · ⛔ 不改任何判据 / 阈值 / 预登记 / `metrics.schema.json` / retention · ⛔ 不改 `test/cep_adr_structural_deferrals.json` · ⛔ 不改 `test/cep_e2e_runs.jsonl` · ⛔ 新增 invariant = 0 · ⛔ 不实施档 2。
+
+**⑥ 关联**:**#402**(ADR 签发回执)· **#401**(ADR 授权)· **#399**(遗留 L-1)· **#396**/**#398**(R-3)· `ADR-CEP-20` 决策 6 + §5 抓取点 6 · `ADR-CEP-06` SU#4 ② · `test/test_cep_stub_cache_emit.cc` · `scripts/test/cep_e2e_reconcile_check.sh`

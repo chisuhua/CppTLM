@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-13T11:21:42Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-13T11:28:40Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-12T13:10:00Z",
-      "by": "user",
-      "reason": "用户口令：切 architect 梳理 CEP 目标 / 已完成 / 后续路径；随后切 planner 梳理后续任务与实施路径。"
-    },
     {
       "role": "planner",
       "at": "2026-11-12T13:40:00Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-13T11:21:42Z",
       "by": "user",
       "reason": "用户口令「按你建议的顺序推进」⇒ A(push)已完成;切 planner 执行 B = 立项 cep-evidence-tier-declaration(落 ADR-CEP-20 决策 3b / 6(ii) + 阶梯登记)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-13T11:28:40Z",
+      "by": "user",
+      "reason": "用户口令「按你建议的顺序推进」⇒ B 的剩余部分(openspec 四件套 + KPI 回填)属 builder 域 ⇒ 切 builder;完成后切回 architect 做 C(档 2 评估)。"
     }
   ],
   "auto_switch_window": null
