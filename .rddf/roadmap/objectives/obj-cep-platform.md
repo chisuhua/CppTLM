@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**(C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 立项 ⇒ 占 1 slot,per 台账 Entry #394;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
+`openspec/changes/` 当前 **0 个 active**(C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -22269,3 +22269,45 @@ builder 实施(闸断言 + 数字订正 + 变异)⇒ 0 回归 ⇒ 归档(✅ 已
 ⛔ 不实施 A8(新闸 + 变异 + ctest 注册)/ A9(归档 + KPI)· ⛔ 不改任何 ADR **决策 / 正文**(仅追加 SU)· ⛔ 不改 IC3 判据 / 阈值 / 预登记 / `metrics.schema.json` / retention 条款 · ⛔ 不改 `B3b-2 = 0/4` · ⛔ KPI **1/3 不变**。
 
 **关联**:**#396**(A4 真跑 + 7 字段)· **#395**(A0/A1 + 冻结面 1→3 处追记)· **#394**(立项 + 五步链授权号)· **#373**(`07 号` 上一则 SU)· **#338**(ADR-19 上一则 SU)· **#314**(ADR-06 签发)· **#304**(框架验证 run 证据边界 / retention 丙 字面追认)· **#295**(retention 丙)· **#228**(B4 达成)· `scripts/cep/generate_doc_index.py` · `scripts/test/cep_freeze_check.sh`
+
+### Entry #398 — 2026-11-13 [build](**R-3 归档回执** —— `cpptlm-cep-full-green-run-evidence` ✅ 已完成归档(带 delta)· KPI 1/3 → 0/3 · 冻结面 81 → 82 产物)
+
+**主题**:per 用户口令「选择K1, 同时批准第4轮critic」⇒ 执行 change `cpptlm-cep-full-green-run-evidence` 的 **A9**(0 回归 + 归档 + KPI 回填 + 体量数字回填)⇒ 本 Entry = **归档回执**。
+
+**① 归档(✅ 已完成归档语义 · per AGENTS.md §DOC HYGIENE 两值语义)**
+
+| 项 | 值 |
+|---|---|
+| `openspec archive` | rc=0 · `archivedAs = 2026-11-13-cpptlm-cep-full-green-run-evidence` · `specsUpdated: true` · **added = 1** |
+| delta 合并 | `openspec/specs/cep-full-green-run-evidence/spec.md`(1 条 Requirement · 6 个 Scenario) |
+| 语义 | **✅ 已完成归档**(实现已落地,契约已在系统内)⇒ **无**「⛔ 暂存归档」标记;⛔ **未**用 `--skip-specs` |
+
+**② 交付物(本 change 全链)**
+
+| 面 | 内容 |
+|---|---|
+| 实现 | `include/tlm/cep/stub_cache_endpoint.hh`(`TxnStamp` 增内存操作原始事实)· `test/test_cep_stub_cache_emit.cc`(检测器接线 + 绑定 H3 + 自陈字段翻转)· `scripts/test/cep_experiment_run.sh`(`--topology` 模式) |
+| 证据 | `experimental/run-20261113-151310-cep-full-green/`(4 件套运行期齐备;**入库 2 件** · retention 丙)· `test/cep_e2e_runs.jsonl` 第 3 条(`ic3_verdict = "✓ 通过"`) |
+| 登记 | `07 号` **附录 · Status Update 2026-11-13** · `ADR-CEP-19` 新 SU(取代其 SU 2026-11-09·一 ② 的「全绿未达成(残余)」)· `ADR-CEP-06` 新 SU(订正其 SU 2026-11-09 ② 的「框架验证 run 证据边界」六句)· `obj §6.2` B4 证据行 append-only 追加(拓扑级档位) |
+| 新闸 | `scripts/test/cep_full_green_run_check.sh`(C1 / C1' / C2 / C3 / C4 / C5 + **6 条决定性变异** + 还原绿 + 真实仓字节指纹前后相等)⇒ ctest **175 → 176** · 守门表 **36 → 37** |
+
+**③ KPI + 体量数字回填**
+
+- **KPI 活口径 1/3 → 0/3**(7 处):`AGENTS.md` · `.rddf/roadmap.md` · `phases/phase-10.md` · `obj §5.2` · `cpptlm-cep-umbrella.md` · `cpptlm-cep-nvlink-sharp.md`(2 处);C7 条目「立项 ⇒ 占 1 slot,per Entry #394」⇒「**归档** ⇒ slot 已释放,per **Entry #398**」;
+- **体量数字**(`AGENTS.md` 6 处):cep-* main spec **40 → 41** · main spec 总数 **126 → 127** · 归档 change 数 **140 → 141**(2 处)· KPI 行「1 个 active → 1/3」⇒「0 个 active → 0/3」;
+- ⇒ `cep_docs_sync_check` 的 **KPI baseline 断言**(实测 0/3)与**体量数字守**(实测 归档 141 / cep-* spec 41 / 闸 42)均转绿。
+
+**④ 冻结面(第二次 `--update`)**
+
+归档后新 main spec `openspec/specs/cep-full-green-run-evidence/spec.md` 命中 `FROZEN_GLOBS` 的 `openspec/specs/cep-*/spec.md` ⇒ **自动入冻结集** ⇒ 冻结产物 **81 → 82** ⇒ 按 Entry #394 ③ 的同一授权号执行**第二次** `cep_freeze_check.sh --update --authorized-by "Entry #394"` ⇒ 清单单独 commit ⇒ 无参复验。
+
+**⑤ 0 回归(A9.1~A9.3)**
+
+`ctest` **176/176** 全绿 · 新增闸 rc=0 + 磁盘 `cep_*.sh` **42** 个逐个 rc=0 · format / docs_sync / doc_ref / agents_md_lint / freeze / reconcile 全 rc=0。
+
+**⑥ ⛔ 未变更(口径随引用重复)**
+
+⛔ 未改 IC3 判据 / 阈值 / 预登记(`experimental/preregistration.json` **零 diff**)· `metrics.schema.json` · retention 条款 · 任何 ADR **决策 / 正文** · `B3b-2 = 0/4`。
+⚠️ **该 0 的语义边界**:本装置**无 sharer 语义** ⇒ SWMR 结构上不可达;写数据**恒 0** + home 只回显 ⇒ 无版本语义 ⇒ data-value 无判别力 ⇒ 该 0 是「**本装置无该形态**」的 0,⛔ **不得**称「检测力已证」,⛔ **不得**与 B4 装置(三负控 + 耦合探针)证据等同;⛔ **一次通过态实例 ≠**「所有协议族 / 所有拓扑达成」;⛔ **不得**读成「B4 被推翻」。
+
+**⑦ 关联**:**#397**(A6 授权 + 三处落盘清单)· **#396**(A4 真跑 + 7 字段)· **#395**(A0/A1 + 冻结面 1→3 处追记 + P-2/P-3 结论)· **#394**(立项 + 五步链授权号)· **#373**(DoD 读法口径订正)· **#338**(ADR-19 上一则 SU)· **#314**(ADR-06 签发)· **#304**(框架验证 run 证据边界 / retention 丙 字面追认)· **#295**(retention 丙)· **#228**(B4 达成)· **#222**(④ 不得写裸 0)· `openspec/specs/cep-full-green-run-evidence/spec.md` · `scripts/test/cep_full_green_run_check.sh` · `test/cep_e2e_runs.jsonl`

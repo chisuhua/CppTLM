@@ -66,11 +66,12 @@
   ⚠️ **A8 期间新发现并已修**:① **重跑陷阱** —— emit 用例断言 run 目录 `file_count == 2u` ⇒ 重跑前必须清空 4 件套 ⇒ `cep_experiment_run.sh --topology` 已加清空步骤(⛔ 否则重跑必踩);② **config 指纹失效** —— A5 改了 config 的 `description` ⇒ A4 记录的 `config_sha256` 变陈旧 ⇒ 已**重跑该 run**(metrics.json **逐字节一致**,仅 `provenance.git_rev` 更新)+ 同步 jsonl 的 3 个指纹字段 ⇒ C4 转绿
 
 ## A9 · 0 回归 + 归档(G6)
-- [ ] A9.1 `ctest --test-dir build -j4` **176/176**
-- [ ] A9.2 新增闸自身 rc=0 + **全部** `scripts/test/cep_*.sh` 逐个 rc=0(⛔ **不写死绝对数**;以 `ls scripts/test/cep_*.sh` 实测为准并回填;⚠️ `cep_test_shadow.sh` 在磁盘但**不在** README 三表 ⇒ 本次只登记该缺口,不在本 change 内修)
-- [ ] A9.3 format / docs_sync / doc_ref / agents_md_lint / freeze / **reconcile** 全 rc=0
-- [ ] A9.4 `openspec archive`(✅ 已完成归档语义)⇒ delta **ADDED** 合并进 `openspec/specs/cep-full-green-run-evidence/`;⇒ 归档后**第二次** `cep_freeze_check.sh --update --authorized-by`(新 main spec 自动入冻结集)
-- [ ] A9.5 KPI 活口径 **1/3 → 0/3**
+- [x] A9.1 `ctest --test-dir build -j4` **176/176** ⇒ ✅ 实测 **176/176** 全绿(197.73s)
+- [x] A9.2 新增闸自身 rc=0 + **全部** `scripts/test/cep_*.sh` 逐个 rc=0(⛔ **不写死绝对数**;以 `ls scripts/test/cep_*.sh` 实测为准并回填;⚠️ `cep_test_shadow.sh` 在磁盘但**不在** README 三表 ⇒ 本次只登记该缺口,不在本 change 内修) ⇒ ✅ 新增闸 `cep_full_green_run_check` rc=0;磁盘 `cep_*.sh` = **42** 个逐个 rc=0;⚠️ `cep_test_shadow.sh` 的登记缺口**已登记**(不在本 change 内修)
+- [x] A9.3 format / docs_sync / doc_ref / agents_md_lint / freeze / **reconcile** 全 rc=0 ⇒ ✅ 全 rc=0(freeze 无参复验 rc=0 · reconcile 3↔3 · 0 问题)
+- [x] A9.4 `openspec archive`(✅ 已完成归档语义)⇒ delta **ADDED** 合并进 `openspec/specs/cep-full-green-run-evidence/`;⇒ 归档后**第二次** `cep_freeze_check.sh --update --authorized-by`(新 main spec 自动入冻结集) ⇒ ✅ `openspec archive --yes` rc=0(`archivedAs = 2026-11-13-cpptlm-cep-full-green-run-evidence` · `specsUpdated: true` · added=1)⇒ main spec 落 `openspec/specs/cep-full-green-run-evidence/spec.md`;**第二次** `--update --authorized-by "Entry #394"`(新 main spec 自动入 M1 冻结集,81 → **82** 产物)
+- [x] A9.5 KPI 活口径 **1/3 → 0/3** ⇒ ✅ **7 处**回填(AGENTS.md · `.rddf/roadmap.md` · `phases/phase-10.md` · `obj §5.2` · `cpptlm-cep-umbrella.md` · `cpptlm-cep-nvlink-sharp.md`(**2 处**));C7 条目由「立项 ⇒ 占 1 slot,per Entry #394」改为「**归档** ⇒ slot 已释放,per Entry **#398**」;`cep_docs_sync_check` 的 **KPI baseline 断言**(实测 0/3)转绿
+- [x] A9.6 **体量数字回填**(A7.3 登记 ⏸ 随 A9)⇒ ✅ `AGENTS.md` **6 处**:cep-* main spec **40 → 41** · main spec 总数 **126 → 127** · 归档 change 数 **140 → 141**(2 处)· KPI 行「1 个 active → 1/3」改为「0 个 active → 0/3」;`cep_docs_sync_check` 的**体量数字守**转绿(实测 归档 141 / cep-* spec 41 / 闸 42)
 
 ## ⛔ 明确不做
 - ⛔ 为凑 IC3 掩盖真实违例 · ⛔ 用合成 fixture 或模型级装置实例冒充拓扑级 E2E run · ⛔ 删 `not_collected` 的键而不接产出者 · ⛔ 以「挂了检测器但样本从未流入」的实测 0 充数 · ⛔ 声称「检测力已证」 · ⛔ 改 IC3 判据 / 阈值 / 预登记 / `metrics.schema.json` / retention 条款 · ⛔ 改任何 ADR **决策 / 正文** · ⛔ 改 `B3b-2` · ⛔ 新建 ADR · ⛔ 动 `§4.0`
