@@ -682,9 +682,43 @@ group-scoped completion     → Fabric Collective Plane
 - [x] ③ 的 6 条口径齐备(尤其第 3 / 5 条)
 - [x] 冻结面五步授权已执行:台账 **Entry #397** 先落 → **commit 本则 + `ADR-CEP-19` SU + `ADR-CEP-06` SU + 索引重生成** → `cep_freeze_check.sh --update --authorized-by "Entry #394"` → **清单单独 commit** → 无参复验 provenance 通过
 
+## 附录 · Status Update 2026-11-13(证据档位阶梯 · per 台账 Entry #404)—— 三档阶梯 + 档位声明义务 + 跨档聚合禁令
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本文件正文与任何既有 SU —— **逐字保留不回改**;⛔ 新增 invariant 数 = **0**。
+> **依据**:`ADR-CEP-20`(v1.0 · 决策 6)· change `cep-evidence-tier-declaration` · 台账 **Entry #403**(立项)/ **#404**(本则落盘)· **Entry #402**(ADR 签发回执)
+
+### ① 能力阶梯(三档 · 强度**不可跨档比较**)
+
+| 档 | 载体 | 违例类证据强度 | 机器载体 |
+|---|---|---|---|
+| **0** | 拓扑级 E2E 装置(`StubCacheEndpointTLM` + `CohIfResponderTLM`) | **样本通路活性**(⛔ **非**语义判据) | `scripts/test/cep_full_green_run_check.sh` 的 **C1'** + `observation_keys.memory_ops_checked_addrs` |
+| **1** | 模型级 `ConsistencyCompletionModel`(B4 的载体) | **语义判据**(三负控 + 耦合探针 + watchdog 非空洞) | `ADR-CEP-06` SU#4 ② 六条非空洞性约束 |
+| **2** | 协议级引擎(`include/tlm/cep/*_protocol_engine.hh`) | **协议语义**(天花板) | `ADR-CEP-12` 的实例面 ⇒ ⏭ 观测面**未建**(另立 change 评估) |
+
+### ② 两条义务(⛔ 引用一致性结论时不可省)
+
+1. **档位声明义务** —— 任何一致性断言**必须**声明档位与载体;⛔ **禁止跨档比较强度**(档 0 的 0 **不得**与档 1 的 0 并列引用);
+2. **跨档聚合禁令** —— ⚠️ **本仓的对账注册表与报告词表不分档**:`test/cep_e2e_runs.jsonl` 里**唯一**的 `"ic3_verdict": "✓ 通过"` 是**档 0**;`ic3_verdict` 的三态词表**不含档位维度** ⇒ ⇒ **按 `hypothesis_id` 聚合 verdict 前必须同读同条目的 `evidence_scope`**,⛔ 不得仅凭 verdict 计数。档位登记的机器面 = `test/cep_e2e_run_tiers.json` + `scripts/test/cep_e2e_reconcile_check.sh`(T1~T3 + T2b)。⚠️ **T2b 的豁免是显式的**:历史 2 条框架 run 早于 `ADR-CEP-20`,其 `evidence_scope` 无档位词 ⇒ 登记于档位表的 `grandfathered`(⛔ 非静默跳过;台账 append-only ⛔ 不可回改)。
+
+### ③ 档 0 的口径(⛔ 随引用重复)
+
+- 本装置**无 sharer 语义** ⇒ **SWMR 违例结构上不可达**(喂料通路只调合法写 `write()`,`write()` 不累加 `swmr`)⇒ ⛔ **不产出 SWMR 检测力见证**;
+- 写数据**恒 0** + home 只回显 ⇒ **无版本语义** ⇒ data-value 检查**无判别力**;
+- ⇒ 该 0 是「**本装置无该形态**」的 0,⛔ **不得**表述为「已证明协议层无违例」,⛔ **不得**称「检测力已证」;⛔ **一次通过态实例 ≠**「所有协议族 / 所有拓扑达成」;⛔ **不得**读成「B4 被推翻」(B4 由**档 1** 达成)。
+
+### ④ Verification(可勾选 · 前瞻)
+
+- [x] 本则已追加,且本文件正文与**全部**既有 SU **逐字未变**;新增 invariant 数 = **0**
+- [x] ① 三档与 ② 两条义务齐备;⛔ 未把档 0 的通过态与档 1 / 档 2 的强度并列
+- [x] ③ 的五条口径齐备(尤其「SWMR 结构不可达」「不得称检测力已证」)
+- [x] 档位登记的机器面可机判(`test/cep_e2e_run_tiers.json` + T1~T3/T2b + 4 条决定性变异)
+- [x] 冻结面五步授权已执行:台账 **Entry #404** 先落 → **commit 本则 + 索引重生成** → `cep_freeze_check.sh --update --authorized-by "Entry #404"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:`ADR-CEP-20` 决策 6 / §5 抓取点 6 · 台账 **Entry #404** / **#403** / **#402** · `ADR-CEP-06` SU#4 ② · `ADR-CEP-12` · `docs/guide/cep-usage.md` §12.9 · `test/cep_e2e_run_tiers.json`
+
 ## §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295)
 
-> **用途**:本文件已 **31 个一级节 / 18 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
+> **用途**:本文件已 **32 个一级节 / 19 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
 
 > ⚠️ **新纪律(per 台账 Entry #295,逐字)**:本索引**永久置于文末**;此后**新增段落 SHALL 插在本索引之前** ⇒ **新增内容永不使既有 `path:line` 锚点位移**;⚠️ **最新 SU 在本索引之前**(⛔ 勿在本文末找最新段)。
 
@@ -692,7 +726,7 @@ group-scoped completion     → Fabric Collective Plane
 
 > ⚠️ **2026-11-12 起**:索引 A / 索引 B **全量列出**(⛔ 不再有「另有 N 个未列入」的 `## ` 标题);自述数 == 索引行数 == 文件**实际** `## ` / SU 数(`cep_index_position_check.sh` 三合一判据 + 行号逐行判据)。⚠️ **待人工判断的导航标注不在索引 A / B**(索引 A/B 是机械视图)⇒ 见索引 C 与 `§11` / `§12` 的正文说明。
 
-### 索引 A · 一级节(31)
+### 索引 A · 一级节(32)
 
 | # | 章节 | 行 |
 |---|---|---|
@@ -726,9 +760,10 @@ group-scoped completion     → Fabric Collective Plane
 | 28 | Status Update 2026-11-12(per 台账 Entry #363)—— **R-c 机器检查已落地**(D0 堵法 ② 兑现)+ 收口指针改指新闸 | 571 |
 | 29 | Status Update 2026-11-13(per 台账 Entry #373)—— **DoD 读法口径订正**(MUST-FIX-1 = Stage 4+ 准入按事件 · MUST-FIX-2 = 禁令作用域重裁) | 602 |
 | 30 | 附录 · Status Update 2026-11-13(拓扑级 IC3 通过态 · per 台账 Entry #396 + #397)—— 拓扑级「全绿 run」的**证据面登记** | 639 |
-| 31 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 685 |
+| 31 | 附录 · Status Update 2026-11-13(证据档位阶梯 · per 台账 Entry #404)—— 三档阶梯 + 档位声明义务 + 跨档聚合禁令 | 685 |
+| 32 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 719 |
 
-### 索引 B · Status Update(18 · 2026-10-28 起)
+### 索引 B · Status Update(19 · 2026-10-28 起)
 
 | # | 日期 | 主题 | 台账 | 行 |
 |---|---|---|---|---|
@@ -750,6 +785,7 @@ group-scoped completion     → Fabric Collective Plane
 | 16 | 2026-11-12 | Status Update 2026-11-12(per 台账 Entry #363)—— **R-c 机器检查已落地**(D0 堵法 ② 兑现)+ 收口指针改指新闸 | Entry #363 | 571 |
 | 17 | 2026-11-13 | Status Update 2026-11-13(per 台账 Entry #373)—— **DoD 读法口径订正**(MUST-FIX-1 = Stage 4+ 准入按事件 · MUST-FIX-2 = 禁令作用域重裁) | Entry #373 | 602 |
 | 18 | 2026-11-13 | 附录 · Status Update 2026-11-13(拓扑级 IC3 通过态 · per 台账 Entry #396 + #397)—— 拓扑级「全绿 run」的**证据面登记** | Entry #396 | 639 |
+| 19 | 2026-11-13 | 附录 · Status Update 2026-11-13(证据档位阶梯 · per 台账 Entry #404)—— 三档阶梯 + 档位声明义务 + 跨档聚合禁令 | Entry #404 | 685 |
 
 ### 索引 C · 关键表指针(高频查阅)
 

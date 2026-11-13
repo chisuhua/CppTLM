@@ -1,0 +1,16 @@
+{
+  "schema": "cep-e2e-run-tiers/v2",
+  "note": "CEP 一致性证据的**档位登记表**(per `ADR-CEP-20` 决策 6 · change `cep-evidence-tier-declaration`)。⚠️ **旁挂**于 append-only 台账 `test/cep_e2e_runs.jsonl` —— 该台账**不得回改**。档位词真源 = `scripts/test/cep_e2e_reconcile_check.sh` 的 `TIER_WORDS`(定义出处 = `ADR-CEP-20` 决策 6 的能力阶梯表):`0` = 拓扑级 E2E 装置(样本通路活性,⛔ 非语义判据)· `1` = 模型级 `ConsistencyCompletionModel`(语义判据)· `2` = 协议级引擎(协议语义)。⚠️ 新增入库 run **必须**在 `run_tiers` 登记(否则报「档位未登记」);反之登记了未入库的 run ⇒ 报「僵尸档位登记」。⚠️ **每个档 0 run 必须**落在 `declaration_required` 或 `grandfathered` 之一(⛔ 不得静默跳过)—— `grandfathered` 须逐条给理由。",
+  "run_tiers": {
+    "cep-e2e-2026-11-09-a": 0,
+    "cep-e2e-2026-11-09-b": 0,
+    "cep-full-green-2026-11-13": 0
+  },
+  "declaration_required": [
+    "cep-full-green-2026-11-13"
+  ],
+  "grandfathered": {
+    "cep-e2e-2026-11-09-a": "2026-11-09 入库,**早于** `ADR-CEP-20`(2026-11-13 签发);其 `evidence_scope` 记的是「可对账(…);⛔ 非 B4 证据;⛔ 非一致性安全断言(IC3=⚪ 不适用)」—— 该措辞**等价于**档 0 的定位(⛔ 非语义判据),但**未使用**档位词 ⇒ 台账 `test/cep_e2e_runs.jsonl` **append-only 不可回改** ⇒ 显式 grandfather,⛔ 不静默豁免。⚠️ 该豁免**仅**覆盖「档位词缺失」这一项,不覆盖其它判据。",
+    "cep-e2e-2026-11-09-b": "同上(2026-11-09 入库,早于 ADR-CEP-20;`hypothesis_id = framework-e2e`;⛔ append-only 不可回改)⇒ 显式 grandfather。"
+  }
+}

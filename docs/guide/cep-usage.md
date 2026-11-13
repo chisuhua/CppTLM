@@ -202,9 +202,34 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 > - **「全绿 run」缺口**(SU · 十五 ①)—— ✅ **拓扑级已闭合(2026-11-13)**:`experimental/run-20261113-151310-cep-full-green/`(`run_id = cep-full-green-2026-11-13`,`hypothesis_id = h3`)的 `ic3_verdict = ✓ 通过`(两违例类**均实测**为 0)· 载体 = 台账 **Entry #396**(7 字段)+ `test/cep_e2e_runs.jsonl` 第 3 条;⚠️ **口径(⛔ 随引用重复)**:本装置**无 sharer 语义** ⇒ SWMR 结构上不可达;写数据**恒 0** ⇒ 无版本语义 ⇒ data-value 无判别力 ⇒ 该 0 是「**本装置无该形态**」的 0(⛔ 不得称「检测力已证」);⚠️ **非**「所有协议族 / 所有拓扑达成」;
 > - **装配闸未挂 `validate_topology` CLI 的不对称**(SU · 十七 ② 末条)—— ✅ **已闭合 2026-11-13**(per 台账 **Entry #381** 归档 + **Entry #387** 验收):IAG 族**两臂同补** —— ① 装配路径臂(`src/core/module_factory.cc` **Step 0.26**,FAIL ⇒ 装配失败且**零副作用**)② 离线 CLI 臂(`examples/cep_instance_assembly_gate.cc` + `validate_topology` 的**单列第二段**,9 份 CEP config)⇒ 两臂**共用同一份**判据实现与加载规则 ⇒ `instantiateAll` 与 CLI 对同一 config 的结论**必然一致**。
 >   ⚠️ **口径订正(2026-11-13,per 台账 Entry #379 ②)**:原登记(Entry #358)称「CLI 未挂 IAG 闸族 ⇒ 两侧结论**可能不一致**」—— **实测偏窄**:IAG 族在 `instantiateAll` 侧**原本也没有**执行臂(`module_factory.cc` 全文 0 命中 `run_instance_assembly_gate`)⇒ 实为「**两侧一致地都不挂**」⇒ 缺陷面更宽 ⇒ 修法必须**两臂同补**(已按此实施)。
+> - **证据档位阶梯**(`ADR-CEP-20` 决策 6)—— 本清单**不含**三档阶梯与档位声明义务(它们是**读法约束**,不是未结项)⇒ 见本手册 **§12.9** + `docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md`;
 >   ⛔ **勿与本轮 Q1 修复的事项混淆**:Q1 修的是「**组合 target 引用已删除文件 ⇒ 整条 target
 >   跑不完 ⇒ 其后 4 条拓扑校验 + 装配闸 CLI 挂点全部从未执行**」(静默 20 天)⇒ 该项**已闭合**;
 >   两者是**不同**的缺陷(前者 = 挂点未执行;后者 = 挂点已执行但判据族不全)。
+
+
+## 12.9 证据档位与强度边界(`ADR-CEP-20` 决策 6 · change `cep-evidence-tier-declaration`)
+
+> **一句话**:同一个「IC3 ✓ 通过」在**不同档位**上强度**天差地别** ⇒ 引用前**先问档位**。
+
+| 档 | 载体 | 违例类证据强度 | 机器载体 |
+|---|---|---|---|
+| **0** | 拓扑级 E2E 装置(`StubCacheEndpointTLM` + `CohIfResponderTLM`) | **样本通路活性**(⛔ **非**语义判据) | `scripts/test/cep_full_green_run_check.sh` 的 **C1'** + `observation_keys.memory_ops_checked_addrs` |
+| **1** | 模型级 `ConsistencyCompletionModel`(B4 的载体) | **语义判据**(三负控 + 耦合探针 + watchdog 非空洞) | `ADR-CEP-06` SU#4 ② 六条非空洞性约束 |
+| **2** | 协议级引擎(`include/tlm/cep/*_protocol_engine.hh`) | **协议语义**(天花板) | `ADR-CEP-12` 的实例面 ⇒ ⏭ 观测面**未建**(另立 change 评估) |
+
+**两条义务(⛔ 引用一致性结论时不可省)**
+
+1. **档位声明义务** —— 任何一致性断言**必须**声明档位与载体;⛔ **禁止跨档比较强度**(档 0 的 0 **不得**与档 1 的 0 并列引用);
+2. **跨档聚合禁令** —— ⚠️ **对账注册表与报告词表不分档**:`test/cep_e2e_runs.jsonl` 里**唯一**的 `"ic3_verdict": "✓ 通过"` 是**档 0**;`ic3_verdict` 三态词表(`✓ 通过` / `❌ 违例 fail` / `⚪ 不适用`)**不含档位维度** ⇒ ⇒ **按 `hypothesis_id` 聚合 verdict 前,必须同读同条目的 `evidence_scope`**,⛔ 不得仅凭 verdict 计数。档位登记的机器面 = `test/cep_e2e_run_tiers.json` + `scripts/test/cep_e2e_reconcile_check.sh`(T1~T3 + T2b:每个档 0 run 必须落在 `declaration_required` 或 `grandfathered` 之一,⛔ 不得静默跳过)。
+
+**⚠️ 档 0 的口径(⛔ 随引用重复)**
+
+- 本装置**无 sharer 语义** ⇒ **SWMR 违例结构上不可达**(喂料通路只调合法写 `write()`,`write()` 不累加 `swmr`)⇒ ⛔ **不产出 SWMR 检测力见证**;
+- 写数据**恒 0** + home 只回显 ⇒ **无版本语义** ⇒ data-value 检查**无判别力** ⇒ ⇒ 该 0 是「**本装置无该形态**」的 0,⛔ **不得**表述为「已证明协议层无违例」,⛔ **不得**称「检测力已证」;
+- ⇒ **一次通过态实例 ≠**「所有协议族 / 所有拓扑达成」;⛔ **不得**读成「B4 被推翻」(B4 由**档 1** 达成)。
+
+**要看真判别力**:⇒ **档 2**(协议引擎不变量观测面)= 本仓可达但**未建**,量级见 `.rddf/reviews/cep-evidence-tier2-scale-assessment.md`(最小切片 ≈ 7-11 人日)。
 
 ---
 

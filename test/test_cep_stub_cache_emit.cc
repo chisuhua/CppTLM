@@ -56,6 +56,33 @@ namespace {
     constexpr int kRunCycles = 300;
     constexpr std::uint64_t kRunSeed = 20261108;
 
+    /// **生产喂料映射** —— ⛔ 单实现源:生产(E2E-01)与**喂料映射见证**用例**共用**本函数
+    /// (per `ADR-CEP-20` 决策 6 / change `cep-evidence-tier-declaration` 的 AC-2)。
+    ///
+    /// 语义(`:is_write` / `:data` / `:addr` 三字段解释):
+    ///   · 写 ⇒ `detector.write(addr, data)`(本装置无 sharer ⇒ invalidate 义务恒已满足)
+    ///   · 读 ⇒ `detector.read(addr, data)`(观测值 vs 该地址最后一次写入值)
+    ///   · `rejected` ⇒ 跳过(未真正访问存储阵列 ⇒ 无内存操作样本)
+    ///
+    /// ⚠️ **喂料通路对 SWMR 无通道(结构事实,⛔ 非缺陷)**:本函数只调**合法写** `write()`,
+    ///    而 `SwmrDataValueDetector::write()` 无条件置 `written=true`、**不累加 `swmr`**
+    ///    (`test/cep_experiment_harness.hh:157-162`)⇒ ⇒ **任何** `txn_stamps` 序列都只能产出
+    ///    `swmr == 0` ⇒ ⛔ **不得**把该 0 读成「SWMR 检测力已见证」(per `ADR-CEP-20` 决策 3c)。
+    void feed(cep_exp::SwmrDataValueDetector& detector,
+              const std::vector<tlm::cep::StubCacheEndpointTLM::TxnStamp>& stamps,
+              std::set<std::uint64_t>* addrs = nullptr) {
+        for (const auto& s : stamps) {
+            if (s.rejected)
+                continue;
+            if (addrs != nullptr)
+                addrs->insert(s.addr);
+            if (s.is_write)
+                detector.write(s.addr, s.data);
+            else
+                detector.read(s.addr, s.data);
+        }
+    }
+
     /// 装配配置加载(路径按**仓根**解析 ⇒ 与 CWD 无关)
     nlohmann::json load_topology(const char* file) {
         const auto path = cpptlm::cep::repo_root() / "configs" / file;
@@ -119,15 +146,7 @@ TEST_CASE("E2E-01: E2E 装置产出 `metrics.json` + `simulation_config.json`(�
     //   ⚠️ 接上产出者才允许删 `not_collected` 的登记(per Entry #222 ④ 的反面要求)。
     cep_exp::SwmrDataValueDetector detector;
     std::set<std::uint64_t> memory_ops_addrs;
-    for (const auto& s : w->txn_stamps()) {
-        if (s.rejected)
-            continue; // 拒绝 = 未真正访问存储阵列 ⇒ 无内存操作样本
-        memory_ops_addrs.insert(s.addr);
-        if (s.is_write)
-            detector.write(s.addr, s.data); // 本装置无 sharer ⇒ invalidate 义务恒已满足
-        else
-            detector.read(s.addr, s.data); // 观测值 vs 该地址最后一次写入值
-    }
+    feed(detector, w->txn_stamps(), &memory_ops_addrs);  // ⛔ 单实现源(见文件内 feed())
     REQUIRE_FALSE(memory_ops_addrs.empty()); // 样本活性见证:⛔ 不得以零样本充数
     REQUIRE(detector.counts().swmr == 0u);
     REQUIRE(detector.counts().data_value == 0u);
@@ -235,4 +254,57 @@ TEST_CASE("E2E-01: E2E 装置产出 `metrics.json` + `simulation_config.json`(�
         ++file_count;
     }
     REQUIRE(file_count == 2u);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 喂料映射的 **data-value 可达性**(正负配对 · synthetic fixture)
+//
+// 谁需要它(per `ADR-CEP-20` 决策 6 / change `cep-evidence-tier-declaration`):
+//   存量负控(`test/test_cep_experiment_harness.cc:87-130` 等 5 处)**不经过**本文件的
+//   `feed()` 喂料映射 ⇒ 「映射能把 data-value 形态**送达**检测器」这一环**无判据**。
+//   本用例补的正是这一环:⛔ 不是「再写一遍负控」(那是同义反复)。
+//
+// ⚠️ **本用例不设 `CEP_EXP_DIR`** ⇒ 无任何产物副作用(与 E2E-01 完全解耦)。
+// ⚠️ 打 `[synthetic-fixture]` 显式标注:输入是**合成**的事务戳(⛔ 非真实 run)。
+// ⛔ **不**证明「装置会产生违例形态」—— 真实流 `req.data` 恒 0(`traffic_gen_tlm.hh:233`)。
+// ─────────────────────────────────────────────────────────────────────────────
+TEST_CASE("[cep][exp][evidence-tier] 喂料映射的 data-value 可达性(正负配对 · synthetic fixture)",
+          "[cep][exp][evidence-tier][synthetic-fixture]") {
+    using Stamp = tlm::cep::StubCacheEndpointTLM::TxnStamp;
+
+    auto mk = [](std::uint64_t txn, bool is_write, std::uint64_t data) {
+        Stamp s;
+        s.txn_id = txn;
+        s.addr = 0x1000;
+        s.is_write = is_write;
+        s.data = data;
+        return s;
+    };
+    // 同一地址两次写(版本 1 → 2),随后一次读 —— 观测值由用例**唯一决定**
+    auto base = [&] { return std::vector<Stamp>{mk(1, true, 1), mk(2, true, 2), mk(3, false, 0)}; };
+
+    SECTION("负控:观测到**旧**版本 ⇒ data-value 违例 = 1") {
+        auto stamps = base();  // 读的 data = 0 ≠ 最后写入的 2
+        cep_exp::SwmrDataValueDetector det;
+        feed(det, stamps);
+        REQUIRE(det.counts().data_value == 1u);
+    }
+    SECTION("正控:**同一 vector**,仅把观测值改为最新 ⇒ 违例 = 0") {
+        auto stamps = base();
+        stamps.back().data = 2;  // ⭐ 唯一差异
+        cep_exp::SwmrDataValueDetector det;
+        feed(det, stamps);
+        REQUIRE(det.counts().data_value == 0u);
+    }
+    SECTION("结构事实锁:喂料通路对 SWMR **无通道** ⇒ 重复写恒 0(⛔ 非「已见证」)") {
+        std::vector<Stamp> stamps;
+        for (std::uint64_t i = 0; i < 10; ++i)
+            stamps.push_back(mk(i + 1, true, i + 1));  // 同地址连续 10 次写
+        cep_exp::SwmrDataValueDetector det;
+        feed(det, stamps);
+        // ⚠️ 本断言锁的是**事实**:`feed()` 只调合法写 `write()`,而 `write()` 不累加 `swmr`
+        //    ⇒ 即便 10 次重复写也恒 0 ⇒ SWMR 违例在**喂料通路结构上不可达**
+        //    (⛔ 故本 change **不**产出 SWMR 检测力见证,per ADR-CEP-20 决策 3c)。
+        REQUIRE(det.counts().swmr == 0u);
+    }
 }

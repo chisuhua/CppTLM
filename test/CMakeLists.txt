@@ -780,6 +780,15 @@ add_test(NAME cep_tilelink_engine_failclosed
 add_test(NAME cep_e2e_reconcile_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_e2e_reconcile_check.sh)
 
+# ── 2026-11-13(change `cep-evidence-tier-declaration` / per `ADR-CEP-20` 决策 6(ii)):
+#    **双向闸的 4 条决定性变异**(档位声明缺失 / 档位未登记 / 僵尸档位登记 / 必填键缺失)。
+# ⚠️ 只在**影子副本**上做(`CEP_RECONCILE_JSONL` / `CEP_RECONCILE_TIERS`)⇒ 真实仓字节
+#    指纹前后必须相等;每条变异须**按签名红**(⛔「rc≠0」不构成红因)。
+add_test(NAME cep_e2e_reconcile_mutations
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_e2e_reconcile_check.sh --mutations)
+set_tests_properties(cep_e2e_reconcile_mutations
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # ── 2026-11-13(per 台账 Entry #396 / #397 / change cpptlm-cep-full-green-run-evidence):
 #     **拓扑级「全绿 run」证据闸** ──
 # 六条判据(C1 违例类实测 / C1' 样本活性见证 / C2 零违例 / C3 IC3 通过态 /
