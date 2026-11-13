@@ -96,3 +96,22 @@ IC3 = `deadlock_violations == 0 && memory_violations == 0`(per `07 号` §4 的 
 ⇒ **更新后的闭合路径第 1 步**:⛔ 不是「用装置跑拓扑 B」(措辞不准确)⇒ 而是「**在真实 E2E 场景中挂 `SwmrDataValueDetector` + 产生真实内存操作样本 ⇒ 该 run 的 `memory_violations` 从 `not-collected` 变为实测值**」⇒ **P-1 的答案 = 当前 E2E 场景均不满足 ⇒ 需扩写场景**(规模 ≈1-2 人日,比原估 +0.5 人日)。
 ⇒ ⚠️ 三条硬边界**不变**(尤其「⛔ 不得为凑 IC3 掩盖真实违例」)。
 
+---
+
+## 六 · ⚠️ 订正二(2026-11-13 · 审查后 · append-only,⛔ 原文不改)
+
+> **性质**:纯**追加**订正段。⛔ **不改** §一 ~ §五 **任何**既有文字(尤其 §一.3 的「结论」行与 §二 硬边界 2)· ⛔ **不改** §五 订正的 ①② 两处(那两处仍成立)⇒ **本段只订正「合成 / 真实 run」这组表述**。
+
+**§一.3 与 §二 硬边界 2 的「合成」表述与已签记录相反**:
+
+| # | 原表述 | 订正 |
+|:--:|---|---|
+| ① | §一.3 结论行:「与 B4 当时的形态**同型**(装置 + **合成 fixture** 的通过态实例已有,**真实 run 实例缺**)」 | ⛔ **说反了**。`obj-cep-platform.md` **§6.2 B4**(Entry #228 ③)明写 B4 的达成证据 (iii) 是「`render_report --check` 绿 且 `report.html` 渲染『✓ 一致性闸门通过』—— IC3 三态中该态**首个真实 run 实例**(此前仅合成 fixture **F1**)」;`docs/validation/2026-11-05-cep-b4-evidence-device.md` §0 同(「**该态的首个真实实例**(此前仅由合成 fixture F1 覆盖)」)⇒ 实测 `experimental/run-20261105-153418-h2h3h4h6/h3/`:`deadlock_violations = 0` + `memory_violations = 0` **均在 `_measured`** · `simulation_config.json`:`hypothesis_id = "h3"`(预登记 registered 行)· `report.html` 渲染「一致性闸门通过」⇒ ⇒ **B4 的通过态实例 = 真实 run(装置级 / 模型级)**;**合成**的是更早的 fixture **F1** ⇒ ⇒ **R-3 的缺口 = 「拓扑级(E2E 链)run 不承载 IC3 通过态」**,⛔ **不是**「真实 run 实例缺」 |
+| ② | §二 硬边界 2:「**不得用合成 fixture 冒充真实 run** —— B4 当时的通过态实例是**合成**的,本项要求的正是**真实 run**」 | ⛔ 同 ① ⇒ 改为:「**不得用合成 fixture 或模型级装置实例冒充拓扑级 E2E run**」—— B4 实例是**真实 run 但属模型级**(装置 `ConsistencyCompletionModel`);合成的是更早的 fixture F1 ⇒ 边界**收紧**(多挡一层「模型级冒充拓扑级」) |
+
+⇒ **闭合路径第 1 步的「动作」不变**(仍为「在真实 E2E 场景中挂 `SwmrDataValueDetector` + 产生真实内存操作样本 ⇒ 该 run 的 `memory_violations` 从 `not-collected` 变为实测值」),但**目标档位**须写明 = **拓扑级**(per `ADR-CEP-19` **ASM-8 ①**:拓扑级 run 的 `hypothesis_id` **须绑定 `H3`** —— 唯一双违例类均须实测的已登记行)⇒ ⛔ 绑定 H3 **不需要**改 `experimental/preregistration.json`(H3 的 `out_of_scope` = {`coherence_stalls`, `collective_stalls`, `directory_misses`},其余 10 键必须实测)。
+⇒ **硬边界 1 / 3 不变**;⚠️ 本次审查另补两条实施期硬约束(**不属于**本段订正范围,落 change 的 design §D-3 / §D-7):**不得以「检测器已挂载但样本从未流入」的实测 0 充数**(须有样本计数见证)· **不得称「检测力已证」**(本项不含负控 ⇒ 证据强度弱于 B4 的三负控 + 耦合探针)。
+⇒ **落地**:change `openspec/changes/cpptlm-cep-full-green-run-evidence/` 的 **proposal §前提订正**(5 条)· **design §D-1 / §D-2 A2.3 / §D-5 C4 / §D-7** · **tasks A0.5 / A2.3 / A2.5 / A4.4 / A8.2** · **spec delta 的 Purpose + Scenario「目标 run SHALL 具备证据资格」/「证据 SHALL 来自拓扑级 E2E run」**。
+
+**关联**:台账 **Entry #394**(立项 + 五步链授权号)· **#393**(P-1 核对)· **#392**(根因首定位)· **#228**(B4 达成)· `obj §6.2 B4` · `docs/validation/2026-11-05-cep-b4-evidence-device.md` · `ADR-CEP-19` **ASM-8 ①** · `tools/render_report.py` 预登记判据④ · change `cpptlm-cep-full-green-run-evidence` proposal §前提订正
+
