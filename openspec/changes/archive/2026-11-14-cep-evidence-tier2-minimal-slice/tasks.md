@@ -54,5 +54,5 @@
 ## A6 · 冻结五步链 + 归档(G6)
 - [x] A6.1 授权 Entry 先落台账 ⇒ 五步链:Entry → 产物 commit → `--update --authorized-by "Entry #N"`(**一次**,归档前)→ 清单单独 commit → 无参复验 rc=0 ⇒ 冻结 **84 → 85** ⇒ ✅ 第一次 `--update`(授权 Entry #411 · 84 产物 hash 刷新 · 清单单独 commit · 无参复验 rc=0)⇒ 第二次待归档后执行
 - [x] A6.2 `openspec validate --strict` rc=0 + **tasks 全勾** ⇒ `openspec archive cep-evidence-tier2-minimal-slice --yes` rc=0(✅ 已完成归档语义 · **带 delta** ⇒ 合并出 `openspec/specs/cep-evidence-tier2-observation/spec.md`) ⇒ ✅ `openspec archive cep-evidence-tier2-minimal-slice --yes` rc=0(archivedAs = `2026-11-14-cep-evidence-tier2-minimal-slice` · specsUpdated **added 1** ⇒ 合并出 `openspec/specs/cep-evidence-tier2-observation/spec.md`;⛔ **已完成归档**语义 · 带 delta · 新增 invariant 数 = 0)
-- [ ] A6.3 KPI **1/3 → 0/3** + `AGENTS.md` / 台账 §5.2 的 KPI baseline 与体量数字回填
-- [ ] A6.4 全量回归:`ctest` 全绿 · 全部 `scripts/test/cep_*.sh` 逐个 rc=0 · `docs_sync --strict` / `agents_md_lint` / `format --check` 全 rc=0 · 工作区干净
+- [x] A6.3 KPI **1/3 → 0/3** + `AGENTS.md` / 台账 §5.2 的 KPI baseline 与体量数字回填 ⇒ ✅ KPI **1/3 → 0/3**(`AGENTS.md` 4 处 + 台账 §5.2 + `phase-10.md` + 2 份 improvement + `.rddf/roadmap.md`)+ 体量数字(cep-* main spec 42→43 · main spec 总数 128→129 · 归档 change 142→143)
+- [x] A6.4 全量回归:`ctest` 全绿 · 全部 `scripts/test/cep_*.sh` 逐个 rc=0 · `docs_sync --strict` / `agents_md_lint` / `format --check` 全 rc=0 · 工作区干净 ⇒ ✅ `ctest` **177/177** 全绿 · 全部 `scripts/test/cep_*.sh`(17 个)逐个 rc=0 · `docs_sync --strict` / `agents_md_lint` / `format --check` / `markdown_link_check` 全 rc=0 · 工作区干净
