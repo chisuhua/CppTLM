@@ -22360,3 +22360,31 @@ R-3「全绿 run」缺口 **闭合**:`cpptlm-cep-full-green-run-evidence` 已归
 - **R-5**(`nvlink_4` IAG-05 无真实 config)维持**登记不修**(补 config 属新增能力)。
 
 **⑥ 关联**:**#398**(归档回执)· **#397**(A6 授权 + 三处落盘清单)· **#396**(A4 真跑 + 7 字段)· **#395**(A0/A1 + 冻结面 1→3 处追记)· **#394**(立项 + 五步链授权号)· **#391**(收口盘点:R-3 本条闭合)· **#388**(体量数字守)· **#304**/**#295**/**#228**/**#222** · `openspec/specs/cep-full-green-run-evidence/spec.md` · `scripts/test/cep_full_green_run_check.sh`
+
+### Entry #400 — 2026-11-13 [build](**R-2 push 回执** —— 用户确认后执行 `git push origin main` · 16 个 commit 已推 · 本地与远端同步(0/0))
+
+**主题**:per 用户口令「先做 P0」⇒ 执行**用户域**的 R-2(push)⇒ 本 Entry = **回执**。
+
+**① 执行前实测**
+
+| 项 | 值 |
+|---|---|
+| 分支 / upstream | `main` → `origin/main` |
+| 远端 | `git@github.com:chisuhua/CppTLM.git` |
+| fetch 后分叉检查 | `git rev-list --left-right --count origin/main...HEAD` = **0 / 16** ⇒ 远端**无**本地缺失的 commit ⇒ **fast-forward 可推,无分叉** |
+| 工作区 | 干净 |
+| 待推范围 | `6636b9bd..23312ae6` = **16 个 commit**(C7 `cpptlm-cep-full-green-run-evidence` 全链:立项 → 审查闭环 → A0~A9 → 归档 → 第 4 轮复审回执) |
+
+**② 执行结果**
+
+`git push origin main` ⇒ **rc=0** ⇒ `6636b9bd..23312ae6  main -> main`;复验 `git rev-list --left-right --count origin/main...HEAD` = **0 / 0** ⇒ **本地与远端已同步**;`origin/main` HEAD = `23312ae6`。
+
+**③ 口径订正(此前活文档的 ahead 数已陈旧)**
+
+台账 Entry #380 / #391 的 R-2 行写「本地 ahead **31** / **44** 个 commit」⇒ 那是**各自当时**的实测值(append-only,⛔ **不回改**历史条目)⇒ **当前实测 = 0**(已全部推送)⇒ 本 Entry 为该状态的**现行回执**。
+
+**④ ⛔ 本 Entry 明确不做**
+
+⛔ 不改任何历史 Entry 的 R-2 行(append-only)· ⛔ 不改 `B3b-2 = 0/4` · ⛔ 不改 KPI 活口径(**0/3** 不变)· ⛔ 不动任何冻结件 · ⛔ **不 push** 其它分支(`cleanup-redundant-configs` / `docs/adr-dgpu-05-09-driver-business-arch` / `docs/designs-migration-dgpu-arch-v2.2` 等**未在本轮范围**,按既有约定不动)。
+
+**关联**:**#399**(第 4 轮复审 + 残余登记)· **#398**(R-3 归档回执)· **#391**(收口盘点:R-2 归因为用户域)· **#380**(R-2 首次登记)
