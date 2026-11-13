@@ -80,7 +80,7 @@
 3. 一次通过态**不构成统计意义上的「全绿」** ⇒ ⛔ 措辞必须限定为「**一次拓扑级 E2E run 的通过态实例**」;
 4. 本项**不改**任何判据 ⇒ 若未来发现违例类语义有缺口,仍须另立 change;
 5. ⚠️ **本项的证据强度弱于 B4**:B4 有三负控 + 耦合探针 + watchdog 非空洞(SU#4 ② 六条非空洞性约束),本项**不含**负控 ⇒ ⛔ **不得**表述为「检测力已证」,⛔ 且「模型级 ≠ 协议级」的口径限定须随引用重复(per `docs/validation/2026-11-05-cep-b4-evidence-device.md` §5);
-6. ⚠️ **CEP 实现侧无内存操作语义**(实测 `include/tlm/cep/*.hh` 对 `memory_read` / `memory_write` / `MemoryOp` **0 命中**)⇒ 本项的内存样本由**测试侧**从 run 的真实事务流(`StubCacheEndpointTLM` 的 per-txn `addr` / `is_write`)导出 ⇒ 该 0 的含义是「**本次 run 的地址 / 写序观察未发现违例**」,**不是**协议级一致性证明。
+6. ⚠️ **CEP 实现侧无内存一致性不变量语义**(实测 `include/tlm/cep/*.hh` 对 `memory_read` / `memory_write` / `MemoryOp` **0 命中**;真实路径 = `cpu_read` / `cpu_write`)⇒ 本项的内存样本由**测试侧**从 run 的真实事务流(per-txn `addr` / `is_write` / `data`)导出 ⇒ ⇒ 该 0 是「**本装置无该形态**」的 0,且**双重空洞**:① 本装置**无 sharer 语义** ⇒ SWMR 违例**结构上不可达**;② 写数据**恒 0** + home 只回显 ⇒ **无版本语义** ⇒ data-value 检查**无判别力** ⇒ ⇒ **不是**协议级一致性证明,⛔ **不得**称「检测力已证」。⚠️ **要获得判别力需另立 change**(写侧非恒定数据 + 版本字段 + 注入式负控 ⇒ 能力新增,⛔ 不在本 change 范围)。
 
 ## 关联
 

@@ -33,6 +33,30 @@
 | **A2** | harness 的**检测器挂载点** + E2E 场景里**真实内存读写**的产生路径 | 读 `test/cep_experiment_harness.hh` 的 `violations` 填充链 + `stub_cache_core` 的 `memory_read/memory_write` 路径 | ⇒ **停**并回报(⛔ 不许猜一个挂载点就改) |
 | **A2.5** | 拓扑级 run 的 **`hypothesis_id` 绑定点**(绑定 H3 后 `not_an_experiment_run` / `run_class` / `evidence_scope` 三处自陈字段的改点) | 读 `test/test_cep_stub_cache_emit.cc` 的 `simulation_config.json` 写出处 + `tools/render_report.py` 判据④ | ⇒ **停**并回报(⛔ 不许绕过预登记绑定) |
 
+### A2.1 / A2.2 · 实测定位结论(2026-11-13 · A2 阶段)
+
+**A2.1 挂载点 = emit 侧一句,harness 零改动**:
+- `ExperimentMetrics::violations`(`test/cep_experiment_harness.hh:345`,类型 `ViolationCounts`)+ 写出点 `:430-432`(`metric_json("memory_violations", violations.total())` + `memory_violation_kinds`)⇒ **harness 只负责「写出」,不负责「填充」**;
+- ⛔ **全仓唯一的填法** = `test/test_cep_experiment_emit.cc:231` `r.metrics.violations = positive.detector().counts();`(**整份 counts 拷贝**)⇒ ⇒ **挂载点 = emit 侧同型一句** `m.violations = detector.counts();` ⇒ ⇒ **`test/cep_experiment_harness.hh` 零改动**。
+
+**A2.2 真实内存读写路径(⚠️ 本 design 的 API 名需订正)**:
+- 真路径 = `StubCacheEndpointTLM::handle_cpu_ingress()`(`include/tlm/cep/stub_cache_endpoint.hh:142`)→ `:150-154` 取 `addr` / `is_write` → `core_.cpu_write(addr, data)` / `core_.cpu_read(addr)`(`include/tlm/cep/stub_cache_core.hh:187` / `:171`,真操作 `lines_[addr].data`)⇒ ⇒ **真实内存读写样本存在**;
+- ⚠️ **订正**:本文件 §D-2 A2 原写「`stub_cache_core` 的 `memory_read/memory_write` 路径」⇒ ⛔ 该 API **不存在**(实测 `memory_read` / `memory_write` 在 `include/tlm/cep/*.hh` **0 命中**)⇒ 实际 API = **`cpu_read` / `cpu_write`**;
+- 样本来源 = `txn_stamps()`(`TxnStamp{txn_id, addr, issue_cycle, complete_cycle, completed, hit, rejected, id_space}`)⇒ ⚠️ **缺 `is_write` 与 `data`** ⇒ ⇒ 需给 `TxnStamp` **增 2 个原始事实字段**(⛔ 只增不删 ⇒ 现有 8 处断言不破);
+- 样本规模:`TrafficGenTLM::issueRequest()`(`include/tlm/traffic_gen_tlm.hh:201`)SEQUENTIAL 下 `is_write = (cur_addr_ % 8 == 0)` ⇒ 每 2 个地址 1 次写;addr 区间 0x1000~0x2000 ⇒ 写 / 读样本均非空。
+
+### A2.3 / A2.5 · 可承载性三问的**改点**(全部定位)
+
+| 字段 | 落点(emit 侧 `simulation_config.json` 写出处) | 现状 | 目标 |
+|---|---|---|---|
+| `hypothesis_id` | `test/test_cep_stub_cache_emit.cc:177` | `"framework-e2e"` | `"h3"`(per `ADR-CEP-19` ASM-8 ①) |
+| `run_class` | `:179` | `"framework-verification"` | 新值(⛔ 须与 `ADR-CEP-06` SU 2026-11-09 ② 的口径在 ADR SU 中对齐) |
+| `not_an_experiment_run` | `:180` | `true` | `false` |
+| `evidence_scope` | `:181-183` | 「⛔ 非 B4 证据;⛔ 非一致性安全断言(IC3=⚪ 不适用)」 | 如实改写(须含**拓扑级** + 强度限定,见 §D-3 语义边界条) |
+
+⇒ **绑定 H3 不需要改 `experimental/preregistration.json`**(H3 已 `registered`,`out_of_scope` = {`coherence_stalls`, `collective_stalls`, `directory_misses`})⇒ 绑定后 `_not_collected` 必须 ⊆ 该 3 键 ⇒ `memory_violations` **必须实测**(A3 目标)且 **延迟族 5 键必须实测**(拓扑 A/B 回程已闭合 ⇒ 实测成立)。
+⇒ ⚠️ **另 1 处同文件断言**须同步:`test/test_cep_stub_cache_emit.cc:154` `REQUIRE(ic3_verdict(m) == NotApplicable)` ⇒ A3 后须改为 `Pass`(⛔ 不得只改 metrics 而留旧断言)。
+
 ### A2.5 · 「不绑 H3」的原理由已失效(一手依据 · 2026-11-13 A1 核对浮出)
 
 `ADR-CEP-06` **SU 2026-11-09(Entry #304)§②** 明写拓扑级 run 当初**不绑 `H3`** 的理由:
@@ -41,7 +65,7 @@
 ⇒ **该前提已被消除**:框架层回程已由 change `cpptlm-cep-dual-port-inbound-dispatch` 修复(双端口适配器入向改为**按端口组**路由)+ 拓扑 A/B 的 home 已配 `emit_completions: true`(实测 `configs/cep_chi_rnf_e2e_{a,b}.json`)⇒ **延迟族 5 键已实测**(实测 `run-2026-11-09-cep-e2e-b`:`avg/p50/p95/p99/max` 全为数值 `5`)⇒ ⇒ **绑 H3 不再违反「未列入 out-of-scope 者必须实测」** ⇒ 且 H3 的 out-of-scope 集**恰好**是那 3 个非违例类 ⇒ ⇒ **绑定 H3 不需要改 `experimental/preregistration.json`**(该文件 M1 冻结集内 ⇒ 零 diff)。
 ⇒ ⛔ **但**:该 SU §② 的**五句证据边界**随之与事实不符 ⇒ 须由 **D-6 的第 3 处冻结面**(`ADR-CEP-06` 一则 Status Update)如实登记本次**形态转变**(⛔ 不得静默翻转自陈字段)。
 
-### A2.3 · 「拓扑级身份」的可判性(⚠️ 问的是**可承载性**,不是「可区分性」)
+### A2.3 · 「拓扑级身份」的可判性(三问的判定依据 · ⚠️ 问的是**可承载性**,不是「可区分性」)
 
 ⚠️ **订正**:原问「真实 run 与合成 fixture 在文件形态上是否可区分」⇒ 答案**是**(可区分),但区分开后得到的是**相反**结论 ⇒ **问错了问题**。正确的三问:
 
@@ -61,7 +85,7 @@
 - **必须(活性见证)**:产出侧登记**样本计数**(落在 `metrics.json` 的 `observation_keys` 附加键,如 `memory_ops_checked_addr_count`,值 **> 0**)⇒ 机器可证「检测器**有样本可检**」⇒ ⛔ **堵住「挂了但样本从未流入 ⇒ 实测 0」的平凡满足**;⚠️ 该键名 ⛔ 不得与 13 必纳键同名(per `cep_b4_observation_keys_check.sh`);⚠️ `observation_keys` 是**附加键** ⇒ 零 `metrics.schema.json` 改动;
 - ⛔ **不得**:把 `not_collected` 里的键**删掉**而不接上产出者(那会让 `metric_json` 输出 0 ⇒ **裸 0 的假绿**,违反 **Entry #222** ④);
 - ⚠️ **零违例是结果,不是目标** ⇒ 若实测 > 0 ⇒ **停止**(见 proposal 的 Out of Scope);
-- ⚠️ **语义边界(必须随登记重复)**:CEP 实现侧**无内存操作语义**(实测 `include/tlm/cep/*.hh` 对 `memory_read` / `memory_write` / `MemoryOp` **0 命中**)⇒ 样本由**测试侧**从 run 的真实事务流(`StubCacheEndpointTLM` 的 per-txn `addr` / `is_write`)导出 ⇒ 该 0 = 「**本次 run 的地址 / 写序观察未发现违例**」,⛔ **不是**协议级一致性证明,⛔ **不得**称「检测力已证」(per `docs/validation/2026-11-05-cep-b4-evidence-device.md` §5 的口径限定同族)。
+- ⚠️ **语义边界(必须随登记重复 · A2 实测精化)**:CEP 实现侧**无内存一致性不变量语义**(实测 `include/tlm/cep/*.hh` 对 `memory_read` / `memory_write` / `MemoryOp` **0 命中**;真实路径 = `cpu_read` / `cpu_write`,per §D-2 A2.2)⇒ 样本由**测试侧**从 run 的真实事务流(`StubCacheEndpointTLM` 的 per-txn `addr` / `is_write` / `data`)导出 ⇒ ⇒ 该 0 是「**本装置无该形态**」的 0,**双重空洞**:① 本装置**无 sharer 语义**(无 directory / 无 sharer tracker)⇒ **SWMR 违例结构上不可达**;② `TrafficGenTLM::issueRequest()` 的 `req.data.write(0)` **恒 0** + home 回程只回显 `p.data`(`include/tlm/cep/cohif_responder.hh:164`)⇒ **无版本语义** ⇒ data-value 检查**无判别力** ⇒ ⇒ ⛔ **不得**表述为「已证明协议层无死锁 / 无违例」,⛔ **不得**称「检测力已证」(per `docs/validation/2026-11-05-cep-b4-evidence-device.md` §5 的同款口径限定)。⚠️ **要获得判别力需另立 change**(写侧非恒定数据 + 版本字段 + 注入式负控 ⇒ **能力新增**,⛔ 不在本 change 范围)。
 
 ## D-4 · 4 件套与登记形态
 
