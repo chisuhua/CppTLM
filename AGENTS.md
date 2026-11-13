@@ -4,7 +4,7 @@
 
 ## WHAT THIS IS
 
-TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**（由 PCIe Endpoint IP + GPGPU Cluster + Memory Cluster + NoC Interconnect + 多层 SimModule 容器等 IP 构成）。2026-2027 年完成 **7 阶段 PCIe EP 微架构**全链路交付（链路层 → 编码 → PHY 数字控制 → SR-IOV → AXI Stream Adapter → AXI4Mapper → Host Bypass + RC → 整合），**Phase 1-7 全部通过 Oracle 评审放行；Phase 8 整合交付完成**。2026-10 起承载 **CEP 平台**（Coherence Exploration Platform —— 跨协议一致性探索平台：22 份 ADR + 40 份 main spec + 41 个契约闸（闸数**以 `ls scripts/test/cep_*.sh` 为准**;2026-11-13 实测）），同时继承既有 GPGPU 端（GPU CU / TPC / GPC / GPU Cluster 多层 + DMA/Doorbell/CommandProcessor/CompletionRing MVP）与顶层 ApuSoC 容器。
+TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**（由 PCIe Endpoint IP + GPGPU Cluster + Memory Cluster + NoC Interconnect + 多层 SimModule 容器等 IP 构成）。2026-2027 年完成 **7 阶段 PCIe EP 微架构**全链路交付（链路层 → 编码 → PHY 数字控制 → SR-IOV → AXI Stream Adapter → AXI4Mapper → Host Bypass + RC → 整合），**Phase 1-7 全部通过 Oracle 评审放行；Phase 8 整合交付完成**。2026-10 起承载 **CEP 平台**（Coherence Exploration Platform —— 跨协议一致性探索平台：22 份 ADR + 40 份 main spec + 42 个契约闸（闸数**以 `ls scripts/test/cep_*.sh` 为准**;2026-11-13 实测）），同时继承既有 GPGPU 端（GPU CU / TPC / GPC / GPU Cluster 多层 + DMA/Doorbell/CommandProcessor/CompletionRing MVP）与顶层 ApuSoC 容器。
 
 **First read** for new agents: `docs/ONBOARDING.md` (knowledge-graph-generated ramp-up)。
 Architecture 必读:

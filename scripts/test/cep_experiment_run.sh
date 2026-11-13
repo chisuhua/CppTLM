@@ -144,6 +144,11 @@ status=0
 #   `trace.h5` / `report.html` 运行期产出但**不入库**(retention 丙)。
 if [[ "$TOPOLOGY" -eq 1 ]]; then
     echo "── topology-e2e ─────────────────────────────────────"
+    # ⚠️ **重跑必须先清空 4 件套**:emit 用例断言 run 目录**只含 2 件**
+    #    (`file_count == 2u`,retention 丙)⇒ 目录里若残留上次的
+    #    `trace.h5` / `report.html` ⇒ 该断言必红 ⇒ 先清空再产出。
+    mkdir -p "$OUT"
+    rm -f "$OUT/simulation_config.json" "$OUT/trace.h5" "$OUT/metrics.json" "$OUT/report.html"
     CEP_EXP_DIR="$OUT" CEP_EXP_ID="framework-e2e" \
         "$BIN" "[cep][e2e][framework-emit]" -r compact >/dev/null
     emit_trace "$OUT" "framework-e2e"

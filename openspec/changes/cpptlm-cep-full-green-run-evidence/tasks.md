@@ -59,10 +59,11 @@
 - [x] A7.3 **活文本同步清单**逐条同步或显式登记不改:`configs/cep_chi_rnf_e2e_{a,b}.json` 的 `description` · `docs/guide/cep-usage.md` §12.8 · `AGENTS.md` 的 main spec 计数 ⇒ ✅ 逐条处置:**A 的 description** 已改(原「仍不承载全绿 run:IC3 = ⚪ 不适用」已成假 ⇒ 改为「现承载拓扑级 IC3 通过态」+ 口径限定);**B 的 description** **无需改**(其 `description` 无假陈述 —— ADR 侧「B 不承载全绿」指的是 **canonical 10 流的无损投影**,与本 run 无关);**`cep-usage` §12.8** 已改(「至今未闭合」→「拓扑级已闭合」+ 载体指针 + 口径限定);**`AGENTS.md` main spec 计数** ⏸ **随 A9 归档执行**(归档前新增 main spec 尚未存在,现在改会写错)
 
 ## A8 · 新闸 + 变异(G5)
-- [ ] A8.1 `scripts/test/cep_full_green_run_check.sh`:**C1 / C1' / C2 / C3 / C4 / C5**(共 6 条判据)
-- [ ] A8.2 **每个判据各 1 条决定性变异 = 6 条**:① 违例类改回 `not-collected` ⇒ `违例类未实测` ② 删样本计数键 ⇒ `检测器无样本见证` ③ 实测值改非 0 ⇒ `违例类非零` ④ IC3 降级为不适用 ⇒ `IC3 非通过态` ⑤ run 换成模型级 / fixture ⇒ `非拓扑级 E2E run` ⑥ 移除 `07 号` 新 SU ⇒ `证据登记缺失`
-- [ ] A8.3 全部**按签名红** + 还原 ⇒ 绿;真实仓字节指纹前后相等
-- [ ] A8.4 `test/CMakeLists.txt` +1 ⇒ ctest **175 → 176**;`scripts/README.md` 守门表 **36 → 37**
+- [x] A8.1 `scripts/test/cep_full_green_run_check.sh`:**C1 / C1' / C2 / C3 / C4 / C5**(共 6 条判据)⇒ ✅ 已落(六条各自**固定红签名**;⛔「rc≠0」不构成红因)
+- [x] A8.2 **每个判据各 1 条决定性变异 = 6 条**:① 违例类改回 `not-collected` ⇒ `违例类未实测` ② 删样本计数键 ⇒ `检测器无样本见证` ③ 实测值改非 0 ⇒ `违例类非零` ④ IC3 降级为不适用 ⇒ `IC3 非通过态` ⑤ run 换成模型级 / fixture ⇒ `非拓扑级 E2E run` ⑥ 移除 `07 号` 新 SU ⇒ `证据登记缺失` ⇒ ✅ **6 条全部按签名红**(影子副本;⛔ 不触碰真实仓)
+- [x] A8.3 全部**按签名红** + 还原 ⇒ 绿;真实仓字节指纹前后相等 ⇒ ✅ 还原后基线绿 + **指纹前后相等**(6 文件 sha256)
+- [x] A8.4 `test/CMakeLists.txt` +1 ⇒ ctest **175 → 176**;`scripts/README.md` 守门表 **36 → 37** ⇒ ✅ 实测 `ctest -N` = **176**(新测试 `cep_full_green_run_check` = #163)· 守门表 **37** 行 · 磁盘 `cep_*.sh` = **42**
+  ⚠️ **A8 期间新发现并已修**:① **重跑陷阱** —— emit 用例断言 run 目录 `file_count == 2u` ⇒ 重跑前必须清空 4 件套 ⇒ `cep_experiment_run.sh --topology` 已加清空步骤(⛔ 否则重跑必踩);② **config 指纹失效** —— A5 改了 config 的 `description` ⇒ A4 记录的 `config_sha256` 变陈旧 ⇒ 已**重跑该 run**(metrics.json **逐字节一致**,仅 `provenance.git_rev` 更新)+ 同步 jsonl 的 3 个指纹字段 ⇒ C4 转绿
 
 ## A9 · 0 回归 + 归档(G6)
 - [ ] A9.1 `ctest --test-dir build -j4` **176/176**

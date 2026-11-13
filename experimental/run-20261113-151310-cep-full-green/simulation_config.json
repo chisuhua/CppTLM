@@ -5,5 +5,5 @@
   "hypothesis_id": "h3",
   "topology_tag": "A",
   "evidence_scope": "拓扑级 E2E run · 运行期 4 件套齐备 + 入库 2 件(retention 丙);⛔ 非协议级一致性断言(本装置无 sharer 语义 ⇒ SWMR 结构上不可达;写数据恒 0 ⇒ 无版本语义 ⇒ data-value 无判别力);⛔ 不得称检测力已证",
-  "provenance": {"seed": 20261108, "git_rev": "69320b45f8676313e7697ada28e75c0416c76896", "toolchain": "gcc 14.2/c++202302/libstdc++14"}
+  "provenance": {"seed": 20261108, "git_rev": "dd631a18f2446e7946e60a9e0943fcbc9cc47bc8", "toolchain": "gcc 14.2/c++202302/libstdc++14"}
 }

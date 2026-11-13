@@ -780,6 +780,18 @@ add_test(NAME cep_tilelink_engine_failclosed
 add_test(NAME cep_e2e_reconcile_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_e2e_reconcile_check.sh)
 
+# ── 2026-11-13(per 台账 Entry #396 / #397 / change cpptlm-cep-full-green-run-evidence):
+#     **拓扑级「全绿 run」证据闸** ──
+# 六条判据(C1 违例类实测 / C1' 样本活性见证 / C2 零违例 / C3 IC3 通过态 /
+# C4 拓扑链身份锚 / C5 证据登记)+ **6 条决定性变异**(影子副本上**按签名红**)
+# + 还原后基线绿 + **真实仓字节指纹前后相等**。
+# ⚠️ C4 的锚点用**对账清单条目 + 指纹**,⛔ 不用「假设行」区分拓扑级/模型级
+#   (两者共用 H3 行)⇒ 合成 fixture 与模型级实例**均自动落选**。
+add_test(NAME cep_full_green_run_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_full_green_run_check.sh)
+set_tests_properties(cep_full_green_run_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # ── 2026-11-09(per 台账 Entry #305 / Entry #295 F-08 残余):**索引位置闸** ──
 # 「索引永久置于文末」纪律(新增段落 SHALL 插在索引之前 ⇒ 既有 path:line 锚点零位移)
 # 的**机器可判**载体:索引之后零个 `## ` + 索引计数自述与实际逐个相等。
