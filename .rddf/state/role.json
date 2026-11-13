@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-13T14:43:05Z",
+  "updated_at": "2026-11-13T17:10:35Z",
   "updated_by": "auto",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-12T16:40:00Z",
-      "by": "user",
-      "reason": "推进 R-1(MUST-FIX-3 归档形态 / MUST-FIX-4 回滚路径):architect 先出方案,再请用户拍唯一开放选择点。"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-12T17:05:00Z",
-      "by": "user",
-      "reason": "R-1(MUST-FIX-3/4)立项:improvement 5 段 + 台账立项授权(architect 决策已落)。"
-    },
     {
       "role": "builder",
       "at": "2026-11-12T17:20:00Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-13T14:43:05Z",
       "by": "auto",
       "reason": "planner 已交底(improvement v2 · Entry #409)=> 切 builder 建 change 四件套 + 实施(S1 基类观测面 / S2 mesif 观测点 / 判定器 + 测试)。"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-13T17:09:16Z",
+      "by": "auto",
+      "reason": "builder 完成的 change `cep-evidence-tier2-minimal-slice` 已归档 ⇒ 按审查配对(builder→verifier)做独立验收(AC-1~AC-14 逐条 + 工具证据)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-13T17:10:35Z",
+      "by": "auto",
+      "reason": "verifier 验收判定「有条件通过」(10 ✅ + 4 ⚠️)⇒ 回 builder 补 4 项实现缺口(G-1 provenance 机器判据 / G-2 三段连通反向证据 / G-3 有界性溢出路径 / G-4 AC-9 产出物覆盖面)。"
     }
   ],
   "auto_switch_window": null
