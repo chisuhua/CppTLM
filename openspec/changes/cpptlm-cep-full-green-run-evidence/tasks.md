@@ -48,13 +48,13 @@
 - [x] A5.3 `cep_ic3_report_states_check.sh` 绿 ⇒ ✅ **4/4**(F1 通过 / F2 不适用 / F3 违例 / F4 连带洞);另 `render_report.py --check` 走**通过**分支(⛔ 非「不适用」分支)· rc=0
 
 ## A6 · 证据登记 + 五步链(G4)
-- [ ] A6.1 `07 号` **新 SU**(插在 `## §末 文档索引` **之前**;⛔ 不改正文;⛔ 须**显式取代** SU·十五 ① 的「不承载全绿 run」口径)⇒ 索引重生成
-- [ ] A6.2 `ADR-CEP-19` **一则 Status Update**(⛔ 不改决策 / 正文)⇒ 取代其 SU ② 的「⛔ 拓扑级未闭合『全绿 run』」状态陈述;**且** `ADR-CEP-06` **一则 Status Update**(⛔ 不改决策 / 正文)⇒ 订正其 SU 2026-11-09 §② 的「框架验证 run 证据边界」五句(本次装置形态转变的如实登记,per design §D-6)
-- [ ] A6.3 五步链:Entry 先落 → 产物 commit → `--update --authorized-by` → 清单 commit → 无参复验
+- [x] A6.1 `07 号` **新 SU**(插在 `## §末 文档索引` **之前**;⛔ 不改正文)⇒ 索引重生成 ✅(⚠️ **口径订正**:07 号 自身**无**「不承载全绿 run」的陈述可取代 ⇒ 本则**新增**拓扑级 IC3 通过态事实 + **指向**真正持有该陈述的三处载体(`ADR-CEP-19` SU 2026-11-09·一 ② / `cep-usage.md` §12.8 / config A `description`);⚠️ **指针漂移已登记为残余** —— 仓内引用的「`07 号` SU · 十五/十六 ①」在当前 07 号 **不可解析**(实测 `grep "十五"` 0 命中;17 则 SU 的索引 B 序号与标题内「则/·N」标签互不对应)⇒ 三处 SU 一律用**可解析锚点**)· `generate_doc_index.py --write` + `--check` 均 rc=0
+- [x] A6.2 `ADR-CEP-19` **一则 Status Update**(⛔ 不改决策 / 正文)⇒ 取代其 SU ② 的「⛔ 拓扑级未闭合『全绿 run』」状态陈述;**且** `ADR-CEP-06` **一则 Status Update**(⛔ 不改决策 / 正文)⇒ 订正其 SU 2026-11-09 §② 的「框架验证 run 证据边界」五句(本次装置形态转变的如实登记,per design §D-6) ✅ 两则均已追加(append-only,原文逐字未动)
+- [ ] A6.3 五步链:Entry 先落 → 产物 commit → `--update --authorized-by` → 清单 commit → 无参复验 ⇒ ⏭ **步 1 已完成**(Entry #397);步 2 = 本 commit;步 3~5 见 A6.4
 - [ ] A6.4 冻结清单 provenance 成立(冻结面 = **3 处**;⚠️ 归档后新 main spec 自动入集 ⇒ 第二次 `--update`)
 
 ## A7 · DoD 读法 + 活文本同步
-- [ ] A7.1 `obj §6.2` B4 证据行**追加**(append-only)「IC3 在**拓扑级 E2E run** 上达成通过态」+ 指向新 SU 与 run 目录 ⇒ ⚠️ 须带「拓扑级/E2E」限定词(与既有行「首个真实 run 实例」并存不冲突) ⏸ **依赖 A6.1 的 SU 指针**(本行要求「指向新 SU」⇒ SU 未落则指针悬空)⇒ **随 A6 一并完成**
+- [x] A7.1 `obj §6.2` B4 证据行**追加**(append-only)「IC3 在**拓扑级 E2E run** 上达成通过态」+ 指向新 SU 与 run 目录 ⇒ ⚠️ 须带「拓扑级/E2E」限定词(与既有行「首个真实 run 实例」并存不冲突) ⇒ ✅ 已追加(📌 2026-11-13 追加(拓扑级档位)· 含 run 目录 / `Entry #396` / `07 号` 新 SU / 口径限定 / 「不改既有『首个真实 run 实例』表述」)
 - [x] A7.2 `cep_docs_sync_check.sh --strict` 绿 ⇒ ✅ rc=0
 - [x] A7.3 **活文本同步清单**逐条同步或显式登记不改:`configs/cep_chi_rnf_e2e_{a,b}.json` 的 `description` · `docs/guide/cep-usage.md` §12.8 · `AGENTS.md` 的 main spec 计数 ⇒ ✅ 逐条处置:**A 的 description** 已改(原「仍不承载全绿 run:IC3 = ⚪ 不适用」已成假 ⇒ 改为「现承载拓扑级 IC3 通过态」+ 口径限定);**B 的 description** **无需改**(其 `description` 无假陈述 —— ADR 侧「B 不承载全绿」指的是 **canonical 10 流的无损投影**,与本 run 无关);**`cep-usage` §12.8** 已改(「至今未闭合」→「拓扑级已闭合」+ 载体指针 + 口径限定);**`AGENTS.md` main spec 计数** ⏸ **随 A9 归档执行**(归档前新增 main spec 尚未存在,现在改会写错)
 

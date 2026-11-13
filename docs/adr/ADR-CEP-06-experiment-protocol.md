@@ -1069,3 +1069,45 @@ per `ADR-CEP-01 §6.2` 代价 3「分类错误 = 静默死锁」,这是 H4 假�
 - 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
 
 **关联**:台账 **Entry #314**(授权 + 双审处置)· **#307**(4 项裁决:C-3.2 / C-3.3 / C-1)· **#313**(T3 登记表)· **#312**(T2 新 spec 入冻结集)· `test/cep_adr_structural_deferrals.json` · `scripts/test/cep_adr_structural_check.sh`
+
+## Status Update 2026-11-13(per 台账 Entry #396 + #397)—— 「框架验证 run」的**证据边界订正**(拓扑级 run 现绑定 H3)+ 保留的强度限定
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文与**任何**既有 SU(尤其 **SU 2026-11-09(Entry #304)②** 的五句边界与 **SU 2026-11-08 · 二** 的 retention 裁定 —— **逐字保留不回改**);⛔ **零** schema 改动(`experimental/metrics.schema.json` 与 `experimental/preregistration.json` **零 diff**);⛔ 新增 invariant 数 = **0**。
+> **触发**:change `cpptlm-cep-full-green-run-evidence` A3 / A4(台账 **Entry #396**):拓扑级 run 的 `run_class` / `not_an_experiment_run` / `evidence_scope` **三字段移除** + `hypothesis_id` 由 `framework-e2e` → **`h3`**。
+> **审查**:builder 自核(实测复验);⚠️ 本则只登记**装置形态转变**,⛔ 不改任何决策与判据口径。
+
+### ① SU 2026-11-09 ② 的哪几句被取代 / 保留(逐句,⛔ 不得含糊「全部作废」)
+
+| 原文句 | 现状 |
+|---|---|
+| run class = `framework-verification`(`simulation_config.json` 的 `run_class` + `not_an_experiment_run: true`) | ⇒ **取代** —— 两字段**已移除**(拓扑级 run 现与 h2 / h3 / h4 / h6 的 `simulation_config` **同形**) |
+| `hypothesis_id` = **`framework-e2e`** ⇒ ⛔ 不在 `experimental/preregistration.json` 的 `registered` 行内 | ⇒ **取代** —— 现绑定 **`h3`**(`registered` 行;per `ADR-CEP-19` ASM-8 ①) |
+| ⛔ **不得**作 B4 达成证据 | ⇒ **保留** —— B4 已由**模型级** h3 v2 run 达成(per 台账 Entry #228 ③);本 run **不是** B4 证据 |
+| ⛔ **不得**改任何 hypothesis 结论 | ⇒ **保留** |
+| ⛔ **不得**作任何一致性安全断言(IC3 = **⚪ 不适用**) | ⇒ **取代** —— 该 run 的 IC3 = **`✓ 通过`**;但 ⛔ **仍不得**作**协议级**一致性安全断言(见 ③) |
+| 用途**仅** = **可对账** | ⇒ **取代** —— 用途 = 可对账 **+ 拓扑级 IC3 通过态的证据面** |
+
+### ② 「为何不绑 `H3`」的原理由已失效(逐字对照)
+
+原文理由(SU 2026-11-09 ②):H3 的预登记 out-of-scope = {`coherence_stalls`, `collective_stalls`, `directory_misses`} ⇒ **延迟族 5 键必须实测**;而本装置**无已完成往返**(框架层 dual-port 入向路由恒落 PE 侧 ⇒ 回程不可达)⇒ 延迟族**无样本** ⇒ 绑 H3 会违反「未列入 out-of-scope 者**必须实测**」。
+
+⇒ **该前提已被消除**(见 `ADR-CEP-19` 新 SU ①):回程已在框架层与拓扑级双双闭合 ⇒ 延迟族 5 键**已实测**(实测 `experimental/run-2026-11-09-cep-e2e-b/` 的 `avg/p50/p95/p99/max` 全为数值 `5`)⇒ ⇒ **绑 H3 不再违反「未列入 out-of-scope 者必须实测」**;且 H3 的 out-of-scope 集**恰好**是那 3 个非违例类 ⇒ ⇒ **`experimental/preregistration.json` 零 diff**(该文件入 M1 冻结集 ⇒ 零 diff 是可机器核的强断言)。
+
+⇒ ⇒ **一次装置形态转变**(同一位装置由「框架验证 run」转为「拓扑级实验 run」)由本则**如实登记**;⚠️ **H3 自此有两个装置**(模型级 `ConsistencyCompletionModel` + 拓扑级 `StubCacheEndpointTLM`)⇒ ⇒ **引用 H3 的结论时须指明装置**,⛔ 不得把两者的证据强度等同。
+
+### ③ ⚠️ 强度限定(⛔ 随任何引用重复 · 本则的核心)
+
+- 本装置**无 sharer 语义**(无 directory / sharer tracker)⇒ **SWMR 违例结构上不可达**;
+- `TrafficGenTLM` 写数据**恒 0** + home 回程只回显 ⇒ **无版本语义** ⇒ data-value 检查**无判别力**;
+- ⇒ 该 `memory_violations = 0` 是「**本装置无该形态**」的 0 ⇒ ⛔ **不得**表述为「已证明协议层无死锁 / 无违例」,⛔ **不得**称「检测力已证」,⛔ **不得**与 B4 装置的**三负控 + 耦合探针 + watchdog 非空洞**证据**等同**;
+- ⇒ **要获得判别力须另立 change**(写侧非恒定数据 + 版本字段 + 注入式负控 ⇒ **能力新增**,⛔ 不在本 change 范围)。
+
+### ④ Verification(可勾选 · 前瞻)
+
+- [x] 本段已追加,且本 ADR 正文与**全部**既有 SU **逐字未变**;新增 invariant 数 = **0**;`experimental/preregistration.json` **零 diff**
+- [x] ① 的六句**逐条**给出取代 / 保留判定(⛔ 不得含糊「全部作废」)
+- [x] ② 的失效理由与 `preregistration.json` 零 diff 的推导齐备;「**H3 双装置**」的限制**逐字**登记
+- [x] ③ 的四条强度限定齐备(尤其「不得称检测力已证」「不得与 B4 等同」)
+- [x] 冻结面五步授权已执行:台账 **Entry #397** 先落 → **commit 本段 + `07 号` 新 SU + `ADR-CEP-19` 新 SU + `07 号` 索引重生成** → `cep_freeze_check.sh --update --authorized-by "Entry #394"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #396**(A4 真跑 + 7 字段)· **#397**(A6 授权 + 落盘清单)· **#394**(立项 + 五步链授权号)· **#304**(本则订正对象)· **#295**(retention 丙)· **#228**(B4 达成)· `ADR-CEP-19` 新 SU + ASM-8 ① · `07 号` 新 SU · `configs/cep_chi_rnf_e2e_a.json` · `test/cep_e2e_runs.jsonl`

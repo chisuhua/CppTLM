@@ -649,3 +649,40 @@ stub 是 RN ⇒ miss 时发起 `request` 并**挂起等 `completion`**;而**全�
 - [x] 冻结面两步授权已执行:台账 **Entry #338** 授权 → **commit 本段 + 其余 3 段 ADR SU + `cep/fabric-transport.md`** → `cep_freeze_check.sh --update --authorized-by "Entry #338"` → **清单单独 commit** → 无参复验 provenance 通过
 
 **关联**:台账 **Entry #338**(授权)· **#288**(10 条决策 + 原授权)· **#292**(ASM-0 更正 / J-9)· **#293**(声明面落点 = 甲)· **#304**(决策 9 的实施后状态)· `.rddf/reviews/cep-ualink-e2e-framework-discussion.md`(讨论纪要 —— 六项的逐条依据)· `docs/architecture/cep/fabric-transport.md`(J-9 拓扑分档判据 + **混排装配规则**的镜像面)
+
+## Status Update 2026-11-13(per 台账 Entry #396 + #397)—— 「全绿 run」残余的**拓扑级闭合**(取代 SU 2026-11-09 · 一 ② 的「⛔ 拓扑级未闭合」状态陈述)
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文与**任何**既有 SU(尤其 **SU 2026-11-09 · 一 ②**「⚠️『全绿』未达成(残余)」与 **SU ④** 的 `B 不承载全绿` 边界 —— **逐字保留不回改**);⛔ **零** schema 改动;⛔ 新增 invariant 数 = **0**。
+> **触发**:change `cpptlm-cep-full-green-run-evidence` A4 / A5 落地(台账 **Entry #396**);A6 授权 per **Entry #397**。
+> **审查**:builder 自核(实测复验);⚠️ 本则只登记**实施态**,⛔ 不改决策 9。
+
+### ① SU 2026-11-09 · 一 ② 的「双重成因」已双双闭合
+
+| 成因(原文) | 现状 |
+|---|---|
+| ① 框架层 `DualPortStreamAdapter` 只 override **单参** `process_request_input` ⇒ net 侧入向(含 home 回程)**恒落 PE 侧** | ✅ **已闭合** —— change `cpptlm-cep-dual-port-inbound-dispatch`:入向改为**按端口组**路由(组 1 = Net ⇒ `net_resp_in()`) |
+| ② 拓扑 A/B 的 home 配 `emit_completions: false` ⇒ 回程**在模块内被抑制** | ✅ **已闭合** —— 实测 `configs/cep_chi_rnf_e2e_{a,b}.json` 均 `emit_completions: true`;`experimental/run-2026-11-09-cep-e2e-b/` 的延迟族 5 键**已实测**(= 5) |
+
+### ② 拓扑级 IC3 通过态(本则的唯一新增事实)
+
+`experimental/run-20261113-151310-cep-full-green/`(`run_id = cep-full-green-2026-11-13` · `hypothesis_id = "h3"` · `topology_tag = "A"`):两违例类**均实测为 0**(`deadlock_violations = 0` · `memory_violations = 0`,`swmr = 0` / `data_value = 0`)⇒ **IC3 = `✓ 通过`**;`report.html` 逐字渲染「**✓ 一致性闸门通过**」。
+
+⇒ ⇒ **SU 2026-11-09 · 一 ② 的「⚠️『全绿』未达成(残余):IC3 = ⚪ 不适用 ⇒ ⛔ 拓扑级未闭合『全绿 run』」状态陈述由本则取代**(原文逐字保留)。
+⇒ 载体 = 台账 **Entry #396**(7 字段)+ `test/cep_e2e_runs.jsonl` 第 3 条 + `07 号` **Status Update 2026-11-13(Entry #396 + #397)**。
+
+⚠️ **口径(⛔ 随引用重复)**:本装置**无 sharer 语义**(无 directory / sharer tracker)⇒ **SWMR 违例结构上不可达**;`TrafficGenTLM` 写数据**恒 0** + home 回程只回显 ⇒ **无版本语义** ⇒ data-value 检查**无判别力** ⇒ ⇒ 该 0 是「**本装置无该形态**」的 0,⛔ **不得**表述为「已证明协议层无违例」,⛔ **不得**称「检测力已证」,⛔ **不得**与 B4 装置(三负控 + 耦合探针)证据**等同**;⛔ **一次通过态实例 ≠**「所有协议族 / 所有拓扑达成」。
+
+### ③ 边界(**不变**)
+
+- ⛔ **B 仍不承载全绿**:SU ④ 的**有损投影**(`flow_id 5→3`)边界**逐字不变** —— 本则只涉及**拓扑 A** 的 IC3 档位,与投影语义无关;
+- ⛔ 本则**不**把「拓扑 A 的 IC3 通过」写成「协议语义达成」(ASM-8 ① 的 `hypothesis_id` 绑定 ≠ 协议级断言);
+- ⛔ `B3b-2` 维持 **0/4**;⛔ `include/tlm/cep/protocol_instances.json` 与 `protocol_instance.schema.json` **零 diff**。
+
+### ④ Verification(可勾选 · 前瞻)
+
+- [x] 本段已追加,且本 ADR 正文与**全部**既有 SU **逐字未变**;新增 invariant 数 = **0**
+- [x] ① 的两条成因**逐条**给出闭合证据(可复验:两 config 的 `emit_completions` + `run-2026-11-09-cep-e2e-b` 的延迟族 5 键)
+- [x] ② 的 run / `ic3_verdict` / 载体 / 口径限定齐备;③ 的三条边界逐字保留
+- [x] 冻结面五步授权已执行:台账 **Entry #397** 先落 → **commit 本段 + `07 号` 新 SU + `ADR-CEP-06` 新 SU + `07 号` 索引重生成** → `cep_freeze_check.sh --update --authorized-by "Entry #394"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #396**(A4 真跑 + 7 字段)· **#397**(A6 授权 + 落盘清单)· **#394**(立项 + 五步链授权号)· **#304**(本则取代对象)· **#295**(retention 丙)· **#228**(B4 达成)· `ADR-CEP-19` ASM-8 ① · `07 号` 新 SU · `ADR-CEP-06` 新 SU · `configs/cep_chi_rnf_e2e_a.json` · `test/cep_e2e_runs.jsonl`

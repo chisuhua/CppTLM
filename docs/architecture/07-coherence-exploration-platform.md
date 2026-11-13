@@ -636,9 +636,55 @@ group-scoped completion     → Fabric Collective Plane
 
 **关联**:台账 `Entry #373` / `#332` / `#340` / `#359` · change `cpptlm-cep-dod-reading-consistency` · 闸 `scripts/test/cep_dod_reading_check.sh`
 
+## 附录 · Status Update 2026-11-13(拓扑级 IC3 通过态 · per 台账 Entry #396 + #397)—— 拓扑级「全绿 run」的**证据面登记**
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本文件正文与任何既有 SU —— **逐字保留不回改**;⛔ 新增 invariant 数 = **0**。
+> **关联**:change `cpptlm-cep-full-green-run-evidence`(A4 / A5 已落地)· 台账 **Entry #396**(7 字段 + 口径)· **#397**(A6 授权与落盘清单)· **#394**(立项)· `ADR-CEP-19` 新 SU · `ADR-CEP-06` 新 SU · `ADR-CEP-19` ASM-8 ①
+
+### ① 事实(实测)
+
+| 项 | 值 |
+|---|---|
+| run | `experimental/run-20261113-151310-cep-full-green/`(`run_id = cep-full-green-2026-11-13`) |
+| 绑定 | `hypothesis_id = "h3"` · `topology_tag = "A"`(per `ADR-CEP-19` ASM-8 ①:拓扑级 run 须绑定 H3 —— 唯一「双违例类均须实测」的已登记行) |
+| 两违例类 | `deadlock_violations = 0` · `memory_violations = 0`(**均实测**;`swmr = 0` / `data_value = 0`) |
+| IC3 | **`✓ 通过`** —— `report.html` 逐字渲染「✓ 一致性闸门通过」;`render_report.py --check` 走**通过**分支(⛔ 非「不适用」)rc=0 |
+| 样本活性见证 | `observation_keys.memory_ops_checked_addrs` = **20 个去重地址**(被检测器观测过的内存操作样本) |
+| `not-collected` | {`collective_stalls`, `directory_misses`} ⊆ H3 `out_of_scope` ⇒ **无越界** |
+| 入库 | retention **丙**:仅 `metrics.json` + `simulation_config.json`;`trace.h5` / `report.html` 运行期齐备但**不入库** |
+
+### ② 与既有「不承载全绿 run」陈述的关系(逐处)
+
+⛔ **本文件当前并无**「不承载全绿 run / IC3 = ⚪ 不适用」的陈述可取代 ⇒ 本则是**新增**该档位的事实,而非取代。真正持有该陈述的载体与其处置:
+
+| 载体 | 处置 |
+|---|---|
+| `ADR-CEP-19` **SU 2026-11-09 · 一 ②**「⚠️『全绿』未达成(残余)」 | ⇒ 由 `ADR-CEP-19` 的新 SU **取代**(原文逐字保留) |
+| `docs/guide/cep-usage.md` §12.8「⚠️ **至今未闭合**」 | ⇒ **已改**(per 台账 Entry #396 同批) |
+| `configs/cep_chi_rnf_e2e_a.json` 的 `description` | ⇒ **已改**(同上) |
+
+⚠️ **指针漂移(登记为残余)**:仓内多处引用的「**`07 号` SU · 十五 ①**」/「**`07 号` SU · 十六 ①**」在**本文件当前不可解析**(实测 `grep "十五"` **0 命中**;本文件 17 则 SU 的**索引 B 序号**与标题内「则 / ·N」标签**互不对应**)⇒ 本则一律使用**可解析锚点**(标题文本 + 台账 Entry + run 目录)⇒ ⛔ 存量外部引用**不在本次改写**(范围外)。
+
+### ③ ⚠️ 口径限定(⛔ 随任何引用重复)
+
+1. 本装置**无 sharer 语义**(无 directory / sharer tracker)⇒ **SWMR 违例结构上不可达**;
+2. `TrafficGenTLM` 写数据**恒 0** + home 回程只回显 ⇒ **无版本语义** ⇒ data-value 检查**无判别力**;
+3. ⇒ 该 0 是「**本装置无该形态**」的 0,⛔ **不得**表述为「已证明协议层无违例」,⛔ **不得**称「检测力已证」,⛔ **不得**与 B4 装置(三负控 + 耦合探针)证据**等同**;
+4. **一次通过态实例 ≠**「所有协议族 / 所有拓扑达成」;
+5. ⛔ **不得**读成「B4 被推翻」—— B4 由**模型级** h3 v2 run 达成(per 台账 Entry #228 ③);本则只是把该形态补到**拓扑级**;
+6. ⛔ 本则**不裁决** retention(维持 **2026-11-08 · 十四**(Entry #295)的 retention **丙**)。
+
+### ④ Verification(可勾选 · 前瞻)
+
+- [x] 本则已追加,且本文件正文与**全部**既有 SU **逐字未变**;新增 invariant 数 = **0**
+- [x] ① 的 7 项**逐项**可复验(run 目录 + `test/cep_e2e_runs.jsonl` 第 3 条 + 台账 Entry #396)
+- [x] ② 的三处载体处置**显式**;指针漂移**已登记为残余**
+- [x] ③ 的 6 条口径齐备(尤其第 3 / 5 条)
+- [x] 冻结面五步授权已执行:台账 **Entry #397** 先落 → **commit 本则 + `ADR-CEP-19` SU + `ADR-CEP-06` SU + 索引重生成** → `cep_freeze_check.sh --update --authorized-by "Entry #394"` → **清单单独 commit** → 无参复验 provenance 通过
+
 ## §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295)
 
-> **用途**:本文件已 **30 个一级节 / 17 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
+> **用途**:本文件已 **31 个一级节 / 18 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
 
 > ⚠️ **新纪律(per 台账 Entry #295,逐字)**:本索引**永久置于文末**;此后**新增段落 SHALL 插在本索引之前** ⇒ **新增内容永不使既有 `path:line` 锚点位移**;⚠️ **最新 SU 在本索引之前**(⛔ 勿在本文末找最新段)。
 
@@ -646,7 +692,7 @@ group-scoped completion     → Fabric Collective Plane
 
 > ⚠️ **2026-11-12 起**:索引 A / 索引 B **全量列出**(⛔ 不再有「另有 N 个未列入」的 `## ` 标题);自述数 == 索引行数 == 文件**实际** `## ` / SU 数(`cep_index_position_check.sh` 三合一判据 + 行号逐行判据)。⚠️ **待人工判断的导航标注不在索引 A / B**(索引 A/B 是机械视图)⇒ 见索引 C 与 `§11` / `§12` 的正文说明。
 
-### 索引 A · 一级节(30)
+### 索引 A · 一级节(31)
 
 | # | 章节 | 行 |
 |---|---|---|
@@ -679,9 +725,10 @@ group-scoped completion     → Fabric Collective Plane
 | 27 | 12. CEP 使用手册(Stage 4+ 维护态交接) | 561 |
 | 28 | Status Update 2026-11-12(per 台账 Entry #363)—— **R-c 机器检查已落地**(D0 堵法 ② 兑现)+ 收口指针改指新闸 | 571 |
 | 29 | Status Update 2026-11-13(per 台账 Entry #373)—— **DoD 读法口径订正**(MUST-FIX-1 = Stage 4+ 准入按事件 · MUST-FIX-2 = 禁令作用域重裁) | 602 |
-| 30 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 639 |
+| 30 | 附录 · Status Update 2026-11-13(拓扑级 IC3 通过态 · per 台账 Entry #396 + #397)—— 拓扑级「全绿 run」的**证据面登记** | 639 |
+| 31 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 685 |
 
-### 索引 B · Status Update(17 · 2026-10-28 起)
+### 索引 B · Status Update(18 · 2026-10-28 起)
 
 | # | 日期 | 主题 | 台账 | 行 |
 |---|---|---|---|---|
@@ -702,6 +749,7 @@ group-scoped completion     → Fabric Collective Plane
 | 15 | 2026-11-08 | Status Update(2026-11-08 · 十四,per 台账 Entry #295)—— **F-08 残余裁定**(索引**移到文末** + 新纪律 + 具名闸)+ **retention 裁定 = 丙**(指针) | Entry #295 | 556 |
 | 16 | 2026-11-12 | Status Update 2026-11-12(per 台账 Entry #363)—— **R-c 机器检查已落地**(D0 堵法 ② 兑现)+ 收口指针改指新闸 | Entry #363 | 571 |
 | 17 | 2026-11-13 | Status Update 2026-11-13(per 台账 Entry #373)—— **DoD 读法口径订正**(MUST-FIX-1 = Stage 4+ 准入按事件 · MUST-FIX-2 = 禁令作用域重裁) | Entry #373 | 602 |
+| 18 | 2026-11-13 | 附录 · Status Update 2026-11-13(拓扑级 IC3 通过态 · per 台账 Entry #396 + #397)—— 拓扑级「全绿 run」的**证据面登记** | Entry #396 | 639 |
 
 ### 索引 C · 关键表指针(高频查阅)
 
