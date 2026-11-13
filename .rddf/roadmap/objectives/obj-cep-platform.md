@@ -22668,3 +22668,39 @@ KPI 活口径 **1/3 → 0/3**(7 处;C8 条目改为「归档 ⇒ slot 已释放,
 **⑦ ⛔ 口径(随引用重复)**:档 2 的版本维 = **观测侧代理,⛔ 非协议语义版本** ⇒ data-value 结论强度低于 sharer 侧;档 2 判别力 **≠** 协议语义全覆盖(权限维 / 标签维被排除);**B3b-2 = 0/4** ⇒ ⛔ 不得把 CEP 写成「DoD 全绿」;一次通过态实例 **≠** 所有族 / 所有拓扑达成;本梳理**不证明**档 2 可实施。
 
 **⑧ 关联**:**#406**(C′ 前置裁决)· **#405**(C8 归档回执)· **#403**(C8 立项 + 档 2 评估)· **#396**(拓扑级通过态)· **#264**(B3b-2 终态裁决)· `ADR-CEP-20` 决策 1/2/5/6 · `07 号` 附录 SU 2026-11-13 ×2 · `.rddf/reviews/cep-current-state-and-forward-plan.md`
+
+### Entry #408 — 2026-11-13 [architect](**档 2 的 8 条裁决 R1~R8 + 勘误段** —— 三个结构性死锁 ⇒ 档 2 **不产 4 件套 run** · 零冻结面变更 · DoD 不退步)
+
+**主题**:per 用户口令「切 architect 梳理 → planner 梳理 → builder 实施」⇒ planner 阶段的 **metis 第 2 轮(正式审查)** 在 improvement 草稿 v1 上挖出 **3 个结构性死锁** ⇒ 属架构取舍 ⇒ 回 architect 追加裁决;经 **oracle 复核 = APPROVE(附 1 项强制修正 + 4 项澄清)** ⇒ 落勘误段。
+
+**① 三个死锁(事实链)**
+
+| # | 死锁 | 关键事实 |
+|:--:|---|---|
+| DL-1 | 预登记 ↔ 4 件套 ↔ 冻结面 | `tools/render_report.py:178-184` 无条件要求 `hypothesis_id` 有非 pending 登记行;`cep_experiment_run.sh:155-177` 用 `--check` 卡 4 件套 ⇒ 无登记行产不出 run;而 `experimental/preregistration.json` **在冻结面** ⇒ 改它须 `--update` + 改真源 `objective §9.1 ②` ⇒ 草稿 AC-7「零 diff」与 AC-5「产 4 件套」**互斥** |
+| DL-2 | `deadlock_violations` ↔ `ic3_verdict` ↔ H3 预登记 | `test/cep_experiment_harness.hh:551-555`:违例类任一 `not-collected` ⇒ verdict **必 ⚪**;引擎面无死锁形态 ⇒ 只得 `not-collected` ⇒ 「档 2 通过态」不可得;写实测 0 = **人造 0** |
+| DL-3 | 观测点 ↔ 行数据写入点 | `apply_event` 只改 state、**不改 data**;data 唯一写入点 = `mesif_protocol_engine.hh:442` ⇒ 在 `apply_event` 入口采 `data_after` **恒为旧值**;且 WRITEBACK 一次 completion = **2 条 transition + 1 条 fill** |
+
+**② 裁决 R1~R8(载体 = `.rddf/reviews/cep-tier2-prerequisite-rulings.md` 的 C′-bis 段)**
+
+| # | 裁决 |
+|:--:|---|
+| **R1** | 版本维 **不实施**(per-engine 私有写序在自读自写下是**恒等式** ⇒ 恒 0 ⇒ **证伪判别力**)⇒ C′ 段「版本 = 引擎内部写序」降级为不实施;data-value 只做「注入陈旧副本」形态 ⇒ 生产流 0 登记为「本装置无该形态」(同档 0 口径) |
+| **R2** | 检测器**留 `test/` 侧**(沿用 `stub_cache_endpoint.hh:68-83` 先例)⇒ 撤回「检测器不在 test 侧」硬约束 ⇒ 不动 `test/cep_experiment_harness.hh` |
+| **R3** | ★ 档 2 载体 = **协议级观测面 + 契约级断言**,⛔ **不产 4 件套 run**(四条产 run 路逐条走死)⇒ **零冻结面变更** + **B7 分母不变** + **DoD 不退步**;档 2 登记面 = **新表**(不进 `test/cep_e2e_run_tiers.json`) |
+| **R4** | 观测面**两处落点**:`kind=transition`(`apply_event` 入口)+ `kind=fill`(`:442` 装行后) |
+| **R5** | 字段表定死 `EventObservation{kind,addr,event,from,to,origin,data_before,data_after,sharers_snapshot,self_mask,self_mask_valid,level,node}`(⛔ 无 version 字段;sharers 用 `uint64_t` ⇒ 基类**不新增** `sharer_tracker.hh` 依赖) |
+| **R6** | `observation_invalid` = 观测面自身状态位(⛔ 不进 `memory_violation_kinds`) |
+| **R7** | 跨档聚合隔离提案作废(不产 run ⇒ 无跨档复用)⇒ C8 的 `evidence_scope` + tiers 表**零改动** |
+| **R8** | 范围收敛 ⇒ 估时 7-9 → **5-7 人日** |
+
+**③ oracle 复核 = APPROVE(强制修正 1 项 + 澄清 4 项)⇒ 勘误段(C′-bis-ter)**
+
+- **强制修正**:DL-2 事实有误 —— **ProgressWatchdog 在 harness/模型层做死锁判定**(`test/cep_consistency_completion_model.hh:111-116,175-177` + 非空洞负控 `:181-186`),且 H3 的收紧登记明写「复合装置 v2 后**实测**该 metric」(`experimental/preregistration.json:63-71`)⇒ ⇒ **「第五条路」存在**(挂进既有 `ConsistencyCompletionModel` 复合装置 + 复用 `hypothesis_id=h3` ⇒ verdict 可得 ✓)⇒ ⇒ **R3 结论维持**,但**理由改述**为「**定价后排除**」(工程 ≈ 7-9 人日 vs 5-7 · 须回驳 AC-6 · watchdog 是**装置活性**判据 ⇒ 对「协议语义」**零增量**)—— ⚠️ 不改述 ⇒ 将来必被重开(正是决策 6 想杜绝的「反复重开」);
+- **澄清 7 项**:M1 **不进本切片**(无合法实现形态)· SWMR **判定行 = `transition ∧ Wr ∧ to=M`**(fill 行显式豁免)· **判定窗口禁 fixture 播种目录** + sharer bit 须溯源到 peer 引擎 `sync_tracker`(防「用台架喂饱判据」)· 新表**自带**跨档聚合检查 + 反向 fixture · 违例计数按 **`(addr, write-episode)` 归并** · 「强度不可跨档比较」**已签批**(`07 号:690`)⇒ R3-C4 的「降级」措辞作废 · 档 2 与档 1 **正交**(⛔ 非强弱序)· `origin` 取值域钉死 · 冻结引用行号更正为 `cep_freeze_check.sh:67`。
+
+**④ 净态**:R1~R8 **结论全部维持**;理由 1 处改述;新增 5 条硬约束;估时 **5-7 人日**不变。
+
+**⑤ ⚠️ 边界(随引用重复)**:⛔ 档 2 **不产 run** ⇒ ⛔ 不得宣称「档 2 有通过态」· ⛔ 不得宣称「档 2 强于档 1」· ⛔ 不得把档 2 的 0 与档 0/1 的 0 并列引用;⛔ 「档位 = 装置归属层级」(已签批语义);⚠️ 本裁决**不证明**档 2 可实施 —— AC-1 非空洞判据不成立 ⇒ **停手**(不立项优于立项);⚠️ metis 预算已用满(planner 该 improvement **总计 1 轮**)⇒ v2 由 architect 裁决 + oracle 复核 + planner 自查承担(偏离已登记)。
+
+**⑥ 关联**:**#407**(architect 梳理)· **#406**(C′ 段)· **#403**(档 2 评估)· `.rddf/reviews/cep-tier2-prerequisite-rulings.md`(C′-bis + C′-bis-ter)· `.rddf/improvements/cep-evidence-tier2-minimal-slice.md`(v1 → 待改 v2)· `ADR-CEP-20` 决策 3a/4/5/6 · `ADR-CEP-06` SU#4 ② + `:697`

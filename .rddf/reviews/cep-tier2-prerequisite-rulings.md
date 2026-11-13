@@ -170,3 +170,77 @@
 5. ⚠️ **本段不证明**档 2 可实施 —— 实施期的非空洞判据(AC-1)若不成立 ⇒ ⛔ 停手(不立项优于立项)。
 
 **关联**:台账 **Entry #408**(本段)· **#407**(architect 梳理)· **#406**(C′ 段)· **#403**(档 2 评估)· `.rddf/improvements/cep-evidence-tier2-minimal-slice.md`(草稿 v1 · 待按本段改 v2)· `.rddf/reviews/cep-evidence-tier2-scale-assessment.md` · `ADR-CEP-20` 决策 3a/4/5/6 · `ADR-CEP-06` SU#4 ② · `test/cep_experiment_harness.hh:551-555` · `tools/render_report.py:161-185` · `include/tlm/cep/stub_cache_endpoint.hh:68-83` · `include/tlm/cep/mesif_protocol_engine.hh:325-346,442,469` · `experimental/preregistration.json`(H3 行)
+
+---
+
+## C′-bis-ter · 勘误段(2026-11-13 · per oracle 复核 · 台账 Entry #408)—— R3 的**理由订正**与 7 项补正
+
+> **性质**:architect **勘误**(⛔ 不改 C′-bis 的任何**结论** · ⛔ 不改任何已签批 ADR · ⛔ 不新增 invariant).
+> **触发**:oracle 对 C′-bis 段的复核 = **APPROVE(附 1 项强制修正 + 4 项澄清)**.
+
+### 1 · 强制修正 —— R3 的**理由**订正(结论不变)
+
+**勘误**:C′-bis 的 **DL-2** 把「**引擎级**死锁能力」与「**run 级**死锁测量」混为一谈 ⇒ **事实有误**:
+
+| 事实 | 出处 |
+|---|---|
+| **ProgressWatchdog 在 harness / 模型层做死锁判定**（「连续 N cycle 无 retire 且在途非空」),且有**合格的非空洞负控**(`deadlock_detector_live` —— 错标负控真的检出死锁) | `test/cep_consistency_completion_model.hh:111-116,175-177,328,356` · 负控 `:181-186` |
+| **H3 的 2026-11-05 收紧登记明写**:「装置升级为『一致性 × 完成域』复合装置(v2, device=v2)后**实测**该 metric」 | `experimental/preregistration.json:63-71` |
+
+⇒ ⇒ **「第五条路」存在**:把 `mesif` 观测面 + 检测器挂进既有 `ConsistencyCompletionModel` 复合装置 ⇒ 复用 `hypothesis_id = h3`(H3 的 `out_of_scope` 恰为 `coherence_stalls`/`collective_stalls`/`directory_misses` ⇒ 三项 `not-collected` ⊆ 预登记,`tools/render_report.py:187-193` 越界检查通过;两项违例类**均实测**)⇒ `ic3_verdict` **可得 ✓** ⇒ run 在档位表登记为档 2 ⇒ **零冻结面变更 + B7 分母不变 + 无造假 0**。
+
+⇒ **R3 的结论(档 2 ⛔ 不产 4 件套 run)维持不变**,但**理由必须改述**为 ——
+
+> **第五条路不是不存在,而是「定价后排除」**:① 复活 4 件套机器面(`scripts/test/cep_experiment_run.sh:155-177` 全链)≈ 草稿原估 **7-9 人日**(vs 裁决后 5-7);② 复用 `hypothesis_id = h3` 须**显式回驳**草稿自设的 AC-6 / metis P0-8;③ **watchdog 死锁是「装置活性」判据**,对档 2 声称的「**协议语义**」几乎**零增量** ⇒ **花 run 的价钱买不到 run 级判别力**。
+
+⚠️ **改述的理由**(防止将来重开本裁决):若不写,任何读者看到 `mesif_protocol_engine.hh:469` 的「不建模在飞 snoop 集合」注释与 `consistency_completion_model.hh:175` 的 watchdog 都会**重开**「档 2 能否产 run」⇒ 正是 `ADR-CEP-20` 决策 6 想杜绝的「反复重开」.
+
+### 2 · M1(引擎本地非法写)处置 —— **不进本切片**
+
+metis P0-1 曾把 M1 降为「检测力见证」,但草稿 AC-3 ⛔ 禁「直接调 `apply_event` 注入冒充生产流可达」,而 M1 在**生产路径结构不可达**(引擎永不做非法本地写)⇒ M1 在「负控 3 条」里**无合法实现形态** ⇒ R1~R8 亦从未处置 ⇒ 实施期必然撞「AC-3 × M1」矛盾.
+
+⇒ **裁决:M1 不进本切片**(⛔ 不实现 · ⛔ 不进负控 · ⛔ 登记为「生产路径结构不可达」). 负控 3 条因此固定为:① **观测面自身失效** ② **写时他人 sharer 注入** ③ **陈旧副本注入**.
+
+### 3 · SWMR 判据的**判定行**钉死
+
+R4 的两处观测点下 `sharers_snapshot` 语义**随 kind 不同**:`kind=transition`(`apply_event` 入口,`:325-344`)= **迁移前**视图(`sync_tracker` 在 `:344` **末尾**才写目录);`kind=fill`(`:442` 之后)= **两次 apply_event + 两次 sync 之后**的视图(E-4 静默升级:一次 completion 产生 **2 条 transition + 1 条 fill**)⇒ 「写时 `view_of.sharers & ~self_mask != 0`」**未指明判定行** ⇒ 两行的 sharer 视图可差 **2 次目录同步**.
+
+⇒ **裁决:判定行 = `kind = transition ∧ event = Wr ∧ to = M`(态迁移写)**;`kind=fill` 行**不参与** SWMR 判定(⛔ 显式豁免,理由 = 它是**同一写 episode 的第 3 条记录**)⇒ ⇒ 记入 design.
+
+### 4 · 防「用测试台架喂饱判据」(M3 动机的可执行形态)
+
+AC-1 ①「真看到过他人 sharer」**可被 fixture 直接播种目录满足** —— 观测流的 `sharers_snapshot` 取 `view_of`,**无法分辨** bit 来自对端引擎的 `sync_tracker` 自同步(`mesif_protocol_engine.hh:599-620`)还是测试 `set_sharer` 播种.
+
+⇒ **design 硬约束**:**判定窗口内禁止 fixture 播种目录** —— 正控的**每一个** sharer bit 必须**可溯源到 peer 引擎自身的 `apply_event → sync_tracker`**;⇒ 溯源判据须**可机判**(见 v2 的 AC-1).
+
+### 5 · R7 补洞 —— 新档 2 登记表须自带跨档聚合检查
+
+C8 的跨档聚合禁令机器面(`cep_e2e_reconcile_check.sh` T1~T3/T2b + `evidence_scope` 档位词检查)**只覆盖 run** ⇒ 新表(档 2 登记面)必须**自带**:① 「不得与档 0/1 的 0 并列」② 「不含『通过态』表述」③ 上述两项的**反向 fixture**(⛔ AC-9 的 grep 闸是**文档层**,不足以独守).
+
+### 6 · 计数纪律 —— 按「**写 episode**」归并
+
+WRITEBACK 完成 = **2 条 transition + 1 条 fill** ⇒ 叠加缓冲上限与 `dropped_observations` ⇒ 若检测器按**原始行**计数,AC-3 的「违例数精确 == 1」会因**行倍增 / 丢行**以**错误原因**红.
+
+⇒ **裁决:违例计数按 `(addr, write-episode)` 归并后计**(write-episode = 一次 `on_completion` 引发的连续记录组)⇒ 该纪律进 v2 的 AC-3 条文.
+
+### 7 · 其余澄清(逐条)
+
+| # | 澄清 |
+|:--:|---|
+| **a** | ⚠️ **R3-C4 的「降级」不是降级** —— `07 号:690` 阶梯表标题**已签批**为「强度**不可跨档比较**」;档 2 行的机器载体 cell(`:696`)本就写「⭕ 观测面未建(另立 change 评估)」⇒ **已签批阶梯的排序语义本就是「装置归属层级」** ⇒ R3 的交付恰好落在该 cell 内 ⇒ ⛔ 无需再作「降级」表述(原措辞作废,以本条为准) |
+| **b** | 档 2 与档 1 是**正交**,⛔ **不是**强弱序 —— 档 2 判**真引擎状态机 + 真目录可见性**;档 1 判**完成域模型** ⇒ ⛔ 不得宣称「档 2 强于档 1」;宣传措辞须守住「**单族 / 单拓扑 / 无通过态**」 |
+| **c** | `origin` 字段须钉死取值域 —— 取值 = `local_request`(本地发起)· `completion_fill`(完成装行)· `remote_snoop`(远端 snoop)· `writeback`(写回)· `back_invalidate`(反向失效)· `direct_inject`(⛔ 测试直调,**不计入**任何生产流判据) |
+| **d** | 冻结引用**行号更正**:C′-bis 引「manifest `:38`」⇒ 实际判据落 `scripts/test/cep_freeze_check.sh:67`(manifest 只是被它读);行号以脚本为准 |
+| **e** | 新 main spec **不得**绕过 change 直接落 `openspec/specs/` ⇒ 走本 change 的 delta spec 合并(⇒ 冻结面 84 → 85,**一次** `--update`) |
+| **f** | oracle 建议「v2 后再过 metis 第 3 轮」—— ⛔ **不采纳**(planner 的 metis 预算 = 该 improvement **总计 1 轮**,已用于正式审查)⇒ v2 改由 **architect 裁决 + oracle 复核 + planner 自查**三方承担,⚠️ 该偏离在此登记 |
+
+### 8 · 勘误后的裁决净态
+
+| 项 | 净态 |
+|---|---|
+| R1 ~ R8 的**结论** | ✅ **全部维持** |
+| R3 的**理由** | ⚠️ **改述**为「第五条路 = 定价后排除」(§1) |
+| 新增硬约束 | M1 不进本切片(§2)· SWMR 判定行 = `transition ∧ Wr ∧ to=M`(§3)· 判定窗口禁目录播种 + provenance 可机判(§4)· 新表自带跨档聚合检查 + 反向 fixture(§5)· 按写 episode 归并计数(§6) |
+| 估时 | **5-7 人日**(不变;勘误未增工程量) |
+
+**关联**:台账 **Entry #408** · **#407**(architect 梳理)· **#406**(C′ 段)· C′-bis 段(R1~R8)· `.rddf/improvements/cep-evidence-tier2-minimal-slice.md`(v1 · 待改 v2)· `test/cep_consistency_completion_model.hh:111-116,175-186` · `experimental/preregistration.json:63-71` · `tools/render_report.py:161-193` · `scripts/test/cep_experiment_run.sh:155-177` · `docs/architecture/07-coherence-exploration-platform.md:690,696`
