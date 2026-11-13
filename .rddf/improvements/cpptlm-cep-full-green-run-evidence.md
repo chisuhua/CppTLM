@@ -110,4 +110,4 @@ created: 2026-11-13
 
 ## 关联
 
-台账 **#393** · **#392** · **#383** · **#264** · **#228** · **#222** · architect 方案 `.rddf/reviews/cep-full-green-run-gap-rootcause.md` · `docs/validation/2026-11-05-cep-b4-evidence-device.md` · `ADR-CEP-19` ASM-8 ① · `openspec/changes/cpptlm-cep-full-green-run-evidence/`
+台账 **#393** · **#392** · **#383** · **#264** · **#228** · **#222** · architect 方案 `.rddf/reviews/cep-full-green-run-gap-rootcause.md` · `docs/validation/2026-11-05-cep-b4-evidence-device.md` · `ADR-CEP-19` ASM-8 ① · `openspec/changes/archive/2026-11-13-cpptlm-cep-full-green-run-evidence/`

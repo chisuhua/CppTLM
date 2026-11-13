@@ -111,7 +111,7 @@ IC3 = `deadlock_violations == 0 && memory_violations == 0`(per `07 号` §4 的 
 
 ⇒ **闭合路径第 1 步的「动作」不变**(仍为「在真实 E2E 场景中挂 `SwmrDataValueDetector` + 产生真实内存操作样本 ⇒ 该 run 的 `memory_violations` 从 `not-collected` 变为实测值」),但**目标档位**须写明 = **拓扑级**(per `ADR-CEP-19` **ASM-8 ①**:拓扑级 run 的 `hypothesis_id` **须绑定 `H3`** —— 唯一双违例类均须实测的已登记行)⇒ ⛔ 绑定 H3 **不需要**改 `experimental/preregistration.json`(H3 的 `out_of_scope` = {`coherence_stalls`, `collective_stalls`, `directory_misses`},其余 10 键必须实测)。
 ⇒ **硬边界 1 / 3 不变**;⚠️ 本次审查另补两条实施期硬约束(**不属于**本段订正范围,落 change 的 design §D-3 / §D-7):**不得以「检测器已挂载但样本从未流入」的实测 0 充数**(须有样本计数见证)· **不得称「检测力已证」**(本项不含负控 ⇒ 证据强度弱于 B4 的三负控 + 耦合探针)。
-⇒ **落地**:change `openspec/changes/cpptlm-cep-full-green-run-evidence/` 的 **proposal §前提订正**(5 条)· **design §D-1 / §D-2 A2.3 / §D-5 C4 / §D-7** · **tasks A0.5 / A2.3 / A2.5 / A4.4 / A8.2** · **spec delta 的 Purpose + Scenario「目标 run SHALL 具备证据资格」/「证据 SHALL 来自拓扑级 E2E run」**。
+⇒ **落地**:change `openspec/changes/archive/2026-11-13-cpptlm-cep-full-green-run-evidence/` 的 **proposal §前提订正**(5 条)· **design §D-1 / §D-2 A2.3 / §D-5 C4 / §D-7** · **tasks A0.5 / A2.3 / A2.5 / A4.4 / A8.2** · **spec delta 的 Purpose + Scenario「目标 run SHALL 具备证据资格」/「证据 SHALL 来自拓扑级 E2E run」**。
 
 **关联**:台账 **Entry #394**(立项 + 五步链授权号)· **#393**(P-1 核对)· **#392**(根因首定位)· **#228**(B4 达成)· `obj §6.2 B4` · `docs/validation/2026-11-05-cep-b4-evidence-device.md` · `ADR-CEP-19` **ASM-8 ①** · `tools/render_report.py` 预登记判据④ · change `cpptlm-cep-full-green-run-evidence` proposal §前提订正
 

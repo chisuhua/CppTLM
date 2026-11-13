@@ -22085,7 +22085,7 @@ builder 实施(闸断言 + 数字订正 + 变异)⇒ 0 回归 ⇒ 归档(✅ 已
 
 | # | 载体 | 形态 |
 |:--:|---|---|
-| 1 | `openspec/changes/cpptlm-cep-full-green-run-evidence/` | 四件套:**proposal.md**(Why / What Changes / **9 条 AC** / 成本收益 / 诚实边界 / Out of Scope)· **design.md**(D-1 现状实测 / **D-2 三处待定位** / D-3 场景扩写判据 / D-4 4 件套 / **D-5 新闸 G1~G5** / D-6 冻结面 / **D-7 五条硬边界** / D-8 不可约残余 + 铁律 5 条)· **tasks.md**(A0~A9 · 6 个门 · **A1/A2 = 前置核对与定位,⛔ 未完成不得改代码**)· **specs/cep-full-green-run-evidence/spec.md**(delta = **ADDED** · 1 条 Requirement · 5 个 Scenario) |
+| 1 | `openspec/changes/archive/2026-11-13-cpptlm-cep-full-green-run-evidence/` | 四件套:**proposal.md**(Why / What Changes / **9 条 AC** / 成本收益 / 诚实边界 / Out of Scope)· **design.md**(D-1 现状实测 / **D-2 三处待定位** / D-3 场景扩写判据 / D-4 4 件套 / **D-5 新闸 G1~G5** / D-6 冻结面 / **D-7 五条硬边界** / D-8 不可约残余 + 铁律 5 条)· **tasks.md**(A0~A9 · 6 个门 · **A1/A2 = 前置核对与定位,⛔ 未完成不得改代码**)· **specs/cep-full-green-run-evidence/spec.md**(delta = **ADDED** · 1 条 Requirement · 5 个 Scenario) |
 | 2 | `.rddf/improvements/cpptlm-cep-full-green-run-evidence.md` | planner 域 **5 段草稿**(Why / What Changes / **9 条 AC** / Capabilities / Impact)+ 已裁项(per §4.7 转正路径「无草稿不得立项」) |
 
 **② 校验**
