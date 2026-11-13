@@ -7,21 +7,28 @@
 //   E2E-03 `simulation_config.json` 含 **provenance**(种子 / git rev / 工具链)
 //         + `topology_tag` + `verification_mode` / `verification_scope`
 //
-// ⚠️ **本 run 不是实验证据 run**(诚实边界,per ADR-CEP-06 SU#1 §④ + SU#2 ①):
-//   · ⛔ **不绑定**任何**预登记假设**(`hypothesis_id = "framework-e2e"` ⇒ 不在
-//     `experimental/preregistration.json` 的 registered 行内)⇒ ⛔ **不得**作 B4 证据、
-//     ⛔ **不得**改任何 hypothesis 结论;
-//   · ⛔ 违例类 `memory_violations` 无样本 ⇒ IC3 = **⚪ 不适用** ⇒ 该 run
-//     **不得**作任何一致性安全断言的证据;
-//   · ✅ 它的用途 = **可对账**(台账 `metrics_sha256` ↔ 仓内 `metrics.json`)。
+// ⚠️ **本 run 自 2026-11-13 起为「拓扑级实验 run」**(per change
+//   `cpptlm-cep-full-green-run-evidence` · A3;台账 Entry #395 / #394):
+//   · **绑定预登记行 `H3`**(`hypothesis_id = "h3"`,per `ADR-CEP-19` ASM-8 ① ——
+//     拓扑级 run 须绑定 H3:唯一「双违例类均须实测」的已登记行)⇒ `run_class` /
+//     `not_an_experiment_run` 两字段**已移除**(与 h2/h3/h4/h6 同形);
+//     ⚠️ 与调用选择器 `CEP_EXP_ID`(仍为 `framework-e2e`)是**两回事** ——
+//     后者只决定「本次测试调用是否产出」,前者决定「产物绑定哪条预登记行」;
+//   · 违例类 `memory_violations` 由 `SwmrDataValueDetector` **逐条消费真实内存操作流**
+//     ⇒ **实测为 0** ⇒ IC3 = **✓ 通过**(三态中该档位的实例);
+//   · ⚠️ **口径限定(⛔ 必须随任何引用重复)**:本装置**无 sharer 语义** ⇒
+//     **SWMR 违例结构上不可达**;`TrafficGenTLM` 的写数据**恒 0** + home 回程只回显
+//     ⇒ **无版本语义** ⇒ data-value 检查**无判别力** ⇒ 该 0 是
+//     「**本装置无该形态**」的 0,⛔ **不得**表述为「已证明协议层无违例」,
+//     ⛔ **不得**称「检测力已证」;
+//   · ✅ 用途 = **可对账**(台账 `metrics_sha256` ↔ 仓内 `metrics.json`)+
+//     **拓扑级 IC3 通过态**的证据面。
 //
 // ⚠️ **延迟族自 2026-11-09 起为**实测值**(per change `cpptlm-cep-dual-port-inbound-dispatch`):
 //   此前 dual-port 适配器的**入向路由恒落 PE 侧** ⇒ 回程不可达 ⇒ 延迟族只能记
 //   `not-collected`(硬编码 reason)。⇒ 现双端口适配器的入向改为**按端口组**路由
 //   (组 1 = Net ⇒ `net_resp_in()`)+ 拓扑补回程连接 ⇒ **已有完成往返**
 //   ⇒ 延迟族由 wrapper 的 per-txn 周期戳(issue → complete)**实测**得出。
-//   ⚠️ `memory_violations` 仍**无样本**(本 run 无内存操作)⇒ IC3 仍 **⚪ 不适用**
-//   ⇒ 本 run **仍不承载「全绿 run」**。
 //
 // 作者: builder  日期: 2026-11-09
 #include "catch_amalgamated.hpp"
@@ -30,6 +37,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -102,12 +110,37 @@ TEST_CASE("E2E-01: E2E 装置产出 `metrics.json` + `simulation_config.json`(�
     }
     REQUIRE_FALSE(watchdog.stalled()); // 跑满预算仍无停滞 ⇒ 死锁判据成立
 
+    // ── 内存不变量:把本 run 的**真实内存操作流**逐条送入检测器(per ADR-CEP-06 IC5)──
+    //   ⚠️ 口径(⛔ 必须随任何引用重复):本装置**无 sharer 语义**(无 directory /
+    //      sharer tracker)⇒ **SWMR 违例结构上不可达**;且 `TrafficGenTLM` 的
+    //      `req.data` **恒 0** + home 回程只回显 ⇒ **无版本语义** ⇒ data-value 检查
+    //      **无判别力** ⇒ 本 run 的 0 是「**本装置无该形态**」的 0,
+    //      ⛔ 不得表述为「已证明协议层无违例」,⛔ 不得称「检测力已证」。
+    //   ⚠️ 接上产出者才允许删 `not_collected` 的登记(per Entry #222 ④ 的反面要求)。
+    cep_exp::SwmrDataValueDetector detector;
+    std::set<std::uint64_t> memory_ops_addrs;
+    for (const auto& s : w->txn_stamps()) {
+        if (s.rejected)
+            continue; // 拒绝 = 未真正访问存储阵列 ⇒ 无内存操作样本
+        memory_ops_addrs.insert(s.addr);
+        if (s.is_write)
+            detector.write(s.addr, s.data); // 本装置无 sharer ⇒ invalidate 义务恒已满足
+        else
+            detector.read(s.addr, s.data); // 观测值 vs 该地址最后一次写入值
+    }
+    REQUIRE_FALSE(memory_ops_addrs.empty()); // 样本活性见证:⛔ 不得以零样本充数
+    REQUIRE(detector.counts().swmr == 0u);
+    REQUIRE(detector.counts().data_value == 0u);
+
     // ── 组装 13 键(实测 **或** `not-collected` + reason)──
     cep_exp::ExperimentMetrics m;
     m.total_cycles = kRunCycles;
     m.total_transactions = w->counters().cpu_requests;
     m.coherence_stalls = coherence_stall_cycles;
     m.deadlock_detected = watchdog.stalled() ? 1 : 0;
+    m.violations = detector.counts();
+    m.observation_keys["memory_ops_checked_addrs"] =
+        std::vector<std::uint64_t>(memory_ops_addrs.begin(), memory_ops_addrs.end());
     m.verification_mode = "sampled";
     m.verification_scope = "CEP E2E 装置 · 拓扑 A(configs/cep_chi_rnf_e2e_a.json) · 300 cycles";
 
@@ -135,23 +168,25 @@ TEST_CASE("E2E-01: E2E 装置产出 `metrics.json` + `simulation_config.json`(�
     m.measured.insert("transactions_per_cycle");
     m.measured.insert("coherence_stalls");
     m.measured.insert("deadlock_violations");
+    m.measured.insert("memory_violations"); // 违例类两键**均实测**(检测器已接上产出者)
     // 延迟族 5 键 = **实测**(回程可达 ⇒ 有完成往返)
     for (const char* k : {"avg_latency_cycles", "p50_latency_cycles", "p95_latency_cycles",
                           "p99_latency_cycles", "max_latency_cycles"})
         m.measured.insert(k);
 
-    // 未采集 3 键(逐键 reason;⛔ 不填 0)
+    // 未采集 2 键(逐键 reason;⛔ 不填 0)
     m.not_collected["collective_stalls"] = "本装置无 collective plane 绑定 ⇒ 无产出者";
     m.not_collected["directory_misses"] = "本装置无 directory / sharer tracker ⇒ 无产出者";
-    m.not_collected["memory_violations"] = "本 run 无内存操作样本 ⇒ 无可检样本";
+    // ⚠️ `memory_violations` 已由上面的检测器**接上产出者** ⇒ 从 `not_collected` **移除**
+    //    (⛔ 不得只删登记而不接产出者 —— 那会输出裸 0 假绿,per Entry #222 ④)
 
     // 13 键各有结论 + 装置自洽
     std::string missing;
     REQUIRE(cep_exp::metrics_13_covered(m, &missing));
     REQUIRE(missing.empty());
     REQUIRE(m.well_formed());
-    // IC3 = ⚪ 不适用(违例类 `memory_violations` 未采集)⇒ ⛔ 不得记「绿」
-    REQUIRE(cep_exp::ic3_verdict(m) == cep_exp::Ic3Verdict::NotApplicable);
+    // IC3 = ✓ 通过(两违例类**均实测**为 0)⇒ 三态中「通过」态该档位的实例
+    REQUIRE(cep_exp::ic3_verdict(m) == cep_exp::Ic3Verdict::Pass);
 
     // ── 落盘 ──
     const std::filesystem::path out(dir);
@@ -174,13 +209,19 @@ TEST_CASE("E2E-01: E2E 装置产出 `metrics.json` + `simulation_config.json`(�
         os << "  \"simulation_mode\": \"functional\",\n";
         os << "  \"verification_mode\": \"" << m.verification_mode << "\",\n";
         os << "  \"verification_scope\": \"" << m.verification_scope << "\",\n";
-        os << "  \"hypothesis_id\": \"framework-e2e\",\n";
+        os << "  \"hypothesis_id\": \"h3\",\n";
         os << "  \"topology_tag\": \"A\",\n";
-        os << "  \"run_class\": \"framework-verification\",\n";
-        os << "  \"not_an_experiment_run\": true,\n";
+        // ⚠️ `run_class` / `not_an_experiment_run` 两字段**已移除** —— 本 run 现为
+        //    **拓扑级实验 run**(与 h2/h3/h4/h6 的 simulation_config 同形:无该两字段)。
+        //    `hypothesis_id = "h3"` 是**预登记绑定**(per `ADR-CEP-19` ASM-8 ①:
+        //    拓扑级 run 须绑定 H3 —— 唯一双违例类均须实测的已登记行);
+        //    ⚠️ 与调用选择器 `CEP_EXP_ID`(仍为 `framework-e2e`)是**两回事**:
+        //    后者只决定「本次测试调用是否产出」,前者决定「产物绑定哪条预登记行」。
         os << "  \"evidence_scope\": "
-           << "\"可对账(台账 metrics_sha256 ↔ 仓内 metrics.json);⛔ 非 B4 证据;"
-              "⛔ 非一致性安全断言(IC3=⚪ 不适用)\",\n";
+           << "\"拓扑级 E2E run · 运行期 4 件套齐备 + 入库 2 件(retention 丙);"
+              "⛔ 非协议级一致性断言(本装置无 sharer 语义 ⇒ SWMR 结构上不可达;"
+              "写数据恒 0 ⇒ 无版本语义 ⇒ data-value 无判别力);"
+              "⛔ 不得称检测力已证\",\n";
         os << "  \"provenance\": " << prov.to_json() << "\n";
         os << "}\n";
     }

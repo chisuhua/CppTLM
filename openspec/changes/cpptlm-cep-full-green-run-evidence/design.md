@@ -82,7 +82,7 @@
 
 - **必须**:目标场景**真的产生内存操作样本**(⇒ `memory_violations` 的检测器**有样本可检**)⇒ 该键**不在** `not_collected` 内;
 - **必须**:检测器**挂上**且**实际参与计数** ⇒ 输出**实测数值**(0 也是数值,⛔ **不是** `"not-collected"`);
-- **必须(活性见证)**:产出侧登记**样本计数**(落在 `metrics.json` 的 `observation_keys` 附加键,如 `memory_ops_checked_addr_count`,值 **> 0**)⇒ 机器可证「检测器**有样本可检**」⇒ ⛔ **堵住「挂了但样本从未流入 ⇒ 实测 0」的平凡满足**;⚠️ 该键名 ⛔ 不得与 13 必纳键同名(per `cep_b4_observation_keys_check.sh`);⚠️ `observation_keys` 是**附加键** ⇒ 零 `metrics.schema.json` 改动;
+- **必须(活性见证)**:产出侧登记**样本计数**(落在 `metrics.json` 的 `observation_keys` 附加键 **`memory_ops_checked_addrs`**:被检测器观测过的**去重地址列表**,其**长度** > 0 = 样本计数 > 0)⇒ 机器可证「检测器**有样本可检**」⇒ ⛔ **堵住「挂了但样本从未流入 ⇒ 实测 0」的平凡满足**;⚠️ 该键名 ⛔ 不得与 13 必纳键同名(per `cep_b4_observation_keys_check.sh`);⚠️ `observation_keys` 是**附加键** ⇒ 零 `metrics.schema.json` 改动;
 - ⛔ **不得**:把 `not_collected` 里的键**删掉**而不接上产出者(那会让 `metric_json` 输出 0 ⇒ **裸 0 的假绿**,违反 **Entry #222** ④);
 - ⚠️ **零违例是结果,不是目标** ⇒ 若实测 > 0 ⇒ **停止**(见 proposal 的 Out of Scope);
 - ⚠️ **语义边界(必须随登记重复 · A2 实测精化)**:CEP 实现侧**无内存一致性不变量语义**(实测 `include/tlm/cep/*.hh` 对 `memory_read` / `memory_write` / `MemoryOp` **0 命中**;真实路径 = `cpu_read` / `cpu_write`,per §D-2 A2.2)⇒ 样本由**测试侧**从 run 的真实事务流(`StubCacheEndpointTLM` 的 per-txn `addr` / `is_write` / `data`)导出 ⇒ ⇒ 该 0 是「**本装置无该形态**」的 0,**双重空洞**:① 本装置**无 sharer 语义**(无 directory / 无 sharer tracker)⇒ **SWMR 违例结构上不可达**;② `TrafficGenTLM::issueRequest()` 的 `req.data.write(0)` **恒 0** + home 回程只回显 `p.data`(`include/tlm/cep/cohif_responder.hh:164`)⇒ **无版本语义** ⇒ data-value 检查**无判别力** ⇒ ⇒ ⛔ **不得**表述为「已证明协议层无死锁 / 无违例」,⛔ **不得**称「检测力已证」(per `docs/validation/2026-11-05-cep-b4-evidence-device.md` §5 的同款口径限定)。⚠️ **要获得判别力需另立 change**(写侧非恒定数据 + 版本字段 + 注入式负控 ⇒ **能力新增**,⛔ 不在本 change 范围)。
@@ -102,7 +102,7 @@
 | # | 判据 | 变异 ⇒ 期望签名 |
 |:--:|---|---|
 | **C1** | **真实 run 存在**且其 `metrics.json` 的两违例类为**实测数值**(⛔ 非 `not-collected`) | 把 `memory_violations` 改回 `not-collected` ⇒ `违例类未实测` |
-| **C1'** | **样本活性见证**:`observation_keys` 的样本计数键 **> 0** | 删掉该键 / 置 0 ⇒ `检测器无样本见证` |
+| **C1'** | **样本活性见证**:`observation_keys["memory_ops_checked_addrs"]` 的**长度 > 0**(去重地址列表 = 被检测的内存操作样本) | 删掉该键 / 置空数组 ⇒ `检测器无样本见证` |
 | **C2** | 两违例类实测值 **== 0** | 改成 1 ⇒ `违例类非零` |
 | **C3** | IC3 = **通过态**(⛔ **非** ⚪ 不适用 / ❌ 违例) | 判据降级为不适用 ⇒ `IC3 非通过态` |
 | **C4** | **拓扑链身份锚** —— run 须在 `test/cep_e2e_runs.jsonl` 有条目,其 `config_file` ∈ `configs/cep_chi_rnf_e2e_*.json` **且** `config_sha256` == 磁盘该 config 的 sha256 **且** `simulation_config_sha256` == run 内 `simulation_config.json` 的 sha256 **且** `hypothesis_id` ∈ 已登记行 | 把 run 换成**模型级 h3 run** / **合成 fixture** ⇒ `非拓扑级 E2E run` |

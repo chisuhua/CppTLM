@@ -75,6 +75,11 @@ public:
         bool hit = false;
         bool rejected = false;
         TxnIdSpace id_space = TxnIdSpace::CPU;  ///< ⛔ 跨空间不得按 txn 配对
+        // ── 内存操作**原始事实**(⛔ 仅事实;SWMR / data-value 判定归 `test/` 的 harness)──
+        /// 本次访问是写。命中 / 拒绝路径在 issue 当期即落值;miss 路径在 issue 时已知。
+        bool is_write = false;
+        /// 写:写入值;读:观测值(命中 = 缓存值;miss = 完成回程值,由 `complete_stamp` 补落)。
+        std::uint64_t data = 0;
     };
 
     StubCacheEndpointTLM(const std::string& name, EventQueue* eq)
@@ -156,7 +161,8 @@ private:
         if (r.hit) {
             // **命中亦回**(一请求一响应 ⇒ latency 样本完整;`INV-SC6` 零网络流量保持)
             enqueue_cpu_resp(CacheResp(cpu_txn, r.data, /*hit=*/true));
-            record_stamp(cpu_txn, addr, /*hit=*/true, TxnIdSpace::CPU);
+            record_stamp(cpu_txn, addr, /*hit=*/true, TxnIdSpace::CPU, /*rejected=*/false,
+                         is_write, /*data=*/r.data);
             return;
         }
         if (!r.pending) {
@@ -164,7 +170,8 @@ private:
             // 回显式 reject 响应(一请求一响应在该路径同样成立)
             ++ctr_.cpu_rejected;
             enqueue_cpu_resp(CacheResp(cpu_txn, 0, /*hit=*/false, /*err=*/1));
-            record_stamp(cpu_txn, addr, /*hit=*/false, TxnIdSpace::CPU, /*rejected=*/true);
+            record_stamp(cpu_txn, addr, /*hit=*/false, TxnIdSpace::CPU, /*rejected=*/true,
+                         is_write, /*data=*/0);
             return;
         }
 
@@ -177,7 +184,8 @@ private:
         b.perm.write(static_cast<std::uint8_t>(is_write ? Perm::WRITEBACK : Perm::READ));
         pending_net_.push_back(b);
         ++ctr_.net_requests_out;
-        record_stamp(r.txn_id, addr, /*hit=*/false, TxnIdSpace::CORE);
+        record_stamp(r.txn_id, addr, /*hit=*/false, TxnIdSpace::CORE, /*rejected=*/false,
+                     is_write, /*data=*/0);
     }
 
     void handle_net_ingress() {
@@ -196,7 +204,7 @@ private:
                 const bool error = b.error.read() != 0;
                 core_.completion(addr, txn, data, perm, error);
                 enqueue_cpu_resp(CacheResp(txn, data, /*hit=*/false, error ? 1 : 0));
-                complete_stamp(txn);
+                complete_stamp(txn, data);
                 break;
             }
             case bundles::CohIfFlowId::Snoop: {
@@ -249,7 +257,7 @@ private:
     }
 
     void record_stamp(std::uint64_t txn, std::uint64_t addr, bool hit, TxnIdSpace space,
-                      bool rejected = false) {
+                      bool rejected = false, bool is_write = false, std::uint64_t data = 0) {
         TxnStamp s;
         s.txn_id = txn;
         s.addr = addr;
@@ -257,17 +265,20 @@ private:
         s.hit = hit;
         s.rejected = rejected;
         s.id_space = space;
+        s.is_write = is_write;
+        s.data = data;
         s.completed = hit || rejected;  // 命中 / 拒绝在 issue 当期完成
         if (s.completed)
             s.complete_cycle = cycle_;
         stamps_.push_back(s);
     }
 
-    void complete_stamp(std::uint64_t txn) {
+    void complete_stamp(std::uint64_t txn, std::uint64_t data) {
         for (auto it = stamps_.rbegin(); it != stamps_.rend(); ++it) {
             if (it->txn_id == txn && it->id_space == TxnIdSpace::CORE && !it->completed) {
                 it->completed = true;
                 it->complete_cycle = cycle_;
+                it->data = data;  // 读 miss 的观测值 = 完成回程值
                 return;
             }
         }

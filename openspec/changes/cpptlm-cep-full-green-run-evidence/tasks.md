@@ -28,11 +28,13 @@
 - [x] A2.6 ⛔ 若 A2.4 / A2.5 的结论为「不可实现」⇒ **停**并回报 ⇒ ✅ **停点门未触发**(A2.4 可机判 + A2.5 可实现)⇒ **可进入 A3**;⚠️ A2 另浮出**证据强度**事实(该 0 是「本装置无该形态」的 0 且**双重空洞**:无 sharer 语义 ⇒ SWMR 结构上不可达;写数据恒 0 + 无版本 ⇒ data-value 无判别力)⇒ 已精化 design §D-3 + proposal 诚实边界 6(⛔ 不得称「检测力已证」;⛔ 要有判别力需另立 change)
 
 ## A3 · 场景扩写 + 检测器挂载 + 样本见证(G2)
-- [ ] A3.1 目标场景**真的产生内存操作样本** ⇒ 检测器**有样本可检**
-- [ ] A3.2 检测器**挂上**且**实际参与计数** ⇒ 输出**实测数值**
-- [ ] A3.3 **样本活性见证**:`metrics.json` 的 `observation_keys` 含样本计数键(如 `memory_ops_checked_addr_count`,值 **> 0**)⇒ ⛔ 键名不得与 13 必纳键同名;⛔ 零 `metrics.schema.json` 改动
-- [ ] A3.4 ⛔ **不得**删 `not_collected` 的键而不接产出者(裸 0 假绿,Entry #222 ④)
-- [ ] A3.5 ⛔ 不改 IC3 判据 / 阈值 / 预登记 / `metrics.schema.json`
+- [x] A3.1 目标场景**真的产生内存操作样本** ⇒ 检测器**有样本可检** ⇒ ✅ 实测:`memory_ops_checked_addrs` **20 个去重地址**(TrafficGen SEQUENTIAL 下 写 = `cur_addr_ % 8 == 0` ⇒ 写/读样本均非空)
+- [x] A3.2 检测器**挂上**且**实际参与计数** ⇒ 输出**实测数值** ⇒ ✅ 实测:`memory_violations = 0`(**实测值**,⛔ 非 `"not-collected"`)· `memory_violation_kinds = {swmr: 0, data_value: 0}` · 两违例类均在 `_measured`
+- [x] A3.3 **样本活性见证**:`metrics.json` 的 `observation_keys` 含样本**地址列表**键 `memory_ops_checked_addrs`(其**长度** = 被检测的内存操作样本计数 ⇒ 实测 **20 > 0**;⛔ 零样本不得充数)⇒ ⛔ 键名不得与 13 必纳键同名(实测不撞);⛔ 零 `metrics.schema.json` 改动 ✅
+- [x] A3.4 ⛔ **不得**删 `not_collected` 的键而不接产出者(裸 0 假绿,Entry #222 ④)⇒ ✅ `memory_violations` 的登记**与**检测器接线在**同一次改动**内完成(检测器在接线前即有 `REQUIRE_FALSE(memory_ops_addrs.empty())` 见证)
+- [x] A3.5 ⛔ 不改 IC3 判据 / 阈值 / 预登记 / `metrics.schema.json` ⇒ ✅ `cep_prereg_drift_check` / `cep_freeze_check` / `cep_ic3_report_states_check` 全 rc=0;`experimental/preregistration.json` **零 diff**
+- [x] A3.6 **装置自陈字段翻转 + 预登记绑定**(A2.3 / A2.5 定位的「改点」的实施项)⇒ ✅ `test/test_cep_stub_cache_emit.cc` 的 `simulation_config.json`:`hypothesis_id` → `"h3"`(per `ADR-CEP-19` ASM-8 ①)· `run_class` / `not_an_experiment_run` **两字段移除**(与 h2/h3/h4/h6 同形)· `evidence_scope` 改写为**拓扑级 + 强度限定**;⚠️ 另同步 `:154` 的 `ic3_verdict` 断言 `NotApplicable` → `Pass`;**文件头诚实边界段**同步改写(原「本 run 不是实验证据 run / IC3 ⚪ 不适用」已成假)
+⇒ **A3 验证**:构建 73/73 · `[cep]` **515 cases / 11707 assertions** 全绿 · `ctest` **175/175** 全绿 · `cep_freeze_check` rc=0 · 实测产物落 `/tmp/opencode/a3-verify`(**非** A4 正式 run)
 
 ## A4 · 真跑 + 4 件套 + 入库 + 双向对账
 - [ ] A4.1 用 `cep_experiment_run.sh` / `tools/run_sweep.py` 跑出目标 run 目录(**顶层** `experimental/run-<ts>-<tag>/`;⛔ 嵌套子目录不入库,per `.gitignore:116-119`)
