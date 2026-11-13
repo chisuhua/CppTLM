@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-13T11:28:40Z",
+  "current_role": "architect",
+  "updated_at": "2026-11-13T11:31:21Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-12T13:40:00Z",
-      "by": "user",
-      "reason": "用户口令：切 planner 梳理后续任务内容并给实施路径（承接 architect 梳理：G5/G6 已达成，剩余 = C 收尾批 / D backlog / B ratify / A 外部 / E 推送）。"
-    },
     {
       "role": "builder",
       "at": "2026-11-12T13:55:00Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-13T11:28:40Z",
       "by": "user",
       "reason": "用户口令「按你建议的顺序推进」⇒ B 的剩余部分(openspec 四件套 + KPI 回填)属 builder 域 ⇒ 切 builder;完成后切回 architect 做 C(档 2 评估)。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-13T11:31:21Z",
+      "by": "user",
+      "reason": "用户口令「按你建议的顺序推进」⇒ A(push)+ B(C8 立项)已完成;切 architect 执行 C = 档 2(协议引擎不变量观测面)的工程量级评估。"
     }
   ],
   "auto_switch_window": null
