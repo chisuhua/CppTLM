@@ -22108,3 +22108,66 @@ builder 实施(闸断言 + 数字订正 + 变异)⇒ 0 回归 ⇒ 归档(✅ 已
 **⑥ 关联**
 
 **#393**(P-1 核对 + 根因精化)· **#392**(根因首定位)· **#391**(收口盘点)· **#383**(R-3 归因)· **#264** · **#228**(B4 达成 + 证据设备)· **#222**(④ 不得写裸 0)· architect 方案 `.rddf/reviews/cep-full-green-run-gap-rootcause.md`
+
+### Entry #395 — 2026-11-13 [build](**R-3 change 审查闭环 + A0 授权门 + A1 前置核对** —— 3 个 BLOCKER 全闭 · 冻结面 1 处 → 3 处追记 · P-2 / P-3 结论落盘 · A1.4 停点门未触发)
+
+**主题**:per 用户口令「提交,若有需要请启动第3轮critic」+「选择C1」⇒ (a) 提交 R-3 change 的审查闭环修订(critic 3 轮:R1 REJECT → R2 APPROVE_WITH_CONDITIONS → **R3 APPROVE**);(b) 执行 change 的 **A0 授权门**(含台账追记)与 **A1 前置核对**(P-2 / P-3)⇒ ⛔ **本 Entry 不实施 A2 及以后**(A2 = 只读定位,A3 = 首次代码改动,须另行放行)。
+
+**① review 闭环(3 个 BLOCKER 全闭 · critic 3 轮)**
+
+| 轮 | 结论 | 关键 |
+|:--:|---|---|
+| R1 | **REJECT**(`mergeable: no`) | 3 个 BLOCKER:① 前提说反(B4 的通过态实例是**真实 run**,合成的是更早的 fixture F1)② 新闸 G4「非合成 fixture」分不开目标 run 与既有**模型级** run ③ 「检测器实际参与计数」无机器见证(可平凡满足) |
+| R2 | **APPROVE_WITH_CONDITIONS**(`mergeable: yes`,0 新 BLOCKER) | 3 个 BLOCKER 逐条闭合;2 条 SHOULD_FIX + 2 条 NITS |
+| R3 | **APPROVE**(`mergeable: yes`,0 BLOCKER / 0 SHOULD_FIX) | 唯一 NIT(A2.5 措辞会把「预期内红」误读为停点)已修 |
+
+⇒ **口径统一** = 缺口 =「**拓扑级(E2E 链)run 不承载 IC3 通过态**」;**模型级**通过态实例已由 B4 达成(per §6.2 B4 Entry #228 ③「IC3 三态中该态**首个真实 run 实例**」;此前仅合成 fixture F1)⇒ ⛔ 本 change 不得宣称「首次具备真实 run 通过态实例」。
+
+**② 落盘产物(2 个 commit + 本 Entry)**
+
+| # | 载体 | 形态 |
+|:--:|---|---|
+| 1 | `c75b3b02` | 审查闭环主修订(6 文件 +254/−133):proposal §前提订正(5 条)· design D-1~D-8 · tasks A0~A9 · spec delta · improvement · architect 方案 §六 订正二(纯追加 +19/−0,§一~§五 逐字未动) |
+| 2 | `fda61c6a` | A2.5 措辞补全(R3 唯一 NIT) |
+| 3 | 本 Entry | 台账追记(A0.5) |
+
+**③ 冻结面枚举追记(A0.5 · 1 处 → 3 处)**
+
+`Entry #394` ③ 的「冻结面 **1 处** = `07 号` 新 SU」**追记为 3 处**:
+
+| # | 冻结件 | 追加内容 | 原因 |
+|:--:|---|---|---|
+| 1 | `docs/architecture/07-coherence-exploration-platform.md` | 新 SU(取代 SU·十五 ① 的「不承载全绿 run」口径) | 原枚举已有 |
+| 2 | `docs/adr/ADR-CEP-19-*.md` | 一则 Status Update | 其 SU ②「⛔ 拓扑级未闭合『全绿 run』」将因本次交付而与事实不符 |
+| 3 | `docs/adr/ADR-CEP-06-*.md` | 一则 Status Update | 其 SU 2026-11-09 ② 的「框架验证 run 证据边界」五句(⛔ 不得作 B4 证据 / 不得改 hypothesis 结论 / 不得作一致性安全断言 / 用途仅可对账 / 不在受监管 emit 路径上)将因**本次装置形态转变**(`run_class` / `not_an_experiment_run` / `evidence_scope` / `hypothesis_id` 翻转)而与事实不符 |
+
+⇒ ⚠️ **第 3 处是 A1 核对时浮出的**(初版只枚举 2 处)⇒ ⛔ 不追加即等于让 ADR 与事实脱节。
+⇒ 五步链授权号**仍为 `Entry #394`**(`cep_freeze_check.sh --update --authorized-by "Entry #394"`),其冻结面范围以**本 Entry 的追记**为准;归档前 `--update` 与归档后**第二次** `--update` 均用本号。
+
+**④ 前提订正追记(口径统一)**
+
+本仓已签记录(`obj §6.2 B4` Entry #228 ③ + `docs/validation/2026-11-05-cep-b4-evidence-device.md` §0)写明 B4 的 h3 v2 run 是「首个真实 run 实例」⇒ **R-3 的缺口 = 拓扑级**;architect 方案 `.rddf/reviews/cep-full-green-run-gap-rootcause.md` 已追加 **§六 订正二**(纯追加)订正其 §一.3 结论行与 §二 硬边界 2 的「合成」表述 ⇒ ⛔ 全部活跃文档口径已一致。
+
+**⑤ A0 / A1 结论(A1.4 停点门判定:未触发)**
+
+| 项 | 结论 |
+|---|---|
+| **A0.4 基线实测** | 两 E2E run 逐项复核一致:`memory_violations = "not-collected"`(不在 `_measured`)· `deadlock_violations = 0` · `hypothesis_id = "framework-e2e"` · `run_class = "framework-verification"` · `not_an_experiment_run = true` · `evidence_scope` 含「⛔ 非一致性安全断言(IC3=⚪ 不适用)」;⚠️ `-b` 的**延迟族 5 键已实测**(= 5) |
+| **P-2**(retention 登记形态) | ✅ **成立** —— `ADR-CEP-06` SU 2026-11-08·二 裁定 = **丙**:运行期 4 件套与入库 2 件**并存**;IC1~IC5 判定面**不依赖** `trace.h5`;且 SU 2026-11-09 ③ 已**追认**「首批 = 有台账条目的 run(首批 = 框架验证 run)」⇒ **框架验证 run 入库有先例** ⇒ ⛔ **无需新裁决**(A1.1 的性质 = 核对) |
+| **P-3**(「全绿 run」完整判据范围) | ✅ **不成立**(不构成扩围)—— 判据 = 两级(`run-validity` / `hypothesis-verdict`,**不可互相继承**);B4 形态 = `ADR-CEP-06` **SU#4 ①** 三条**单 run**同时满足(⛔ 不可跨 run 继承 / 不可再放宽)⇒ **不含**「H2/H3/H6 假设全覆盖」(那是 B7 的 8/8 口径);`ADR-CEP-19` SU ② 的**双重成因**已双双闭合(① 框架层回程已由 `cpptlm-cep-dual-port-inbound-dispatch` 修复 ② 拓扑 A/B 的 home 已配 `emit_completions: true`)⇒ **拓扑级只剩 IC3 一项** = 本 change 范围 |
+| **A1.4 停点门** | ✅ **未触发**(P-2 与 P-3 均不构成否决 / 扩围)⇒ **可进入 A2** |
+
+⚠️ **A1 核对浮出三条新增约束(已回写 change)**:
+- **N-1** 冻结面 **2 处 → 3 处**(见 ③)⇒ design §D-6 / proposal 前提订正 ④ + AC-6 / tasks A0.5 · A6.2 · A6.4 已改;
+- **N-2** **台账载体 = 两处并存**(per `ADR-CEP-06` SU 2026-11-09 ③:7 字段载体 = 台账散文段 + `test/cep_e2e_runs.jsonl`)⇒ tasks A4.4 已加「台账散文段」;⚠️ 机器闸只校验 jsonl ⇔ 台账散文段**机器不兜底** ⇒ 须人工核对;
+- **N-3** `ADR-CEP-06` SU 2026-11-09 ② 当初「**不绑 H3**」的理由(延迟族无样本 ⇒ 绑 H3 违反「未列入 out-of-scope 者必须实测」)⇒ **该前提已被回程修复消除** ⇒ 绑定 H3 **合法且不需改** `preregistration.json` ⇒ design §A2.5 已把该**一手依据**落盘(A2.5 由推断升级为有据)。
+
+**⑥ ⛔ 本 Entry 明确不做**
+
+⛔ **不实施 A2 及以后**(A2 = 只读定位;A3 = 首次代码改动,须另行放行)· ⛔ 不改 IC3 判据 / 阈值 / 预登记 / `metrics.schema.json` / retention 条款 · ⛔ 不改任何 ADR 决策 / 正文(第 2 / 3 处冻结面**尚未**追加)· ⛔ 不改 `B3b-2 = 0/4` · ⛔ KPI **1/3 不变**(change 仍 active)。
+
+**⑦ 下一步**
+
+**A2**(只读定位)—— A2.1 检测器挂载点 · A2.2 真实内存读写路径 · A2.3 可承载性三问的「改点」 · A2.4 C4 拓扑链身份锚入库后可判性 · A2.5 绑定点 + 三处自陈字段改点 · A2.6 停点门 ⇒ ⛔ **A2 全程不写代码**。
+
+**关联**:**#394**(立项 + 五步链授权号)· **#393**(P-1 核对 + 根因精化)· **#392**(根因首定位)· **#391**(收口盘点)· **#383**(R-3 归因)· **#304**(框架验证 run 证据边界 / retention 丙 字面追认)· **#303**(首批 run 入库 + 双向闸 + 7 字段台账)· **#295**(retention 丙)· **#228**(B4 达成 + 证据设备)· **#222**(④ 不得写裸 0)· `ADR-CEP-06` SU 2026-11-08·二 / SU 2026-11-09 ②③ / SU#4 ① · `ADR-CEP-19` SU ② + ASM-8 ① · `obj §6.2` B4 · `docs/validation/2026-11-05-cep-b4-evidence-device.md` · `.rddf/reviews/cep-full-green-run-gap-rootcause.md`(§五 + §六)

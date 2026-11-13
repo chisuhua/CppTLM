@@ -23,6 +23,8 @@ created: 2026-11-13
 | ① | 「**一致性闸门(IC3)至今没有一个「真实 run」的通过态实例**」⇒「B4 的证据链**缺最后一环**」 | ⛔ **不成立**。`obj §6.2 B4`(Entry #228 ③)与 `docs/validation/2026-11-05-cep-b4-evidence-device.md` §0 均明写 B4 的 **h3 v2 run** 是「IC3 三态中该态**首个真实 run 实例**(此前仅合成 fixture **F1**)」⇒ 实测 `experimental/run-20261105-153418-h2h3h4h6/h3/`:两违例类实测 0 且均在 `_measured` · `hypothesis_id = "h3"` · `report.html` 渲染「一致性闸门通过」⇒ **缺口 = 拓扑级(E2E 链)缺口** |
 | ② | 「Entry #228 \| B4 的达成证据形态(装置 + **合成** fixture 的通过态实例)」 | ⛔ **说反了**。B4 实例 = **真实 run**(装置级 / 模型级);**合成**的是更早的 fixture F1 |
 | ③ | 新闸 G4「⛔ 非合成 fixture」 | ⛔ **判据方向错**(模型级 run 也不是 fixture)⇒ 改为**拓扑链身份锚**(C4) |
+| ④ | 冻结面 = **1 处**(`07 号` 新 SU) | ⇒ **3 处**:`07 号` 新 SU + `ADR-CEP-19` + `ADR-CEP-06` 各一则 Status Update ⇒ ⚠️ **第 3 处是 A1 核对时浮出**:本 change 翻转拓扑级 run 的 `run_class` / `not_an_experiment_run` / `evidence_scope` / `hypothesis_id` ⇒ `ADR-CEP-06` **SU 2026-11-09 ②** 的「框架验证 run 证据边界」五句将与事实不符 ⇒ 必须追加订正(per 台账 **Entry #395 ③**) |
+| ⑤ | AC-9「⛔ **无 ADR 变更**」 | ⇒ 改为「⛔ 不改任何 ADR **决策 / 正文**;⛔ 仅**追加** Status Update」(3 处) |
 
 ## 架构依据
 
@@ -41,7 +43,7 @@ created: 2026-11-13
 
 | 面 | 内容 |
 |---|---|
-| ✅ 在范围内 | ① **前置核对**(P-2 retention 丙口径 / P-3 「全绿 run」完整判据范围)+ **前提订正落盘** ② **挂载点 / 内存样本路径 / 判据绑定**定位 ③ **场景扩写 + 检测器挂载 + 样本活性见证**(⇒ 违例类被实测)④ 一次拓扑级真实 run + 4 件套 + **两件套入库 + 双向对账** ⑤ IC3 通过态判定 ⑥ `07 号` 新 SU + `ADR-CEP-19` 一则 Status Update(**冻结面 2 处 ⇒ 五步链**)+ `obj §6.2` 证据行 ⑦ 新闸 + **每判据 1 条**决定性变异 |
+| ✅ 在范围内 | ① **前置核对**(P-2 retention 丙口径 / P-3 「全绿 run」完整判据范围)+ **前提订正落盘** ② **挂载点 / 内存样本路径 / 判据绑定**定位 ③ **场景扩写 + 检测器挂载 + 样本活性见证**(⇒ 违例类被实测)④ 一次拓扑级真实 run + 4 件套 + **两件套入库 + 双向对账 + 台账散文段** ⑤ IC3 通过态判定 ⑥ `07 号` 新 SU + `ADR-CEP-19` + `ADR-CEP-06` 各一则 Status Update(**冻结面 3 处 ⇒ 五步链**)+ `obj §6.2` 证据行 ⑦ 新闸 + **每判据 1 条**决定性变异 |
 | ⛔ 不在范围内 | ① 改 IC3 判据 / 阈值 / 预登记 / `metrics.schema.json` / retention 条款 ② 为凑 IC3 掩盖真实违例 ③ 用合成 fixture 或模型级实例冒充拓扑级 E2E run ④ 删 `not_collected` 的登记而不接产出者 ⑤ 以「挂了但样本从未流入」的实测 0 充数 ⑥ 声称「检测力已证」 ⑦ 新建 ADR / 改 ADR 决策与正文 |
 
 ## Why
@@ -66,7 +68,7 @@ created: 2026-11-13
 | 1 | **场景扩写 + 判据绑定** | `test/cep_experiment_harness.hh` + `test/test_cep_stub_cache_emit.cc` + E2E 场景 / `configs/cep_*_e2e_*.json` | 违例类由 `not-collected` → **实测数值**;`hypothesis_id` 绑定 H3;⛔ 不得删登记而不接产出者;⛔ 不得零样本充数 |
 | 2 | **拓扑级真实 run + 4 件套 + 入库 + 双向对账** | `experimental/run-<ts>-<tag>/` + `test/cep_e2e_runs.jsonl` | 形态以 **P-2** 结论为准;两件套入库 ⇒ 双向闸绿 |
 | 3 | **IC3 通过态** | `report.html` + `cep_ic3_report_states_check.sh` + `render_report --check` | 渲染「✓ 一致性闸门通过」+ 预登记判据④ 绿 |
-| 4 | **证据登记** | `07 号` 新 SU + `ADR-CEP-19` 一则 Status Update(**冻结面 2 处 ⇒ 五步链**)+ `obj §6.2` 证据行(append-only) | ⛔ 不改正文 |
+| 4 | **证据登记** | `07 号` 新 SU + `ADR-CEP-19` + `ADR-CEP-06` 各一则 Status Update(**冻结面 3 处 ⇒ 五步链**)+ `obj §6.2` 证据行(append-only) | ⛔ 不改正文 |
 | 5 | **新闸** | `scripts/test/cep_full_green_run_check.sh` | C1 / C1' / C2 / C3 / C4 / C5 + **每判据 1 条**决定性变异(共 **6 条**);ctest **175 → 176**;守门表 **36 → 37** |
 
 ## Acceptance
@@ -78,7 +80,7 @@ created: 2026-11-13
 - [ ] **AC-3**:两违例类实测 **== 0** ⇒ ⚠️ **> 0 ⇒ 停止**并按缺陷另立处置
 - [ ] **AC-4**:IC3 = **通过态** + 渲染「✓ 一致性闸门通过」+ **拓扑链身份锚** ⇒ ⛔ 模型级 / fixture 冒充必红
 - [ ] **AC-5**:4 件套按 P-2 结论齐备 **+ 两件套入库 + `jsonl` 条目 + 双向闸绿**
-- [ ] **AC-6**:`07 号` 新 SU + `ADR-CEP-19` 一则 Status Update + **五步链** provenance 成立(冻结面 **2 处**)
+- [ ] **AC-6**:`07 号` 新 SU + `ADR-CEP-19` + `ADR-CEP-06` 各一则 Status Update + **五步链** provenance 成立(冻结面 **3 处**)
 - [ ] **AC-7**:`obj §6.2` B4 证据行 append-only 更新(带「拓扑级」限定词)+ `cep_docs_sync_check --strict` 绿 + 活文本同步清单逐条处置
 - [ ] **AC-8**:新闸 **每判据各 1 条决定性变异**按签名红 + 还原绿
 - [ ] **AC-9**:`ctest` **176/176** · 全部 `cep_*.sh` 逐个 rc=0(⛔ 不写死绝对数) · format / docs_sync / doc_ref / lint / freeze / reconcile 全 rc=0 · ⛔ 未改判据 / 阈值 / 预登记 / schema / retention · ⛔ `B3b-2` 未动 · ⛔ 未改 ADR 决策与正文
@@ -93,7 +95,7 @@ created: 2026-11-13
 
 | 项 | 内容 |
 |---|---|
-| **冻结面** | ✅ **2 处**(`07 号` 新 SU + `ADR-CEP-19` 一则 Status Update)⇒ **五步链**;⚠️ 归档后新 main spec 自动入集 ⇒ 第二次 `--update` |
+| **冻结面** | ✅ **3 处**(`07 号` 新 SU + `ADR-CEP-19` + `ADR-CEP-06` 各一则 Status Update)⇒ **五步链**;⚠️ 归档后新 main spec 自动入集 ⇒ 第二次 `--update`;⚠️ 第 3 处是 A1 核对时浮出(拓扑级 run 的 `run_class` / `not_an_experiment_run` / `evidence_scope` / `hypothesis_id` 翻转 ⇒ `ADR-CEP-06` SU 2026-11-09 ② 的「框架验证 run 证据边界」五句须订正)· per 台账 **Entry #395 ③** |
 | **KPI slot** | ✅ 占 **1 个**(当前 1/3)⇒ 归档后回填 0/3 |
 | **风险** | ① 实测 > 0 ⇒ **停止**(硬边界)② 「拓扑级身份」若在入库后**不可机判** ⇒ ⛔ 须在 A2/A3 解决 ③ `trace.h5` 不入库 ⇒ 4 件套只能**运行期**形态(依赖 P-2)④ 取得证据资格若需改**预登记** ⇒ ⛔ 停并回报 ⑤ P-3 若要求扩围 ⇒ ⛔ 停并回报**重立项** |
 | **不可约残余** | ① 一次拓扑级通过态 **≠** 全面达成 ② 措辞须限定为「一次拓扑级 E2E run 的通过态实例」 ③ **模型级 ≠ 协议级** ④ ⛔ 不得称「检测力已证」(证据强度弱于 B4) |

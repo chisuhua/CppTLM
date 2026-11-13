@@ -33,6 +33,14 @@
 | **A2** | harness 的**检测器挂载点** + E2E 场景里**真实内存读写**的产生路径 | 读 `test/cep_experiment_harness.hh` 的 `violations` 填充链 + `stub_cache_core` 的 `memory_read/memory_write` 路径 | ⇒ **停**并回报(⛔ 不许猜一个挂载点就改) |
 | **A2.5** | 拓扑级 run 的 **`hypothesis_id` 绑定点**(绑定 H3 后 `not_an_experiment_run` / `run_class` / `evidence_scope` 三处自陈字段的改点) | 读 `test/test_cep_stub_cache_emit.cc` 的 `simulation_config.json` 写出处 + `tools/render_report.py` 判据④ | ⇒ **停**并回报(⛔ 不许绕过预登记绑定) |
 
+### A2.5 · 「不绑 H3」的原理由已失效(一手依据 · 2026-11-13 A1 核对浮出)
+
+`ADR-CEP-06` **SU 2026-11-09(Entry #304)§②** 明写拓扑级 run 当初**不绑 `H3`** 的理由:
+「H3 的预登记 out-of-scope = {`coherence_stalls`, `collective_stalls`, `directory_misses`} ⇒ **延迟族 5 键必须实测**;而本装置**无已完成往返**(框架层 dual-port 入向路由恒落 PE 侧 ⇒ 回程不可达)⇒ 延迟族**无样本** ⇒ 绑 H3 会违反『未列入 out-of-scope 者**必须实测**』」。
+
+⇒ **该前提已被消除**:框架层回程已由 change `cpptlm-cep-dual-port-inbound-dispatch` 修复(双端口适配器入向改为**按端口组**路由)+ 拓扑 A/B 的 home 已配 `emit_completions: true`(实测 `configs/cep_chi_rnf_e2e_{a,b}.json`)⇒ **延迟族 5 键已实测**(实测 `run-2026-11-09-cep-e2e-b`:`avg/p50/p95/p99/max` 全为数值 `5`)⇒ ⇒ **绑 H3 不再违反「未列入 out-of-scope 者必须实测」** ⇒ 且 H3 的 out-of-scope 集**恰好**是那 3 个非违例类 ⇒ ⇒ **绑定 H3 不需要改 `experimental/preregistration.json`**(该文件 M1 冻结集内 ⇒ 零 diff)。
+⇒ ⛔ **但**:该 SU §② 的**五句证据边界**随之与事实不符 ⇒ 须由 **D-6 的第 3 处冻结面**(`ADR-CEP-06` 一则 Status Update)如实登记本次**形态转变**(⛔ 不得静默翻转自陈字段)。
+
 ### A2.3 · 「拓扑级身份」的可判性(⚠️ 问的是**可承载性**,不是「可区分性」)
 
 ⚠️ **订正**:原问「真实 run 与合成 fixture 在文件形态上是否可区分」⇒ 答案**是**(可区分),但区分开后得到的是**相反**结论 ⇒ **问错了问题**。正确的三问:
@@ -61,6 +69,7 @@
 - ⚠️ **登记形态以 A1/P-2 的结论为准** ⇒ ⛔ 本文件**不预设**形态;
 - ⚠️ `trace.h5` 的入库口径 ⛔ 不在本 change 内放宽(⛔ 不改 retention 条款);
 - **入库形态(retention 丙 · A4 承接)**:目标 run 落**顶层** `experimental/run-<ts>-<tag>/`(⛔ 嵌套子目录不入库,per `.gitignore:116-119`)⇒ 只入库 `metrics.json` + `simulation_config.json` ⇒ `test/cep_e2e_runs.jsonl` 追加 1 条(9 键 + `ic3_verdict = "✓ 通过"` + `metrics_13` 逐键结论)⇒ `cep_e2e_reconcile_check.sh` **双向闸绿**(⛔ 只 commit 两件套而不加 jsonl 条目 ⇒ **零 orphan 判红** ⇒ AC-9 失败)。
+- ⚠️ **台账载体 = 两处并存**(per `ADR-CEP-06` **SU 2026-11-09(Entry #304)③**):7 字段的载体 = **台账散文段**(obj §11 的一条 Entry,描述该 run 的 7 字段)+ **`test/cep_e2e_runs.jsonl`** ⇒ ⇒ A4 须**两处同落**,⛔ 只落 jsonl 即不满足该 SU(机器闸只校验 jsonl ⇔ 台账散文段是**契约面**要求,机器不兜底 ⇒ 须人工核对)。
 
 ## D-5 · 新闸设计(`scripts/test/cep_full_green_run_check.sh`)
 
@@ -81,7 +90,8 @@
 
 ## D-6 · 冻结面
 
-**2 处**(`07 号` 新 SU + `ADR-CEP-19` 一则 Status Update)⇒ **五步授权链**:Entry 先落 → 产物 commit → `--update --authorized-by "Entry #N"` → 清单 commit → 无参复验。
+**3 处**(`07 号` 新 SU + `ADR-CEP-19` 一则 Status Update + `ADR-CEP-06` 一则 Status Update)⇒ **五步授权链**:Entry 先落 → 产物 commit → `--update --authorized-by "Entry #N"` → 清单 commit → 无参复验。
+⚠️ **为何是 3 处**(A1/P-3 核对时浮出 · 2026-11-13):本 change 翻转拓扑级 run 的 `run_class` / `not_an_experiment_run` / `evidence_scope` / `hypothesis_id` ⇒ `ADR-CEP-06` **SU 2026-11-09(Entry #304)§②** 的「框架验证 run 的证据边界」**五句**(⛔ 不得作 B4 证据 · ⛔ 不得改 hypothesis 结论 · ⛔ 不得作一致性安全断言(IC3 = ⚪ 不适用)· 用途**仅** = 可对账 · 不在受监管的实验 emit 路径上)将**与事实不符** ⇒ 必须**追加**一则订正(⛔ 不回改原文)⇒ **冻结面 = 3 处**。
 ⚠️ 归档时新增 main spec `openspec/specs/cep-full-green-run-evidence/spec.md` 会被 `openspec/specs/cep-*/spec.md` glob **自动入冻结集** ⇒ 归档后需**第二次** `--update`(同一授权号)⇒ 冻结产物数会变 ⇒ ⛔ 实施期须以 `cep_freeze_check.sh` 无参复验的实测为准。
 ⚠️ `test/` / `scripts/` / `configs/` / `experimental/run-*/` **不在冻结集** ⇒ 其改动**不触发**清单变更;⚠️ 但 `experimental/preregistration.json` 与 `experimental/metrics.schema.json` **在**冻结集内 ⇒ 本 change 对二者**零 diff**。
 
