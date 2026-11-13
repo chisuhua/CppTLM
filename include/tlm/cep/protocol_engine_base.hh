@@ -55,6 +55,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace tlm::cep {
 
@@ -137,6 +138,66 @@ struct AddressResolveResult {
     std::uint64_t home_node = 0;
     bool coherent = false;
 };
+
+// ══════════════════════════════════════════════════════════════════════
+//  EventObservation —— 协议级**观测记录**(per change `cep-evidence-tier2-minimal-slice`)
+// ══════════════════════════════════════════════════════════════════════
+//
+// ⚠️ **定位**:档 2(协议级)的**原始观测事实**载体 —— 实现侧只出事实,
+//    **判定归 `test/` 侧**(沿用 `stub_cache_endpoint.hh:68-83` 的既有先例)。
+//    ⛔ 本结构**不做任何聚合 / 判定**。
+//
+// ⚠️ **per-event 不是 per-txn**:`apply_event` 无 `txn_id`;且 WRITEBACK 完成
+//    一次 = **2 条 transition + 1 条 fill** ⇒ 计数必须按 `(addr, write-episode)`
+//    归并(⛔ 不得按原始行计)。
+//
+// ⛔ **无 version 字段**(per architect 裁决 R1:per-engine 私有写序在自读自写下
+//    是恒等式 ⇒ 恒 0 ⇒ 证伪判别力 ⇒ 版本维不实施)。
+//
+// ⛔ **字段表定死**(per 裁决 R5):`sharers_snapshot` / `self_mask` 用
+//    `std::uint64_t`(**⛔ 不用 `responder_set_t`** ⇒ 本基类**不新增**对
+//    `tlm/cep/sharer_tracker.hh` 的依赖,保「4 受限族可复用」的 seam 面窄)。
+struct EventObservation {
+    /// 记录种类 —— 两处落点(per 裁决 R4)
+    enum class Kind : std::uint8_t {
+        Transition = 0,  ///< 状态迁移(`apply_event` 入口);`sharers_snapshot` = **迁移前**视图
+        Fill = 1,        ///< 行数据装入(`on_completion` 装行**之后**)
+    };
+
+    /// 归因来源(per 裁决 R5 §c)—— `DirectInject` ⛔ **不计入**任何生产流判据
+    enum class Origin : std::uint8_t {
+        LocalRequest = 0,
+        CompletionFill = 1,
+        RemoteSnoop = 2,
+        Writeback = 3,
+        BackInvalidate = 4,
+        DirectInject = 5,
+    };
+
+    Kind kind = Kind::Transition;
+    Origin origin = Origin::LocalRequest;
+    std::uint64_t addr = 0;
+    std::int32_t event = 0;  ///< 协议中立事件码(派生类给)
+    std::int32_t from = 0;   ///< 迁移前态(协议中立编码)
+    std::int32_t to = 0;     ///< 迁移后态(协议中立编码)
+    std::uint64_t data_before = 0;
+    std::uint64_t data_after = 0;
+    std::uint64_t sharers_snapshot = 0;  ///< 该地址的 sharer 位掩码(**迁移前**视图)
+    std::uint64_t self_mask = 0;         ///< 本节点的 sharer 位
+    bool self_mask_valid = false;        ///< `self_mask` 是否可用(节点未映射 ⇒ false)
+    std::size_t level = 0;               ///< 目录层级(0 = 最细)
+    std::uint32_t node = 0;              ///< 本节点 id
+};
+
+/// **逐字相等**(per AC-8「同一流跑两遍 ⇒ 观测记录逐字相等」)
+inline bool operator==(const EventObservation& a, const EventObservation& b) {
+    return a.kind == b.kind && a.origin == b.origin && a.addr == b.addr && a.event == b.event &&
+           a.from == b.from && a.to == b.to && a.data_before == b.data_before &&
+           a.data_after == b.data_after && a.sharers_snapshot == b.sharers_snapshot &&
+           a.self_mask == b.self_mask && a.self_mask_valid == b.self_mask_valid &&
+           a.level == b.level && a.node == b.node;
+}
+inline bool operator!=(const EventObservation& a, const EventObservation& b) { return !(a == b); }
 
 // ══════════════════════════════════════════════════════════════════════
 //  ProtocolEngineBase —— ProtocolEngine 的 ChStream 端口面
@@ -293,11 +354,50 @@ public:
         return static_cast<LineState>(b.line_state.read());
     }
 
+    // ── 协议级观测面(per change `cep-evidence-tier2-minimal-slice`)──────
+    //
+    // ⚠️ **默认关闭**(`observations_enabled_ == false`)⇒ 既有测试与既有性能
+    //    **零影响**;只有显式 `enable_observations(true)` 的用例才会产生记录。
+    //
+    // ⚠️ **实现侧只出原始事实,判定归 `test/` 侧**(沿用
+    //    `stub_cache_endpoint.hh:68-83` 的既有先例)⇒ 本基类**无任何判定逻辑**。
+    void enable_observations(bool on) { observations_enabled_ = on; }
+    bool observations_enabled() const { return observations_enabled_; }
+    const std::vector<EventObservation>& observations() const { return observations_; }
+    std::size_t observation_count() const { return observations_.size(); }
+    /// **丢弃计数**(缓冲溢出时 +1)—— 非零 ⇒ 该 run 的观测**不完整** ⇒ 判「不可判」
+    std::uint64_t dropped_observations() const { return dropped_observations_; }
+    /// **观测面自身失效**计数(装配期硬断言失败时 +1)—— 非零 ⇒ 判「不可判」(⛔ 不是 0)
+    std::uint64_t observation_invalid() const { return observation_invalid_; }
+
+protected:
+    /// 落一条观测记录(⛔ 观测面关闭 ⇒ 零成本返回)
+    void record_observation(EventObservation obs) {
+        if (!observations_enabled_)
+            return;
+        if (observations_.size() >= kObservationCapacity) {
+            ++dropped_observations_;  // ⛔ 有界:溢出即计数(不静默丢)
+            return;
+        }
+        observations_.push_back(obs);
+    }
+
+    /// 标记观测面**不可判**(装配期硬断言失败 / 前提不成立)
+    void mark_observation_invalid() { ++observation_invalid_; }
+
 private:
+    /// 观测缓冲上限(⛔ 有界 —— 防止长 run 无界增长)
+    static constexpr std::size_t kObservationCapacity = 4096;
+
     std::array<ReqAdapter, N> req_in_;
     std::array<RespAdapter, N> resp_out_;
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
     cpptlm::ProtocolBridgeEr* bridge_ = nullptr;  // 非拥有
+
+    bool observations_enabled_ = false;
+    std::vector<EventObservation> observations_;
+    std::uint64_t dropped_observations_ = 0;
+    std::uint64_t observation_invalid_ = 0;
 };
 
 // ══════════════════════════════════════════════════════════════════════

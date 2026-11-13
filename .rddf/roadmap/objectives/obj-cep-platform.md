@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**(C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
+`openspec/changes/` 当前 **1 个 active**(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-13 **立项** ⇒ 占 1 slot,per 台账 Entry #410;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -22749,3 +22749,46 @@ KPI 活口径 **1/3 → 0/3**(7 处;C8 条目改为「归档 ⇒ slot 已释放,
 **⑥ 边界(随引用重复)**:⛔ 档 2 **不产 run / 无通过态** · ⛔ 档 2 与档 1 **正交**(非强弱序)· ⛔ 不得宣称「档 2 强于档 1」· ⛔ data-value 生产流恒 0 = 「本装置无该形态」· ⛔ **AC-1 不成立即停手**(⛔ 不立项优于立项)· ⚠️ **M3(R-4 降级)可绕过 AC-1** ⇒ AC-1 ④ 的 provenance 判据兜底。
 
 **⑦ 关联**:**#408**(裁决 R1~R8 + 勘误)· **#407**(architect 梳理)· **#406**(C′ 段)· **#403**(档 2 评估)· `.rddf/improvements/cep-evidence-tier2-minimal-slice.md`(v2)· `.rddf/reviews/cep-tier2-prerequisite-rulings.md`(C′ / C′-bis / C′-bis-ter)
+
+### Entry #410 — 2026-11-13 [builder](**档 2 change 立项 + A0~A3 实施** —— 协议级观测面 + 契约级断言 · KPI **0/3 → 1/3** · ⛔ **未归档**(A4~A6 待办))
+
+**主题**:per 用户口令「切 architect 梳理 → planner 梳理 → builder 实施」⇒ architect 裁决(**Entry #408**)⇒ planner 草稿 v2(**Entry #409**)⇒ 本 Entry = **builder 域的立项 + A0~A3 实施回执**(⚠️ 同时作为实施授权号)。
+
+**① 立项**
+
+| 项 | 值 |
+|---|---|
+| change | `openspec/changes/cep-evidence-tier2-minimal-slice/`(四件套:proposal / design / tasks / delta spec `cep-evidence-tier2-observation`) |
+| 校验 | `openspec validate cep-evidence-tier2-minimal-slice --strict` **rc=0** |
+| KPI | **0/3 → 1/3**(`openspec list --json` 实测 active = 1)⇒ `AGENTS.md` 3 处 + 台账 §5.2 已回填 |
+| 状态 | 🟡 **in-progress**(tasks **28/39** 全勾至 A3)⇒ ⛔ **未归档**(tasks 未全勾 ⇒ 不得归档,per §4.7.2) |
+
+**② A0~A3 交付面(实测)**
+
+| 面 | 内容 |
+|---|---|
+| **观测面(基类)** | `include/tlm/cep/protocol_engine_base.hh`:新增 `EventObservation`(字段表按裁决 R5 · **⛔ 无 version 字段** · sharer 用 `std::uint64_t` ⇒ 基类**不新增** `sharer_tracker.hh` 依赖)+ `operator==` + 有界缓冲(4096)+ `dropped_observations` + `observation_invalid` + **默认关闭**(⇒ 既有行为与性能零影响) |
+| **观测点(mesif)** | `include/tlm/cep/mesif_protocol_engine.hh`:`apply_event_as(origin, ...)`(7 处内部调用点已改归因;**外部直调一律标 `DirectInject`** ⇒ ⛔ 不计入生产流判据)+ `record_transition`(**迁移前**视图 · 在 `sync_tracker` 之前取)+ `record_fill`(**装行之后** ⇒ 修掉「`data_after` 恒旧」的结构性错误) |
+| **sharer 快照取法** | `tracker_->view_of(addr)`(**const 纯查询**)⇒ ⛔ **不用**有副作用的 `lookup`(会污染目录事件流) |
+| **装配期硬断言** | `set_tracker`:3 硬断言(目录未接线 / 节点未映射到 sharer 位 / 层级越界)⇒ 置**不可判**;+ 1 防御断言(`completeness == EXACT`,⚠️ 生产路径恒真 ⇒ 不要求反 fixture) |
+| **判定器 + 契约级断言** | `test/test_cep_tier2_observation.cc`(**新**,**7 cases / 33 assertions**):非空洞正控 / SWMR 负控(**精确 == 1**)· 判定行钉死(一次 WRITEBACK = **2 transition + 1 fill** ⇒ 写 episode 计 **1**)· data-value 负控(**精确 == 1** + 正控配对)· 断线三连(判**不可判**)· 确定性(逐字相等)· 默认关闭 |
+
+**③ 0 回归**
+
+`[tier2]` **7 cases / 33 assertions** 全绿 · `[mesif-engine]` **5 cases / 99 assertions** 全绿 · `[cep]` **523 cases / 11747 assertions** 全绿(较实施前 **+7 cases / +33 assertions**)· `agents_md_lint` rc=0 · `openspec validate --strict` rc=0。
+
+**④ AC-7 范围纪律(逐项零 diff 实测)**
+
+`include/bundles/` · `docs/adr/` · `include/tlm/cep/sharer_tracker.hh` · `experimental/` · `tools/render_report.py` · `scripts/test/cep_experiment_run.sh` · `test/cep_e2e_run_tiers.json` · `test/cep_experiment_harness.hh` · `protocol_instance.schema.json` ⇒ **全部零 diff**;`grep '#include "test/'` 与 `grep 'catch_amalgamated\|cep_experiment_harness' include/` ⇒ **零命中**;**新增 `INV-CEP-` 数 == 0**;`SharerTrackerIf` 虚方法数 == 5 的既有断言仍绿。
+
+**⑤ ⛔ 未完成项(A4~A6 · tasks 保持未勾 · change 保持 active)**
+
+- **A4** 档 2 登记面(新表 `test/cep_evidence_tiers.json` + `cep_e2e_reconcile_check.sh` 的 **T4/T5** + 反向 fixture)—— ⛔ 未做;
+- **A5** 总纲 `07 号` 新 SU(末尾追加 + 索引重生成)+ 手册新节 + 诚实边界逐字登记 —— ⛔ 未做(⇒ **冻结面本轮零变更** ⇒ 冻结产物仍 **84**);
+- **A6** 冻结五步链(**一次** `--update` ⇒ 84→85)+ 归档 + KPI 1/3→0/3 + 全量回归 —— ⛔ 未做。
+
+**⑥ ⚠️ 口径(随引用重复 · 本 Entry 不改变它)**
+
+**档 2 ⭔ 不产 4 件套 run** ⇒ ⛔ **无 `ic3_verdict` / 无「通过态」**;**data-value 生产流恒 0** = 「**本装置无该形态**」⇒ ⛔ **不得**称「检测力已证」;档 2 与档 1 **正交**(⛔ 非强弱序)⇒ ⛔ 不得宣称「档 2 强于档 1」;档位排序语义 = 「**装置归属层级,强度不可跨档比较**」(已签批,per `07 号:690`);档 2 判别力 **≠** 协议语义全覆盖(权限维 / 标签维被排除);**单族(mesif)/ 单拓扑**;⛔ 本轮**未证明**档 2 可实施 —— AC-1 的 provenance 判据仍待下轮以**反 fixture** 形态落实。
+
+**⑦ 关联**:**#409**(草稿 v2)· **#408**(裁决 R1~R8 + 勘误)· **#407**(architect 梳理)· **#406**(C′ 段)· **#403**(档 2 评估)· `.rddf/improvements/cep-evidence-tier2-minimal-slice.md`(v2)· `.rddf/reviews/cep-tier2-prerequisite-rulings.md` · `ADR-CEP-20` 决策 5/6 · `ADR-CEP-06` SU#4 ② · `07 号:690,696` · `include/tlm/cep/protocol_engine_base.hh` · `include/tlm/cep/mesif_protocol_engine.hh`

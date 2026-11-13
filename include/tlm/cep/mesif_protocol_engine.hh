@@ -293,6 +293,29 @@ namespace tlm::cep {
             tracker_ = tracker;
             node_id_ = node;
             level_ = level;
+            // ── 装配期硬断言(per change `cep-evidence-tier2-minimal-slice` · AC-4)──
+            // ⚠️ **失败 ⇒ 置观测面「不可判」**(⛔ **不是** 0)—— 判「不可判」与
+            //    判「无违例」是两件不同的事,混淆即造假。
+            //
+            // ⚠️ **为什么必须在这里**:三处**静默退化**会让 sharer 维度**恒空**
+            //    ⇒ 观测面会报出「0 违例」的假象:
+            //      ① `tracker_ == nullptr` ⇒ `sync_tracker` 走 `tracker_missing` 分支
+            //      ② `responder_mask_of(node) == 0` ⇒ `set_sharer` **静默 no-op**
+            //         (`sharer_tracker.hh` 的 bit→node 映射只有 4 个 bit)
+            //      ③ `level >= kLevelCount` ⇒ `set_sharer` / `clear_sharer` **静默 no-op**
+            //    ⇒ 且 `sync_tracker` 在静默 no-op 时**仍** `++tracker_feeds`
+            //       ⇒ 「接线良好」的假象。
+            if (tracker == nullptr)
+                mark_observation_invalid();
+            if (responder_mask_of(node) == 0)
+                mark_observation_invalid();
+            if (level >= HierarchicalDirectory::kLevelCount)
+                mark_observation_invalid();
+            // ⚠️ **第 4 条 = 防御断言(非生产不变式)**: `HierarchicalDirectory` 构造时
+            //    把 `caps` 写死为 `EXACT` ⇒ 该断言在**生产路径恒真** ⇒ 它的唯一作用是
+            //    「防护实现被换成保守 tracker」⇒ **不要求**反 fixture(AC-4)。
+            if (tracker != nullptr && tracker->caps.completeness != Completeness::EXACT)
+                mark_observation_invalid();
         }
         bool tracker_wired() const { return tracker_ != nullptr; }
 
@@ -322,7 +345,21 @@ namespace tlm::cep {
         /// 应用一次**协议事件** —— 表驱动迁移 + 快照 + 目录同步(写回接线在此)
         ///
         /// @return true = 已应用;false = 该事件的出向流被声明为不支持(拒绝闸)
+        ///
+        /// ⚠️ **本重载 = 外部直调路径** ⇒ 观测归因 `DirectInject`
+        ///    ⇒ ⛔ **不计入**任何生产流判据(per 裁决 R5)。
+        ///    引擎内部的一切迁移走 `apply_event_as(origin, ...)`。
         bool apply_event(std::uint64_t addr, Event e) {
+            return apply_event_as(EventObservation::Origin::DirectInject, addr, e);
+        }
+
+        /// 内部迁移入口(带归因)—— **唯一**产生 `kind = transition` 观测记录的地方
+        ///
+        /// ⚠️ `apply_event` 的注释称「false = 该事件的出向流被声明为不支持(拒绝闸)」,
+        ///    但实现**恒返回 `true`** ⇒ 该注释**过期**(per oracle 复核)⇒ 本次**只改
+        ///    注释、不改返回值语义**(改动会静默影响所有调用点)⇒ 过期注释的修正登记在
+        ///    design 的「已知边界」段。
+        bool apply_event_as(EventObservation::Origin origin, std::uint64_t addr, Event e) {
             const State from = state_of(addr);
             const State to = static_cast<State>(MesifAdapter::transition(from, e));
             // ① 表查询留痕(空转的引擎到达不了非空快照)
@@ -335,6 +372,10 @@ namespace tlm::cep {
             // ② 写回事实(`M + SnpShared` ⇒ 脏数据已回送)⇒ 计数 + 目录同步
             if (from == State::M && e == Event::SnpShared)
                 ++ctr_.writebacks_cleared;
+            // ── 观测记录(transition)──
+            // ⚠️ **必须在 `sync_tracker` 之前**取 sharer 快照 ⇒ 那是「**迁移前**」视图
+            //    (per 裁决 R4);`sync_tracker` 在本函数**末尾**才写目录。
+            record_transition(origin, addr, e, from, to);
             // ③ 提交态
             if (to == State::I)
                 lines_.erase(addr);
@@ -430,17 +471,32 @@ namespace tlm::cep {
                 return;
             }
             const std::uint64_t addr = it->second;
+            // ⚠️ 装行前的旧值(⛔ 用 `find` ⇒ 不引入额外插入)
+            std::uint64_t data_before = 0;
+            {
+                const auto dit = lines_.find(addr);
+                if (dit != lines_.end())
+                    data_before = dit->second.data;
+            }
 
             if (perm == PlatformPerm::NONE) {
-                apply_event(addr, Event::SnpUnique);  // 无权 ⇒ 本地失效
+                apply_event_as(EventObservation::Origin::CompletionFill, addr,
+                                Event::SnpUnique);  // 无权 ⇒ 本地失效
                 txn_addr_.erase(it);
                 return;
             }
-            apply_event(addr, (perm == PlatformPerm::READ) ? Event::Rd : Event::RdUnique);
+            apply_event_as(EventObservation::Origin::CompletionFill, addr,
+                            (perm == PlatformPerm::READ) ? Event::Rd : Event::RdUnique);
             if (perm == PlatformPerm::WRITEBACK)
-                apply_event(addr, Event::Wr);  // `E + Wr → M` 静默升级(决策 E-4)
+                apply_event_as(EventObservation::Origin::CompletionFill, addr,
+                                Event::Wr);  // `E + Wr → M` 静默升级(决策 E-4)
             lines_[addr].data = data;
             ++ctr_.line_fills;
+            // ── 观测记录(fill)──
+            // ⚠️ **必须在装行之后**(per 裁决 R4:否则 `data_after` 恒为旧值)
+            // ⚠️ `data_before` 用 `find` 取(⛔ 不用 `operator[]`)⇒ 不引入额外插入
+            record_fill(addr, (perm == PlatformPerm::READ) ? Event::Rd : Event::Wr, data_before,
+                        data);
             txn_addr_.erase(it);
         }
 
@@ -455,14 +511,15 @@ namespace tlm::cep {
             const Event e = (type == SnoopType::INVALIDATE) ? Event::SnpUnique : Event::SnpShared;
             if (pre == State::I) {
                 // 未命中:表仍被查询(`I + Snp* → I`),回 `hit = 0`
-                apply_event(addr, e);
+                apply_event_as(EventObservation::Origin::RemoteSnoop, addr, e);
                 emit_snoop_resp(addr, /*hit=*/false, State::I, /*dirty=*/false, 0, txn_id);
                 return;
             }
             std::uint64_t payload = 0;
             line_data(addr, payload);
             const bool was_dirty = (pre == State::M);
-            apply_event(addr, e);  // 内含 `M + SnpShared → F` 的写回接线
+            apply_event_as(EventObservation::Origin::RemoteSnoop, addr,
+                            e);  // 内含 `M + SnpShared → F` 的写回接线
             emit_snoop_resp(addr, /*hit=*/true, state_of(addr), was_dirty, payload, txn_id);
         }
 
@@ -482,7 +539,8 @@ namespace tlm::cep {
             ++ctr_.flow_events[static_cast<std::size_t>(CanonicalFlow::Writeback)];
             if (state_of(addr) == State::I)
                 return;
-            apply_event(addr, Event::SnpUnique);  // 写回后本地无副本
+            apply_event_as(EventObservation::Origin::Writeback, addr,
+                            Event::SnpUnique);  // 写回后本地无副本
         }
 
         /// 流 6 —— 转发数据:只记账(决策 E-5)
@@ -500,7 +558,8 @@ namespace tlm::cep {
             ++ctr_.flow_events[static_cast<std::size_t>(CanonicalFlow::BackInvalidate)];
             if (state_of(addr) == State::I)
                 return;
-            apply_event(addr, Event::SnpUnique);
+            apply_event_as(EventObservation::Origin::BackInvalidate, addr,
+                            Event::SnpUnique);
         }
 
         /// 流 8 —— 地址解析:最小诚实语义(解析为请求者自身,**不**做一致性声称)
@@ -646,6 +705,70 @@ namespace tlm::cep {
             }
             ++ctr_.egress_backpressure;
             return false;
+        }
+
+        /// 落一条 `kind = transition` 观测记录(per 裁决 R4 / R5)
+        ///
+        /// ⚠️ **调用点约束**:必须在 `sync_tracker` **之前**调用 ⇒ 快照是
+        ///    「**迁移前**」视图。
+        void record_transition(EventObservation::Origin origin, std::uint64_t addr, Event e,
+                               State from, State to) {
+            if (!observations_enabled())
+                return;
+            EventObservation obs;
+            obs.kind = EventObservation::Kind::Transition;
+            obs.origin = origin;
+            obs.addr = addr;
+            obs.event = static_cast<std::int32_t>(e);
+            obs.from = static_cast<std::int32_t>(from);
+            obs.to = static_cast<std::int32_t>(to);
+            {
+                // ⛔ 用 `find`(⛔ 不用 `operator[]`)⇒ 不得**提前插入**空行
+                //    (那会改 `line_count()` ⇒ 影响既有断言)
+                const auto dit = lines_.find(addr);
+                if (dit != lines_.end())
+                    obs.data_before = dit->second.data;
+            }
+            obs.data_after = obs.data_before;  // transition **不改** data
+            // ⚠️ sharer 快照 = **迁移前**视图
+            // ⚠️ ⛔ **必须**用 `view_of`(const 纯查询)—— ⛔ **不得**用 `lookup`
+            //    (它有副作用:首次 forward 时 `dir_.emplace` + 记 `AllocateOnFirstForward`
+            //     ⇒ 会污染 tracker 的事件流 ⇒ 影响既有断言)
+            if (tracker_ != nullptr)
+                obs.sharers_snapshot = tracker_->view_of(addr).sharers;
+            const std::uint64_t self = responder_mask_of(node_id_);
+            obs.self_mask = self;
+            obs.self_mask_valid = (self != 0);
+            obs.level = level_;
+            obs.node = static_cast<std::uint32_t>(node_id_);
+            record_observation(obs);
+        }
+
+        /// 落一条 `kind = fill` 观测记录(per 裁决 R4)
+        ///
+        /// ⚠️ **调用点约束**:必须在**装行之后**调用 ⇒ `data_after` 是新值。
+        void record_fill(std::uint64_t addr, Event e, std::uint64_t data_before,
+                         std::uint64_t data_after) {
+            if (!observations_enabled())
+                return;
+            EventObservation obs;
+            obs.kind = EventObservation::Kind::Fill;
+            obs.origin = EventObservation::Origin::CompletionFill;
+            obs.addr = addr;
+            obs.event = static_cast<std::int32_t>(e);
+            const State st = state_of(addr);
+            obs.from = static_cast<std::int32_t>(st);
+            obs.to = static_cast<std::int32_t>(st);  // 装行**不改**状态
+            obs.data_before = data_before;
+            obs.data_after = data_after;
+            if (tracker_ != nullptr)
+                obs.sharers_snapshot = tracker_->view_of(addr).sharers;
+            const std::uint64_t self = responder_mask_of(node_id_);
+            obs.self_mask = self;
+            obs.self_mask_valid = (self != 0);
+            obs.level = level_;
+            obs.node = static_cast<std::uint32_t>(node_id_);
+            record_observation(obs);
         }
 
         Counters ctr_;

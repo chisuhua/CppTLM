@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-13T14:40:34Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-13T14:43:05Z",
   "updated_by": "auto",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-12T16:10:00Z",
-      "by": "user",
-      "reason": "批 1 + 批 2 全部完成 ⇒ planner 收口盘点(投影订正 + 剩余任务定稿 + 台账回执)。"
-    },
     {
       "role": "architect",
       "at": "2026-11-12T16:40:00Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-13T14:40:34Z",
       "by": "auto",
       "reason": "architect 裁决 R1~R8 + 勘误段已落盘(Entry #408)=> 回 planner 按裁决把 improvement 草稿改 v2(范围收敛:无版本维 / 不产 run / 检测器留 test 侧)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-13T14:43:05Z",
+      "by": "auto",
+      "reason": "planner 已交底(improvement v2 · Entry #409)=> 切 builder 建 change 四件套 + 实施(S1 基类观测面 / S2 mesif 观测点 / 判定器 + 测试)。"
     }
   ],
   "auto_switch_window": null
