@@ -146,8 +146,8 @@ TEST_CASE("E2E-01: E2E 装置产出 `metrics.json` + `simulation_config.json`(�
     //   ⚠️ 接上产出者才允许删 `not_collected` 的登记(per Entry #222 ④ 的反面要求)。
     cep_exp::SwmrDataValueDetector detector;
     std::set<std::uint64_t> memory_ops_addrs;
-    feed(detector, w->txn_stamps(), &memory_ops_addrs);  // ⛔ 单实现源(见文件内 feed())
-    REQUIRE_FALSE(memory_ops_addrs.empty()); // 样本活性见证:⛔ 不得以零样本充数
+    feed(detector, w->txn_stamps(), &memory_ops_addrs); // ⛔ 单实现源(见文件内 feed())
+    REQUIRE_FALSE(memory_ops_addrs.empty());            // 样本活性见证:⛔ 不得以零样本充数
     REQUIRE(detector.counts().swmr == 0u);
     REQUIRE(detector.counts().data_value == 0u);
 
@@ -284,14 +284,14 @@ TEST_CASE("[cep][exp][evidence-tier] 喂料映射的 data-value 可达性(正负
     auto base = [&] { return std::vector<Stamp>{mk(1, true, 1), mk(2, true, 2), mk(3, false, 0)}; };
 
     SECTION("负控:观测到**旧**版本 ⇒ data-value 违例 = 1") {
-        auto stamps = base();  // 读的 data = 0 ≠ 最后写入的 2
+        auto stamps = base(); // 读的 data = 0 ≠ 最后写入的 2
         cep_exp::SwmrDataValueDetector det;
         feed(det, stamps);
         REQUIRE(det.counts().data_value == 1u);
     }
     SECTION("正控:**同一 vector**,仅把观测值改为最新 ⇒ 违例 = 0") {
         auto stamps = base();
-        stamps.back().data = 2;  // ⭐ 唯一差异
+        stamps.back().data = 2; // ⭐ 唯一差异
         cep_exp::SwmrDataValueDetector det;
         feed(det, stamps);
         REQUIRE(det.counts().data_value == 0u);
@@ -299,7 +299,7 @@ TEST_CASE("[cep][exp][evidence-tier] 喂料映射的 data-value 可达性(正负
     SECTION("结构事实锁:喂料通路对 SWMR **无通道** ⇒ 重复写恒 0(⛔ 非「已见证」)") {
         std::vector<Stamp> stamps;
         for (std::uint64_t i = 0; i < 10; ++i)
-            stamps.push_back(mk(i + 1, true, i + 1));  // 同地址连续 10 次写
+            stamps.push_back(mk(i + 1, true, i + 1)); // 同地址连续 10 次写
         cep_exp::SwmrDataValueDetector det;
         feed(det, stamps);
         // ⚠️ 本断言锁的是**事实**:`feed()` 只调合法写 `write()`,而 `write()` 不累加 `swmr`
