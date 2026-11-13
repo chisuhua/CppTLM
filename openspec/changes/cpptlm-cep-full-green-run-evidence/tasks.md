@@ -37,10 +37,10 @@
 ⇒ **A3 验证**:构建 73/73 · `[cep]` **515 cases / 11707 assertions** 全绿 · `ctest` **175/175** 全绿 · `cep_freeze_check` rc=0 · 实测产物落 `/tmp/opencode/a3-verify`(**非** A4 正式 run)
 
 ## A4 · 真跑 + 4 件套 + 入库 + 双向对账
-- [ ] A4.1 用 `cep_experiment_run.sh` / `tools/run_sweep.py` 跑出目标 run 目录(**顶层** `experimental/run-<ts>-<tag>/`;⛔ 嵌套子目录不入库,per `.gitignore:116-119`)
-- [ ] A4.2 4 件套按 **A1.1 的结论**齐备(⚠️ `trace.h5` 的 retention 逐字遵守)
-- [ ] A4.3 `cep_experiment_run.sh` 的 4 件套校验绿 + `tools/render_report.py --check` 绿(⚠️ 后者的预登记判据④ 要求 `hypothesis_id` 是**已登记**行)
-- [ ] A4.4 **入库 + 对账**:`metrics.json` + `simulation_config.json` **已入库**(git tracked)· `test/cep_e2e_runs.jsonl` 追加 1 条(**必填 9 键**齐备,per `cep_e2e_reconcile_check.sh` 的 `required`:`run_id` / `config_sha256` / `metrics_sha256` / `metrics_13` / `verification_mode` / `verification_scope` / `ic3_verdict` / `hypothesis_id` / `topology_tag`)+ `ic3_verdict` ∈ 三态词表 + `metrics_13` 逐键结论 ⇒ `cep_e2e_reconcile_check.sh` **双向闸绿**(⛔ 只 commit 不加条目 ⇒ 零 orphan 判红);**且** **台账散文段**已落(obj §11 一条 Entry 描述该 run 的 7 字段 —— per `ADR-CEP-06` SU 2026-11-09 ③「载体 = 两处并存」⇒ ⛔ 只落 jsonl 即不满足该 SU,机器闸不兜底 ⇒ 须人工核对)
+- [x] A4.1 用 `cep_experiment_run.sh` / `tools/run_sweep.py` 跑出目标 run 目录(**顶层** `experimental/run-<ts>-<tag>/`;⛔ 嵌套子目录不入库,per `.gitignore:116-119`)⇒ ✅ `experimental/run-20261113-151310-cep-full-green/`;⚠️ **A2 漏查**:`cep_experiment_run.sh` 只覆盖 h2/h3/h4/h6 ⇒ 补 `--topology` 模式(复用同一 `emit_trace`,⛔ 不复制实现)
+- [x] A4.2 4 件套按 **A1.1 的结论**齐备(⚠️ `trace.h5` 的 retention 逐字遵守)⇒ ✅ 运行期 4 件套齐备(`metrics.json` / `simulation_config.json` / `trace.h5` 17488 B / `report.html` 3239 B);`git check-ignore` 实测:前 2 件 **TRACKABLE** · `trace.h5` / `report.html` **IGNORED**(= retention 丙)
+- [x] A4.3 `cep_experiment_run.sh` 的 4 件套校验绿 + `tools/render_report.py --check` 绿(⚠️ 后者的预登记判据④ 要求 `hypothesis_id` 是**已登记**行)⇒ ✅ 两者均 rc=0(`not-collected` = {`collective_stalls`, `directory_misses`} ⊆ H3 `out_of_scope` ⇒ 无越界)
+- [x] A4.4 **入库 + 对账**:`metrics.json` + `simulation_config.json` **已入库**(git tracked)· `test/cep_e2e_runs.jsonl` 追加 1 条(**必填 9 键**齐备,per `cep_e2e_reconcile_check.sh` 的 `required`:`run_id` / `config_sha256` / `metrics_sha256` / `metrics_13` / `verification_mode` / `verification_scope` / `ic3_verdict` / `hypothesis_id` / `topology_tag`)+ `ic3_verdict` ∈ 三态词表 + `metrics_13` 逐键结论 ⇒ `cep_e2e_reconcile_check.sh` **双向闸绿**(⛔ 只 commit 不加条目 ⇒ 零 orphan 判红);**且** **台账散文段**已落(obj §11 一条 Entry 描述该 run 的 7 字段 —— per `ADR-CEP-06` SU 2026-11-09 ③「载体 = 两处并存」⇒ ⛔ 只落 jsonl 即不满足该 SU,机器闸不兜底 ⇒ 须人工核对)⇒ ✅ 条目已加(`run_id = cep-full-green-2026-11-13` · `ic3_verdict = "✓ 通过"`)· 双向闸 **3 条目 ↔ 3 run · 0 问题** · 台账散文段 = **Entry #396**
 
 ## A5 · IC3 通过态(G3)
 - [ ] A5.1 两违例类实测值 **== 0**(⚠️ **> 0 ⇒ 停止**并按缺陷另立处置 —— 硬边界 1)

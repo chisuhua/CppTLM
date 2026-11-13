@@ -22171,3 +22171,55 @@ builder 实施(闸断言 + 数字订正 + 变异)⇒ 0 回归 ⇒ 归档(✅ 已
 **A2**(只读定位)—— A2.1 检测器挂载点 · A2.2 真实内存读写路径 · A2.3 可承载性三问的「改点」 · A2.4 C4 拓扑链身份锚入库后可判性 · A2.5 绑定点 + 三处自陈字段改点 · A2.6 停点门 ⇒ ⛔ **A2 全程不写代码**。
 
 **关联**:**#394**(立项 + 五步链授权号)· **#393**(P-1 核对 + 根因精化)· **#392**(根因首定位)· **#391**(收口盘点)· **#383**(R-3 归因)· **#304**(框架验证 run 证据边界 / retention 丙 字面追认)· **#303**(首批 run 入库 + 双向闸 + 7 字段台账)· **#295**(retention 丙)· **#228**(B4 达成 + 证据设备)· **#222**(④ 不得写裸 0)· `ADR-CEP-06` SU 2026-11-08·二 / SU 2026-11-09 ②③ / SU#4 ① · `ADR-CEP-19` SU ② + ASM-8 ① · `obj §6.2` B4 · `docs/validation/2026-11-05-cep-b4-evidence-device.md` · `.rddf/reviews/cep-full-green-run-gap-rootcause.md`(§五 + §六)
+
+### Entry #396 — 2026-11-13 [build](**R-3 A4 真跑 + 入库 + 双向对账** —— 拓扑级 IC3 通过态 run 落盘(`run-20261113-151310-cep-full-green`)· 双向闸 3↔3 · 台账载体两处并存)
+
+**主题**:per 用户口令「F1」⇒ 执行 change `cpptlm-cep-full-green-run-evidence` 的 **A4**(真跑 + 4 件套 + 入库 + 双向对账)⇒ ⛔ **本 Entry 不实施 A5 及以后**(A5 = IC3 状态闸 / A6 = 冻结面五步链)。
+
+**① 目标 run(顶层目录 · retention 丙)**
+
+| 项 | 值 |
+|---|---|
+| 目录 | `experimental/run-20261113-151310-cep-full-green/` |
+| `run_id` | `cep-full-green-2026-11-13` |
+| 运行期 4 件套 | ✅ `metrics.json`(1213 B)· `simulation_config.json`(637 B)· `trace.h5`(17488 B)· `report.html`(3239 B) |
+| 入库 | ✅ **只 2 件**(`metrics.json` + `simulation_config.json`);`trace.h5` / `report.html` 实测 `git check-ignore` = **IGNORED**(= retention 丙) |
+| 绑定 | `hypothesis_id = "h3"`(per `ADR-CEP-19` **ASM-8 ①**)· `topology_tag = "A"` |
+
+**② 台账 7 字段(两处并存 · per `ADR-CEP-06` SU 2026-11-09 ③)**
+
+| # | 字段 | 值 |
+|:--:|---|---|
+| 1 | `run_id` | `cep-full-green-2026-11-13` |
+| 2 | `config_sha256` | `4c118842328ecc21b722c4bfb65d8485d8ca06f1745f09d6e9d6fa4812b3e074`(= `configs/cep_chi_rnf_e2e_a.json`) |
+| 3 | `metrics_sha256` | `0c57696e848d273603fcf9753c2d7324f9fb6d811aabb4c657caa7d6174fc5b1` |
+| 4 | `metrics_13` | 见 ③ |
+| 5 | `verification_mode` + `verification_scope` | `sampled` · 「CEP E2E 装置 · 拓扑 A(configs/cep_chi_rnf_e2e_a.json) · 300 cycles」 |
+| 6 | `ic3_verdict` + `hypothesis_id` | **`✓ 通过`** · `h3` |
+| 7 | `topology_tag` | `A` |
+
+⇒ **载体 = 两处并存**:本段(台账散文段)+ `test/cep_e2e_runs.jsonl` 第 3 条(`simulation_config_sha256 = e6344d5bf371e5de17d90ba3d80599eb6154fb489d2633dd08c7682740b79366`)。
+
+**③ `metrics_13`(逐键结论)**
+
+`total_cycles=300` · `total_transactions=20` · `transactions_per_cycle=0.0666667` · 延迟族 5 键 = **`5`(实测)** · `coherence_stalls=86` · **`deadlock_violations=0`(实测)** · **`memory_violations=0`(实测)** · `collective_stalls="not-collected"` · `directory_misses="not-collected"`。
+⇒ `not-collected` = {`collective_stalls`, `directory_misses`} **⊆** H3 `out_of_scope`(3 键)⇒ **无越界** ⇒ `render_report.py --check` **rc=0**。
+⇒ 样本活性见证:`observation_keys.memory_ops_checked_addrs` = **20 个去重地址**(实测,`trace.h5` 已镜像该组)。
+
+**④ ⚠️ 口径限定(⛔ 必须随任何引用重复)**
+
+`ic3_verdict = ✓ 通过` 的语义边界:本装置**无 sharer 语义**(无 directory / sharer tracker)⇒ **SWMR 违例结构上不可达**;`TrafficGenTLM` 的写数据**恒 0** + home 回程只回显 ⇒ **无版本语义** ⇒ data-value 检查**无判别力** ⇒ ⇒ 该 0 是「**本装置无该形态**」的 0,⛔ **不得**表述为「已证明协议层无违例」,⛔ **不得**称「检测力已证」;⛔ 亦**不得**读成「B4 被推翻」(B4 由**模型级** h3 v2 run 达成,per Entry #228 ③)。**要获得判别力须另立 change**(写侧非恒定数据 + 版本字段 + 注入式负控 ⇒ 能力新增)。
+
+**⑤ 一处工具补全(A2 漏查 · 已补)**
+
+`cep_experiment_run.sh` 的默认路径**只覆盖 h2/h3/h4/h6**(产物落 `$OUT/<exp>`)⇒ 拓扑级 run 无产出链 ⇒ 本 Entry 补 **`--topology` 模式**(调 `[cep][e2e][framework-emit]`,产物**直接落 `$OUT`**),并**复用同一 `emit_trace`**(⛔ 不复制 h5py 实现)⇒ `cep_experiment_run_selftest`(ctest)复验 rc=0。
+
+**⑥ 验证**
+
+`cep_experiment_run.sh --topology` rc=0 · `render_report.py --check` rc=0 · `cep_e2e_reconcile_check.sh` **3 条目 ↔ 3 run · 0 问题** · `report.html` 渲染「**✓ 一致性闸门通过**」。
+
+**⑦ ⛔ 本 Entry 明确不做**
+
+⛔ 不实施 A5(`cep_ic3_report_states_check` 的绿判据)/ A6(冻结面 3 处五步链)/ A7(A8/A9)· ⛔ 不改 IC3 判据 / 阈值 / 预登记(`preregistration.json` **零 diff**) / `metrics.schema.json` / retention 条款 · ⛔ 不改任何 ADR 决策 / 正文 · ⛔ 不改 `B3b-2 = 0/4` · ⛔ KPI **1/3 不变**(change 仍 active)。
+
+**关联**:**#395**(A0/A1)· **#394**(立项 + 五步链授权号)· **#304**(retention 丙 字面追认 + 框架验证 run 证据边界)· **#303**(首批 run 入库 + 双向闸 + 7 字段台账)· **#295**(retention 丙)· **#228**(B4 达成)· `ADR-CEP-19` ASM-8 ① + SU ② · `ADR-CEP-06` SU 2026-11-08·二 / SU 2026-11-09 ③ · `test/cep_e2e_runs.jsonl` · `scripts/test/cep_experiment_run.sh`

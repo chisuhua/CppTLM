@@ -7,6 +7,9 @@
 # 用法:
 #   bash scripts/test/cep_experiment_run.sh [--out <dir>]
 #   bash scripts/test/cep_experiment_run.sh --selftest   # 只跑「4 件套完整性」自检(ctest 用,不产实验)
+#   bash scripts/test/cep_experiment_run.sh --topology [--out <dir>]  # 只跑**拓扑级 E2E run**
+#       (change `cpptlm-cep-full-green-run-evidence` · A4;产物**直接落 `$OUT`**,
+#        不落 `$OUT/<exp>` —— `.gitignore` 只放开顶层 `experimental/run-*/{metrics,simulation_config}.json`)
 #
 # 链路(runner 契约 per tools/run_sweep.py 文件头):
 #   C++ 产 simulation_config.json + metrics.json
@@ -23,10 +26,12 @@ cd "$REPO_ROOT"
 
 OUT="experimental/run-$(date +%Y%m%d-%H%M%S)-h2h3h4h6"
 SELFTEST=0
+TOPOLOGY=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --out) OUT="$2"; shift 2 ;;
         --selftest) SELFTEST=1; shift ;;
+        --topology) TOPOLOGY=1; shift ;;
         -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
         *) echo "✗ 未知参数: $1" >&2; exit 2 ;;
     esac
@@ -132,6 +137,32 @@ fi
 mkdir -p "$OUT"
 
 status=0
+
+# ── 拓扑级 E2E run(change `cpptlm-cep-full-green-run-evidence` · A4)──────────
+#   ⚠️ 与 h2/h3/h4/h6 的**形态差异**:产物直接落 `$OUT`(顶层),不落 `$OUT/<exp>`
+#   —— `.gitignore` 只放开顶层 `experimental/run-*/{metrics.json,simulation_config.json}`;
+#   `trace.h5` / `report.html` 运行期产出但**不入库**(retention 丙)。
+if [[ "$TOPOLOGY" -eq 1 ]]; then
+    echo "── topology-e2e ─────────────────────────────────────"
+    CEP_EXP_DIR="$OUT" CEP_EXP_ID="framework-e2e" \
+        "$BIN" "[cep][e2e][framework-emit]" -r compact >/dev/null
+    emit_trace "$OUT" "framework-e2e"
+    python3 tools/render_report.py "$OUT" >/dev/null
+    if python3 tools/render_report.py "$OUT" --check >/dev/null; then
+        echo "  ✓ 4 件套 + 契约校验通过: $OUT"
+    else
+        echo "  ✗ 契约校验失败: $OUT" >&2
+        status=1
+    fi
+    check_four_artifacts "$OUT" || status=1
+    if [[ $status -eq 0 ]]; then
+        echo "✓ 拓扑级 run 产出完成: $OUT"
+    else
+        echo "✗ 存在失败项" >&2
+    fi
+    exit $status
+fi
+
 for exp in h2 h3 h4 h6; do
     dir="$OUT/$exp"
     echo "── $exp ─────────────────────────────────────────────"

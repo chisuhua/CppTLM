@@ -90,6 +90,7 @@
 ## D-4 · 4 件套与登记形态
 
 - 产出链 = `cep_experiment_run.sh`(--out <dir>)/ `tools/run_sweep.py` ⇒ 4 件套 + `cep_experiment_run.sh` 的 4 件套校验;
+  - ⚠️ **A4 实测订正**:`cep_experiment_run.sh` 的默认路径**只覆盖 h2/h3/h4/h6**(`[cep][exp][emit]`,产物落 `$OUT/<exp>`)⇒ 拓扑级 run 需**新增 `--topology` 模式**(调 `[cep][e2e][framework-emit]`,产物**直接落 `$OUT`**)⇒ ⛔ 复用它同一 `emit_trace`(单实现源),⛔ 不复制 h5py 代码;
 - ⚠️ **登记形态以 A1/P-2 的结论为准** ⇒ ⛔ 本文件**不预设**形态;
 - ⚠️ `trace.h5` 的入库口径 ⛔ 不在本 change 内放宽(⛔ 不改 retention 条款);
 - **入库形态(retention 丙 · A4 承接)**:目标 run 落**顶层** `experimental/run-<ts>-<tag>/`(⛔ 嵌套子目录不入库,per `.gitignore:116-119`)⇒ 只入库 `metrics.json` + `simulation_config.json` ⇒ `test/cep_e2e_runs.jsonl` 追加 1 条(9 键 + `ic3_verdict = "✓ 通过"` + `metrics_13` 逐键结论)⇒ `cep_e2e_reconcile_check.sh` **双向闸绿**(⛔ 只 commit 两件套而不加 jsonl 条目 ⇒ **零 orphan 判红** ⇒ AC-9 失败)。

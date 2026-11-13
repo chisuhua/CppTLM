@@ -1,0 +1,22 @@
+{
+  "total_cycles": 300,
+  "total_transactions": 20,
+  "transactions_per_cycle": 0.0666667,
+  "avg_latency_cycles": 5,
+  "p50_latency_cycles": 5,
+  "p95_latency_cycles": 5,
+  "p99_latency_cycles": 5,
+  "max_latency_cycles": 5,
+  "coherence_stalls": 86,
+  "collective_stalls": "not-collected",
+  "directory_misses": "not-collected",
+  "deadlock_violations": 0,
+  "memory_violations": 0,
+  "memory_violation_kinds": {"swmr": 0, "data_value": 0},
+  "observation_keys": {"memory_ops_checked_addrs": [4096, 4100, 4104, 4108, 4112, 4116, 4120, 4124, 4128, 4132, 4136, 4140, 4144, 4148, 4152, 4156, 4160, 4164, 4168, 4172]},
+  "vc_stall_per_vc": {},
+  "_measured": ["avg_latency_cycles", "coherence_stalls", "deadlock_violations", "max_latency_cycles", "memory_violations", "p50_latency_cycles", "p95_latency_cycles", "p99_latency_cycles", "total_cycles", "total_transactions", "transactions_per_cycle"],
+  "_not_collected": {"collective_stalls": "本装置无 collective plane 绑定 ⇒ 无产出者", "directory_misses": "本装置无 directory / sharer tracker ⇒ 无产出者"},
+  "verification_mode": "sampled",
+  "verification_scope": "CEP E2E 装置 · 拓扑 A(configs/cep_chi_rnf_e2e_a.json) · 300 cycles"
+}
