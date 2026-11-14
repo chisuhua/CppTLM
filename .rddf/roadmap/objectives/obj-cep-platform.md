@@ -23306,3 +23306,37 @@ T6 只守**档 2 的「新增产出物」** ⇒ **档 0 / 档 1 的产出物不�
 ⛔ **未推广任何族**（`tilelink_c` 仅登记为「可推广」，代码 / 测试零改动 · `mesif` 仍是档 2 唯一载体）· ⛔ **未改 `07 号`**（免五步链）· ⛔ **未新增 invariant** · ⛔ **未改 `protocol_instances.json` / `sharer_tracker.hh`**（只读）· ⛔ **未宣称 `nvlink_4` 「适用」**。
 
 **⑤ 关联**:**#421**（ADR-CEP-21）· **#420** / **#419**（objective 归档）· `ADR-CEP-20` 决策 6（档位阶梯）· `ADR-CEP-21`（阶段 1 的机制化仍待立项 —— 本 Entry **未做**）· `test/cep_evidence_tiers.json` 的 `coverage_map` · `scripts/test/cep_e2e_reconcile_check.sh`（T7 / 变异 h·i）
+
+### Entry #423 — 2026-11-14 [planner](**ADR-CEP-21 阶段 1 立项** —— improvement v2(**metis 12 条全采纳**)+ change 目录 + proposal · **KPI 0/3 → 1/3**)
+
+**主题**:per 用户口令「启动」⇒ 启动 P0 = ADR-CEP-21 **阶段 1** 落地立项。本 Entry = improvement v2 + **metis 第 1 轮处置** + change 立项回执。
+
+**① ⚠️ metis 第 1 轮抓到的 P0 级硬错误(4 条,全部已修)**
+
+| # | metis 发现 | 独立复核 | 影响 |
+|:--:|---|---|---|
+| **P0-1** | W1/W2 拟写的 `cep::kResponderMappedBits` **在本文件不存在** —— `test/cep_directory_experiment.hh:28` 是 `namespace cep_exp`,其 `using` 列表(`:30-36`)**无** `namespace cep = tlm::cep;` | ✅ **成立** | ⇒ **会编译失败**;改为 `tlm::cep::` 全限定 + AC-3 加「编译 rc=0」 |
+| **P0-2** | **D-2 必须绑定** —— `broadcast_fanout` 的唯一调用方(`:107`/`:139`)传的就是 `cfg_.broadcast_fanout`，而 `ServiceConfig` 从未被 override ⇒ W=8 时 `mapped_prefix_mask(4)` 仍只覆盖 4 位 ⇒ **W1/W2 的收益不成立** | ✅ **成立** | ⇒ 原稿「三处缺口今天就存在」是**修辞放大**;已改写为「仅 M3 今天错,M1/M2 今天零影响」+ D-2 裁**方案 (b) 值保留 4** |
+| **P0-3** | AC-3 的「全仓 `n > 4` 零命中」**实测不可满足** —— 4 处命中(1 目标 + `writeback.cc:31` + 2 个 PCIe 测试的 `offset+len > 4096` **字符串子串**) | ✅ **成立** | ⇒ 重写为**三条单文件判据**(grep 限定 `test/cep_directory_experiment.hh`) |
+| **P0-4** | AC-7 的变异**不可隔离**:改 `bit 0..3` 任一表项 ⇒ 既有 `:214-219` **同时红**;改 index 4 ⇒ 被 `responder_node_of` 的 `bit < kResponderMappedBits` 短路 ⇒ **变异惰性** | ✅ **成立** | ⇒ 改为「影子树 `kResponderMappedBits` 4→5 且**不填**第 5 项 ⇒ **只有 W5 红**」+ 显式记录「改 0..3 无法只打红满射」 |
+
+**② metis 的其余 8 条(全部采纳，无驳回)**
+
+W3 注释又要写错(该参数上限是它自己)⇒ 重写 · W4 四项内容不全(漏 `W > 8` 的 **OOB**、64 是 `responder_set_t` 上限**非表上限**、三项同步义务)⇒ 重写 · W2 的 `std::min` 过度设计 ⇒ 改 `if` + `static_cast`(**D-3 登记为对 ADR 字面的偏离**) · W1 的 `-Wsign-compare` 论断**错误**(双方均无符号,`:118` 有同型先例)⇒ 保持 `unsigned bit` · 补 AC(X-2 static_assert / 编译 / `spec.md` 零 diff / `metrics.json` 零 diff) · **D-1 的判权在 architect** ⇒ 登记为待裁,planner 不代裁 · R-2 的 `n == 0` 短路**非必需**(`(1<<0)-1 = 0`)⇒ 真正要守的是 `n >= 64` 的 shift UB ⇒ 加 `static_assert(kResponderMappedBits <= 64)` · 项数统一为 **6 项**(W1~W6)。
+
+**③ ⚠️ metis 的关键提醒(已纳入 C-3 与 AC-6)**
+
+**W5 的满射判据在 `kResponderMappedBits = 4` 时恒真** ⇒ 与 ADR 自己反对的「死判据」同形 ⇒ ⇒ **必须显式写明「今日无增量判别力,是为阶段 2 预置」**(⛔ 不得计入今日价值)。
+
+**④ 立项回执**
+
+| 项 | 值 |
+|---|---|
+| change 名 | `cep-responder-bitmap-expansion` |
+| 目录 | `openspec/changes/cep-responder-bitmap-expansion/` |
+| 已落 | `proposal.md`(planner 域) |
+| 待 builder | `design.md` + `tasks.md` + 实施 |
+| KPI | **0/3 → 1/3** |
+| 范围 | **仅阶段 1**(6 项 · 3 文件)⇒ ⛔ 不含阶段 2(扩容) |
+
+**⑤ 关联**:**#422**(档 2 普查)· **#421**(ADR-CEP-21 落盘)· **#420** / **#419** · `.rddf/improvements/cep-responder-bitmap-expansion.md`(v2)· `openspec/changes/cep-responder-bitmap-expansion/proposal.md` · `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md`
