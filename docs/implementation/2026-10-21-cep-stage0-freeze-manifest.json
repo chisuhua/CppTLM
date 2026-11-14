@@ -91,7 +91,7 @@
   "authorized_by": "Entry #424",
   "exclusions": [],
   "frozen_at": "2026-11-14",
-  "frozen_at_commit": "611e30f79415c552463a6e3c8ac6245b39b606b2",
+  "frozen_at_commit": "d2aea03050ede80384e06b686f97b1e2667e9a3d",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
