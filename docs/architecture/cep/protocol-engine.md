@@ -13,7 +13,8 @@
 
 > **表述纪律**(per `ADR-CEP-17 §3.2`):"协议族" = **协议实例的来源集合**;"协议实例" = 一个具体可实现协议(1 个 `.slicc` / 1 个 adapter)。**adapter 数量 = 协议实例数**,不是族数。
 >
-> **当前口径**:**2 个来源族(工业 6 族 / Ruby 1 族)= 16 个 adapter 实例** + §5.1.4 的 **5 个一致性模型语义索引**(交叉视图,不重复计 adapter)。
+> **当前口径**:**2 个来源族(工业 6 族 / Ruby 1 族)= 16 个 adapter 实例**(**下界 / 目标口径**,per `ADR-CEP-12` 理由句 —— 16 = §5.1.1 的 8 + §5.1.2 的 8,⛔ **非「已实现 16 个」**) + §5.1.4 的 **5 个一致性模型语义索引**(交叉视图,不重复计 adapter)。
+> ⚠️ **实现计数以声明源为唯一依据**(`include/tlm/cep/protocol_instances.json` 的 `status=implemented`):**当前已落地 8 个实例 / 8 个 adapter**(工业 7 + 学术 1 `tilelink_c`)—— **Ruby-SLICC 族 8 实例落地 0**(零 adapter / 零实例声明 / 零 main spec / 零 change;代码侧仅有 `include/tlm/cep/protocol_family.hh` 的 `ProtocolFamily::RubySlicc` 枚举常量与 schema 的 `family` 枚举值)⇒ ⇒ **「16」不得读作「已实现 16」**。
 
 ### 5.1.1 工业硬件协议族(6 族 / 8 实例)
 
@@ -39,6 +40,8 @@
 > **已失效** —— ArchForge 已裁定判据 (b) **成立**(`4ff2fa6`,Q-3a = 是)→ 该静默 `E→M` **是域可见写**。
 > **状态值以 `ADR-CEP-05 §13.1` 为唯一权威**(本表**不复制**状态值,per 防双真源立场);
 > 本行的「已落地 / 已排期」状态**不受影响**(排期 ≠ 就绪)。
+>
+> ⚠️ **「族」与「实现」的两条口径澄清**(2026-11-14 实测补记):① **「6 族」= 来源族叙述口径**(gem5 调研的工业 6 族,含 `moesi_gpu` / `mesif` 合族的先例);**声明侧 `family` 字段实为 `industrial` 7 + `academic` 1**(`tilelink_c` —— 学术起源,per `ADR-CEP-12` Status Update 的明确认定)⇒ **「6 族」与 `family` 字段是两个正交维度**(来源族 vs 血统分类),**互不构成反驳**;引用「族」时须注明所指维度;② 本表 **8 行 = 8 个 `status=implemented` 实例** ⇒ **已落地 8 实例 / 8 adapter**(计数机检 = `test/test_cep_moesi_gpu_adapter.cc` 的 `REQUIRE(implemented == 8)` ⇒ 第 9 个实例落地即红,腐化不可能静默);⚠️ **「adapter」列有值 ≠ 有可运行引擎** —— **CXL 2.0 / CXL 3.0 对称 / NVLink 三族无专用引擎**(仅 adapter + state spec + tracker),引擎载体只有 CHI / MOESI-GPU / MESIF / TileLink / UALink 五个。
 
 ### 5.1.2 Ruby-SLICC 协议族(1 族 / 8 实例,per `ADR-CEP-17 §2 Decision 2`)
 
@@ -59,6 +62,9 @@
 **关键映射证据**:gem5 Ruby 消息模型(RubyRequest / RubyResponse / RubySnoopResponse)→ CEP canonical 10 流 **100% 覆盖,零新增流**(per `docs/research/cep-coherence-protocol-space-survey.md §3.3`)。
 
 > **注**:调研文档 `gem5-coherence-protocols-survey.md:27` 指出本快照中 `MESI_CMP_directory` 协议**不存在**(历史 gem5 曾有,现已删除,仅 MOESI 版存活);上表按调研文档原文照录。
+>
+> ⚠️ **「判定」列 = 可行性判定,不是实现状态**(2026-11-14 实测补记):「✅ 直接支持」应读作「**该族若接入,可直接映射到既有 tracker 能力**」,**不是「已支持」**。**Ruby-SLICC 族 8 实例当前落地 0** —— 零 adapter 头 / 零实例声明(`include/tlm/cep/protocol_instances.json` 无 `family=ruby-slicc` 条目)/ 零 main spec / 零 change;代码侧仅 `include/tlm/cep/protocol_family.hh` 的 `ProtocolFamily::RubySlicc` 枚举常量与 schema 的 `family` 枚举值。
+> ⚠️ **本族整体尚未进入实现队列**:`ADR-CEP-17` 的 6 条 Verification 在台账登记为「**3 可执行 / 1 半有牙 / 2 文档层待建**」;§4.0 的 14 个 change **无 Ruby 队列位** ⇒ ⇒ **「16 个 adapter 实例」中的 Ruby 8 个是目标口径,非既成事实**。
 
 ### 5.1.3 协议私有状态边界(per `ADR-CEP-17 §2 Decision 4`)
 

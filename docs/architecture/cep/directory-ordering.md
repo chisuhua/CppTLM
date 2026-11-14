@@ -8,7 +8,7 @@
 ---
 
 
-## 5.2 目录策略可插拔(Sharer Tracker 5 实现,per `ADR-CEP-04 §2`)
+## 5.2 目录策略可插拔(Sharer Tracker 6 实现,per `ADR-CEP-04 §2`)
 
 | 实现 | scope | completeness | authority | aggregation_at | 适用 |
 |------|-------|--------------|-----------|----------------|------|
@@ -17,6 +17,10 @@
 | `DcohSymmetric` | LOCAL_MEMORY_REGION | **必须 CONSERVATIVE** | LOCAL_HINT | **HOME** | CXL 3.0 对称(per-device DCOH)|
 | `TreeManager` | SUBTREE | EXACT | LOCAL | TREE_PARENT | TileLink ClientMetadata |
 | `BroadcastNull` | NONE | EXACT(degenerate) | NONE | NONE | 无目录基线(target = all)|
+| `HierarchicalDirectory` | SYSTEM | EXACT | GLOBAL | **HIERARCHICAL** | MESIF 分级目录(多级聚合;per `ADR-CEP-04 §13` R-1 裁决)|
+
+> ⚠️ **枚举名 vs 实现类名**:上表第 1 列是 `TrackerImpl` **枚举值**(代码真源 = `include/tlm/cep/sharer_tracker.hh` 的 `kTrackerTraits`,6 行)⇒ 其中 `BroadcastNull` 的**实现类名**是 `BroadcastNullTracker`(`include/tlm/cep/broadcast_null_tracker.hh`),其余 5 种实现类名与枚举值同名。
+> ⚠️ **本表 caps 四属性与代码真源逐键一致**(2026-11-14 实测:`scope` / `completeness` / `authority` / `aggregation_at` 6 行全符)⇒ 文档与代码的漂移面只在**实现计数**(曾写 5)与**类名写法**两处。
 
 **caps descriptor 替代 bool**(per `ADR-CEP-04 §2 Decision 3`):`scope` / `completeness` / `authority` / `aggregation_at` 四属性 struct,禁止任何 `is_distributed` / `is_central` bool flag。
 

@@ -54,7 +54,7 @@
 |------|---------|----------------|
 | **协议层** | snoop vs 目录 / 集中 Home vs 分布式 Home / 共享集跟踪粒度对延迟与带宽的影响 | §3 canonical 10 流 + §5 协议适配 + §4 守门 invariant |
 | **互联层** | mesh / ring / tree、VC 数量、credit 深度、路由策略对一致性事务吞吐的影响 | §2 6 层骨架 + §6 仿真语义 |
-| **目录层** | full-map / sparse / bloom / 分层目录对存储开销与误判流量的影响 | §5 Sharer Tracker 5 实现(caps 策略可插拔)|
+| **目录层** | full-map / sparse / bloom / 分层目录对存储开销与误判流量的影响 | §5 Sharer Tracker 6 实现(caps 策略可插拔)|
 
 ### 1.2 与既有真源 1 的关系(不重发明)
 
@@ -85,9 +85,9 @@
 | 维度 | gem5 Ruby | CppTLM CEP |
 |------|-----------|-------------|
 | 宿主框架 | gem5 | CppTLM |
-| 仓归属 | **gem5 仓内** `src/mem/ruby/` | **CppTLM 仓内** `docs/adr/` + `docs/architecture/` + `src/tlm/cep/` |
+| 仓归属 | **gem5 仓内** `src/mem/ruby/` | **CppTLM 仓内** `docs/adr/` + `docs/architecture/` + `include/tlm/cep/` |
 | 协议可插拔机制 | SLICC `.slicc` 文件 | ProtocolEngine 插件 + 能力映射表 |
-| 协议实现数 | 6+ 协议族(MESI_Two_Level / MESI_Three_Level / MOESI_CMP_directory / MOESI_hammer / MOESI_AMD_Base / GPU_VIPER)| **2 来源族 / 16 adapter 实例**(工业 6 族 8 实例 + Ruby 1 族 8 实例,per §5.1)|
+| 协议实例数(declared / implemented) | 6+ 协议族(MESI_Two_Level / MESI_Three_Level / MOESI_CMP_directory / MOESI_hammer / MOESI_AMD_Base / GPU_VIPER)| **2 来源族 / 16 adapter 实例**(工业 6 族 8 实例 + Ruby 1 族 8 实例,per §5.1)——⚠️ **「16」= 下界 / 目标口径**(per `ADR-CEP-12` 理由句);**已实现 = 8 实例 / 8 adapter**(工业 7 + 学术 1 `tilelink_c`),**Ruby 族 8 实例落地 0** ⇒ ⛔ 「16」不得读作「已实现 16」|
 | 目录 / 探测结构多样性 | 不同协议各自实现不同 `.sm` 组件(`-dir.sm` / `-probeFilter.sm` / token 机制),**非**同一 `.slicc` 内变体 | SharerTracker **6** 实现 + caps descriptor(§5.2)|
 | 探索产出 | 协议 / 拓扑 / 目录对比实验 | 同左(per `ADR-CEP-06` 4 件套)|
 
@@ -135,7 +135,7 @@ Core / Traffic Generator
 Coherence Interface Layer             ← §3 canonical 10 流,协议无关
         │
         ▼
-Protocol Engine                       ← §5 CHI / CXL / TileLink / NVLink / UALink 插件
+Protocol Engine                       ← §5 协议引擎插件(CHI / MOESI-GPU / MESIF / TileLink / UALink;CXL 2.0 / CXL 3.0 对称 / NVLink **仅 adapter + state spec,无引擎**)
         │
         ▼
 Directory & Ordering Plane    ∥(横向并列,非堆叠)
@@ -268,7 +268,7 @@ group-scoped completion     → Fabric Collective Plane
 
 #### 5.1.5 「转移表真源」判定式(T1–T4)与来源效力
 
-### 5.2 目录策略可插拔(Sharer Tracker 5 实现,per `ADR-CEP-04 §2`)
+### 5.2 目录策略可插拔(Sharer Tracker 6 实现,per `ADR-CEP-04 §2`)
 
 ### 5.3 集合通信旁路平面(per `ADR-CEP-03`)
 
@@ -815,9 +815,52 @@ group-scoped completion     → Fabric Collective Plane
 
 **关联**:台账 **Entry #419**(ratify + 落盘)· **#418**(裁决草案 + 双审)· **#264** / **#332** / **#334** / **#385** / **#386** · `§14.8` · `§14.2` · `.rddf/reviews/cep-b3b2-archive-ruling-2026-11-14.md` · `docs/guide/cep-usage.md` §12.7 / §12.8
 
+## Status Update 2026-11-14(架构文档对齐订正 · 台账 `backlog: cep-architecture-doc-alignment-2026-11-14`)—— 文档 ↔ 代码 10 处漂移的措辞澄清 + 6 处残余登记
+
+> **性质**:纯**追加** SU(append-only)。⛔ 不改本文件既有正文与任何既有 SU —— **逐字保留不回改**;新增 invariant 数 = **0**。
+> **依据**:architect 域**只读核对 + 就地措辞订正**(2026-11-14 实测)· 审稿报告 `.rddf/reviews/cep-architecture-doc-alignment-2026-11-14.md`
+> ⚠️ **不改任何已签批 ADR** —— 5 份 ADR 引用「16 adapter 实例」(`ADR-CEP-00` / `ADR-CEP-00A` / `ADR-CEP-12` / `ADR-CEP-17` / `ADR-CEP-18`);ADR 不可变(只追加 SU)⇒ **口径以其自身理由句为准**(`ADR-CEP-12` 已写明「16 是下界」)⇒ 本则只澄清**真源 1 文档侧**的读法。
+
+### ① 10 处漂移与处置(4 个文件)
+
+| # | 位置 | 漂移 | 处置 |
+|:--:|---|---|---|
+| 1 | §1.1 三类问题表「目录层」行 | 写「Sharer Tracker **5** 实现」,与同文件 §1.4 / §8.2 的「**6** 实现」**自相矛盾**;代码真源 `kTrackerTraits` = **6 行** | → 「**6** 实现」 |
+| 2 | §5.2 标题 | 同上(「5 实现」) | → 「**6** 实现」 |
+| 3 | `docs/architecture/cep/directory-ordering.md` §5.2 表 | 表体只列 **5 行**,**缺 `HierarchicalDirectory` 整行**(caps 四属性与其余 5 行均与代码逐键一致) | 补第 6 行 + 加「枚举名 vs 实现类名」注 |
+| 4 | §1.4 gem5 对比表「仓归属」 | 写 `src/tlm/cep/` —— **该目录不存在**(CEP 为 header-only,实体在 `include/tlm/cep/`) | → `include/tlm/cep/` |
+| 5 | §1.4 gem5 对比表「协议实现数」 | 「16 adapter 实例」可被读成「已实现 16」;实况 **8 实例 / 8 adapter** | 列名 →「协议实例数(declared / implemented)」+ 加「16 = 下界/目标;已实现 8;Ruby 族 0」限定 |
+| 6 | §2.1 分层图 Protocol Engine 注 | 插件族清单暗示 5 族皆有插件;实况 **CXL 2.0 / CXL 3.0 对称 / NVLink 无引擎** | 加限定(引擎 5 个 + 无引擎 3 族) |
+| 7 | `docs/architecture/cep/protocol-engine.md` §5.1 引言 | 「当前口径 = 16 个 adapter 实例」**无「下界」限定** | 加「下界 / 目标口径」+ 已实现 8 实例 / 8 adapter |
+| 8 | 同上 §5.1.1 | 「6 族」与声明侧 `family` 字段(`industrial` 7 + `academic` 1)不一致且未说明 | 加族标签口径 + 实现计数口径 + 「adapter 列有值 ≠ 有引擎」 |
+| 9 | 同上 §5.1.2 | 「判定」列「✅ 直接支持」可被读成「已支持」;实况 **Ruby 族 8 实例落地 0** | 加「判定 = 可行性判定」+ 落地 0 + 「本族无实现队列位」 |
+| 10 | `docs/architecture/cep/simulation-and-experiment.md` §7.2 | 写 `_not_collected_reason`;**schema 真源字段 = `_not_collected`**(per-metric 原因表) | → `_not_collected`(+ 原因表说明) |
+| **11(残余登记)** | `docs/architecture/06-inter-module-network.md`(真源 1,活体)+ `docs/research/cep-coherence-protocol-space-survey.md`(活体调研)+ **冻结面**:`docs/architecture/06-bis-coherence-as-network-extension.md` 与 `ADR-CEP-00` / `ADR-CEP-16` / `ADR-CEP-17` | 同型「Sharer Tracker **5** 实现」残留 | **本批不改** —— 活体 2 处登记为 `backlog: cep-sharer-tracker-5-residual-2026-11-14`;冻结面 4 处按 **ADR / superseded 正文不可变**纪律**仅登记不追改** ⇒ 故本则标题的「10 处」指**本批已处置 10 处**,不含本行的 6 处残余 |
+
+### ② 读法边界(⛔ 随引用重复)
+
+1. ⛔ **「16 个 adapter 实例」不得读作「已实现 16 个」** —— 它是 **declared / 目标口径**(§5.1.1 的 8 + §5.1.2 的 8);**已实现 = 8 实例 / 8 adapter**(唯一依据 = `include/tlm/cep/protocol_instances.json` 的 `status=implemented`)。
+2. ⛔ **Ruby-SLICC 族 8 实例落地 0** —— 「✅ 直接支持」= **可行性判定**(可映射到既有 tracker 能力),**不是「已支持」**;该族**无实现队列位**(§4.0 的 14 个 change 无 Ruby 行)。
+3. ⛔ **「6 族」是来源族叙述口径** —— 声明侧 `family` 字段实为 `industrial` **7** + `academic` **1**(`tilelink_c`)⇒ **族标签以声明源为准**。
+4. ⛔ **Sharer Tracker = 6 实现**(非 5)—— 代码真源 = `include/tlm/cep/sharer_tracker.hh` 的 `kTrackerTraits` 6 行。
+5. ⛔ **两层仍无 CEP 自有运行时载体** —— Core·TrafficGen(通用 `TrafficGenTLM`,非 CEP 载体)与 Fabric&Transport Plane(仅 `fabric.json` 声明 + 装配期闸)⇒ 本则**不宣称**这两层已落地(per 本文件既有 SU 的「实施前不得宣称已落地」)。
+
+### ③ Verification(可勾选 · 前瞻)
+
+- [x] 本则已**追加**,本文件既有正文与**全部**既有 SU **逐字未变**;新增 invariant 数 = **0**
+- [x] ① 的 **10 处已处置 + 1 行残余登记**逐处可追(文件 + 位置 + 漂移 + 处置);**零代码 / 零 spec / 零 ADR 改动**
+- [x] ② 的 5 条读法边界齐备
+- [x] **跨仓机器锚点未破**:`docs/architecture/cep/protocol-engine.md:16` 的锚点字面量「16 个 adapter 实例」**逐字保留**;`07 号` 的活锚点(实测 ≤ 690)与 `path:line` 锚点(`:639` / `:696` / `:582-600`)**零位移**(本则插在索引之前 ⇒ 索引之前行号不变)
+- [x] **测试锁未破**:`test/test_cep_schema.cc` 的 5 处字面量锁(「16 个 adapter 实例」/「不重复计 adapter」/「5 个一致性模型语义索引」/「6 族 / 8 实例」/「1 族 / 8 实例」)与 §5.1.1 / §5.1.2 的行数锁(**8 / 8**)**全部保留** ⇒ **零测试改动**
+- [x] 索引已重生成(`scripts/cep/generate_doc_index.py --write`),`cep_index_position_check.sh` rc=0
+
+**关联**:`.rddf/reviews/cep-architecture-doc-alignment-2026-11-14.md`(审稿报告)· `docs/architecture/cep/protocol-engine.md` · `docs/architecture/cep/directory-ordering.md` · `docs/architecture/cep/simulation-and-experiment.md` · `include/tlm/cep/protocol_instances.json` · `include/tlm/cep/sharer_tracker.hh` · `ADR-CEP-12`(「16 = 下界」理由句)· 台账 `backlog: cep-architecture-doc-alignment-2026-11-14` · 台账 `backlog: cep-sharer-tracker-5-residual-2026-11-14`(① 表第 11 行的活体残余)
+
+> ⚠️ **冻结面授权链的时序(⛔ 随引用重复)**:本则改动的 4 个文件**全在 M1 冻结面**(86 产物,per `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`)⇒ `cep_freeze_check.sh` 报红是**预期态**;`--update` 的 `--authorized-by <台账 entry id>` 为**必填**,而台账唯一写入方是 **rdd-planner** ⇒ **须待 planner 落台账 Entry 后**方可执行 `--update` ⇒ 在此之前本则的**冻结清单 provenance 未闭合**。索引 B 的「台账」列暂显 `—`(generator 只识别 `台账 Entry #N`;`—` 有先例)⇒ **本则的台账可追性由上行的 `backlog:` 指针承担**。
+
 ## §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295)
 
-> **用途**:本文件已 **34 个一级节 / 21 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
+> **用途**:本文件已 **35 个一级节 / 22 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
 
 > ⚠️ **新纪律(per 台账 Entry #295,逐字)**:本索引**永久置于文末**;此后**新增段落 SHALL 插在本索引之前** ⇒ **新增内容永不使既有 `path:line` 锚点位移**;⚠️ **最新 SU 在本索引之前**(⛔ 勿在本文末找最新段)。
 
@@ -825,7 +868,7 @@ group-scoped completion     → Fabric Collective Plane
 
 > ⚠️ **2026-11-12 起**:索引 A / 索引 B **全量列出**(⛔ 不再有「另有 N 个未列入」的 `## ` 标题);自述数 == 索引行数 == 文件**实际** `## ` / SU 数(`cep_index_position_check.sh` 三合一判据 + 行号逐行判据)。⚠️ **待人工判断的导航标注不在索引 A / B**(索引 A/B 是机械视图)⇒ 见索引 C 与 `§11` / `§12` 的正文说明。
 
-### 索引 A · 一级节(34)
+### 索引 A · 一级节(35)
 
 | # | 章节 | 行 |
 |---|---|---|
@@ -862,9 +905,10 @@ group-scoped completion     → Fabric Collective Plane
 | 31 | 附录 · Status Update 2026-11-13(证据档位阶梯 · per 台账 Entry #404)—— 三档阶梯 + 档位声明义务 + 跨档聚合禁令 | 685 |
 | 32 | Status Update 2026-11-14(档 2 协议级观测面 · per 台账 Entry #410)—— 天花板档的**载体形态**与**读法边界** | 719 |
 | 33 | Status Update 2026-11-14(二 · objective 归档 + 口径 ④ ratify · per 台账 Entry #419)—— 终局 Ⅲ-甲:**归档与 DoD Go 解耦** | 765 |
-| 34 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 818 |
+| 34 | Status Update 2026-11-14(架构文档对齐订正 · 台账 `backlog: cep-architecture-doc-alignment-2026-11-14`)—— 文档 ↔ 代码 10 处漂移的措辞澄清 + 6 处残余登记 | 818 |
+| 35 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 861 |
 
-### 索引 B · Status Update(21 · 2026-10-28 起)
+### 索引 B · Status Update(22 · 2026-10-28 起)
 
 | # | 日期 | 主题 | 台账 | 行 |
 |---|---|---|---|---|
@@ -889,6 +933,7 @@ group-scoped completion     → Fabric Collective Plane
 | 19 | 2026-11-13 | 附录 · Status Update 2026-11-13(证据档位阶梯 · per 台账 Entry #404)—— 三档阶梯 + 档位声明义务 + 跨档聚合禁令 | Entry #404 | 685 |
 | 20 | 2026-11-14 | Status Update 2026-11-14(档 2 协议级观测面 · per 台账 Entry #410)—— 天花板档的**载体形态**与**读法边界** | Entry #410 | 719 |
 | 21 | 2026-11-14 | Status Update 2026-11-14(二 · objective 归档 + 口径 ④ ratify · per 台账 Entry #419)—— 终局 Ⅲ-甲:**归档与 DoD Go 解耦** | Entry #419 | 765 |
+| 22 | 2026-11-14 | Status Update 2026-11-14(架构文档对齐订正 · 台账 `backlog: cep-architecture-doc-alignment-2026-11-14`)—— 文档 ↔ 代码 10 处漂移的措辞澄清 + 6 处残余登记 | — | 818 |
 
 ### 索引 C · 关键表指针(高频查阅)
 

@@ -67,7 +67,7 @@ experimental/<run_id>/
 
 **4 个可选 metric**:`link_utilization_per_link` / `vc_stall_per_vc` / `snoop_fanout_per_request` / `directory_size_distribution`
 
-**兜底契约**:不可观测 metric 标 `not-collected` + `_not_collected_reason`,**禁止**省略 / 写 0 / 写 -1。
+**兜底契约**:不可观测 metric 标 `not-collected` + `_not_collected`(**per-metric 原因表** —— 键 = 该 metric 名,值 = 原因;字段真源 = `experimental/metrics.schema.json`),**禁止**省略 / 写 0 / 写 -1。
 
 ## 7.2.1 实验验证深度契约(per `ADR-CEP-06 §3`)
 
