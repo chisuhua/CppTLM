@@ -90,7 +90,7 @@ include/                 # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
       pcie_controller_ip.hh              # 4-IP 顶层 facade (4 BAR decode; attach_endpoint() 注入 EP)
       pcie_axi_bridge_ip.hh             # EP composite (非顶层; REGISTER_MODULE 已移除)
       host_pcie_test_stub.hh            # in-process 仿真测试桩 (FLR / Resizable BAR)
-    cep/               # ★ CEP 平台 (Coherence Exploration Platform) —— header-only, 43 文件
+    cep/               # ★ CEP 平台 (Coherence Exploration Platform) —— 43 个 .hh + 9 个 JSON/schema 声明源(共 52 文件)
       protocol_engine_base.hh / protocol_family.hh / collective_plane.hh / collective_plane_contract.hh
       fabric_collective_plane.hh / sharer_tracker.hh / ordering_point_checker.hh
       stub_cache_core.hh / address_resolver.hh / channel_dependency_graph.hh
@@ -127,7 +127,7 @@ src/                    # .cc 实现 + main.cpp
 build.sh                # 独立构建入口（OFF/PTX-EMU，薄包装转 scripts/build/build.sh）
 test.sh                 # 统一测试入口（默认只 test；--build 显式 build+test；--verify-fix 一键回归）
 
-test/                   # Catch2 v3.7.0 测试套件 (349 个 test_*.cc, 全在顶层)
+test/                   # Catch2 v3.7.0 测试套件 (370 个 test_*.cc, 全在顶层)
   catch_amalgamated.hpp  # Catch2 预编译 (非 FetchContent)
   CMakeLists.txt         # 测试构建配置 (file GLOB test_*.cc — AGENTS.md 例外)
   test_pcie_endpoint_ip_full_e2e.cc   # ★ Phase 8 全链路 E2E (solve Phase 7 M1)
@@ -140,7 +140,7 @@ test/                   # Catch2 v3.7.0 测试套件 (349 个 test_*.cc, 全在�
   python/                # Python 侧测试 (21 个 test_*.py)
   mock_modules.hh        # 测试用 Mock 模块
 
-configs/                 # JSON 拓扑配置 (顶层 49 个 json, 递归 60 个)
+configs/                 # JSON 拓扑配置 (顶层 55 个 json, 递归 66 个)
   common/ param_rules/ templates/ test/    # 共享 + 规则 + 模板 + 测试配置
   apu_soc_v1.json         # 顶层 SoC 配置 (CPU + GPU + Crossbar)
   apu_soc_full.json / apu_soc_phase7a.json / apu_soc_phase7b.json  # 阶段性
@@ -169,7 +169,7 @@ docs/
     dgpu-soc/architecture.md            #   SoC 业务架构 (6 模块拓扑 + GMMU + SDMA + 存储子系统)
     dgpu-soc/timing-mode.md             #   timing-mode SoC 业务设计
     dgpu-driver/architecture.md         #   Driver 接口架构 (15 ABI + 4 BAR + driver 闭环)
-  adr/                   # 真源 3: 不可变 ADR (58 份: ADR-CEP-* 22 + ADR-DGPU-* 14 + 其他 22)
+  adr/                   # 真源 3: 不可变 ADR (59 份: ADR-CEP-* 24 文件(23 ADR + NUMBER-MAP) + ADR-DGPU-* 14 + 其他 21)
     ADR-CEP-00-platform-charter-and-governance.md   # ★ CEP 治理宪章 (跨仓归口 + 准入门槛)
     ADR-CEP-00A-real-source-anchor-map.md           # ★ CEP 真源章节映射表 (ADR 引用锚点)
     # 其余 ADR-CEP-01 ~ ADR-CEP-19 / 07A 与 ADR-DGPU-01 ~ 09 见 ls docs/adr/
@@ -520,7 +520,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | 层 | 职责 | 路径 | 数量控制 | 修改门槛 |
 |----|------|------|---------|---------|
 | **第 1 层 长期维护架构文档** | 设计意图 + 现状真相 | `docs/architecture/` (真源 1) + `docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/` (真源 2) | **每主题 = 1 主纲 + N 子文档**（子文档**仅从主纲进入**;须服务**同一主纲的同一设计意图**;**子文档不计入篇数**。真源 1 的「唯一真源」是**目录级**约束,拆子文档不违反;先例 = `docs/designs/dgpu-soc/` 与 `docs/architecture/cep/`） | Oracle 评审 or ADR 触发 |
-| **第 2 层 架构决策记录** | 不可变决策 + Status Update | `docs/adr/ADR-*.md` (真源 3, 58 份) | 每个不可逆决策 1 篇 | 签发后不改，只追加 Status Update |
+| **第 2 层 架构决策记录** | 不可变决策 + Status Update | `docs/adr/ADR-*.md` (真源 3, 59 份) | 每个不可逆决策 1 篇 | 签发后不改，只追加 Status Update |
 | **第 3 层 OpenSpec change** | 实施变更提案 | `openspec/changes/<name>/{proposal,design,spec,tasks}.md` | 每个独立变更 1 个 | 标准 OpenSpec 工作流 |
 | **第 4 层 实施跟踪** | TDD 5 步 + 进度报告 | `docs/superpowers/plans/<name>.md` + `archive/` | 每个大 Phase 1 个 | 实施期短期，archive 后归档 |
 
@@ -603,7 +603,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **ccache**: 自动检测，未安装降级（非 fatal）
 - **ASan**: `USE_ASAN=ON` 仅 Debug 有效（CI 矩阵排除 Release+ASan）
 - **构建产物**: `build/bin/` 可执行 + `build/lib/cpptlm_core.a` 静态库
-- **测试规模**: 350+ 个 `test_*.cc` / 750+ 个 Catch2 标签（2026-11-05 实测 350 / 755）。主力标签: `[cep]` / `[pcie]` / `[axi]` / `[realip]` / `[lwc]` / `[dgpu_soc_timing]` / `[minimal_dgpu_soc]` / `[pcie-memory]` / `[driver_visible]` / `[fabric]`。**实时计数用 `./build/bin/cpptlm_tests --list-tags` 取** —— 计数随新测试增长, 本行只给量级与标签入口, **不要**在此固化精确值（会静默腐化）。**0 已知 flaky**（2026-10-08 Step 0 P0 SIGSEGV 修复后）。
+- **测试规模**: 350+ 个 `test_*.cc` / 750+ 个 Catch2 标签。主力标签: `[cep]` / `[pcie]` / `[axi]` / `[realip]` / `[lwc]` / `[dgpu_soc_timing]` / `[minimal_dgpu_soc]` / `[pcie-memory]` / `[driver_visible]` / `[fabric]`。**实时计数用 `./build/bin/cpptlm_tests --list-tags` 取** —— 计数随新测试增长, 本行只给量级与标签入口, **不要**在此固化精确值（会静默腐化）。**0 已知 flaky**（2026-10-08 Step 0 P0 SIGSEGV 修复后）。
 
 ## PHASE STATE
 
