@@ -43,7 +43,9 @@ namespace cep_exp {
         std::uint64_t lookup_latency = 4;
         std::uint64_t snoop_latency = 2;      // = StubCacheCore::Config::snoop_latency_cycles
         std::uint64_t data_return_latency = 6;
-        /// 无任何 sharer 信息时的广播目标数(映射位只有 4 个 ⇒ 上限 4)
+        /// 无 sharer 信息时的广播**探测量** = 本参数**默认值**;
+        /// 调用方可配到 [0, `tlm::cep::kResponderMappedBits`];snoop 循环上界 = `kResponderMappedBits`。
+        /// ⚠️ 本参数的上限**是它自己**(实验参数),⛔ 不是 `kResponderMappedBits` —— 后者只是循环/掩码的上界。
         std::uint64_t broadcast_fanout = 4;
     };
 
@@ -160,10 +162,11 @@ namespace cep_exp {
             return n;
         }
 
-        /// 前 n 个**已映射**节点(bit 0..3)的掩码。
+        /// 前 n 个**已映射**节点(bit 0 .. `kResponderMappedBits-1`)的掩码。
+        /// ⚠️ 上界引用 `kResponderMappedBits`(⛔ 非硬编码 4)⇒ 扩容后自动跟随。
         static responder_set_t mapped_prefix_mask(std::uint64_t n) {
-            if (n > 4)
-                n = 4;
+            if (n > tlm::cep::kResponderMappedBits)
+                n = static_cast<std::uint64_t>(tlm::cep::kResponderMappedBits);
             return (n == 0) ? responder_set_t{0} : ((responder_set_t{1} << n) - 1);
         }
 
@@ -177,7 +180,7 @@ namespace cep_exp {
 
             responder_set_t remaining = targets;
             tlm::cep::MergedState merged = SnoopState::I;
-            for (unsigned bit = 0; bit < 4; ++bit) {
+            for (unsigned bit = 0; bit < tlm::cep::kResponderMappedBits; ++bit) {
                 const responder_set_t m = responder_set_t{1} << bit;
                 if ((targets & m) == 0)
                     continue;

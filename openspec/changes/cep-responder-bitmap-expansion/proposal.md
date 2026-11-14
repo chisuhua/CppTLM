@@ -34,6 +34,7 @@ ADR-CEP-21 已 Proposed（双审通过、五步链走完），但其**阶段 1�
 | **W4** | `kResponderBitToNode` 上方注释 4 项（含 **`W > 8` 须先扩数组**——否则 OOB;64 是 `responder_set_t` 上限**非表上限**;三项同步义务;不得填无权威 id）+ `static_assert(kResponderMappedBits <= 64)` | `include/tlm/cep/sharer_tracker.hh` |
 | **W5** | 新增**满射判据**（`responder_node_of(b) != kInvalidNode && responder_bit_of(responder_node_of(b)) == b`）⚠️ **不替代**既有 `:211-219` | `test/test_cep_sharer_tracker_base.cc` |
 | **W6** | （备选）`using tlm::cep::kResponderMappedBits;` | `test/cep_directory_experiment.hh` |
+| **W7** | **delta spec**（⚠️ 立项后补 —— openspec 要求至少 1 个 delta）：`ADDED` Requirement「responder 位宽扩容的机制与触发判据」+ 6 Scenario ⇒ **把 W4 的「注释」升为「Requirement」** ⇒ 机制从文档约定变契约 | `specs/cep-sharer-tracker-base/spec.md` |
 
 **⛔ 边界**：`kResponderMappedBits` **必须仍 = 4** · `responder_set_t` 宽度不变 · `SharerTrackerIf` 虚方法 = 5 · `ADR-CEP-04` 零 diff · 新增 invariant = **0** · 不填任何 node id · **运行时行为不变**（三处替换均为语义等价）
 

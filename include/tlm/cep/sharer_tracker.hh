@@ -92,7 +92,22 @@ inline constexpr unsigned kNoBit = 64u;
 inline constexpr std::size_t kResponderMappedBits = 4;
 
 // bit → node_id **显式映射表**(bit 0 = SDMA;其余 3 位按「内存归属 → 页表 → 主机」序)
-// bits 4..63 未映射(`kInvalidNode`),留给后续协议族的 more-sharer 场景。
+// 未映射位(`kInvalidNode`)留给后续协议族的 more-sharer 场景。
+//
+// ── ⚠️ **扩容须知**(per `ADR-CEP-21` 阶段 1 · 台账 Entry #423)──────────────────
+// ① **扩容 = 改 `kResponderMappedBits` + 填本表项**;
+//    ⚠️ **`W > 8` 时必须先扩本数组**(现为 `std::array<node_id_t, 8>`)—— `responder_node_of`
+//    的上界判据用的是 `kResponderMappedBits` ⇒ `W > 8` 会**直接越界(OOB/UB)**,不是干净失败。
+// ② 两个上限**不可混**:`responder_set_t` 是 64-bit ⇒ **掩码上限 = 64**(且 `kNoBit = 64u` 同值);
+//    ⛔ **本表的上限 = 数组尺寸(当前 8)**,⛔ 不是 64。
+// ③ 扩容**必须**同步三处:(a) `openspec/specs/cep-sharer-tracker-base/spec.md` 的 spec delta
+//    (`bits 4..63` ⇒ `bits W..63`);(b) 新族的**装配期硬断言**
+//    (`responder_mask_of(node) == 0 ⇒ mark_observation_invalid`);(c) **运行时 mask 判据**
+//    (`kMappedResponderMask == (1<<W)-1` —— 堵住「文本锚闸在 mask 语义漂移时照绿」的盲区)。
+// ④ ⛔ **不得**填无权威来源的 node id(须 ArchForge 族声明 / 实例 13 字段);
+//    ⛔ **若某族需 > 64 sharer ⇒ 另立 ADR**(候选:沿用 `HierarchicalDirectory` 层级聚合 / 多字位图)。
+static_assert(kResponderMappedBits <= 64,
+              "responder_set_t 是 64-bit ⇒ kResponderMappedBits 不得超过 64(否则 1<<n 为 UB)");
 inline constexpr std::array<node_id_t, 8> kResponderBitToNode{{
     kNodeIdSdma,   // bit 0
     kNodeIdVram,   // bit 1

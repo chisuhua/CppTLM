@@ -13,6 +13,8 @@
 
 #include "catch_amalgamated.hpp"
 
+#include <cstddef>
+
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -217,6 +219,20 @@ TEST_CASE("CEP SharerTracker: caps 4 属性 / ResponderSet 64-bit / bit→node �
         CHECK(b < cep::kResponderMappedBits);
         CHECK(cep::responder_node_of(b) == id); // 双向一致
     }
+    // ④-b **满射判据**(per `ADR-CEP-21` S1-4 · 台账 Entry #423):
+    //     对 [0, kResponderMappedBits) 的**每一个** bit:① 必映射到有效 node
+    //     ② 该 node 的 bit 必须回到原值(双向自洽)。
+    //     ⚠️ **本判据随 `kResponderMappedBits` 自动覆盖新位**(上面的 initializer list 不会);
+    //     ⚠️ **仅在 `kResponderMappedBits > 4` 时有增量判别力** —— 当前 = 4 ⇒ 与上面
+    //        的 4 个具体 node 断言**等价**(⛔ 不得据此宣称「今日新增了覆盖」)。
+    //     ⚠️ ⛔ 本判据**不替代**上面的 bit↔具体 node 断言 —— 满射只证**双射自洽**,
+    //        不钉 bit→具体 node(置换两个表项仍绿)。
+    for (std::size_t b = 0; b < cep::kResponderMappedBits; ++b) {
+        INFO("满射判据 bit #" << b);
+        CHECK(cep::responder_node_of(b) != cep::kInvalidNode);
+        CHECK(cep::responder_bit_of(cep::responder_node_of(b)) == b);
+    }
+
     // 未映射节点 ⇒ 位号为 kNoBit、掩码为 0(不得静默映射到某个位)
     CHECK(cep::responder_bit_of(cep::kInvalidNode) == cep::kNoBit);
     CHECK(mask(cep::kInvalidNode) == 0u);

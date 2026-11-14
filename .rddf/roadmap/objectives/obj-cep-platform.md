@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
+`openspec/changes/` 当前 **1 个 active**（`cep-responder-bitmap-expansion` 于 2026-11-14 **立项**,per 台账 Entry #423）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cep-responder-bitmap-expansion` 立项,per Entry #423）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -23340,3 +23340,56 @@ W3 注释又要写错(该参数上限是它自己)⇒ 重写 · W4 四项内容�
 | 范围 | **仅阶段 1**(6 项 · 3 文件)⇒ ⛔ 不含阶段 2(扩容) |
 
 **⑤ 关联**:**#422**(档 2 普查)· **#421**(ADR-CEP-21 落盘)· **#420** / **#419** · `.rddf/improvements/cep-responder-bitmap-expansion.md`(v2)· `openspec/changes/cep-responder-bitmap-expansion/proposal.md` · `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md`
+
+### Entry #424 — 2026-11-14 [verifier](**`cep-responder-bitmap-expansion` 实施完成 + 验收通过(8/8)** + **归档授权(五步链拍 0)**)
+
+**主题**:ADR-CEP-21 **阶段 1** 落地 —— W1~W5 实施 + **W7 delta**(openspec 要求)+ verifier 独立验收。本 Entry = 验收回执 + **归档授权**。
+
+**① 交付面(7 项 · 3 代码文件 + 1 delta)**
+
+| # | 内容 | 结果 |
+|:--:|---|---|
+| **W1** | snoop 遍历上界 `bit < 4` ⇒ `bit < tlm::cep::kResponderMappedBits`（⚠️ **全限定** —— metis P0-1 实测「`cep::` 会编译失败」） | ✅ |
+| **W2** | `if (n > 4) n = 4;` ⇒ `if (n > tlm::cep::kResponderMappedBits) n = static_cast<std::uint64_t>(...)`（⛔ 不用 `std::min` —— 零新 include;已登记为对 ADR 字面的偏离） | ✅ |
+| **W3** | `broadcast_fanout` 注释重写（⛔ 不写「上限 = `kResponderMappedBits`」—— 该参数上限是它自己;值保留 **4**） | ✅ |
+| **W4** | `kResponderBitToNode` 上方注释**四项**（含 **`W > 8` 须先扩数组** —— 否则 OOB;64 是 `responder_set_t` 上限**非表上限**;三项同步义务;不得填无权威 id）+ **`static_assert(kResponderMappedBits <= 64)`** | ✅ |
+| **W5** | 新增**满射判据**（⚠️ **不替代**既有 `:211-219`;⚠️ 显式标注「今日无增量判别力」） | ✅ |
+| **W7** | **delta spec**（⚠️ **立项后补** —— `openspec validate` 要求 change 至少 1 个 delta）:`ADDED` Requirement「responder 位宽扩容的机制与触发判据」+ 6 Scenario ⇒ **把 W4 的「注释」升为「Requirement」**（机制从文档约定变**契约**） | ✅ |
+
+**② 验收判定(8/8 通过)**
+
+AC-1(三处硬编码全消)· AC-2(注释四项)· AC-3(编译 rc=0 零 warning)· AC-4(阶段 2 未执行:`kResponderMappedBits = 4;`)· AC-5(0 回归:`ctest` 177/177 + 42 闸 + `[cep]` **527 cases / 11797 assertions**)· AC-6(诚实登记两项)· AC-7(满射判据**有牙**)· AC-8(范围纪律:6 项零 diff + INV=0 + 虚方法 5 + `static_assert(sizeof==8)` 仍在)。
+
+**③ ⚠️ AC-7 的变异结果(比预期丰富 —— **实证 ADR 选项 B 的否决理由**)**
+
+变异 = `kResponderMappedBits` 4→**5** 且不填表项 ⇒ **3 个 test case 红**:
+
+| 断言 | 结果 |
+|---|---|
+| `responder_node_of(4) != kInvalidNode`(**满射判据**) | ❌ 红 ⇒ **W5 有牙** |
+| `responder_bit_of(kInvalidNode) == kNoBit` | ❌ **`4 == 64`** ⇒ **sentinel 被破坏** |
+| `mask(kInvalidNode) == 0u` | ❌ **`16 == 0`** |
+| `dir.view_of(...)` no-op(`:243`/`:247`)· `test_cep_sparse_snoop_filter.cc:191` · `test_cep_tier2_observation.cc:291` | ❌ 连带 |
+
+⇒ ⚠️ **已订正措辞**:⛔ 「只有 W5 红」不准确 ⇒ 实际是「W5 **必红** + sentinel 断言同时红」⇒ **更好**(多重防线),但 ⛔ 措辞必须准确。
+
+**④ ⚠️ 实施期的范围调整(如实登记)**
+
+`openspec validate` 报 ERROR「Change must have at least one delta」⇒ 新增 **W7**（delta spec）。⚠️ **这是提升而非扩大**:把注释级机制升为 Requirement 级契约。
+⚠️ 连带修正:AC-8 的 `cep-sharer-tracker-base/spec.md` 口径由「零 diff」改为「**archive 前**零 diff」（归档时 delta 合并是正常流程）。
+
+**⑤ 归档授权(五步链拍 0 = 本 Entry)**
+
+| 步 | 动作 | 状态 |
+|:--:|---|:--:|
+| 1 | 台账 Entry 先落(本 Entry) | ✅ |
+| 2 | 产物 commit(3 代码文件 + 四件套) | ⬜ |
+| 3 | `openspec archive cep-responder-bitmap-expansion --yes`（delta 合并进 `cep-sharer-tracker-base/spec.md` ⇒ **该文件在冻结面**） | ⬜ |
+| 4 | `cep_freeze_check.sh --update --authorized-by "Entry #424"` | ⬜ |
+| 5 | 清单**单独** commit + 无参复验 | ⬜ |
+
+**⑥ 遗留(2 项,均已披露)**
+
+**L-1** V1-7(观测面可定位触发节点)**未做** ⇒ 待 **architect** 裁定(ADR 允许「判定不补则 2a 降级」)· **L-2** W5 今日**无增量判别力** ⇒ 价值只在 `kResponderMappedBits > 4` 时兑现。
+
+**⑦ 关联**:**#423**(立项 + metis 12 条处置)· **#422** / **#421** · `.rddf/reviews/cep-responder-bitmap-expansion-verify.md`(本报告)· `openspec/changes/cep-responder-bitmap-expansion/`(四件套)· `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md`
