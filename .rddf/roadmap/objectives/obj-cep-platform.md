@@ -23479,4 +23479,4 @@ AC-1(三处硬编码全消)· AC-2(注释四项)· AC-3(编译 rc=0 零 warning)
 
 > ⚠️ **零债务提示**:本轮**不得**读作「文档漂移已全部清零」—— 本批处置 **10 处**,登记残余 **6 处**(活体 2 + 冻结面 4)。
 
-**④ 关联**:**#425**(授权记录)· `#424`(同链先例)· `#319**(五步链闭合记录先例)· `docs/guide/cep-usage.md` §12.6(五步链)· `.rddf/reviews/cep-architecture-doc-alignment-2026-11-14.md`(审稿报告 · oracle APPROVE)· `docs/architecture/07-coherence-exploration-platform.md`(SU:2026-11-14 架构文档对齐订正)· `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(86 产物 · `authorized_by = Entry #425`)
+**④ 关联**:**#425**(授权记录)· **#424**(同链先例)· **#319**(五步链闭合记录先例)· `docs/guide/cep-usage.md` §12.6(五步链)· `.rddf/reviews/cep-architecture-doc-alignment-2026-11-14.md`(审稿报告 · oracle APPROVE)· `docs/architecture/07-coherence-exploration-platform.md`(SU:2026-11-14 架构文档对齐订正)· `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(86 产物 · `authorized_by = Entry #425`)
