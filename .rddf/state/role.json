@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "verifier",
-  "updated_at": "2026-11-14T07:36:06Z",
-  "updated_by": "auto",
+  "current_role": "planner",
+  "updated_at": "2026-11-14T14:42:53Z",
+  "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-13T14:27:27Z",
-      "by": "auto",
-      "reason": "planner 阶段的 metis 第 2 轮(正式审查)挖出 3 个结构性死锁(预登记↔4 件套 / deadlock_violations↔ic3_verdict / 观测点↔data 写入点)⇒ 属架构取舍,回 architect 追加裁决 R1~R8(不改任何已签批 ADR)。"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-13T14:40:34Z",
-      "by": "auto",
-      "reason": "architect 裁决 R1~R8 + 勘误段已落盘(Entry #408)=> 回 planner 按裁决把 improvement 草稿改 v2(范围收敛:无版本维 / 不产 run / 检测器留 test 侧)。"
-    },
     {
       "role": "builder",
       "at": "2026-11-13T14:43:05Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-14T07:36:06Z",
       "by": "auto",
       "reason": "change `cep-responder-bitmap-expansion` 四件套 + 实施完成 => 按审查配对做独立验收(AC-1~AC-8 + ADR V1 组 + X 组)。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-14T14:15:44Z",
+      "by": "user",
+      "reason": "per 用户口令「切architect」⇒ 落「16 adapter 实例」措辞澄清(07 号 §gem5 对比表「协议实现数」+ protocol-engine.md §5.1「当前口径」)—— 实况 8 实例/8 adapter,Ruby-SLICC 族 8 实例零落地 ⇒ 措辞需澄清为「下界/目标口径」(per ADR-CEP-12 理由句,ADR 不可改)⇒ 真源 1 措辞修订 ⇒ 按审查配对走 oracle 单审。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-14T14:42:53Z",
+      "by": "user",
+      "reason": "per 用户口令「切 planner + builder 把这条链走完」⇒ 落五步授权链第 1 步(台账 Entry = 授权记录,台账唯一写入方 = rdd-planner)。"
     }
   ],
   "auto_switch_window": null

@@ -23393,3 +23393,52 @@ AC-1(三处硬编码全消)· AC-2(注释四项)· AC-3(编译 rc=0 零 warning)
 **L-1** V1-7(观测面可定位触发节点)**未做** ⇒ 待 **architect** 裁定(ADR 允许「判定不补则 2a 降级」)· **L-2** W5 今日**无增量判别力** ⇒ 价值只在 `kResponderMappedBits > 4` 时兑现。
 
 **⑦ 关联**:**#423**(立项 + metis 12 条处置)· **#422** / **#421** · `.rddf/reviews/cep-responder-bitmap-expansion-verify.md`(本报告)· `openspec/changes/archive/2026-11-14-cep-responder-bitmap-expansion/`(四件套)· `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md`
+
+### Entry #425 — 2026-11-14 [planner](**架构文档对齐订正的授权记录** —— 真源 1 的 11 处漂移订正 · 五步授权链第 1 步)
+
+**主题**:per 用户口令「切 planner + builder 把这条链走完」⇒ 本 Entry = **M1 冻结面改动的授权记录**(五步链第 1 步,per `docs/guide/cep-usage.md` §12.6)+ 台账侧的残余登记。**本 Entry 不改任何排期 / 队列 / KPI / 计数**。
+
+**① 授权对象(4 个 M1 冻结产物 · 86 产物集内)**
+
+| 文件 | 改动 |
+|---|---|
+| `docs/architecture/07-coherence-exploration-platform.md` | §1.1 目录层行 / §1.4 「仓归属」+「协议实例数」/ §2.1 分层图注 / §5.2 标题 = **5 处就地订正** + **追加 1 则 Status Update**(2026-11-14 · 架构文档对齐订正)+ 索引重生成(一级节 **34 → 35** · SU **21 → 22**) |
+| `docs/architecture/cep/protocol-engine.md` | §5.1 引言 + §5.1.1 + §5.1.2 = **3 处 `>` 澄清注**(下界口径 / 族标签正交 / 判定列语义) |
+| `docs/architecture/cep/directory-ordering.md` | §5.2 标题 + 表体补第 6 行(`HierarchicalDirectory`)+ **2 条注**(枚举名 vs 实现类名 · caps 逐键一致) |
+| `docs/architecture/cep/simulation-and-experiment.md` | §7.2 兜底契约 `_not_collected_reason` → **`_not_collected`**(schema 真源) |
+
+**② 授权理由(4 项 · 全部实测)**
+
+1. **漂移属实** —— 只读核对(architect 域,2026-11-14)实测:「16 个 adapter 实例」写在「实现数 / 当前口径」位 ⇒ 可读成「已实现 16」;实况 `include/tlm/cep/protocol_instances.json` = **8 个 `status=implemented` 实例 / 8 个 adapter**,**Ruby-SLICC 族 8 实例落地 0**(零 adapter / 零实例声明 / 零 main spec / 零 change)。另 10 处为:Sharer Tracker「5 实现」vs 代码 `kTrackerTraits` 6 行(`include/tlm/cep/sharer_tracker.hh:238-260`)· `src/tlm/cep/` **死路径**(该目录不存在)· CXL×2 / NVLink **无引擎** · `_not_collected_reason` 字段名不存在于 schema。
+2. **口径本身未被推翻** —— `ADR-CEP-12:139` 已写明「16 adapter 实例」是**下界**;5 份已签批 ADR 引用该数 ⇒ **ADR 不动**,只澄清**真源 1 文档侧**的读法。
+3. **约束守住(实测)** —— 跨仓机器锚点 `docs/architecture/cep/protocol-engine.md:16` 字面量 `16 个 adapter 实例` **逐字保留且仍在第 16 行**;`test/test_cep_schema.cc` 的 **5 处字面量锁** + §5.1.1 / §5.1.2 **行数锁 8 / 8** 全保留 ⇒ **零测试改动**;`07 号` 活锚点(实测 ≤ 690)与 `path:line` 锚点(`:639` / `:696` / `:582-600`)**零位移**(SU 插在索引之前)。
+4. **审查完成** —— oracle **APPROVE**(改措辞 ⇒ 只 oracle,per 审查配对 architect 行);3 条 actionable **逐条处置**(残余登记行 / 「6 族」改「两个正交维度」措辞 / 五步链时序注)+ 1 项 cosmetic。审稿报告 = `.rddf/reviews/cep-architecture-doc-alignment-2026-11-14.md`。
+
+**③ 边界(⛔ 5 条)**
+
+- ⛔ **零代码 / 零 spec / 零 ADR 改动**;新增 invariant 数 = **0**
+- ⛔ **5 份引用「16 adapter」的已签批 ADR 不动**(`ADR-CEP-00` / `00A` / `12` / `17` / `18`)
+- ⛔ **不新增 openspec change**(planner 不代 architect 立项;本轮为措辞订正,无能力增量)
+- ⛔ **冻结面报红为预期态** —— `cep_freeze_check.sh` rc=1 与 `cep_docs_sync_check.sh --strict` rc=1 在第 3 步 `--update` 之前**属正常**
+- ⛔ **§2.2 职责表不加状态列**(加列反违反「本文不承载实施状态」纪律 + 台账 §4.0-a 状态单一真源);Core·TrafficGen 与 Fabric&Transport Plane 两层无 CEP 自有运行时载体的事实,由 07 号 SU **读法边界第 5 条**承担
+
+**④ 五步授权链(本 Entry = 第 1 步)**
+
+| 步 | 动作 | 执行者 | 状态 |
+|:--:|---|---|:--:|
+| 1 | 台账 Entry 先落(**本 Entry**) | planner | ✅ |
+| 2 | 产物 commit(4 个架构文档 + 审稿报告) | builder | ⬜ |
+| 3 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #425"` | builder | ⬜ |
+| 4 | 冻结清单**单独** commit | builder | ⬜ |
+| 5 | 无参复验(`cep_freeze_check.sh` rc=0 且 provenance 一致) | builder | ⬜ |
+
+**⑤ 残余登记(2 项 · 不在本轮范围)**
+
+| 项 | 载体 | 处置 |
+|---|---|---|
+| **活体 2 处**「Sharer Tracker **5** 实现」 | `docs/architecture/06-inter-module-network.md`(真源 1)+ `docs/research/cep-coherence-protocol-space-survey.md`(活体调研) | 登记 `backlog: cep-sharer-tracker-5-residual-2026-11-14` ⇒ **后续批处理** |
+| **冻结面 4 处**「5 实现 / 5 种」 | `docs/architecture/06-bis-coherence-as-network-extension.md`(superseded 正文)+ `ADR-CEP-00` / `ADR-CEP-16` / `ADR-CEP-17` | 按 **ADR / superseded 正文不可变**纪律 ⇒ **仅登记不追改**;各自 owner 追加 SU |
+
+> ⚠️ **零债务提示**:本轮登记的 2 项残余**均未关闭** ⇒ 不得读作「文档漂移已全部清零」。
+
+**⑥ 关联**:`.rddf/reviews/cep-architecture-doc-alignment-2026-11-14.md`(审稿报告)· `docs/architecture/07-coherence-exploration-platform.md`(SU:2026-11-14 架构文档对齐订正)· `docs/architecture/cep/{protocol-engine,directory-ordering,simulation-and-experiment}.md` · `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(M1 冻结面 86 产物)· `docs/guide/cep-usage.md` §12.6(五步链)· `ADR-CEP-12`(「16 = 下界」理由句)· `ADR-CEP-17`(Ruby 族可行性判定)· `ADR-CEP-04 §13`(R-1 裁决)
