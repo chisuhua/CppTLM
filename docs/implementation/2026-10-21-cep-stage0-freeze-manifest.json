@@ -73,7 +73,7 @@
     "openspec/specs/cep-poc-spike-verification/spec.md": "b6b2e0cdbdcbda4f70a97fc27ff929dfbfa280a5413c9b9dca45e0f21d84d795",
     "openspec/specs/cep-protocol-bridge-contracts/spec.md": "78721ebaa76f3d23f6b086371c908f6083c0937dfe1835af187fffdda6702cf8",
     "openspec/specs/cep-refkind-coverage/spec.md": "e701ff80fb8f480b79c26cbff1a261745b38df03fc1517d6af55b096209138fa",
-    "openspec/specs/cep-sharer-tracker-base/spec.md": "ee2e6ba3299207189468dcd987f5263a88f50705c97e6f95f89b61f57173dc5d",
+    "openspec/specs/cep-sharer-tracker-base/spec.md": "377ee2e7238206e5d12db8b6940bf3095917652dbad88da904fffbf1cb3bb0ee",
     "openspec/specs/cep-sparse-snoop-filter/spec.md": "21a44b7210f2f6eef33b3bdeddcb30455ecdf06ed52b3a0c3df09723e314d525",
     "openspec/specs/cep-stub-cache-chstream-surface/spec.md": "45b2797f335c6868a9c797a49ee91266f95fa20e41051cf8a9f99455a47bcee9",
     "openspec/specs/cep-stub-cache-core/spec.md": "d50c82396ae9d5c00052950ab3dfaa9f0e4959a52c208bddba353068f33da5bb",
@@ -88,10 +88,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #421",
+  "authorized_by": "Entry #424",
   "exclusions": [],
   "frozen_at": "2026-11-14",
-  "frozen_at_commit": "778b2262dd7c44c98f66b796f4f40aa74608f7e1",
+  "frozen_at_commit": "611e30f79415c552463a6e3c8ac6245b39b606b2",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",

@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**（`cep-responder-bitmap-expansion` 于 2026-11-14 **立项**,per 台账 Entry #423）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cep-responder-bitmap-expansion` 立项,per Entry #423）。
+`openspec/changes/` 当前 **0 个 active**（`cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -23333,13 +23333,13 @@ W3 注释又要写错(该参数上限是它自己)⇒ 重写 · W4 四项内容�
 | 项 | 值 |
 |---|---|
 | change 名 | `cep-responder-bitmap-expansion` |
-| 目录 | `openspec/changes/cep-responder-bitmap-expansion/` |
+| 目录 | `openspec/changes/archive/2026-11-14-cep-responder-bitmap-expansion/` |
 | 已落 | `proposal.md`(planner 域) |
 | 待 builder | `design.md` + `tasks.md` + 实施 |
 | KPI | **0/3 → 1/3** |
 | 范围 | **仅阶段 1**(6 项 · 3 文件)⇒ ⛔ 不含阶段 2(扩容) |
 
-**⑤ 关联**:**#422**(档 2 普查)· **#421**(ADR-CEP-21 落盘)· **#420** / **#419** · `.rddf/improvements/cep-responder-bitmap-expansion.md`(v2)· `openspec/changes/cep-responder-bitmap-expansion/proposal.md` · `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md`
+**⑤ 关联**:**#422**(档 2 普查)· **#421**(ADR-CEP-21 落盘)· **#420** / **#419** · `.rddf/improvements/cep-responder-bitmap-expansion.md`(v2)· `openspec/changes/archive/2026-11-14-cep-responder-bitmap-expansion/proposal.md` · `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md`
 
 ### Entry #424 — 2026-11-14 [verifier](**`cep-responder-bitmap-expansion` 实施完成 + 验收通过(8/8)** + **归档授权(五步链拍 0)**)
 
@@ -23392,4 +23392,4 @@ AC-1(三处硬编码全消)· AC-2(注释四项)· AC-3(编译 rc=0 零 warning)
 
 **L-1** V1-7(观测面可定位触发节点)**未做** ⇒ 待 **architect** 裁定(ADR 允许「判定不补则 2a 降级」)· **L-2** W5 今日**无增量判别力** ⇒ 价值只在 `kResponderMappedBits > 4` 时兑现。
 
-**⑦ 关联**:**#423**(立项 + metis 12 条处置)· **#422** / **#421** · `.rddf/reviews/cep-responder-bitmap-expansion-verify.md`(本报告)· `openspec/changes/cep-responder-bitmap-expansion/`(四件套)· `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md`
+**⑦ 关联**:**#423**(立项 + metis 12 条处置)· **#422** / **#421** · `.rddf/reviews/cep-responder-bitmap-expansion-verify.md`(本报告)· `openspec/changes/archive/2026-11-14-cep-responder-bitmap-expansion/`(四件套)· `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md`
