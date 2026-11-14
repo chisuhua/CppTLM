@@ -4,7 +4,7 @@
 
 ## WHAT THIS IS
 
-TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**（由 PCIe Endpoint IP + GPGPU Cluster + Memory Cluster + NoC Interconnect + 多层 SimModule 容器等 IP 构成）。2026-2027 年完成 **7 阶段 PCIe EP 微架构**全链路交付（链路层 → 编码 → PHY 数字控制 → SR-IOV → AXI Stream Adapter → AXI4Mapper → Host Bypass + RC → 整合），**Phase 1-7 全部通过 Oracle 评审放行；Phase 8 整合交付完成**。2026-10 起承载 **CEP 平台**（Coherence Exploration Platform —— 跨协议一致性探索平台：22 份 ADR + 43 份 main spec + 42 个契约闸（闸数**以 `ls scripts/test/cep_*.sh` 为准**;2026-11-14 实测）），同时继承既有 GPGPU 端（GPU CU / TPC / GPC / GPU Cluster 多层 + DMA/Doorbell/CommandProcessor/CompletionRing MVP）与顶层 ApuSoC 容器。
+TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**（由 PCIe Endpoint IP + GPGPU Cluster + Memory Cluster + NoC Interconnect + 多层 SimModule 容器等 IP 构成）。2026-2027 年完成 **7 阶段 PCIe EP 微架构**全链路交付（链路层 → 编码 → PHY 数字控制 → SR-IOV → AXI Stream Adapter → AXI4Mapper → Host Bypass + RC → 整合），**Phase 1-7 全部通过 Oracle 评审放行；Phase 8 整合交付完成**。2026-10 起承载 **CEP 平台**（Coherence Exploration Platform —— 跨协议一致性探索平台：23 份 ADR（= 24 个 `ADR-CEP-*` 文件 − `NUMBER-MAP`）+ 43 份 main spec + 42 个契约闸（闸数**以 `ls scripts/test/cep_*.sh` 为准**;2026-11-14 实测）），同时继承既有 GPGPU 端（GPU CU / TPC / GPC / GPU Cluster 多层 + DMA/Doorbell/CommandProcessor/CompletionRing MVP）与顶层 ApuSoC 容器。
 
 **First read** for new agents: `docs/ONBOARDING.md` (knowledge-graph-generated ramp-up)。
 Architecture 必读:
@@ -229,7 +229,7 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 | **CEP 治理宪章 + 真源锚点** | `docs/adr/ADR-CEP-00-platform-charter-and-governance.md`（跨仓归口 + 准入门槛）+ `docs/adr/ADR-CEP-00A-real-source-anchor-map.md`（**引用任何 CEP 章节前必查该表**，禁凭记忆写节号） |
 | **CEP 实现层** | `include/tlm/cep/`（43 个 header-only 文件：protocol engine / adapter / state spec / JSON schema） |
 | **CEP 契约守门脚本** | `scripts/test/cep_*.sh`（shell 闸，数量以 `ls scripts/test/cep_*.sh` 为准：冻结面校验 / 实验运行器 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture；另有 17 个 `cep_*_probe.cc` 编译探针） |
-| **CEP 契约一致性** | `scripts/test/cep_docs_sync_check.sh`（22 份 ADR 的不变量 ↔ owner ADR 实际定义条数一致）+ `scripts/test/cep_doc_ref_check.sh`（对外文档引用节号校验） |
+| **CEP 契约一致性** | `scripts/test/cep_docs_sync_check.sh`（23 份 ADR 的不变量 ↔ owner ADR 实际定义条数一致）+ `scripts/test/cep_doc_ref_check.sh`（对外文档引用节号校验） |
 | **CEP 实验 4 件套** | `scripts/test/cep_experiment_run.sh`（H2/H3/H4/H6 产出与契约校验）+ `scripts/test/cep_freeze_check.sh`（产物冻结先于解读） |
 | **CEP 真实 IP 对齐** | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`（ArchForge 接口对齐清单，§6 C-4 / §7 漂移检测） |
 | **CEP 开放规格** | `openspec/specs/cep-*/`（43 份 main spec）+ `openspec/changes/archive/`（143 份已归档 change）—— 2026-11-14 实测 |
@@ -484,7 +484,9 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
       4. **不得**在暂存状态下把该能力写进任何 Stage 的 DoD / 验收条款
     - **与旧约定的关系**: `docs/archive/architecture/05-packet-semantic-network-archived-2026-10.md` §0.2bis 曾写"未实施 ⇒ 没有可以 archive 的对象"—— 该表述**仅对"✅ 已完成归档"语义成立**;⏸ 暂存归档是**第三种语义**,不与其冲突,但**必须**遵守上述 4 项硬约束
     - **先例**: 部分归档 change 未合并 spec(deprecated / doc-only / 被取代类) —— 见 `openspec/changes/archive/*/specs/` 与 `openspec/specs/` 的差集
-  - **实测基线** (2026-11-14, per `openspec list --json`): **0 个 active** → **0/3**（档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #367;`cpptlm-cep-bridge-reattach-guard`(R-3 装配路径关口)已归档,per 台账 Entry #320）；已归档 change **143** 份（含 `cpptlm-cep-bridge-reattach-guard`(✅ 已完成归档语义 · **带 delta**,per 台账 Entry #320)、`cpptlm-cep-bidirectional-multiport-inbound`(✅ 已完成归档语义 · 零 delta,per 台账 Entry #318)与 `cpptlm-cep-stub-cache-chstream-surface`,per 台账 Entry #305)（含 T3 映射锚点普查 `cpptlm-cep-tilelink-t3-mapping-survey`,per 台账 Entry #241 + TileLink-C 运行时引擎 `cpptlm-cep-tilelink-runtime-engine`,per 台账 Entry #247 —— 均 2026-11-06 归档,✅ 已完成归档语义）
+  - **实测基线** (2026-11-14, per `openspec list --json`): **0 个 active** → **0/3**（最近一次释放 = 档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档**,per 台账 Entry #412）
+  - **历史 slot 释放流水**（每条 = 一个 change 归档释放 1 slot）: C8 `cep-evidence-tier-declaration`(2026-11-13 · #405) · C7 `cpptlm-cep-full-green-run-evidence`(2026-11-13 · #398) · C6 `cpptlm-cep-b3b2-archive-form`(2026-11-13 · #386) · C5 `cpptlm-cep-iag-gate-execution-arm`(2026-11-12 · #381) · C4 `cpptlm-cep-dod-reading-consistency`(2026-11-12 · #375) · C3 `cpptlm-cep-invariant-gate-teeth`(2026-11-12 · #367) · R-3 `cpptlm-cep-bridge-reattach-guard`(#320)
+  - **已归档 change 计数 = 143**（`ls -d openspec/changes/archive/*/ | wc -l` 实测;口径与集合细节见台账 §10 与 Entry #320 / #318 / #305 / #241 / #247）
   - **历史快照**: 2026-10-20 前 3 个 active 全部 ⏸ 暂存归档 ⇒ 0/3; 更早的 e1 v1.1 / flr-rebar v1.1 已于 2026-10-09 归档（详见 `openspec/changes/archive/2026-10-09-*`）
   - **检测命令**: `ls openspec/changes/ | grep -v archive | wc -l` (排除 archive 目录)
 
@@ -612,7 +614,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | 项 | 内容 |
 |----|------|
 | **治理** | `ADR-CEP-00`（跨仓归口 + 准入门槛）+ `ADR-CEP-00A`（真源章节锚点表） |
-| **ADR** | 22 份 `ADR-CEP-*`（fabric / coherence / protocol / experiment / ownership 各域） |
+| **ADR** | 23 份 `ADR-CEP-*`（fabric / coherence / protocol / experiment / ownership 各域;⚠️ 文件数 24 = 23 + `NUMBER-MAP`） |
 | **实现** | `include/tlm/cep/` 43 个 header-only 文件 + `test/test_cep_*.cc` |
 | **OpenSpec** | 43 份 `cep-*` main spec；**0 active** change；143 份已归档 change（2026-11-14 实测） |
 | **守门** | `scripts/test/cep_*.sh` 契约闸（数量以 `ls scripts/test/cep_*.sh` 为准）+ 17 个 `.cc` 编译探针（冻结面 / 实验 4 件套 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture） |

@@ -126,6 +126,7 @@ NO_INV = {
     "ADR-CEP-18-protocol-generation-scope.md",           # 路线范围(纯 trade-off)
     "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md",    # 载体形态(纯交付机制;**新增 invariant 数 = 0**,per 决策 2/8)
     "ADR-CEP-20-topology-ic3-evidence-strength.md",      # 证据档位与强度边界(纯读法约束;**新增 invariant 数 = 0**,per 决策 1~6)
+    "ADR-CEP-21-sharer-bitmap-expansion.md",             # 位宽扩容机制与触发判据(**新增 invariant 数 = 0**,per 决策「两阶段」+ X-3)
 }
 
 CAND = r"(?:CEN-Ib\d+|INV-SC\d+|INV-CEP-(?:\d+[A-Z]?|07A|NUM)-IC\d+)"

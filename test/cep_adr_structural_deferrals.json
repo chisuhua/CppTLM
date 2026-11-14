@@ -28,7 +28,8 @@
     "ADR-CEP-17-ruby-slicc-protocol-family.md",
     "ADR-CEP-18-protocol-generation-scope.md",
     "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md",
-    "ADR-CEP-20-topology-ic3-evidence-strength.md"
+    "ADR-CEP-20-topology-ic3-evidence-strength.md",
+    "ADR-CEP-21-sharer-bitmap-expansion.md"
   ],
   "excluded": [
     {

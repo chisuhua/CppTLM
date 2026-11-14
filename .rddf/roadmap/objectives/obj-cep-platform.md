@@ -1369,7 +1369,7 @@ W1(独立)     B2(并行)     B1(A9 后,分批)
 | **DoD 12 条** | **11/12 达成**(14 change 全 archived · 66 invariant = 61 + 5 · 8 假设全有结论 · Kill 未触发);**唯一未达成 = `B3b-2` = `0/4` ⏭**(4 个受限族:规约真源仓外 / 受限 ⇒ 本仓不可推进,per 台账 Entry #264 口径 ② + #332 ⑨ 终局 Ⅱ) |
 | **Stage Go 节点** | Stage 0 ~ Stage 3 **全部 ✅**;**终态 DoD Go = ⏳ 挂起**(唯一未达成 = `B3b-2` = **0/4 ⏭**) |
 | **测试基线** | `ctest` **177/177** · `scripts/test/cep_*.sh` **42** 个闸全绿 · `docs_sync --strict` / `agents_md_lint` / `format --check` / `markdown_link_check` 全绿 · `openspec list` ⇒ **0 active** |
-| **ADR 签发** | **20 份决策 ADR**(结构闸分母,per `test/cep_adr_structural_deferrals.json` 的 `decision_adrs`;`ls docs/adr/ADR-CEP-*.md` = **23** 个文件 = 20 决策 + 3 excluded:宪章 / 锚点表 / 编号表)⇒ **18 已签发 + 2 永久豁免**(18 = 20 − `waivers` 2,⚠️ **推导值**);`pending_signing` = **0**;id 归因债 = **19 笔分类登记**(per `invariant_attribution_dispositions`;⛔ 旧的「11 笔」计数已随 C3′(Entry #326)改名改语义而失效) |
+| **ADR 签发** | **21 份决策 ADR**（结构闸分母,per `test/cep_adr_structural_deferrals.json` 的 `decision_adrs`;`ls docs/adr/ADR-CEP-*.md` = **24** 个文件 = 21 决策 + 3 excluded：宪章 / 锚点表 / 编号表）⇒ **18 已签发 + 2 永久豁免 + 1 Proposed**（`ADR-CEP-21` · 2026-11-14 双审通过转 Proposed;⚠️ 「已签发」为推导值）;`pending_signing` = **0**;id 归因债 = **19 笔分类登记**（per `invariant_attribution_dispositions`;⛔ 旧的「11 笔」计数已随 C3′(Entry #326)改名改语义而失效） |
 | **KPI** | **0/3** |
 | **未 push** | **27 commit**(本地领先 `origin/main`;⚠️ **易变数字** —— 以 `git rev-list --count origin/main..HEAD` 实测为准;本轮 W7 push 后归 0) |
 | ⚠️ **排期 vs 实测** | `§4.6` 写「串行 **14 季度** / 2030-Q1 终态」;实测 14 个 change 从 **2026-10-23 到 2026-11-04(13 天)**全部归档 ⇒ **提前约 13 个季度** ⇒ 季度表述已成**历史叙事**,非现行口径 |
@@ -23221,3 +23221,49 @@ T6 只守**档 2 的「新增产出物」** ⇒ **档 0 / 档 1 的产出物不�
 | **P-2** | ratify 硬成本 = 手册 A3 锚行 1 处 ⇒ **须另立 change**(占 KPI slot) | **成本实测降为 0** | S2 = 整行相等 + S6 扫描面 = `l == A3` 的行 ⇒ 在锚行**之后**加 dated 续行既不破 S2 也不进 S6;且无「四条禁写」计数闸 ⇒ ⛔ 无需另立 change ⇒ **优于签字时披露的成本上限**(⛔ 未突破用户知情范围) |
 
 **⑤ 关联**:**#419**(ratify + 落盘)· **#418**(裁决草案 + 双审)· `§14.8` · `§14.2` · `07 号` `Status Update 2026-11-14(二)` · `.rddf/reviews/cep-objective-archive-verify-2026-11-14.md`(本报告)· `scripts/test/cep_b3b2_archive_form_check.sh`(V7 / M3 / M4)
+
+### Entry #421 — 2026-11-14 [planner](**ADR-CEP-21 落盘** —— Sharer 位宽的扩容机制与触发判据 · **oracle BLOCK→12 条全采纳** + **critic APPROVE_WITH_CONDITIONS(0 BLOCKER)** ⇒ 转 **Proposed** · **五步链授权**)
+
+**主题**:per 用户指令「4-bit 扩容 ADR」⇒ architect 起草 `ADR-CEP-21-sharer-bitmap-expansion.md` → oracle 第 1 审（**BLOCK · 12 条**）→ 全部采纳落 v2 → critic 第 2 审（**APPROVE_WITH_CONDITIONS · 0 BLOCKER**）→ 4 SHOULD_FIX + 2 NIT 全部采纳 → **Draft → Proposed**。本 Entry = 五步授权链的**拍 0**（授权号 = 本 Entry）+ 落盘回执。
+
+**① 决策摘要**
+
+> **两阶段**:**阶段 1（本 ADR 成立即生效）机制化** —— 三处硬编码全消 + 新增满射判据 + 成文扩容流程 + 定义触发判据;**阶段 2（触发式）扩容到宽度 `W`（默认 8，实测 > 8 则按同一流程上调，依据入台账）**。
+
+⛔ **不编造 node id**（⛔ 不填无权威来源的 node）· ⛔ **不预占死位** · ⛔ **不改** `responder_set_t` 宽度（64 bit）· ⛔ **不改** `SharerTrackerIf` 虚方法数（5）· ⛔ **不改** `ADR-CEP-04`（已签发不可变）· **新增 invariant 数 = 0** · **代码 / 测试零改动**（阶段 1 的实际落地留给后续 change）。
+
+**② ⚠️ 双审抓到的 4 处实质缺陷（全部已修，如实登记）**
+
+| # | 审查者 | 缺陷 | 修法 |
+|:--:|---|---|---|
+| **D-1** | oracle | S2-3 假称「双向一致性判据按 `kResponderMappedBits` 循环 ⇒ 自动覆盖新 bit」⇒ **实测 `test_cep_sharer_tracker_base.cc:214-219` 是显式 initializer list** ⇒ 阶段 2 后 bits 4~7 **零覆盖** | 删假声明 + **新增 S1-4 满射判据**（随宽度自动覆盖）+ V2 判据编号同步 |
+| **D-2** | oracle | 选项 B 的否决理由① 错：`kResponderMappedBits=8` 下 `responder_bit_of(kInvalidNode)` 在 **bit 4 命中** ⇒ 返回 **4 而非 `kNoBit`** ⇒ **sentinel 语义被破坏**（比「等价于没扩」更严重） | 理由改写为「sentinel 破坏 + 永久 STALL」双理由（两理由均经复核成立） |
+| **D-3** | oracle + critic | 依赖清单**漏 2 处**（oracle：`cep_directory_experiment.hh:47` 的 `broadcast_fanout = 4` + 注释「上限 4」、`:165-166` 的 `if (n > 4) n = 4;`）+ **漏第 7 处契约面**（critic：`openspec/specs/cep-sharer-tracker-base/spec.md:140` 的 Requirement 正文写「未映射位(**bits 4..63**)」⇒ 阶段 2 后**直接失效**，须随 change 走 spec delta） | 清单由 **4 处 → 7 处**;S1-1 扩为**三处**;V1-3 的 grep 扩为**三种形态** |
+| **D-4** | critic | 触发判据 2a 残留**自我修正草稿**（带问号的残句 + 「更准确地」）;且未限定触发源（`mark_observation_invalid()` 有 **4 个源**） | 删残句 + **限定触发源**为「由 `responder_mask_of(node)==0` 这一分支触发」 |
+
+**③ 连带改动面（本 Entry 同批）**
+
+| 面 | 变更 |
+|---|---|
+| `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md` | **新增**（192 行 · Proposed） |
+| `docs/adr/ADR-CEP-NUMBER-MAP.md` | **补登 CEP-20**（⚠️ **既有债**:CEP-20 签发时漏登）+ **登记 CEP-21**;第 5 列按 `Entry #321/#322` 口径 = **ADR 文件存在性** |
+| `test/cep_adr_structural_deferrals.json` | `decision_adrs` **20 → 21** |
+| `scripts/test/cep_docs_sync_check.sh` | `NO_INV` 加 `ADR-CEP-21`（**新增 invariant 数 = 0** ⇒ 不进 `OWNERS`） |
+| `AGENTS.md` | ADR 计数 **3 处**:22 → **23**（= 24 文件 − `NUMBER-MAP`） |
+| 台账 §10「ADR 签发」行 | **行内替换**（零位移）:20 → **21 份决策 ADR** · 文件 23 → **24** · 「18 + 2」→「**18 + 2 + 1 Proposed**」 |
+
+**④ ⛔ 边界**
+
+⛔ **`B3b-2` 计数未动(0/4 ⏭)** · ⛔ **未新建 change**（关联 = `backlog: cep-responder-bitmap-expansion` 占位）· ⛔ **代码 / 测试零改动** · ⛔ **未改任何已签批 ADR**（`ADR-CEP-04` 零 diff）· ⛔ **未宣称阶段 2 已执行**（`kResponderMappedBits` 仍 = 4）· ⛔ **未把「仓内无 >4 sharer 实测需求」写成有需求**（如实登记）。
+
+**⑤ 五步授权链（拍 0 = 本 Entry）**
+
+| 步 | 动作 | 状态 |
+|:--:|---|:--:|
+| 1 | 台账 Entry 先落（本 Entry） | ✅ |
+| 2 | 产物 commit（ADR + NUMBER-MAP + 结构与白名单登记） | ⬜ |
+| 3 | `cep_freeze_check.sh --update --authorized-by "Entry #421"` | ⬜ |
+| 4 | 清单**单独** commit | ⬜ |
+| 5 | 无参复验（provenance rc=0） | ⬜ |
+
+**⑥ 关联**:**#420**（objective 归档验收）· **#419**（ratify + 归档落盘）· `.rddf/reviews/cep-adr-021-oracle-review.md`（第 1 审 · BLOCK 12 条全采纳）· `.rddf/reviews/cep-adr-021-critic-review.md`（第 2 审 · 4 SHOULD + 2 NIT 全采纳）· `ADR-CEP-04`（不可变 · 不受影响）· `ADR-CEP-12`（其 `INV-CEP-12-IC1` 的 13 键 schema 是**触发判据 1 的前置**——⚠️ 该 schema 无节点数声明位 ⇒ 判据 1 当前结构上不成立，已由 2a/2b/2c 替代）
