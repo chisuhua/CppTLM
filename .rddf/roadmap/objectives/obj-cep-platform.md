@@ -22874,3 +22874,38 @@ KPI 活口径 **1/3 → 0/3**(`AGENTS.md` + 台账 §5.2 + `phase-10.md` + 2 份
 `openspec validate --archived` 的**全库**统计 = **70 passed / 73 failed**(143 items)⇒ 其中 **73 项失败全部为历史归档件**的 tasks 未全勾(⛔ 含非 CEP change)⇒ **本 change 已转绿**(`✓ change/2026-11-14-cep-evidence-tier2-minimal-slice`)⇒ 该 73 项属**跨 change 的工具级历史遗留**,**不在本 change 范围** ⇒ 按「存量不追溯」**只登记、不改** ⇒ 若要清理,需单独立项(⛔ 不可在本 change 内顺手做)。
 
 **③ 关联**:**#412**(归档回执 + 第三次 `--update` 授权)· **#411**(五步链授权)· **#410**(A0~A3 实施回执)· `openspec/specs/cep-evidence-tier2-observation/spec.md` · `docs/architecture/07-coherence-exploration-platform.md`(`Status Update 2026-11-14` §① · 阶梯表档 2 行 `:696`)
+
+### Entry #414 — 2026-11-14 [planner](**下一步任务内容规划** —— 档 2 验收闭环 improvement 落盘 + **metis 第 1 轮 13 条处置** + 对原路径图的 **3 处修正** + **授权 builder 实施**)
+
+**主题**:per 用户口令「切 planner 给出下一步任务内容规划,在通过 metis 审查通过后再实施」⇒ 本 Entry = 规划产出 + 审查处置 + 实施授权。**审查者 metis 1 轮**(6 节 gap 分析)⇒ **13 条建议逐条处置**(9 条采纳 + 4 条改写采纳 + 4 条**不采纳**(如实登记,附理由))。
+
+**① 规划产出**
+
+`.rddf/improvements/cep-tier2-verification-closure.md`(v2 · 5 段 · Why / What Changes / Acceptance / Capabilities / Impact + 待裁 3 项 + metis 处置段)—— 范围 = **W1 ~ W7**:G-1 provenance 用例 · G-3 溢出路径用例 · G-2 行为级负控 · G-4 段级扫描面 + 变异 g · verifier 第 2 轮 · 台账 §10 订正 · push。估时 **1.0 ~ 1.5 人日**。
+
+**② ⚠️ 对上一轮路径图的 3 处修正(planner 实测复核后的改判)**
+
+| # | 原路径图的说法 | 实测依据 | 修正 |
+|:--:|---|---|---|
+| **C-1** | 「**B3b-2 裁决**(architect,口径 ④)」 | 口径 ④ **已于 `Entry #332`(2026-11-10)裁决**(oracle PASS-WITH-NOTES + critic REJECT)⇒ **critic 2 条 BLOCKER 已于 `Entry #332 ⑯` 闭合**;**未决的只是 MUST-FIX-3(归档语义)/ MUST-FIX-4(回滚路径)/ 用户 ratify**;且 `Entry #334 ①` 明写「⛔ **不引用** Entry #332 的『口径 ④』作为依据(该口径**未 ratify**)」;`Entry #332 ⑨` 定义**三个终局分支**(Ⅰ 需 N ≥ 1 ⇒ 不可达 / Ⅱ 维持挂起 ⇒ 需 ≥4 次季度复审才到 Ⅳ 暂存归档 / Ⅲ 用户改判)⇒ 当前 = **终局 Ⅱ** | ⇒ **不是「再裁决一次」**,而是**用户门**(ratify / 改判 / 维持)+ architect 域补 MUST-FIX-3/4 ⇒ **规划域无权推进** ⇒ 本轮**明确排除** |
+| **C-2** | 「G-4 把 FORBIDDEN 扫描面扩到 3 个文档产出物」 | planner 实测:按**整文件**扫 ⇒ **7 处假红**(基线**不绿**)⇒ 原形态**不可执行** ⇒ 根因 = `FORBIDDEN` 是**档位相关**词表(「通过态」在**档 0** 合法、在档 2 非法)却扫**不分档位**范围 | ⇒ 改为**段级「新增产出物」扫描面**(登记面整份 + `07号` 档 2 SU 段 + 手册 §12.10 段 + main spec 整份)—— 依据是 **AC-9 原文「新增产出物内 grep」的字面读法**(文件级反而**超出**契约);配套 `NEG_MARKERS` 补 `NOT`(RFC 2119 否定)· **不改** `has_negation_context` 方向 · 新 env `CEP_RECONCILE_DOCS_ROOT` · 指纹集纳 3 份文档 · 递归重入透传 · 变异 g + 注释/计数同步 |
+| **C-3** | 「补 4 项缺口」= 全部待做 | 实测 `git status`:2 文件**已改未提交且无台账 Entry**(`protocol_engine_base.hh` +14 / `test_cep_tier2_observation.cc` +24)⇒ **机件已在,用例未写** ⇒ 即「死判据」状态 | ⇒ 新增 **A-11 死判据免税**(4 条硬判据:新增形参非默认值调用点 · `provenance_broken` 恒 false 变异必红 · `set_observation_capacity` 非 4096 调用点 · WIP 无用例则**回滚**)⇒ 这批 WIP **必须**在本轮被用例触发 |
+
+**③ 关键边界(本轮不变)**
+
+⛔ **不新建 OpenSpec change**(4 项全是 `implementation_gap` · 判据已在归档契约里 · 只碰实现与闸脚本**不碰契约面**)—— ⚠️ 已针对 `AGENTS.md` ANTI-PATTERNS「公共 API ⇒ 必须走 openspec」给出**正面 rebuttal**(`set_observation_capacity` 判为「测试注入 seam,非契约面」,依据 = main spec 未定义可注入性)· 须**双重登记**(台账 + code comment)· verifier 若判为契约面 ⇒ **升级为 change**。
+⛔ **不占 KPI slot**(0/3 保持)· ⛔ **新增 invariant 数 = 0** · ⛔ **不改任何已签批 ADR** · ⛔ **不改 main spec 的 Requirement / Scenario** · ⛔ **不改 B3b-2 计数(0/4)** · ⛔ **不放宽 `FORBIDDEN` 词表**(闸现写「强于档 1」比 AC-9 原文「档 2 强于档 1」**更严** ⇒ 只登记措辞差异,**不放宽**)。
+
+**④ 实施授权**
+
+授权 **builder** 实施 W1 ~ W7(实施 commit + 台账订正 commit + push,三个提交面分开 ⇒ 回滚粒度 = 单 commit `git revert`)。
+
+**⑤ ⚠️ 待裁 3 项(不阻塞本轮实施)**
+
+| # | 待裁 | 裁者 | 时点 |
+|:--:|---|---|---|
+| **D-1** | G-2 的「行为级负控」是否可接受(AC-2 原文要「按签名红」) | verifier | **W5 判定时** ⇒ A-3 锁死「只能判 ⚠️,⛔ 不得 ✅」;升级路径 = 观测事实导出 JSON + 新 shell 闸 + 影子树变异(≈ 0.5~1 人日·**触发五步链**)⇒ 届时**须回 planner 重排** |
+| **D-2** | 是否本轮顺带做 4-bit 扩容 | architect(需新 ADR) | 本轮**明确排除** |
+| **D-3** | B3b-2 / objective 归档的用户门 | **用户** | 本轮**不推进**,只登记(见 ② C-1) |
+
+**⑥ 关联**:**#413**(指针链 + 既有债登记)· **#412**(归档回执 + 第三次 `--update` 授权)· **#411** / **#410** · **#332**(口径 ④ 裁决 · ⑯ BLOCKER 闭合记录)· **#334**(⛔ 不引用未 ratify 口径)· **#355 ⑧**(「以本段为准」先例)· `.rddf/improvements/cep-tier2-verification-closure.md` · `.rddf/reviews/cep-evidence-tier2-minimal-slice-verify.md` · `ADR-CEP-20` 决策 5 / 6
