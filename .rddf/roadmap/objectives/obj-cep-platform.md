@@ -1366,12 +1366,12 @@ W1(独立)     B2(并行)     B1(A9 后,分批)
 
 | 项 | 实测 |
 |---|---|
-| **DoD 12 条** | **实质全达成**(14 change 全 archived · 66 invariant = 61 + 5 · 8 假设全有结论 · Kill 未触发) |
+| **DoD 12 条** | **11/12 达成**(14 change 全 archived · 66 invariant = 61 + 5 · 8 假设全有结论 · Kill 未触发);**唯一未达成 = `B3b-2` = `0/4` ⏭**(4 个受限族:规约真源仓外 / 受限 ⇒ 本仓不可推进,per 台账 Entry #264 口径 ② + #332 ⑨ 终局 Ⅱ) |
 | **Stage Go 节点** | Stage 0 ~ Stage 3 **全部 ✅**;**终态 DoD Go = ⏳ 挂起**(唯一未达成 = `B3b-2` = **0/4 ⏭**) |
-| **测试基线** | `ctest` **167/167** · `./test.sh --mode off` **21/21** · 4 个治理闸全绿 · `openspec list` ⇒ **0 active** |
-| **ADR 签发** | 19 份决策 ADR ⇒ **17 已签发 + 2 永久豁免**(11/19);`pending_signing` = **0**;id 债务 **11 笔**(机检) |
+| **测试基线** | `ctest` **177/177** · `scripts/test/cep_*.sh` **42** 个闸全绿 · `docs_sync --strict` / `agents_md_lint` / `format --check` / `markdown_link_check` 全绿 · `openspec list` ⇒ **0 active** |
+| **ADR 签发** | **20 份决策 ADR**(结构闸分母,per `test/cep_adr_structural_deferrals.json` 的 `decision_adrs`;`ls docs/adr/ADR-CEP-*.md` = **23** 个文件 = 20 决策 + 3 excluded:宪章 / 锚点表 / 编号表)⇒ **18 已签发 + 2 永久豁免**(18 = 20 − `waivers` 2,⚠️ **推导值**);`pending_signing` = **0**;id 归因债 = **19 笔分类登记**(per `invariant_attribution_dispositions`;⛔ 旧的「11 笔」计数已随 C3′(Entry #326)改名改语义而失效) |
 | **KPI** | **0/3** |
-| **未 push** | **17 commit**(本地领先 `origin/main`) |
+| **未 push** | **27 commit**(本地领先 `origin/main`;⚠️ **易变数字** —— 以 `git rev-list --count origin/main..HEAD` 实测为准;本轮 W7 push 后归 0) |
 | ⚠️ **排期 vs 实测** | `§4.6` 写「串行 **14 季度** / 2030-Q1 终态」;实测 14 个 change 从 **2026-10-23 到 2026-11-04(13 天)**全部归档 ⇒ **提前约 13 个季度** ⇒ 季度表述已成**历史叙事**,非现行口径 |
 
 #### ③ 剩余任务全量盘点(6 类 · 每项带退出条件)
@@ -22909,3 +22909,75 @@ KPI 活口径 **1/3 → 0/3**(`AGENTS.md` + 台账 §5.2 + `phase-10.md` + 2 份
 | **D-3** | B3b-2 / objective 归档的用户门 | **用户** | 本轮**不推进**,只登记(见 ② C-1) |
 
 **⑥ 关联**:**#413**(指针链 + 既有债登记)· **#412**(归档回执 + 第三次 `--update` 授权)· **#411** / **#410** · **#332**(口径 ④ 裁决 · ⑯ BLOCKER 闭合记录)· **#334**(⛔ 不引用未 ratify 口径)· **#355 ⑧**(「以本段为准」先例)· `.rddf/improvements/cep-tier2-verification-closure.md` · `.rddf/reviews/cep-evidence-tier2-minimal-slice-verify.md` · `ADR-CEP-20` 决策 5 / 6
+
+### §10 · 现状订正(2026-11-14 · 实测 · per 台账 Entry #414 W6)
+
+> **性质**:§10 的**追加段**(append-only)· 落点 = **台账段尾**(per Entry #333 ③ 的既有裁定:台账顶部 / 中部插入会位移 15 处自指行号锚点 ⇒ 追加只落在段尾)⇒ **零行号位移**。
+> ⚠️ **两处「改」的区别**:上方 §10 的**现状表本体**(4 行)已按台账纪律「**§10 可就地同步**」(per `obj:1499` 纪律归属表)做**行内替换** ⇒ **不增删行** ⇒ 零位移;而 §10 的**历史追加段**(2026-10 段 / 2026-11-12 段)⛔ **一字未改**,其快照值由**本段声明取代**。
+
+**① 取代声明**
+
+⛔ 上方 §10 的 **2026-10 段**与 **2026-11-12 段**内的现状快照(`ctest` 167 / 169 · 归档 136 · 冻结 78 · 未推送 0 / 17 · ADR 19 份等)**均已被本段取代** —— 与 `Entry #355 ⑧` 第 5 项「未推送 20 已过时,以本段为准」**同形先例**。⛔ 本段**不回改**那些段落(append-only 纪律)。
+
+**② 本轮实测(2026-11-14 · 真源命令见括号)**
+
+| 项 | 实测值 | 真源命令 |
+|---|---|---|
+| `ctest` | **177/177** 全绿 | `ctest --test-dir build -N \| grep -c 'Test *#'` |
+| 契约闸 | `scripts/test/cep_*.sh` **42** 个 · 全 rc=0 | `ls scripts/test/cep_*.sh \| wc -l` |
+| 其它闸 | `docs_sync --strict` / `agents_md_lint` / `format --check` / `markdown_link_check` 全 rc=0 | — |
+| 决策 ADR | **20 份**(结构闸分母)· 文件 **23** 个 = 20 + 3 excluded | `test/cep_adr_structural_deferrals.json` 的 `decision_adrs` / `excluded` |
+| ADR 处置 | **18 已签发 + 2 永久豁免**(`waivers` = `ADR-CEP-11` / `ADR-CEP-19`)· `pending_signing` = **0** | 同上 |
+| id 归因债 | **19 笔分类登记**(`invariant_attribution_dispositions`) | 同上 |
+| 归档 change | **143** · cep-* main spec **43** · main spec 总数 **129** | `ls -d openspec/changes/archive/*/ \| wc -l` |
+| 冻结产物 | **85** | `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` |
+| KPI | **0/3** | `openspec list --json` |
+| 未推送 | **27 commit**(⚠️ 易变 —— 以 `git rev-list --count origin/main..HEAD` 为准) | 同左 |
+
+**③ DoD 12 条的准确读法(⛔ 关键订正)**
+
+**11/12 达成**;**唯一未达成 = `B3b-2` = `0/4` ⏭** —— 4 个受限族(CXL 2.0 非对称「显式冻结」/ CXL 3.0 DCOH / NVLink(NDA)/ UALink)的规约真源**在仓外或受限** ⇒ 本仓**不可推进** ⇒ 终态 DoD Go **挂起**(per Entry #264 口径 ② + Entry #332 ⑨ 终局 Ⅱ)。
+⚠️ **本仓推不动的 ≠ 可被改写成「已达成」** —— `07 号` SU 2026-11-13 ① 的禁令:禁「不带 N/M 分解与逐族锚点的 ✅」,**N = 0 时一律 ⏭,永不 ✅**。
+
+**④ 排期 vs 实测(不变)**
+
+`§4.6` 写「串行 **14 季度** / 2030-Q1 终态」;实测 14 个 change 从 **2026-10-23 到 2026-11-04(13 天)**全部归档 ⇒ **提前约 13 个季度** ⇒ 季度表述已成**历史叙事,非现行口径**。
+
+### Entry #415 — 2026-11-14 [builder](**档 2 验收闭环 W1 ~ W4 实施回执** —— 4 项实现缺口补正 + **死判据免税的两条决定性变异实测** + **§10 现状订正**)
+
+**主题**:per 台账 Entry #414 的实施授权 ⇒ 本 Entry = W1 ~ W4 的**实施回执**(逐项附证据)+ §10 现状订正的回执。**verifier 第 2 轮**(W5)为**下一步**(⛔ 不得由 builder 代写判定)。
+
+**① W1 ~ W4 逐项回执(4 项缺口全数闭合或如实标注)**
+
+| 缺口 | 交付 | 证据 |
+|:--:|---|---|
+| **G-1** | **provenance 机器判据** —— `detect()` 的 `known_engine_masks` 形参**无默认值**(⛔ 默认 `~0` 会让 `untraceable` 恒 0 ⇒ 判据成死代码)⇒ 5 处调用点**全部显式传值**;正控(他人位恰等于 peer `self_mask` ⇒ `provenance_broken == false`)+ **判别力子断言**(把 peer 位排除出已知集合 ⇒ 立刻破口)+ 反 fixture(`dir.set_sharer` 播种 GMMU ⇒ `untraceable_bits != 0`)+ **播种前置断言**(读回目录位,防「未映射节点 / 越界 level 静默 no-op」造成伪测试) | `test/test_cep_tier2_observation.cc` 两个新用例 |
+| **G-3** | **有界性溢出路径** —— 基类新增 `set_observation_capacity()` / `observation_capacity()`(默认 **4096** 不变 ⇒ 生产行为零变化);`cap=2` ⇒ 丢弃 fill(判定行仍在);`cap=1` ⇒ **判定行本身被丢弃** ⇒ 违例计数 0 ⇒ **必须**被判「不可判」⇒ ⛔ 不得记成「零违例」(AC-14 边界 ⑥) | 同文件 1 个新用例(2 个子情形) |
+| **G-2** | **三段连通(行为级)** —— `detect()` 新增 `observations_enabled` 形参(无默认值)⇒ 观测面关闭 ⇒ 判「不可判」;段 ① 正向贯通 / 段 ②「判定不收」(只喂 fill 行)/ 段 ③「观测面不产记录」。⚠️ **诚实边界**:「**断言不落**」一段(断言被删 ⇒ 闸应变红)**仍未可机判**(需影子树 / 变异机制)⇒ ⇒ **本项为「部分达成」,⛔ 不得记 ✅** | 同文件 1 个新用例 + 用例内逐字标注 |
+| **G-4** | **AC-9 产出物覆盖面** —— 新增 **T6** 判据块:扫 **3 个文档产出物单元** = `07 号`「Status Update 2026-11-14」段 + 手册「## 12.10」段 + 新 main spec(整份)⇒ ⛔ **段级**(非文件级)。⚠️ **实测裁定**:整文件扫 ⇒ **7 处假红**(「通过态」在**档 0** 合法 / 在档 2 非法 ⇒ `FORBIDDEN` 是**档位相关**词表)⇒ 段级才是 AC-9 原文「**新增产出物内** grep」的**字面读法**(文件级反而**超出**契约);`NEG_MARKERS` 补 RFC 2119 的 `NOT`(消 main spec 英文 `SHALL NOT` 的 2 处假红)⇒ **不放宽**判据(变异 g 证明仍必红);新增 `CEP_RECONCILE_DOCS_ROOT`(影子树)+ 指纹集纳 3 份文档 + 递归重入透传;**决定性变异 g** ⇒ 共 **7 条变异**全按签名红 + 真实仓字节指纹相等 | `scripts/test/cep_e2e_reconcile_check.sh` |
+
+**② ⚠️ 死判据免税的两条决定性变异(per 验收 A-11 ② ③ · 实测)**
+
+| 变异 | 注入 | 实测结果 |
+|---|---|---|
+| **provenance 判据短路** | `if (untraceable != 0)` ⇒ `if (false)` | ✅ **2 个用例变红**(正控的判别力子断言 + 反 fixture)⇒ 判据**有牙** |
+| **cap 恒 4096** | `record_observation` 改用 `kObservationCapacity` | ✅ **W2 用例变红** ⇒ 有界性判据**有牙** |
+
+⇒ 两条均已**还原**并复验(`[tier2]` 11 cases / 67 assertions 全绿)⇒ **无死判据残留**。
+
+**③ §10 现状订正(W6)**
+
+§10 **现状表本体 4 行**按台账纪律「**§10 可就地同步**」(per `obj:1499` 纪律归属表)做**行内替换** ⇒ **不增删行 ⇒ 零行号位移**;§10 的**历史追加段**(2026-10 / 2026-11-12)**一字未改**,其快照由**新增的「§10 · 现状订正(2026-11-14)」段声明取代**(落点 = **台账段尾**,per Entry #333 ③ 的既有裁定 ⇒ 零位移)。
+
+| 订正项 | 原值 | 现值 |
+|---|---|---|
+| DoD 12 条 | 「**实质全达成**」(与下一行「终态 Go 挂起」**自相矛盾**) | 「**11/12 达成**;唯一未达成 = `B3b-2` = `0/4` ⏭」(⛔ 禁 token 5 条不命中) |
+| 测试基线 | `ctest` **167/167** · 4 个治理闸 | `ctest` **177/177** · **42** 个 `cep_*` 闸全绿 + 4 个其它闸 |
+| ADR 签发 | 「19 份决策 ADR ⇒ 17 已签发 + 2 永久豁免(11/19)」· id 债 **11 笔** | 「**20 份决策 ADR**(结构闸分母)· 文件 **23** 个 = 20 + 3 excluded)⇒ **18 + 2**(⚠️ 推导值)· `pending_signing` = **0** · id 归因债 **19 笔**分类登记」—— ⚠️ **三个分母写清,⛔ 不互换、不编造** |
+| 未 push | **17 commit** | **27 commit**(⚠️ 标注为易变数字 + 真源命令) |
+
+**④ 0 回归(实测)**
+
+`ctest --test-dir build -j2` ⇒ **177/177** 全绿 · `scripts/test/cep_*.sh` **42** 个逐个 rc=0(失败闸数 = 0)· `docs_sync --strict` / `agents_md_lint` / `format --check` / `markdown_link_check` 全 rc=0 · `openspec validate --archived` 对本 change 仍 ✅。
+
+**⑤ 关联**:**#414**(规划 + metis 13 条处置 + 实施授权)· **#413** / **#412** / **#411** / **#410** · `.rddf/improvements/cep-tier2-verification-closure.md` · `.rddf/reviews/cep-evidence-tier2-minimal-slice-verify.md`(待追加第 2 轮段)· `ADR-CEP-20` 决策 5 / 6
