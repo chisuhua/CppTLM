@@ -176,7 +176,11 @@ namespace cpptlm {
                 // 的 NO_INV 白名单**同步登记**(两处规则重复,修一处必须记得改另一处 ——
                 // 本行即教训:只改了 shell 侧时 cep_canonical_invariant 必红)。
                 "ADR-CEP-20-topology-ic3-evidence-strength.md",
-            };
+
+                // 2026-11-14(Entry #421):ADR-CEP-21 = Sharer 位宽的扩容机制与触发判据
+                // (两阶段 · **新增 invariant 数 = 0**,per 其 X-3)⇒ 与
+                // scripts/test/cep_docs_sync_check.sh 的 NO_INV 同步登记(两处规则重复)。
+                "ADR-CEP-21-sharer-bitmap-expansion.md",            };
             return v;
         }
 
