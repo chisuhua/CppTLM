@@ -9,6 +9,11 @@
 // ⚠️ 全部**行为/结构**断言(⛔ 不是「ADR 里写着这句话」):
 //   变红条件分别是「实例缺字段」「BroadcastNull 开始记 sharer set」「有环却 PASS」
 //   「缺检查项却 PASS」「写传播简化为全传播/全不传播」。
+// ⚠️ **例外(per change `cpptlm-cep-flow-support-assertions`)**:`flow_support` 值层判据的
+//   期望值来自 `test/cep_flow_support_expected.json`(**逐格字面量**)⇒ 它是**程序性变更检测**
+//   (声明值变更必须同步本表 + 附台账 Entry,否则红),⛔ **不是行为断言**、⛔ **不是独立 oracle**
+//   (值的权威仍是声明源 `include/tlm/cep/protocol_instances.json`)。该例外只覆盖本文件末尾的
+//   `flow_support` 用例;⛔ 其余用例仍全部是行为/结构断言。
 //
 // 作者: CppTLM Team / 日期: 2026-11-05
 #include "catch_amalgamated.hpp"
@@ -16,6 +21,7 @@
 #include "cep_adr_parser.hh"
 
 #include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <set>
@@ -28,6 +34,7 @@
 #include "tlm/cep/channel_dependency_graph.hh"
 #include "tlm/cep/moesi_gpu_adapter.hh"
 #include "tlm/cep/ordering_point_checker.hh"
+#include "tlm/cep/protocol_engine_base.hh"
 #include "tlm/cep/sharer_tracker.hh"
 
 using cpptlm::cep::read_file;
@@ -37,8 +44,26 @@ namespace {
 
     using nlohmann::json;
 
+    // ── env 覆盖(per design D-3):供**脚本侧持久反向 fixture**把声明源 / 期望表指向
+    //    **仓外副本**(⛔ 仓内文件零改动 ⇒ 可安全进 ctest 并行运行)。
+    //    ⚠️ **零外溢**:仅本文件的 `load_json` 生效;⛔ 其他测试文件的 `load_json` 不受影响。
+    //    ⚠️ 本文件既有的 5 处 `load_json("...protocol_instances.json")` **也**会被覆盖 ——
+    //       这是**期望行为**:声明源被毒化时,本文件的**全部**声明判据都应随之变化,
+    //       否则 fixture 只验了新用例、放过既有判据的静默漂移。
     json load_json(const char* rel) {
-        const auto text = read_file((repo_root() / rel).string());
+        const std::string rel_s(rel);
+        const std::string base = std::filesystem::path(rel_s).filename().string();
+        std::filesystem::path p;
+        if (base == "protocol_instances.json") {
+            if (const char* e = std::getenv("CEP_FLOW_SUPPORT_DECL"))
+                p = std::filesystem::path(e);
+        } else if (base == "cep_flow_support_expected.json") {
+            if (const char* e = std::getenv("CEP_FLOW_SUPPORT_EXPECTED"))
+                p = std::filesystem::path(e);
+        }
+        if (p.empty())
+            p = repo_root() / rel_s;
+        const auto text = read_file(p.string());
         if (text.empty())
             return json::object();
         return json::parse(text);
@@ -539,5 +564,180 @@ TEST_CASE("ADR-CEP-04-SU4-O2:实例的 sharer-tracker caps 与 `kTrackerTraits` 
         const auto orig = inst.at("sharer_tracker").at("caps").value("scope", std::string());
         inst["sharer_tracker"]["caps"]["scope"] = (orig == "SYSTEM") ? "NONE" : "SYSTEM";
         REQUIRE_FALSE(caps_match(inst, exp));
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// flow_support 值层机器锁(per change `cpptlm-cep-flow-support-assertions`)
+// ─────────────────────────────────────────────────────────────────────────
+// ⚠️ 期望值载体 = `test/cep_flow_support_expected.json`(**逐格字面量**,⛔ 不从声明源推导)
+//   ⇒ 本判据是**程序性变更检测**(声明值变更必须同步本表 + 附台账 Entry,否则红),
+//   ⛔ **不是行为断言**、⛔ **不是独立 oracle**(值的权威仍是声明源)。
+// ⚠️ 域 = 声明源 `repo_owned_instance_ids` **全集**(权威在本仓);⛔ 不按 `status` 过滤;
+//   镜像实例(`moesi_gpu` / `mesif`,权威在 ArchForge)**不在本判据范围**。
+// ⚠️ canonical 10 流取**代码真源** `tlm::cep::kCanonicalFlowNames`;⛔ **不用** schema 的
+//   `properties.flow_support` —— 那是 **schema 形状**,⛔ 不是任何实例的形状。
+TEST_CASE("[cep][instance-decl] flow_support 60 格逐键锁 + 出处可核 + 反向控制",
+          "[cep][instance-decl][flow-support]") {
+    const auto decl = load_json("include/tlm/cep/protocol_instances.json");
+    const auto table = load_json("test/cep_flow_support_expected.json");
+
+    REQUIRE_FALSE(decl.is_null());
+    REQUIRE(decl.contains("instances"));
+    REQUIRE(decl.contains("repo_owned_instance_ids"));
+    REQUIRE(table.contains("instances"));
+    REQUIRE(table.value("schema", std::string()) == "cep-flow-support-expected/v1");
+
+    // canonical 10 流(代码真源)
+    std::set<std::string> canonical;
+    for (const auto* n : tlm::cep::kCanonicalFlowNames)
+        canonical.insert(std::string(n));
+    REQUIRE(canonical.size() == 10u);
+
+    // ── 域:期望表 ids ⟷ 声明源 repo_owned ids(**双向集合相等**)──────────────
+    //    ⇒ 新增实例不会「无覆盖且绿」;声明源删实例也不会「静默漏检」
+    const std::set<std::string> owned(decl.at("repo_owned_instance_ids").begin(),
+                                      decl.at("repo_owned_instance_ids").end());
+    std::set<std::string> tids;
+    for (const auto& item : table.at("instances").items())
+        tids.insert(item.key());
+    REQUIRE(owned == tids);
+    REQUIRE(owned.size() == 6u);
+
+    // ── id 唯一性(声明源侧)────────────────────────────────────────────────
+    {
+        std::set<std::string> seen;
+        for (const auto& inst : decl.at("instances")) {
+            const auto id = inst.value("id", std::string());
+            INFO("重复的实例 id: " << id);
+            REQUIRE(seen.insert(id).second);
+        }
+    }
+
+    // ── 逐实例(per-instance SECTION ⇒ 每格独立报告;⛔ 首个 REQUIRE 失败不遮蔽其余格)──
+    for (const auto& item : table.at("instances").items()) {
+        const std::string id = item.key();
+        const json& exp = item.value();
+        DYNAMIC_SECTION("实例 " << id) {
+            REQUIRE(exp.contains("flow_support"));
+            REQUIRE(exp.contains("source"));
+            const json& efs = exp.at("flow_support");
+            REQUIRE(efs.size() == 10u);
+
+            // 声明源里该实例(⛔ 「找到才断言」是禁止形态 ⇒ 以查表 + 集合相等取代遍历时找)
+            const json* inst = nullptr;
+            for (const auto& i : decl.at("instances")) {
+                if (i.value("id", std::string()) == id) {
+                    inst = &i;
+                    break;
+                }
+            }
+            REQUIRE(inst != nullptr);
+            const json& dfs = inst->at("flow_support");
+
+            // 形状联判 + 类型(⛔ `get<bool>()` 对整数会抛 type_error ⇒ 先判 is_boolean)
+            std::set<std::string> dkeys;
+            for (const auto& kv : dfs.items()) {
+                INFO("声明源 flow_support 键 " << kv.key() << " 的值类型非法(必须 bool)");
+                REQUIRE(kv.value().is_boolean());
+                dkeys.insert(kv.key());
+            }
+            std::set<std::string> ekeys;
+            for (const auto& kv : efs.items()) {
+                INFO("期望表 flow_support 键 " << kv.key() << " 的值类型非法(必须 bool)");
+                REQUIRE(kv.value().is_boolean());
+                ekeys.insert(kv.key());
+            }
+            REQUIRE(dkeys == canonical);
+            REQUIRE(ekeys == canonical);
+
+            // 逐格比对(失败消息含 id / key / 期望 / 实际)
+            for (const auto& key : canonical) {
+                INFO("实例 " << id << " / 流 " << key << ":期望 "
+                     << efs.at(key).get<bool>() << " ≠ 声明源 " << dfs.at(key).get<bool>());
+                REQUIRE(efs.at(key).get<bool>() == dfs.at(key).get<bool>());
+            }
+
+            // 出处可核(per design D-1.1 三态)
+            const json& src = exp.at("source");
+            const auto cov = src.value("coverage", std::string());
+            REQUIRE((cov == "full" || cov == "partial" || cov == "none"));
+            std::set<std::string> pk;
+            if (cov == "none") {
+                REQUIRE_FALSE(src.contains("file"));
+                REQUIRE_FALSE(src.contains("anchors"));
+                REQUIRE(src.value("note", std::string()).find("无逐值出处") != std::string::npos);
+            } else {
+                REQUIRE(src.contains("file"));
+                REQUIRE(src.contains("anchors"));
+                const auto f = std::filesystem::path(repo_root() / src.value("file", std::string()));
+                REQUIRE(std::filesystem::exists(f));
+                const auto text = read_file(f.string());
+                REQUIRE_FALSE(text.empty());
+                for (const auto& a : src.at("anchors")) {
+                    INFO("出处锚点未命中 " << src.value("file", std::string()) << ":"
+                         << a.value("text", std::string()));
+                    REQUIRE(text.find(a.value("text", std::string())) != std::string::npos);
+                    for (const auto& k : a.at("keys")) {
+                        REQUIRE(canonical.count(k) == 1u);
+                        pk.insert(k);
+                    }
+                }
+                std::set<std::string> declared_pk;
+                for (const auto& k : src.at("provenanced_keys"))
+                    declared_pk.insert(k);
+                REQUIRE(declared_pk == pk);
+                if (cov == "full") {
+                    REQUIRE(pk == canonical);
+                } else {
+                    REQUIRE_FALSE(pk.empty());
+                    REQUIRE(src.value("note", std::string()).find("无逐值出处") != std::string::npos);
+                }
+            }
+        }
+    }
+
+    // ── 反向控制:逐实例轮转翻转 1 格 ⇒ 比对必须判否(证明判据有牙)─────────
+    //    ⚠️ 四要件:① 逐实例 ② 被变异实例数 == 域大小 ③ 翻转值 ≠ 原值 ④ 比对判否
+    {
+        std::size_t mutated = 0;
+        for (const auto& item : table.at("instances").items()) {
+            const std::string id = item.key();
+            const json& efs = item.value().at("flow_support");
+            json bad = decl;
+            bool flipped = false;
+            for (auto& i : bad.at("instances")) {
+                if (i.value("id", std::string()) != id)
+                    continue;
+                for (auto& kv : i.at("flow_support").items()) {
+                    if (!kv.value().get<bool>()) {  // 翻一个 false → true
+                        const auto before = kv.value().get<bool>();
+                        kv.value() = true;
+                        INFO("实例 " << id << " / 流 " << kv.key() << ":翻转值 == 原值(空转)");
+                        REQUIRE(kv.value().get<bool>() != before);
+                        flipped = true;
+                        break;
+                    }
+                }
+                break;
+            }
+            INFO("反向控制未生效(实例 " << id << "):没有任何 false 格可翻 ⇒ 表与声明源不可能一致");
+            REQUIRE(flipped);
+
+            // 比对必须判否
+            bool matched = true;
+            for (const auto& i : bad.at("instances")) {
+                if (i.value("id", std::string()) != id)
+                    continue;
+                for (const auto& kv : i.at("flow_support").items()) {
+                    if (!efs.contains(kv.key()) || efs.at(kv.key()).get<bool>() != kv.value().get<bool>())
+                        matched = false;
+                }
+            }
+            INFO("反向控制未生效:翻转后仍与期望表一致(实例 " << id << ")");
+            REQUIRE_FALSE(matched);
+            ++mutated;
+        }
+        REQUIRE(mutated == owned.size());
     }
 }

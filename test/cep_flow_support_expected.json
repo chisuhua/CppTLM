@@ -1,0 +1,209 @@
+{
+  "schema": "cep-flow-support-expected/v1",
+  "note": "repo_owned 协议实例的 `flow_support` **期望值表** —— 逐格字面量,⛔ 不从声明源推导。判据载体 = `test/test_cep_instance_declaration_contract.cc`;声明源 = `include/tlm/cep/protocol_instances.json`(唯一权威)。⚠️ 本表是**变更检测器**,**不是独立 oracle** —— 值的权威仍是声明源;本表的契约力在于「声明值变更必须同步本表 + 附台账 Entry,否则红」。⛔ `coverage != full` 的实例 = 部分键无逐值出处(冻结口径)⇒ **不得**伪造出处、⛔ **不得**用「ADR-CEP-12 能力映射」做笼统背书(其 `## Verification` 无逐实例值判据)。",
+  "domain": {
+    "field": "repo_owned_instance_ids",
+    "note": "域 = 声明源 `repo_owned_instance_ids` 全集(权威在本仓);⛔ 不按 `status` 过滤;镜像实例(moesi_gpu / mesif,权威在 ArchForge)**不在本表范围**。"
+  },
+  "instances": {
+    "chi_rnf": {
+      "source": {
+        "coverage": "partial",
+        "file": "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md",
+        "anchors": [
+          {
+            "text": "`chi_rnf` 实例的 `flow_support`",
+            "keys": [
+              "request",
+              "completion",
+              "snoop",
+              "snoop_resp",
+              "writeback"
+            ]
+          }
+        ],
+        "note": "该锚点逐值登记了 5 条 true(request / completion / snoop / snoop_resp / writeback);其余 5 条无逐值出处(冻结口径)",
+        "provenanced_keys": [
+          "completion",
+          "request",
+          "snoop",
+          "snoop_resp",
+          "writeback"
+        ]
+      },
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": true,
+        "back_invalidate": false,
+        "address_resolve": false,
+        "barrier": false,
+        "snoop_completion_ack": true
+      }
+    },
+    "cxl_2_0": {
+      "source": {
+        "coverage": "partial",
+        "file": "openspec/specs/cep-cxl-dcoh-symmetric/spec.md",
+        "anchors": [
+          {
+            "text": "与 `cxl_2_0` 的 `false` **不同**",
+            "keys": [
+              "back_invalidate"
+            ]
+          }
+        ],
+        "note": "该锚点以对照形态逐值登记 back_invalidate=false;其余 9 条无逐值出处(冻结口径)",
+        "provenanced_keys": [
+          "back_invalidate"
+        ]
+      },
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": true,
+        "back_invalidate": false,
+        "address_resolve": false,
+        "barrier": false,
+        "snoop_completion_ack": false
+      }
+    },
+    "tilelink_c": {
+      "source": {
+        "coverage": "none",
+        "note": "无逐值出处(冻结口径)—— 仓内无任何文件逐值登记本实例的 flow_support 取值",
+        "provenanced_keys": []
+      },
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": false,
+        "back_invalidate": false,
+        "address_resolve": false,
+        "barrier": false,
+        "snoop_completion_ack": false
+      }
+    },
+    "cxl_3_0_symmetric": {
+      "source": {
+        "coverage": "partial",
+        "file": "openspec/specs/cep-cxl-dcoh-symmetric/spec.md",
+        "anchors": [
+          {
+            "text": "`flow_support.back_invalidate` SHALL 为 **true**",
+            "keys": [
+              "back_invalidate"
+            ]
+          }
+        ],
+        "note": "该锚点逐值登记 back_invalidate=true;其余 9 条无逐值出处(冻结口径)",
+        "provenanced_keys": [
+          "back_invalidate"
+        ]
+      },
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": true,
+        "back_invalidate": true,
+        "address_resolve": false,
+        "barrier": false,
+        "snoop_completion_ack": false
+      }
+    },
+    "nvlink_4": {
+      "source": {
+        "coverage": "none",
+        "note": "无逐值出处(冻结口径)—— 仓内无任何文件逐值登记本实例的 flow_support 取值",
+        "provenanced_keys": []
+      },
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": false,
+        "back_invalidate": false,
+        "address_resolve": false,
+        "barrier": true,
+        "snoop_completion_ack": false
+      }
+    },
+    "ualink_4": {
+      "source": {
+        "coverage": "full",
+        "file": "docs/adr/ADR-CEP-12-protocol-engine-capability-map.md",
+        "anchors": [
+          {
+            "text": "`flow_support.request` / `.completion`",
+            "keys": [
+              "request",
+              "completion"
+            ]
+          },
+          {
+            "text": "`flow_support.snoop` / `.snoop_resp` / `.snoop_completion_ack`",
+            "keys": [
+              "snoop",
+              "snoop_resp",
+              "snoop_completion_ack"
+            ]
+          },
+          {
+            "text": "`flow_support.writeback` / `.forward_data` / `.back_invalidate` / `.address_resolve`",
+            "keys": [
+              "writeback",
+              "forward_data",
+              "back_invalidate",
+              "address_resolve"
+            ]
+          },
+          {
+            "text": "`flow_support.barrier`",
+            "keys": [
+              "barrier"
+            ]
+          }
+        ],
+        "note": "`ADR-CEP-12` 的 13 键取值表逐行登记本实例全部 10 条 flow_support 取值(表行 2~5)",
+        "provenanced_keys": [
+          "address_resolve",
+          "back_invalidate",
+          "barrier",
+          "completion",
+          "forward_data",
+          "request",
+          "snoop",
+          "snoop_completion_ack",
+          "snoop_resp",
+          "writeback"
+        ]
+      },
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": false,
+        "snoop_resp": false,
+        "writeback": false,
+        "forward_data": false,
+        "back_invalidate": false,
+        "address_resolve": false,
+        "barrier": false,
+        "snoop_completion_ack": false
+      }
+    }
+  }
+}

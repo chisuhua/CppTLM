@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-14T14:51:01Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-14T17:07:01Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-13T17:10:35Z",
-      "by": "auto",
-      "reason": "verifier 验收判定「有条件通过」(10 ✅ + 4 ⚠️)⇒ 回 builder 补 4 项实现缺口(G-1 provenance 机器判据 / G-2 三段连通反向证据 / G-3 有界性溢出路径 / G-4 AC-9 产出物覆盖面)。"
-    },
     {
       "role": "planner",
       "at": "2026-11-14T02:21:40Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-14T14:51:01Z",
       "by": "user",
       "reason": "五步链第 2~5 步已由 builder 执行完毕(产物 commit 884a6e0f / 清单 commit 501dfe4f / 无参复验 rc=0)⇒ 回 planner 落闭合回执(台账唯一写入方),避免 Entry #425 的链表停在 ⬜ 而被读成未闭合。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-14T17:07:01Z",
+      "by": "user",
+      "reason": "per 用户口令「继续」⇒ 承接 planner 立项(台账 Entry #427):补 design.md / tasks.md + 实施 4 产物(W1 期望表 / W2 判据 / W3 脚本侧持久 fixture / W4 ctest 注册)+ 0 回归 + 归档五步链 + KPI 回填 1/3 -> 0/3。"
     }
   ],
   "auto_switch_window": null

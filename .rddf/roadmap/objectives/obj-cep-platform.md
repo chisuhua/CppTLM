@@ -23539,3 +23539,62 @@ AC-1(三处硬编码全消)· AC-2(注释四项)· AC-3(编译 rc=0 零 warning)
 delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 冻结面(`openspec/specs/cep-*/spec.md` glob)⇒ 归档步须走:台账 Entry(归档期那条)→ 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #N"` → 清单**单独** commit → 无参复验 rc=0。⚠️ **归档前冻结闸必绿**(delta 在 `openspec/changes/<name>/specs/...`,冻结 glob 刻意不匹配该路径,per `cep_freeze_check.sh:73-77`)⇒ **不得**拿「归档前 rc=0」当已合规。
 
 **⑧ 关联**:`.rddf/improvements/cpptlm-cep-flow-support-assertions.md`(v2)· `openspec/changes/cpptlm-cep-flow-support-assertions/{proposal.md,specs/cep-core-contracts/spec.md}` · `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md:391`(「5 种 ⇒ 6 种」追加式修订)· `openspec/specs/cep-hierarchical-directory/spec.md:36-38,61`(以 `kTrackerTraits[5]` 为三方真源)· `include/tlm/cep/protocol_instances.json`(`repo_owned_instance_ids`)· `scripts/test/cep_decl_alignment_check.sh:523-551` · `scripts/test/cep_decl_reverse_verify.sh:183` · `test/test_cep_instance_declaration_contract.cc:490-543`(`ADR-CEP-04-SU4-O2` 值锁 + 反向 fixture 先例)
+
+### Entry #428 — 2026-11-15 [builder](**`flow_support` 值锁实施完成 + 归档授权** —— 4 产物落地 · 既存竞态根除 · 五步链拍 0)
+
+**主题**:change `cpptlm-cep-flow-support-assertions`(台账 #427 立项)的 **design/tasks + W1~W4 实施 + 0 回归**;本 Entry = **实施回执** + **归档授权**(五步链拍 0)。**KPI 待归档后回填 1/3 → 0/3**。
+
+**① 交付面(4 产物)**
+
+| # | 内容 | 结果 |
+|:--:|---|---|
+| **W1** | `test/cep_flow_support_expected.json`(新)—— 6 个 `repo_owned` 实例 × 10 键 = **60 格**逐格字面量 + `source` 三态覆盖(`ualink_4` = full 10/10 · `chi_rnf` = partial 5 · `cxl_3_0_symmetric` / `cxl_2_0` = partial 1 · `tilelink_c` / `nvlink_4` = none) | ✅ |
+| **W2** | `test/test_cep_instance_declaration_contract.cc`(改)—— `load_json` 加 **2 个 env 覆盖**(`CEP_FLOW_SUPPORT_DECL` / `CEP_FLOW_SUPPORT_EXPECTED`,仅本文件)· 新增 1 个 TEST_CASE(**6 个 `DYNAMIC_SECTION`**):域双向集合相等 / 形状联判(`kCanonicalFlowNames` 代码真源)/ `is_boolean()` + id 唯一 / 逐格比对 / 出处三态可核 / **反向控制四要件**;文件头自述补「golden 表是程序性变更检测」例外句 | ✅ |
+| **W3** | `scripts/test/cep_flow_support_reverse_verify.sh`(新)—— **只写临时目录**(env 覆盖指向副本 ⇒ ⛔ 仓内文件零改动)⇒ 可安全进 ctest;4 条闭环(未毒化绿 / 声明源漂移红 / 期望表漂移红 / 双侧漂移红)+ 2 条「仓内零改动」复核 ⇒ **6/6 通过** | ✅ |
+| **W4** | `test/CMakeLists.txt`(改)—— 注册 `cep_flow_support_reverse_verify` 进 ctest | ✅ |
+
+**② ⚠️ 既存潜在竞态:实测发现 + 根除(本 change 的连带产物)**
+
+**现象**:`ctest -j4` 偶发 `cep_docs_sync_check` 假红(`moesi_gpu.protocol_version 与 ArchForge 不符`)与 `cep_cohif_carrier` 假红(`[IAG-02] instance not declared: moesi_gpu`)。
+
+**根因**:`scripts/test/cep_decl_reverse_verify.sh` **临时改写仓内 `include/tlm/cep/protocol_instances.json` 再还原**(其文件头写「⚠️ **刻意不注册 ctest**」),但该脚本 **实际已注册** ctest(`test/CMakeLists.txt:613`)⇒ 与任何**读**该文件的测试并行时读者读到**中间态**。受害者 2 个(实测):`cep_docs_sync_check`(经内部 `cep_decl_alignment_check` 的 ⑥ 派生副本逐字段)与 `cep_cohif_carrier`(经 IAG 装配闸间接读)。
+
+**修法**:`set_tests_properties(cep_decl_reverse_verify ... RUN_SERIAL TRUE)` —— ⛔ **不选** `RESOURCE_LOCK`(需枚举全部读者,新增读者即失守);`RUN_SERIAL` 让**改写者独占运行** ⇒ 读者天然安全且**未来新增读者无需同步**。
+
+**复验**:全量 `ctest -R cep -j4` **98/98 × 5 轮全绿**(修复前 5 轮中 4 轮红)。
+
+**③ ⚠️ 过程事故的诚实登记(已恢复)**
+
+实施期我**同时**启动后台 `ctest -R cep` 与前台闸循环 ⇒ 两个 `cep_decl_reverse_verify` 实例并行改写声明源 ⇒ **还原竞态** ⇒ 仓内 `protocol_instances.json` 残留 `moesi_gpu.combination_capabilities.concurrent = false` + 尾换行丢失。**处置**:`git checkout --` 按字节恢复,复核 `git diff` 零差异 + `concurrent = true` + 尾换行复原。**教训**(已写入 ② 修法):改写仓内文件的测试必须独占运行。
+
+**④ 复验(全绿 · 串行)**
+
+| 项 | 结果 |
+|---|---|
+| `cmake --build build` | ✅ rc=0;唯一 warning = **既存** `broadcast_null_tracker.hh:68`(-Waddress,与本 change 无关) |
+| `./build/bin/cpptlm_tests '[cep]'` | ✅ **528 用例 / 12286 断言全通过**(基线 527/11797 ⇒ **用例 +1**) |
+| `ctest -R cep -j4` | ✅ **98/98 × 5 轮** |
+| `scripts/test/cep_*.sh`(43 个) | ✅ 全 rc=0 |
+| `openspec validate --strict` | ✅ rc=0 |
+| `cep_docs_sync_check --strict` | ✅ rc=0(**含 KPI 1/3 断言 + 体量数字守:闸 42 → 43**) |
+| `agents_md_lint` | ✅ 通过 |
+| **范围零 diff** | ✅ `include/tlm/cep/**` / `protocol_instances.json` / `protocol_instance.schema.json` / 引擎 / adapter / tracker 全零 diff · 新增 invariant = **0** |
+
+**⑤ ⚠️ 体量数字连带**:新增 1 个闸 ⇒ `AGENTS.md:7` 的「契约闸数」**42 → 43**(`cep_docs_sync_check` 的体量数字守实测抓红 ⇒ 已同步;日期同步为 2026-11-15)。
+
+**⑥ 归档授权(五步链拍 0 = 本 Entry)**
+
+| 步 | 动作 | 状态 |
+|:--:|---|:--:|
+| 1 | 台账 Entry 先落(本 Entry) | ✅ |
+| 2 | 产物 commit(4 产物 + `openspec archive` 的 delta 合并 + design/tasks) | ⬜ |
+| 3 | `cep_freeze_check.sh --update --authorized-by "Entry #428"`(delta 合并进 `cep-core-contracts` ⇒ **冻结面** ⇒ 清单 diff 应**只**含该文件 hash) | ⬜ |
+| 4 | 冻结清单**单独** commit | ⬜ |
+| 5 | 无参复验 rc=0 + provenance 一致 | ⬜ |
+
+**⑦ 遗留(2 项,均已披露)**
+
+- **L-1** `openspec show <change>` 报「Change must have a Why section」—— 因 CEP proposal 惯例用 `## 为什么` 而 `ChangeParser` 要求**精确** `## Why`。⚠️ **既存状态**(已归档的 `cep-responder-bitmap-expansion` 同样如此且归档成功)⇒ 非本 change 引入;`openspec validate --strict` rc=0 是有效判据。
+- **L-2** `mozjpeg`-类无关:无。**唯一未做项 = proposal 的 3 项残余**(镜像 20 值 SKIP 洞待 architect / 3 族无逐值出处 / Scenario 标题债),状态见 #427 ⑥。
+
+**⑧ 关联**:**#427**(立项)· `.rddf/improvements/cpptlm-cep-flow-support-assertions.md`(v2)· `openspec/changes/archive/2026-11-15-cpptlm-cep-flow-support-assertions/`(四件套)· `test/cep_flow_support_expected.json` · `test/test_cep_instance_declaration_contract.cc` · `scripts/test/cep_flow_support_reverse_verify.sh` · `test/CMakeLists.txt`(含 `RUN_SERIAL` 竞态修复)· `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md`(ualink_4 10/10 逐值出处)· `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md:551`(chi_rnf 5 键)

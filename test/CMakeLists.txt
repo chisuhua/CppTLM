@@ -302,6 +302,17 @@ set_tests_properties(cep_decision_block_check
 add_test(NAME cep_cohif_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_cohif_reverse_verify.sh)
 
+# `flow_support` 值层判据的**持久反向验证**(per change
+# `cpptlm-cep-flow-support-assertions` task T3.1~T3.6)—— 2 类毒化副本
+# (声明源副本漂移 1 格 / 期望表副本漂移 1 格)分别必须让判据报红,未毒化态必须绿。
+#    ⚠️ 本脚本**只写自己的临时目录**(通过 env 覆盖把声明源 / 期望表指向**副本**)⇒
+#    **不改**仓内任何文件 ⇒ 可安全并行进 ctest(对比 `cep_decl_reverse_verify.sh`
+#    临时改写仓内 `fabric.json` ⇒ 刻意不注册 ctest)。
+add_test(NAME cep_flow_support_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_flow_support_reverse_verify.sh)
+set_tests_properties(cep_flow_support_reverse_verify
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # ProtocolEngine 端口面契约的**反向验证**(per change `cpptlm-cep-cohif-carrier`
 # task 2.6 / 2.7)—— 2 类毒化副本(10 流覆盖矩阵缺 1 流 / 某流语义退化为 no-op)
 #    分别必须让「覆盖完整性」「逐流行为」两条编译期锁报红。
@@ -601,8 +612,18 @@ set_tests_properties(cep_decl_alignment_check
 #    2026-11-12 起**真进 CI**(实测 3 连跑 rc=0 · ~5.7s · 不写仓内文件 ⇒ 可安全并行)。
 add_test(NAME cep_decl_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_decl_reverse_verify.sh)
+# ⚠️ **RUN_SERIAL 理由**(既存潜在竞态,per change `cpptlm-cep-flow-support-assertions` 实测):
+#    本脚本**临时改写**仓内 `include/tlm/cep/protocol_instances.json` 再还原
+#    (其文件头写「刻意不注册 ctest」,但它**实际已注册**)⇒ 在 `ctest -j4` 下与任何
+#    **读**该文件的测试并行时,读者会读到**中间态** ⇒ **假红**。实测受害者(2 个):
+#      · `cep_docs_sync_check`(内部调用 `cep_decl_alignment_check` ⇒ `⑥ 派生副本逐字段`)
+#        ⇒ `moesi_gpu.protocol_version 与 ArchForge 不符`
+#      · `cep_cohif_carrier`(经 IAG 装配闸间接读)⇒ `[IAG-02] instance not declared: moesi_gpu`
+#    ⇒ 修法选 **`RUN_SERIAL`** 而非 `RESOURCE_LOCK`:后者要求**枚举全部读者**(脆弱,新增读者
+#    即失守);前者让**改写者独占运行** ⇒ 读者天然安全,且**未来新增读者无需同步**。
 set_tests_properties(cep_decl_reverse_verify
-                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                                RUN_SERIAL TRUE)
 
 # 预登记 out-of-scope 集合的**真源 ↔ 机器投影 drift 检测**
 # (per ADR-CEP-06 SU#2 ② 门禁②:objective §9.1 ② 表 ↔ experimental/preregistration.json
