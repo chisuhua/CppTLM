@@ -50,6 +50,12 @@ cd "$REPO_ROOT"
 LEDGER="${CEP_RECONCILE_JSONL:-test/cep_e2e_runs.jsonl}"
 TIERS="${CEP_RECONCILE_TIERS:-test/cep_e2e_run_tiers.json}"
 EVIDENCE_TIERS="${CEP_RECONCILE_EVIDENCE_TIERS:-test/cep_evidence_tiers.json}"
+# ── 文档产出物扫描面(per 验收 G-4)—— 影子副本模式用(变异 g)──
+DOCS_ROOT="${CEP_RECONCILE_DOCS_ROOT:-$REPO_ROOT}"
+# ⚠️ 指纹用**真实仓**路径(⛔ 不用 $DOCS_ROOT)⇒ 影子树模式下也能检出「变异污染真实仓」
+DOC07="docs/architecture/07-coherence-exploration-platform.md"
+GUIDE="docs/guide/cep-usage.md"
+SPEC="openspec/specs/cep-evidence-tier2-observation/spec.md"
 MUTATIONS=0
 [[ "${1:-}" == "--mutations" ]] && { MUTATIONS=1; shift; }
 problems=0
@@ -58,11 +64,12 @@ fail() { echo "✗ $*" >&2; problems=$((problems + 1)); }
 
 # ── 档 2 的**非 run 载体**登记面(T4 / T5)───────────────────────────────
 # ⚠️ **独立于**下面的 run 闸 ⇒ 档 2 ⭔ 不产 run(per 裁决 R3)时本组判据**仍**执行。
-python3 - "$EVIDENCE_TIERS" "$TIERS" <<'PYT'
+python3 - "$EVIDENCE_TIERS" "$TIERS" "$DOCS_ROOT" <<'PYT'
 import json, os, sys
 
 ev_path = sys.argv[1]
 run_tiers_path = sys.argv[2]
+docs_root = sys.argv[3]
 
 # 档位词真源单点 = 主判据块内的 TIER_WORDS(⛔ 本块**只引用**不复制定义)
 TIER_WORDS_2 = ("档 2", "协议级")
@@ -73,7 +80,10 @@ FORBIDDEN = ("检测力已证", "全族达成", "所有族", "强于档 1", "通
 # 否定语境标记(命中短语**之前**的窗口内出现任一 ⇒ 豁免)
 # ⚠️ 「⛔」(U+26D4)与「⭕」(U+2B50)是**不同字符** ⇒ 两者都要列
 #    (踩坑记录:只列「⭕」时,正文用「⛔」的否定句会被误判为肯定式 ⇒ 假红)。
-NEG_MARKERS = ("不", "无", "非", "缺", "禁", "否", "⭕", "⛔", "≠")
+# ⚠️ `NOT` = RFC 2119 的规范否定标记(`SHALL NOT` / `MUST NOT`)⇒ main spec 是
+#    SHALL 语法 ⇒ 不认英文否定会**系统性假红**(实测 2 处)。
+#    ⚠️ 加它**不放宽**判据:变异 g 植入的肯定式夸大表述其前窗无 `NOT` ⇒ 仍必红。
+NEG_MARKERS = ("不", "无", "非", "缺", "禁", "否", "⭕", "⛔", "≠", "NOT")
 
 
 def has_negation_context(text, idx, window=16):
@@ -179,7 +189,79 @@ for cid, e in entries.items():
                       f"档 0/1 的 run_id {rid!r}", file=sys.stderr)
                 problems += 1
 
-print(f"[evidence-tiers] 档 2 非 run 载体登记 {len(entries)} 条 · 问题 {problems}")
+# ── T6:防夸大 · **文档产出物**扫描面(per 验收 G-4 / AC-9 原文)────────────
+#
+# ⚠️ **为什么是「段级」而不是「文件级」**(实测裁定):
+#   `FORBIDDEN` 是**档位相关**的词表 —— 「通过态」在**档 0** 合法(档 0 产 run
+#   ⇒ 有 verdict)、在**档 2** 非法 ⇒ 用它扫**不分档位**的范围必然假红
+#   (实测整文件扫 ⇒ 7 处假红:`07号` 的档 0 SU 标题 ×3 + 后置否定 ×2
+#    + main spec 的英文 `SHALL NOT` ×2)。
+#   ⇒ AC-9 原文是「**新增产出物内** grep 禁表述」⇒ **段级**才是字面读法
+#   (文件级反而**超出**契约)。
+#
+# ⚠️ **只读**:本块**不改**任何文档 ⇒ 冻结面 hash 不变 ⇒ 无需五步链。
+DOC_UNITS = [
+    # (相对 docs_root 的路径, 段标题前缀(None=整份), 单元标签)
+    ("docs/architecture/07-coherence-exploration-platform.md",
+     "## Status Update 2026-11-14", "07号 · 档 2 SU 段"),
+    ("docs/guide/cep-usage.md", "## 12.10", "手册 · §12.10 段"),
+    ("openspec/specs/cep-evidence-tier2-observation/spec.md",
+     None, "main spec(整份 · 整体即档 2 产出物)"),
+]
+
+
+def extract_section(text, heading_prefix):
+    """取从 `heading_prefix` 开头的标题到**下一个 `## ` 之前**的段(⛔ 不写死行号)"""
+    lines = text.split("\n")
+    start = None
+    for i, line in enumerate(lines):
+        if line.startswith(heading_prefix):
+            start = i
+            break
+    if start is None:
+        return None
+    end = len(lines)
+    for i in range(start + 1, len(lines)):
+        if lines[i].startswith("## "):
+            end = i
+            break
+    return "\n".join(lines[start:end])
+
+
+doc_units = 0
+for rel, heading, label in DOC_UNITS:
+    full = os.path.join(docs_root, rel)
+    try:
+        with open(full, encoding="utf-8") as fh:
+            text = fh.read()
+    except FileNotFoundError:
+        print(f"✗ 缺少档 2 文档产出物: {full}", file=sys.stderr)
+        problems += 1
+        continue
+    if heading is not None:
+        section = extract_section(text, heading)
+        if section is None:
+            print(f"✗ 档 2 文档产出物**找不到目标段**: {full} 标题前缀={heading!r}",
+                  file=sys.stderr)
+            problems += 1
+            continue
+    else:
+        section = text
+    doc_units += 1
+    for phrase in FORBIDDEN:
+        s = 0
+        while True:
+            idx = section.find(phrase, s)
+            if idx < 0:
+                break
+            if not has_negation_context(section, idx):
+                label_txt = "文档肯定式通过态表述" if phrase == "通过态" else "文档夸大表述"
+                print(f"✗ {full} {label_txt}: {label} 命中 {phrase!r}", file=sys.stderr)
+                problems += 1
+            s = idx + len(phrase)
+
+print(f"[evidence-tiers] 档 2 非 run 载体登记 {len(entries)} 条 · "
+      f"文档产出物 {doc_units} 个 · 问题 {problems}")
 sys.exit(1 if problems else 0)
 PYT
 _ev_rc=$?
@@ -356,20 +438,27 @@ fi
 
 echo "✓ CEP E2E 双向闸通过(台账 ↔ 仓内 run 产物)"
 
-# ── 4 条决定性变异(⛔ 只在影子副本上做;每条须**按签名红**)──────────────
+# ── 7 条决定性变异(⛔ 只在影子副本上做;每条须**按签名红**)──────────────
 if [[ $MUTATIONS -eq 1 ]]; then
   echo "── 决定性变异(影子副本)──────────────────────────────"
-  FP_BEFORE="$(sha256sum "$LEDGER" "$TIERS" "$EVIDENCE_TIERS")"
+  FP_BEFORE="$(sha256sum "$LEDGER" "$TIERS" "$EVIDENCE_TIERS" "$DOC07" "$GUIDE" "$SPEC")"
   MF=0
   mutate() {  # $1=签名 $2=编号 $3=说明
     local sig="$1" no="$2" desc="$3" out rc
     local SHD; SHD="$(mktemp -d)"
     cp "$LEDGER" "$SHD/ledger.jsonl"; cp "$TIERS" "$SHD/tiers.json"
     cp "$EVIDENCE_TIERS" "$SHD/evidence_tiers.json"
-    python3 - "$SHD" "$no" <<'PYM'
+    # ── 文档影子树(per 验收 G-4 / 变异 g)—— T6 的扫描面指向它 ──
+    mkdir -p "$SHD/docs/$(dirname "$DOC07")" "$SHD/docs/$(dirname "$GUIDE")" \
+             "$SHD/docs/$(dirname "$SPEC")"
+    cp "$DOC07" "$SHD/docs/$DOC07"
+    cp "$GUIDE" "$SHD/docs/$GUIDE"
+    cp "$SPEC" "$SHD/docs/$SPEC"
+    python3 - "$SHD" "$no" "$DOC07" <<'PYM'
 import json, sys
 from pathlib import Path
 shd, no = Path(sys.argv[1]), sys.argv[2]
+DOC07_REL = sys.argv[3]
 led = shd / "ledger.jsonl"; tir = shd / "tiers.json"; evt = shd / "evidence_tiers.json"
 rows = [json.loads(l) for l in led.read_text(encoding="utf-8").splitlines() if l.strip()]
 tiers = json.loads(tir.read_text(encoding="utf-8"))
@@ -399,11 +488,23 @@ elif no == "f":    # 档 2 条目**引用**档 0 的 run_id(跨档并列)
     ev["evidence_tiers"]["mesif-observation"]["attribution"] += \
         " (对照档 0 的 run cep-full-green-2026-11-13)"
     evt.write_text(json.dumps(ev, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+elif no == "g":    # 档 2 **文档产出物**被植入**肯定式**夸大表述(T6)
+    # ⚠️ 必须是**纯肯定式**文本 —— 若沿用原文的否定语境(⛔ / 无 / ≠),
+    #    `has_negation_context` 会把它豁免 ⇒ 变异不会红。
+    p = shd / "docs" / DOC07_REL
+    lines = p.read_text(encoding="utf-8").split("\n")
+    start = next(i for i, l in enumerate(lines)
+                 if l.startswith("## Status Update 2026-11-14"))
+    end = next((i for i in range(start + 1, len(lines))
+                if lines[i].startswith("## ")), len(lines))
+    lines.insert(end, "> 档 2 的检测力已证,所有族均达成通过态。")
+    p.write_text("\n".join(lines), encoding="utf-8")
 led.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
 tir.write_text(json.dumps(tiers, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PYM
     out="$(CEP_RECONCILE_JSONL="$SHD/ledger.jsonl" CEP_RECONCILE_TIERS="$SHD/tiers.json" \
            CEP_RECONCILE_EVIDENCE_TIERS="$SHD/evidence_tiers.json" \
+           CEP_RECONCILE_DOCS_ROOT="$SHD/docs" \
            bash "$REPO_ROOT/scripts/test/cep_e2e_reconcile_check.sh" 2>&1)" && rc=0 || rc=$?
     if [[ $rc -eq 0 ]]; then
       printf '✗ 变异 %s 未变红(基线仍绿)\n' "$no"; MF=$((MF + 1))
@@ -420,13 +521,14 @@ PYM
   mutate "必填键缺失:evidence_scope"  d "删 evidence_scope 键"
   mutate "肯定式通过态表述"             e "档 2 条目写成肯定式「通过态已达成」"
   mutate "跨档 run 引用"                f "档 2 条目引用档 0 的 run_id"
+  mutate "文档夸大表述"                  g "档 2 文档产出物被植入肯定式夸大表述"
 
-  FP_AFTER="$(sha256sum "$LEDGER" "$TIERS" "$EVIDENCE_TIERS")"
+  FP_AFTER="$(sha256sum "$LEDGER" "$TIERS" "$EVIDENCE_TIERS" "$DOC07" "$GUIDE" "$SPEC")"
   if [[ "$FP_BEFORE" != "$FP_AFTER" ]]; then
     echo "✗ 真实仓字节指纹前后**不等** ⇒ 变异污染了真实仓"; exit 1
   fi
   echo "  ✓ 真实仓字节指纹前后相等"
   [[ $MF -ne 0 ]] && { echo "✗ $MF 条变异未按签名红"; exit 1; }
-  echo "✓ 6 条决定性变异全部按签名红 + 还原绿"
+  echo "✓ 7 条决定性变异全部按签名红 + 还原绿"
 fi
 exit 0

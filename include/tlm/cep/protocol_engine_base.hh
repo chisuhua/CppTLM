@@ -395,6 +395,17 @@ namespace tlm::cep {
         void enable_observations(bool on) {
             observations_enabled_ = on;
         }
+        /// **仅测试用**:设置观测缓冲上限(⛔ 不得用于生产路径 —— 溢出即丢观测 ⇒ 判不可判)
+        ///
+        /// ⚠️ **为什么可注入**(per 验收 AC-8 的有界性子项):默认上限 4096 ⇒ 测试无法
+        ///    在合理规模内触发溢出 ⇒ 「非零 ⇒ 判不可判」这条判据**从未被执行过**
+        ///    ⇒ 注入上限是让该判据**可被执行**的唯一办法(⛔ 不改默认行为)。
+        void set_observation_capacity(std::size_t cap) {
+            observation_capacity_ = cap;
+        }
+        std::size_t observation_capacity() const {
+            return observation_capacity_;
+        }
         bool observations_enabled() const {
             return observations_enabled_;
         }
@@ -418,7 +429,7 @@ namespace tlm::cep {
         void record_observation(EventObservation obs) {
             if (!observations_enabled_)
                 return;
-            if (observations_.size() >= kObservationCapacity) {
+            if (observations_.size() >= observation_capacity_) {
                 ++dropped_observations_; // ⛔ 有界:溢出即计数(不静默丢)
                 return;
             }
@@ -440,6 +451,7 @@ namespace tlm::cep {
         cpptlm::ProtocolBridgeEr* bridge_ = nullptr; // 非拥有
 
         bool observations_enabled_ = false;
+        std::size_t observation_capacity_ = kObservationCapacity;  ///< ⚠️ **仅测试可注入**
         std::vector<EventObservation> observations_;
         std::uint64_t dropped_observations_ = 0;
         std::uint64_t observation_invalid_ = 0;
