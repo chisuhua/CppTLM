@@ -42,6 +42,19 @@
 #      · **T5c** 档 2 条目**不得引用**档 0 / 档 1 的 run_id(跨档并列的机器形态)
 #        ⇒ 否则 `跨档 run 引用`
 #    ⚠️ 本组判据**独立于** run 闸的早退分支(档 2 ⭔ 不产 run ⇒ 不得依赖 run 存在)。
+#
+# ── 2026-11-14(普查落盘 · 台账 Entry #422):**档 2 可覆盖性地图**(**T7**)
+#      补「将来把档 2 误推广到不适用的族」的机器面
+#      · **T7a** `coverage_map.families` 的实例集合 == `protocol_instances.json` 的 `instances` 集合
+#      · **T7b** 每实例的 `impl` 与 `protocol_instances.json` 声明一致
+#      · **T7c** `completeness` / `broadcast_fallback` 与**代码真源** `kTrackerTraits` 逐字段一致
+#      · **T7d** `tier2_applicable` 与**推导规则**一致
+#        (`(completeness == EXACT) && (!broadcast_fallback) && (impl != 不参与)`)
+#      ⇒ 否则 `覆盖地图实例集不符` / `覆盖地图 impl 不符` / `覆盖地图 caps 与代码真源不符` /
+#        `覆盖地图推导规则不符`
+#    ⚠️ **为什么必须有 T7**:`completeness == EXACT` **不足以**判定适用 ——
+#      `nvlink_4`(BroadcastNull)是 EXACT 但 `broadcast_fallback = true` + `scope = NONE`
+#      ⇒ sharer 视图恒为**全广播** ⇒ 「他人 sharer」恒非空 ⇒ **恒判违例**(⛔ 不是零违例)。
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -56,6 +69,9 @@ DOCS_ROOT="${CEP_RECONCILE_DOCS_ROOT:-$REPO_ROOT}"
 DOC07="docs/architecture/07-coherence-exploration-platform.md"
 GUIDE="docs/guide/cep-usage.md"
 SPEC="openspec/specs/cep-evidence-tier2-observation/spec.md"
+# ── T7 的两个**真源**(per 普查 2026-11-14):caps 真源 = 代码 traits 表;实例面 = JSON 声明 ──
+CAPS_SRC="${CEP_RECONCILE_CAPS_SRC:-$REPO_ROOT/include/tlm/cep/sharer_tracker.hh}"
+INSTANCES="${CEP_RECONCILE_INSTANCES:-$REPO_ROOT/include/tlm/cep/protocol_instances.json}"
 MUTATIONS=0
 [[ "${1:-}" == "--mutations" ]] && { MUTATIONS=1; shift; }
 problems=0
@@ -64,12 +80,14 @@ fail() { echo "✗ $*" >&2; problems=$((problems + 1)); }
 
 # ── 档 2 的**非 run 载体**登记面(T4 / T5)───────────────────────────────
 # ⚠️ **独立于**下面的 run 闸 ⇒ 档 2 ⭔ 不产 run(per 裁决 R3)时本组判据**仍**执行。
-python3 - "$EVIDENCE_TIERS" "$TIERS" "$DOCS_ROOT" <<'PYT'
-import json, os, sys
+python3 - "$EVIDENCE_TIERS" "$TIERS" "$DOCS_ROOT" "$CAPS_SRC" "$INSTANCES" <<'PYT'
+import json, os, re, sys
 
 ev_path = sys.argv[1]
 run_tiers_path = sys.argv[2]
 docs_root = sys.argv[3]
+caps_src_path = sys.argv[4]
+instances_path = sys.argv[5]
 
 # 档位词真源单点 = 主判据块内的 TIER_WORDS(⛔ 本块**只引用**不复制定义)
 TIER_WORDS_2 = ("档 2", "协议级")
@@ -260,8 +278,91 @@ for rel, heading, label in DOC_UNITS:
                 problems += 1
             s = idx + len(phrase)
 
+# ── T7:档 2 可覆盖性地图(per 普查落盘 2026-11-14 · 台账 Entry #422)─────────
+#
+# ⚠️ **三个真源**:① `evidence_tiers.json` 的 `coverage_map` ② `protocol_instances.json`
+#    (实例面声明)③ **代码** `kTrackerTraits`(caps 真源 —— JSON 是派生副本)。
+# ⚠️ **T7c 必须读代码**:若只比 JSON 与 JSON,两者一起错时闸抓不到。
+def parse_traits(path):
+    txt = open(path, encoding="utf-8").read()
+    i = txt.index("kTrackerTraits{{")
+    seg = txt[i:txt.index("\n}};", i)]
+    out = {}
+    for blk in re.split(r"\n    \{TrackerImpl::", seg):
+        if not blk.strip():
+            continue
+        impl = blk.split(",")[0].strip()
+        caps = re.search(
+            r"\{Scope::(\w+),\s*Completeness::(\w+),\s*Authority::(\w+),\s*AggregationAt::(\w+)\}",
+            blk, re.S)
+        beh = re.search(r"\{LookupHazard::(\w+),\s*(true|false)\}", blk)
+        if caps and beh:
+            out[impl] = {"scope": caps.group(1), "completeness": caps.group(2),
+                         "broadcast_fallback": beh.group(2) == "true"}
+    return out
+
+
+cov = doc.get("coverage_map") if isinstance(doc, dict) else None
+if not isinstance(cov, dict) or not isinstance(cov.get("families"), dict):
+    print(f"✗ {ev_path} 缺 coverage_map.families(档 2 可覆盖性地图)", file=sys.stderr)
+    problems += 1
+else:
+    fam = cov["families"]
+    try:
+        inst_doc = json.load(open(instances_path, encoding="utf-8"))
+        inst_impl = {}
+        for v in inst_doc["instances"]:
+            inst_impl[v["id"]] = (v.get("sharer_tracker") or {}).get("impl")
+    except Exception as exc:
+        print(f"✗ 缺实例声明真源 {instances_path}: {exc}", file=sys.stderr)
+        problems += 1
+        inst_impl = None
+    try:
+        traits = parse_traits(caps_src_path)
+        if len(traits) != 6:
+            raise ValueError(f"kTrackerTraits 解析出 {len(traits)} 行(须 6)")
+    except Exception as exc:
+        print(f"✗ 缺 caps 代码真源 {caps_src_path}: {exc}", file=sys.stderr)
+        problems += 1
+        traits = None
+
+    if inst_impl is not None:
+        # T7a 实例集合相等
+        if set(fam) != set(inst_impl):
+            print(f"✗ {ev_path} 覆盖地图实例集不符: 多={sorted(set(fam) - set(inst_impl))} "
+                  f"缺={sorted(set(inst_impl) - set(fam))}", file=sys.stderr)
+            problems += 1
+        for iid, rec in fam.items():
+            # T7b impl 与声明一致
+            if iid in inst_impl and rec.get("impl") != inst_impl[iid]:
+                print(f"✗ {ev_path} 覆盖地图 impl 不符: {iid} 表={rec.get('impl')!r} "
+                      f"声明={inst_impl[iid]!r}", file=sys.stderr)
+                problems += 1
+            # T7d 推导规则
+            impl = rec.get("impl")
+            if impl == "不参与":
+                want = False
+            elif traits is not None and impl in traits:
+                want = (traits[impl]["completeness"] == "EXACT") and \
+                       (not traits[impl]["broadcast_fallback"])
+            else:
+                want = None
+            if want is not None and rec.get("tier2_applicable") is not want:
+                print(f"✗ {ev_path} 覆盖地图推导规则不符: {iid} "
+                      f"tier2_applicable={rec.get('tier2_applicable')!r} 应为 {want!r}", file=sys.stderr)
+                problems += 1
+            # T7c caps 与代码真源逐字段
+            if traits is not None and impl in traits:
+                for k in ("completeness", "broadcast_fallback"):
+                    if rec.get(k) != traits[impl][k]:
+                        print(f"✗ {ev_path} 覆盖地图 caps 与代码真源不符: {iid}.{k} "
+                              f"表={rec.get(k)!r} 代码={traits[impl][k]!r}", file=sys.stderr)
+                        problems += 1
+
 print(f"[evidence-tiers] 档 2 非 run 载体登记 {len(entries)} 条 · "
-      f"文档产出物 {doc_units} 个 · 问题 {problems}")
+      f"文档产出物 {doc_units} 个 · "
+      f"覆盖地图 {len(cov['families']) if isinstance(cov, dict) and isinstance(cov.get('families'), dict) else 0} 族 · "
+      f"问题 {problems}")
 sys.exit(1 if problems else 0)
 PYT
 _ev_rc=$?
@@ -438,7 +539,7 @@ fi
 
 echo "✓ CEP E2E 双向闸通过(台账 ↔ 仓内 run 产物)"
 
-# ── 7 条决定性变异(⛔ 只在影子副本上做;每条须**按签名红**)──────────────
+# ── 9 条决定性变异(⛔ 只在影子副本上做;每条须**按签名红**)──────────────
 if [[ $MUTATIONS -eq 1 ]]; then
   echo "── 决定性变异(影子副本)──────────────────────────────"
   FP_BEFORE="$(sha256sum "$LEDGER" "$TIERS" "$EVIDENCE_TIERS" "$DOC07" "$GUIDE" "$SPEC")"
@@ -488,6 +589,18 @@ elif no == "f":    # 档 2 条目**引用**档 0 的 run_id(跨档并列)
     ev["evidence_tiers"]["mesif-observation"]["attribution"] += \
         " (对照档 0 的 run cep-full-green-2026-11-13)"
     evt.write_text(json.dumps(ev, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+elif no == "i":    # 覆盖地图的 caps **与代码真源不符**(T7c)· ⚠️ 推导**保持自洽**
+    # ⇒ 只触发 T7c,不触发 T7d ⇒ 这是 T7c 的**专属**变异(否则 T7c 只被 T7d 间接覆盖)
+    ev = json.loads(evt.read_text(encoding="utf-8"))
+    fam = ev["coverage_map"]["families"]
+    fam["mesif"]["completeness"] = "CONSERVATIVE"
+    fam["mesif"]["tier2_applicable"] = False
+    evt.write_text(json.dumps(ev, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+elif no == "h":    # 覆盖地图的 tier2_applicable **反转**(T7d 推导规则)
+    ev = json.loads(evt.read_text(encoding="utf-8"))
+    fam = ev["coverage_map"]["families"]
+    fam["tilelink_c"]["tier2_applicable"] = not fam["tilelink_c"]["tier2_applicable"]
+    evt.write_text(json.dumps(ev, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 elif no == "g":    # 档 2 **文档产出物**被植入**肯定式**夸大表述(T6)
     # ⚠️ 必须是**纯肯定式**文本 —— 若沿用原文的否定语境(⛔ / 无 / ≠),
     #    `has_negation_context` 会把它豁免 ⇒ 变异不会红。
@@ -505,6 +618,7 @@ PYM
     out="$(CEP_RECONCILE_JSONL="$SHD/ledger.jsonl" CEP_RECONCILE_TIERS="$SHD/tiers.json" \
            CEP_RECONCILE_EVIDENCE_TIERS="$SHD/evidence_tiers.json" \
            CEP_RECONCILE_DOCS_ROOT="$SHD/docs" \
+           CEP_RECONCILE_CAPS_SRC="$CAPS_SRC" CEP_RECONCILE_INSTANCES="$INSTANCES" \
            bash "$REPO_ROOT/scripts/test/cep_e2e_reconcile_check.sh" 2>&1)" && rc=0 || rc=$?
     if [[ $rc -eq 0 ]]; then
       printf '✗ 变异 %s 未变红(基线仍绿)\n' "$no"; MF=$((MF + 1))
@@ -522,6 +636,8 @@ PYM
   mutate "肯定式通过态表述"             e "档 2 条目写成肯定式「通过态已达成」"
   mutate "跨档 run 引用"                f "档 2 条目引用档 0 的 run_id"
   mutate "文档夸大表述"                  g "档 2 文档产出物被植入肯定式夸大表述"
+  mutate "覆盖地图推导规则不符"            h "覆盖地图的 tier2_applicable 反转(tilelink_c)"
+  mutate "覆盖地图 caps 与代码真源不符"      i "覆盖地图的 mesif.completeness 改 CONSERVATIVE(推导保持自洽)"
 
   FP_AFTER="$(sha256sum "$LEDGER" "$TIERS" "$EVIDENCE_TIERS" "$DOC07" "$GUIDE" "$SPEC")"
   if [[ "$FP_BEFORE" != "$FP_AFTER" ]]; then
@@ -529,6 +645,6 @@ PYM
   fi
   echo "  ✓ 真实仓字节指纹前后相等"
   [[ $MF -ne 0 ]] && { echo "✗ $MF 条变异未按签名红"; exit 1; }
-  echo "✓ 7 条决定性变异全部按签名红 + 还原绿"
+  echo "✓ 9 条决定性变异全部按签名红 + 还原绿"
 fi
 exit 0

@@ -23267,3 +23267,42 @@ T6 只守**档 2 的「新增产出物」** ⇒ **档 0 / 档 1 的产出物不�
 | 5 | 无参复验（provenance rc=0） | ⬜ |
 
 **⑥ 关联**:**#420**（objective 归档验收）· **#419**（ratify + 归档落盘）· `.rddf/reviews/cep-adr-021-oracle-review.md`（第 1 审 · BLOCK 12 条全采纳）· `.rddf/reviews/cep-adr-021-critic-review.md`（第 2 审 · 4 SHOULD + 2 NIT 全采纳）· `ADR-CEP-04`（不可变 · 不受影响）· `ADR-CEP-12`（其 `INV-CEP-12-IC1` 的 13 键 schema 是**触发判据 1 的前置**——⚠️ 该 schema 无节点数声明位 ⇒ 判据 1 当前结构上不成立，已由 2a/2b/2c 替代）
+
+### Entry #422 — 2026-11-14 [builder](**档 2 可覆盖性普查** —— 8 族逐族判定 · **有牙载体**(T7a~T7d + 变异 h/i) · ⛔ 未推广任何族(per 用户裁决 A))
+
+**主题**:per 用户裁决 **A**（「只做普查 + 『不适用』登记，暂不推广 `tilelink_c`」）⇒ 本 Entry = 普查结果 + 有牙载体 + ⚠️ **两处推翻原规划的实测发现**。
+
+**① ⚠️ 推翻原规划的两处实测（重要）**
+
+| # | 原规划的说法 | 实测 | 影响 |
+|:--:|---|---|---|
+| **P-1** | 「档 2 **全族推广**（其余 **5 族**，+8~12 人日）」 | `protocol_instances.json` 的 **8 个实例**实测：**3 族「不参与」**（`chi_rnf` / `cxl_2_0` / `ualink_4` —— 权限由副本携带或 software coherency ⇒ **无 sharer 跟踪需求**）· **2 族 CONSERVATIVE**（`moesi_gpu` / `cxl_3_0_symmetric`）· **1 族恒广播**（`nvlink_4`）⇒ ⇒ **真正适用且未覆盖的只有 `tilelink_c` 1 族** | ⇒ 「5 族 +8~12 人日」**不成立**;实际可推广面 = **1 族** |
+| **P-2** | 「档 2 适用性 = `completeness == EXACT`」 | ⚠️ **单看 `completeness` 会把 `nvlink_4` 误判为适用** —— 它是 `BroadcastNull`，`completeness = EXACT` **但** `broadcast_fallback = true` + `scope = NONE` ⇒ sharer 视图**恒为全广播** ⇒ 「他人 sharer」恒非空 ⇒ **恒判违例**（⛔ 不是零违例，也⛔ 不是不可判） | ⇒ 判据须为**两必要条件**:`(completeness == EXACT) && (!broadcast_fallback)` |
+
+**② 普查结论（8 族逐族）**
+
+| 实例 | tracker | `completeness` | `broadcast_fallback` | `tier2_applicable` | disposition |
+|---|---|---|---|:--:|---|
+| `mesif` | HierarchicalDirectory | EXACT | false | ✅ | `applicable`（**已覆盖**） |
+| `tilelink_c` | TreeManager | EXACT | false | ✅ | `applicable`（**可推广，未做**） |
+| `nvlink_4` | BroadcastNull | **EXACT** | **true** | ❌ | `broadcast-no-discrimination` |
+| `moesi_gpu` | SparseSnoopFilter | CONSERVATIVE | true | ❌ | `conservative-no-negative-answer` |
+| `cxl_3_0_symmetric` | DcohSymmetric | CONSERVATIVE | true | ❌ | `conservative-no-negative-answer` |
+| `chi_rnf` / `cxl_2_0` / `ualink_4` | 不参与 | — | — | ❌ | `no-sharer-tracking` |
+
+⇒ **适用 2 族 / 不适用 6 族**;⚠️ 3 个真源逐字段实测**一致**:`coverage_map` ↔ `protocol_instances.json` ↔ **代码** `kTrackerTraits`(6 行)。
+
+**③ 有牙载体（⛔ 不是「一份文档」）**
+
+| 面 | 内容 |
+|---|---|
+| 数据 | `test/cep_evidence_tiers.json` 新增顶层 `coverage_map`（8 族 × {impl / completeness / broadcast_fallback / tier2_applicable / disposition / reason} + `derivation` + `caps_source`） |
+| 闸 | `cep_e2e_reconcile_check.sh` 新增 **T7a**（实例集合相等）· **T7b**（impl 与声明一致）· **T7c**（caps 与**代码真源**逐字段一致 —— ⚠️ 只比 JSON↔JSON 时两者一起错会漏抓）· **T7d**（`tier2_applicable` 与推导规则一致） |
+| 决定性变异 | **h** = `tier2_applicable` 反转 ⇒ T7d 红;· **i** = 改 `completeness` **但推导保持自洽** ⇒ **只有 T7c 红**（T7c 的**专属**变异 —— 否则 T7c 只被 T7d 间接覆盖）⇒ **共 9 条变异全按签名红** + 真实仓字节指纹相等 |
+| 文档 | `docs/guide/cep-usage.md` §12.10 补「可覆盖性地图」节（含推导规则 + 8 族表 + 三真源说明 + 「⛔ 本表不表示证据强度已完成」） |
+
+**④ ⛔ 边界**
+
+⛔ **未推广任何族**（`tilelink_c` 仅登记为「可推广」，代码 / 测试零改动 · `mesif` 仍是档 2 唯一载体）· ⛔ **未改 `07 号`**（免五步链）· ⛔ **未新增 invariant** · ⛔ **未改 `protocol_instances.json` / `sharer_tracker.hh`**（只读）· ⛔ **未宣称 `nvlink_4` 「适用」**。
+
+**⑤ 关联**:**#421**（ADR-CEP-21）· **#420** / **#419**（objective 归档）· `ADR-CEP-20` 决策 6（档位阶梯）· `ADR-CEP-21`（阶段 1 的机制化仍待立项 —— 本 Entry **未做**）· `test/cep_evidence_tiers.json` 的 `coverage_map` · `scripts/test/cep_e2e_reconcile_check.sh`（T7 / 变异 h·i）

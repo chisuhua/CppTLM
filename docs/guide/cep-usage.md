@@ -258,6 +258,23 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 3. ⛔ **档 2 与档 1 正交**(协议引擎状态机与目录可见性 ↔ 完成域模型)⇒ 不得写「档 2 强于档 1」;跨档强度**不可比**;
 4. ✅ **「不可判」≠「零违例」** —— 装配前提不成立(目录未接线 / 节点未映射到 sharer 位 / 层级越界)或观测被丢弃 ⇒ 判「**不可判**」。
 
+### 档 2 的可覆盖性地图（⚠️ 推广前必查）
+
+**推导规则**（⛔ 不是人工拍脑袋）：`tier2_applicable = (completeness == EXACT) && (!broadcast_fallback)`；`impl == 不参与` ⇒ 一律 false。
+⚠️ **两个必要条件缺一不可** —— 只看 `completeness` 会把 `nvlink_4` 误判为适用。
+
+| 实例 | tracker | `completeness` | `broadcast_fallback` | 档 2 适用？ |
+|---|---|---|---|---|
+| `mesif` | HierarchicalDirectory | EXACT | false | ✅ **已覆盖** |
+| `tilelink_c` | TreeManager | EXACT | false | ✅ **可推广**（SUBTREE 聚合 · ⚠️ 需 L4 E2E 载体） |
+| `nvlink_4` | BroadcastNull | **EXACT** | **true** | ❌ **无判别力** —— sharer 视图恒为全广播 ⇒ 「他人 sharer」恒非空 ⇒ **恒判违例**（⛔ 不是零违例） |
+| `moesi_gpu` | SparseSnoopFilter | CONSERVATIVE | true | ❌ 保守多探 ⇒ **不能回答「没有其他 sharer」** ⇒ 判据会**假阳性** |
+| `cxl_3_0_symmetric` | DcohSymmetric | CONSERVATIVE | true | ❌ 同上 |
+| `chi_rnf` / `cxl_2_0` / `ualink_4` | 不参与 | — | — | ❌ 权限由副本携带 / software coherency ⇒ **无 sharer 跟踪** |
+
+⚠️ **三个真源**：① 本表落点 = `test/cep_evidence_tiers.json` 的 `coverage_map` ② 实例面 = `include/tlm/cep/protocol_instances.json` ③ **caps 真源 = 代码** `include/tlm/cep/sharer_tracker.hh` 的 `kTrackerTraits`（JSON 是派生副本）⇒ 三者一致性由闸 `cep_e2e_reconcile_check.sh` 的 **T7a~T7d** 机检。
+⛔ **本表不表示各族的证据强度已完成** —— 它只回答「档 2 的判据对谁是**有判别力**的」。
+
 ### 加一个新协议族时
 
 观测面只依赖协议中立字段(`addr` / 事件码 / 迁移前后态 / 数据前后值 / sharer 快照 / 归因)⇒ **基类无需改动**;派生引擎只需:① 在状态迁移入口落一条 `transition` 记录 ② 在行数据写入点落一条 `fill` 记录 ③ 装配期核对「目录已接线 / 节点已映射到 sharer 位 / 层级在界内」⇒ 任一不成立即判「不可判」。

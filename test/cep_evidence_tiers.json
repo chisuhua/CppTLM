@@ -9,8 +9,12 @@
       "version_caliber": "no-version-dimension",
       "version_caliber_note": "档 2 **无版本维**(per architect 裁决 R1:per-engine 私有写序在「自读自写」下是**恒等式** ⇒ 恒 0 ⇒ 证伪判别力)⇒ ⛔ **非**协议语义版本;观测面记录的数据前后值是**实现侧真实状态**,⛔ 不是版本代理",
       "coverage_scope": {
-        "families": ["mesif"],
-        "topologies": ["single-topology"],
+        "families": [
+          "mesif"
+        ],
+        "topologies": [
+          "single-topology"
+        ],
         "instances": 1,
         "note": "**单族(mesif)/ 单拓扑 / 一次实例** ⇒ ⛔ 一次通过态实例 ≠ 所有族 / 所有拓扑达成"
       },
@@ -35,6 +39,77 @@
         "test/test_cep_tier2_observation.cc"
       ],
       "non_empty_gate": "scripts/test/cep_e2e_reconcile_check.sh"
+    }
+  },
+  "coverage_map": {
+    "note": "档 2(协议级)**可覆盖性地图**(per ADR-CEP-20 决策 6 的档位阶梯;普查落盘 2026-11-14 · 台账 Entry #422)。⚠️ **推导规则**(⛔ 不是人工拍脑袋):`tier2_applicable = (completeness == EXACT) && (!broadcast_fallback)`;`impl == '不参与'` ⇒ 一律 false。⚠️ **两个必要条件缺一不可**:只看 completeness 会把 `nvlink_4`(BroadcastNull · EXACT)误判为适用 —— 它的 sharer 视图恒为**全广播** ⇒ 「他人 sharer」恒非空 ⇒ **恒判违例**(⛔ 不是零违例)。⚠️ **caps 真源 = 代码** `include/tlm/cep/sharer_tracker.hh` 的 `kTrackerTraits`(6 行)· `protocol_instances.json` 是**派生副本** ⇒ 本表与该两者的一致性由闸 T7 机检。⚠️ **本表的用途** = 防「将来把档 2 误推广到不适用的族」⇒ ⛔ 本表**不表示**各族的证据强度已完成。",
+    "derivation": "(completeness == EXACT) && (broadcast_fallback == false) && (impl != '不参与')",
+    "caps_source": "include/tlm/cep/sharer_tracker.hh 的 kTrackerTraits(6 行)",
+    "families": {
+      "moesi_gpu": {
+        "impl": "SparseSnoopFilter",
+        "completeness": "CONSERVATIVE",
+        "broadcast_fallback": true,
+        "tier2_applicable": false,
+        "disposition": "conservative-no-negative-answer",
+        "reason": "`SparseSnoopFilter` 的 completeness = CONSERVATIVE ⇒ 不能回答「**没有**其他 sharer」(sharer_tracker.hh:692 明文)⇒ 档 2 的 SWMR 判据会**假阳性**"
+      },
+      "mesif": {
+        "impl": "HierarchicalDirectory",
+        "completeness": "EXACT",
+        "broadcast_fallback": false,
+        "tier2_applicable": true,
+        "disposition": "applicable",
+        "reason": "`HierarchicalDirectory`: completeness = EXACT 且无广播兜底 ⇒ 可回答「没有其他 sharer」⇒ 档 2 判据有判别力"
+      },
+      "chi_rnf": {
+        "impl": "不参与",
+        "completeness": null,
+        "broadcast_fallback": null,
+        "tier2_applicable": false,
+        "disposition": "no-sharer-tracking",
+        "reason": "该协议权限由副本携带或无 snoop 流 ⇒ 无 sharer-set 知识需求(见 protocol_instances.json 的 sharer_tracker_rationales)"
+      },
+      "cxl_2_0": {
+        "impl": "不参与",
+        "completeness": null,
+        "broadcast_fallback": null,
+        "tier2_applicable": false,
+        "disposition": "no-sharer-tracking",
+        "reason": "该协议权限由副本携带或无 snoop 流 ⇒ 无 sharer-set 知识需求(见 protocol_instances.json 的 sharer_tracker_rationales)"
+      },
+      "cxl_3_0_symmetric": {
+        "impl": "DcohSymmetric",
+        "completeness": "CONSERVATIVE",
+        "broadcast_fallback": true,
+        "tier2_applicable": false,
+        "disposition": "conservative-no-negative-answer",
+        "reason": "`DcohSymmetric` 的 completeness = CONSERVATIVE ⇒ 不能回答「**没有**其他 sharer」(sharer_tracker.hh:692 明文)⇒ 档 2 的 SWMR 判据会**假阳性**"
+      },
+      "tilelink_c": {
+        "impl": "TreeManager",
+        "completeness": "EXACT",
+        "broadcast_fallback": false,
+        "tier2_applicable": true,
+        "disposition": "applicable",
+        "reason": "`TreeManager`: completeness = EXACT 且无广播兜底 ⇒ 可回答「没有其他 sharer」⇒ 档 2 判据有判别力"
+      },
+      "nvlink_4": {
+        "impl": "BroadcastNull",
+        "completeness": "EXACT",
+        "broadcast_fallback": true,
+        "tier2_applicable": false,
+        "disposition": "broadcast-no-discrimination",
+        "reason": "`BroadcastNull` 虽为 EXACT,但 `broadcast_fallback = true` + `scope = NONE` ⇒ sharer 视图**恒为全广播** ⇒ 「他人 sharer」恒非空 ⇒ **恒判违例**(⛔ 不是零违例,也⛔ 不是不可判)⇒ 无判别力"
+      },
+      "ualink_4": {
+        "impl": "不参与",
+        "completeness": null,
+        "broadcast_fallback": null,
+        "tier2_applicable": false,
+        "disposition": "no-sharer-tracking",
+        "reason": "该协议权限由副本携带或无 snoop 流 ⇒ 无 sharer-set 知识需求(见 protocol_instances.json 的 sharer_tracker_rationales)"
+      }
     }
   }
 }
