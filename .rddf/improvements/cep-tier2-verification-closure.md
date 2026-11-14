@@ -7,7 +7,7 @@ phase: phase-10
   - ADR-CEP-20
   - ADR-CEP-06
   - ADR-CEP-12
-状态: "🟡 待实施(2026-11-14 起草 · **v2 · 已按 metis 第 1 轮审查 13 条建议逐条修订**)⚠️ 4 项缺口由 verifier 独立验收报告判定为 `implementation_gap`(判据正确、实现未完)⇒ 路由回 builder"
+状态: "🟢 已实施并验收(2026-11-14 · **v3 · 实施 + verifier 第 2 轮**)—— W1 ~ W7 **全部完成**;4 项缺口 ⇒ **G-1 / G-3 / G-4 闭合** + **G-2 部分达成**(AC-2 ⭔ 不得记 ✅);⛔ 唯一未达成项 = D-1 待裁(verifier + 用户);已 push ⇒ **本 improvement 归档态**"
 created: 2026-11-14
 ---
 
@@ -16,7 +16,7 @@ created: 2026-11-14
 > **范围纪律**:⛔ **不改任何已签批 ADR** · ⛔ **新增 invariant 数 = 0** · ⛔ **不改 main spec 的 Requirement / Scenario** · ⛔ **不产 4 件套 run** · ⛔ **不新建 OpenSpec change**(理由见 §What Changes ①,含对 `AGENTS.md`「公共 API ⇒ 必须走 openspec」条款的正面 rebuttal)· ⛔ **不占 KPI slot**(保持 0/3)
 > **产出形态**:**归档后缺陷补正**(实施 commit)+ 台账订正 commit + verifier 第 2 轮报告 + push(三个提交面分开,见 §Impact)
 > **估时**:≈ **1.0 ~ 1.5 人日**(W4 走「段级扫描面」分支 ≈ 1.0;若改走「五步链改文档」分支 ≈ 1.5 —— per metis P2-11)
-> **上游**:`.rddf/reviews/cep-evidence-tier2-minimal-slice-verify.md`(verifier · 2026-11-14 · 判定「有条件通过」10 ✅ + 4 ⚠️)· 台账 **Entry #410 ~ #413**
+> **上游**:`.rddf/reviews/cep-evidence-tier2-minimal-slice-verify.md`(verifier · 第 1 轮「有条件通过」10 ✅ + 4 ⚠️ · **第 2 轮**「3 项闭合 + G-2 部分达成」)· 台账 **Entry #410 ~ #413** · **#414**(规划 + metis 处置 + 授权)· **#415**(实施回执)· **#416**(第 2 轮验收)· **#417**(push 回执)
 
 ## ⚠️ 工作区现态(实施前必读 · per metis P0-1)
 
