@@ -15,10 +15,17 @@
 #   V4 `07 号` §12 含维护态判定规则的**单向指针**
 #   V5 回滚形态**成对可判**(规则文本 + 成对登记表)
 #   V6 闸的**行为**有牙(破坏 deferrals 的 ledger_entry ⇒ 闸红)
+#   V7 **归档事件与「DoD Go 仍挂起」不矛盾**(per 验收 A-9;⚠️ 仅当 §14.8 存在时判)
+#      (a) §12 终态行仍含「终态 DoD Go 仍挂起」
+#      (b) §14.8 段内「终态 DoD Go」与「仍挂起」同段出现
+#      (c) §14 头部警示句所在行含 dated 更新句 **且** 含「见 §14.8」指针 token
+#      ⚠️ 归档**前** §14.8 不存在 ⇒ V7 **不判**(⛔ 不得 fail-closed)
 #
 # 决定性变异(影子树内,⛔ 不动真实仓):
 #   M1 破坏 deferrals 的 `ledger_entry` ⇒ 闸必红(签名含 `ledger_entry`)
 #   M2 把闸的锚解析改回全文子串 ⇒ V2 必红(签名 `锚解析降级`)
+#   M3 把 §12 终态行的挂起锚改成「Go 已开」⇒ **V7a 必红**
+#   M4 删 §14.8 段内的「仍挂起」⇒ **V7b 必红**
 #
 # 退出码: 0 = 全绿 · 1 = 有 FAIL · 2 = 环境缺失
 set -uo pipefail
@@ -50,7 +57,7 @@ fi
 # shellcheck source=/dev/null
 source scripts/test/cep_test_shadow.sh
 
-echo "═══ B3b-2 归档形态 / 回滚路径 · 对账闸(6 条判据 + 2 条决定性变异)═══"
+echo "═══ B3b-2 归档形态 / 回滚路径 · 对账闸(7 条判据 + 4 条决定性变异)═══"
 
 # ── V1 · 归档态段 + 七个子标题 ────────────────────────────────────────────
 missing=""
@@ -112,6 +119,38 @@ else
     say "V5" "撤回标记不成对" "$OBJ 内缺「成对可判」规则文本或成对登记表(被撤回的 SU 标识 / 撤回 Entry 号)"
 fi
 
+# ── V7 · 归档事件与「DoD Go 仍挂起」不矛盾(per 验收 A-9)──────────────────
+#
+# ⚠️ **为什么需要这条**:归档事件一旦登记,台账里会同时存在
+#    「已归档」与「§14 头部警示句:归档未发生」两类断言 ⇒ 无闸则**同日即自相矛盾**。
+# ⚠️ **fail-open 设计**:§14.8 不存在(归档未发生)⇒ V7 **不判** ⇒
+#    ⛔ 不得把「归档尚未发生」判成红。
+v7_check() {  # $1 = 台账路径;rc=0 ⇒ 绿
+    local f="$1"
+    grep -q '### §14\.8 · 归档事件登记' "$f" 2>/dev/null || return 0
+    # (a) §12 终态行仍含挂起锚
+    grep -q '^| \*\*终态\*\*.*终态 DoD Go 仍挂起' "$f" 2>/dev/null || return 1
+    # (b) §14.8 段内「终态 DoD Go」与「仍挂起」同段
+    local seg
+    seg="$(awk '/^### §14\.8 · 归档事件登记/{i=1} i && /^### Entry /{exit} i' "$f")"
+    grep -q '终态 DoD Go' <<<"$seg" || return 1
+    grep -q '仍挂起' <<<"$seg" || return 1
+    # (c) §14 头部警示句所在行含 dated 更新 + 「见 §14.8」指针 token
+    grep -qE '本段的存在不表示 objective 已归档.*2026-11-14 更新.*见 §14\.8' "$f" 2>/dev/null || return 1
+    return 0
+}
+
+if v7_check "$OBJ"; then
+    if grep -q '### §14\.8 · 归档事件登记' "$OBJ"; then
+        ok "V7 归档事件与「DoD Go 仍挂起」不矛盾(a/b/c 三锚齐备)"
+    else
+        ok "V7 归档事件尚未发生(§14.8 不存在)⇒ 本判据按 fail-open 不判"
+    fi
+else
+    ng "V7 归档事件与挂起锚矛盾"
+    say "V7" "归档/挂起锚矛盾" "§14.8 已存在,但 (a) §12 终态行挂起锚 / (b) §14.8 段内挂起锚 / (c) §14 头部 dated 句含「见 §14.8」 三者至少缺一"
+fi
+
 # ── V6 · 闸的行为有牙(影子树破坏)─────────────────────────────────────────
 cep_shadow_reset "$SHADOW" "$GATE" "$DECL" "$REDIRECT" "$OBJ"
 python3 - "$SHADOW/$DECL" <<'PY'
@@ -157,6 +196,44 @@ else
 fi
 cep_shadow_reset "$SHADOW" "$GATE" "$DECL" "$REDIRECT" "$OBJ"
 
+# ── M3 · 把 §12 终态行的挂起锚改成「Go 已开」⇒ V7a 必红 ─────────────────
+cep_shadow_reset "$SHADOW" "$GATE" "$DECL" "$REDIRECT" "$OBJ"
+python3 - "$SHADOW/$OBJ" <<'PYM3'
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+hit = [i for i, l in enumerate(lines) if l.startswith('| **终态**')]
+assert len(hit) == 1, f"终态行命中 {len(hit)} 次(须恰 1)"
+lines[hit[0]] = lines[hit[0]].replace('终态 DoD Go 仍挂起', '终态 DoD Go 已开')
+open(p, 'w', encoding='utf-8').write('\n'.join(lines))
+PYM3
+if v7_check "$SHADOW/$OBJ"; then
+    ng "M3 把挂起锚改成「Go 已开」后 V7 仍判绿(判据无牙)"
+    say "M3" "判据无牙" "影子树内 §12 终态行的挂起锚被改成「已开」,v7_check 仍返回绿"
+else
+    ok "M3 改挂起锚为「Go 已开」⇒ V7a 判红(判据有牙)"
+fi
+cep_shadow_reset "$SHADOW" "$GATE" "$DECL" "$REDIRECT" "$OBJ"
+
+# ── M4 · 删 §14.8 段内的「仍挂起」⇒ V7b 必红 ───────────────────────────
+cep_shadow_reset "$SHADOW" "$GATE" "$DECL" "$REDIRECT" "$OBJ"
+python3 - "$SHADOW/$OBJ" <<'PYM4'
+import sys
+p = sys.argv[1]
+txt = open(p, encoding='utf-8').read()
+start = txt.index('### §14.8 · 归档事件登记')
+end = txt.index('### Entry #419', start)
+seg = txt[start:end].replace('仍挂起', '未挂起')
+open(p, 'w', encoding='utf-8').write(txt[:start] + seg + txt[end:])
+PYM4
+if v7_check "$SHADOW/$OBJ"; then
+    ng "M4 删 §14.8 段内的「仍挂起」后 V7 仍判绿(判据无牙)"
+    say "M4" "判据无牙" "影子树内 §14.8 段的挂起锚被删,v7_check 仍返回绿"
+else
+    ok "M4 删 §14.8 段内的「仍挂起」⇒ V7b 判红(判据有牙)"
+fi
+cep_shadow_reset "$SHADOW" "$GATE" "$DECL" "$REDIRECT" "$OBJ"
+
 # ── 真实仓零改动(字节指纹前后比对)────────────────────────────────────────
 fp_real() { sha256sum "$OBJ" "$DOC07" "$GATE" "$REDIRECT" "$DECL" 2>/dev/null | awk '{print $1}' | tr '\n' ' '; }
 FP_BEFORE="$(fp_real)"
@@ -171,4 +248,4 @@ fi
 echo "───────────────────────────────────────────────"
 echo "  通过 $pass · 失败 $fail"
 [[ $fail -eq 0 ]] || exit 1
-echo "✅ cep_b3b2_archive_form_check 全绿(6 条判据 + 2 条决定性变异)"
+echo "✅ cep_b3b2_archive_form_check 全绿(7 条判据 + 4 条决定性变异)"
