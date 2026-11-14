@@ -22981,3 +22981,43 @@ KPI 活口径 **1/3 → 0/3**(`AGENTS.md` + 台账 §5.2 + `phase-10.md` + 2 份
 `ctest --test-dir build -j2` ⇒ **177/177** 全绿 · `scripts/test/cep_*.sh` **42** 个逐个 rc=0(失败闸数 = 0)· `docs_sync --strict` / `agents_md_lint` / `format --check` / `markdown_link_check` 全 rc=0 · `openspec validate --archived` 对本 change 仍 ✅。
 
 **⑤ 关联**:**#414**(规划 + metis 13 条处置 + 实施授权)· **#413** / **#412** / **#411** / **#410** · `.rddf/improvements/cep-tier2-verification-closure.md` · `.rddf/reviews/cep-evidence-tier2-minimal-slice-verify.md`(待追加第 2 轮段)· `ADR-CEP-20` 决策 5 / 6
+
+### Entry #416 — 2026-11-14 [verifier](**档 2 验收第 2 轮** —— 只复核 G-1 ~ G-4 ⇒ **3 项闭合 + 1 项部分达成**;缺口 4 → **1**)
+
+**主题**:per 台账 Entry #414 的实施授权 ⇒ builder 完成 W1~W4(Entry #415)⇒ **verifier 第 2 轮独立验收**。**已用轮次 = 2 / 3**(⛔ 未超 verifier 3 轮上限)。
+**复核范围**:⛔ **只复核 G-1 ~ G-4** —— 第 1 轮已通过的 **10 项不重审**。**被验增量** = `git diff 01769640..HEAD`(规划 commit → HEAD)= **5 个文件**。
+
+**① 判定**
+
+| 缺口 | 第 1 轮 | 第 2 轮 | 结论 |
+|---|:--:|:--:|---|
+| **G-1** provenance 机器判据 | ⚠️ | ✅ **通过** | 5 形参**全部无默认值** ⇒ 调用方无法省略 `known_engine_masks`;9 处调用点全显式传值;**零处传 `~0`**;正控 + 判别力子断言 + 反 fixture + 播种前置断言齐备 |
+| **G-2** 三段连通反向证据 | ⚠️ | ⚠️ **部分达成** | 三段中 **2 段**已可机判(且「观测面不产记录」一段**强化**为「判不可判」而非「零违例」);「**断言不落**」一段**仍未可机判** ⇒ AC-2 **⭔ 不记 ✅** |
+| **G-3** 有界性溢出路径 | ⚠️ | ✅ **通过** | 上限可注入(默认 4096 不变);溢出**真实触发**;`cap=1` 的最狠情形(判定行本身被丢弃)亦被封住 |
+| **G-4** AC-9 产出物覆盖面 | ⚠️ | ✅ **通过** | 段级「新增产出物」扫描面(3 单元);变异 g 按签名红;**边界独立实测**(档 0 语境不被误伤) |
+
+⇒ **总判定:仍为「有条件通过」,但缺口由 4 项收敛为 1 项**(AC-2 的「断言不落」一段)。
+
+**② 决定性变异实测(死判据免税 · A-11 ② ③)**
+
+| 变异 | 实测 | 结论 |
+|---|---|---|
+| provenance 判据短路(`if (untraceable != 0)` ⇒ `if (false)`) | **2 个用例变红**(正控的判别力子断言 + 反 fixture) | ✅ 判据**有牙**;已还原并复验 |
+| `record_observation` 判据改回 `kObservationCapacity` | **W2 用例变红** | ✅ 有界性判据**有牙**;已还原并复验 |
+
+**③ 独立核验要点**
+
+· **范围纪律**:AC-7 的 **9 条路径** `git diff` ⇒ **输出为空**;本轮增量仅 **5 文件**(台账 · `role.json` · 基类 · 闸脚本 · 测试)⇒ **零 ADR / 零 main spec(Requirement / Scenario 逐字未变)/ 零新增 `INV-CEP-` / `SharerTrackerIf` 虚方法仍 = 5 且零改动**。
+· **冻结面**:本轮**零文档改动**(3 份文档只被**读**)⇒ 冻结面 hash 不变 ⇒ **无需五步链**;`cep_freeze_check.sh` 无参复验 rc=0(**85** 产物)。
+· **0 回归**:`ctest` **177/177** · `scripts/test/cep_*.sh` **42** 个逐个 rc=0(失败闸数 = **0**)· `docs_sync --strict` / `agents_md_lint` / `format --check` / `markdown_link_check` 全 rc=0。
+· **台账 §10 订正**:4 行**行内替换** ⇒ **行数不变(22 912)⇒ 零行号位移**;「DoD 12 条」措辞不撞禁 token 5 条(`cep_dod_reading_check.sh` rc=0)。
+
+**④ ⚠️ 唯一未达成项 + 路由**
+
+**G-2 ④「断言不落」**(断言被删 ⇒ 无任何机制会变红)⇒ 分类 `implementation_gap` ⇒ 路由 = **verifier + 用户**(D-1 裁决)。二选一:① 接受「部分达成」并结案(AC-2 登记为 ⚠️ 长期形态,⭔ 不得写 ✅);② 升级路径 = 观测事实导出 JSON + 新 shell 闸 + 影子树变异(≈ 0.5 ~ 1 人日;⚠️ 新闸若入 `scripts/test/` ⇒ **触发五步链**)⇒ 届时**须回 planner 重排**。
+
+**⑤ ⚠️ 范围边界(如实登记 · 非缺口)**
+
+T6 只守**档 2 的「新增产出物」** ⇒ **档 0 / 档 1 的产出物不受防夸大闸保护** —— 这是 **AC-9 原文的字面范围** ⇒ **不是缺口**,但**读者须知**:将来档 0/1 产出物若出现夸大表述,本闸**不会**拦。
+
+**⑥ 关联**:**#415**(W1~W4 实施回执)· **#414**(规划 + metis 13 条处置 + 实施授权)· **#413** / **#412** / **#411** / **#410** · `.rddf/reviews/cep-evidence-tier2-minimal-slice-verify.md`(第 2 轮段)· `.rddf/improvements/cep-tier2-verification-closure.md` · `ADR-CEP-20` 决策 5 / 6

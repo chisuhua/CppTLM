@@ -133,3 +133,122 @@
 ## 4 · 关联
 
 change `cep-evidence-tier2-minimal-slice`(归档件 `openspec/changes/archive/2026-11-14-cep-evidence-tier2-minimal-slice/`)· 台账 **Entry #410**(实施回执)/ **#411**(五步链授权)/ **#412**(归档回执 + 第三次 `--update` 授权)/ **#413**(指针链 + 既有债登记)· architect 裁决 `.rddf/reviews/cep-tier2-prerequisite-rulings.md`(C′ / C′-bis / C′-bis-ter)· `.rddf/improvements/cep-evidence-tier2-minimal-slice.md`(v2)· `ADR-CEP-20` 决策 5 / 6
+
+---
+
+# 第 2 轮验收（2026-11-14）—— 只复核 G-1 ~ G-4
+
+> **角色**:verifier(只验不改;本轮产出 = 本段)· **已用轮次**:**2 / 3**
+> **复核范围**:⛔ **只复核 G-1 ~ G-4** —— 第 1 轮已通过的 **10 项(AC-3 / 4 / 5 / 6 / 7 / 10 / 11 / 12 / 13 / 14)不重审**。
+> **被验对象**:台账 **Entry #414** 的实施授权 + **Entry #415** 的实施回执 ⇒ 实施增量 = `git diff 01769640..HEAD`(规划 commit → HEAD)。
+> **判据来源**:`.rddf/improvements/cep-tier2-verification-closure.md` 的 **A-1 ~ A-12** + 第 1 轮报告的 G-1 ~ G-4 原文。
+
+## 0 · 判定汇总
+
+| 缺口 | 第 1 轮 | 第 2 轮 | 结论 |
+|---|:--:|:--:|---|
+| **G-1** provenance 机器判据 | ⚠️ | ✅ **通过** | 判据已可执行且**有牙**(见 §1.1 的两条决定性变异) |
+| **G-2** 三段连通反向证据 | ⚠️ | ⚠️ **部分达成** | 三段中 **2 段**已可机判;「**断言不落**」一段**仍未可机判** ⇒ AC-2 **不能记 ✅** |
+| **G-3** 有界性溢出路径 | ⚠️ | ✅ **通过** | 溢出路径已**真实触发**且「非零 ⇒ 不可判」已执行 |
+| **G-4** AC-9 产出物覆盖面 | ⚠️ | ✅ **通过** | 扫描面 = 段级「新增产出物」;变异 g 按签名红;**边界已实测** |
+
+⇒ **总判定:仍为「有条件通过」,但缺口由 4 项收敛为 1 项**(AC-2 的「断言不落」一段)。
+⇒ **未达成项的唯一出口** = D-1 的升级路径(观测事实导出 JSON + 新 shell 闸 + 影子树变异,≈ 0.5 ~ 1 人日,**触发五步链**)⇒ 该决策属 **verifier + 用户**(⛔ builder 不得自行升级)。
+
+---
+
+## 1 · 逐条判定与工具证据
+
+### 1.1 · G-1(AC-1 ③ provenance 机器判据)—— ✅ **通过**
+
+| 子项 | 判定 | 工具证据 |
+|---|:--:|---|
+| 判据**可执行** | ✅ | `test/test_cep_tier2_observation.cc` 的 `detect()` 签名 = `detect(obs, home_last_write, dropped, known_engine_masks, observations_enabled)` ⇒ **5 个形参全部无默认值** ⇒ 调用方**无法**省略 `known_engine_masks` |
+| ⛔ **无「传 `~0` 变死代码」** | ✅ | `grep -n "uint64_t{0}\|~0" test/test_cep_tier2_observation.cc` ⇒ 仅 **2 处命中且全在注释里**(`:73` / `:376` 的禁传说明)⇒ **零处实参传 `~0`** |
+| **非默认值调用点存在** | ✅ | 9 处调用点(`:161 :197 :238 :262 :268 :379 :389 :418 :454 :478 :517`)**全部显式传值** ⇒ 满足 A-11 ① |
+| **正控** | ✅ | `:379` 用例:他人位恰等于 peer 引擎 `self_mask` ⇒ `provenance_broken == false` 且 `untraceable_bits == 0` |
+| **判别力(非恒真)** | ✅ | `:389` 子断言:把 peer 位**排除**出已知集合 ⇒ `provenance_broken == true` ⇒ 该断言**不是装饰** |
+| **反 fixture** | ✅ | `:418` 用例:`dir.set_sharer(kAddr, kNodeIdGmmu, 0, SnoopState::S)` 播种 ⇒ `untraceable_bits != 0` ⇒ `provenance_broken == true` |
+| ⚠️ **播种前置断言(防伪测试)** | ✅ | `:415` 读回 `dir.lookup_scoped(kAddr, 0)` 确认目录位**确实**置上 ⇒ 规避「未映射节点 / 越界 level 静默 no-op」造成的假红 |
+| ⚠️ **决定性变异(有牙)** | ✅ | 实测:把 `if (untraceable != 0)` 短路为 `if (false)` ⇒ **2 个用例变红**(正控的判别力子断言 + 反 fixture)⇒ 判据**有牙**;已还原并复验 |
+
+### 1.2 · G-2(AC-2 三段连通)—— ⚠️ **部分达成**(⭔ 不记 ✅)
+
+| 段 | 判定 | 工具证据 |
+|---|:--:|---|
+| ① 观测面 → 判定 → 断言(正向) | ✅ 可机判 | `:517` `v_on.write_episodes == 1` / `v_on.swmr_violations == 1` |
+| ② 「**判定不收**」 | ✅ 可机判 | `:530` 只喂 `Kind::Fill` 的记录 ⇒ `write_episodes == 0` / `swmr_violations == 0` / `fill_records == fills_only.size()` ⇒ 判定行的**选择**是决定性的 |
+| ③ 「**观测面不产记录**」 | ✅ 可机判(且**强化**) | `:545` 同款驱动 + 仅「观测面关闭」一个差异 ⇒ `observation_count() == 0` ⇒ `detect(..., observations_enabled=false)` ⇒ `invalid == true` 且 `invalid_reason` 含「不可判」⇒ **那组 0 被标成「不可判」,⭔ 不是「零违例」**(直接封住 AC-14 边界 ⑥ 的禁区) |
+| ④ 「**断言不落**」 | ❌ **未可机判** | `grep -rn "shadow\|SHADOW\|mutations\|--mutations" test/test_cep_tier2_observation.cc` ⇒ **0 命中**;`ls scripts/test/ \| grep -i "tier2\|observ"` ⇒ **无 tier2 专用影子闸**(仅 `cep_b4_observation_keys_check.*`,与本档位无关)⇒ **断言被删除时无任何机制会变红** |
+
+⇒ **AC-2 的字面要求(「拔掉任一段 ⇒ 按签名红」)未闭合** ⇒ **⚠️ 部分达成,⛔ 不得记 ✅**。
+⇒ 已在用例内逐字标注 + 台账 Entry #415 ① 逐字标注 ⇒ **诚实边界已登记**(A-3 ③ 满足)。
+
+### 1.3 · G-3(AC-8 有界性)—— ✅ **通过**
+
+| 子项 | 判定 | 工具证据 |
+|---|:--:|---|
+| 上限**可注入**(不改默认) | ✅ | `protocol_engine_base.hh` 新增 `set_observation_capacity()` / `observation_capacity()` + `observation_capacity_` 成员;**默认 `kObservationCapacity = 4096` 不变** ⇒ 生产路径零行为变化 |
+| 溢出路径**真实触发** | ✅ | `:454` 用例:`set_observation_capacity(2)` ⇒ 一次写(2 transition + 1 fill)⇒ `observation_count() == 2` 且 `dropped_observations() == 1` |
+| 「非零 ⇒ 判不可判」**已执行** | ✅ | `detect(..., dropped=1, ...)` ⇒ `invalid == true` 且 `invalid_reason` 含「丢弃」 |
+| ⚠️ **最狠的情形也覆盖** | ✅ | `:478` 用例:`cap=1` ⇒ **判定行本身被丢弃** ⇒ `write_episodes == 0` / `swmr_violations == 0` ⇒ **必须**判 `invalid == true` ⇒ 这正是「零违例」假象的**最小复现** ⇒ 已被封住 |
+| ⚠️ **决定性变异(有牙)** | ✅ | 实测:把 `record_observation` 的判据改回 `kObservationCapacity` ⇒ **W2 用例变红** ⇒ 有界性判据**有牙**;已还原并复验 |
+
+### 1.4 · G-4(AC-9 产出物覆盖面)—— ✅ **通过**
+
+| 子项 | 判定 | 工具证据 |
+|---|:--:|---|
+| 扫描面 = **段级「新增产出物」** | ✅ | `cep_e2e_reconcile_check.sh` 新增 **T6** 块,3 个单元:`07 号`「Status Update 2026-11-14」段 · 手册「## 12.10」段 · 新 main spec(整份)⇒ **按标题定位,⛔ 不写死行号** |
+| ⚠️ **为何段级是对的** | ✅ | 实测:整文件扫 ⇒ **7 处假红**(`07号` 档 0 SU 标题 ×3 + 后置否定 ×2 + main spec 英文 `SHALL NOT` ×2)⇒ 根因 = `FORBIDDEN` 是**档位相关**词表(「通过态」在档 0 **合法**、在档 2 非法)⇒ **段级**才是 AC-9 原文「**新增产出物内** grep」的**字面读法**(文件级反而**超出**契约) |
+| ⛔ **不放宽判据** | ✅ | `NEG_MARKERS` 仅补 **1 个** RFC 2119 否定标记 `NOT`(消 main spec 的英文 `SHALL NOT` 假红)⇒ **未扩窗口、未加词表项**;且**未改** `has_negation_context` 的「只看前文」方向 ⇒ 段级扫描后后置否定问题自动消失 |
+| **反向 fixture(变异 g)** | ✅ | `bash scripts/test/cep_e2e_reconcile_check.sh --mutations` ⇒ **7 条变异全按签名红**(含 **g** = 文档植入肯定式夸大表述) |
+| **影子树 plumbing** | ✅ | 新 env `CEP_RECONCILE_DOCS_ROOT` + 文档影子树复制 + **递归重入透传**(否则变异 g 读真实仓 ⇒ 永不红)+ 指纹集纳 **3 份文档** ⇒ 「真实仓字节指纹前后相等」✅ |
+| ⚠️ **边界正确性(独立实测)** | ✅ | 影子树实测:把**档 0** 的 SU 标题(`07号:639`)改成含肯定式「检测力已证」⇒ 闸**仍绿**(rc=0)⇒ 扫描面**正确限定**在档 2 的新增产出物内 ⇒ **无假红** |
+| ⚠️ **注释/计数同步** | ✅ | 脚本头「7 条决定性变异」+ `:430` echo「7 条」已同步(⛔ `docs_sync_check` 不抓此项) |
+
+---
+
+## 2 · 其余判据的独立核验(A-5 ~ A-12)
+
+| 判据 | 判定 | 工具证据 |
+|---|:--:|---|
+| **A-5** verifier 第 2 轮报告 | ✅ | 本段(verifier 产出,⛔ builder 未代写判定) |
+| **A-6** 台账 §10 订正 | ✅ | `obj` 内 4 行**行内替换**;**行数不变**(22 912 行)⇒ **零行号位移**;「DoD 12 条」= 「11/12 达成;唯一未达成 = `B3b-2` = `0/4` ⏭」⇒ **禁 token 5 条不命中**(`cep_dod_reading_check.sh` rc=0) |
+| **A-7** push | ⏳ **待执行**(W7,下一步) | — |
+| **A-8** 0 回归 | ✅ | `ctest --test-dir build -j2` ⇒ **177/177**;`scripts/test/cep_*.sh` **42** 个逐个 rc=0(**失败闸数 = 0**);`docs_sync --strict` / `agents_md_lint` / `format --check` / `markdown_link_check` 全 rc=0 |
+| **A-9** 范围纪律(逐字抄 AC-7) | ✅ | `git diff 066767ac..HEAD --stat --` 对 AC-7 的 **9 条路径** ⇒ **输出为空**(全部零 diff);本轮增量 `01769640..HEAD` 的文件清单 = **5 个**(`obj` 台账 · `role.json` · `protocol_engine_base.hh` · `cep_e2e_reconcile_check.sh` · `test_cep_tier2_observation.cc`)⇒ **零 ADR / 零 main spec / 零 invariant / 零虚方法**;`git diff 01769640..HEAD -- openspec/specs/cep-evidence-tier2-observation/spec.md` ⇒ **空**(Requirement / Scenario 逐字未变);`SharerTrackerIf` 虚方法 = **5**(不含析构)且本轮**零改动**;本轮新增行含 `INV-CEP-` 的 = **0** |
+| **A-10** 冻结面 | ✅ | 本轮**零文档改动**(3 份文档只被**读**)⇒ 冻结面 hash 不变 ⇒ 无需五步链;`cep_freeze_check.sh` 无参复验 rc=0(85 产物) |
+| **A-11** 死判据免税 | ✅ | ① 新增形参非默认值调用点:9/9 显式传值 + 零 `~0`;② provenance 短路 ⇒ **2 例红**;③ `set_observation_capacity` 有非 4096 调用点(`:452` / `:476`);④ 无「机件在、用例无」残留 |
+
+---
+
+## 3 · 遗留清扫复核(verifier 第 5 步)
+
+| 项 | 范围 | 结果 |
+|---|---|---|
+| TODO / FIXME / XXX / HACK | 本轮 3 个代码文件 | **0 命中** ✅ |
+| 临时调试日志(`fopen` / `printf` / `DEBUG_PRINT`) | 同上 | **0 命中** ✅ |
+| 被 skip 的测试(`SKIP` / `#if 0`) | 同上 | **0 命中** ✅ |
+| 注释掉的代码块 | 同上 | **0 命中** ✅ |
+| **变异残留** | 本轮 2 次决定性变异 | ✅ **已还原并复验**(`[tier2]` 11 cases / 67 assertions 全绿) |
+| ⚠️ **AC 未落项** | G-2 的「断言不落」一段 | **1 项** ⇒ ⛔ **不记清扫通过** |
+
+---
+
+## 4 · 失败项与路由建议
+
+| # | 未达成项 | 分类 | 路由 | 出口条件 |
+|:--:|---|---|---|---|
+| **G-2 ④** | AC-2 的「**断言不落**」一段未可机判(断言被删 ⇒ 无机制变红) | `implementation_gap`(判据正确、实现未完) | **verifier + 用户**(D-1 裁决) | 二选一:① **接受「部分达成」并结案**(登记 AC-2 为 ⚠️ 长期形态,⭔ 不得写 ✅);② 走升级路径 = 观测事实导出 JSON + 新 shell 闸 + 影子树变异(≈ 0.5 ~ 1 人日;⚠️ 新闸若入 `scripts/test/` ⇒ **触发五步链**)⇒ 届时**须回 planner 重排** |
+
+---
+
+## 5 · 范围边界(如实登记 · 非缺口)
+
+**T6 只守档 2 的「新增产出物」** ⇒ **档 0 / 档 1 的产出物不受防夸大闸保护**。⚠️ 这是 **AC-9 原文的字面范围**(「新增产出物内 grep 禁表述」)⇒ **不是缺口**,但**读者须知**:若将来档 0/1 的产出物出现夸大表述,本闸**不会**拦。
+
+---
+
+## 6 · 关联
+
+· 第 1 轮报告(同文件上文)· 台账 **Entry #414**(规划 + metis 13 条处置 + 实施授权)/ **#415**(W1~W4 实施回执)· `.rddf/improvements/cep-tier2-verification-closure.md`(A-1 ~ A-12)· 实施增量 `git diff 01769640..HEAD` · `ADR-CEP-20` 决策 5 / 6
