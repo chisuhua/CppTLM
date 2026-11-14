@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-14T04:12:02Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-14T04:32:23Z",
   "updated_by": "auto",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-13T03:20:00Z",
-      "by": "user",
-      "reason": "补 R-3 的 improvement 5 段草稿(planner 域;§4.7 转正路径要求:无草稿不得立项)。"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-13T03:30:00Z",
-      "by": "user",
-      "reason": "落 R-3 的实施授权 Entry(#394 = 五步链授权号)+ KPI 回填 1/3 + 提交 change。"
-    },
     {
       "role": "architect",
       "at": "2026-11-13T09:34:13Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-14T04:12:02Z",
       "by": "auto",
       "reason": "裁决草案已过 oracle 第 1 轮 + critic 第 2 轮(mergeable: yes)=> 按台账单写者纪律(frontmatter :19「写入权: rdd-planner 唯一写入方」)切 planner 落台账回执 Entry。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-14T04:28:52Z",
+      "by": "auto",
+      "reason": "用户 ratify R-1/R-2 后 => 按草案 SHOULD-4 分工,arch_paths 内的产物(07 号 新 SU + 手册)由 architect 落盘,builder 随后走五步链。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-14T04:32:23Z",
+      "by": "auto",
+      "reason": "architect 已落 07 号 新 SU + 手册改动 => 按五步链(Entry #419 为授权号)由 builder 执行产物 commit / --update / 清单 commit / 无参复验 + A-9 闸扩展。"
     }
   ],
   "auto_switch_window": null

@@ -762,9 +762,62 @@ group-scoped completion     → Fabric Collective Plane
 
 **关联**:`ADR-CEP-20` 决策 5 / 6 · 台账 **Entry #410** / **#409** / **#408** · `openspec/changes/archive/2026-11-14-cep-evidence-tier2-minimal-slice/` · `openspec/specs/cep-evidence-tier2-observation/spec.md` · `include/tlm/cep/protocol_engine_base.hh` · `include/tlm/cep/mesif_protocol_engine.hh` · `test/test_cep_tier2_observation.cc` · `test/cep_evidence_tiers.json` · `scripts/test/cep_e2e_reconcile_check.sh` · `docs/guide/cep-usage.md` §12.10
 
+## Status Update 2026-11-14(二 · objective 归档 + 口径 ④ ratify · per 台账 Entry #419)—— 终局 Ⅲ-甲:**归档与 DoD Go 解耦**
+
+> **性质**:纯**追加** SU(append-only)。⛔ 不改本文件正文与任何既有 SU —— **逐字保留不回改**;新增 invariant 数 = **0**;⛔ 未新建 ADR。
+> **依据**:台账 **Entry #264**(口径 ② 判定句 · 明文保留「或用户另行裁决 DoD 结构」的改判授权)· **Entry #332**(口径 ④ + MUST-FIX-1~4 + ⑯ BLOCKER 闭合)· **Entry #334 ①**(§8.3 ④ 订正)· **Entry #385 / #386**(MUST-FIX-3 / 4 落地 = 台账 `## §14`)· **Entry #419**(用户 ratify 记录 + 落盘回执)· `.rddf/reviews/cep-b3b2-archive-ruling-2026-11-14.md`(裁决 · oracle 第 1 轮 + critic **第 2 轮 APPROVE_WITH_CONDITIONS · 0 BLOCKER**)
+> **用户裁决**(2026-11-14 · 逐项签字):**R-1 = A(解耦归档与 DoD Go)** · **R-2 = 是(ratify 口径 ④)** · **R-3 = ⏸ 暂存归档**(确认性)
+
+### ① 归档事件(终局 **Ⅲ-甲**)
+
+| 项 | 值 |
+|---|---|
+| 归档日期 | **2026-11-14** |
+| 终局分支 | **Ⅲ-甲** = 终局 Ⅲ(用户改判)的**首次实例化**(台账 `§14.2` Ⅲ 行的行内追加 + **`§14.8`** 归档事件登记) |
+| 归档语义 | **⏸ 暂存归档** —— ⛔ **非** ✅ 已完成归档(`B3b-2` = `0/4` ⏭ ⇒ 能力未落地;per MUST-FIX-3 ② 硬约束) |
+| 归档判据 | 台账 `§8.3` **四条**(① 14/14 change archived with sync ② §9 八假设全有结论 ③ §8.2 Kill/Pivot 未触发 ④ 交接文档完成)—— 2026-11-14 **实测全部满足**;④ 的早期误判已由 `Entry #334 ①` 订正 |
+| frontmatter | `status: archived` · `last_revised: 2026-11-14` · `review_by` 保留(schema `required`) |
+
+### ② ⚠️ 解耦声明(**本则最重要的一条**)
+
+> **「objective 归档」≠「终态 DoD Go 已开」≠「`B3b-2` 已关闭」。**
+
+- 终态 DoD Go **仍挂起**(`B3b-2` = **`0/4` ⏭** 未动);`§12` 的 Stage Go 表终态行仍 `⏳`;
+- **分母未缩**(仍 4)· **DoD 12 条文本未改** · **零 ADR 改动** · **新增 invariant 数 = 0**;
+- ⛔ **不得**把本则读作「平台已完成」或「B3b-2 已达成」;
+- 归档只是把 objective 送进**维护态**(新协议族走 add-feature + 单 change),⛔ 不改变任何判据。
+
+### ③ 口径 ④ **已 ratify** —— 生效范围严格限定
+
+- **生效的是什么**:`B3b-2` 的**终态登记规则** = 「✅ `N/4`」(N = 有引擎 + L4 E2E 的族数,**N ≥ 1**;M = 4 − N 为授权 ⏭ 族,**逐族机器可查登记 + 逐族触发条件 + 台账锚**)⇒ 将来**任一**受限族经 D-4 ①/② 满足 T1–T4 并交付引擎 + L4 E2E ⇒ 重新普查 ⇒ 改判计数 ⇒ 按上述格式登记,**无需重开裁决**;
+- ⛔ **不生效的是什么**:`B3b-2` = **0/4 ⏭ 未达成(维持)** ⇒ **终局 Ⅰ 不触发** ⇒ 终态门**今天仍不开**;「ratify」**不是**「达成」;
+- ⚠️ **不可逆**:MUST-FIX-4 的回滚触发条件 ①(「用户不 ratify ⇒ 回落 interim 乙」)**已永久失效** ⇒ 只剩 ②(N=1 登记出错)③(三处重裁被证明不可行)两种**错误型**回滚;
+- ⚠️ **回滚载体仍在**(`§14.7` 双载体:本文件新 SU 显式撤销 + 台账 append-only 撤回标记)⇒ 撤回标记登记当前为**空占位**。
+
+### ④ 4 族义务:随义务转移,**机器约束不放松**
+
+| 义务 | 转移后的真源 |
+|---|---|
+| `B3b-2` 逐族判定 | `test/cep_b3b2_deferrals.json`(4 族 × 6 字段)= **判据真源** |
+| `B3b-2` 判定闸 | `scripts/test/cep_b3b2_deferral_check.sh` = **机器执行**(4 族仍被逐族机检) |
+| 读者入口 | 本文件 §12(Stage 4+ 维护态交接)= **单向指针** |
+| 归档事件索引 | 台账 **`§14.8`** + **`§14.2` Ⅲ 行** |
+
+⇒ ⛔ **本文件不复写判定规则**(单一真源纪律)。
+
+### ⑤ Verification(可勾选 · 前瞻)
+
+- [x] ① 归档事件四项(日期 / 终局 / 语义 / 判据)齐备且与台账 `§14.8` 一致
+- [x] ② 解耦声明的四条边界齐备(DoD Go 仍挂起 · 分母未缩 · DoD 文本未改 · 不得读作平台已完成)
+- [x] ③ 口径 ④ 的**生效 / 不生效**两面与**不可逆**均已逐字写明
+- [x] ④ 4 族义务转移的四个载体齐备,且 `test/cep_b3b2_deferrals.json` **零 diff**
+- [x] 索引已重生成(`scripts/cep/generate_doc_index.py --write`),`cep_index_position_check.sh` rc=0
+
+**关联**:台账 **Entry #419**(ratify + 落盘)· **#418**(裁决草案 + 双审)· **#264** / **#332** / **#334** / **#385** / **#386** · `§14.8` · `§14.2` · `.rddf/reviews/cep-b3b2-archive-ruling-2026-11-14.md` · `docs/guide/cep-usage.md` §12.7 / §12.8
+
 ## §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295)
 
-> **用途**:本文件已 **33 个一级节 / 20 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
+> **用途**:本文件已 **34 个一级节 / 21 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
 
 > ⚠️ **新纪律(per 台账 Entry #295,逐字)**:本索引**永久置于文末**;此后**新增段落 SHALL 插在本索引之前** ⇒ **新增内容永不使既有 `path:line` 锚点位移**;⚠️ **最新 SU 在本索引之前**(⛔ 勿在本文末找最新段)。
 
@@ -772,7 +825,7 @@ group-scoped completion     → Fabric Collective Plane
 
 > ⚠️ **2026-11-12 起**:索引 A / 索引 B **全量列出**(⛔ 不再有「另有 N 个未列入」的 `## ` 标题);自述数 == 索引行数 == 文件**实际** `## ` / SU 数(`cep_index_position_check.sh` 三合一判据 + 行号逐行判据)。⚠️ **待人工判断的导航标注不在索引 A / B**(索引 A/B 是机械视图)⇒ 见索引 C 与 `§11` / `§12` 的正文说明。
 
-### 索引 A · 一级节(33)
+### 索引 A · 一级节(34)
 
 | # | 章节 | 行 |
 |---|---|---|
@@ -808,9 +861,10 @@ group-scoped completion     → Fabric Collective Plane
 | 30 | 附录 · Status Update 2026-11-13(拓扑级 IC3 通过态 · per 台账 Entry #396 + #397)—— 拓扑级「全绿 run」的**证据面登记** | 639 |
 | 31 | 附录 · Status Update 2026-11-13(证据档位阶梯 · per 台账 Entry #404)—— 三档阶梯 + 档位声明义务 + 跨档聚合禁令 | 685 |
 | 32 | Status Update 2026-11-14(档 2 协议级观测面 · per 台账 Entry #410)—— 天花板档的**载体形态**与**读法边界** | 719 |
-| 33 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 765 |
+| 33 | Status Update 2026-11-14(二 · objective 归档 + 口径 ④ ratify · per 台账 Entry #419)—— 终局 Ⅲ-甲:**归档与 DoD Go 解耦** | 765 |
+| 34 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 818 |
 
-### 索引 B · Status Update(20 · 2026-10-28 起)
+### 索引 B · Status Update(21 · 2026-10-28 起)
 
 | # | 日期 | 主题 | 台账 | 行 |
 |---|---|---|---|---|
@@ -834,6 +888,7 @@ group-scoped completion     → Fabric Collective Plane
 | 18 | 2026-11-13 | 附录 · Status Update 2026-11-13(拓扑级 IC3 通过态 · per 台账 Entry #396 + #397)—— 拓扑级「全绿 run」的**证据面登记** | Entry #396 | 639 |
 | 19 | 2026-11-13 | 附录 · Status Update 2026-11-13(证据档位阶梯 · per 台账 Entry #404)—— 三档阶梯 + 档位声明义务 + 跨档聚合禁令 | Entry #404 | 685 |
 | 20 | 2026-11-14 | Status Update 2026-11-14(档 2 协议级观测面 · per 台账 Entry #410)—— 天花板档的**载体形态**与**读法边界** | Entry #410 | 719 |
+| 21 | 2026-11-14 | Status Update 2026-11-14(二 · objective 归档 + 口径 ④ ratify · per 台账 Entry #419)—— 终局 Ⅲ-甲:**归档与 DoD Go 解耦** | Entry #419 | 765 |
 
 ### 索引 C · 关键表指针(高频查阅)
 

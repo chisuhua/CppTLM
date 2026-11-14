@@ -11,7 +11,7 @@
 >
 > **本节不产生状态判定**:状态权威在 **`obj §4.0` / `obj §4.0-a`(原 `07 号` §11 已迁出)**(落地)/ `docs/adr/ADR-CEP-*`(决策)/ `objective-cep-platform §6.2`(DoD)/ **`07 号` §7**(实验契约);本节只给**读法与导航**。**本节只回答三件事:「去哪找 / 怎么操作 / 什么不能写」。**
 >
-> ⚠️ **本节不含台账 Entry #332 ⑪ 要求的「新 SU」**(口径 ④ 本体 —— ⑤ 裁决句 + MUST-FIX-2 三处重裁 + 终局三分支 —— **尚未落进 `07 号`**)⇒ **§12.7 的禁令按现行绝对禁令执行**,且 §12.7 与 §12.8 之间存在**待重裁的张力**(已在该两节逐条标注)。
+> ✅ **本节说明已于 2026-11-14 更新**：`07 号` 已落 **`Status Update 2026-11-14(二)`**（口径 ④ 本体 + objective 归档）⇒ 原「本节不含台账 Entry #332 ⑪ 要求的『新 SU』」的**前提已消除**；⚠️ §12.7 与 §12.8 的**待重裁张力**已由 `07 号` 的 SU 2026-11-13 ② 的重裁**消除**（该两节的逐条标注保留，语义按重裁后的作用域读）。
 
 ## 12.1 10 分钟上手
 
@@ -160,6 +160,7 @@
 1. ⛔ **不得**把 B3b-1 的 ✅ 扩写为「B3b 整体达成」
 2. ⛔ **不得**写 `B3b-2 ✅(⏭)` 形态(⛔ **单一状态 token**;N = 0 时一律 `⏭`,**永不 ✅**)
 3. ⛔ **不得**把 B3b-2 整行改写为「已达成」—— 「DoD 降格后仍宣称达成」是明确禁止的失败模式。📌 **本条作用域已重裁**(per 台账 Entry #373):作用域与例外**见 `07 号` 的 `Status Update 2026-11-13` ②**(⛔ 本行不复制作用域定义)。⚠️ 现行登记口径仍 = 口径 ②(挂起);口径 ④ **未 ratify**。⛔ **不回改 `07 号` 的 `Status Update 2026-11-04` ① 段原文**(per 台账 Entry #264 / Entry #284 的先例形态)
+   📌 **2026-11-14 更新（per 台账 Entry #419）**：口径 ④ **已于 2026-11-14 经用户 ratify 生效** ⇒ 上句末尾「口径 ④ **未 ratify**」为**该行撰写时的历史状态**；⛔ **本行（锚行）字面按 `cep_dod_reading_check.py` 的 S2「整行唯一」判据逐字保留**，现行事实以本续行为准。⚠️ objective 同日归档（终局 Ⅲ-甲）⇒ 但 `B3b-2` = **0/4 ⏭** 未变、终态 DoD Go **仍挂起**。
 4. ⛔ **不得**用「**永久冻结**」措辞 —— 4 族的阻塞是「**外部条件 + 人力资源受限**」(逐族触发条件见 `test/cep_b3b2_deferrals.json`)
 
 **⭕ 登记形态**(B2 同型;分母恒定,⛔ **永不可缩**):
@@ -172,7 +173,7 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 - **当前实测**:**61 项有牙载体 + 5 项授权 ⏭** ⇒ `test/cep_invariant_assertion_map.json`(61 条,派生视图)+ `test/cep_invariant_deferrals.json`(5 条 `⏭-unmodelled`)
 - ⛔ **映射表是生成物**(`// INV-CARRIER: <id>` 刚性标记)⇒ **不是**手写口径源;**重新生成** = `python3 scripts/test/cep_invariant_map_check.py --generate`
 
-**终态 Go 的当前状态**:**⏳ 挂起**(口径 ②,per 台账 Entry #264)。口径 ④「条件化终局 + B3b-2 判定规则预登记」已由台账 Entry #332 裁决,⛔ **其生效以用户 ratify 为前置** ⇒ **未 ratify 前不自动开终态门**。⚠️ 口径 ④ 的**本体 SU 尚未落进 `07 号`**(Entry #332 ⑪ 的落点含新 SU)⇒ **本段只登记当前生效的口径 ②**。
+**终态 Go 的当前状态**：**⏳ 挂起**（口径 ②，per 台账 Entry #264；⚠️ **objective 已于 2026-11-14 归档(终局 Ⅲ-甲,⏸ 暂存语义)** —— 但「objective 归档」≠「DoD Go 已开」≠「`B3b-2` 已关闭」⇒ 终态 Go **仍挂起**）。口径 ④「条件化终局 + `B3b-2` 判定规则预登记」**已于 2026-11-14 经用户 ratify 生效**（MUST-FIX-1~4 全部落地）⇒ 但 `B3b-2` = **0/4 ⏭** ⇒ **终局 Ⅰ 不触发** ⇒ 终态门**仍不开**；⚠️ 生效的只是「**N ≥ 1 之日的登记格式**」⇒ 将来任一受限族解冻后按 `✅ N/4`（N ≥ 1 + M 授权⏭ 逐族机器可查）登记。本体 SU 已落 `07 号` 的 `Status Update 2026-11-14(二)`。
 
 ## 12.8 未结义务清单
 
@@ -190,8 +191,8 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 | | UALink | 同上 | **external** | Evaluation Copy 约束解除 / 联盟发布公开规范 |
 | **invariant ⏭**(5 条) | `CEN-Ib8` / `INV-CEP-08-IC1` / `INV-CEP-09-IC2` / `INV-CEP-13-IC1` / `INV-CEP-13-IC3` | `test/cep_invariant_deferrals.json` | 能力未建模 | 逐条 `trigger_condition` |
 | **ADR 归因**(18 条) | `condition_unmet` 2 · `carrier_buildable_id_blocked` 10 · `carrier_present_id_absent` 2 · `doc_layer_manual_review` 4 | `test/cep_adr_structural_deferrals.json` | 见逐条 `disposition` | **建 id 架构性不可行** ⇒ 归类收敛(per Entry #326/#331);⛔ 不新建 id |
-| **口径 ④ 实施轮** | MUST-FIX-1 / MUST-FIX-2 | 台账 Entry #332 ⑧ | ✅ **已完成**(2026-11-12,change `cpptlm-cep-dod-reading-consistency` 已归档;⛔ 未 ratify 的 MUST-FIX-3/4 **未并入** —— 回执 per 台账 **Entry #375** 归档回执 + **Entry #376** 验收 15/15 AC PASS) | —(已闭合) |新 SU 落地时)执行;⚠️ **重裁落地前 §12.7 禁写 #3 按绝对禁令执行** |
-| | MUST-FIX-3 / MUST-FIX-4 | 台账 Entry #332 ⑧ | 待 **用户 ratify** / 归档形态定义 | ratify 后方可执行 |
+| **口径 ④ 实施轮** | MUST-FIX-1 / MUST-FIX-2 | 台账 Entry #332 ⑧ | ✅ **已完成**(2026-11-12,change `cpptlm-cep-dod-reading-consistency` 已归档;MUST-FIX-3/4 已于 2026-11-12 / 13 落地(Entry #385 / #386)；口径 ④ 已于 2026-11-14 经用户 ratify 生效 —— 回执 per 台账 **Entry #375** 归档回执 + **Entry #376** 验收 15/15 AC PASS) | —(已闭合) |新 SU 落地时)执行;⚠️ **重裁落地前 §12.7 禁写 #3 按绝对禁令执行** |
+| | MUST-FIX-3 / MUST-FIX-4 | 台账 Entry #332 ⑧ | ✅ **已完成**（2026-11-12 / 13，`## §14` 归档态段 + 回滚路径；回执 per Entry #386） | 已闭合（2026-11-12 / 13） |
 | ~~**闸强度缺口**~~ | ✅ **已闭合 2026-11-12**(per 台账 Entry #342)—— `cep_b3b2_deferral_check.sh` 的恒真 grep 段(grep `$DECL` **自身**)已删,改为**集合覆盖 + 逐族锚校验**;⛔ 本表状态判定以**载体文件与台账**为准 | 同脚本 | ✅ 已闭合 | 决定性变异:删 1 族 / 同族加第 2 条 ⇒ 必红 |
 | ~~**守门软点**~~ | ✅ **已闭合 2026-11-12**(per 台账 Entry #342)—— `cep_b4_observation_keys_check.sh` 的自合成 `trace.h5` 已加 `[synthetic-fixture]` **显式标注**且 exit 0 ⇒ 强度可被 grep 观测,⛔ 不欺 | 同脚本 + 本节 **§12.4** 尾注 | ✅ 已闭合 | 闸头注释写明「本闸 = 文件级」 |
 | ~~**登记处不完整**~~ | ✅ **已闭合 2026-11-12**(per 台账 Entry #342)—— `cep_index_position_check.sh` / `cep_e2e_reconcile_check.sh` 已登记进 `scripts/README.md` 守门表;`AGENTS.md` 的闸数已改为「以 `ls scripts/test/cep_*.sh` 为准」;索引位置闸已强化为**三合一**(实际 `## ` 数 == 自述 == 表行数 + 行号逐行 + 标题覆盖) | 三处登记文档 + `scripts/test/cep_index_position_check.sh` | backlog | 独立 change 补齐登记 + 给索引闸加「标题计数 == 行数」断言 |
