@@ -23059,3 +23059,47 @@ T6 只守**档 2 的「新增产出物」** ⇒ **档 0 / 档 1 的产出物不�
 | `8a9dae5b` | 角色切换记录(role.json) |
 
 **⑤ 关联**:**#416**(verifier 第 2 轮)· **#415**(实施回执)· **#414**(规划 + metis 处置 + 授权)· **#413** / **#412** / **#411** / **#410** · `.rddf/improvements/cep-tier2-verification-closure.md` · `.rddf/reviews/cep-evidence-tier2-minimal-slice-verify.md`
+
+### Entry #418 — 2026-11-14 [planner](**D-3 用户门的裁决草案落盘** —— 终局 Ⅲ 三候选 + **oracle 第 1 轮** + **critic 第 2 轮 = APPROVE_WITH_CONDITIONS** ⇒ **待用户 ratify R-1 / R-2 / R-3**)
+
+**主题**:per 用户口令「先处理 D-3」(= B3b-2 / objective 归档的用户门)⇒ architect 出裁决草案 → oracle 对抗式复核 → critic 两轮审稿 ⇒ **双审通过,现请用户 ratify**。
+**角色**:architect(裁决草案 + 双审)· planner(台账落笔 —— per 台账 frontmatter `:19`「写入权: rdd-planner(唯一写入方)」)· **本 Entry 只登记,不构成裁决生效**。
+
+**① 草案落点**
+
+`.rddf/reviews/cep-b3b2-archive-ruling-2026-11-14.md`(183 行)—— 终局 Ⅲ 的三个候选:**A** 解耦归档与 DoD Go(建议)· **B** 维持终局 Ⅱ 不归档 · **C** ratify 口径 ④(与 A/B 并存)。含动作清单 **A-1 ~ A-10 + C-1 ~ C-6**、Verification 10 条、待裁 **R-1 / R-2 / R-3**。
+
+**② ⚠️ 现状核实(实测,非台账自述)—— 改变了 D-3 的性质**
+
+| 项 | 实测 | 对 D-3 的影响 |
+|---|---|---|
+| **MUST-FIX-1 / 2 / 3 / 4** | ✅ **全部已落地**(Entry #373/#375 · #385/#386 + 台账 `## §14` 段) | ⇒ **口径 ④ 的机制前置已齐备** ⇒ 唯一缺 = **用户 ratify** ⇒ **D-3 不是「再裁决一次」** |
+| **`§8.3` 四条归档判据** | ✅ **全绿**(④ 交接文档已由 `Entry #334 ①` 订正为满足) | ⇒ 「按 §8.3 归档」在文本上成立 |
+| **当前终局** | **终局 Ⅱ**(`§14.2` 表 = **不归档**) | ⇒ **D-3 的落点 = 终局 Ⅲ(用户改判)** |
+| **`B3b-2`** | **0/4 ⏭**(不动) | ⇒ 无论 ratify 与否,**终局 Ⅰ 不触发** ⇒ **ratify 本身不解锁归档** |
+
+**③ 双审结论**
+
+| 审查 | 结论 | 处置 |
+|---|---|---|
+| **oracle 第 1 轮** | APPROVE + **4 MUST-FIX + 3 SHOULD-FIX + 2 NIT** + 排除 **4 条替代方案** | ✅ **全部逐条落地**;其「§8.3 不含终态 Go / Ⅲ 无时间前置 / A 绕开三条已排除项」三项实测结论**支撑候选 A 成立** |
+| **critic 第 1 轮** | **REJECT** · mergeable: no · **1 BLOCKER** + 5 SHOULD_FIX + 6 NIT | ✅ **全部逐条落地**(BLOCKER = frontmatter `status` 三处自相矛盾 ⇒ 已统一) |
+| **critic 第 2 轮** | **APPROVE_WITH_CONDITIONS** · **mergeable: yes** · **0 BLOCKER** | ✅ 其 1 SHOULD_FIX(**C-5/C-6 成本精确化**)+ 2 NIT 亦已落地 |
+
+⚠️ **critic 第 2 轮实测出的一处事实修正(重要)**:第 1 轮我把候选 C 的连带成本写成「手册 4 处失实 + 与闸的禁表述正面碰撞」⇒ **实测不成立** —— `cep_dod_reading_check.py` 的 S6 扫描面 = ① `07 号` 中**仅** `## Status Update 2026-11-13` 起始的 SU 块(`SU_HEADING_PREFIX` 是**日期特定前缀**)② 手册中**逐字等于硬编码 A3** 的行 ③ 台账含 `[C4 · MUST-FIX-` 的行(3 处)⇒ ⇒ **新 SU 不在扫描面内**、**手册 `:14` / `:175` / `:193-194` 也不被扫描** ⇒ **唯一硬锁 = 手册 A3 锚行 `:162`** ⇒ ⇒ **C 的硬成本 = 1 处锚行,其余自由** ⇒ 已精确化写入 C-5 / C-6 / R-2。
+
+⚠️ **另一处事实修正(推翻 oracle 的一项判断)**:oracle 判「objective schema 引用悬空 ⇒ `status` 合法值不可核 ⇒ 保持 `active`」⇒ **不成立** —— schema 实际位于**工具仓** `/workspace/main/rdd-workflow/_lib/schemas/objective_schema.json`,其 `status.enum` = `active` / `deferred` / `completed` / **`archived`** ⇒ ⇒ 归档时 `status` ⇒ **`archived`**(合法值)⇒ 已据此统一草案的四处表述(原为三处矛盾)。
+
+**④ 请用户 ratify —— 三项待裁**
+
+| # | 待裁 | 草案建议 | 关键风险/成本(供签字) |
+|:--:|---|---|---|
+| **R-1** | **候选 A vs B**(是否解耦 objective 归档与终态 DoD Go) | **A** | A = 归档(⏸ 暂存语义)+ **终态 DoD Go 仍挂起**;4 族义务**随义务转移**、机器闸**不放松**;⚠️ 风险 = 「已归档」被误读成「平台已完成」⇒ 由 **A-9 机器防线**(闸 + 2 条决定性变异)兜住;B = 零动作 ⇒ objective 继续 `active` ≈ 1 年 |
+| **R-2** | **候选 C 是否同时 ratify 口径 ④** | **是** | ⚠️ **不可逆**(MUST-FIX-4 回滚条件 ① 永久失效)⇒ 只剩 ②③ 两种**错误型**回滚;⚠️ 硬成本 = **手册 A3 锚行 1 处**(改它 ⇒ 已归档 C4 change 的闸必红 ⇒ 须另立 change **占 KPI slot**;不改 ⇒ 留失实陈述);⛔ **C 不解锁归档**,不能替代 R-1 |
+| **R-3** | 候选 A 的**归档语义** | **⏸ 暂存归档**(**确认性** —— 选 A 即已接受) | ⛔ **✅ 在此语境下本就不可选**(`B3b-2` = 0/4 ⇒ MUST-FIX-3 ② 硬约束) |
+
+**⑤ ⛔ 本轮边界(未生效声明)**
+
+本 Entry + 草案**均不构成裁决生效**:⛔ **台账正文零改动**(除本 Entry 的末尾追加)· ⛔ **`07 号` 零改动** · ⛔ **零 ADR 改动** · ⛔ **未 ratify** · ⛔ **`B3b-2` 计数未动(0/4)** · ⛔ **未新建 change / 未占 KPI slot** · ⛔ **未宣称口径 ④ 已 ratify**。
+
+**⑥ 关联**:**#417**(上一轮 push 回执)· **#264**(口径 ② · 判定句与改判授权)· **#332**(口径 ④ 裁决 + MUST-FIX-1~4 + 终局三分支 + ⑯ BLOCKER 闭合)· **#334**(⛔ 不引用未 ratify 口径 + §8.3 ④ 订正)· **#373 / #375**(MUST-FIX-1 / 2)· **#384 / #385 / #386**(MUST-FIX-3 / 4 + `## §14` 归档态段)· `.rddf/reviews/cep-b3b2-archive-ruling-2026-11-14.md`(裁决草案)· `07 号` SU 2026-11-13 ② · `scripts/test/cep_b3b2_archive_form_check.sh` · `scripts/test/cep_dod_reading_check.py`

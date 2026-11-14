@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-14T03:31:28Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-14T04:12:02Z",
   "updated_by": "auto",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-13T02:10:00Z",
-      "by": "user",
-      "reason": "R-1 + R-4 完成 ⇒ planner 收口(投影订正 + 剩余任务定稿 + 台账回执)。"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-13T03:00:00Z",
-      "by": "user",
-      "reason": "为 R-3(全绿 run 缺口)创建 OpenSpec change(四件套);per 用户口令。"
-    },
     {
       "role": "planner",
       "at": "2026-11-13T03:20:00Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-14T03:31:28Z",
       "by": "auto",
       "reason": "verifier 第 2 轮验收完成(Entry #416)=> 实施面已闭合 ⇒ 执行 W7(push)收口本轮。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-14T03:46:52Z",
+      "by": "user",
+      "reason": "per 用户口令「先处理 D-3」⇒ 处理 B3b-2 / objective 归档的用户门(architect 域裁决 + oracle→critic + 用户 ratify)。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-14T04:12:02Z",
+      "by": "auto",
+      "reason": "裁决草案已过 oracle 第 1 轮 + critic 第 2 轮(mergeable: yes)=> 按台账单写者纪律(frontmatter :19「写入权: rdd-planner 唯一写入方」)切 planner 落台账回执 Entry。"
     }
   ],
   "auto_switch_window": null
