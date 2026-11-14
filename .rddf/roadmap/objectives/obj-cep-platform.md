@@ -23598,3 +23598,51 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 - **L-2** `mozjpeg`-类无关:无。**唯一未做项 = proposal 的 3 项残余**(镜像 20 值 SKIP 洞待 architect / 3 族无逐值出处 / Scenario 标题债),状态见 #427 ⑥。
 
 **⑧ 关联**:**#427**(立项)· `.rddf/improvements/cpptlm-cep-flow-support-assertions.md`(v2)· `openspec/changes/archive/2026-11-15-cpptlm-cep-flow-support-assertions/`(四件套)· `test/cep_flow_support_expected.json` · `test/test_cep_instance_declaration_contract.cc` · `scripts/test/cep_flow_support_reverse_verify.sh` · `test/CMakeLists.txt`(含 `RUN_SERIAL` 竞态修复)· `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md`(ualink_4 10/10 逐值出处)· `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md:551`(chi_rnf 5 键)
+
+### Entry #429 — 2026-11-15 [builder](**五步授权链闭合回执** —— `flow_support` 值锁已全链走完 · KPI 回 0/3 · 2 项过程教训)
+
+**主题**:Entry #428 授权的 `cpptlm-cep-flow-support-assertions` 归档与冻结链**已全链走完**。本 Entry = **闭合回执** + **过程教训登记** + **残余状态**。
+
+**① 五步链逐步(与 commit 哈希一一对应)**
+
+| 步 | 动作 | 结果 |
+|:--:|---|---|
+| 1 | 台账 Entry 先落(授权记录) | ✅ **Entry #428**(同 `468e5352`) |
+| 2 | 产物 commit(含 `openspec archive` 的 delta 合并 + design/tasks) | ✅ **`468e5352`** —— `openspec archive` ⇒ `+1 added / ~1 modified`;归档名 `2026-11-15-cpptlm-cep-flow-support-assertions`(`openspec/changes/archive/` 按 `.gitignore` **不入库**,仓内惯例) |
+| 3 | `cep_freeze_check.sh --update --authorized-by "Entry #428"` | ✅ 授权校验精确命中;清单 diff **恰 4 处**(`cep-core-contracts/spec.md` hash + `authorized_by` + `frozen_at` + `frozen_at_commit`)⇒ **零附带漂移** |
+| 4 | 清单**单独** commit | ✅ **`81a0cd5e`**(`artifact_count` 不变 = 86) |
+| 5 | 无参复验 | ✅ **rc=0** ——「provenance 自检通过:86 个产物的 hash 与 commit `468e5352` 的内容一致」 |
+| 6 | 归档后活口径回填(per 先例 #346) | ✅ **`439b1386`** —— KPI **1/3 → 0/3**(6 处)+ 体量数字(归档 **144 → 145**,4 处)+ 归档前路径 `VIRTUAL_PATHS` 登记 |
+
+> ⚠️ 「`frozen_at_commit`(`468e5352`) ≠ HEAD」是**常态告警**(清单 commit 落后 HEAD 一个 commit)⇒ ⛔ **不得**重复 `--update`。
+
+**② 复验(全绿)**
+
+| 项 | 结果 |
+|---|---|
+| `ctest -R cep -j4` | ✅ **98/98 × 3 轮** |
+| `./build/bin/cpptlm_tests '[cep]'` | ✅ **528 用例 / 12286 断言全通过** |
+| `scripts/test/cep_*.sh`(43 个,**按 ctest 同参数**) | ✅ 全 rc=0 |
+| `openspec validate --strict` / `docs_sync --strict` / `cep_doc_ref_check --strict` / `agent_md_lint` | ✅ 全通过 |
+| `openspec list --json` | ✅ **0 active** ⇒ KPI **0/3** |
+| 冻结面 | ✅ provenance 一致(86 产物,冻结于 2026-11-15) |
+
+**③ ⚠️ 过程教训(2 项,均已写入载体)**
+
+**L-1 并发事故(已恢复,教训已进 `test/CMakeLists.txt` 注释)**
+我**同时**启动后台 `ctest -R cep` 与前台闸循环 ⇒ 两个 `cep_decl_reverse_verify` 实例并行改写 `protocol_instances.json` ⇒ **还原竞态** ⇒ 仓内文件残留污染(`concurrent=false` + 尾换行丢失)。**处置**:`git checkout --` 按字节恢复 + 强校验。**根因修法**:`cep_decl_reverse_verify` 加 **`RUN_SERIAL TRUE`**(独占运行)⇒ 读者天然安全且**未来新增读者无需同步**(⛔ 优于 `RESOURCE_LOCK` 的读者枚举法)。**纪律**:凡**改写仓内文件**的测试 SHALL 独占运行。
+
+**L-2 闸循环参数必须与 ctest 一致(教训已落本 Entry)**
+我早期的「43 闸全 rc=0」循环用了**无参**模式,而 ctest 注册 `cep_docs_sync_check` / `cep_doc_ref_check` 时带 **`--strict`** ⇒ **漏检 1 项**(`cep_doc_ref_check --strict` rc=1:台账引用归档前活路径)。**修法**:循环按 ctest 参数复跑(已全绿)。**纪律**:闸的「全绿」声明必须以**与 ctest 同参数**的执行为准,⛔ 不得以无参模式代言。
+
+**④ 残余(3 项 · 全部**未关闭**)**
+
+| 项 | 状态 |
+|---|---|
+| **镜像 20 值(`moesi_gpu` / `mesif`)的 SKIP 条件性洞** —— ArchForge 缺席时 `cep_decl_alignment_check.sh:40-44` 整闸 exit 0 ⇒ 无 ArchForge 环境零保护 | ⛔ **待 architect 裁决**(是否把镜像值纳入仓内权威 / 或要求 ArchForge 仓在 CI 常驻) |
+| **`cxl_2_0` / `tilelink_c` / `nvlink_4` 无逐值出处** —— 期望表已显式标「无逐值出处(冻结口径)」 | ⛔ **未关闭**;⛔ 不伪造出处 |
+| **Scenario 标题债** —— `cep-core-contracts:85` 的标题仍为「5 实现 + caps 四属性齐备」(正文已订正为 6 + 免责句) | ⛔ **未关闭**(openspec 机械约束:MODIFIED 场景名不可改);✅ 前向纪律已写入 delta 的 Requirement |
+
+**⑤ 下一步**:**verifier 独立验收**(proposal AC-01 ~ AC-10 逐条 + 工具证据)⇒ 报告落 `.rddf/reviews/cpptlm-cep-flow-support-assertions-verify.md`。⚠️ 本 change 的 delta 已合并 ⇒ **归档后**验收以 **main spec** 为判据载体(非 delta)。
+
+**⑥ 关联**:**#427**(立项)· **#428**(实施回执 + 授权)· `468e5352`(产物)· `81a0cd5e`(清单)· `439b1386`(KPI + 体量 + VIRTUAL_PATHS)· `openspec/specs/cep-core-contracts/spec.md`(delta 已合并:新 Requirement `cep-flow-support-value-lock` + `cep-sharer-tracker-contract` 订正为 6 种)· `test/cep_flow_support_expected.json` · `scripts/test/cep_flow_support_reverse_verify.sh` · `test/CMakeLists.txt`(`RUN_SERIAL` 竞态修复)
