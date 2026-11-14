@@ -23021,3 +23021,41 @@ KPI 活口径 **1/3 → 0/3**(`AGENTS.md` + 台账 §5.2 + `phase-10.md` + 2 份
 T6 只守**档 2 的「新增产出物」** ⇒ **档 0 / 档 1 的产出物不受防夸大闸保护** —— 这是 **AC-9 原文的字面范围** ⇒ **不是缺口**,但**读者须知**:将来档 0/1 产出物若出现夸大表述,本闸**不会**拦。
 
 **⑥ 关联**:**#415**(W1~W4 实施回执)· **#414**(规划 + metis 13 条处置 + 实施授权)· **#413** / **#412** / **#411** / **#410** · `.rddf/reviews/cep-evidence-tier2-minimal-slice-verify.md`(第 2 轮段)· `.rddf/improvements/cep-tier2-verification-closure.md` · `ADR-CEP-20` 决策 5 / 6
+
+### Entry #417 — 2026-11-14 [builder](**W7 push 回执** —— 档 2 验收闭环整轮收口)
+
+**主题**:per 台账 Entry #414 的 W7 ⇒ 本 Entry = **push 回执** + 本轮**整轮收口**的最终实测。
+
+**① push 回执**
+
+| 项 | 值 |
+|---|---|
+| 命令 | `git push origin main` ⇒ rc=0 |
+| 范围 | `a37c8ce4..8a9dae5b` ⇒ **30 个 commit** |
+| 远端一致核验 | `git fetch origin` 后 `git rev-list --left-right --count origin/main...HEAD` = **`0 0`** ✅ |
+| ⚠️ 与台账 §10 的关系 | §10 现状表的「未 push」值是**易变数字**(已标注真源命令)⇒ push 后归 **0** ⇒ ⛔ **不得**再把「27」当现行值引用 |
+
+**② 本轮整轮收口(4 项缺口 → 1 项)**
+
+| 缺口 | 结果 |
+|:--:|---|
+| **G-1** provenance 机器判据 | ✅ **闭合**(verifier 第 2 轮判通过) |
+| **G-3** 有界性溢出路径 | ✅ **闭合** |
+| **G-4** AC-9 产出物覆盖面 | ✅ **闭合** |
+| **G-2** 三段连通反向证据 | ⚠️ **部分达成**(三段中 2 段可机判;「**断言不落**」一段未可机判)⇒ AC-2 **⭔ 不得记 ✅** ⇒ 出口 = **D-1 二选一**(verifier + 用户) |
+
+**③ 最终实测(push 后)**
+
+`ctest --test-dir build -j2` ⇒ **177/177** 全绿 · `scripts/test/cep_*.sh` **42** 个逐个 rc=0(**失败闸数 = 0**)· `docs_sync_check` / `markdown_link_check` / `agents_md_lint` / `format --check` 全 rc=0 · 工作区**干净**。
+
+**④ 本轮提交面(3 个 + 2 个治理 commit)**
+
+| commit | 内容 |
+|---|---|
+| `01769640` | 规划:improvement v2 + metis 第 1 轮 13 条处置 + 台账 Entry #414 |
+| `2d2bb6e4` | **实施面 W1 ~ W4**(基类 2 方法 + 测试 4 用例 + 闸 T6 + 变异 g) |
+| `f5744fec` | 台账 §10 现状订正 + Entry #415(实施回执) |
+| `517f5004` | verifier 第 2 轮报告 + Entry #416 |
+| `8a9dae5b` | 角色切换记录(role.json) |
+
+**⑤ 关联**:**#416**(verifier 第 2 轮)· **#415**(实施回执)· **#414**(规划 + metis 处置 + 授权)· **#413** / **#412** / **#411** / **#410** · `.rddf/improvements/cep-tier2-verification-closure.md` · `.rddf/reviews/cep-evidence-tier2-minimal-slice-verify.md`
