@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **1 个 active**（`cpptlm-cep-flow-support-assertions` 于 2026-11-15 **立项** ⇒ 占 1 slot,per 台账 Entry #427;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-cep-flow-support-assertions` 于 2026-11-15 立项 ⇒ 占 1 slot,per Entry #427;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -23480,3 +23480,62 @@ AC-1(三处硬编码全消)· AC-2(注释四项)· AC-3(编译 rc=0 零 warning)
 > ⚠️ **零债务提示**:本轮**不得**读作「文档漂移已全部清零」—— 本批处置 **10 处**,登记残余 **6 处**(活体 2 + 冻结面 4)。
 
 **④ 关联**:**#425**(授权记录)· **#424**(同链先例)· **#319**(五步链闭合记录先例)· `docs/guide/cep-usage.md` §12.6(五步链)· `.rddf/reviews/cep-architecture-doc-alignment-2026-11-14.md`(审稿报告 · oracle APPROVE)· `docs/architecture/07-coherence-exploration-platform.md`(SU:2026-11-14 架构文档对齐订正)· `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(86 产物 · `authorized_by = Entry #425`)
+
+### Entry #427 — 2026-11-15 [planner](**`flow_support` 值锁的立项** —— improvement v2 + metis 第 1 轮 14 条处置 + change 目录 + proposal + delta spec)
+
+**主题**:per 用户口令「开 change 补第 1 项」(测试覆盖缺口的第 1 项 = `flow_support` 声明值无逐键断言)⇒ 本 Entry = **立项回执** + 范围收敛的权威依据 + 2 项残余登记。**不改任何排期 / 队列位 / 计数**。
+
+**① 立项面**
+
+| 项 | 值 |
+|---|---|
+| improvement | `.rddf/improvements/cpptlm-cep-flow-support-assertions.md`(v2 · 7 段 · `pre_create_brainstorm_check.sh` **rc=0**) |
+| change 目录 | `openspec/changes/cpptlm-cep-flow-support-assertions/`(`proposal.md` + `specs/cep-core-contracts/spec.md`) |
+| `openspec validate --strict` | **rc=0**(零 WARNING) |
+| 审查 | **metis 第 1 轮**(planner 固定审查者 · 本 improvement 预算 **1 轮**,已用尽) |
+| KPI | Proposed 并发 **0/3 → 1/3** |
+
+**② metis 14 条 MUST/SHOULD-FIX 的逐条处置**
+
+| # | metis finding | 处置 |
+|:--:|---|---|
+| MUST-1 | 范围应收敛到 `repo_owned` 6 实例(镜像 2 实例的 20 值已由脚本级闸 ⑥ 覆盖) | ✅ 采纳 —— 范围 = 6 实例 / 60 值 / 缺口 **39**(原估 49) |
+| MUST-2 | 「值锁(契约力)」与「变更检测器(程序力)」两套框架并存,必须二选一 | ✅ 采纳**变更检测器**定位 —— delta 的 Requirement 写**变更检测义务**,⛔ **不**写「值的权威归属」(后者需 `ADR-CEP-12` SU 授权,本 change 不动已签批 ADR) |
+| MUST-3 | golden 表无授权路径 ⇒ 「改表即绿」一次性速度坎 | ✅ 部分采纳 —— 新增**脚本侧持久反向 fixture**(`CEP_FLOW_SUPPORT_DECL` env 覆盖 + 临时副本毒化,⛔ 不改仓内文件 ⇒ **可进 ctest 并行**);并写入 delta 的 Requirement「持久反向 fixture 在脚本侧独立存活」 |
+| MUST-4 | AC-04 事实错:`test_cep_schema.cc:265-275` 锁的是 **schema** 形状,⛔ 不是实例 | ✅ 订正 —— 实例级 10 键形状由本 change **新增**;唯一流名来源取 `kCanonicalFlowNames`(代码真源);⛔ 撤回「禁双实现」在该处的误用 |
+| MUST-5 | AC-02「注明族级权威来源」不可判定;3 族仓内**无逐值出处** | ✅ 改为**可机器验收**(所引文件存在 + 锚点串存在)+ 无出处者显式标注「无逐值出处(冻结口径)」+ ⛔ 禁笼统背书 |
+| MUST-6 | AC-03 反向控制无机器验收 | ✅ 改为四要件(逐实例 `SECTION` + `REQUIRE(被变异实例数 == 6)` + `REQUIRE(翻转值 != 原值)` + 失败消息含 id/key)+ ⛔ 禁「找到才断言」形态 |
+| MUST-7 | AC-08 缺 5 条五步链细节 | ✅ 补齐(授权 id 精确匹配 / `--update` 全量重算须复核清单 diff / 禁 `--skip-specs` / 「归档前必绿 → 合并后必红」时序 / `artifact_count` 不变) |
+| SHOULD-8~12 | AC 硬编码计数 · 巨型 TEST_CASE · id 唯一性 · 域定义 · 不勾 ADR Verification | ✅ 全部采纳(AC-07 改为「0 failures + 用例数 +1」;per-instance `SECTION`;id 唯一性断言;域 = `repo_owned_instance_ids` 全集不按 `status` 过滤;新增 AC-07「不勾选 `ADR-CEP-12` 任何 Verification 项」) |
+| NITS-13~15 | 估时低估 · 载体文件自述 · 不新增 tag | ✅ 采纳(估时拆「实施 0.5d + 归档链 0.3d」;载体自述在 proposal 中登记;沿用 `[cep][instance-decl]`) |
+
+**③ 范围收敛的权威依据(实测,非推断)**
+
+`include/tlm/cep/protocol_instances.json` 的 `repo_owned_instance_ids` = **`chi_rnf` / `cxl_2_0` / `tilelink_c` / `cxl_3_0_symmetric` / `nvlink_4` / `ualink_4`**(6 个,权威**在本仓**);`moesi_gpu` / `mesif` 的权威在 **ArchForge**(`authority_migrations` 为空 ⇒ 无权威迁移)。镜像 2 实例的 20 值已由 ⑥ `strict_equal` 逐字段覆盖(`scripts/test/cep_decl_alignment_check.sh:523-551`,含 `flow_support`)+ 持久反向 fixture 穷举(`scripts/test/cep_decl_reverse_verify.sh:183`)。⇒ repo_owned 6 实例的 60 值中仅 **21** 有断言 ⇒ **真实缺口 = 39**。
+
+**④ ⚠️ 本轮新发现:openspec 的 Scenario 标题债(工具约束)**
+
+`openspec` 的 `MODIFIED` 块按**场景名精确匹配**且 archive **拒绝丢弃**既有场景名(`dist/core/parsers/requirement-blocks.js:453-480` + `dist/core/validation/validator.js:671-680`);`ADDED`+`REMOVED` 同名被拒(`dist/core/specs-apply.js:200-203`)⇒ **含数量的 Scenario 标题一经落盘即无法经 delta 改名**。⇒ 本 change 的 delta **保留**标题「5 实现 + caps 四属性齐备」+ 正文加**显式免责句**(实现数 = 6,以正文为准)+ Requirement 说明里写入「**后续新增 Scenario SHALL NOT 在标题内嵌数量**」。⚠️ 该形态**严格优于拆出**(拆出则 main spec 仍写「恰好 5 个实现」= 明错)⇒ 用户「合并」裁决**维持有效**。
+
+**⑤ 边界**
+
+- ⛔ `include/tlm/cep/**` 零 diff · `protocol_instances.json` 零 diff · `protocol_instance.schema.json` 零 diff · 引擎 / adapter / tracker 零 diff
+- ⛔ 新增 invariant 数 = **0** · 不改任何已签批 ADR(只引用 `ADR-CEP-04 §13` 的「6 种实现」追加式修订)
+- ⛔ **不断言镜像实例**(`moesi_gpu` / `mesif`)的 `flow_support` 值 —— 权威不在本仓
+- ⛔ **不勾选 `ADR-CEP-12` 的任何 Verification 项**(其 6 条判据无「逐实例 `flow_support` 值」对应项)
+- ⛔ `design.md` / `tasks.md` = builder 的活 ⇒ **planner 不写**(per 角色矩阵)
+- ⛔ 本轮**未启用** `rdd-builder` skill 写 `proposal.md`(其 P0 会生成 proposal,但需整条 6 阶段状态机 + P0 用户选门)⇒ 走**内置流程**(planner 起草 proposal + delta),先例 = Entry #75/#76 / #423
+
+**⑥ 残余登记(3 项 · 全部**未关闭**)**
+
+| 项 | 载体 | 处置 |
+|---|---|---|
+| **镜像 20 值的 SKIP 条件性洞** | `moesi_gpu` / `mesif` 的 `flow_support` 由 ⑥ 覆盖,**但 ArchForge 缺席时 `cep_decl_alignment_check.sh:40-44` 整闸 exit 0** ⇒ 无 ArchForge 环境零保护 | ⛔ **待 architect 裁决**(是否把镜像值纳入仓内权威 / 或要求 ArchForge 仓在 CI 常驻)—— 判权在 architect,⛔ planner 不代裁 |
+| **`cxl_2_0` / `tilelink_c` / `nvlink_4` 无逐值出处** | 期望表显式标「无逐值出处(冻结口径)」 | ⛔ **不伪造**出处;⛔ 不用笼统背书 |
+| **Scenario 标题债** | `openspec` 机械约束(见 ④) | ✅ 本 change 已以「保留标题 + 免责句」消化;根因(标题内嵌数量)已写入 delta 的 Requirement 作**前向纪律** |
+
+**⑦ 五步授权链(归档期,⛔ 归档时才触发)**
+
+delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 冻结面(`openspec/specs/cep-*/spec.md` glob)⇒ 归档步须走:台账 Entry(归档期那条)→ 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #N"` → 清单**单独** commit → 无参复验 rc=0。⚠️ **归档前冻结闸必绿**(delta 在 `openspec/changes/<name>/specs/...`,冻结 glob 刻意不匹配该路径,per `cep_freeze_check.sh:73-77`)⇒ **不得**拿「归档前 rc=0」当已合规。
+
+**⑧ 关联**:`.rddf/improvements/cpptlm-cep-flow-support-assertions.md`(v2)· `openspec/changes/cpptlm-cep-flow-support-assertions/{proposal.md,specs/cep-core-contracts/spec.md}` · `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md:391`(「5 种 ⇒ 6 种」追加式修订)· `openspec/specs/cep-hierarchical-directory/spec.md:36-38,61`(以 `kTrackerTraits[5]` 为三方真源)· `include/tlm/cep/protocol_instances.json`(`repo_owned_instance_ids`)· `scripts/test/cep_decl_alignment_check.sh:523-551` · `scripts/test/cep_decl_reverse_verify.sh:183` · `test/test_cep_instance_declaration_contract.cc:490-543`(`ADR-CEP-04-SU4-O2` 值锁 + 反向 fixture 先例)
