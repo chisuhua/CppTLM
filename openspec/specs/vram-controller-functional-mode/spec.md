@@ -2,7 +2,9 @@
 
 ## Purpose
 TBD - created by archiving change cpptlm-vram-controller-functional-integration. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: vc-functional-mode-data-path (新)
 
 `PcieMemoryDevice::handle_slave_port(port=0)` SHALL 在 `simulation_mode == "functional"` 且 `vram_controller_ != nullptr` 时, **委托 SDMA MEM_WRITE 流量给 VramControllerTLM 的 functional-mode 接口** (`VramControllerMode::FunctionalZeroDelay`), 而不是直 memcpy.
@@ -17,7 +19,7 @@ TBD - created by archiving change cpptlm-vram-controller-functional-integration.
 - **AND** 返回 `MEM_WRITE_RESP` (resp.resp=0 OK) → `sdma.req_in[2]`
 - **AND** controller latency = **0 cycles** (functional-mode 标识; 与 timing-mode `latency=kOperatingFrequencyHz × bandwidth_gbps^-1` 区分)
 
-### Scenario: handle_request 返回 SLVERR 传播 (per D-AXI v1.4 B9)
+#### Scenario: handle_request 返回 SLVERR 传播 (per D-AXI v1.4 B9)
 
 - **GIVEN** VramController functional-mode, `sdma.mem_out` 触发 handle_slave_port(port=0)
 - **AND** `vram_ctrl.handle_functional_request()` 返回 `non-zero` rc (e.g., OOB, SLVERR)
@@ -26,7 +28,7 @@ TBD - created by archiving change cpptlm-vram-controller-functional-integration.
 - **AND** SDMA 收到 SLVERR → 触发 retry driver (per D-AXI v1.4 B22)
 - **NOTE**: per §X 关键风险 R3 缓解; 测试用例 `[vram_controller][functional][slverr]` 必须注入 1 case 验证
 
-### Scenario: GMMU PTE fetch 改走 VramControllerTLM 专用 functional port (NVIDIA H100 dedicated memory client 模式, per v0.5 三锁叠加裁决)
+#### Scenario: GMMU PTE fetch 改走 VramControllerTLM 专用 functional port (NVIDIA H100 dedicated memory client 模式, per v0.5 三锁叠加裁决)
 
 - **GIVEN** `dgpu_soc_minimal_v1.json` functional-mode 配置 (含 `vram_ctrl`) + per §1.4.6 v0.5 修订 (GMMU dedicated memory client bus)
 - **WHEN** GMMU 触发 PTE fetch: `gmmu.translate(iova, ...) → GMMU 异步状态机 → MasterPort(gmmu.req_out) → VramControllerTLM::handle_functional_request(pte_addr, 8, is_write=false, nullptr)`
@@ -174,4 +176,3 @@ TEST_CASE("[vram_controller][functional] functional-mode path", "[vram_controlle
 - **THEN** 0 errors, ≥0 warnings (per §0.1 DoD)
 
 ---
-

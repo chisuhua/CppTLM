@@ -104,7 +104,7 @@ created: 2026-11-15
 | **AC-01** | 2 份 spec **非 strict** 绿 | `openspec validate <spec> --type spec`（**不带** `--strict`）⇒ **2/2 rc=0** |
 | **AC-02** | ERROR 级清零 | `openspec validate --json` ⇒ `items[0].issues` 中 `level == "ERROR"` **计数 = 0**（2 份） |
 | **AC-03** | 全仓非 strict 全绿 | 129 份 spec 逐份 `validate --type spec`（非 strict）⇒ **rc≠0 计数 = 0**（当前 2 ⇒ 目标 0） |
-| **AC-04** | 改的只有标题层级 | diff 逐行核对：vram-controller 的 2 行 = `### Scenario:` → `#### Scenario:`（**正文 0 改**）；pcie-slice 的 1 行 = 标题降级（**内容 0 改**）⇒ **diff 的增行 = 3 / 删行 = 3** |
+| **AC-04** | 改的只有标题层级 | diff 逐行核对：vram-controller 的 2 行 = `### Scenario:` → `#### Scenario:`（**正文 0 改**）；pcie-slice 的 1 行 = 标题降级（**内容 0 改**）⇒ **语义改动 = 3 处标题**。⚠️ **判据订正（实施时实测）**：初稿写「增行 = 3 / 删行 = 3」—— 实际 vram-controller 的归档 diff 为 **增 4 / 删 3**，多出的 3 行是 **openspec MODIFIED 合并器对 `## Requirements` 段头（前后空行）+ 文件尾空行的规范化**（合并器重写整段所致，与 delta 内容无关）⇒ 改判为「语义改动 = 3 处标题 + 空白规范化 ≤ 3 行（已归因）」 |
 | **AC-05** | Scenario 数量不丢 | vram-controller 的 `vc-functional-mode-data-path` ⇒ **3 个 `#### Scenario:`**（改前：1 正确 + 2 错级）；`pcie-slice-prerequisites` 的 Requirement 数 **5 → 5** |
 | **AC-06** | 零实现层 / 零冻结面 | `include/**` / `src/**` / `test/*.cc` / `docs/adr/**` 零 diff · `cep_freeze_check.sh` 的 `artifact_count` **86 不变** |
 | **AC-07** | `cep-*` 不受影响 | 43 份 `cep-*` 逐份 `--strict` ⇒ **rc≠0 = 0**（与改前一致） |

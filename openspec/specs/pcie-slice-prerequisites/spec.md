@@ -103,7 +103,7 @@ The `SdmaEngineTLM::DmaTranslateCb` callback (per ADR-088 §D3.8) MUST handle th
 - **WHEN** both host_backdoor and vram_backdoor are set
 - **THEN** writing host_backdoor does NOT affect vram_backdoor region (per change B set_host_backdoor/set_vram_backdoor 独立性)
 
-### 【延至 change C/D】 Backdoor-vs-BAR0 隔离 (本 change 无法测试)
+**【延至 change C/D】 Backdoor-vs-BAR0 隔离 (本 change 无法测试)**
 
 > **⚠️ 跨 change 依赖注记 (per Metis 审查 2026-08-28)**: 以下 Scenario 属 change C (Board shell) + change D (ABI export) 范围,本 change 无法直接验证。建议在 C 的 T-bs-2 (Doorbell/DGpuBar 迁移) + D 的 AE-G3 (23 ABI 端到端) 中实现并验证。本 spec 不创建对应的 Requirement (避免 openspec validate 误判)。
 

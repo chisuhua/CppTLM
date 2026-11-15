@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**（`cpptlm-spec-scenario-level-fix` 于 2026-11-15 **立项** ⇒ 占 1 slot,per 台账 Entry #438;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-spec-scenario-level-fix` 于 2026-11-15 立项 ⇒ 占 1 slot,per Entry #438;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -24157,4 +24157,43 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 - **T1 已立项**:change `cpptlm-spec-scenario-level-fix`(improvement + proposal + tasks + **1 份 delta**);原型验证已过(影子根 3 处改完 ⇒ 2 份 spec 非 strict 即 `valid`)。
 - **口径澄清(登记)**:6 份 improvement 写「已实施」但**无同名 openspec change**(工作承载在别的 change 内)⇒ 「improvement 已实施」≠「有同名 change」;建议未来状态行统一为「已实施(承载于 `<change>`)」。
 
-**⑥ 关联**:Entry **#437**(上一 change 收口)· **#436**(本 change 立项)· **#431**/**#432**(假红实测)· `.rddf/improvements/cpptlm-spec-scenario-level-fix.md` · `openspec/changes/cpptlm-spec-scenario-level-fix/` · `openspec/specs/vram-controller-functional-mode/spec.md` · `openspec/specs/pcie-slice-prerequisites/spec.md`
+**⑥ 关联**:Entry **#437**(上一 change 收口)· **#436**(本 change 立项)· **#431**/**#432**(假红实测)· `.rddf/improvements/cpptlm-spec-scenario-level-fix.md` · `openspec/changes/archive/2026-11-15-cpptlm-spec-scenario-level-fix/` · `openspec/specs/vram-controller-functional-mode/spec.md` · `openspec/specs/pcie-slice-prerequisites/spec.md`
+
+### Entry #439 — 2026-11-15 [builder](**R-7 闭合** —— 主 spec 标题层级修正 **3 处** · 全仓 **129 份 spec 非 strict 全绿** · KPI **1/3 → 0/3**)
+
+**主题**:change `cpptlm-spec-scenario-level-fix` 收口(立项见 Entry #438)。**R-7 闭合** —— 全仓唯一「连非 strict 都 rc=1」的类别清零。
+
+**① 交付面(3 处定点改 · 语义零改动)**
+
+| # | 目标 | 改法 | 载体 | 实测 |
+|:--:|---|---|---|---|
+| **W1** | `vram-controller-functional-mode` 2 处 `### Scenario:`(level 3) | → `#### Scenario:`(正文逐字不动) | **1 份 MODIFIED delta** | `#### Scenario:` **14 → 16** · `### Requirement:` **7 → 7** |
+| **W2** | `pcie-slice-prerequisites` 1 处伪 Requirement `### 【延至 change C/D】 …` | → **非标题**(内容逐字保留、位置不变) | **直改主 spec**(⛔ MODIFIED 只能重发**具名 Requirement** ⇒ 无 delta 途径) | `### Requirement:` **5 → 5** · Scenario **15 → 15** |
+
+**② AC 逐条复验**
+
+| AC | 判据 | 实测 |
+|:--:|---|---|
+| AC-01 | 2 份 spec 非 strict rc=0 | **2/2 rc=0** |
+| AC-02 | ERROR 级计数 = 0 | **0**(改前 3 处 ERROR) |
+| AC-03 | 全仓 129 份 spec 非 strict rc≠0 = 0 | **0**(改前 **2**)⇒ **R-7 闭合** |
+| AC-04 | 语义改动 = 3 处标题 | 增 5 / 删 4 = **3 处标题 + 3 行合并器空白规范化**(已归因,见下) |
+| AC-05 | Scenario / Requirement 数不丢 | 见上表 |
+| AC-06 | 范围零 diff + `artifact_count` 不变 | `include/**` / `src/**` / `test/*.cc` / `docs/adr/**` **零 diff** · `artifact_count` **86** · `cep_freeze_check.sh` 无参 rc=0 |
+| AC-07 | 43 份 `cep-*` --strict 不受影响 | rc≠0 = **0** |
+| AC-08 | 归档 | `openspec/changes/archive/2026-11-15-cpptlm-spec-scenario-level-fix/`(proposal / design / tasks / **1 份 delta**) |
+| AC-09 | KPI | **0/3 → 1/3**(立项)→ **0/3**(归档)· 6 处活口径 + obj 并发句 |
+
+**③ 复验**:45 闸全 rc=0(`docs_sync` / `doc_ref` 带 `--strict`)· `openspec validate --changes --strict` rc=0 · 闸数 **45 不变**。
+
+**④ ⚠️ 本轮 3 处判据订正 / 机制发现(均留痕)**
+
+1. **AC-04 订正**:初稿写「增行 = 3 / 删行 = 3」—— 实测归档 diff 为 **增 5 / 删 4**。多出的 **3 行**是 **openspec MODIFIED 合并器对 `## Requirements` 段头(前后空行)+ 文件尾空行的规范化**(合并器**重写整段**所致,与 delta 内容无关)。⇒ 改判为「**语义改动 = 3 处标题** + 空白规范化 ≤ 3 行(已归因)」,proposal / improvement / tasks 三处同步留痕。
+2. **归档载体不能走 `skip_specs`**:实测 `openspec archive` 在 change **无 delta** 时要求 `.openspec.yaml` 设 `skip_specs: true`(或 CLI `--skip-specs`)⇒ 而 `AGENTS.md` 规定 `--skip-specs` = **⏸ 暂存归档**语义(断言「设计保留,能力未落地」)⇒ 与本 change「实现已完成」**矛盾**。⇒ **走 delta 路径**(归档时合并 ⇒ 明确 **✅ 已完成归档** 语义,无暂存歧义),代价 = 上述 3 行空白噪声。**取舍:归档语义正确性 > diff 最小化。**
+3. **`ChangeParser` 要求精确标题**:实测 `## Why（为什么）` / `## What Changes（变更内容）` **不被接受**(警告「Change must have a Why section」)⇒ 必须**精确** `## Why` / `## What Changes`。⚠️ 本仓 CEP 提案惯用的 `## 为什么` 会触发该警告 —— **Entry #424 L-1 已记过同一坑**,本轮**再踩一次** ⇒ 已订正本 change 提案。**建议**:后续 CEP 提案统一用精确英文标题。
+
+**⑤ 口径澄清(承接 Entry #438 §3)**:R-1 的「**77** 份」是 **`--strict` 口径**;**非 strict 口径**下,本 Entry 修完后 **rc≠0 = 0** ⇒ R-1 的剩余范围 = **75 份 Purpose 占位 + 70 份正文 >500**(**WARNING 级**,不含 ERROR)。
+
+**⑥ 状态**:active **1 → 0** · 归档 **148 → 149** · KPI **0/3** · 冻结产物 **86**(免五步链)· 闸 **45** 不变。
+
+**⑦ 关联**:Entry **#438**(立项 + 全量梳理)· **#437**(上一 change 收口)· **#424**(L-1 同坑)· `openspec/changes/archive/2026-11-15-cpptlm-spec-scenario-level-fix/` · `.rddf/improvements/cpptlm-spec-scenario-level-fix.md` · `openspec/specs/vram-controller-functional-mode/spec.md` · `openspec/specs/pcie-slice-prerequisites/spec.md`
