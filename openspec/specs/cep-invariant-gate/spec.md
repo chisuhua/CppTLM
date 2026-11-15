@@ -17,17 +17,20 @@ CEP 治理线的**机制机器化**能力:把 `ADR-CEP-00` SU 2026-11-11 §⑤ �
 > **规范载体**:决策块计数口径 = `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` 的 `## Status Update 2026-11-12`;
 > **canonical 实现** = 本闸的 Python 实现(`ADR-CEP-00:431` 的「标题口径 4」= 其文档镜像)
 
-
 ## Requirements
 
 ### Requirement: cep-invariant-gate-decision-block-and-residual-check
 
 CEP SHALL 提供**机器化治理判据**，把 `ADR-CEP-00` SU 2026-11-11 §⑤ 自认的两项「有登记、无牙齿」残留
-—— **R-c**（「一决策一文档化」残余登记 + 3 条触发条件**无机器检查**）与 **R-d**（决策块计数口径
+—— **R-c**（「一决策一文档化」残余登记 + 3 条触发条件**无机器检查」）与 **R-d**（决策块计数口径
 **三个互不相等的实现**）—— 落为**有牙齿的判据**。
 
 判据 SHALL 由**单一新闸**承载（`scripts/test/cep_decision_block_check.{sh,py}`），其 SHALL 包含两个
 **独立段**：**R-d 段**（决策块计数快照）与 **R-c 段**（双向对账）。
+
+> **本次修订(2026-11-15,per 台账 Entry #431)**:⛔ **只修正本 Requirement 内登记的快照规模数字**(22 份 / `total`=125 → **23 份 / `total`=131**)—— 决策块闸的**覆盖集合**新增 `ADR-CEP-20-topology-ic3-evidence-strength.md`(**6** 个决策块)⇒ 本 Requirement 内的实测数字 SHALL 与闸外快照同步,⛔ 否则**契约与快照自相矛盾**。
+> ⚠️ **边界**:本 Requirement **不新增**任何 Requirement、**不**新增判据口径、**不**改闸的判定逻辑(`scripts/test/cep_decision_block_check.py` **零 diff**)—— 本次只是把「覆盖集合 +1 份」这一既成事实**登记进契约面**。
+> ⚠️ **⛔ 覆盖集合不自愈**:新签发 ADR 仍需**人工** bump 快照 ⇒ 该缺口**另立 backlog**(本 change **不**新增「覆盖完整性」判据 —— 那需要改闸代码)。
 
 #### Scenario: **R-d 段 SHALL 按四步口径计数，并与快照逐份相等**
 
@@ -37,7 +40,7 @@ CEP SHALL 提供**机器化治理判据**，把 `ADR-CEP-00` SU 2026-11-11 §⑤
 - **AND** 块 ID SHALL 为编号串的**正则全匹配**（`1` / `2` / `2.1` / `10`）⇒ ⛔ 前缀 / 子串 / 整数归一比较
       SHALL NOT 被使用（`stoi("2.1")==2` 会漏计;`grep -c "决策 1"` 会双命中 `决策 10`）
 - **AND** 逐份计数 SHALL 与 `test/cep_decision_block_snapshot.json` 的**对应键**相等
-- **AND** 快照的 `total` SHALL == 各份计数之和（实测 **125**），`count` SHALL == 键数（实测 **22**）
+- **AND** 快照的 `total` SHALL == 各份计数之和（实测 **131**），`count` SHALL == 键数（实测 **23**）
 - **AND** 任一份偏离 SHALL 判 **FAIL**，红因 SHALL 含稳定签名 `决策块计数快照偏离` 且携带
       **文件名 + 期望值 + 实得值 + 差值**
 - **AND** 判据 SHALL 为「**逐份相等**」⇒ ⛔ SHALL NOT 退化为「≥1」（后者删 8 条仍绿）
@@ -93,6 +96,8 @@ CEP SHALL 提供**机器化治理判据**，把 `ADR-CEP-00` SU 2026-11-11 §⑤
 - **AND** **被指物存在性**（仓内路径 / 台账 Entry / ADR 短名 glob / 符号定义式）SHALL 取自**真实仓根**
       （影子树不含台账与闸外文件 ⇒ 若在影子根解析则恒红）
 - **AND** 快照读取 SHALL 取自**真实仓根**（快照是闸外的期望值载体，⛔ 不是语料）
+
+> ⚠️ **本 Scenario 的直接推论(per 台账 Entry #431)**:因快照**恒**取自真实仓根 ⇒ **快照毒化在不改仓内文件的前提下不可实现** ⇒ 闸的**覆盖集合**判据只能通过**改影子树里的 ADR** 来证明(⛔ 非「毒化快照」)。
 
 #### Scenario: **每条判据 SHALL 有决定性变异，且变异 SHALL 按签名红、还原后绿**
 

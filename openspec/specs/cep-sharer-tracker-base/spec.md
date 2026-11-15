@@ -188,6 +188,10 @@ CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全�
 
 系统 SHALL 以成文规则定义 sharer 位宽的扩容路径,使「何时扩容 / 扩到多少 / 随扩容同步哪些点」不依赖口头约定。
 
+> **本次修订(2026-11-15,per 台账 Entry #431)**:本 Requirement **新增 2 条 Scenario** —— 把 `ADR-CEP-21` **V1-6 自认的真空**(「当前**无任何机器闸/测试钉死 `kResponderMappedBits == 4`**」)与 **V2-6 的同形判据**(运行时 mask 数值锚)落成**机器可判**。
+> ⚠️ **边界**:本 Requirement 规定的是「**当前状态的变更检测义务**」,**不**论证「4 是正确的宽度」—— 宽度的正确性来自 `ADR-CEP-21` 的阶段 2 触发判据(2a 机判 / 2b 人裁),本 change **不**动该判据、**不**执行阶段 2、**不**满足/替代 `V2-6`。
+> ⚠️ **⛔ 不写成恒等式**:mask 的判据 SHALL 用**数值锚**(`0xF`),SHALL NOT 用 `kMappedResponderMask == (1 << kResponderMappedBits) - 1` —— `sharer_tracker.hh:141-142` 的定义**就是**该式 ⇒ 恒真 ⇒ 零判别力。
+
 #### Scenario: 扩容的最小改动面
 
 - **WHEN** 决定扩容到宽度 `W`
@@ -224,3 +228,25 @@ CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全�
 
 - **WHEN** 宽度覆盖的某个 bit 在映射表中指向无效节点
 - **THEN** 满射判据 SHALL 失败(该 bit 必须映射到有效节点,且其位号必须回到原值)
+
+#### Scenario: 宽度常量与掩码数值锚 SHALL 被机器钉死
+
+- **WHEN** 契约测试检查 responder 位宽的**当前状态**
+- **THEN** `kResponderMappedBits` SHALL 等于 **4**(阶段 1「未扩容」状态被钉死)⇒ 任何把它改成 `W` 的变更 SHALL 判红,除非该变更**同时**完成 `ADR-CEP-21` 阶段 2(触发判据 + architect 裁决 + 台账 Entry)
+- **AND** `kMappedResponderMask` SHALL 等于 **0xF**(数值锚)⇒ 掩码语义漂移 SHALL 判红
+- **AND** 上述两条判据 SHALL 用**具体数值**表达,SHALL NOT 用 `kMappedResponderMask == (1 << kResponderMappedBits) - 1` 这类**定义复述式**(恒真 ⇒ 零判别力)
+- **AND** 失败消息 SHALL 含**实测值**
+
+> **依据**:`ADR-CEP-21` V1-6(自认真空)· `ADR-CEP-21` V2-6(运行时 mask 判据的同形形态)· `ADR-CEP-21:47`(文本锚盲区的实证)。
+> **锚点**:`include/tlm/cep/sharer_tracker.hh:92`(`kResponderMappedBits`)· `:141-142`(`kMappedResponderMask`)· `test/test_cep_sharer_tracker_base.cc`。
+
+#### Scenario: 持久反向 fixture SHALL 在脚本侧独立存活且只写临时目录
+
+- **WHEN** 仓内执行本 Requirement 的**持久**反向 fixture
+- **THEN** 该 fixture SHALL 位于**脚本侧**(⛔ 不在 C++ 测试文件内)⇒ 删除 C++ 用例后 fixture 仍能令判据变红
+- **AND** fixture SHALL 仅**写自己的 `mktemp -d` 临时目录**(⛔ 不改写仓内任何文件)⇒ 可安全进 ctest 并行运行
+- **AND** **宽度毒化**(影子树复制头文件 ⇒ 改 `kResponderMappedBits` ⇒ 编译最小探针)SHALL 令判据**以非零退出码**判红
+- **AND** ⚠️ **编译失败 SHALL 归类为环境错误并以 `exit 2` 退出**,SHALL NOT 被计作「判据失败」(⛔ 编译失败不得冒充判据失败)
+- **AND** 毒化态 SHALL 判红、未毒化态 SHALL 判绿
+
+> **锚点**:`scripts/test/cep_adr_verification_carriers_reverse_verify.sh` · 形态先例 `scripts/test/cep_flow_support_reverse_verify.sh`(只写临时目录)· `scripts/test/cep_tilelink_adapter_reverse_verify.sh`(影子树编译期锁毒化副本)。

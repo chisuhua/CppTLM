@@ -313,6 +313,21 @@ add_test(NAME cep_flow_support_reverse_verify
 set_tests_properties(cep_flow_support_reverse_verify
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# `ADR` Verification 判据载体的**持久反向验证**(per change
+# `cpptlm-cep-adr-verification-carriers` task T3.1~T3.7)—— 2 类毒化:
+#   · **宽度毒化**:影子树复制 `include/tlm/cep/sharer_tracker.hh` ⇒ 改
+#     `kResponderMappedBits` 4→8 ⇒ 编译**最小探针 TU** ⇒ 探针**运行期退出码**即判决
+#     (⛔ 编译失败 ⇒ exit 2 环境错误,不得冒充判据失败);
+#   · **覆盖毒化**:影子树复制 `docs/adr` ⇒ 删 `ADR-CEP-20` 一个 `### 决策 N` 段
+#     ⇒ 决策块闸(`--root` 影子树)必红 + 归因含文件名。
+#    ⚠️ 本脚本**只写自己的 `mktemp -d`**(⛔ 不复用 wrapper 的固定影子路径)⇒
+#    仓内文件零改动 ⇒ **可安全并行进 ctest**。
+#    ⚠️ 探针**独立于** C++ 测试二进制 ⇒ 即便该用例被删,本 fixture 仍红(删除韧性)。
+add_test(NAME cep_adr_verification_carriers_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_adr_verification_carriers_reverse_verify.sh)
+set_tests_properties(cep_adr_verification_carriers_reverse_verify
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # ProtocolEngine 端口面契约的**反向验证**(per change `cpptlm-cep-cohif-carrier`
 # task 2.6 / 2.7)—— 2 类毒化副本(10 流覆盖矩阵缺 1 流 / 某流语义退化为 no-op)
 #    分别必须让「覆盖完整性」「逐流行为」两条编译期锁报红。

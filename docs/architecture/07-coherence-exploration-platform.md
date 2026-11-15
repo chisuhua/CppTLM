@@ -587,7 +587,7 @@ group-scoped completion     → Fabric Collective Plane
 | 段 | 载体 | 判据 | 期望值来源 |
 |---|---|---|---|
 | **R-c** | `scripts/test/cep_decision_block_check.py` | 双向对账:正向(三份精确 basename + **无同号拆出件**)+ 反向(`ADR-CEP-00` 的 `### ⑥` 重述块)+ 触发条件表可解析性(4 类) | **闸内源码常量** |
-| **R-d** | 同上 | 22 份 ADR 的 §2 决策块计数**逐份** == 快照(`test/cep_decision_block_snapshot.json` · 22 键 + `total`=125) | **闸外快照** |
+| **R-d** | 同上 | 23 份 ADR 的 §2 决策块计数**逐份** == 快照(`test/cep_decision_block_snapshot.json` · 23 键 + `total`=131) | **闸外快照** |
 
 ⇒ 决策块计数口径的**规范载体** = `ADR-CEP-00` 的 `## Status Update 2026-11-12`(§⑤ 的「唯一规范载体」地位由该 SU 继承,§⑤ 文本**保留为历史**);**canonical 实现** = 上述闸的 Python 实现。
 

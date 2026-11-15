@@ -982,3 +982,29 @@ TEST_CASE("CEP SharerTracker: IC1 —— caps 4 字段是 enum 类型且取值 �
     REQUIRE(CapsFieldsAreInts<BadCapsAsInts>::value);
     REQUIRE_FALSE(CapsFieldsAreEnums<BadCapsAsInts>::value);
 }
+
+// ═════════════════════════════════════════════════════════════════════
+// responder 位宽常量与掩码数值锚(per change `cpptlm-cep-adr-verification-carriers`)
+//   —— 兑现 `ADR-CEP-21` **V1-6** 的自认真空(「无任何机器闸/测试钉死
+//      `kResponderMappedBits == 4`」)+ 堵住 `ADR-CEP-21:47` 的**文本锚盲区**
+// ═════════════════════════════════════════════════════════════════════
+// ⚠️ **判别力纪律**(本文件头「不做『恒真的常量存在性』检查」):
+//   · 宽度用**具体数值** 4 钉死 ⇒ 改常量即红;
+//   · 掩码用**数值锚** `0xF`,⛔ **不得**写 `== (1 << kResponderMappedBits) - 1`
+//     —— `sharer_tracker.hh:141-142` 的定义**就是**该式 ⇒ 恒真 ⇒ 零判别力。
+//     数值锚在宽度被改成 8 时实测 `mask == 0xFF` ⇒ 红 ⇒ 这正是文本锚闸
+//     (`scripts/test/cep_tilelink_adapter_reverse_verify.sh:49` 的
+//     `join-no-unmapped-reject` 锚 = **源码文本**)照绿的那条盲区。
+// ⚠️ **⛔ 不写成编译期 `static_assert`**:那会让 `ADR-CEP-21` **阶段 2 的合法扩容**
+//     也编译不过 ⇒ 与该 ADR 的两阶段设计直接冲突 ⇒ 本判据是 test-only。
+TEST_CASE("CEP SharerTracker: responder 位宽常量与掩码数值锚", "[cep][sharer-tracker]") {
+    // ① 阶段 1「未扩容」状态被机器钉死(per `ADR-CEP-21` V1-6 的自认真空)
+    INFO("kResponderMappedBits 实测 = " << cep::kResponderMappedBits
+         << "(期望 4;非 4 ⇒ `ADR-CEP-21` 阶段 2 已被执行或被误改)");
+    REQUIRE(cep::kResponderMappedBits == 4u);
+
+    // ② 掩码数值锚(⛔ 非恒等式 —— 恒等式是定义复述 ⇒ 零判别力)
+    INFO("kMappedResponderMask 实测 = 0x" << std::hex << cep::kMappedResponderMask
+         << std::dec << "(期望 0xF;≠ 0xF ⇒ 掩码语义已漂移,而文本锚闸照绿)");
+    REQUIRE(cep::kMappedResponderMask == 0xFu);
+}

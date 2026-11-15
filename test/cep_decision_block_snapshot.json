@@ -1,8 +1,8 @@
 {
   "schema": "cep-decision-block-snapshot-v1",
-  "authorized_by": "Entry #363",
-  "count": 22,
-  "total": 125,
+  "authorized_by": "Entry #431",
+  "count": 23,
+  "total": 131,
   "files": {
     "ADR-CEP-00-platform-charter-and-governance.md": 4,
     "ADR-CEP-00A-real-source-anchor-map.md": 3,
@@ -25,6 +25,7 @@
     "ADR-CEP-17-ruby-slicc-protocol-family.md": 10,
     "ADR-CEP-18-protocol-generation-scope.md": 6,
     "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": 9,
+    "ADR-CEP-20-topology-ic3-evidence-strength.md": 6,
     "ADR-CEP-NUMBER-MAP.md": 4
   }
 }

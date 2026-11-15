@@ -23739,3 +23739,64 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 | **R-5** | **`cep_decl_alignment_check.sh` 在 ArchForge 缺席时整闸 `exit 0`**(`:40-44`)⇒ 7 项子校验全跳过 | ⭔ **architect 判权**(条件性 —— 本机 ArchForge **在位** ⇒ 当前 `[RUN]` 7/7 全绿) |
 
 **⑧ 关联**:**#430**(上轮验收:有条件通过 · 1 项 SHOULD_FIX)· **#427 / #428 / #429**(`flow_support` 值锁链)· `openspec/changes/cpptlm-cep-adr-verification-carriers/`(proposal + 2 份 delta spec)· `.rddf/improvements/cpptlm-cep-adr-verification-carriers.md`(v2)· `docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md` · `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md` · `test/cep_decision_block_snapshot.json` · `scripts/test/cep_decision_block_check.py` · `openspec/specs/cep-sharer-tracker-base/spec.md` · `openspec/specs/cep-invariant-gate/spec.md`
+
+### Entry #432 — 2026-11-15 [builder](**`ADR` Verification 判据载体实施完成** —— W1~W6 落地 · **既存竞态根除**(wrapper 固定影子路径)· 2 项既存缺陷顺手登记 · 归档授权(五步链拍 0))
+
+**主题**:change `cpptlm-cep-adr-verification-carriers`(台账 #431 立项)的 **design/tasks + W1~W6 实施 + 0 回归**;本 Entry = **实施回执** + **归档授权**(五步链拍 0)。**KPI 待归档后回填 1/3 → 0/3**。
+
+**① 交付面(4 产物 + 2 文档连带)**
+
+| # | 内容 | 结果 |
+|:--:|---|:--:|
+| **W1** | `test/test_cep_sharer_tracker_base.cc`(改)—— 新增 1 个 TEST_CASE(2 断言):`kResponderMappedBits == 4u`(宽度状态钉死)+ `kMappedResponderMask == 0xFu`(**数值锚**) | ✅ |
+| **W2** | `test/cep_decision_block_snapshot.json`(改)—— 加 `ADR-CEP-20-topology-ic3-evidence-strength.md: 6`;`count` 22→**23**;`total` 125→**131**;`authorized_by` → `Entry #431`。⚠️ 期望值 **6** 用**闸自己的** `analyze_section2` 实测 = `(6, [])`(⛔ 禁用外部 `grep`) | ✅ |
+| **W4** | `scripts/test/cep_adr_verification_carriers_reverse_verify.sh`(新)—— **只写 `mktemp -d`** ⇒ 8/8 闭环:基线新用例绿 / 基线闸绿 / **宽度毒化红**(影子树改 4→8 ⇒ 编译最小探针 ⇒ **运行期退出码 1**)/ **覆盖毒化红**(+归因含 `决策块计数快照偏离` **与** `ADR-CEP-20`)/ 恢复绿 / **3 条仓内零改动**(`sha256sum` 前后比对) | ✅ |
+| **W6a** | `test/CMakeLists.txt`(改)—— 注册 `cep_adr_verification_carriers_reverse_verify` 进 ctest(Test **#95**)· `scripts/README.md`(改)—— 守门表 +2 行 · `AGENTS.md`(改)—— 契约闸数 **43 → 44** | ✅ |
+| **W6b** | `docs/architecture/07-coherence-exploration-platform.md:590` —— 决策块计数 **22 份 / 22 键 / total=125 → 23 份 / 23 键 / total=131**(第 3 份 M1 冻结产物,⚠️ **必须**在 `archive` 之后、`--update` 之前改,否则清单里它的 hash 是旧的 ⇒ 无参复验必红) | ✅ |
+
+**② ⚠️ 既存竞态:实测发现 + 根除**
+
+**现象**:`ctest -R cep -j4` 下 `cep_decision_block_check` **假红**(单独跑绿)。
+**根因**:`scripts/test/cep_decision_block_check.sh:36` 的影子路径是**固定**的 `SHADOW="${SHADOW_ROOT:-/tmp/opencode/cep-decision-block}"` ⇒ 本 change 的新 fixture 的「基线」步骤调该 wrapper ⇒ 与 ctest 里并发跑的 `cep_decision_block_check` **共用同一影子目录** ⇒ 互相覆盖 ⇒ 假红。
+**修法**:新 fixture 的 wrapper 调用**一律传独立 `SHADOW_ROOT="$TMP/shadow_wrapper"`** ⇒ 影子树隔离 ⇒ **不改 wrapper 本身**(⛔ 避免扩大范围;wrapper 的固定默认路径**仍**是既存隐患,登记为下条)。
+**复验**:`ctest -R cep -j4` **99/99 × 3 轮全绿**(基线 98 ⇒ **+1** 新 fixture)。
+
+**③ ⚠️ 2 项既存缺陷(顺手登记并修复,同域)**
+
+| # | 缺陷 | 处置 |
+|:--:|---|---|
+| **D-1** | `scripts/README.md` 的 CEP 守门表在**第 49 行有一个空行** ⇒ **Markdown 表被断成两段**(既存,HEAD 版即如此) | ✅ 本轮插入新行时**接好了**(删该空行)⇒ 表 **41 → 43 行连续**;**行数守恒校验**:新增 2 行 / **丢失 0 行** |
+| **D-2** | 上一轮 change 的 `cep_flow_support_reverse_verify.sh` **未登记**进 `scripts/README.md` 守门表(⚠️ 该表 `:33` 明文「⛔ 不写死绝对总数」⇒ 新增闸**必须**逐行登记) | ✅ 本轮**补回**该行(同一登记义务) |
+
+**④ 复验(全绿 · 串行)**
+
+| 项 | 结果 |
+|---|---|
+| `cmake --build build` | ✅ rc=0;唯一 warning = **既存** `broadcast_null_tracker.hh:68`(-Waddress,与本 change 无关) |
+| `./build/bin/cpptlm_tests '[cep]'` | ✅ **529 用例 / 12288 断言**(基线 528/12286 ⇒ **+1 用例 / +2 断言**) |
+| `ctest --test-dir build -R cep -j4` | ✅ **99/99 × 3 轮** |
+| **44 个** `scripts/test/cep_*.sh`(**按 ctest 同参数**) | ✅ 全 rc=0 |
+| `openspec validate --changes --strict` / `agents_md_lint` | ✅ rc=0 |
+| **归档前**冻结闸 | ✅ **rc=0** + provenance 一致(86 产物)⇒ ⛔ **不得**拿「归档前 rc=0」当已合规(delta 在 change 目录内,**刻意不匹配**冻结 glob) |
+| **范围零 diff** | ✅ `include/tlm/cep/**` · `docs/adr/**` · `scripts/test/cep_decision_block_check.py` 全零 diff;新增 `INV-CEP-*` = **0**;新增 spec Requirement = **0**(只 MODIFIED) |
+
+**⑤ 归档授权(五步链拍 0 = 本 Entry)**
+
+| 步 | 动作 | 状态 |
+|:--:|---|:--:|
+| 1 | 台账 Entry 先落(本 Entry) | ✅ |
+| 2 | `openspec archive --yes` ⇒ `~ 2 modified`;归档名 `2026-11-15-cpptlm-cep-adr-verification-carriers`;**W6b 改 07 文档**(第 3 份冻结产物) | ✅ |
+| 3 | 产物 commit | ⬜ |
+| 4 | `cep_freeze_check.sh --update --authorized-by "Entry #432"` ⇒ 清单 diff 应**恰含 3 份产物**的 hash + 元数据;`artifact_count` 不变(86) | ⬜ |
+| 5 | 清单**单独** commit | ⬜ |
+| 6 | 无参复验 rc=0 + provenance 一致 | ⬜ |
+
+**⑥ 遗留(3 项 · 全部**未关闭**)**
+
+| # | 项 | 状态 |
+|:--:|---|---|
+| **L-1** | `scripts/test/cep_decision_block_check.sh:36` 的**固定**影子路径默认值仍是**既存隐患**(任何并发调用者都会撞)⇒ 本轮**只**在自己这边隔离,⛔ **未改 wrapper** | ⛔ **未关闭** —— 建议后续给 wrapper 的默认路径加 PID 后缀(独立小改,⛔ 不在本 change 范围) |
+| **L-2** | `scripts/test/cep_decision_block_check.py:11` / `:237` 与 `.sh:10` 注释里的「**22 份**」已 **stale**(实为 23 份)⇒ 闸**代码零改动**故未改 | ⛔ **未关闭**(纯注释,⛔ 不在本 change 范围) |
+| **L-3** | `ADR-CEP-21` 的 **V1-6 checkbox 保留 `- [ ]`**(ADR 不可变、不可勾选)⇒ 「载体已存在」的事实**以本 Entry 为准** | ⛔ **未关闭**(⛔ 不追加 ADR 的 `## Status Update`,保持 `docs/adr/**` 零 diff) |
+
+**⑦ 关联**:**#431**(立项 + 授权快照覆盖集合 +1)· `.rddf/improvements/cpptlm-cep-adr-verification-carriers.md`(v2)· `openspec/changes/archive/2026-11-15-cpptlm-cep-adr-verification-carriers/`(四件套)· `test/cep_decision_block_snapshot.json` · `test/test_cep_sharer_tracker_base.cc` · `scripts/test/cep_adr_verification_carriers_reverse_verify.sh` · `scripts/test/cep_decision_block_check.py` · `openspec/specs/cep-sharer-tracker-base/spec.md` · `openspec/specs/cep-invariant-gate/spec.md` · `docs/architecture/07-coherence-exploration-platform.md`
