@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-15T03:54:55Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-15T05:02:53Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-14T03:31:28Z",
-      "by": "auto",
-      "reason": "verifier 第 2 轮验收完成(Entry #416)=> 实施面已闭合 ⇒ 执行 W7(push)收口本轮。"
-    },
     {
       "role": "architect",
       "at": "2026-11-14T03:46:52Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-15T03:54:55Z",
       "by": "user",
       "reason": "per 用户口令「再切builder进行实施」⇒ 实施已立项 change `cpptlm-cep-adr-verification-carriers`(台账 Entry #431):补 design.md/tasks.md + W1 判据 / W2 快照 / W4 持久 fixture / W6 文档连带 + 0 回归 + 归档五步链 + KPI 回填 1/3 -> 0/3。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-15T05:02:53Z",
+      "by": "user",
+      "reason": "per 用户口令「切planner对后续任务梳理 + 实施路径 + 再切builder实施(第二轮)」⇒ 对实测收敛的 F-1(cep-* spec 逐份 --strict 12/43 红,含本轮引入的 2 份回归)/L-1(9 闸固定影子路径)/L-2/R-3/G-4/G-5 做 gap 分析 + 立项 F-1。"
     }
   ],
   "auto_switch_window": null

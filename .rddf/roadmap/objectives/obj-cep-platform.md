@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cpptlm-cep-adr-verification-carriers` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #432;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-cep-adr-verification-carriers` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #432;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **1 个 active**（`cpptlm-cep-spec-strict-compliance` 于 2026-11-15 **立项** ⇒ 占 1 slot,per 台账 Entry #434;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-cep-spec-strict-compliance` 于 2026-11-15 立项 ⇒ 占 1 slot,per Entry #434;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -23840,3 +23840,74 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 **④ ⑤ 项残余(承 #431 ⑦ · 状态更新)**:`R-1`(F-1 全仓 **87/129** 份 `--strict` 超长)仍 **backlog** · `R-2`(镜像 20 值)仍 **architect** · `R-3`(决策块闸覆盖集合**无自愈**)仍 **backlog** · `R-4`(编译期锁**不可追**)已**确认为设计必然** · `R-5`(ArchForge 缺席零保护)仍 **architect**。
 
 **⑤ 关联**:**#431**(立项)· **#432**(实施 + 授权)· `49288f5a`(产物)· `b4fcb04a`(清单)· `openspec/specs/cep-sharer-tracker-base/spec.md`(delta 已合并:新 2 条 Scenario)· `openspec/specs/cep-invariant-gate/spec.md`(数字 131/23)· `docs/architecture/07-coherence-exploration-platform.md`(第 3 份冻结产物)· `test/cep_decision_block_snapshot.json` · `test/test_cep_sharer_tracker_base.cc` · `scripts/test/cep_adr_verification_carriers_reverse_verify.sh` · `test/CMakeLists.txt`
+
+### Entry #434 — 2026-11-15 [planner](**`cep-*` 契约面 `--strict` 合规** 的立项 —— improvement v2(metis **10 MUST + 7 SHOULD + 6 NIT 全处置**,其中 **2 条推翻初稿事实判断**)+ change 目录 + proposal + **5 份 delta** · **回归认领** · KPI **0/3 → 1/3**)
+
+**主题**:`cep-*` 43 份 spec 中 **12 份** `openspec validate --strict` rc=1(2 份是本会话上一 change 引入的**回归**),且**仓内没有任何闸跑逐份 `--strict`** ⇒ 落地即静默腐化。change = `cpptlm-cep-spec-strict-compliance`;improvement = `.rddf/improvements/cpptlm-cep-spec-strict-compliance.md`(v2)。
+
+**① ⚠️ 回归认领(上一 change `cpptlm-cep-adr-verification-carriers` · Entry #431~#433)**
+
+| spec | Requirement | 归档前正文 | 现在 |
+|---|---|:--:|:--:|
+| `cep-sharer-tracker-base` | `responder 位宽扩容的机制与触发判据` | **89** | **604** ❌ >500 |
+| `cep-invariant-gate` | `cep-invariant-gate-decision-block-and-residual-check` | **348** | **811** ❌ >500 |
+
+**根因(工具的不对称,非疏忽)**:`@fission-ai/openspec` `dist/core/validation/validator.js:266-276` 注释原文 — `MODIFIED is left alone: its text is the existing requirement, which the specs instruction says to keep whole.` ⇒ **delta 的 `MODIFIED` 块不作 500 长度检查**,而 main spec 被检查 ⇒ delta 阶段**零告警**,归档合并后**静默超长**。上一 change 的 AC-09 写「归档后逐份 rc=0(max 298/348)」= **归档前的估值**,归档后未复跑 ⇒ **该断言已失实**。
+
+⚠️ **处置 = 认领并登记,⛔ 不改归档件**(`openspec/changes/archive/2026-11-15-cpptlm-cep-adr-verification-carriers/proposal.md` 的 AC-09 原文**零 diff** —— 归档件不可变);删除依据 = Entry #431 的记录仍在台账。
+
+**② 立项依据(全部 2026-11-15 实测)**
+
+| 项 | 实测 |
+|---|---|
+| `cep-*` 红份数 | **12 / 43** = {5 份 Requirement 正文 >500} ∪ {8 份 Purpose 占位}(`cep-ualink-coherence-engine` 两类都占) |
+| 超长 5 份(openspec 同口径复刻,逐条一致) | `cep-collective-plane-contract` **517** · `cep-core-contracts`(`cep-sharer-tracker-contract`) **697** · `cep-invariant-gate` **811** · `cep-sharer-tracker-base` **604** · `cep-ualink-coherence-engine` **1931** |
+| Purpose 占位 8 份 | `cep-basis-source-kind` · `cep-instance-assembly` · `cep-moesi-gpu-l4-e2e` · `cep-poc-spike-verification` · `cep-refkind-coverage` · `cep-stub-cache-core` · `cep-ualink-coherence-engine` · `cep-vc-mapping-contract`(占位文本 = `TBD - created by archiving change …`) |
+| 全仓面(⛔ 本 change 不做) | 129 份中 **87** rc=1 = 非 cep **75**(全为 Purpose 占位)+ cep **12** |
+| 治理来源 | `obj:18150`(Entry **#324**,architect):「**轴 2 达标度**(Purpose 非占位符 / Scenario ≥1 / 无悬空锚点)= **独立** remediation 批次 · 不入冻结判据」⇒ 本 change = 该批次的 `--strict` 可检子集(另两轴登记 R-5) |
+| 仓内无闸覆盖 | 44 个 `cep_*.sh` 无一跑逐份 `--strict`;`openspec validate --changes --strict` rc=0(只查 change) |
+
+**③ ⛔ 认识论边界**:500 / 50 两阈值由**仓外工具**持有 ⇒ 本闸是**变更检测器**,**不是**判据权威(输出须打印工具版本;major 漂移走 R-6);闸覆盖 = 目录名以 `cep-` 开头(不叫 `cep-*` 的新 spec 逃逸 ⇒ R-1);「语义零变更」**不靠机器自证** —— 机器只防「偷偷改」,**删掉的到底是什么**由 critic(arch 档)逐条比对。
+
+**④ metis 第 1 轮(10 MUST + 7 SHOULD + 6 NIT 全处置)—— 其中 2 条推翻了我的初稿事实判断**
+
+| # | 初稿判断 | metis 实测 | 处置 |
+|:--:|---|---|---|
+| **M-1** | ualink「纯去重即可」(1931 → ≤500) | ❌ **算术不成立** —— 真正重复的只有三分法表(387)+ 4 条不变量(398)= 785,去重后仍剩 ≈1156;且 `UGE-B` 明写「本 scenario SHALL NOT 被读作覆盖…**键型 SHALL 由代码评审保证**」⇒ `txn_id` 唯一键 / response handler 禁令 / 13 键三项**无场景覆盖** | ✅ 改为「去重 + **下沉为 `UGE-F/G/H`** + 零 UPLI 语义操作定义 `UGE-I`」⇒ 裁后 **481** |
+| **M-2** | 反向 fixture 内联 `cp -r openspec` | ❌ **违反冻结契约** —— `openspec/specs/cep-invariant-gate/spec.md:13` + `:115` 明文:「影子树 SHALL 由共享 helper(`cep_test_shadow.sh`)承载,⛔ 任一闸 SHALL NOT 自带复制实现」 | ✅ 新增 **W7**:扩展 helper(`cp` → `cp -r`,对文件行为完全相同)+ **AC-14** 回归共用它的 2 闸 |
+| M-3 | AC 用 `\b(SHALL\|MUST)\b` 存在性 | 恒真 ⇒ 零判别力(本仓自订纪律明文禁止) | ✅ 换为 **removals.json 句级集合等式** + 术语表不降 |
+| M-4 | Scenario 只比标题集合 | 内容被改照样绿 | ✅ 升级为**逐块 sha256 byte-equal** |
+| M-5 | 五步链漏 `openspec archive` 步 | 顺序会变成「commit → --update → 才发现 delta 未合并」 | ✅ 改 **7 步** + provenance 断言(`frozen_at_commit` == 产物 commit sha) |
+| M-6 | 反向 fixture 无基线前置 | 毒化一个**本已红**的 spec ⇒ rc 仍非 0 ⇒ 零信息量 | ✅ 首步断言 `invalid_ids(基线) == ∅`,否则 **exit 2**;毒化后 `invalid_ids == 基线 ∪ {毒化 id}` 且**恰好 +1** |
+| M-7 | 缺环境缺失判据 / 覆盖对账 | 有闸无牙齿 / 静默漏检 | ✅ 新增 **AC-11**(exit 2)+ **AC-03**(129 / 43 对账) |
+| M-8 | 写「80 份非 cep」且 80 + 12 ≠ 87 | 实测 83 份占位,cep 占 8 ⇒ 非 cep **75** | ✅ 全文订正为 **75** |
+| M-9 | 写「闭环上一 change 的 AC-09 失实」 | 归档件不可变,不能改原文 ⇒ 「闭环」是过度声称 | ✅ 改为「**认领并登记**」+ 边界加「不改归档件」「不发明 `rddf feedback`」 |
+| M-10 | 无「自身禁写过程日志」约束 | 本轮腐化成因就是「过程日志进契约正文」 | ✅ 12 份终态 SHALL NOT 含 `本 change` / `2026-11-15` / `Entry #43*` + **AC-08 ④** 可机检 |
+| S-11..17 · N-18..23 | 授权链 / ctest 口径 / 去魔数 / 定序 / 唯一真源 / 审查轮 / 3 人日 / 12=5∪8 / 残余 R-5 R-6 等 | — | ✅ 全采纳(逐条见 improvement 末尾对照表) |
+
+**⑤ 交付面**
+
+| # | 内容 | 落点 |
+|:--:|---|---|
+| **W1** | 12 份修到 0 红(**定序固定** W1a 2 份回归 → W1b collective → W1c core-contracts → W1d ualink) | 5 delta + 8 Purpose |
+| **W2** | 防退闸 `scripts/test/cep_spec_strict_check.sh`(主判据 + 覆盖对账 + 环境 exit 2 + 版本固化 + 反向 fixture) | 新脚本 |
+| **W3** | **5 份 delta** —— 已生成并自检:既有 Scenario **0 丢失**,ualink 新增 4 条 | `specs/**/*.md` × 5 |
+| **W4..W6** | 8 份 Purpose · README/CMake/AGENTS 连带 · `removals.json` | — |
+| **W7** | 共享 helper 支持目录复制(`cp` → `cp -r`) | `scripts/test/cep_test_shadow.sh` |
+| **W8** | 本 Entry | — |
+
+**⑥ 裁后正文长度(openspec 同口径,planner 已用 Python 复刻并**逐条对照工具判定一致**)**
+
+| spec | 裁前 | 裁后 | 手法 |
+|---|:--:|:--:|---|
+| `cep-sharer-tracker-base` | 604 | **206** | 删「本次修订」过程块(3 行)→ 1 行边界声明 |
+| `cep-invariant-gate` | 811 | **386** | 删 3 条过程块 → 1 行「覆盖集合不自愈」限制披露 |
+| `cep-collective-plane-contract` | 517 | **401** | 删 `:29-30` |
+| `cep-core-contracts` | 697 | **336** | 删「订正(2026-11-15)」;**保留**规范句 `SHALL NOT 在标题内嵌数量` |
+| `cep-ualink-coherence-engine` | 1931 | **481** | 去重 785 + 下沉 3 条规范句为 `UGE-F/G/H` + `UGE-I` |
+
+**⑦ 复验**:`openspec validate cpptlm-cep-spec-strict-compliance --strict` ⇒ **rc=0** · `openspec list --json` ⇒ active **1** ⇒ KPI **0/3 → 1/3**。
+
+**⑧ 残余(6 项 · 全未关闭)**:R-1 非 cep **75** 份 · R-2 镜像 20 值(architect)· R-3 ArchForge 缺席零保护(architect)· R-4 9 个闸固定影子路径 + 决策块闸注释 stale + 覆盖集合无自愈(backlog)· R-5 轴 2 另两轴(`Scenario ≥1` / 无悬空锚点)· R-6 `openspec` 版本未 pinning。
+
+**⑨ 关联**:**#431 / #432 / #433**(上一 change 三件套,本 Entry 认领其 AC-09 失实)· **#324**(轴 2 预授权)· `.rddf/improvements/cpptlm-cep-spec-strict-compliance.md`(v2)· `openspec/changes/cpptlm-cep-spec-strict-compliance/` · `openspec/specs/cep-{sharer-tracker-base,invariant-gate,collective-plane-contract,core-contracts,ualink-coherence-engine}/spec.md`
