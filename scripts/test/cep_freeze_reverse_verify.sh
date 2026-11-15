@@ -27,7 +27,8 @@ cd "$ROOT" || exit 2
 
 FREEZE="scripts/test/cep_freeze_check.sh"
 FABRIC="include/tlm/cep/fabric.json"
-BACKUP="$(mktemp -t fabric_backup.XXXXXX.json)"
+_fb_base="${TMPDIR:-/tmp/opencode}"; mkdir -p "$_fb_base" 2>/dev/null || true
+BACKUP="$(mktemp "$_fb_base/fabric_backup.XXXXXX.json")"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'

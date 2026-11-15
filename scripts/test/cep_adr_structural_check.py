@@ -5,7 +5,7 @@
 用途:把「ADR 正文结构缺口」从**暗**变**可见**,并**锁住**例外登记不被滥用。
 
 判定口径(per `compliance_rule`):
-  · 分母 = `decision_adrs` 列出的 **19 份决策 ADR**(22 份 `ADR-CEP-*` − NUMBER-MAP / 00 宪章 / 00A 锚点表)
+  · 分母 = `decision_adrs` 列出的 **21 份决策 ADR**(24 份 `ADR-CEP-*` − NUMBER-MAP / 00 宪章 / 00A 锚点表)
   · 合规 = **顶层 `##` 章**含 `Verif|验证|验收判据` **且**位于首个 `## Status Update` **之前**
   · 不合规者必须落在两类例外之一:
       - `waivers`        —— **永久豁免**(已签发 + ADR 不可变 ⇒ 正文永远补不了)⇒ 带 `evidence_anchor` 行号锚点,

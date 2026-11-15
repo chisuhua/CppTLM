@@ -27,8 +27,22 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT" || exit 2
 
 CHECK="scripts/test/cep_dod_reading_check.py"
-SHADOW="${SHADOW_ROOT:-/tmp/opencode/cep-dod-reading}"
-LOG="${SHADOW_LOG:-/tmp/opencode/cep-dod-reading-last.log}"
+# `--list` 必须在创建影子目录**之前**返回：`exec` 会替换进程 ⇒ EXIT trap 不触发 ⇒
+if [[ "${1:-}" == "--list" ]]; then
+    exec python3 "$CHECK" --list
+fi
+
+# 影子路径：默认 `mktemp -d`（⛔ 不用固定字面量 —— 同闸并发会互踩；⛔ 不用 `$$` ——
+# 容器共享 hostPath 的 /tmp 而 PID namespace 各自从 1 起 ⇒ PID 会撞）。
+# `SHADOW_ROOT` 显式覆盖时**不删**其目录（只清理自己创建的）。
+_shadow_base="${TMPDIR:-/tmp/opencode}"; mkdir -p "$_shadow_base" 2>/dev/null || true
+if [ -n "${SHADOW_ROOT:-}" ]; then SHADOW="$SHADOW_ROOT"; _own_shadow=0
+else SHADOW="$(mktemp -d "$_shadow_base/cep-dod-reading.XXXXXX")"; _own_shadow=1; fi
+_cleanup_shadow() { [ "${_own_shadow:-0}" = 1 ] && rm -rf -- "$SHADOW"; }
+trap _cleanup_shadow EXIT
+echo "[shadow] $SHADOW"
+
+LOG="${SHADOW_LOG:-$SHADOW/last.log}"   # 默认随影子目录 ⇒ 并发时诊断不串味
 
 DOC07="docs/architecture/07-coherence-exploration-platform.md"
 GUIDE="docs/guide/cep-usage.md"
@@ -41,9 +55,6 @@ ng() { echo "  ❌ $1"; fail=$((fail + 1)); }
 
 source "$(dirname "${BASH_SOURCE[0]}")/cep_test_shadow.sh"
 
-if [[ "${1:-}" == "--list" ]]; then
-    exec python3 "$CHECK" --list
-fi
 
 # ── 常量取自闸模块(⛔ 本壳不复写锚文本)──────────────────────────────────
 const() { python3 -c "import sys; sys.path.insert(0,'scripts/test'); import cep_dod_reading_check as m; sys.stdout.write(getattr(m,'$1'))"; }

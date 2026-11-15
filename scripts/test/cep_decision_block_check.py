@@ -8,7 +8,7 @@
      —— 落为**有牙齿的机器判据**。
 
 判定口径(per 台账 Entry #359 D-1~D-5 + Entry #361 D-6~D-9 + 本 change 的 design.md):
-  · **R-d 段** —— 22 份 ADR 的 §2 决策块计数,与**闸外快照**逐份比对。
+  · **R-d 段** —— 23 份 ADR 的 §2 决策块计数,与**闸外快照**逐份比对。
   · **R-c 段** —— 双向对账:正向(磁盘集合)+ 反向(重述块)。
 
 ⚠️ **受控重复登记**(per design D-3 / Entry #361 ③ D-8 第 2 点):
@@ -56,6 +56,7 @@ SIG_SPLIT_ADR = "存在同号拆出件"
 SIG_RESIDUAL_MISS = "重述块缺项"
 SIG_RESIDUAL_FMT = "重述块格式不符"
 SIG_TRIGGER_FMT = "触发条件表结构不符"
+SIG_COVERAGE_MISSING = "决策块覆盖缺失"
 SIG_REF_UNRESOLVED = "引用解析缺失"
 
 # ── D-3.1 四步口径(per D-1)─────────────────────────────────────────────────
@@ -230,13 +231,54 @@ def adr_files(corpus_root):
     )
 
 
+# ── 覆盖义务(语料 → 快照) ──────────────────────────────────────────────────
+def check_coverage(corpus_root):
+    """覆盖义务:凡有 §2 决策章的 `ADR-CEP-*.md` MUST 出现在快照 `files` 里。
+
+    补的是 `check_rd` 划走的另一半:新增 ADR 若**只**进了 `cep_adr_structural_check.sh`
+    的分类表而**忘了**登记快照,此前**无人红**。
+    ⚠️ 谓词**复用** `section2(strip_fences(...))`(⛔ 不新写正则 —— 围栏内的 `## 2`
+    不得算章,`SIG_DANGER_FENCE` 证明这种围栏确实存在)。
+    ⚠️ **计数仍是闸外期望值**;本判据只推导 key 集。
+    ⚠️ **射程 = `ADR-CEP-*.md`**;`## 决策`(无编号)形态(先例 `ADR-CEP-21`)不适用。
+    """
+    reds = []
+    snap, _ = load_snapshot()
+    if snap is None:
+        return reds  # 快照本身非法已由 check_rd / check_snapshot_totals 报
+    registered = set(snap["files"])
+    adr_dir = os.path.join(corpus_root, "docs", "adr")
+    if not os.path.isdir(adr_dir):
+        return reds
+    for name in sorted(os.listdir(adr_dir)):
+        if not (name.startswith("ADR-CEP-") and name.endswith(".md")):
+            continue
+        with open(os.path.join(adr_dir, name), encoding="utf-8") as fh:
+            text = fh.read()
+        if section2(strip_fences(text)) is None:
+            continue  # 无 §2 章 ⇒ 结构性不适用(先例 ADR-CEP-21)
+        if name not in registered:
+            reds.append(
+                (
+                    SIG_COVERAGE_MISSING,
+                    f"{name}: 有 §2 决策章但未登记决策块快照 ⇒ 登记义务:`files` 补 "
+                    f'"{name}": <块数> 并同步 count/total(authorized_by 复用同一台账 Entry)',
+                )
+            )
+    return reds
+
+
 # ── R-d 段 ────────────────────────────────────────────────────────────────
 def check_rd(corpus_root):
     """R-d:快照逐份比对 + 两条显式红 + 围栏危险标记。
 
-    职责边界:本段遍历**快照已登记的文件**(22 份)⇒ 语料里**新增**的 ADR 文件
-    不在本段职责内(由 R-c 的「无同号拆出件」+ `cep_adr_structural_check.sh` 的
-    分区完整性负责)⇒ 两段职责解耦,变异红因唯一。
+    职责边界:本段遍历**快照已登记的文件**(23 份);语料里**新增**的 ADR **不**由本段
+    负责 —— 改由 **`check_coverage`**(`决策块覆盖缺失`)承接,方向互补:
+      · `check_rd`    :**快照 → 语料**(文件缺失 / 计数偏离 / 层级 / 编号)
+      · `check_coverage`:**语料 → 快照**(有 §2 章的 `ADR-CEP-*.md` 必须登记)
+    ⇒ 两段红因仍然唯一(计数偏离 vs 未登记,签名不同)。
+    ⚠️ **计数仍是闸外期望值**(人工登记 + 台账 Entry 授权);`check_coverage` 只推导 **key 集**。
+    ⚠️ **射程 = `ADR-CEP-*.md`**;`## 决策`(无编号)形态(先例 `ADR-CEP-21`)**不在射程内**。
     """
     results = []
     snap, reds = load_snapshot()
@@ -501,17 +543,19 @@ def check_rc_trigger(corpus_root):
 def run(corpus_root, list_only=False):
     if list_only:
         print("CEP 治理判据闸(cep_decision_block_check)判据清单:")
-        print("  [R-d] 22 份 ADR 的 §2 决策块计数 == 快照逐份相等(D-1 四步 + D-3.2 块 ID 全匹配)")
+        print("  [R-d] 23 份 ADR 的 §2 决策块计数 == 快照逐份相等(D-1 四步 + D-3.2 块 ID 全匹配)")
         print("  [R-d] 显式红①:决策标题层级 ≠ ###")
         print("  [R-d] 显式红②:决策编号非 ASCII 十进制 / 非全匹配")
         print("  [R-d] 围栏危险标记:§2 内围栏内容含行首 '## '")
         print("  [R-d] 快照健康度:schema / count / total / authorized_by(台账 Entry 必须存在)")
+        print("  [R-d] 覆盖义务(语料 → 快照):有 §2 章的 `ADR-CEP-*.md` 必须登记(`决策块覆盖缺失`)")
         print("  [R-c] 正向:三份精确 basename 存在 + 无同号拆出件")
         print("  [R-c] 反向:新 SU 的 '### ⑥' 重述块(恰 3 bullet · 每行唯一 token)")
         print("  [R-c] 触发条件:SU '### ②' 之下第一张表(恰 3 数据行 · 4 类引用可解析)")
         return 0
 
     reds = check_rd(corpus_root)
+    reds.extend(check_coverage(corpus_root))
     evidence, ev_reds = check_snapshot_totals(corpus_root)
     reds.extend(ev_reds)
     reds.extend(check_rc_forward(corpus_root))

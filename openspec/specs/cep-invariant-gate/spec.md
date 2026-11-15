@@ -27,7 +27,7 @@ CEP SHALL 提供**机器化治理判据**，把 `ADR-CEP-00` SU 2026-11-11 §⑤
 判据 SHALL 由**单一新闸**承载（`scripts/test/cep_decision_block_check.{sh,py}`），其 SHALL 包含两个
 **独立段**：**R-d 段**（决策块计数快照）与 **R-c 段**（双向对账）。
 
-> ⚠️ **覆盖集合不自愈**:新签发含 §2 决策章的 ADR 仍需**人工** bump 快照 ⇒ 本 Requirement **不**提供「覆盖完整性」判据(该缺口另行立项)。
+> ⚠️ **覆盖义务与计数维护是两件事**:本 Requirement **提供**「**覆盖义务**」判据 —— 语料中凡有 §2 决策章的 `ADR-CEP-*.md` MUST 出现在快照 `files` 里;但 ⛔ **不**自动维护**计数**(期望块数仍须人工登记 + 台账 Entry 授权)。
 
 #### Scenario: **R-d 段 SHALL 按四步口径计数，并与快照逐份相等**
 
@@ -41,6 +41,7 @@ CEP SHALL 提供**机器化治理判据**，把 `ADR-CEP-00` SU 2026-11-11 §⑤
 - **AND** 任一份偏离 SHALL 判 **FAIL**，红因 SHALL 含稳定签名 `决策块计数快照偏离` 且携带
       **文件名 + 期望值 + 实得值 + 差值**
 - **AND** 判据 SHALL 为「**逐份相等**」⇒ ⛔ SHALL NOT 退化为「≥1」（后者删 8 条仍绿）
+- **AND** **覆盖义务**（语料 → 快照）：语料中凡 `section2(strip_fences(text))` 存在的 `ADR-CEP-*.md` SHALL 出现在快照 `files` 里 ⇒ 否则 SHALL 判 **FAIL**，红因签名 SHALL 为 `决策块覆盖缺失` 且携带文件名（与 R-d 既有段「快照 → 语料」方向互补）
 
 > **锚点**：`test/cep_decision_block_snapshot.json` · `scripts/test/cep_decision_block_check.py`
 
@@ -119,6 +120,7 @@ CEP SHALL 提供**机器化治理判据**，把 `ADR-CEP-00` SU 2026-11-11 §⑤
 - **THEN** SHALL 显式记录：① 判据只验「**引用良形 + 被指物存在**」，**不验**「被指物真实现了该判定」;
       ② 计数类判据**防不住**「块数不变但 §2 正文被原位改写」;③ **新编号拆出件不在 R-c 覆盖内**
       （由 `cep_adr_structural_check.sh` 的分区完整性 + `ADR-CEP-00 §3` supersede 表兜底）
+- **AND** **④** 覆盖义务判据**不覆盖「`## 决策`（无编号）形态」**的决策章（先例 `ADR-CEP-21`）⇒ 该形态的登记义务由 ADR 格式约定 + `cep_adr_structural_check.sh` 的分母承担，⛔ 不得据此宣称「全部 ADR 已被覆盖判据管辖」
 - **AND** ⛔ SHALL NOT 把「不可判 / 不空转」表述为「已覆盖 / 已证明」
 
 > **锚点**：`docs/adr/ADR-CEP-00` 的 `## Status Update 2026-11-12` · `docs/architecture/07-coherence-exploration-platform.md`

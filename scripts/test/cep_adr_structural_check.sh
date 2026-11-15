@@ -27,16 +27,27 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT" || exit 2
 
 CHECK="scripts/test/cep_adr_structural_check.py"
-SHADOW="${SHADOW_ROOT:-/tmp/opencode/cep-adr-structural}"
+# `--list` 必须在创建影子目录**之前**返回：`exec` 会替换进程 ⇒ EXIT trap 不触发 ⇒
+if [[ "${1:-}" == "--list" ]]; then
+    exec python3 "$CHECK" --list
+fi
+
+# 影子路径：默认 `mktemp -d`（⛔ 不用固定字面量 —— 同闸并发会互踩；⛔ 不用 `$$` ——
+# 容器共享 hostPath 的 /tmp 而 PID namespace 各自从 1 起 ⇒ PID 会撞）。
+# `SHADOW_ROOT` 显式覆盖时**不删**其目录（只清理自己创建的）。
+_shadow_base="${TMPDIR:-/tmp/opencode}"; mkdir -p "$_shadow_base" 2>/dev/null || true
+if [ -n "${SHADOW_ROOT:-}" ]; then SHADOW="$SHADOW_ROOT"; _own_shadow=0
+else SHADOW="$(mktemp -d "$_shadow_base/cep-adr-structural.XXXXXX")"; _own_shadow=1; fi
+_cleanup_shadow() { [ "${_own_shadow:-0}" = 1 ] && rm -rf -- "$SHADOW"; }
+trap _cleanup_shadow EXIT
+echo "[shadow] $SHADOW"
+
 
 pass=0
 fail=0
 ok() { echo "  ✅ $1"; pass=$((pass + 1)); }
 ng() { echo "  ❌ $1"; fail=$((fail + 1)); }
 
-if [[ "${1:-}" == "--list" ]]; then
-    exec python3 "$CHECK" --list
-fi
 
 echo "══ ① 基线(无变异) ══"
 out="$(python3 "$CHECK" 2>&1)"

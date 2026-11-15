@@ -19,7 +19,16 @@ cd "$ROOT" || exit 2
 PROBE="test/cep_b3b2_d4_probe.json"
 DEFERRALS="test/cep_b3b2_deferrals.json"
 VALIDATE="scripts/test/cep_b3b2_d4_probe_validate.py"
-SHADOW="${SHADOW_ROOT:-/tmp/opencode/cep-b3b2-d4-shadow}"
+# 影子路径：默认 `mktemp -d`（⛔ 不用固定字面量 —— 同闸并发会互踩；⛔ 不用 `$$` ——
+# 容器共享 hostPath 的 /tmp 而 PID namespace 各自从 1 起 ⇒ PID 会撞）。
+# `SHADOW_ROOT` 显式覆盖时**不删**其目录（只清理自己创建的）。
+_shadow_base="${TMPDIR:-/tmp/opencode}"; mkdir -p "$_shadow_base" 2>/dev/null || true
+if [ -n "${SHADOW_ROOT:-}" ]; then SHADOW="$SHADOW_ROOT"; _own_shadow=0
+else SHADOW="$(mktemp -d "$_shadow_base/cep-b3b2-d4-shadow.XXXXXX")"; _own_shadow=1; fi
+_cleanup_shadow() { [ "${_own_shadow:-0}" = 1 ] && rm -rf -- "$SHADOW"; }
+trap _cleanup_shadow EXIT
+echo "[shadow] $SHADOW"
+
 
 pass=0
 fail=0

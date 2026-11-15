@@ -69,10 +69,12 @@ else
 fi
 
 # ② 决策块闸绿(真实仓)
-#    ⚠️ **必须传独立的 `SHADOW_ROOT`**:wrapper 的默认影子路径是**固定**的
-#    `/tmp/opencode/cep-decision-block`(`cep_decision_block_check.sh:36`)⇒ 与 ctest 里
-#    并发跑的 `cep_decision_block_check` **共用同一目录** ⇒ 互相覆盖 ⇒ **假红**
-#    (2026-11-15 实测:单独跑绿,`-j4` 下红 ⇒ 定位到此)
+#    ⚠️ 此处**仍显式传** `SHADOW_ROOT`(隔离本脚本自己的断言面)。
+#    ⓘ 历史(2026-11-15):当时 wrapper 的默认影子路径是**固定**的
+#    `/tmp/opencode/cep-decision-block` ⇒ 与 ctest 里并发跑的
+#    `cep_decision_block_check` **共用同一目录** ⇒ 互相覆盖 ⇒ **假红**(单独跑绿、`-j4` 下红)。
+#    该**默认值已改为 `mktemp -d`**(change `cpptlm-cep-gate-robustness` / 台账 Entry #436)
+#    ⇒ 并发假红根因已从闸内消除;本行传值保留作**双保险**,不再是必需。
 if SHADOW_ROOT="$TMP/shadow_wrapper" bash scripts/test/cep_decision_block_check.sh >/dev/null 2>&1; then
     echo "  ✓ [基线] 决策块闸绿"
     pass=$((pass+1))

@@ -85,15 +85,17 @@ trap _cleanup_shadow EXIT
 | `cep_decision_block_check.py:11` / `:237` / `:504` · `.sh:10` · `scripts/README.md:73` · `test/CMakeLists.txt:286` | **快照键数** | 22 | **23** |
 | `cep_freeze_check.sh:10` | **磁盘 `ADR-CEP-*.md` 文件数** | 22 | **24** |
 | `cep_adr_structural_check.py:8` | **`decision_adrs` 分母**（22 = 磁盘 − NUMBER-MAP/00A） | 19 / 22 | **21 / 24** |
-| `cep_docs_sync_check.sh:4` | **`ADR_LIST` 条数** | 22 | 以数组实际条数为准（W4 后 **23**） |
+| `cep_docs_sync_check.sh:4` | **`ADR_LIST` 条数** | 22 | 以数组实际条数为准（W4 后 **24**） |
 
 ⚠️ `grep` 必须 `--include=*.py --include=*.sh --include=*.md --include=*.txt`（`scripts/test/__pycache__/*.pyc` 内含「22 份」⇒ 全量 `grep -r` 会误红）。
 
 ### W4 · `docs_sync` 的 `ADR_LIST` 补齐（**新发现的活缺陷**）
 
-实测 `ADR_LIST`（`cep_docs_sync_check.sh:50`）**仅 20 条**，末位 `ADR-CEP-18` ⇒ **`ADR-CEP-19` / `-20` / `-21` 三份从未被「存在 + 含不变量/决策节」两项检查**（该文件 `:72` 自己写着「漏登记 = 新 ADR **静默脱检**」）。
+实测 `ADR_LIST`（`cep_docs_sync_check.sh:50`）原为 **22 条**，末位 `ADR-CEP-NUMBER-MAP` ⇒ **`ADR-CEP-20` / `-21` 两份从未被「存在 + 含不变量/决策节」两项检查**（`-19` 已于 Entry #74 登记；该文件 `:72` 自己写着「漏登记 = 新 ADR **静默脱检**」）。
 
-**改法**：补齐 3 条 ⇒ **20 → 23**；并验证 `docs_sync --strict` 仍 rc=0（三份都含「决策」节 ⇒ 应绿）。
+> ⚠️ **判据订正（2026-11-15 实施时实测）**：初稿写「仅 **20** 条 / 末位 `ADR-CEP-18` / 缺 `-19`/`-20`/`-21` **三份**」—— **错**。实际 22 条（含 `-19`）。⇒ 补齐 **2** 条 ⇒ **22 → 24**（== 磁盘全量）。订正原因：初稿的「20」是**误读**（把 `ADR-CEP-00A` / `07A` 之类带字母后缀的条目数漏了），未逐条核对数组。
+
+**改法**：补齐 `-20` / `-21` ⇒ **22 → 24**；并验证 `docs_sync --strict` 仍 rc=0（两份都含「决策」节 ⇒ 已实测绿）。
 
 ### W5 · 1 份 delta（`cep-invariant-gate`，**整条 Requirement 重发**）
 
@@ -153,7 +155,7 @@ trap _cleanup_shadow EXIT
 3. `cep_iag_gate_reconcile_check.sh` / `cep_freeze_reverse_verify.sh`（W1）：`mktemp -t` → `mktemp -d "$base/..."`。
 4. `scripts/test/cep_decision_block_check.py`（W2 + W3）：正向覆盖判据 + docstring + `--list` + 3 处注释。
 5. `scripts/test/cep_decision_block_check.sh`（W1 + W3）：影子路径 + 2 条 fixture（开火 / 不误报）+ 1 处注释。
-6. `scripts/test/cep_docs_sync_check.sh`（W4 + W3）：`ADR_LIST` +3 条；`:4` 注释。
+6. `scripts/test/cep_docs_sync_check.sh`（W4 + W3）：`ADR_LIST` +2 条（22→24）；`:4` 注释。
 7. `scripts/test/cep_freeze_check.sh:10` / `cep_adr_structural_check.py:8`（W3）：指代订正 22→24 / 19→21。
 8. `scripts/README.md:73/:95` / `test/CMakeLists.txt:286`（W3/W6）：23 / 31→45。
 9. 1 份 delta（W5）。
@@ -173,7 +175,7 @@ trap _cleanup_shadow EXIT
 | **AC-08** | `--list` 含新判据 | `python3 cep_decision_block_check.py --list` 输出含覆盖义务判据 |
 | **AC-09** | 契约自陈**不再互斥** | `cep-invariant-gate/spec.md` 中**无**「本 Requirement **不**提供「覆盖完整性」判据」；含覆盖义务 bullet + 残余第 ④ 条；该 spec `--strict` rc=0 |
 | **AC-10** | 「22 份」清零且**指代正确** | 8 处逐一核对（⛔ 不盲替换）；`grep -rn '22 份' --include=*.py --include=*.sh --include=*.md --include=*.txt scripts/ test/ CMakeLists.txt` == **0**；`:pyc` 不计 |
-| **AC-11** | `ADR_LIST` 覆盖 23 份 | 数组条数 == **23** 且含 `-19` / `-20` / `-21`；`docs_sync --strict` rc=0 |
+| **AC-11** | `ADR_LIST` 覆盖全量 | 数组条数 == **24**（== 磁盘 `ADR-CEP-*.md`）且含 `-20` / `-21`；`docs_sync --strict` rc=0 |
 | **AC-12** | 0 回归 | **45 个** `cep_*.sh`（按 ctest 同参数）全 rc=0；`ctest -R cep` 全绿且条目数 == **T0 记录值**；`[cep]` 用例数 == **T0 记录值**（⛔ AC 里不写死 180/529，按 T0 实测记录对比） |
 | **AC-13** | 范围零 diff | `include/**` / `src/**` / `test/*.cc` / `docs/adr/**` 零 diff；闸数 **45 不变**；新增 `INV-CEP-*` = 0 |
 | **AC-14** | 五步链（**1 份**冻结产物） | Entry 先落 → 产物 commit → `--update --authorized-by`（清单 diff = **1 份** `cep-invariant-gate/spec.md` + 元数据；`artifact_count` 86 不变）→ 清单单独 commit → 无参复验 rc=0 |
@@ -236,7 +238,7 @@ trap _cleanup_shadow EXIT
 | **S-9** | 可把路径管理收敛进 helper | ⛔ **不采纳**（记录理由）—— helper 的 `cep_shadow_reset` 职责是「复制 ADR 语料」；把路径分配塞进去会扩其语义面并波及 5 个既有调用点。改为在各闸**统一同一段 4 行**（并在 §Why 登记取舍） |
 | **S-10** | `SHADOW_LOG` 默认改 `$SHADOW/last.log` | ✅ **采纳** —— W1 第三项 |
 | **S-11** | AC-08 去硬编码（180/529） | ✅ **采纳** —— AC-12 改「== T0 记录值」 |
-| **S-12** | 登记 R-9（清单增殖）+ 两个活缺陷（`ADR_LIST` 漏 19/20/21；README「31 = 磁盘」实为 45） | ✅ **采纳** —— 两者均**实测成立**；`ADR_LIST` 升为 **W4**（功能性修复），README 31→45 进 W6，R-9 登记 |
+| **S-12** | 登记 R-9（清单增殖）+ 两个活缺陷（`ADR_LIST` 漏 20/21（实测为 22 条非 20）；README「31 = 磁盘」为 2026-11-07 历史值，现为 45） | ✅ **采纳** —— 两者均**实测成立**；`ADR_LIST` 升为 **W4**（功能性修复），README 31→45 进 W6，R-9 登记 |
 | **N-15** | AC-07 的 grep 须排除 `__pycache__` | ✅ **采纳** —— 实测 `.pyc` 含「22 份」⇒ 指定 `--include` |
 | **N-16** | 顺手改 `iag:142` 的 `mktemp -t` | ✅ **采纳** —— W1（并**多发现** `freeze_reverse_verify:30` 同型） |
 | **N-17** | `trap` 显式含 INT/TERM | ✅ **采纳** —— `trap _cleanup_shadow EXIT INT TERM` |

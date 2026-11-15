@@ -1,7 +1,7 @@
 #!/bin/bash
 # CppTLM CEP 文档同步检查脚本
 # 用途：校验 CEP (Coherence Exploration Platform) 系列的**契约一致性**：
-#       1. 22 份 CEP ADR 存在，且各自含「不变量」或「决策」节
+#       1. `ADR_LIST` 列的 CEP ADR 全部存在，且各自含「不变量」或「决策」节(条数以数组实际为准)
 #       2. `07 号 §4` 的 invariant 总表 ↔ 各 owner ADR 实际**定义**的条数一致
 #       3. invariant 计数口径：区分「提及」与「定义」（跳空 ID 只被提及，从未定义）
 #       4. `06 §15.4` 的 P 编号口径：CEP 文档不得引用 P6
@@ -71,6 +71,11 @@ ADR_LIST=(
   # 2026-10-27(Entry #74):ADR-CEP-19 签发 ⇒ 清单 21 → 22。**必须**登记在此 ——
   # ADR_LIST 是「存在 + 含不变量/决策节」两项检查的覆盖集;漏登记 = 新 ADR **静默脱检**。
   "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md"
+  # 2026-11-15(change `cpptlm-cep-gate-robustness` · 台账 Entry #436):补 **-20 / -21**。
+  # ⚠️ 本清单是「存在 + 含不变量/决策节」两项检查的**覆盖集**;漏登记 = 新 ADR **静默脱检**。
+  # 实测(2026-11-15):补后 **24 条** == 磁盘 `ADR-CEP-*.md` 全量(含 NUMBER-MAP / 00A)。
+  "ADR-CEP-20-topology-ic3-evidence-strength.md"
+  "ADR-CEP-21-sharer-bitmap-expansion.md"
   "ADR-CEP-NUMBER-MAP.md"
 )
 MISSING=0

@@ -28,7 +28,16 @@ cd "$ROOT" || exit 2
 
 BUILD_DIR="${BUILD_DIR:-build}"
 CLI="$BUILD_DIR/bin/examples/cep_instance_assembly_gate"
-SHADOW="${SHADOW_ROOT:-/tmp/opencode/cep-iag-gate-reconcile}"
+# 影子路径：默认 `mktemp -d`（⛔ 不用固定字面量 —— 同闸并发会互踩；⛔ 不用 `$$` ——
+# 容器共享 hostPath 的 /tmp 而 PID namespace 各自从 1 起 ⇒ PID 会撞）。
+# `SHADOW_ROOT` 显式覆盖时**不删**其目录（只清理自己创建的）。
+_shadow_base="${TMPDIR:-/tmp/opencode}"; mkdir -p "$_shadow_base" 2>/dev/null || true
+if [ -n "${SHADOW_ROOT:-}" ]; then SHADOW="$SHADOW_ROOT"; _own_shadow=0
+else SHADOW="$(mktemp -d "$_shadow_base/cep-iag-gate-reconcile.XXXXXX")"; _own_shadow=1; fi
+_cleanup_shadow() { [ "${_own_shadow:-0}" = 1 ] && rm -rf -- "$SHADOW"; [ -n "${BROKEN:-}" ] && rm -f -- "$BROKEN"; }
+trap _cleanup_shadow EXIT
+echo "[shadow] $SHADOW"
+
 
 MF="src/core/module_factory.cc"
 CLI_SRC="examples/cep_instance_assembly_gate.cc"
@@ -139,7 +148,8 @@ else
 fi
 
 # ── M1 · 决定性变异(行为级):破坏 config ⇒ CLI 按 [IAG-02] 红 ───────────
-BROKEN="$(mktemp -t iag_broken_XXXXXX.json)"
+_iag_base="${TMPDIR:-/tmp/opencode}"; mkdir -p "$_iag_base" 2>/dev/null || true
+BROKEN="$(mktemp "$_iag_base/iag_broken_XXXXXX.json")"
 python3 - "$BROKEN" <<'PY'
 import json, sys
 c = json.load(open('configs/cep_chi_rnf_pe_minimal.json', encoding='utf-8'))

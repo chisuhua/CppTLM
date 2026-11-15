@@ -7,7 +7,7 @@
 #   bash scripts/test/cep_decision_block_check.sh --list     # 只打印判据清单
 #
 # 检查 2 段(判据见 `scripts/test/cep_decision_block_check.py` 头注 / design.md D-1):
-#   [R-d] 22 份 ADR 的 §2 决策块计数 **逐份** == 快照(D-1 四步 + D-3.2 块 ID 全匹配)
+#   [R-d] 23 份 ADR 的 §2 决策块计数 **逐份** == 快照(D-1 四步 + D-3.2 块 ID 全匹配)
 #          + 显式红①(非 ### 级)+ 显式红②(编号非法)+ 围栏危险标记
 #   [R-c] 双向对账:正向(磁盘集合 ⇄ 无同号拆出件)+ 反向(新 SU 的 `### ⑥` 重述块)
 #
@@ -16,6 +16,8 @@
 #   R-d 变异② §2 内插入 `#### 决策 5`      ⇒ 必须按 `决策块标题非 ### 级` 变红
 #   R-d 变异③ §2 内插入 `### 决策 Ⅻ`       ⇒ 必须按 `决策块编号非法` 变红
 #   R-d 变异④ 删掉一个 `### 决策 N` 段     ⇒ 必须按 `决策块计数快照偏离` 变红
+#   R-d 变异⑤ **新增**一份有 §2 章的 ADR  ⇒ 必须按 `决策块覆盖缺失` 变红(覆盖义务)
+#   R-d 变异⑥ 新增 `## 决策`(无编号)形态 ⇒ 必须**不**误报(复刻 `ADR-CEP-21`)
 #   R-c 变异① 删重述块一行                  ⇒ 必须按 `重述块缺项` 变红
 #   R-c 变异② 影子树造 `ADR-CEP-02a-*.md`   ⇒ 必须按 `存在同号拆出件` 变红
 #                                          ⇒ ⛔ 且 `cep_adr_structural_check.sh` **同时红**(双闸各报各的签名)
@@ -33,7 +35,21 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT" || exit 2
 
 CHECK="scripts/test/cep_decision_block_check.py"
-SHADOW="${SHADOW_ROOT:-/tmp/opencode/cep-decision-block}"
+# `--list` 必须在创建影子目录**之前**返回：`exec` 会替换进程 ⇒ EXIT trap 不触发 ⇒
+if [[ "${1:-}" == "--list" ]]; then
+    exec python3 "$CHECK" --list
+fi
+
+# 影子路径：默认 `mktemp -d`（⛔ 不用固定字面量 —— 同闸并发会互踩；⛔ 不用 `$$` ——
+# 容器共享 hostPath 的 /tmp 而 PID namespace 各自从 1 起 ⇒ PID 会撞）。
+# `SHADOW_ROOT` 显式覆盖时**不删**其目录（只清理自己创建的）。
+_shadow_base="${TMPDIR:-/tmp/opencode}"; mkdir -p "$_shadow_base" 2>/dev/null || true
+if [ -n "${SHADOW_ROOT:-}" ]; then SHADOW="$SHADOW_ROOT"; _own_shadow=0
+else SHADOW="$(mktemp -d "$_shadow_base/cep-decision-block.XXXXXX")"; _own_shadow=1; fi
+_cleanup_shadow() { [ "${_own_shadow:-0}" = 1 ] && rm -rf -- "$SHADOW"; }
+trap _cleanup_shadow EXIT
+echo "[shadow] $SHADOW"
+
 
 pass=0
 fail=0
@@ -45,9 +61,6 @@ shadow_reset() {
     cep_shadow_reset "$SHADOW"
 }
 
-if [[ "${1:-}" == "--list" ]]; then
-    exec python3 "$CHECK" --list
-fi
 
 # ── 影子树 ADR 路径 ──────────────────────────────────────────────────────
 SH_ADR_01="$SHADOW/docs/adr/ADR-CEP-01-fabric-collective-plane.md"
@@ -219,6 +232,56 @@ mutate_drop_decision "$SH_ADR_02"
 run_shadow_expect_red "决策块计数快照偏离" "R-d 变异④"
 shadow_reset
 run_shadow_expect_green "R-d 变异④"
+
+echo ""
+echo "══ ②b 覆盖义务(语料 → 快照)决定性变异 ══"
+#   ⚠️ 命名理由:本闸 R-c 的 SPLIT_RE 只匹配 `^ADR-CEP-0[123]`
+#      ⇒ 探针用 `ADR-CEP-30` / `ADR-CEP-31` **不撞**该检查(否则归因会被混淆)。
+
+# 变异⑤:影子根**新增**一份有 §2 章的 ADR ⇒ 必须按 `决策块覆盖缺失` 变红
+shadow_reset
+cat > "$SHADOW/docs/adr/ADR-CEP-30-coverage-probe.md" <<'PROBE_EOF'
+# ADR-CEP-30: 覆盖义务探针(仅存在于影子树)
+
+## 1. 背景
+
+覆盖义务判据的**开火**探针。
+
+## 2. 决策
+
+### 决策 1 —— 探针决策
+
+本文件只用于验证「有 §2 章但未登记快照 ⇒ 必红」。
+
+## 3. 后果
+
+无。
+PROBE_EOF
+run_shadow_expect_red "决策块覆盖缺失" "R-d 变异⑤(覆盖义务·开火)"
+rm -f "$SHADOW/docs/adr/ADR-CEP-30-coverage-probe.md"
+run_shadow_expect_green "R-d 变异⑤"
+
+# 变异⑥(**不误报**):`## 决策`(无编号)形态 —— 复刻 `ADR-CEP-21` ⇒ 必须**不**触发覆盖判据
+shadow_reset
+cat > "$SHADOW/docs/adr/ADR-CEP-31-nonumbered-probe.md" <<'PROBE_EOF'
+# ADR-CEP-31: 无编号决策章探针(仅存在于影子树)
+
+## 1. 背景
+
+复刻 `ADR-CEP-21` 的形态:决策章为 `## 决策`,**无** `## 2` 章、**无** `### 决策 N`。
+
+## 决策
+
+### 阶段 1 —— 机制化
+
+无编号决策结构。
+
+## 后果
+
+无。
+PROBE_EOF
+run_shadow_expect_green "R-d 变异⑥(覆盖义务·不误报)"
+rm -f "$SHADOW/docs/adr/ADR-CEP-31-nonumbered-probe.md"
 
 echo ""
 echo "══ ③ R-c 决定性变异 ══"
