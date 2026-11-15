@@ -185,12 +185,9 @@ CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全�
 ⚠️ **本段追加经台账 Entry #165 两步授权**（冻结面 M1 产物；`--update --authorized-by "Entry #165"`）。
 
 ### Requirement: responder 位宽扩容的机制与触发判据
-
 系统 SHALL 以成文规则定义 sharer 位宽的扩容路径,使「何时扩容 / 扩到多少 / 随扩容同步哪些点」不依赖口头约定。
 
-> **本次修订(2026-11-15,per 台账 Entry #431)**:本 Requirement **新增 2 条 Scenario** —— 把 `ADR-CEP-21` **V1-6 自认的真空**(「当前**无任何机器闸/测试钉死 `kResponderMappedBits == 4`**」)与 **V2-6 的同形判据**(运行时 mask 数值锚)落成**机器可判**。
-> ⚠️ **边界**:本 Requirement 规定的是「**当前状态的变更检测义务**」,**不**论证「4 是正确的宽度」—— 宽度的正确性来自 `ADR-CEP-21` 的阶段 2 触发判据(2a 机判 / 2b 人裁),本 change **不**动该判据、**不**执行阶段 2、**不**满足/替代 `V2-6`。
-> ⚠️ **⛔ 不写成恒等式**:mask 的判据 SHALL 用**数值锚**(`0xF`),SHALL NOT 用 `kMappedResponderMask == (1 << kResponderMappedBits) - 1` —— `sharer_tracker.hh:141-142` 的定义**就是**该式 ⇒ 恒真 ⇒ 零判别力。
+> **边界**:本 Requirement 规定的是**当前状态的变更检测义务**,**不**论证「4 是正确的宽度」—— 位宽取值的正确性由 `ADR-CEP-21` 的阶段 2 触发判据(2a 机判 / 2b 人裁)裁决;本 Requirement **不**执行阶段 2。
 
 #### Scenario: 扩容的最小改动面
 

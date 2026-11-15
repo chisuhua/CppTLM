@@ -19,15 +19,12 @@
 ## Requirements
 
 ### Requirement: cep-collective-plane-contract
-
 CEP SHALL 将 **Fabric Collective Plane 的跨平面契约**固化成**可机器检查的判据**:6 条契约判据(`CP-01`..`CP-06`)+ 独立声明源 + 三态显式化判定。
 
 > **定位**:per `ADR-CEP-01 §3.3` 的 7 条抓取点 —— 覆盖本 Stage 可测部分,其余 P3 / Stage 2+。
 > **判据实现**:`collective_plane_contract.hh` —— 与行为面**共享**同一判据实现,**禁双实现**。
 > **声明源**:`collective_planes.json` + schema —— **诞生即不冻结**;**不扩** `protocol_instances.json`。
 > **禁写恒真 / 恒 SKIP 判据**:本 Stage 不可测的条款 SHALL **不**进判据清单。
-> ⚠️ **本次修订的实质变化 = 1 个 Scenario**(「声明源形态与 schema 一致」:三组 → 四组 + 空预留门)
-> + 「5 条契约判据」计数订正为 **6**;其余 Scenario **逐字不变**。
 
 #### Scenario: 声明源形态与 schema 一致(plane 绑定 / region 表 / VC 预留)
 

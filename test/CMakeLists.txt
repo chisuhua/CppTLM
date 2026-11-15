@@ -328,6 +328,19 @@ add_test(NAME cep_adr_verification_carriers_reverse_verify
 set_tests_properties(cep_adr_verification_carriers_reverse_verify
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# `cep-*` 契约面 `openspec validate --strict` 的**零容忍**守门闸(per change
+# `cpptlm-cep-spec-strict-compliance`):`validate <change>` **不查 `MODIFIED` 块长度**
+# (工具注释原文 `MODIFIED is left alone`)⇒ 超长只能在归档合并后成立,而此前**无闸覆盖**
+# ⇒ 契约面腐化是静默的(实测已发生:两个 Requirement 由 89/348 涨到 604/811)。
+# 判据:① `--specs --strict --json` 过滤 `cep-` ⇒ invalid == ∅(⛔ 无基线豁免)
+#      ② 覆盖对账(items == specs 目录数 ∧ cep- 项 == cep-* 目录数)
+#      ③ 环境缺失(openspec / python3)⇒ exit 2 ④ 打印工具版本(判据 owner 在仓外)
+#      ⑤ 反向 fixture **两条毒化**(Purpose 占位 / Requirement >500),经共享影子树 helper。
+add_test(NAME cep_spec_strict_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_spec_strict_check.sh)
+set_tests_properties(cep_spec_strict_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # ProtocolEngine 端口面契约的**反向验证**(per change `cpptlm-cep-cohif-carrier`
 # task 2.6 / 2.7)—— 2 类毒化副本(10 流覆盖矩阵缺 1 流 / 某流语义退化为 no-op)
 #    分别必须让「覆盖完整性」「逐流行为」两条编译期锁报红。

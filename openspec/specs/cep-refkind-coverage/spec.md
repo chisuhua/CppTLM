@@ -1,7 +1,7 @@
 # cep-refkind-coverage Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-dcoh-nvlink-refkind-migration. Update Purpose after archive.
+统一「证据来自哪一类来源」的标签体系,使跨载体的来源类型可以互相比对;同时不允许标签脱离各载体自己的来源清单自由生长 ⇒ 避免「标签统一了但含义各说各话」。
 
 ## Requirements
 

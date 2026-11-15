@@ -1,7 +1,7 @@
 # cep-vc-mapping-contract Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-stub-cache-core. Update Purpose after archive.
+固定「flit 类别 → 物理 VC 桶」的映射、每个桶的流量实况与冲突输入的归属规则 ⇒ 使 VC 资源争用与死锁相关的结论建立在**可回归的映射契约**上,而不是散落在注释里的约定。
 
 ## Requirements
 

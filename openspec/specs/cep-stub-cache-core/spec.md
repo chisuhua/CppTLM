@@ -1,7 +1,7 @@
 # cep-stub-cache-core Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-stub-cache-core. Update Purpose after archive.
+把 `ADR-CEP-05` 的 Stub Cache Core 定义落成**可执行**契约(接口 / 状态机 / 双端口 / 折叠映射 / `INV-SC*`)⇒ 让协议引擎有一个行为可验的缓存替身,不必依赖真实缓存模型即可探索一致性行为。
 
 ## Requirements
 

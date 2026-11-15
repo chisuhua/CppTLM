@@ -1,0 +1,102 @@
+{
+  "schema": "cep-spec-removals-v1",
+  "authorized_by": "Entry #434",
+  "note": "规范句移除清单。判据:各 entry 的 sentence_sha256 集合 == 基线(7dbcc117)−终态的 SHALL/MUST 句差集;covered_by 必须可解析(scenario:<同 spec 的场景标题> / ledger:Entry #N / text:<终态中存在的句 sha256>)。",
+  "entries": [
+    {
+      "spec": "cep-sharer-tracker-base",
+      "sentence_sha256": "dd996d7cffc6669942734ca3711bc7ccac9d45efc5f71f117244b78872500240",
+      "kind": "moved",
+      "covered_by": "scenario:宽度常量与掩码数值锚 SHALL 被机器钉死"
+    },
+    {
+      "spec": "cep-invariant-gate",
+      "sentence_sha256": "5d1e8ef56196b928777d88b0c57008d4fcc83c6a001d57ca038804093efeb077",
+      "kind": "process",
+      "covered_by": "scenario:**R-d 段 SHALL 按四步口径计数，并与快照逐份相等**"
+    },
+    {
+      "spec": "cep-core-contracts",
+      "sentence_sha256": "8114ac03bef6557f1bb08497b9e5268f3cc6db082d1a8b0d3379bed1957d938c",
+      "kind": "reworded",
+      "covered_by": "text:2ac92d9a931fe33bb5033b4c89d2a2b5d9bd33801c3e0c4f9871cfbe9f263788",
+      "_replacement": "故本块**保留**标题「5 实现 + caps 四属性齐备」，**实现数以本条正文为准**（= 6）⇒ 后续新增 Scenario **SHALL NOT** 在标题内嵌数量"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "493894d4e44f6eef74c0a6e25a4ec00c59f8d874e95f3231d6019f7ee8c0c644",
+      "kind": "reworded",
+      "covered_by": "text:5231a34b9dfbabae371112c9b59dd757607e86a514e8920037ce5a86e4f22f99",
+      "_replacement": "`ualink_4` 的**专用承载引擎** SHALL 是**记账级专用承载**:对 canonical 10 流的全部行为 SHALL 限于**记账 / 拒绝 / pending 登记**,且 SHALL **零发射**、**零协议状态机**、**零 UPLI 通道级语义**(`UGE-I`)"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "289692dc3dbe413fa198bf1e2bb0c61887195f60131702fa8fe38edc6e854d7b",
+      "kind": "reworded",
+      "covered_by": "text:bbcc6a79d154a721686876aecc0033a0f04d269f363b502bca8407391690ed83",
+      "_replacement": "观测面 SHALL 为**三分法**并与 `flow_support` **逐流对齐**,满足 4 条不变量(`UGE-A`)"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "a95ee7ed1dcc68ccca3f1dfdd0086b1e7ce9a883f42b8f177cf926f086e30563",
+      "kind": "reworded",
+      "covered_by": "text:8bfcca09c99c4f8acbd48560ff2a0f807d3e6306558acfb3bf993792523c753c"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "b23d45e024e5e182901116ff8c7b924bff4e80b9cdc88e2cdb78d942e64f8317",
+      "kind": "moved",
+      "covered_by": "scenario:UGE-A —— 三分法观测面与 4 条不变量"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "e47672002c465929864a83733556952f41505d6415dd425fec3aebd12eef3d86",
+      "kind": "reworded",
+      "covered_by": "text:ae6d8f38761d1d10bc4469e78e810f40398a9de759445b52dc22236046b304f4",
+      "_replacement": "`completion` SHALL **仅**按 `txn_id` 恒等匹配,SHALL NOT 以到达次序为据"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "ce01ca1ba3c9035de6ec4c90cf3cdd4db5b96239ebdb4dbdf4846ca00d27fd5e",
+      "kind": "reworded",
+      "covered_by": "text:ae6d8f38761d1d10bc4469e78e810f40398a9de759445b52dc22236046b304f4"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "7a2f8bbd5ff326ef46414a5f89dac5e853ad255f3c3e7805835ae0a744482c72",
+      "kind": "moved",
+      "covered_by": "scenario:UGE-F —— `txn_id` 为在途集合唯一键,且不假设有序性"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "aa03eb7b2ed4df38f1a7ab3ef1e265fe45be609d5ade53900e965bec3017a053",
+      "kind": "moved",
+      "covered_by": "scenario:UGE-F —— `txn_id` 为在途集合唯一键,且不假设有序性"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "42f17312fa5756039c6a39202c526c88c58fd688a04b52ef3e67563bd221964b",
+      "kind": "reworded",
+      "covered_by": "text:8eeebefb5ce99eb0d0ff7c65dcb9aa9c86e81eb9832fbd1bde442d16a33a0b94",
+      "_replacement": "`pending` SHALL 为**终态处置**(`UGE-C`)"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "0b75feb8054800fb24f6fc131f521e679c49d1fe074597722586bb6cfd75c03b",
+      "kind": "moved",
+      "covered_by": "scenario:UGE-C —— `snoop_resp` 的 pending 终态"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "242cf51c42dc0aa50ed74b36c352928a7187bd4c78f4e1ba18a849c8661dc691",
+      "kind": "moved",
+      "covered_by": "scenario:UGE-G —— ⛔ 不为 `response` 类与 collective 回传路径新增 handler"
+    },
+    {
+      "spec": "cep-ualink-coherence-engine",
+      "sentence_sha256": "1596de0a3728757c39cb9888e92ca5e8b18831f6ba38eb971747f96ed7567b24",
+      "kind": "moved",
+      "covered_by": "scenario:UGE-H —— `ualink_4` 的 13 键与 B3b 登记逐字不动"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # cep-moesi-gpu-l4-e2e Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-moesi-gpu-l4-e2e. Update Purpose after archive.
+为 `moesi_gpu` 提供**事务级 L4 驱动**,使该实例不只是一个静态声明 —— 10 条 canonical 流逐条可被驱动、可被记账 ⇒ 让「这个实例真的跑起来了」成为可回归的事实,而不是配置里的一句断言。
 
 ## Requirements
 

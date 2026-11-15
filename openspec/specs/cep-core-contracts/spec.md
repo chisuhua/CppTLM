@@ -79,11 +79,9 @@ CEP SHALL 定义 Stub Cache Core 的 **RN 侧投影**接口与 **7 条不变量*
 - **AND** `INV-SC1` 的"每 addr 至多 1 个 outstanding"被标注为**刻意的保守简化**(与 ProtoGen 的 cache 侧并发度上限一致)
 
 ### Requirement: cep-sharer-tracker-contract
-
 CEP SHALL 定义 Sharer Tracker 的 **6 种实现** + **caps descriptor** + **6 条不变量**（`INV-CEP-04-IC1/2/3/5/6/7`；`IC4` 永久跳空）。
 
-> **订正（2026-11-15）**：原文写「**5 种实现**」，与代码真源 `include/tlm/cep/sharer_tracker.hh` 的 `kTrackerTraits`（**6** 行）不一致，亦与 `ADR-CEP-04 §13` 的追加式修订（「5 种实现 ⇒ **6 种实现**」，第 6 种 = `HierarchicalDirectory`）及兄弟 spec `openspec/specs/cep-hierarchical-directory/spec.md`（以 `kTrackerTraits[5]` 为三方真源）不一致 ⇒ 本次订正为 **6 种**。**决策正文不改**（`ADR-CEP-04` 零 diff）。
-> **⚠️ Scenario 标题沿用历史命名（工具约束，非疏漏）**：openspec 的 `MODIFIED` 块按**场景名精确匹配**，且 archive **拒绝丢弃**既有场景名 ⇒ **含数量的 Scenario 标题一经落盘即无法经 delta 改名**。故本块**保留**标题「5 实现 + caps 四属性齐备」，**实现数以本条正文为准**（= 6）。⚠️ 该标题债的根因是「标题内嵌数量」这一写法本身 ⇒ 后续新增 Scenario **SHALL NOT** 在标题内嵌数量。
+> **⚠️ Scenario 标题沿用历史命名（工具约束，非疏漏）**：openspec 的 `MODIFIED` 块按**场景名精确匹配**，且 archive **拒绝丢弃**既有场景名 ⇒ 含数量的 Scenario 标题一经落盘即无法经 delta 改名。故本块**保留**标题「5 实现 + caps 四属性齐备」，**实现数以本条正文为准**（= 6）⇒ 后续新增 Scenario **SHALL NOT** 在标题内嵌数量。
 
 #### Scenario: 5 实现 + caps 四属性齐备
 

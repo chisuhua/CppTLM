@@ -20,7 +20,6 @@ CEP 治理线的**机制机器化**能力:把 `ADR-CEP-00` SU 2026-11-11 §⑤ �
 ## Requirements
 
 ### Requirement: cep-invariant-gate-decision-block-and-residual-check
-
 CEP SHALL 提供**机器化治理判据**，把 `ADR-CEP-00` SU 2026-11-11 §⑤ 自认的两项「有登记、无牙齿」残留
 —— **R-c**（「一决策一文档化」残余登记 + 3 条触发条件**无机器检查」）与 **R-d**（决策块计数口径
 **三个互不相等的实现**）—— 落为**有牙齿的判据**。
@@ -28,9 +27,7 @@ CEP SHALL 提供**机器化治理判据**，把 `ADR-CEP-00` SU 2026-11-11 §⑤
 判据 SHALL 由**单一新闸**承载（`scripts/test/cep_decision_block_check.{sh,py}`），其 SHALL 包含两个
 **独立段**：**R-d 段**（决策块计数快照）与 **R-c 段**（双向对账）。
 
-> **本次修订(2026-11-15,per 台账 Entry #431)**:⛔ **只修正本 Requirement 内登记的快照规模数字**(22 份 / `total`=125 → **23 份 / `total`=131**)—— 决策块闸的**覆盖集合**新增 `ADR-CEP-20-topology-ic3-evidence-strength.md`(**6** 个决策块)⇒ 本 Requirement 内的实测数字 SHALL 与闸外快照同步,⛔ 否则**契约与快照自相矛盾**。
-> ⚠️ **边界**:本 Requirement **不新增**任何 Requirement、**不**新增判据口径、**不**改闸的判定逻辑(`scripts/test/cep_decision_block_check.py` **零 diff**)—— 本次只是把「覆盖集合 +1 份」这一既成事实**登记进契约面**。
-> ⚠️ **⛔ 覆盖集合不自愈**:新签发 ADR 仍需**人工** bump 快照 ⇒ 该缺口**另立 backlog**(本 change **不**新增「覆盖完整性」判据 —— 那需要改闸代码)。
+> ⚠️ **覆盖集合不自愈**:新签发含 §2 决策章的 ADR 仍需**人工** bump 快照 ⇒ 本 Requirement **不**提供「覆盖完整性」判据(该缺口另行立项)。
 
 #### Scenario: **R-d 段 SHALL 按四步口径计数，并与快照逐份相等**
 

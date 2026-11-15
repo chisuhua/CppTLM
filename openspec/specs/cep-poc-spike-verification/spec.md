@@ -1,7 +1,7 @@
 # cep-poc-spike-verification Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-poc-spike. Update Purpose after archive.
+把 PoC 阶段**三个关键判定**固化成带唯一判据的回归契约 ⇒ 使早期「试出来了」的结论不随时间退化为传闻;每场景一个判据、一个 ctest 用例,判定退化即红。
 
 ## Requirements
 

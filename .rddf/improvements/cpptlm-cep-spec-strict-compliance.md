@@ -143,7 +143,7 @@ created: 2026-11-15
 | **AC-02** | 12 份**逐名**核对 | 12 个目录名逐个在 `items` 里 `valid == true` |
 | **AC-03** | 覆盖对账（防漏检） | `items` 数 == `ls openspec/specs \| wc -l`（**129**）∧ `cep-` 项数 == **43** |
 | **AC-04** | 规范句移除**逐句归因** | `removals.json` 的 `sentence_sha256` 集合 **== 基线−终态的 SHALL/MUST 句差集**（逐条相等，⛔ 非 ⊆ 的弱判据）；非 `process` 类的 `covered_by` 必须可解析（场景标题存在于同 spec，或台账 Entry 命中） |
-| **AC-05** | 术语表**不降** | 每份 spec 的受控 token（`txn_id` / `flow_events` / `unsupported_rejected` / `snoop_resp_pending_not_consumed` / `completion_unmatched` / `egress_emitted` / `kResponderMappedBits` / `kMappedResponderMask` / `0xF` / `kResponderBitToNode`）在终态的**出现次数 ≥ 基线** |
+| **AC-05** | 术语表**不整体消失**（⚠️ 原措辞「次数 ≥ 基线」**实施中订正** —— 它禁止了本 change 必须做的去重） | 每份 spec 的受控 token（`txn_id` / `flow_events` / `unsupported_rejected` / `snoop_resp_pending_not_consumed` / `completion_unmatched` / `egress_emitted` / `kResponderMappedBits` / `kMappedResponderMask` / `0xF` / `kResponderBitToNode`）中，**基线存在者**在终态仍 ≥1 次；次数下降由 AC-04 的句级归因解释 |
 | **AC-06** | 既有 Scenario **逐块 byte-equal** | 5 份 target Requirement 段内每个 `#### Scenario:` 块的 sha256 集合**逐块相等**（基线取 `git show <base>:<path>`） |
 | **AC-07** | 新增场景**已登记**且可归因 | 若 delta 含新场景，其标题 ∈ `design.md` 下沉清单，且正文**至少 1 个 bullet** 与被删正文句共享核心 token |
 | **AC-08** | Purpose 四条正交 | 8 份：①`openspec --json` 判 valid（唯一真源）②≥50 字符 ③**不复制** Requirement 首句 ④**不含** `本 change` / `2026-11-15` / `Entry #43*` |

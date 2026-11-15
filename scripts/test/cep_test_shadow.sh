@@ -36,8 +36,13 @@ cep_shadow_reset() {
     # ── 必复制集合(两闸共用)────────────────────────────────────────────
     cp -r "$SHADOW_HELPER_ROOT/docs/adr" "$shadow/docs/adr"
     # ── 差异复制(各闸按需)──────────────────────────────────────────────
+    # ⚠️ `-r`:extra_cp 允许是**目录**(例 `openspec` —— `cep_spec_strict_check.sh`
+    #    需要一份可被 `openspec validate` 解析的完整语料根)。
+    #    ⚠️ 仅支持**顶层**路径(`openspec` / `docs/adr` 这类);嵌套路径(如
+    #    `openspec/specs`)会因 `mkdir -p $(dirname)` + `cp -r` 组合产生 `specs/specs`。
+    #    对**文件**而言 `cp -r` 与 `cp` 行为完全相同 ⇒ 既有两闸零行为变化。
     for extra in "$@"; do
         mkdir -p "$shadow/$(dirname "$extra")"
-        cp "$SHADOW_HELPER_ROOT/$extra" "$shadow/$extra"
+        cp -r "$SHADOW_HELPER_ROOT/$extra" "$shadow/$extra"
     done
 }

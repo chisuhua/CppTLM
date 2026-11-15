@@ -1,7 +1,7 @@
 # cep-basis-source-kind Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-basis-source-kind-and-cell-free. Update Purpose after archive.
+让 CEP 每一格证据的**来源类型**成为机器可判的字段,使「这条结论凭什么成立」不再靠读者猜。`basis` 与来源类型 SHALL 由载体自身保持自洽 ⇒ 避免同一事实在不同载体上被标注成强度不同的证据。
 
 ## Requirements
 

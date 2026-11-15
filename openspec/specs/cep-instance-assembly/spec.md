@@ -1,7 +1,7 @@
 # cep-instance-assembly Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-ualink-instance-assembly. Update Purpose after archive.
+回答「某个协议实例**到底装配进去了没有**」:把装配闸放在装配路径上执行,并让离线挂点与装配路径同源 ⇒ 使「声明了但没挂载」「挂载了但没人验」两类静默失效在装配当场暴露。
 
 ## Requirements
 
