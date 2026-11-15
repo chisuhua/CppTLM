@@ -37,7 +37,7 @@
 
 ## Phase 3 · 审查与归档
 
-- [ ] **T3.0** ⚠️ **归档语义硬门**：architect 裁决 **出口 A 或 B**（二选一）⇒ 落标记/台账记录（AC-10）—— **不裁决则不得归档**
+- [ ] **T3.0** **归档语义备案**：实测已收敛为**唯一路径 = 出口 A**（`skip_specs: true` 是 `validate --changes --strict` 保持绿的必要条件 ⇒ 出口 B 会破坏校验基线；工具 INFO 措辞「no spec-level behavior changes」与本 change 精确匹配）⇒ 落**标记行 + 归因 JSON `archive_semantics` 字段**，并请 architect 确认 `AGENTS.md` 分类表是否补记该变体（⛔ 本 change 不改 `AGENTS.md`）
 - [ ] **T3.1** critic 审（`arch` 档；**按 4 组签**：① `pcie-*` 数据通路 ② `pcie-*` 集成与微架构 ③ `cpptlm-stage-*` ④ `cpptlm-*` 其他 —— 一组不过只回退该组）
 - [ ] **T3.2** 影子根**预演**归档 ⇒ main spec 零改动 + 归档无警告
 - [ ] **T3.3** 真仓归档（按 T3.0 的出口）+ 复验 16 份 `--strict`

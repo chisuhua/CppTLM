@@ -95,7 +95,11 @@
 
 ⚠️ **可判别性缺口**（metis A-4）：归档后目录形态「无 `specs/` + `skip_specs: true`」与 ⏸ 暂存归档**结构同形** ⇒ 半年后 grep `skip_specs` 无法区分。
 
-⇒ **T3.0 硬门**（architect 裁决，二选一，⛔ 不许两条都做）：
+✅ **后续实测追加的 2 条事实（把「两出口」收敛为「唯一路径」）**：
+1. **`validate --changes --strict` 对 0-delta change 会红**（实测 rc≠0，`[ERROR] Change must have at least one delta`）⇒ **`skip_specs: true` 不是可选，是仓内 strict 校验保持绿的**必要条件** ⇒ **出口 B（不走归档器）会破坏仓内校验基线** ⇒ **出口 A 是唯一可行路径**。
+2. 工具对该声明的 INFO 措辞 = 「change declares **no spec-level behavior changes**, zero deltas accepted」⇒ **本 change 精确匹配**（改了 spec 的**表述**，⛔ 未改任何**可验证行为**）⇒ 该声明**语义正确**，不是工具妥协。
+
+⇒ **T3.0 降为「architect 备案」**（不再是硬门）：路径已由工具事实唯一确定；architect 只需确认「`AGENTS.md` 归档分类表是否补记这一变体」（治理面，⛔ 本 change 不改 `AGENTS.md`）。两条互斥出口的表述保留如下，供备案时引用：
 - **出口 A**：`skip_specs: true` + **proposal 顶部**加「**✅ 已完成归档 · 主 spec 直改（无 delta）**」标记行 + 归因 JSON `archive_semantics: "completed-direct-main-spec"`。
 - **出口 B**：**不走**归档器，按 doc-only change 手工 `mv` 进 `archive/`，台账显式记「**未走归档器**，理由：Purpose 无法走 delta（工具明文）」。
 

@@ -50,7 +50,9 @@
 1. delta 的 `## Purpose` **被忽略** ⇒ 归档器要求**直接编辑 main spec** ⇒ **0 份 delta 是唯一路径**。
 2. change 无 delta 时归档器要求 `.openspec.yaml` 设 `skip_specs: true`；实测该声明 ⇒ 归档**无警告** + main spec **零改动** + 正常归档。
 
-⚠️ **可判别性缺口**：归档后目录形态「无 `specs/` + `skip_specs: true`」与 ⏸ 暂存归档**结构同形** ⇒ 半年后 grep `skip_specs` 无法区分。
+✅ **追加实测（收敛为唯一路径）**：③ **`validate --changes --strict` 对 0-delta change 会红**（实测 `[ERROR] Change must have at least one delta`）⇒ `skip_specs: true` 是仓内 strict 校验保持绿的**必要条件** ⇒ **出口 B 会破坏仓内校验基线** ⇒ **出口 A 是唯一可行路径**；④ 工具对该声明的 INFO 措辞 = 「change declares **no spec-level behavior changes**, zero deltas accepted」⇒ 与本 change（改**表述**、⛔ 不改**可验证行为**）**精确匹配** ⇒ 语义正确。
+
+⚠️ **可判别性缺口**（仍存）：归档后目录形态「无 `specs/` + `skip_specs: true`」与 ⏸ 暂存归档**结构同形** ⇒ 半年后 grep `skip_specs` 无法区分 ⇒ 须靠**标记行 + 归因 JSON 字段**区分。
 
 ⇒ **两条互斥出口**（⛔ 不许两条都做）：
 - **出口 A**：`skip_specs: true` + **proposal 顶部**加「**✅ 已完成归档 · 主 spec 直改（无 delta）**」标记行 + 归因 JSON `archive_semantics: "completed-direct-main-spec"`。
