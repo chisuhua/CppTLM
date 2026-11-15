@@ -24368,3 +24368,118 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 **⑥ 已用轮次**:**1**(上限 3)· 全程**只读取证**,未修改任何实现或规范文件。
 
 **⑦ 关联**:Entry **#442**(收口)· **#441**(立项)· **#440**(上一 change 的 verifier 验收)· **#438**(全量梳理 + 任务清单)· `.rddf/reviews/cpptlm-spec-purpose-batch1-verify.md` · `openspec/changes/archive/2026-11-15-cpptlm-spec-purpose-batch1/`
+
+### Entry #444 — 2026-11-16 [planner](**CEP 平台目标达成度全量核对 + 后续任务与实施路径** —— DoD 逐项实测 · **未完成目标分三类** · **R-1 批 3 立项** · KPI **0/3 → 1/3**)
+
+**主题**:按用户口令「对CEP领域相关的完成和后续任务进行梳理,检查下我们要实现的CEP目标,列出还有哪些目标还未完成,已经完成了哪些,后续要怎么做,为什么要这么做,目前的目标是什么,再切planner对后续还有哪些任务内容都梳理一遍,再给出后续任务内容和实施路径,再切builder进行实施」。
+本 Entry = **CEP 平台目标达成度的实测核对**（2026-11-16 逐项实测，⛔ 不采信台账措辞推断）+ **剩余任务清单** + **实施路径** + **R-1 批 3 立项**。
+
+---
+
+#### §0 目前的目标是什么（CEP 平台）
+
+| 层 | 内容 | 实测锚点 |
+|---|---|---|
+| **愿景** | 把「用 CHI / CXL / UALink 的这个 SoC,coherence 开销 / 停顿 / 死锁风险如何」这类**跨协议取舍问题**,从「当前靠人脑推演」变成「**可跑实验出数据**」 | `obj §2.1` |
+| **形态** | **6 协议族**(CHI-RNF / CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink)· **8 实例**可插拔 + **实验产物可比较**(4 件套 + 13 必纳 metric) | `obj §2.2` · `07 号 §5.1` |
+| **守护** | **66 条**守门 invariant（编号位 67，`INV-CEP-04-IC4` 唯一跳空）· 历次 change 硬纪律「新增 invariant 数 = 0」 | `test/cep_invariant_assertion_map.json` |
+| **排期** | **14 个 change 串行 14 季度**(2026-Q4 ~ 2030-Q1) | `obj §4.0` |
+| **当前态** | ✅ **Stage 0~3 的 14 个 change 已全部归档**（最新 = `cpptlm-cep-ualink-inc`，2026-11-04）⇒ **Stage 4+ 维护态已进入** | `openspec/changes/archive/`（**150** 份） |
+
+**为什么是「可验证」而不是「可跑」**:CEP 的核心资产不是仿真器，而是 **invariant 的形式化断言** —— 一致性协议的 bug 无法靠功能测试发现 ⇒ 因此**闸族（45 个 `cep_*.sh`）= 产品本体**，不是辅助工具。
+
+---
+
+#### §1 已完成（DoD 逐项实测 · 2026-11-16）
+
+| # | DoD 项（`obj §0`） | 实测 | 判定 |
+|:--:|---|---|:--:|
+| 1 | **14** 个 OpenSpec change 全部 archived with sync | 归档 **150** 份（队列 #1~#14 全 ✅，见 `obj §4.0`） | ✅ |
+| 2 | Stage 0 umbrella 落地 | `cpptlm-cep-umbrella` 已归档(2026-10-23)，tasks 99/99，delta 已合并进 `openspec/specs/cep-core-contracts/spec.md` | ✅ |
+| 3 | Stage 1 完成（Stub Cache + Sharer Tracker + Collective Plane + 协议实例） | 队列 #2~#11 全 ✅（含 `implemented` 实例 **3** 个：moesi_gpu / mesif / 另一） | ✅ |
+| 4 | Stage 2 完成（CXL 对称 DCOH + NVLink SHARP） | 队列 #12 / #13 两段式全 ✅ | ✅ |
+| 5 | Stage 3 完成（UALink In-Network Compute） | 队列 #14 两段式全 ✅（2026-11-04） | ✅ |
+| 6 | 实验输出 4 件套契约 | `test_cep_simulation_mode_lock.cc` 等在位 · `cep_experiment_run.sh` 闸 rc=0 | ✅ |
+| 7 | **66 条守门 invariant 机器检查 100% 覆盖** | ⚠️ **实测 = 61 条有判定级载体 + 5 条 `⏭-unmodelled`**（`carriers` len=**61** + `deferrals` len=**5** = 66）⇒ **「100% 覆盖」的措辞与实测不符**（真源是「61 条有载体 + 5 条经授权永久 ⏭ 登记 = 66 条全部**已处置**」）⇒ **口径需订正**（改 `07 号 §4` ⇒ 触冻结面 ⇒ 需 architect + 五步链） | ⚠️ **口径订正** |
+| 8 | ModuleFactory 集成 0 发明宏形式 | `REGISTER_MODULE` / `REGISTER_CHSTREAM` 既有宏 | ✅ |
+| 9 | `simulation_mode` 单一维度 | `VramControllerMode` 单一维度（functional / timing） | ✅ |
+| 10 | §9 研究问题 8 个假设全有结论 | `obj §9.1` | ✅ |
+| 11 | §11 决策台账完整 | `obj §11`（append-only，443+ 条 Entry） | ✅ |
+| 12 | §8 Kill / Replan 未触发 | 未触发 | ✅ |
+
+**维护态基础设施实测（2026-11-16）**:
+
+| 面 | 实测 |
+|---|---|
+| **闸族** | **45** 个 `cep_*.sh` · 全 rc=0（`docs_sync` / `doc_ref` 带 `--strict`）· `ctest -R cep` **100/100** · 全量 **180/180** |
+| **Catch2** | `[cep]` **529 用例 / 12288 断言** 全绿 |
+| **契约面** | `cep-*` **43** 份 `--strict` **全绿** |
+| **冻结面** | `artifact_count` **86** · `cep_freeze_check.sh` 无参 rc=0 |
+| **规范面（`--strict`）** | 全仓 **129** 份主 spec · 红 **65** 份（全为非 `cep-*`）= **59** 份 Purpose 占位 + **69** 条「正文 >500」issue（落 **26** 份）⇒ **非 strict 口径 129/129 绿** |
+| **范围纪律** | 最近 5 个 change：`include/**` / `src/**` / `test/*.cc` / `docs/adr/**` 全 **零 diff** |
+
+---
+
+#### §2 ⚠️ **还有哪些目标未完成**（分三类 —— **可推进性**是分类轴）
+
+##### §2.1 类 A —— **external 阻塞**（本仓单方面**不可**推进）
+
+| # | 未完成目标 | 实测 | 解除触发 |
+|:--:|---|---|---|
+| **A-1** | **B3b-2 = 0/4**（4 族未达「转移表真源」判定） | `test/cep_b3b2_deferrals.json`：**CXL 2.0 / CXL 3.0 / NVLink / UALink** 4 族 `disposition = frozen`/`deferred`，`blocking_type = **external**` | ECA 解除 / 联盟发布可读规范 / 人类成员条款摘要 / NVIDIA 发布**条款级**规范 |
+| **A-2** | CXL 规范正文受 ECA §3 + AI AUP 约束 | ⛔ **禁止**把规范 PDF 投喂任何 AI ⇒ 纯 AI 作业下覆盖率不可补 ⇒ 显式冻结 | 同上 |
+
+⇒ **诚实边界**：CEP 的「6 族全可验证」这一终局，在**规范不可读**的前提下**结构性不可达** ⇒ 台账登记 ⭕ 而非 ✅ 是**正确**的治理动作（⛔ 不得写成「已达成」）。
+
+##### §2.2 类 B —— **本仓可推进**（真·**功能缺口**，非文档债）
+
+| # | 未完成目标 | 实测 | 为什么可推进 | 成本 |
+|:--:|---|---|---|:--:|
+| **B-1** | **5 条 invariant `⏭-unmodelled`**（能力未建模 ⇒ 无可断言对象） | `test/cep_invariant_deferrals.json`：**`CEN-Ib8`**（engine egress 可观测面缺失）· **`INV-CEP-08-IC1`**（J3 通用形式不可静态判定）· **`INV-CEP-09-IC2`**（多 VC 仲裁器未建模，Stage 4+）· **`INV-CEP-13-IC1`**（组合判据未转写为结构化声明项 + 需 litmus）· **`INV-CEP-13-IC3`**（schema 13 缺「adapter 提前 ack」声明项） | 前 3 条 = **纯建模工作**（可断言对象缺失 ⇒ 建对象即可）⇒ **本仓可做**；后 2 条 = 需 schema 13→14 + `ADR-CEP-12` 追加修订 ⇒ **需 architect** | 1.5 ~ 3 d |
+| **B-2** | **19 条 ADR 归因例外** | `test/cep_adr_structural_deferrals.json` · `invariant_attribution_dispositions` len=**19**（`condition_unmet` 2 · `carrier_buildable_id_blocked` **10** · `carrier_present_id_absent` 2 · `doc_layer_manual_review` 5）⇒ ⚠️ 手册 §12.8 写「18 条」**已 stale** | `carrier_buildable_id_blocked` 的 10 条 = 「**载体建不出来**」⇒ **多数可本仓推进**（把不可静态审计的判据改成可审计形态） | 1.5 ~ 2 d |
+| **B-3** | **DoD 7 口径订正**（见 §1 第 7 行） | 61 + 5 = 66 | 措辞订正，改 `07 号 §4` ⇒ **触冻结面** ⇒ 五步链 + architect | 0.3 d |
+
+##### §2.3 类 C —— **规范面可信度**（低风险，本批正在推进）
+
+| # | 未完成目标 | 实测 | 成本 |
+|:--:|---|---|:--:|
+| **C-1** | **59 份 Purpose 占位** | 全仓 129 份中 59 份 | **批 3 本轮** 17 份 · 批 4~6 其余 42 份（2.5 d） |
+| **C-2** | **26 份有「正文 >500」issue** | 69 条 issue | 批 2 —— ⚠️ **会动 `## Requirements` 段 ⇒ 另一档风险** ⇒ 另立 change（1.5 d） |
+| **C-3** | **5 项 spec 卫生** | **R-10** superseded spec 存废 · **R-11** 4 份同源 spec 合并退役 · **R-12** `abi_guards.h` 悬空引用 · **R-13** spec 内部旧状态行 · **R-14/R-15** 已迁 ArchForge 的文档引用 | **architect** 为主（1 d） |
+| **C-4** | **R-9 / R-2** | 清单增殖（同一事实 5 处手工维护）· `moesi_gpu`/`mesif` 13 键无仓内 golden | **architect** 定 canonical（2 d） |
+
+##### §2.4 类 D —— **流程债**
+
+| # | 未完成 | 实测 | 成本 |
+|:--:|---|---|:--:|
+| **D-1** | **5 个近期 change 缺独立验收报告** | `cpptlm-spec-scenario-level-fix` · `cpptlm-cep-spec-strict-compliance` · `cpptlm-cep-adr-verification-carriers` · `cep-evidence-tier-declaration` · `cpptlm-cep-full-green-run-evidence` | 0.5 d（可并行） |
+| **D-2** | **立项时未同步 6 处 KPI 活口径** | 本轮**亲历**：active 窗口期间 `docs_sync` / `gate_selftest` 报红（Entry #442 §⑤·3）⇒ **流程缺口**，下一轮 planner 须把「立项即改 6 处口径」列入动作清单 | 0（流程） |
+| **D-3** | **R-6** 版本 pinning / **R-3** ArchForge 缺席 | `openspec` 版本未锁；R-3 **本机不成立**（ArchForge 在位 ⇒ 闸真跑 7 项全绿） | 0.2 d |
+
+---
+
+#### §3 后续要怎么做 · **实施路径**（4 波 · 按「收益/成本 + 是否需 architect」排序）
+
+| 波 | 内容 | 依赖 | 为什么这个顺序 | 成本 |
+|:--:|---|---|---|:--:|
+| **波 1**（本轮） | **R-1 批 3**（D3 域 17 份 Purpose）· **D-1** 补 5 个 verifier 报告 | 无 | ① 判据 / 规则 / 脚本 / 归因载体**全部就位**（批 1 已铺好）⇒ **零新设计**；② 与仓主线（dGPU SoC + PCIe EP）一致 ⇒ 事实基础最扎实；③ **不与 architect 裁决冲突** | 1.2 d |
+| **波 2** | **B-1 前 3 条 invariant 建模**（`CEN-Ib8` / `INV-CEP-08-IC1` / `INV-CEP-09-IC2`） | 无（纯建模） | ① **这是 CEP 本体的真功能缺口**（不是文档债）⇒ **收益最高**；② 与波 1 无依赖 ⇒ 可在批 3 之后立即接；③ 需为每条定义「可断言对象」⇒ **建模判据须 architect 参与**（否则 builder 自行发明 invariant 语义 ⇒ 越权） | 1.5 ~ 3 d |
+| **波 3** | **R-1 批 4~6**（其余 42 份 Purpose）· **批 2**（26 份正文裁剪） | 批 3 的脚本与规则 | ① 批 4~6 = 批 3 的同构复制 ⇒ 成本线性下降；② **批 2 必须另立 change**（动 `## Requirements` 段 ⇒ 契约内容变更 ⇒ 需更严判据 + architect 参与） | 2.5 + 1.5 d |
+| **波 4** | **architect 裁决批**：**B-1 后 2 条**（schema 13→14）· **B-2** 19 条 ADR 归因收敛 · **B-3** DoD 7 口径 · **C-3** R-10~R-15 · **C-4** R-9/R-2 · `AGENTS.md` 归档分类表 | **architect** 判权 | 全部是「**要定一个 canonical / 权威归属 / 措辞口径**」的架构取舍 ⇒ **builder 不得自行拍板**（与前 3 波并行推进会撞车） | 2 ~ 3 d |
+| — | **R-6** / **R-3** / **D-2** | backlog | 低优先级；R-3 本机不成立 ⇒ 只作 CI 环境提示 | 0.2 d |
+
+**关键排序理由**:
+- **波 1 → 波 3 是同一条「规范面可信度」主线的三段**（Purpose 占位 → Purpose 全清 → 正文裁剪），手法完全可复制 ⇒ **固定成本只付一次**（批 1 已付）。
+- **波 2 是唯一「真功能」波** ⇒ 收益最高，但**必须 architect 先定义判据**（否则 builder 自行发明 invariant 语义 = 越权），⇒ 建议波 1 期间**并行启动 architect 的波 2 方案**。
+- **波 4 单独隔离**：全部是「定 canonical」类取舍 ⇒ 与波 1~3 无依赖但**不可并行**（builder 拍板 = 越权）。
+- ⛔ **类 A（external）不排期** —— 排期它等于承诺一个本仓无法兑现的结果 ⇒ 治理上正确处置是 ⭕ 登记（已登记）。
+
+---
+
+#### §4 本轮产出
+
+- **§1 / §2 / §3 全部逐项实测**（2026-11-16）：闸 45 全绿 · ctest 180/180 · `[cep]` 529/12288 · 归档 150 · KPI 0/3 · `cep-*` 43/43 --strict 绿 · `--strict` 红 65 份（59 Purpose + 69 条正文 issue / 26 份）· invariant 载体 **61** + ⏭ **5** = 66 · ADR 归因 **19** · B3b-2 **0/4**（4 族 external）。
+- **R-1 批 3 立项**：change `cpptlm-spec-purpose-batch3`（improvement + proposal + design + tasks + `.openspec.yaml`）· **17 份**（D3 域）· canonical 草稿 + **写作规则 D-0**（复用批 1 的 7 条）+ **逐条可追性核对表** + **判据差异登记**（C-6 收紧到 spec 级 · C-7 扩展 `evidence_kind` · ⛔ 不用 TBD 行做 glob 键）· KPI **0/3 → 1/3**。
+- ⚠️ **本 Entry 新登记的 2 处 stale**：手册 `docs/guide/cep-usage.md §12.8` 写「ADR 归因 **18** 条」⇒ 实测 **19**；§0 DoD 7 写「66 条 invariant 机器检查 **100% 覆盖**」⇒ 实测 **61 条有载体 + 5 条 ⏭**。
+
+**⑥ 关联**:Entry **#443**（批 1 verifier 验收）· **#442**（批 1 收口）· **#441**（批 1 立项）· **#438**（上轮全量梳理 —— 本 Entry 是其**批 1 完成后的再核对**）· **#340**（上一轮排序裁决）· **#419**（objective ⏸ 暂存归档 · 终局 Ⅲ-甲）· `.rddf/improvements/cpptlm-spec-purpose-batch3.md` · `openspec/changes/cpptlm-spec-purpose-batch3/` · `docs/guide/cep-usage.md §12.8` · `test/cep_b3b2_deferrals.json` · `test/cep_invariant_assertion_map.json` · `test/cep_invariant_deferrals.json` · `test/cep_adr_structural_deferrals.json`
