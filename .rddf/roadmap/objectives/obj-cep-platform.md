@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cpptlm-cep-flow-support-assertions` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #428;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-cep-flow-support-assertions` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #428;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **1 个 active**（`cpptlm-cep-adr-verification-carriers` 于 2026-11-15 **立项** ⇒ 占 1 slot,per 台账 Entry #431;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-cep-adr-verification-carriers` 于 2026-11-15 立项 ⇒ 占 1 slot,per Entry #431;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -23694,3 +23694,48 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 **⑥ 已用轮次**:**第 1 轮**(上限 3)。**下一步建议**:F-1 与残余 ① 同属「契约面质量/覆盖」⇒ 建议**打包为一批**(各走一条五步链,物理串行)路由 builder/planner;残余 ① 的判权在 architect。
 
 **⑦ 关联**:**#427**(立项)· **#428**(实施 + 授权)· **#429**(五步链闭合回执)· `.rddf/reviews/cpptlm-cep-flow-support-assertions-verify.md`(本报告)· `openspec/specs/cep-core-contracts/spec.md` · `test/cep_flow_support_expected.json` · `scripts/test/cep_flow_support_reverse_verify.sh`
+
+### Entry #431 — 2026-11-15 [planner](**`ADR` Verification 判据补机器载体** 的立项 —— improvement v2 + metis 第 1 轮 **14 MUST + 9 SHOULD + 6 NIT 全处置** + change 目录 + proposal + 2 份 delta spec · KPI **0/3 → 1/3**)
+
+**主题**:把**两个已签批 ADR 的 Verification 判据真空**落成**有牙齿的机器载体** —— ① `ADR-CEP-21` **V1-6 自认**的「无任何机器闸钉死 `kResponderMappedBits == 4`」;② 决策块治理闸对 **2026-11-13 新签发的 `ADR-CEP-20`** 的**零覆盖**(闸的 R-d 段只遍历闸外快照里的 ADR)。change = `cpptlm-cep-adr-verification-carriers`;improvement = `.rddf/improvements/cpptlm-cep-adr-verification-carriers.md`(v2)。
+
+**① 立项依据(全部 2026-11-15 实测,非台账措辞推断)**
+
+| 缺口 | 实测证据 | 危害 |
+|---|---|---|
+| **G-1** `kResponderMappedBits == 4` 无机器载体 | 全仓 grep:该常量只在 `include/tlm/cep/sharer_tracker.hh:92` 定义 + 被引用作循环上界 / 掩码计算,**无任何测试或闸断言它 == 4**;`kMappedResponderMask`(`:141-142` = `0xF`)亦无断言 | `ADR-CEP-21` 的「阶段 2 **未执行**」前提**无机器载体** ⇒ 把常量改成 8(本该走 architect 裁决 + 台账 Entry)变成一条**无人察觉**的改常量动作;且 `kResponderBitToNode` 数组尺寸**已是 8** ⇒ **不会编译失败** |
+| **G-1 的文本锚盲区(可复现)** | `ADR-CEP-21:47` 自认:`scripts/test/cep_tilelink_adapter_reverse_verify.sh:49` 的 `join-no-unmapped-reject` 锚 = **源码文本**;**本轮影子树探针实测**:宽度毒化为 8 ⇒ 编译 rc=**0**、运行打印 `mask=0xff` ⇒ **源码文本一字未改而语义已漂移** ⇒ 该闸**确实照绿** | ⇒ 掩码判据**必须**用**数值锚**(`0xF`),⛔ 不得用恒等式 `== (1<<k)-1`(定义**就是**该式 ⇒ 恒真 ⇒ 零判别力) |
+| **G-2** 决策块闸对 `ADR-CEP-20` 零覆盖 | 闸的 R-d 段只遍历快照(`scripts/test/cep_decision_block_check.py:247`);闸外快照 `test/cep_decision_block_snapshot.json` = **22 份**/`total`=125,**不含** `ADR-CEP-20`;用**闸自己的** `analyze_section2` 实测 `ADR-CEP-20` = **`(6, [])`** ⇒ 期望值 **6** | `ADR-CEP-20` 的 **6 个**决策块不受任何机器判据守 ⇒ 未来降级/增删决策块**闸不会红**,而另外 22 份**会**红 ⇒ **同仓两套覆盖强度**;且快照覆盖集合**无自愈** ⇒ 盲区**单调增长** |
+
+**② ⛔ 认识论边界(不得过度声称)**:G-1 的判据是「**当前状态的变更检测器**」(断言「现在是 4 / 现在是 `0xF`」),**不**论证「4 是正确的宽度」(正确性来自 `ADR-CEP-21` 阶段 2 的 2a 机判 / 2b 人裁,本 change **不动**);G-2 的快照是「**覆盖集合的显式登记**」,**不**是「决策块计数正确」的独立裁决;本 change **只 bump 一次快照**,**不解决「自愈」**。
+
+**③ metis 第 1 轮(14 MUST + 9 SHOULD + 6 NIT)全处置** —— 其中 **5 条指出了初稿的实质性错误**(逐条验真后全部采纳):
+① **恒等式是恒真断言** ⇒ 改数值锚 `0xF`;② **快照毒化在不改仓内文件的前提下不可实现**(闸的 `load_snapshot()` 固定读真实仓根,`--root` 只重定向文档语料 —— **已签批契约** `openspec/specs/cep-invariant-gate/spec.md` 的「判据 SHALL 区分两个根」Scenario 明文如此)⇒ 反向覆盖证明改为「**影子树改 ADR-CEP-20**」;③ **`V2-5` 编号错误**(运行时 mask 判据是 **`V2-6`**;`V2-5` = 触发证据入台账);④ **`ADR-CEP-21` 不适用的理由错误**(它是**无 `## 2` 决策章**,⛔ 非「无编号决策块」);⑤ **遗漏第 3 份冻结产物** —— `docs/architecture/07-coherence-exploration-platform.md:590` 的「22 份 ADR … 22 键 + `total`=125」∈ **M1 冻结面** ⇒ 冻结链 = **3 份产物**(另 2 份 = 被 MODIFIED 的 main spec)。
+⚠️ **metis 自身 1 处错已订正**:metis 称「台账最大 Entry = #429」⇒ 实测为 **#430**(verifier 验收回执刚落)⇒ 本授权号取 **#431**。
+
+**④ 交付面(6 产物 + 1 台账 Entry)**
+
+| # | 内容 | 落点 |
+|:--:|---|---|
+| **W1** | 判据:新增 1 个 TEST_CASE —— `kResponderMappedBits == 4u` + `kMappedResponderMask == 0xFu` | `test/test_cep_sharer_tracker_base.cc`(改) |
+| **W2** | 快照:`files` 加 `ADR-CEP-20-topology-ic3-evidence-strength.md: 6`;`count` 22→**23**;`total` 125→**131**;`authorized_by` → **`Entry #431`** | `test/cep_decision_block_snapshot.json`(改) |
+| **W3** | delta spec(**2 份 MODIFIED,⛔ 不新增 Requirement**):`responder 位宽扩容的机制与触发判据`(+2 Scenario)· `cep-invariant-gate`(`:40` 的「实测 **125** / **22**」→ **131 / 23**) | `openspec/changes/cpptlm-cep-adr-verification-carriers/specs/**` |
+| **W4** | 持久反向 fixture:**只写 `mktemp -d`** ⇒ 4 条闭环(未毒化绿 / 宽度毒化红 / 覆盖毒化红 / 恢复绿);⚠️ **编译失败 ⇒ exit 2 环境错误**(⛔ 编译失败不得冒充判据失败) | 脚本侧(待 builder 创建) |
+| **W5** | 台账 Entry(**本 Entry**)—— 兼作 W2 的 `authorized_by` ⇒ **必须先于** W2 落盘(闸 `:207-218` 会检查该 Entry **真实存在**) | 本 Entry |
+| **W6** | 文档连带:真源 1 `docs/architecture/07-coherence-exploration-platform.md:590`(第 3 份冻结产物)· `scripts/README.md` 脚本表 · `test/CMakeLists.txt` ctest 注册 | 3 文件 |
+
+**⑤ 验收判据(AC-01 ~ AC-10,全部机器可判)**:详见 `openspec/changes/cpptlm-cep-adr-verification-carriers/proposal.md` 的「## 验收标准」。核心 = **AC-03 的覆盖证明必须用影子树变异**(`ADR-CEP-20` 删一个 `### 决策 N` 段 ⇒ 闸必红且输出含 `决策块计数快照偏离` **与** 文件名)—— ⛔ 「闸对它实测零红」**不构成**覆盖证据(未 bump 快照时它同样零红)。
+
+**⑥ 复验**:`openspec validate cpptlm-cep-adr-verification-carriers --strict` ⇒ **rc=0**(零 WARNING)· `openspec list --json` ⇒ active **1** ⇒ KPI **0/3 → 1/3**。
+
+**⑦ ⚠️ 残余(5 项 · 全部**未关闭**)**
+
+| # | 残余 | 状态 |
+|:--:|---|---|
+| **R-1** | **F-1 范围被 verifier 报告低估一个数量级** —— `openspec validate --strict` **逐 spec** 实测 **87/129 份 rc=1**(cep-* 内 ≥9 个超长 Requirement 分布 **7 份**;`refkind-coverage` 1185 / `ualink-coherence-engine` 1969 最长)⇒ verifier 报告写「3 个 Requirement」**范围不足**。⚠️ 仓内**任何闸 / CI 都不跑**逐 spec `--strict`(`openspec validate --changes --strict` rc=0 + 43 闸全 rc=0 **已实测**)⇒ 实际影响 = 「手动跑逐 spec `--strict` 会看到红」 | ⛔ **另立 backlog**;本 change **不**修、**不**改 `openspec/specs/cep-core-contracts/spec.md`(避免加剧)。⚠️ verifier 报告属 verifier 写集 ⇒ **planner 不回改** ⇒ 以本 Entry 为订正凭据 |
+| **R-2** | **镜像 20 值**(`moesi_gpu`/`mesif`)的 13 键无仓内 golden 锁(权威在 ArchForge) | ⭔ **architect 判权** |
+| **R-3** | **决策块闸的覆盖集合无自愈机制**(新签发 ADR 仍需人工 bump) | ⛔ **backlog**(需改闸代码 + 有牙载体 ⇒ 独立 change) |
+| **R-4** | `kResponderMappedBits == 4` 的**编译期锁**不可行 | ⛔ **不追** —— 写成 `static_assert` 会让**阶段 2 的合法扩容也编译不过** ⇒ 与 ADR 两阶段设计**直接冲突**;test-only 判据**已实测有牙齿** |
+| **R-5** | **`cep_decl_alignment_check.sh` 在 ArchForge 缺席时整闸 `exit 0`**(`:40-44`)⇒ 7 项子校验全跳过 | ⭔ **architect 判权**(条件性 —— 本机 ArchForge **在位** ⇒ 当前 `[RUN]` 7/7 全绿) |
+
+**⑧ 关联**:**#430**(上轮验收:有条件通过 · 1 项 SHOULD_FIX)· **#427 / #428 / #429**(`flow_support` 值锁链)· `openspec/changes/cpptlm-cep-adr-verification-carriers/`(proposal + 2 份 delta spec)· `.rddf/improvements/cpptlm-cep-adr-verification-carriers.md`(v2)· `docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md` · `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md` · `test/cep_decision_block_snapshot.json` · `scripts/test/cep_decision_block_check.py` · `openspec/specs/cep-sharer-tracker-base/spec.md` · `openspec/specs/cep-invariant-gate/spec.md`
