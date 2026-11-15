@@ -24234,3 +24234,56 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 **⑤ 已用轮次**:**1**(上限 3,与 `RDDF_VERIFIER_MAX_LOOPS=3` 对齐)⇒ **T8 关闭**。
 
 **⑥ 关联**:Entry **#436**(立项)· **#437**(收口)· **#438**(全量梳理)· **#439**(R-7 收口)· `.rddf/reviews/cpptlm-cep-gate-robustness-verify.md` · `openspec/changes/archive/2026-11-15-cpptlm-cep-gate-robustness/`
+
+### Entry #441 — 2026-11-15 [planner](**R-1 批 1 立项** —— 16 份非 `cep-*` 主 spec 的 Purpose 占位修复 · **metis 预审 7 MUST + 8 SHOULD + 5 NIT 全处置** · KPI **0/3 → 1/3**)
+
+**主题**:change `cpptlm-spec-purpose-batch1`。R-1 的**批 1**：只修 Purpose 占位，**不裁正文**（批 2）。
+
+**① 实测基线(2026-11-15)**
+
+| 项 | 实测 |
+|---|---|
+| 全仓主 spec | **129** 份（`cep-*` 43 + 非 `cep-*` 86） |
+| `cep-*` `--strict` | **43/43 绿** |
+| 非 `cep-*` `--strict` 红 | **77** 份 = **75** 份 Purpose 占位（全为 `TBD - created by archiving change …` 形态，**无形态分叉**）+ **70** 份正文 >500 字符（WARNING 级，重叠） |
+| 非 strict 口径 | **129/129 绿**（R-7 已闭合 ⇒ 本批全是 **WARNING 级**） |
+| 批 1 范围 | **16** 份（`pcie-*` 10 + `cpptlm-*` 6；**1 份已移出**，见 ③） |
+
+**② 工具实测(影子根实验，非推断)**
+- ① delta 的 `## Purpose` **被忽略** —— 工具原话 `delta Purpose ignored; <spec> already has one. Edit … spec.md directly to change it.` ⇒ **0 份 delta 是唯一路径**。
+- ② change 无 delta 时归档器要求 `.openspec.yaml` 设 `skip_specs: true`；实测该声明 ⇒ 归档**无警告** + main spec **零改动** + 正常归档。
+- ③ `## Why` 段须 **≥50 字符**（否则非阻塞警告）。
+
+**③ ⚠️ metis 预审推翻的 5 处初稿事实（全部验真后处置）**
+
+| # | 初稿 | 实测 | 处置 |
+|:--:|---|---|---|
+| **M-1** | 批 1 = **17** 份 | `cpptlm-d1-p1-pipeline-scoreboard` 的 spec 自带 `Status: SUPERSEDED`（`include/cudart/cpptlm_bridge.h` 已由 HSK-6 物理删除）且 `include/cudart/` **整个目录不存在**、`include/tlm/gpu/{scoreboard,pipeline,tensor_core}_tlm.hh` **全不存在** ⇒ 该份写现状即**立假账** | **移出批 1** ⇒ 批 = **16** 份；新登记残余 **R-10**(superseded spec 存在性裁定) |
+| **M-2** | Purpose #2 写「非法取值必须被**显式拒绝**」 | spec 第 4 个 Scenario 实为 **warning + falling back to 4096**（告警 + 回退，非拒绝） | 改写为「以告警形式暴露并回退到缺省值后继续运行」 |
+| **M-3** | 引用台账 **Entry #441**（3 处 + tasks T0.6 已勾 `[x]`） | `grep 'Entry #441'` = **0 命中** ⇒ **引用了不存在的 Entry**（=「已勾选的交付物其实没落」） | **本 Entry 即该 Entry**（真实落盘） |
+| **M-4** | 3 处来源 change 的归档目录名 | 实测：`2026-10-09-cpptlm-pcie-host-test-flr-rebar` / `2026-09-10-2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes` / `2026-09-03-2027-02-09-cpptlm-dgpu-pcie-ip-integration` ⇒ 初稿 3 处**全错** ⇒ 归因载体会假红 | 逐处订正为**实测路径** |
+| **M-5** | AC-02 写「77 → ≤62（= 77 − 15）」 | ① 减数应是 **16** 不是 15；② **方向可能不可达** —— 16 份里 6 份明显含长正文（`pcie-tlp-wire-datapath` 20KB / `pcie-ip-microarch` 11.5KB / `cpptlm-d1-p1` 9.6KB / `cpptlm-pcie-ep-foundation` 8.9KB / `pcie-host-test-flr-rebar` 6.9KB / `pcie-slice-prerequisites` 5.9KB）⇒ 修完 Purpose 仍会因正文超长红 ⇒ `post ≥ 61` | 换判据：**定向**（16/16 不再出现 Purpose 类条目，永远可达）+ **全局**（pre − post = k，**k 与剩余红数逐份归因闭合**，数字不写死） |
+
+**④ metis 其余 finding 的处置**
+
+- **P0-4 AC-03③ 定死机判**：规范化（去强调符/围栏/空白标点）+ **LCS < 12 字符**（CJK 计 1）+ 硬禁技术字面量（`>>`/`& 0x`/`0x[0-9a-f]+`/`A::B`）+ **单 Requirement 豁免**（`pcie-ip-integration` ⇒ LCS < 16 且须以「为什么需要这条交付判据」起句 + `waiver` 标记）。
+- **P0-5 AC-05 换判据**：`claim_kind` 枚举（`current|historical|superseded`）+ 与 spec 内 `Superseded/物理删除` 标记**互斥校验** + Purpose 标识符集合 ⊆ Requirement 标题 ∪ 仓内可 grep 符号。
+- **P0-6 归档语义先裁后动**：升级为**归档前硬门 T3.0**，两条互斥出口（A = `skip_specs: true` + proposal 顶部「✅ 已完成归档 · 主 spec 直改（无 delta）」标记 + 归因 JSON `archive_semantics` 字段；B = 不走归档器，手工 mv 进 `archive/` 并在台账显式记「未走归档器，理由：Purpose 无法走 delta」）。⚠️ **失败代价已写进 proposal**：两条都不行 ⇒ 本 change 无法归档 ⇒ KPI 卡 1/3 ⇒ 后续提案全被 3/3 上限阻塞。
+- **P0-7 KPI 归属裁决（不留悬置）**：本 change 改的是 **`openspec/specs/`（契约面）**，**不适用** `AGENTS.md` 的 doc-only 豁免（该豁免限定「改 docs + 注释 + 注解」且 **0 函数签名/逻辑/构建改动**）⇒ **计入** KPI，**0/3 → 1/3**（归档回 0/3）。
+- **P1-8~13**：归因载体 3 处路径订正 · Purpose #2 越界断言改写 · Purpose #6 定性订正（ACS 是**隔离**不是能效）· Purpose #11 去过程叙述并指向独占内容 · **每份 Purpose ≤ 2 句 + ≤160 字符**（初稿 150~250 ⇒ 压缩）· AC-04 写死预期 diff 形状（实测 16 份结构统一：`## Purpose` 在 line 3 / 占位 line 4 / `## Requirements` line 5 ⇒ 每份恰 1 hunk、删 1 增 k、**不新增空行**、**单物理行**）。
+- **P1-14 tasks 增补**：T1.0（写作规则 D-0）· T2.8（新残余登记）· T3.0（归档语义硬门）。
+- **P2-15 批大小**：**保持 16 份一批**（拆批会把固定成本乘 3）；拆的是**评审** —— critic 按 4 组（`pcie-*` 数据通路 / `pcie-*` 集成与微架构 / `cpptlm-stage-*` / `cpptlm-*` 其他）分组签，一组不过只回退该组。
+- **P2-16 AC-08 降级**：闸族只跑**归档前**一次（增量阶段用 `validate --changes --strict` + `git diff --stat` 白名单）。
+- **P2-17** 归因 JSON 增 `result_commit` 字段。
+
+**⑤ 新登记残余（本 change 暴露的既有缺口，不在本次修）**
+
+| # | 残余 | 实测 | 路由 |
+|:--:|---|---|---|
+| **R-10** | `cpptlm-d1-p1-pipeline-scoreboard` 的**存在性裁定**（spec 标 SUPERSEDED + 实现物理删除 ⇒ spec 本身是孤儿） | `include/cudart/` 目录不存在 · 3 个模块文件不存在 | **architect**（删 spec / 改写为历史记录） |
+| **R-11** | `pcie-host-test-flr-rebar` 与 3 份兄弟 spec **内容重复**（其 3 条 Requirement 就是 `pcie-host-test-infrastructure` / `pcie-flr` / `pcie-resizable-bar-runtime` 的同名复制） | 实测 Requirement 标题逐条对应 | **architect**（合并 / 退役） |
+| **R-12** | `pcie-slice-prerequisites/spec.md:14` 引用**已删除**的 `include/cudart/abi_guards.h` | 目录不存在 | 各 owner |
+| **R-13** | spec 内部**旧状态行**与新 Purpose 打架（`pcie-ip-microarch:296`「等待评审 + Phase 1 启动实施」· `pcie-ip-integration` 末行「Phase 8 最终整合交付中」） | 实测 | 批 2（动 Requirements 段时一并处理） |
+| **R-14** | `pcie-ip-integration` 的 Requirement 要求交付 `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`，该文档**已迁 ArchForge**（仓内仅占位 README） | 文件不存在 | 各 owner |
+
+**⑥ 关联**:Entry **#438**(全量梳理)· **#439**(R-7 收口)· **#440**(verifier 验收)· `.rddf/improvements/cpptlm-spec-purpose-batch1.md` · `openspec/changes/cpptlm-spec-purpose-batch1/`
