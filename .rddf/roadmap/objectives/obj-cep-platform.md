@@ -24331,3 +24331,40 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 **⑦ 残余（本 change 登记，未修）**：**R-10** superseded spec 存在性裁定（`cpptlm-d1-p1-pipeline-scoreboard`）· **R-11** 4 份同源 spec 内容重复（合并/退役）· **R-12** `abi_guards.h` 悬空引用 · **R-13** spec 内部旧状态行 · **R-14** `19-pcie-ip-microarchitecture.md` 已迁 ArchForge · **R-1 批 2**（70 份正文 >500，裁剪**会动 Requirements 段** ⇒ 另一档风险）· **R-1 批 3~5**（其余 59 份 Purpose）· **R-9** 清单增殖 · **R-2** 13 键 golden。
 
 **⑧ 关联**:Entry **#441**(立项 · metis 预审全处置)· **#440**(verifier 验收)· **#439**(R-7 收口)· **#438**(全量梳理)· `.rddf/reviews/cpptlm-spec-purpose-batch1-verify.md`(verifier 待做)· `openspec/changes/archive/2026-11-15-cpptlm-spec-purpose-batch1/` · `scripts/test/cep_spec_purpose_batch1_check.py` · `test/spec_purpose_batch1_attribution.json`
+
+### Entry #443 — 2026-11-15 [verifier](**R-1 批 1 独立验收** —— AC-01~AC-10 逐条 · **全通过(PASS)** · 报告落 `.rddf/reviews/`)
+
+**主题**:已归档 change `cpptlm-spec-purpose-batch1`(Entry #441 立项 / #442 收口,产物 commit `400aa618`)的**独立验收**(第 1 轮)。报告 = `.rddf/reviews/cpptlm-spec-purpose-batch1-verify.md`。
+
+**① 分流判定**:① change 含 `## 验收标准` 段 ✓ · ② **P3 archive gate 信号缺失**(`.rddf/state/iteration.json` **不存在** —— 本会话未跑 `rdd-builder` skill)✗ · ③ skill 可加载 ✓ ⇒ **条件 ② 不满足 ⇒ 走本地验收**(5 步)。⚠️ 本地验收的额外门(`iteration.json` 的 `tasks_done == tasks_total`)在该文件不存在时**无法适用** ⇒ pass 结论**完全由逐条工具证据支撑**。
+
+**② 独立性原则(本轮核心方法)**:被验 change **自带**校验脚本 ⇒ 用它验自己 = 自证 ⇒ 验收**另写一份独立实现**(`/tmp/opencode/verify_purpose_batch1.py`,不同代码路径、不同判定口径):长度/单行/CJK-only LCS/禁式**独立重算** · 归因闭合**独立重算** · 范围零 diff **独立 `git diff --numstat` + 逐份 `## Requirements` 段字节比对**。⇒ **两套实现结论一致**才算证据。被验脚本本身的判别力另行验证:**落地前**跑 ⇒ **0/16 绿**(占位残留被 C-1 抓到)=> 有牙。
+
+**③ 判定**:**PASS**(10/10 通过 · 0 不通过 · **0 未取证**)
+
+| AC | 判定 | 关键证据 |
+|:--:|:--:|---|
+| AC-01 零占位 | ✅ | 独立实现限段扫 16 份 ⇒ 命中 **0** |
+| AC-02 定向 | ✅ | 16 份 `--strict --json` 含 `placeholder` 类 issue 的 = **0** |
+| AC-02b 全局闭合 | ✅ | `--strict` 红 **pre 77 → post 65(k=12)**;本批 **12 份完全转绿**、**4 份仍红**(红因**全为「正文 >500」**);全仓 Purpose 占位残留 **59** = 期望 75−16 ⇒ **精确闭合** |
+| AC-03 四条正交 | ✅ | **独立实现**复算 16 份:长度/单行/CJK-LCS/13 类禁式 ⇒ 问题 **0** |
+| AC-04 零语义 + diff 形状 | ✅ | **16 文件 · 每文件 +1/−1**;16 份 `## Requirements` 段与 base **逐字节比对 ⇒ 变动 0** |
+| AC-05 不声称不存在的能力 | ✅ | 独立复算 16 条:`isfile` 全 True **且**核心名命中(16/16)· `claim_kind` 互斥通过 ⇒ 问题 **0** |
+| AC-06 `cep-*` 不受影响 | ✅ | 43 份 `--strict` rc≠0 = **0** · `artifact_count` **86** |
+| AC-07 范围零 diff | ✅ | `include/` `src/` `test/*.cc` `docs/adr/` `cep-specs/` ⇒ **0** 个文件 |
+| AC-08 闸 0 回归 | ✅ | **45 闸**全 rc=0 · `ctest -R cep` **100/100** · 全量 **180/180** · `[cep]` **529/12288** · 校验脚本 **16/16** |
+| AC-09 KPI + 体量 | ✅ | active **0** · 归档 **150** · `docs_sync --strict` rc=0 |
+| AC-10 归档语义可判别 | ✅ | 归档 proposal 顶部「✅ 已完成归档 · 主 spec 直改(无 delta)」标记行 + JSON `archive_semantics` + 无 `specs/` 目录 |
+
+**④ ⚠️ 验收侧发现**
+- **F-1(验收方法缺陷)**:我的验收脚本第一轮跑出 **8/10 假阴性** —— ① 用 `listdir` 数归档目录 ⇒ 把 `STATUS_AUDIT_*.md` 也计入(151 vs 实测 **150**)② 范围零 diff 用了 `test/`(整个目录)而非 `test/*.cc` ⇒ 误命中本 change 自己的归因载体 ⇒ **已修正口径并重跑 ⇒ 10/10**。
+- **F-2(流程缺口)**:立项时**未同步 6 处 KPI 活口径** ⇒ active 窗口期间 `docs_sync`/`gate_selftest` 报红 ⇒ 归档后恢复 ⇒ 建议下一轮 planner 把「立项即改 6 处口径」列入动作清单(已记 Entry #442 §⑤·3)。
+- **F-3(连带)**:台账登记 R-10/R-12/R-14 时引用 **4 条已删除路径** ⇒ `doc_ref` 红 ⇒ 补 `VIRTUAL_PATHS` 4 条 ⇒ 绿。
+- **F-4(已知边界)**:**C-6 机判不覆盖纯中文能力声称** ⇒ 由人工抽验 + critic 4 组逐组签承担 ⇒ 批 2~5 **须保留同等人审环节**。
+- **F-5(轻微)**:归因 JSON 的 `requirement_titles` 含过程括注 ⇒ 建议批 2 起存裸标题。
+
+**⑤ 遗留清扫(本次范围)**:TODO/FIXME/HACK **0** · **死代码 1 处已修**(C-7 的 `kw=[...][:0]` 恒空 + `kw_ok=...or True` 恒真且从未参与 checks ⇒ 与 design D-2/D-3 两处承诺不一致 ⇒ 删除并落实关键字命中)· skip/`.disabled` **0** · mock N/A · 临时 fallback = C-6 的 `DOMAIN_TOKENS` 白名单(已登记)· 资源释放 N/A。
+
+**⑥ 已用轮次**:**1**(上限 3)· 全程**只读取证**,未修改任何实现或规范文件。
+
+**⑦ 关联**:Entry **#442**(收口)· **#441**(立项)· **#440**(上一 change 的 verifier 验收)· **#438**(全量梳理 + 任务清单)· `.rddf/reviews/cpptlm-spec-purpose-batch1-verify.md` · `openspec/changes/archive/2026-11-15-cpptlm-spec-purpose-batch1/`

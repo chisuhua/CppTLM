@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-15T12:38:32Z",
+  "current_role": "verifier",
+  "updated_at": "2026-11-15T13:19:34Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-14T06:46:24Z",
-      "by": "auto",
-      "reason": "planner 已立项(proposal + Entry #423)=> builder 补 design/tasks 并实施 W1~W5。"
-    },
     {
       "role": "verifier",
       "at": "2026-11-14T07:36:06Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-15T12:38:32Z",
       "by": "user",
       "reason": "per 用户口令「按你建议的顺序推进」⇒ 步骤 3:实施 R-1 批 1(16 份 Purpose 落地 + 校验脚本 + 归因载体)。"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-15T13:19:34Z",
+      "by": "user",
+      "reason": "per 用户口令「按你建议的顺序推进」⇒ 步骤 5:独立验收 cpptlm-spec-purpose-batch1(AC-01~AC-10),报告落 .rddf/reviews/。"
     }
   ],
   "auto_switch_window": null
