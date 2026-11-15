@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-15T05:32:12Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-15T06:24:50Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-14T04:12:02Z",
-      "by": "auto",
-      "reason": "裁决草案已过 oracle 第 1 轮 + critic 第 2 轮(mergeable: yes)=> 按台账单写者纪律(frontmatter :19「写入权: rdd-planner 唯一写入方」)切 planner 落台账回执 Entry。"
-    },
     {
       "role": "architect",
       "at": "2026-11-14T04:28:52Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-15T05:32:12Z",
       "by": "user",
       "reason": "per 用户口令「再切builder进行实施」⇒ 实施已立项 change `cpptlm-cep-spec-strict-compliance`(Entry #434):8 份 Purpose + 5 份 delta 合并 + 防退闸 + 共享 helper 扩展 + removals.json + 7 步归档链 + KPI 1/3 -> 0/3。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-15T06:24:50Z",
+      "by": "user",
+      "reason": "per 用户口令「继续推进后续任务实施」⇒ 测试收敛后选 R-4(CEP 闸族健壮性:9 闸固定影子路径并发互踩 + 决策块闸覆盖集合无自愈 + 4 处注释 stale)立项;同时登记新发现 R-7(2 份 spec ERROR 级结构性无效)与 R-5 已闭合。"
     }
   ],
   "auto_switch_window": null

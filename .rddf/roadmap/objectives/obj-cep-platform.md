@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cpptlm-cep-spec-strict-compliance` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #434;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-cep-spec-strict-compliance` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #434;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **1 个 active**（`cpptlm-cep-gate-robustness` 于 2026-11-15 **立项** ⇒ 占 1 slot,per 台账 Entry #436;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-cep-gate-robustness` 于 2026-11-15 立项 ⇒ 占 1 slot,per Entry #436;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -23974,3 +23974,49 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 | **R-6** | `openspec` **版本未 pinning**（闸已打印版本但不锁） | backlog |
 
 **⑦ 关联**:**#434**（立项 + 回归认领）· **#324**（轴 2 预授权）· `7dbcc117`（立项 commit）· `9b90e378`（产物）· `9f5b3166`（清单）· `.rddf/improvements/cpptlm-cep-spec-strict-compliance.md`(v2)· `openspec/changes/archive/2026-11-15-cpptlm-cep-spec-strict-compliance/`（四件套）· `scripts/test/cep_spec_strict_check.sh` · `scripts/test/cep_test_shadow.sh` · `test/cep_spec_strict_removals.json`
+
+### Entry #436 — 2026-11-15 [planner](**CEP 闸族健壮性** 立项 —— 9 闸影子路径并发安全 · 决策块覆盖义务 · 覆盖集补齐 · **R-5 关闭 + R-7 新发现** · KPI **0/3 → 1/3**)
+
+**主题**:change `cpptlm-cep-gate-robustness`。**三件事同一个病：闸族的可信度欠账** —— 会假红、会漏判、会自相矛盾。
+
+**① 立项依据(全部 2026-11-15 实测)**
+
+| 缺口 | 实测 | 危害 |
+|---|---|---|
+| **G-1** 9 闸影子路径为**固定字面量** | helper **5** 个(`adr_structural` / `b3b2_archive_form` / `decision_block` / `dod_reading` / `iag_gate_reconcile`)+ **自建 4** 个(`b3b2_d4_probe` / `b3b2_d4_quarterly` / `source_effect` / `tilelink_engine_failclosed`);8 个已注册 ctest | 上一 change **已兑现**假红:Entry #432 ② / #435 实测 `-j4` 下 `cep_decision_block_check` 假红、单独跑绿;当时**只隔离调用方**,闸默认值未动 ⇒ 下次同闸并发照样假红 |
+| **G-1 追加**(metis M-7 触发复核) | 另 **3 处**固定/越界临时路径:`cep_dod_reading_check.sh:31` 的 `SHADOW_LOG` 固定 `/tmp/opencode/...`;`cep_iag_gate_reconcile_check.sh:142` 与 `cep_freeze_reverse_verify.sh:30` 的 `mktemp -t`(写系统 `/tmp`,违反仓内 `${TMPDIR:-/tmp/opencode}` 约定;`cep_gate_harness.py:34` 明文反对) | 并发时失败诊断**读对方输出**⇒ 红因归因错 |
+| **G-2** 决策块闸**覆盖集合无自愈** | `cep_decision_block_check.py:237-240` **明文**把「新增 ADR」划出 R-d 段职责;实测「新 ADR 进分类表但忘登记快照」⇒ **无人红** | 同仓两套覆盖强度;且 **`openspec/specs/cep-invariant-gate/spec.md:30` 现写着「本 Requirement **不**提供「覆盖完整性」判据(该缺口另行立项)」⇒ 本 change 就是那个「另行立项」** ⇒ 不改则该 spec 内两句互斥(⚠️ **上一 change 自己留下的自指债**) |
+| **G-3** `docs_sync` 的 `ADR_LIST` **只 20 条** | `cep_docs_sync_check.sh:50`;末位 `ADR-CEP-18` ⇒ **`-19`/`-20`/`-21` 三份从未被「存在 + 含不变量/决策节」检查**(该文件 `:72` 自己写「漏登记 = 新 ADR **静默脱检**」) | 三份 ADR 的存在性与结构**零检查** |
+| **G-4** `scripts/README.md:95` 写「**31** = 磁盘实际」 | 实测 `ls scripts/test/cep_*.sh \| wc -l` = **45** | 文档自述与实测差 14 |
+
+**② 实测**订正/关闭**的既有残余**
+
+| # | 原登记 | 实测结论 |
+|:--:|---|---|
+| **R-5** | 轴 2 另两轴(`Scenario ≥1` / 无悬空锚点)**未闭合** | ✅ **已闭合** —— `Scenario ≥1`:**43/43 满足**(零 Scenario = 0);悬空锚点:`cep-*` spec 的 `path:line` 锚点 6 个、**悬空 0** ⇒ **本 Entry 关闭 R-5** |
+| **R-7**(新) | — | ⚠️ **严重度高于既有全部残余**:**2 份 spec 非 strict 也 rc=1**(`ERROR` 级:Requirement 无 Scenario)—— `pcie-slice-prerequisites`(`requirements.5`)/ `vram-controller-functional-mode`(`requirements.1/2`);**均不在 CEP 冻结面** ⇒ 需撰写 Scenario(= 授权契约内容)⇒ **另立** |
+| **R-8** | 「3 个闸自建临时工作区」 | 订正为 **4 个**(漏 `cep_tilelink_engine_failclosed` 的 `make_shadow()`) |
+| **R-9**(新) | — | **清单增殖**:同一事实 5 处手工维护(`structural decision_adrs` / 快照 keys / `NUMBER-MAP` / `docs_sync ADR_LIST` / `docs_sync OWNERS+NO_INV`),失效模式同为「漏登记 = 静默脱检」⇒ 本 change 只堵 2 处,⛔ 不主张已解决 |
+
+**③ metis 第 1 轮(7 MUST + 5 SHOULD + 5 NIT 全处置)—— 1 条**推翻初稿事实**、1 条**推翻初稿方案**
+
+| # | 初稿 | metis 实测 | 处置 |
+|:--:|---|---|---|
+| **M-1** | 影子路径加 **`$$`(PID)** | ❌ **容器场景下会撞** —— 各容器共享 hostPath 的 `/tmp`,而 PID namespace 各自从 1 起;且 `trap rm -rf` 会**删掉调用方给的目录** | ✅ 改 **`mktemp -d`** + `_own_shadow` 标志(只删自己建的)+ `${TMPDIR:-/tmp/opencode}` 兜底(CI 无该目录) |
+| **M-3** | 「6 个走 helper / 3 个自建」 | ❌ 实为 **5 / 4**(我列了 5 个名字却说 6 个,并漏 `tilelink`) | ✅ 全文订正 |
+| **M-2** | (未写谓词) | 谓词须钉死为 `section2(strip_fences(text))`,且关系**双向**;否则围栏内 `## 2` 会被要求登记 | ✅ 采纳 |
+| **M-4** | 「追加 AND bullet」 | MODIFIED 是**整条重发**;且必须改 `:30` 自陈 + 残余第 ④ 条 | ✅ 采纳 ⇒ delta **448 字符 / 9 Scenario 逐字保留** |
+| **M-6** | 只有「开火」fixture | 缺「**不误报**」⇒ over-fire 也能显得「有牙」 | ✅ 新增 `ADR-CEP-31`(`## 决策` 无 `## 2`)必须**绿** |
+| **M-7** | AC 只看 rc | 只看 rc 会假绿(两实例可能共用其它资源) | ✅ AC 断言两行 `[shadow]` **不同**;并复核出上述 **3 处**追加路径 |
+| **S-8/S-12** | 「4 处注释」 | 实测 **8 处 / 3 种指代**(快照键 23 · 磁盘 24 · `decision_adrs` 分母 21/24) | ✅ 改**指代表**逐条订正(⛔ 不盲替换) |
+| **S-9** | — | 建议把路径管理收敛进 helper | ⛔ **不采纳**(记录理由):`cep_shadow_reset` 职责是「复制 ADR 语料」,塞路径管理会扩语义面并波及 5 个调用点;改为各闸统一同一段 4 行 |
+| 其余 S-10/11 · N-15~19 | — | — | ✅ 全采纳(见 improvement 对照表) |
+
+**④ 交付面**:W1 11 个闸 · W2 覆盖义务判据(+双向 fixture)· W3 8 处指代订正 · W4 `ADR_LIST` 20→23 · W5 **1 份 delta** · W6 文档连带 + 本 Entry。
+
+**⑤ ⛔ 认识论边界**:W1 不改判别力(纯可靠性);W2 **新增有牙判据**但**不自动维护快照**(仍须人工 + 台账授权);**不主张已解决清单增殖**(R-9);覆盖判据**不覆盖** `## 决策`(无编号)形态(先例 `ADR-CEP-21`)⇒ 写进 spec 残余第 ④ 条。
+**「加 ADR 必须同改快照」不构成循环**:`docs/adr/ADR-CEP-*.md` 在 `FROZEN_GLOBS` 内 ⇒ 加 ADR 本就须先有台账 Entry 才能 `--update`;新判据只要求**同一次登记**里顺手补 key,`authorized_by` 复用同一 Entry。
+
+**⑥ 复验**:`openspec validate cpptlm-cep-gate-robustness --strict` rc=0 · `openspec list --json` ⇒ active **1** ⇒ KPI **0/3 → 1/3**。
+
+**⑦ 关联**:**#434 / #435**(上一 change)· **#432**(假红实测)· `.rddf/improvements/cpptlm-cep-gate-robustness.md`(v2)· `openspec/changes/cpptlm-cep-gate-robustness/` · `scripts/test/cep_decision_block_check.py` · `scripts/test/cep_docs_sync_check.sh` · `openspec/specs/cep-invariant-gate/spec.md`
