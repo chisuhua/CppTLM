@@ -241,6 +241,7 @@ VIRTUAL_PATHS=(
   "docs/adr-dgpu-05-09-driver-business-arch"      # **非路径**:它是**本地分支名**(2026-11-13,per 台账 Entry #400 §④ 的「未 push 其它分支」登记)⇒ 形如路径但不指向文件;⛔ 台账 append-only 不可回改 ⇒ 闸侧豁免
   "docs/designs-migration-dgpu-arch-v2.2"          # **非路径**:同上(本地分支名,台账 Entry #400 §④)
   "openspec/changes/cpptlm-cep-flow-support-assertions"  # change **已归档**(2026-11-15,✅ 已完成归档语义 · delta 合并进 `openspec/specs/cep-core-contracts/spec.md`;归档名 `2026-11-15-cpptlm-cep-flow-support-assertions`)⇒ 台账历史 Entry **#427**(立项面「change 目录」行 + ⑧ 关联)与 **#428**(实施回执)引用的是**归档前活路径**;⛔ 台账 append-only 不可回改 ⇒ 闸侧豁免
+  "openspec/changes/cpptlm-cep-adr-verification-carriers"  # change **已归档**(2026-11-15,✅ 已完成归档语义 · delta 合并进 `openspec/specs/cep-sharer-tracker-base/spec.md` + `openspec/specs/cep-invariant-gate/spec.md`;归档名 `2026-11-15-cpptlm-cep-adr-verification-carriers`)⇒ 台账历史 Entry **#431**(立项面 ⑤ 验收判据行 + ⑧ 关联)引用的是**归档前活路径**;⛔ 台账 append-only 不可回改 ⇒ 闸侧豁免
 )
 
 is_virtual_path() {

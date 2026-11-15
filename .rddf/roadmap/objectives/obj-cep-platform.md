@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**（`cpptlm-cep-adr-verification-carriers` 于 2026-11-15 **立项** ⇒ 占 1 slot,per 台账 Entry #431;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-cep-adr-verification-carriers` 于 2026-11-15 立项 ⇒ 占 1 slot,per Entry #431;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **0 个 active**（`cpptlm-cep-adr-verification-carriers` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #432;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-cep-adr-verification-carriers` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #432;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -23800,3 +23800,43 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 | **L-3** | `ADR-CEP-21` 的 **V1-6 checkbox 保留 `- [ ]`**(ADR 不可变、不可勾选)⇒ 「载体已存在」的事实**以本 Entry 为准** | ⛔ **未关闭**(⛔ 不追加 ADR 的 `## Status Update`,保持 `docs/adr/**` 零 diff) |
 
 **⑦ 关联**:**#431**(立项 + 授权快照覆盖集合 +1)· `.rddf/improvements/cpptlm-cep-adr-verification-carriers.md`(v2)· `openspec/changes/archive/2026-11-15-cpptlm-cep-adr-verification-carriers/`(四件套)· `test/cep_decision_block_snapshot.json` · `test/test_cep_sharer_tracker_base.cc` · `scripts/test/cep_adr_verification_carriers_reverse_verify.sh` · `scripts/test/cep_decision_block_check.py` · `openspec/specs/cep-sharer-tracker-base/spec.md` · `openspec/specs/cep-invariant-gate/spec.md` · `docs/architecture/07-coherence-exploration-platform.md`
+
+### Entry #433 — 2026-11-15 [builder](**五步授权链闭合回执** —— `ADR` Verification 判据载体已全链走完 · KPI 回 0/3 · 3 项遗留)
+
+**主题**:Entry #432 授权的 `cpptlm-cep-adr-verification-carriers` 归档与冻结链**已全链走完**。本 Entry = **闭合回执** + **遗留状态**。
+
+**① 五步链逐步(与 commit 哈希一一对应)**
+
+| 步 | 动作 | 结果 |
+|:--:|---|---|
+| 1 | 台账 Entry 先落(授权记录) | ✅ **Entry #432**(同 `49288f5a`) |
+| 2 | `openspec archive --yes` ⇒ `~ 2 modified`;归档名 `2026-11-15-cpptlm-cep-adr-verification-carriers`;**W6b 改 07 文档**(第 3 份冻结产物,⚠️ 必须在 `archive` 之后、`--update` **之前**) | ✅ |
+| 3 | 产物 commit | ✅ **`49288f5a`** |
+| 4 | `cep_freeze_check.sh --update --authorized-by "Entry #432"` | ✅ 授权校验精确命中;清单 diff **恰 5 处**(3 份产物 hash + `authorized_by` + `frozen_at_commit`)⇒ **零附带漂移**;`artifact_count` 不变(**86**) |
+| 5 | 清单**单独** commit | ✅ **`b4fcb04a`** |
+| 6 | 无参复验 | ✅ **rc=0** ——「provenance 自检通过:86 个产物的 hash 与 commit `49288f5a` 的内容一致」 |
+| 7 | 归档后活口径回填(per 先例 #346) | 本 Entry 同 commit —— KPI **1/3 → 0/3** + 体量数字(归档 **145 → 146**) |
+
+> ⚠️ 「`frozen_at_commit`(`49288f5a`) ≠ HEAD」是**常态告警**⇒ ⛔ **不得**重复 `--update`。
+
+**② 复验(全绿)**
+
+| 项 | 结果 |
+|---|---|
+| `ctest -R cep -j4` | ✅ **99/99 × 3 轮** |
+| `./build/bin/cpptlm_tests '[cep]'` | ✅ **529 用例 / 12288 断言** |
+| **44 个** `scripts/test/cep_*.sh`(**按 ctest 同参数**) | ✅ 全 rc=0 |
+| `openspec validate --changes --strict` / `agents_md_lint` / `cep_freeze_check.sh`(无参) | ✅ 全 rc=0 |
+| `openspec list --json` | ✅ **0 active** ⇒ KPI **0/3** |
+
+**③ ⚠️ 遗留(3 项 · 全部**未关闭** · ⛔ 本 change 不做)**
+
+| # | 项 | 状态 |
+|:--:|---|---|
+| **L-1** | `scripts/test/cep_decision_block_check.sh:36` 的**固定**影子路径默认值(`/tmp/opencode/cep-decision-block`)是**既存隐患** —— 任何并发调用者都会撞(本轮新 fixture 已在自己这边隔离) | ⛔ 建议后续给默认路径加 PID 后缀(独立小改) |
+| **L-2** | 决策块闸的**注释**里「22 份」已 stale(实为 23 份)⇒ 闸代码零改动故未改 | ⛔ 纯注释 |
+| **L-3** | `ADR-CEP-21` 的 **V1-6 checkbox 保留 `- [ ]`**(ADR 不可变、不可勾选)⇒ 「载体已存在」以 **Entry #432** 为准 | ⛔ 不追加 ADR 的 `## Status Update` |
+
+**④ ⑤ 项残余(承 #431 ⑦ · 状态更新)**:`R-1`(F-1 全仓 **87/129** 份 `--strict` 超长)仍 **backlog** · `R-2`(镜像 20 值)仍 **architect** · `R-3`(决策块闸覆盖集合**无自愈**)仍 **backlog** · `R-4`(编译期锁**不可追**)已**确认为设计必然** · `R-5`(ArchForge 缺席零保护)仍 **architect**。
+
+**⑤ 关联**:**#431**(立项)· **#432**(实施 + 授权)· `49288f5a`(产物)· `b4fcb04a`(清单)· `openspec/specs/cep-sharer-tracker-base/spec.md`(delta 已合并:新 2 条 Scenario)· `openspec/specs/cep-invariant-gate/spec.md`(数字 131/23)· `docs/architecture/07-coherence-exploration-platform.md`(第 3 份冻结产物)· `test/cep_decision_block_snapshot.json` · `test/test_cep_sharer_tracker_base.cc` · `scripts/test/cep_adr_verification_carriers_reverse_verify.sh` · `test/CMakeLists.txt`
