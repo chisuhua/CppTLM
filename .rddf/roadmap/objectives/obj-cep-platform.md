@@ -23911,3 +23911,66 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 **⑧ 残余(6 项 · 全未关闭)**:R-1 非 cep **75** 份 · R-2 镜像 20 值(architect)· R-3 ArchForge 缺席零保护(architect)· R-4 9 个闸固定影子路径 + 决策块闸注释 stale + 覆盖集合无自愈(backlog)· R-5 轴 2 另两轴(`Scenario ≥1` / 无悬空锚点)· R-6 `openspec` 版本未 pinning。
 
 **⑨ 关联**:**#431 / #432 / #433**(上一 change 三件套,本 Entry 认领其 AC-09 失实)· **#324**(轴 2 预授权)· `.rddf/improvements/cpptlm-cep-spec-strict-compliance.md`(v2)· `openspec/changes/cpptlm-cep-spec-strict-compliance/` · `openspec/specs/cep-{sharer-tracker-base,invariant-gate,collective-plane-contract,core-contracts,ualink-coherence-engine}/spec.md`
+
+### Entry #435 — 2026-11-15 [builder](**`cep-*` 契约面 `--strict` 归零 + 防退闸** 已全链闭合 · 7 步链走完 · 2 处自身判据订正 · 6 项残余)
+
+**主题**:Entry #434 立项的 `cpptlm-cep-spec-strict-compliance` 已**实施 + 归档 + 冻结链闭合**。本 Entry = 闭合回执。
+
+**① 7 步链逐步（与 commit 一一对应）**
+
+| 步 | 动作 | 结果 |
+|:--:|---|---|
+| ① | 台账 Entry #434（立项 + 回归认领） | ✅ 同 `7dbcc117` |
+| ② | 8 份 Purpose 直改 + 5 份 delta 落盘 | ✅ |
+| ③ | **影子根预演 `openspec archive`** | ✅ `~ 5 modified`;合并后 **43 份全绿 / 超长 0**;既有 Scenario **0 丢失 0 改动**、ualink **+4**;真实仓全量 sha256 manifest 前后相等 |
+| ④ | 真仓 `openspec archive --yes` + 复验 | ✅ 43/43 逐份 `--strict` rc=0 |
+| ⑤ | 产物 commit | ✅ **`9b90e378`** |
+| ⑥ | `--update --authorized-by "Entry #434"` | ✅ 授权精确命中;清单 diff **恰 12 份 hash**(全在 `openspec/specs/cep-*`)+ `authorized_by` / `frozen_at_commit`;`artifact_count` **86 不变**;`docs/adr/**` 与 `07-*.md` **零变化** |
+| ⑦ | 清单单独 commit + 无参复验 | ✅ **`9f5b3166`**;rc=0 + provenance 一致;`frozen_at_commit(9b90e378)` == 产物 commit（AC-16） |
+
+**② 验收实跑（AC-01 ~ AC-18）**
+
+| 判据 | 结果 |
+|---|---|
+| AC-01/02/03 | ✅ `cep-*` **43/43** `--strict` rc=0;`items` 129 == 目录数;`cep-` 43 == 目录数 |
+| AC-04 | ✅ `removals.json` **15 条**;`sentence_sha256` 集合 == 基线−终态差集（**集合相等**）;`covered_by` 全可解析（11 × `text:` / 4 × `scenario:`） |
+| AC-05 | ✅ **无 token 整体消失**（见 ③ 订正） |
+| AC-06 | ✅ 既有 Scenario **逐块 byte-equal**（0 丢失 / 0 改动;ualink 5 → 9 = +4 条 `UGE-F/G/H/I`） |
+| AC-07 | ✅ 4 条新增场景标题 ∈ `design.md` 下沉清单,且正文含被删句的核心 token |
+| AC-08 | ✅ 8 份 Purpose 全部 `--strict` valid、83~121 字符、无 Requirement 首句复述、无过程叙述 |
+| AC-09/10/11 | ✅ 闸 **6/6 绿**（含**两条毒化**:Purpose 占位 / Requirement >500 ⇒ `invalid_ids` 恰好 {毒化 id}）;仓内零改动;环境缺失 ⇒ `exit 2` |
+| AC-12 | ✅ `include/**` · `src/**` · `test/*.cc` · `docs/adr/**` · `openspec/changes/archive/**(存量)` 零 diff;新增 `INV-CEP-*` = 0;新增 spec Requirement = 0 |
+| AC-13 | ✅ `[cep]` **529 用例 / 12288 断言**（与基线逐值相等,无魔数化断言）· `ctest -R cep` **100/100** · `validate --changes --strict` rc=0 · `agents_md_lint` rc=0 |
+| AC-14 | ✅ 共用 helper 的 `cep_adr_structural_check` / `cep_decision_block_check` 全绿 |
+| AC-15/16/17 | ✅ 7 步链 · provenance · **diff 只落「目标 Requirement 段 ∪ Purpose 段」** |
+| AC-18 | ✅ KPI **1/3 → 0/3** · 归档数 **146 → 147** |
+
+**③ ⚠️ 2 处**自身判据**在实施中订正（诚实登记,非事后放宽）**
+
+| # | 原判据 | 为什么不成立 | 订正为 |
+|:--:|---|---|---|
+| 1 | **AC-05**「受控 token 出现次数 **≥ 基线**」 | **它禁止了本 change 必须做的去重** —— ualink 的三分法表 + 4 条不变量本来就重复了 `UGE-A/B/C`;`cep-sharer-tracker-base` 被我删的过程块里也提到 `kResponderMappedBits`(11→9)/ `kMappedResponderMask`(4→3)/ `0xF`(2→1) | 「**基线存在者终态仍 ≥1 次**（⛔ 不得整体消失）」+ 次数下降必须由 AC-04 的**句级归因**解释 ⇒ 实跑:5 份**无 token 整体消失** |
+| 2 | **AC-17**「diff 只落目标 Requirement 段」 | D-2 的 Purpose 是**合法直改**（openspec 明文:Purpose 不能走 delta）⇒ ualink 的 Purpose 段出现 1 个 hunk 被判越界 | 「目标 Requirement 段 **∪ Purpose 段**」⇒ 实跑 5 份**全部 hunk 在范围内** |
+
+> **为什么不悄悄改**:判据订正**必须留痕** —— 否则读者无法区分「放宽以适应实现」与「原判据本身错了」。此处两条都是**原判据错**（前者与去重的目标直接冲突,后者漏了 D-2 的合法改动面）。
+
+**④ critic（arch + build 档 · 第 1 轮）**:`APPROVE_WITH_CONDITIONS` · **0 BLOCKER** · `mergeable: yes` · `scope_exceeded: false`
+- Focus 1（ualink 语义零变更）**判定成立**:逐句比对基线正文与 delta,保留句 SHALL 全部完好、下沉 3 条在 `UGE-F/G/H` 以 SHALL 原义承载、去重部分由既有场景 byte-identical 承载、删除物均为过程日志与解释性依据。
+- Focus 3（Purpose 直改是否违反「契约只经 delta 演进」）**判定不构成违反**:全仓 7 份含该措辞的 spec 与 8 份被改者**零交集**;且 openspec 无 Purpose 的 delta 路径 ⇒ 无可选方案可列。
+- 3 项 SHOULD_FIX **全部修复**（均在本 change 交付面内）:① 夹具补**第二条毒化**（>500 判据 —— 正是本轮腐化模式）② design 的「major 漂移只警告」与实现不符 ⇒ 改为「版本仅记录」③ `python3` 缺失也应 `exit 2`（原先走 exit 1）。
+- 3 项 NIT:① helper 注释限定「仅顶层路径」② design 的「不变量 4 由 `UGE-A` 承载」订正为 `UGE-B` ③ 8 份 Purpose 抽查合规（`cep-vc-mapping-contract` 原 TBD 的归档 change 名本就错登,新 Purpose 顺带修正）。
+
+**⑤ ⚠️ 顺带修复的**既存**缺陷（⛔ 非本 change 引入）**:`scripts/README.md` 的 CEP 守门表**第二处**表中断空行（HEAD 即如此;上一轮 Entry #432 只修了第一节）⇒ 已接好,守门表 **43 → 44 行连续、0 丢失**（行数守恒:仅新增本闸 1 行）。
+
+**⑥ 残余（6 项 · 全未关闭）**
+
+| # | 残余 | 状态 |
+|:--:|---|---|
+| **R-1** | **非 `cep-*` 的 75 份** spec 仍 rc=1（全为 Purpose 占位） | 各 owner;本闸不覆盖（逃逸面含「不叫 `cep-*` 的新 spec」） |
+| **R-2** | 镜像 20 值（`moesi_gpu`/`mesif`）13 键无仓内 golden | **architect 判权** |
+| **R-3** | `cep_decl_alignment_check.sh:40-44` ArchForge 缺席 ⇒ 整闸 `exit 0` | **architect 判权** |
+| **R-4** | 9 个闸的固定影子路径默认值 + 决策块闸注释 stale（「22 份」）+ 覆盖集合无自愈 | backlog（闸健壮性,另一域） |
+| **R-5** | **轴 2 的另两轴**（`Scenario ≥1` / **无悬空锚点**）未闭合 | 另立（Entry #324 的批次含三轴,本 change 只做 `--strict` 可检子集） |
+| **R-6** | `openspec` **版本未 pinning**（闸已打印版本但不锁） | backlog |
+
+**⑦ 关联**:**#434**（立项 + 回归认领）· **#324**（轴 2 预授权）· `7dbcc117`（立项 commit）· `9b90e378`（产物）· `9f5b3166`（清单）· `.rddf/improvements/cpptlm-cep-spec-strict-compliance.md`(v2)· `openspec/changes/archive/2026-11-15-cpptlm-cep-spec-strict-compliance/`（四件套）· `scripts/test/cep_spec_strict_check.sh` · `scripts/test/cep_test_shadow.sh` · `test/cep_spec_strict_removals.json`
