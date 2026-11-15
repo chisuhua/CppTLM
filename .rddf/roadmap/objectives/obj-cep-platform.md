@@ -23646,3 +23646,51 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 **⑤ 下一步**:**verifier 独立验收**(proposal AC-01 ~ AC-10 逐条 + 工具证据)⇒ 报告落 `.rddf/reviews/cpptlm-cep-flow-support-assertions-verify.md`。⚠️ 本 change 的 delta 已合并 ⇒ **归档后**验收以 **main spec** 为判据载体(非 delta)。
 
 **⑥ 关联**:**#427**(立项)· **#428**(实施回执 + 授权)· `468e5352`(产物)· `81a0cd5e`(清单)· `439b1386`(KPI + 体量 + VIRTUAL_PATHS)· `openspec/specs/cep-core-contracts/spec.md`(delta 已合并:新 Requirement `cep-flow-support-value-lock` + `cep-sharer-tracker-contract` 订正为 6 种)· `test/cep_flow_support_expected.json` · `scripts/test/cep_flow_support_reverse_verify.sh` · `test/CMakeLists.txt`(`RUN_SERIAL` 竞态修复)
+
+### Entry #430 — 2026-11-15 [verifier](**`flow_support` 值锁独立验收** —— AC-01~AC-10 逐条 · **有条件通过** · 1 项 SHOULD_FIX)
+
+**主题**:已归档 change `cpptlm-cep-flow-support-assertions` 的**独立验收**(第 1 轮 · `tasks.md` T6.1/T6.2)。报告 = `.rddf/reviews/cpptlm-cep-flow-support-assertions-verify.md`。
+
+**① 判定**:**有条件通过(CONDITIONAL PASS)**
+
+| AC | 判定 |
+|---|---|
+| AC-01 期望表 6 实例 × 10 键 = 60 格 / 格数可验收 | ✅ PASS(独立复算:60 格 · 键集/类型全符 · 域双向相等 · 期望值 ⟷ 声明源**不一致格 = 0**) |
+| AC-02 `source` 三态可机器验收 / 3 族显式标「无逐值出处」/ 禁笼统背书 | ✅ PASS(6 实例逐项:file 存在 + 锚点逐字命中 + `provenanced_keys` == ∪anchors + 覆盖度判据;`tilelink_c`/`nvlink_4` = none 且 file/anchors 缺席) |
+| AC-03 反向控制四要件 / 禁「找到才断言」 | ✅ PASS(`:621` DYNAMIC_SECTION · `:741` `mutated == owned.size()` · `:717` 翻转值≠原值 · `:656` 消息含 id/key;域用集合相等 `:604`) |
+| AC-04 形状联判取代码真源 + 事实订正 | ✅ PASS(`kCanonicalFlowNames`;`test_cep_schema.cc:265-275` 实测锁 **schema** 形状 ⇒ 订正成立) |
+| AC-05 持久 fixture 必红 | ✅ PASS(6/6;并**独立验证删除韧性**:无匹配时 Catch2 rc=2 ⇒ 用例被删 fixture 仍红) |
+| AC-06 实施期零改动 / 新增 invariant = 0 | ✅ PASS(`include/tlm/cep/**` + `src/tlm/cep` 变更文件 **0**;invariant 集合级复核 20 → 20 · 新增 ∅ · 删除 ∅) |
+| AC-07 不勾 ADR-CEP-12 任何 Verification | ✅ PASS(立项前 5 个 `- [x]` / 现在 5 个;`docs/adr/` 零 diff) |
+| **AC-08 `openspec validate --strict`** | ⚠️ **部分达成** —— **归档前(delta)= PASS**;归档后(main spec)= **FAIL**(见 ② F-1) |
+| AC-09 `[cep]` 0 failures · 用例 +1 | ✅ PASS(**528 用例 / 12286 断言**;基线 527/11797 ⇒ +1 / +489) |
+| AC-10 归档期五步链 | ✅ PASS(Entry #428 精确命中 · 清单 diff 恰 4 处 · 未用 `--skip-specs` · 时序正确 · `artifact_count` 86 不变 · 常态告警未误重跑) |
+
+**② ⚠️ F-1(SHOULD_FIX)—— main spec 3 个 Requirement 正文 >500 字符**
+
+`openspec validate cep-core-contracts --strict` = **rc=1**(**WARNING** 级:`MAX_REQUIREMENT_TEXT_LENGTH = 500`):
+
+| # | Requirement | 长度 | 归属 |
+|:--:|---|:--:|---|
+| 1 | `cep-stub-cache-contract` | **510** | ⚠️ **既存**(立项前即 510) |
+| 2 | `cep-sharer-tracker-contract` | **727** | ⚠️ **本 change**(143 → 727) |
+| 3 | `cep-flow-support-value-lock` | **527** | ⚠️ **本 change**(新增) |
+
+**⛔ 不判 BLOCKER 的判据**:① 该 main spec **立项前即红**(既存 510 > 阈值)⇒ 本 change **未造成「绿 → 红」**;② 级别为 **WARNING** 非 ERROR;③ AC-08 的字面对象是 change 的 delta,其 rc=0 已达成。
+**⚠️ 但属质量退化(1 → 3)⇒ 应修**:建议把两段 `>` 注从 Requirement 正文**移入首个 Scenario**、ADDED Requirement 的边界/依据注压缩 ⇒ 正文 <500;⛔ 不新增 Requirement、⛔ 不改语义。**需另走一条五步链**(动冻结 main spec)⇒ 路由 builder + planner。
+
+**③ T6.2 残余 3 项:全部**未关闭**(逐项实测确认)**
+
+| # | 残余 | 确认 |
+|:--:|---|---|
+| ① | 镜像 20 值(`mesif`/`moesi_gpu`)SKIP 洞 | ✅ 期望表不含该 2 实例;`cep_decl_alignment_check.sh:41-43` ArchForge 缺席时 `exit 0` ⇒ **零保护**。⛔ **待 architect 裁决** |
+| ② | `tilelink_c`/`nvlink_4` = none(0/10)· `cxl_2_0`/`cxl_3_0_symmetric` = 1/10 · `chi_rnf` = 5/10 | ✅ 已显式标注,⛔ 未伪造出处 |
+| ③ | Scenario 标题债 | ✅ `spec.md:88` 标题仍「5 实现」而 `:93` 正文「恰好 6 个实现」+ 免责句(机械约束下最优) |
+
+**④ 遗留清扫(本 change 范围)**:新增 TODO/FIXME **0** · 被 skip 测试 **0** · 临时调试输出 **0** · 注释掉代码 **0** · 未替换 mock **0** · U+FFFD 乱码 **0** · 空 catch **0**。实施期 3 项自引入缺陷**均已修**(期望表 note 乱码 / fixture 双侧同格设计缺陷 / 并发事故致声明源污染——已按字节恢复)。
+
+**⑤ 独立复验**:43 闸(**按 ctest 同参数**)全 rc=0 · `ctest -R cep` **98/98** · `[cep]` 528 用例/12286 断言 · fixture 6/6 · `agents_md_lint` 通过 · `validate --changes --strict` rc=0 · `cep_freeze_check` rc=0 + provenance 一致 · 工作区干净。
+
+**⑥ 已用轮次**:**第 1 轮**(上限 3)。**下一步建议**:F-1 与残余 ① 同属「契约面质量/覆盖」⇒ 建议**打包为一批**(各走一条五步链,物理串行)路由 builder/planner;残余 ① 的判权在 architect。
+
+**⑦ 关联**:**#427**(立项)· **#428**(实施 + 授权)· **#429**(五步链闭合回执)· `.rddf/reviews/cpptlm-cep-flow-support-assertions-verify.md`(本报告)· `openspec/specs/cep-core-contracts/spec.md` · `test/cep_flow_support_expected.json` · `scripts/test/cep_flow_support_reverse_verify.sh`
