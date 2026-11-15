@@ -24019,4 +24019,63 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 
 **⑥ 复验**:`openspec validate cpptlm-cep-gate-robustness --strict` rc=0 · `openspec list --json` ⇒ active **1** ⇒ KPI **0/3 → 1/3**。
 
-**⑦ 关联**:**#434 / #435**(上一 change)· **#432**(假红实测)· `.rddf/improvements/cpptlm-cep-gate-robustness.md`(v2)· `openspec/changes/cpptlm-cep-gate-robustness/` · `scripts/test/cep_decision_block_check.py` · `scripts/test/cep_docs_sync_check.sh` · `openspec/specs/cep-invariant-gate/spec.md`
+**⑦ 关联**:**#434 / #435**(上一 change)· **#432**(假红实测)· `.rddf/improvements/cpptlm-cep-gate-robustness.md`(v2)· `openspec/changes/archive/2026-11-15-cpptlm-cep-gate-robustness/` · `scripts/test/cep_decision_block_check.py` · `scripts/test/cep_docs_sync_check.sh` · `openspec/specs/cep-invariant-gate/spec.md`
+
+### Entry #437 — 2026-11-15 [builder](**CEP 闸族健壮性** 归档 —— 9 闸并发安全 · 决策块覆盖义务 · ADR 覆盖集补齐 · KPI **1/3 → 0/3**)
+
+**主题**:change `cpptlm-cep-gate-robustness` 收口(立项见 Entry #436)。**三件事同一个病:闸族的可信度欠账**(会假红 / 会漏判 / 会自相矛盾)。
+
+**① 交付面(W1~W6)**
+
+| # | 内容 | 实测证据 |
+|:--:|---|---|
+| **W1** | **9 闸**影子路径 `mktemp -d` + `_own_shadow` 所有权标志 + `trap EXIT` + `echo "[shadow] $SHADOW"`(helper 5 / 自建 4);另 **3 处**固定/越界临时路径(`SHADOW_LOG` 默认随影子目录、`iag:142` 与 `freeze_reverse_verify:30` 的 `mktemp -t` 改仓内约定目录) | 同闸**并行 2 实例**⇒两行 `[shadow]` 路径不同、双 rc=0(此前 `-j4` 假红);默认路径跑完残留 **0**;显式 `SHADOW_ROOT` 跑完目录**仍在**(不删调用方目录) |
+| **W2** | 决策块闸新增**覆盖义务**判据(语料 → 快照),签名 `决策块覆盖缺失`;谓词复用 `section2(strip_fences(...))`;`check_rd` docstring 职责边界改写;`--list` 补一行 | 双向 fixture:**变异⑤**(影子根 `ADR-CEP-30`,`## 2`)⇒ 按签名红 + 带文件名 + rc=1;**变异⑥**(`ADR-CEP-31`,`## 决策` 无编号)⇒ 该判据命中 **0**(⛔ 不误报);真实仓两集合 == **23 份**、两向差集皆空 |
+| **W3** | stale「22 份」按**指代**订正(**8 处 / 3 种指代**,⛔ 不盲替换):快照键 **23** · 磁盘文件 **24** · `decision_adrs` 分母 **21/24** · `ADR_LIST` 以数组实际为准 | `grep -rn '22 份' --include=*.py --include=*.sh --include=*.md --include=*.txt scripts/ test/ CMakeLists.txt` == **0**(`.pyc` 除外 —— 否则误红) |
+| **W4** | 活缺陷:`docs_sync` 的 `ADR_LIST`(「ADR 存在 + 含不变量/决策节」的**覆盖集**,该文件 `:72` 自述「漏登记 = 静默脱检」)实测原 **22 条**、缺 `ADR-CEP-20`/`-21` ⇒ 补后 **24 条 == 磁盘全量** | `docs_sync --strict` 打印「**24 份** CEP ADR 全部存在」rc=0 |
+| **W5** | **1 份** delta:`cep-invariant-gate` 整条 Requirement 重发(**448 字符 / 9 Scenario 逐字保留**):改 `:30` 自陈(「**不**提供覆盖判据(该缺口另行立项)」⇒「**提供**覆盖义务判据,但⛔不自动维护计数」)+ 追加覆盖义务 AND bullet + 残余**第 ④ 条**(`## 决策` 无编号形态不在射程,先例 `ADR-CEP-21`) | 影子根**预演** `openspec archive` ⇒ `~1 modified`、Scenario **9 不变**、`diff` 只落 3 处;真仓归档后 `cep-invariant-gate --spec --strict` rc=0;全仓「不提供「覆盖完整性」判据」残留 **0** |
+| **W6** | `scripts/README.md` 「31 = 磁盘实际」标注为 **2026-11-07 历史值** + 补当前实测 **45**(⛔ 不改写历史);`README:73` / `CMakeLists:286` 快照键 **23**;`AGENTS.md` 归档数 **147 → 148**(4 处) | `agents_md_lint` rc=0 |
+
+**② critic(第 1 轮 · `arch, build` 双档)**:`APPROVE` / `mergeable: yes` / **0 BLOCKER** / **0 SHOULD_FIX** / **6 NIT**(3 修 + 3 记录采纳)。
+- **修**:① 3 闸(`adr_structural` / `decision_block` / `dod_reading`)的 `--list` 分支用 `exec` 返回 ⇒ **替换进程则 EXIT trap 不触发** ⇒ 每次 `--list` 泄漏一个 mktemp 目录(实测 2 次留 2 个)⇒ 分支前置到创建影子目录之前(6 次后残留 0);② `design.md` 两处过时事实(误称两闸都补 `SHADOW_ROOT="$SHADOW"`,实测 `cep_source_effect_check` 下游全用 `$SHADOW` 28 处 ⇒ 无需别名;`ADR_LIST` 仍写 20/23);③ `cep_adr_verification_carriers_reverse_verify.sh:72` 注释称默认路径「固定」已过时。
+- **记录采纳**:9 份 4 行块已开始漂移(下一份变体出现时收敛进 helper)· `_shadow_base` 的 `mkdir -p || true` 吞失败(装饰性)· 只接 EXIT 不接 INT/TERM(Ctrl-C 留垃圾非错误,`mktemp` 唯一性兜底)。
+- **判我「否得对」的 4 条**替代方案:`$$` PID 后缀(容器 PID namespace 撞)· 判据自动维护计数(= 自证,恰是快照机制要治的病)· 快照改从 `--root` 读(会产生第二个未授权期望值来源,与已签批 Scenario「快照取真实仓根」冲突)· 路径管理收敛进 helper(可辩护但有代价)。
+
+**③ ⚠️ 本次**自身**两处订正(均留痕,非静默)**
+1. **`ADR_LIST` 原数**:初稿写「仅 **20** 条 / 末位 `ADR-CEP-18` / 缺 `-19`/`-20`/`-21` **三份**」—— **错**。实测 **22 条**(`-19` 早已于 Entry #74 登记)⇒ 只缺 2 份 ⇒ 补后 **24**。原因:误读数组条数。proposal AC-11 / improvement W4 / design D-6 / tasks T4.1 **四处同步订正**,本 Entry §① 用订正后表述。
+2. **验证 harness 假绿**:我的临时闸循环写 `case "$(basename $g)" in cep_docs_sync_check|cep_doc_ref_check) a="--strict"` —— `basename` 产出 `cep_docs_sync_check.sh`,模式**不带 `.sh` ⇒ 匹配不上** ⇒ `--strict` **从未生效** ⇒ 两个闸以非 strict 跑仍报「45 闸全绿」。**该缺陷被 ctest 抓到**:归档后 `ctest -R cep` 红在 `cep_doc_ref_check`(台账仍指旧 change 路径 ⇒ 路径漂移)。修法:先订正台账路径,**并把循环改为 `basename "$g" .sh`**。⛔ 仓内**无**同型(`grep 'case "$(basename' scripts/ test/` = 0;ctest 对两闸显式传 `--strict`)⇒ 属**我的**验证方法缺陷,不是仓内缺陷。
+
+**④ 五步链(1 份冻结产物)**
+`d1bde837`(立项)→ **`08a67003`**(产物)→ `cep_freeze_check --update --authorized-by "Entry #436"`(清单 diff = **1 份** hash + `authorized_by`/`frozen_at_commit` 元数据,`artifact_count` **86 不变**)→ **`28e795a7`**(清单单独 commit)→ 无参复验 rc=0 且 `frozen_at_commit(08a67003)` == 产物 commit(`≠ HEAD` 是常态告警,⛔ 不重跑 `--update`)。
+`openspec archive` ⇒ `~1 modified`、`+0 / -0`;`archived as 2026-11-15-cpptlm-cep-gate-robustness`。
+
+**⑤ 复验(全串行)**
+- **45 闸**全 rc=0(**`docs_sync` / `doc_ref` 带 `--strict`** —— 见 §③ 第 2 条)
+- `ctest -R cep` **100/100** · `ctest` 全量 **180/180**
+- `[cep]` **529 用例 / 12288 断言**(== T0)
+- `openspec validate --changes --strict` rc=0 · `agents_md_lint` rc=0
+- **范围零 diff**:`include/**` / `src/**` / `test/*.cc` / `docs/adr/**`;闸数 **45 不变**;新增 `INV-CEP-*` = **0**
+- **体量**:active **1 → 0** · 归档 **147 → 148** · 冻结产物 **86** · KPI **1/3 → 0/3**(6 处活口径 + obj 并发句)
+
+**⑥ ⛔ 认识论边界(不主张已解决)**
+- W1 纯**可靠性**修复,**不改变任何判据的判别力**。
+- W2 **新增一条有牙判据**,但 ⛔ **不自动维护快照**(期望块数仍须人工登记 + 台账 Entry 授权)—— 只有 **key 集**被机器推导。
+- ⛔ **未解决「清单增殖」(R-9)**:同一事实仍 **5 处**手工维护(structural `decision_adrs` / 快照 keys / `NUMBER-MAP` / `docs_sync ADR_LIST` / `docs_sync OWNERS+NO_INV`),本 change 只堵 2 处。
+- 覆盖判据**不覆盖** `## 决策`(无编号)形态 ⇒ 已写进 spec 残余第 ④ 条。
+- 「加 ADR 必须同改快照」**不构成循环**:`docs/adr/ADR-CEP-*.md` 在 `FROZEN_GLOBS` 内 ⇒ 加 ADR 本就须先有台账 Entry;新判据只要求**同一次登记**里顺手补 key,`authorized_by` 复用同一 Entry。
+
+**⑦ 残余状态**
+
+| # | 残余 | 状态 |
+|:--:|---|---|
+| R-1 | 非 `cep-*` 的 77 份 spec rc=1 | 未动(另立) |
+| R-2 | 镜像 20 值 13 键无仓内 golden | architect 判权 |
+| R-3 | ArchForge 缺席 ⇒ 整闸 `exit 0` | architect 判权 |
+| **R-5** | 轴 2 另两轴 | ✅ **已闭合**(Entry #436 关闭:Scenario ≥1 **43/43**;锚点 6 个悬空 **0**) |
+| R-6 | `openspec` 版本未 pinning | backlog |
+| **R-7** | 2 份 spec **非 strict 也 rc=1**(`ERROR`:Requirement 无 Scenario)—— `pcie-slice-prerequisites`(`req.5`)/ `vram-controller-functional-mode`(`req.1/2`) | ⚠️ **另立**(需撰写 Scenario = 授权契约内容) |
+| **R-8** | **4 个**闸自建临时工作区(非 ADR 语料,不迁 helper) | 口径澄清,**不追** |
+| **R-9** | **清单增殖**(5 处手工维护) | backlog(需定 canonical) |
+| **R-10** | `mktemp -t` 写系统 `/tmp`(iag / freeze_reverse_verify) | ✅ **已修**(W1) |
+
+**⑧ 关联**:Entry **#436**(立项)· **#432**(假红实测)· **#434/#435**(上一 change)· `.rddf/improvements/cpptlm-cep-gate-robustness.md`(v2)· `openspec/changes/archive/2026-11-15-cpptlm-cep-gate-robustness/` · `scripts/test/cep_decision_block_check.{py,sh}` · `scripts/test/cep_docs_sync_check.sh` · `openspec/specs/cep-invariant-gate/spec.md`
