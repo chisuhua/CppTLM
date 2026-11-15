@@ -7,7 +7,7 @@ phase: phase-10
   - ADR-CEP-20
   - ADR-CEP-06
   - ADR-CEP-19
-状态: "🟡 待实施(2026-11-13 起草 · **v2 已按 metis 首轮 4 条 P0 重写**;per **ADR-CEP-20** 决策 6(ii)+ §5 抓取点 6 + 台账 **Entry #402** 遗留 ①)"
+状态: ✅ **已归档**(2026-11-13 · per 台账 Entry #405)
 created: 2026-11-13
 ---
 

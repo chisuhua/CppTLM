@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-15T06:44:45Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-15T09:57:08Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-14T04:32:23Z",
-      "by": "auto",
-      "reason": "architect 已落 07 号 新 SU + 手册改动 => 按五步链(Entry #419 为授权号)由 builder 执行产物 commit / --update / 清单 commit / 无参复验 + A-9 闸扩展。"
-    },
     {
       "role": "verifier",
       "at": "2026-11-14T04:45:54Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-15T06:44:45Z",
       "by": "user",
       "reason": "per 用户口令「继续推进后续任务实施」⇒ 实施已立项 change `cpptlm-cep-gate-robustness`(Entry #436):W1 11 闸影子路径 mktemp 化 / W2 覆盖义务判据 + 双向 fixture / W3 8 处指代订正 / W4 ADR_LIST 20->23 / W6 文档连带 / 归档 1 份冻结产物 + KPI 1/3 -> 0/3。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-15T09:57:08Z",
+      "by": "user",
+      "reason": "per 用户口令「切 planner 对后续还有哪些任务内容都梳理一遍,再给出后续任务内容和实施路径」⇒ 梳理 CEP 平台剩余任务(实测 R-1/R-2/R-3/R-6/R-7/R-9 + 状态卫生 stale + 未验收债),产出台账 Entry + improvement + 实施路径。"
     }
   ],
   "auto_switch_window": null

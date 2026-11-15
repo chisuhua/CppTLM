@@ -6,7 +6,7 @@ phase: phase-10
 依赖:
   - ADR-CEP-02
   - ADR-CEP-12
-状态: 🟡 **已立项**(2026-11-15 · metis 第 1 轮 14 条全处置 + 2 项用户裁决 · change `cpptlm-cep-flow-support-assertions` 已建(proposal + delta spec)· `openspec validate --strict` **rc=0** · KPI **0/3 → 1/3** · **待 builder 补 `design.md` / `tasks.md` 并实施**)
+状态: ✅ **已归档**(2026-11-15 · per 台账 Entry #427~#430)
 created: 2026-11-15
 ---
 

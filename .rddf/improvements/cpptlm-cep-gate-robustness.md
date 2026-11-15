@@ -5,7 +5,7 @@ phase: phase-10
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 依赖:
   - ADR-CEP-00
-状态: 🟡 **已立项**(2026-11-15 · metis 第 1 轮 **7 MUST + 5 SHOULD + 5 NIT 全处置**;其中 **1 条推翻初稿事实**（helper/自建计数 6/3 → **5/4**）+ **1 条指出上轮自身留下契约自陈冲突** · change 已建 · KPI **0/3 → 1/3**)
+状态: ✅ **已归档**(2026-11-15 · per 台账 Entry #436/#437)
 created: 2026-11-15
 ---
 

@@ -9,7 +9,7 @@ phase: phase-10
   - ADR-CEP-12
   - ADR-CEP-20
   - ADR-CEP-21
-状态: 🟡 **已立项**(2026-11-15 · metis 第 1 轮 14 MUST + 9 SHOULD + 6 NIT **全处置**(metis 自身 1 处错已订正:台账最大 Entry 为 #430 ⇒ 授权号取 **#431**)· change `cpptlm-cep-adr-verification-carriers` 已建(proposal + 2 份 delta spec)· KPI **0/3 → 1/3** · **待 builder 补 `design.md` / `tasks.md` 并实施**)
+状态: ✅ **已归档**(2026-11-15 · per 台账 Entry #431~#433)
 created: 2026-11-15
 ---
 

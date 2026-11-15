@@ -7,7 +7,7 @@ phase: phase-10
   - ADR-CEP-00
   - ADR-CEP-01
   - ADR-CEP-06
-状态: 🟡 **已立项**(2026-11-15 · metis 第 1 轮 **10 MUST + 7 SHOULD + 6 NIT 全处置**;其中 **2 条推翻了我的初稿事实判断** —— ① ualink「纯去重」算术不成立 ② 影子树内联 `cp -r` 违反冻结契约 · change `cpptlm-cep-spec-strict-compliance` 已建 · KPI **0/3 → 1/3** · **待 builder 补 design/tasks 并实施**)
+状态: ✅ **已归档**(2026-11-15 · per 台账 Entry #434/#435)
 created: 2026-11-15
 ---
 

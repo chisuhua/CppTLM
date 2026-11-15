@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cpptlm-cep-gate-robustness` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #437;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-cep-gate-robustness` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #437;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **1 个 active**（`cpptlm-spec-scenario-level-fix` 于 2026-11-15 **立项** ⇒ 占 1 slot,per 台账 Entry #438;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-spec-scenario-level-fix` 于 2026-11-15 立项 ⇒ 占 1 slot,per Entry #438;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -24079,3 +24079,82 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 | **R-10** | `mktemp -t` 写系统 `/tmp`(iag / freeze_reverse_verify) | ✅ **已修**(W1) |
 
 **⑧ 关联**:Entry **#436**(立项)· **#432**(假红实测)· **#434/#435**(上一 change)· `.rddf/improvements/cpptlm-cep-gate-robustness.md`(v2)· `openspec/changes/archive/2026-11-15-cpptlm-cep-gate-robustness/` · `scripts/test/cep_decision_block_check.{py,sh}` · `scripts/test/cep_docs_sync_check.sh` · `openspec/specs/cep-invariant-gate/spec.md`
+
+### Entry #438 — 2026-11-15 [planner](**CEP 平台后续任务全量梳理** —— 目标/为什么/已完成/待办/路径 · **R-7 根因推翻** · **8 份 improvement 状态行订正** · KPI **0/3 → 1/3**)
+
+**主题**:按用户口令「对完成和后续任务进行梳理……切 planner 对后续还有哪些任务内容都梳理一遍,再给出后续任务内容和实施路径」。本 Entry = **CEP 平台维护态的全量盘点**(2026-11-15 实测,非凭记忆)。
+
+---
+
+#### §0 目标与「为什么」
+
+**目标(CEP 平台)**:跨 **14 季度**(2026-Q4 ~ 2030-Q1)把 Coherence Exploration Platform 从「协议中立基线」推到「**5 协议族**(CHI / CXL 2.0+3.0 对称 / TileLink-C / NVLink / UALink)跨协议一致性互联**可验证**」。
+
+**为什么是「可验证」而不是「可跑」**:CEP 的核心资产不是仿真器,而是 **66 条编号 invariant 的机器检查 100% 覆盖**(`INV-CEP-04-IC4` 唯一跳空)—— 一致性协议的 bug 无法靠功能测试发现,只能靠**不变量的形式化断言**。⇒ 因此**闸族(45 个 `cep_*.sh`)= 产品本体**,不是辅助工具。
+
+**为什么现在进入维护态**:Stage 0~3 全部归档(148 个 change)⇒ **DoD 7 项全达成**(逐项实测:umbrella 1 / Stage 1 四件套 / Stage 2 两件套 / Stage 3 两件套 / 实验 4 件套契约测试在位 / `test_cep_canonical_invariants.cc` 在位)。⇒ 剩余工作**不再是「做功能」,而是「让判据本身可信」** —— 这正是最近 4 个 change(`flow_support` / `ADR Verification 载体` / `cep-* --strict` / `闸族健壮性`)的主线。
+
+---
+
+#### §1 已完成(可复算)
+
+| 面 | 状态 | 实测 |
+|---|---|---|
+| **OpenSpec** | **148** 份已归档 · active **1**(本轮新建) · KPI **0/3 → 1/3** | `ls -d openspec/changes/archive/*/ \| wc -l` |
+| **闸族** | **45** 个 `cep_*.sh` · 全 rc=0(按 ctest 同参数:`docs_sync` / `doc_ref` 带 `--strict`) | `ctest -R cep` **100/100** · 全量 **180/180** |
+| **Catch2** | `[cep]` **529 用例 / 12288 断言** 全绿 | `cpptlm_tests '[cep]'` |
+| **契约面** | `cep-*` **43** 份 --strict **全绿** | 逐份 `openspec validate --strict` |
+| **冻结面** | **86** 份产物 · `frozen_at_commit` == 产物 commit | `cep_freeze_check.sh` 无参 rc=0 |
+| **范围纪律** | `include/**` / `src/**` / `test/*.cc` / `docs/adr/**` **零 diff**(最近 4 个 change) | `git diff --stat` |
+
+---
+
+#### §2 剩余任务清单(全部 2026-11-15 实测)
+
+| # | 任务 | 实测 | 级别 | owner | 成本 |
+|:--:|---|---|:--:|---|:--:|
+| **T1** | **R-7 闭合**:2 份 spec 连**非 strict** 都 rc=1 | `pcie-slice-prerequisites` / `vram-controller-functional-mode` | **ERROR** | **builder**(纯格式) | **0.2 d** |
+| **T2** | **状态卫生**:8 份 improvement「状态」行 stale | 实际已归档却写「待实施/已立项」 | P1 | **planner**(自有写域) | 0.1 d |
+| **T3** | **R-1**:非 `cep-*` **77** 份 `--strict` 红 | 75 Purpose 占位 + 70 正文 >500 + 2 ERROR | WARNING | builder(分批) | **3~5 d** |
+| **T4** | **R-9 清单增殖**:同一事实 5 处手工维护 | structural `decision_adrs` / 快照 keys / `NUMBER-MAP` / `docs_sync ADR_LIST` / `OWNERS+NO_INV` | P2 | **architect**(定 canonical) | 1 d |
+| **T5** | **R-2**:`moesi_gpu`/`mesif` 13 键无仓内 golden | 二者**不在** `repo_owned_instance_ids`(6 个)⇒ 权威在本仓、无第二来源 | P2 | **architect** | 1 d |
+| **T6** | **R-6**:`openspec` 版本未 pinning | 闸打印版本,CI 不锁 | P3 | backlog | 0.2 d |
+| **T7** | **R-3**:ArchForge 缺席 ⇒ 整闸 `exit 0` | ⚠️ **本机不成立** —— ArchForge **在位**(`/workspace/main/ArchForge`)⇒ 闸真跑 **7 项全绿**;仅 CI 无 ArchForge 时成立 | P3 | backlog | 0.2 d |
+| **T8** | **验收债**:上一 change(`gate-robustness`)未做 verifier 独立验收 | 流程债 | P1 | verifier | 0.3 d |
+
+---
+
+#### §3 ⚠️ 本轮**推翻**的既有登记(R-7 根因)
+
+**Entry #436 原记**:"R-7 = 2 份 spec Requirement **无 Scenario** ⇒ 需撰写 Scenario(= **授权契约内容**)⇒ **另立**"。
+
+**实测推翻**(`openspec validate --json` 的错误路径):
+- `pcie-slice-prerequisites` 报 `requirements.5.scenarios`,但该 spec **只有 5** 个 `### Requirement:` ⇒ **索引 5 = 第 6 个 `###` 标题** —— `### 【延至 change C/D】 Backdoor-vs-BAR0 隔离`(**占位小节**,不是 Requirement);
+- `vram-controller-functional-mode` 报 `requirements.1` / `requirements.2` ⇒ 那 2 个是 `### Scenario:`(level 3,**本来就是 Scenario**,正文含 GIVEN/WHEN/THEN),只是层级写错。
+
+⇒ **真相 = `## Requirements` 段内的 `###` 级非 Requirement 标题被解析器当作 Requirement** ⇒ 修复 = **改标题层级** ⇒ **零语义变化、零契约授权** ⇒ R-7 由「需 architect 判权的授权型任务」**降级为纯结构修复**,可由 builder 直接实施。⇒ **本轮立项 `cpptlm-spec-scenario-level-fix`。**
+
+**⚠️ 另一处订正**:R-1 的「77 份」是 **`--strict` 口径**。**非 strict 口径**下,修完 R-7 后 **rc≠0 = 0** ⇒ 台账 R-1 条目须补口径澄清(否则下轮 planner 会误判「还有 2 份 ERROR」)。
+
+---
+
+#### §4 实施路径(3 轮 · 按「收益/成本 + 是否需 architect」排序)
+
+| 轮 | 内容 | 依赖 | 为什么这个顺序 |
+|:--:|---|---|---|
+| **轮 1**(本轮) | **T1** R-7 闭合(3 处层级)· **T2** 状态卫生(8 份状态行) | 无 | ① 唯一 ERROR 级 ⇒ 收益最高;② 纯格式 ⇒ 风险最低;③ **T2 是 T1 的必要配套** —— 我本轮亲身踩到 stale 状态行会误导判断(误以为 4 个 change 待实施) |
+| **轮 2** | **T3** R-1 分批(批 1:75 份 Purpose 占位;批 2:70 份正文裁剪)· **T8** verifier 独立验收 | 轮 1 的 delta 手法可复制 | 量最大 ⇒ 必须分批;**Purpose 必须直接编辑主 spec**(openspec 明文:delta 的 Purpose 只在创建时读)⇒ 沿用上一 change(`spec-strict-compliance`)的「直接编辑 + 归因载体」范式 |
+| **轮 3** | **T4** R-9 canonical 化 · **T5** R-2 golden 裁决 | **architect** 判权 | 二者都是「**要定一个 canonical/权威归属**」的架构取舍 ⇒ builder 不得自行拍板;R-9 的 canonical 一旦定了,T4 与 R-1 批 2 的部分成本会**顺带下降** |
+| — | **T6** / **T7** | backlog | 低优先级;T7 本机不成立(ArchForge 在位)⇒ 只作 CI 环境提示 |
+
+**关键排序理由**:T1 → T3 是**同一条「规范面可信」主线的两段**,T1 清 ERROR(结构)、T3 清 WARNING(内容),且 T3 的手法直接复用 T1 验证过的 delta + 直改混合范式。T4/T5 必须等 architect ⇒ 放在轮 3,避免 builder 越权。
+
+---
+
+#### §5 本轮产出
+
+- **T2 已完成**:8 份 improvement 状态行订正(`cep-evidence-tier-declaration` / `cep-evidence-tier2-minimal-slice` / `cep-responder-bitmap-expansion` / `cpptlm-cep-full-green-run-evidence` / `cpptlm-cep-flow-support-assertions` / `cpptlm-cep-adr-verification-carriers` / `cpptlm-cep-spec-strict-compliance` / `cpptlm-cep-gate-robustness`)⇒ 复查全仓 40 份 improvement:**「实际已归档却写待实施/已立项」= 0**。
+- **T1 已立项**:change `cpptlm-spec-scenario-level-fix`(improvement + proposal + tasks + **1 份 delta**);原型验证已过(影子根 3 处改完 ⇒ 2 份 spec 非 strict 即 `valid`)。
+- **口径澄清(登记)**:6 份 improvement 写「已实施」但**无同名 openspec change**(工作承载在别的 change 内)⇒ 「improvement 已实施」≠「有同名 change」;建议未来状态行统一为「已实施(承载于 `<change>`)」。
+
+**⑥ 关联**:Entry **#437**(上一 change 收口)· **#436**(本 change 立项)· **#431**/**#432**(假红实测)· `.rddf/improvements/cpptlm-spec-scenario-level-fix.md` · `openspec/changes/cpptlm-spec-scenario-level-fix/` · `openspec/specs/vram-controller-functional-mode/spec.md` · `openspec/specs/pcie-slice-prerequisites/spec.md`
