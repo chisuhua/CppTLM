@@ -62,7 +62,7 @@
     "openspec/specs/cep-hierarchical-directory/spec.md": "729f8e7b9eda0a8a8d8e1f748857287824745526e427f67182dd870b1d2f222f",
     "openspec/specs/cep-instance-assembly/spec.md": "6d2b352f6b7ee6f56c2dd7ced2bb167f0852b5455b46245b18ca761842f64770",
     "openspec/specs/cep-instance-authority-partition/spec.md": "8fa4011df2ea90cb70f18a5f46a360f2b33c4b0823de10b55083c35dbcf171d6",
-    "openspec/specs/cep-invariant-gate/spec.md": "59c8a87cb80f2889308bed5e16c756aa15fd0a88424f99ea1af71ae345d94d67",
+    "openspec/specs/cep-invariant-gate/spec.md": "7d6ae0c3597c8bf23da1c29f16605bb81dbed2d3a091274d881e532be135be97",
     "openspec/specs/cep-mesif-adapter/spec.md": "79643d8760bbde17b95b1818116671b5b023892bc18ad8a63df81a4e530a18d2",
     "openspec/specs/cep-mesif-state-spec/spec.md": "fd02855675ed8dbf9dcfb6ef6cbeb70c4f46586f4e2abbf4c236cebeff63fa3c",
     "openspec/specs/cep-moesi-gpu-adapter/spec.md": "62d6e2193a36d369d9d6835cff2d57128cdf18334972961ff69e3093bc0be423",
@@ -88,10 +88,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #434",
+  "authorized_by": "Entry #436",
   "exclusions": [],
   "frozen_at": "2026-11-15",
-  "frozen_at_commit": "9b90e378902627c856095e7ae5fc7bc9be709fda",
+  "frozen_at_commit": "08a67003e9f36f06f01df2f5088fb2ab21d8bfbd",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
