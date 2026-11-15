@@ -24197,3 +24197,40 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 **⑥ 状态**:active **1 → 0** · 归档 **148 → 149** · KPI **0/3** · 冻结产物 **86**(免五步链)· 闸 **45** 不变。
 
 **⑦ 关联**:Entry **#438**(立项 + 全量梳理)· **#437**(上一 change 收口)· **#424**(L-1 同坑)· `openspec/changes/archive/2026-11-15-cpptlm-spec-scenario-level-fix/` · `.rddf/improvements/cpptlm-spec-scenario-level-fix.md` · `openspec/specs/vram-controller-functional-mode/spec.md` · `openspec/specs/pcie-slice-prerequisites/spec.md`
+
+### Entry #440 — 2026-11-15 [verifier](**`cpptlm-cep-gate-robustness` 独立验收** —— AC-01~AC-15 逐条 · **全通过(PASS)** · 报告落 `.rddf/reviews/`)
+
+**主题**:已归档 change `cpptlm-cep-gate-robustness`(台账 Entry #436 立项 / #437 收口)的**独立验收**(第 1 轮)。报告 = `.rddf/reviews/cpptlm-cep-gate-robustness-verify.md` ⇒ **T8 关闭**。
+
+**① 分流判定**:是否走 `rdd-verifier` skill —— ① change 含 `## 验收标准` 段 ✓ · ② **P3 archive gate 信号缺失**(`.rddf/state/iteration.json` **不存在** —— 本会话未跑 `rdd-builder` skill ⇒ 无状态机文件)✗ · ③ skill 可加载 ✓ ⇒ **条件 ② 不满足 ⇒ 走本地验收**(5 步)。⚠️ 本地验收的额外门(`iteration.json` 的 `tasks_done == tasks_total`)在**该文件不存在时无法适用** ⇒ **pass 结论完全由逐条工具证据支撑**,与 iteration 状态无关。
+
+**② 判定**:**PASS**(15/15 判据通过 · 0 不通过 · **0 未取证**)
+
+| AC | 判定 | 关键证据 |
+|:--:|:--:|---|
+| AC-01 9 闸 `mktemp -d` + 无固定字面量 | ✅ | 9 闸 `grep -c 'mktemp -d'` 全 = 2;固定字面量 `grep -rn` = **0**;`[shadow]` 打印 = **9** |
+| AC-02 并发 2 实例路径不同 + 双 rc=0 | ✅ | 脚本对 **9/9** 闸并行双跑:全 rc=0/0 且两路径不同 |
+| AC-03 显式 `SHADOW_ROOT` 被用且不被删 | ✅ | `[shadow] /tmp/opencode/verify_ac03` + 跑完 `test -d` 仍存在 |
+| AC-04 默认路径无残留 | ✅ | 残留目录数 = **0** |
+| AC-05 覆盖判据开火 | ✅ | 影子根加 `ADR-CEP-30` ⇒ rc=**1** + `决策块覆盖缺失` + 文件名 |
+| AC-06 不误报 | ✅ | `ADR-CEP-31`(`## 决策` 无编号)⇒ rc=**0** + 命中次数 **0** |
+| AC-07 真实仓可复算 | ✅ | 语料 **23** == 快照 **23**,两向差集皆空;`check.py` rc=0 |
+| AC-08 `--list` 含新判据 | ✅ | 第 7 行 `[R-d] 覆盖义务(语料 → 快照)…` |
+| AC-09 契约自陈不互斥 | ✅ | 「不提供覆盖判据」残留 = **0**;覆盖义务 3 处(含残余④);`--strict` rc=0 |
+| AC-10「22 份」清零 + 指代正确 | ✅ | 残留 = **0**;快照 23 / 磁盘 24 / `decision_adrs` 21(24−3 自洽)全对 |
+| AC-11 `ADR_LIST` 24 == 磁盘全量 | ✅ | 条数 **24** · 含 `-20`/`-21` · 集合 == 磁盘(24) · `docs_sync --strict` rc=0 |
+| AC-12 0 回归(45 闸 / ctest / `[cep]`) | ✅ | 45 闸全 rc=0 · `ctest -R cep` **100/100** · 全量 **180/180** · `[cep]` **529/12288** ⇒ 3 项 == T0(tasks.md:4) |
+| AC-13 范围零 diff | ✅ | 基线 `2f530450`→HEAD:`include/`/`src/`/`test/*.cc`/`docs/adr/` 全 **0**;闸数 45→45;新增 `INV-CEP-*` = **0** |
+| AC-14 五步链(1 份冻结产物) | ✅ | Entry #436 在位 · 产物 `08a67003` · 清单 `28e795a7` diff = **1 file / 3±3**(1 份 hash + 2 元数据)· `artifact_count` 86→86 · 无参复验 rc=0 |
+| AC-15 `frozen_at_commit` == 产物 sha | ✅ | `08a67003e9f36f06…` == `git rev-parse 08a67003` ⇒ **相等** |
+
+**③ 验证顺序(未跳步)**:① 静态(`bash -n` / `py_compile` / `agents_md_lint` rc=0 / `validate --changes --strict` rc=0)→ ② 单元(`[cep]` 529/12288)→ ③ 集成(`ctest` 100/100 与 180/180 + 45 闸实跑)→ ④ **边界**(`SHADOW_ROOT` 指向不存在路径 ⇒ rc=0 自建;`--root` 指向空目录 ⇒ rc=2 明确报错,**无 Traceback**)→ ⑤ **遗留清扫**(TODO/FIXME/HACK = 0;`printf` 命中 1 处 = `cba5e31c` 引入的**影子树变异体构造器**(闸机制,非调试日志);skip/`.disabled` = 0;mock N/A;3 项临时 fallback 已登记;`trap EXIT` 覆盖 10/10)。
+
+**④ ⚠️ 发现(不构成判据失败)**
+- **F-6 记录债**:归档后的 `tasks.md` 中 **T7.4 / T7.5 / T8.1 / T8.2 仍未勾选**,但 4 项**实际已完成**(AC-14 已独立取证)⇒ 根因 = 归档**之后**才执行却未回勾。⛔ verifier 不改实施方产物 ⇒ **交回 builder 补勾**(纯勾选)。**T8.3** 由本次验收闭合。
+- **F-4**:`SHADOW_ROOT` 指向不存在路径时闸会**创建**该目录(设计内语义,`cep_shadow_reset` 既有行为)。
+- **F-5**:`grep` 取证须排除 `scripts/test/__pycache__/*.pyc`(内含旧数字「22 份」)。
+
+**⑤ 已用轮次**:**1**(上限 3,与 `RDDF_VERIFIER_MAX_LOOPS=3` 对齐)⇒ **T8 关闭**。
+
+**⑥ 关联**:Entry **#436**(立项)· **#437**(收口)· **#438**(全量梳理)· **#439**(R-7 收口)· `.rddf/reviews/cpptlm-cep-gate-robustness-verify.md` · `openspec/changes/archive/2026-11-15-cpptlm-cep-gate-robustness/`
