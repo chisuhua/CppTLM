@@ -1,7 +1,7 @@
 # cpptlm-stage-1-2-msix Specification
 
 ## Purpose
-TBD - created by archiving change 2026-09-10-cpptlm-stage-1-2-msix. Update Purpose after archive.
+定义消息中断从注册到触发的完整链路契约：初始化、更新与清除三入口所登记的中断回调必须能被真实的触发路径调用到；此前回调虽已接线却全仓无调用方，中断实际从未发生。修复中断链的同时须保持既有 ABI 契约不变。
 ## Requirements
 ### Requirement: MSI-X trigger_irq_async 真实实现
 

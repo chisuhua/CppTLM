@@ -1,7 +1,7 @@
 # pcie-slice-prerequisites Specification
 
 ## Purpose
-TBD - created by archiving change 2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites. Update Purpose after archive.
+固化 dGPU 板级 SoC 切片落地前必须成立的前置条件：报文结构的字节级布局由仓内编译期断言守护，地址翻译回调在越界、抛异常与重入下不得导致仿真崩溃，中断状态机的迁移必须可判定，门铃队列须在并发提交下保持有序，设备引擎与后门直访路径互不污染。
 ## Requirements
 ### Requirement: pcie-slice-wire-format-in-repo-guarded
 

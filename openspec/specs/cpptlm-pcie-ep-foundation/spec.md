@@ -1,7 +1,7 @@
 # cpptlm-pcie-ep-foundation Specification
 
 ## Purpose
-TBD - created by archiving change 2026-09-09-cpptlm-pcie-ep-foundation. Update Purpose after archive.
+锁定宿主侧委托 dGPU 板卡仿真时 PCIe 端点侧的真实语义：配置空间与内存映射的读写、寄存器回调、地址翻译回调与消息中断的初始化与清除，这些入口都必须返回真实数据与真实翻译结果，而不是桩值、空实现或伪装成功。
 ## Requirements
 ### Requirement: PCIe Configuration Space Real Implementation
 

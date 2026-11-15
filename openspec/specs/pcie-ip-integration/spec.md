@@ -1,7 +1,7 @@
 # pcie-ip-integration Specification
 
 ## Purpose
-TBD - created by archiving change 2027-02-09-cpptlm-dgpu-pcie-ip-integration. Update Purpose after archive.
+为什么需要这条交付判据：各 PCIe IP 部件单独就绪并不等于它们在同一拓扑中真正接通，本判据要求集成结果可被端到端用例验证，而不是仅靠单模块用例各自通过。
 ## Requirements
 ### Requirement: integration-delivery
 

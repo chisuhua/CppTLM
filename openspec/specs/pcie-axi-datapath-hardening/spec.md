@@ -1,7 +1,7 @@
 # pcie-axi-datapath-hardening Specification
 
 ## Purpose
-TBD - created by archiving change 2026-09-03-cpptlm-pcie-axi-datapath-hardening. Update Purpose after archive.
+约束 AXI 与 PCIe 之间数据通路的保真：读写方向的判别必须来自请求本身的语义而非字段组合的启发式；BAR 存储必须尊重访问粒度与字节使能；配置空间与 BAR 的边界必须精确，使落在配置区间的请求不会被静默当作 BAR 访问。
 ## Requirements
 ### Requirement: axi-rw-discrimination
 

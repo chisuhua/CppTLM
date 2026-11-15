@@ -1,7 +1,7 @@
 # pcie-resizable-bar-runtime Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-pcie-host-test-flr-rebar. Update Purpose after archive.
+定义可调整尺寸地址空间在运行时的行为契约：尺寸变更须遵循停用、重新编程、再启用的顺序，尺寸以 64 位表达，且变更后配置空间所描述的尺寸与实际路由必须保持一致。
 ## Requirements
 ### Requirement: resizable-bar-runtime-protocol (v1.1 复用既有 + uint64)
 

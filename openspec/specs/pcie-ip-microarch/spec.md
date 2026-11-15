@@ -1,7 +1,7 @@
 # pcie-ip-microarch Specification
 
 ## Purpose
-TBD - created by archiving change 2026-09-01-cpptlm-dgpu-pcie-ip-microarch. Update Purpose after archive.
+划定 PCIe 端点微架构各分层的可观察行为边界与彼此衔接：链路层与其管理包及流控、编码层及其延迟模型、物理层数字控制与旁路切换、虚拟功能池，以及 AXI 侧的流适配与映射。各层的内部实现不在本规范约束范围内。
 ## Requirements
 ### Requirement: link-layer
 

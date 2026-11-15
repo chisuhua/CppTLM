@@ -1,7 +1,7 @@
 # cpptlm-pcie-endpoint-ip-json-config Specification
 
 ## Purpose
-TBD - created by archiving change 2027-02-09-cpptlm-pcie-endpoint-ip-json-config. Update Purpose after archive.
+划定 PcieEndpointIP 可被配置真正驱动的参数面：此前写入但未被消费的参数会在装配时消失，使仓库自带示例与实际行为不一致。本规范定义哪些键会被消费、缺省取值为何，以及无法识别的键与越界取值如何以告警形式暴露，并在回退到缺省取值后继续运行。
 ## Requirements
 ### Requirement: PcieEndpointIP JSON Configuration Surface
 

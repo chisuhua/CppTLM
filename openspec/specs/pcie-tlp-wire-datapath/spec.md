@@ -1,7 +1,7 @@
 # pcie-tlp-wire-datapath Specification
 
 ## Purpose
-TBD - created by archiving change 2026-09-16-cpptlm-pcie-tlp-wire-datapath. Update Purpose after archive.
+定义 PCIe 传输层报文的线格式与数据通路契约：编解码的字段布局、完成方与请求方各自的引擎行为、旁路通路上的报文搬运、被测用的模拟 IP，以及各协议 profile 下经 PCIe 路径的路由选择。
 ## Requirements
 ### Requirement: tlp-codec-wire-format
 

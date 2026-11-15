@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -24286,4 +24286,48 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 | **R-13** | spec 内部**旧状态行**与新 Purpose 打架（`pcie-ip-microarch:296`「等待评审 + Phase 1 启动实施」· `pcie-ip-integration` 末行「Phase 8 最终整合交付中」） | 实测 | 批 2（动 Requirements 段时一并处理） |
 | **R-14** | `pcie-ip-integration` 的 Requirement 要求交付 `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`，该文档**已迁 ArchForge**（仓内仅占位 README） | 文件不存在 | 各 owner |
 
-**⑥ 关联**:Entry **#438**(全量梳理)· **#439**(R-7 收口)· **#440**(verifier 验收)· `.rddf/improvements/cpptlm-spec-purpose-batch1.md` · `openspec/changes/cpptlm-spec-purpose-batch1/`
+**⑥ 关联**:Entry **#438**(全量梳理)· **#439**(R-7 收口)· **#440**(verifier 验收)· `.rddf/improvements/cpptlm-spec-purpose-batch1.md` · `openspec/changes/archive/2026-11-15-cpptlm-spec-purpose-batch1/`
+
+### Entry #442 — 2026-11-15 [builder](**R-1 批 1 归档** —— **16 份**主 spec 的 Purpose 占位清零 · `--strict` 红 **77 → 65** · KPI **1/3 → 0/3**)
+
+**主题**:change `cpptlm-spec-purpose-batch1` 收口(立项见 Entry #441)。
+
+**① 交付面**：**16 份**非 `cep-*` 主 spec 的 `## Purpose` 段：占位 → 实质 Purpose（**每份恰 1 行**）。diff = **16 files / 16 insertions / 16 deletions** ⇒ **Requirements 段逐字节未动**。
+配套：**1 个校验脚本** `scripts/test/cep_spec_purpose_batch1_check.py`（C-1~C-7）· **1 份归因载体** `test/spec_purpose_batch1_attribution.json`（16 条 · `checks` **由脚本重算**）· **1 个写作规则集**（design §D-0 · 7 条 · 供批 3~5 复用）。
+
+**② AC 逐条复验**
+
+| AC | 判据 | 实测 |
+|:--:|---|---|
+| AC-01 | 16 份 Purpose 限段零占位 | **16/16** |
+| AC-02 | 定向：16/16 无 Purpose 类 issue | **16/16** |
+| AC-02b | 全局闭合 | `--strict` 红 **pre 77 → post 65 ⇒ k = 12**（本批 **12 份**完全转绿）；本批 16 份的 Purpose 占位**全清**（全仓 75 → **59** = **−16 精确闭合**）；批外仍红 **61** 份，红因**全为「正文 >500」**（批外 Purpose 类残留 **0**） |
+| AC-03 | 四条正交（逐份机判） | **16/16**（含**人工抽验 4 份**跨 4 组，见 ④） |
+| AC-04 | 零语义 + diff 形状写死 | **16 files / 16±16**；每份 1 hunk、删 1 增 1、**不新增空行** |
+| AC-05 | 不声称不存在的能力 | `claim_kind` 互斥 + 标识符可追 + `source_evidence` 16/16 `isfile` **且**核心名命中 |
+| AC-06 | `cep-*` 不受影响 | 43 份 `--strict` rc≠0 = **0** · `artifact_count` **86 不变**（零冻结产物 ⇒ 免五步链） |
+| AC-07 | 范围零 diff | `include/**` / `src/**` / `test/*.cc` / `docs/adr/**` / `openspec/specs/cep-*/spec.md` 全 **0** |
+| AC-08 | 闸 0 回归 | 45 闸全 rc=0 · `ctest -R cep` / `[cep]` == T0 |
+| AC-09 | KPI + 体量 | **1/3 → 0/3** · 归档 **149 → 150** |
+| AC-10 | 归档语义可判别 | 出口 **A**（实测收敛为唯一路径）⇒ proposal 顶部「✅ 已完成归档 · 主 spec 直改（无 delta）」标记行 + 归因 JSON `archive_semantics` 字段 + 本 Entry |
+
+**③ critic（`arch` 档 · 4 组逐组签）**：`mergeable: yes` / **0 BLOCKER** / **4 SHOULD_FIX** / 4 NIT。**4 组全签**（① `pcie-*` 数据通路 4 份 ② `pcie-*` 集成与微架构 6 份 ③ `cpptlm-stage-*` 4 份 ④ `cpptlm-*` 其他 2 份）⇒ 无组回退。
+**4 条 SHOULD_FIX 全修**：① proposal AC-10 措辞与 design/tasks 对齐（出口 A 已唯一）② design §D-0 R-6 补「登记残余后可暂写聚合视角 Purpose」③ **C-7 死代码删除 + 落实关键字命中**（原 `kw = [...][:0]` 恒空、`kw_ok = ... or True` 恒真且从未参与 checks ⇒ design §D-2/D-3 两处承诺不一致）④ design §D-3 C-6 补机判边界声明（**纯中文能力声称不在机判射程内** ⇒ 须人工审查兜住）。
+
+**④ 人工抽验（4 份跨 4 组 · critic 指出的「独立判据唯一证据点」）**
+① `pcie-ip-microarch`（伞形 change）—— Purpose 取「划定可观察行为边界」的**规范用途**表述，⛔ 未声称「已交付实现」⇒ 一致
+② `pcie-slice-prerequisites` —— 「由仓内**编译期断言**守护」⇒ `test/test_pcie_slice_wire_format_snapshot.cc` **存在**且含 **29 条 `static_assert`** ⇒ 当前事实 ⇒ 一致（其 `:14` 悬空引用已登记 R-12，**未写进 Purpose**）
+③ `cpptlm-stage-1-2-msix` —— 「此前回调虽已接线却全仓无调用方」⇒ 源 proposal `:21` 逐字有 ⇒ 合法 **why-范畴** ⇒ 一致
+④ `cpptlm-pcie-endpoint-ip-json-config` —— 「以告警形式暴露并回退到缺省取值后继续运行」⇒ spec Scenario 逐字为 `warning "…must be 256 or 4096; got 1024, falling back to 4096"` ⇒ 一致；⛔ 未声称任何 Python 工具能力（与源「本次只解决 C++ 端消费，**不动 Python 工具**」一致）
+
+**⑤ ⚠️ 本轮 3 处自身订正 / 缺口（留痕）**
+1. **C-3 度量被自己的判据打了一次**：初稿「含标识符的 LCS < 12」**假阳性** —— 合法产品名 `PcieEndpointIP`（14 字符）与 Requirement 标题同名即触发 ⇒ 度量把「同名标识符」误判为「复述正文」⇒ 拆为 **CJK-only LCS < 12 + 英文词序列公共 < 5 词**，标识符同名交 **C-6** 单独把关（design §D-3 + improvement AC-03 已同步）。
+2. **草稿自身违规被脚本抓到**：`pcie-host-test-flr-rebar` 初稿含「归档载体」「分别见」⇒ C-4 判红 ⇒ 改写为「宿主验证口径」聚合视角（并按 critic SHOULD_FIX-2 在 D-0 R-6 补例外）。
+3. **⚠️ 立项时未同步 6 处 KPI 活口径** ⇒ change 处于 active 窗口期间 `cep_docs_sync_check` / `cep_gate_selftest` 报红（KPI 口径写 0/3 而实测 1/3）⇒ 归档后自动恢复。**这暴露流程缺口**：立项 commit 应当同步 KPI 口径（⇒ 建议：把「立项即改 6 处口径」写进下一轮的 planner 动作清单）。另：台账登记 R-10/R-12/R-14 时引用了 4 条**已删除路径** ⇒ `cep_doc_ref_check` 报红 ⇒ 按 `AGENTS.md` 约定补 **`VIRTUAL_PATHS` 4 条**（各带理由）⇒ 恢复绿。
+
+**⑥ 归档载体（实测收敛为唯一路径）**
+① delta 的 `## Purpose` **被归档器忽略**（原话 `delta Purpose ignored; … Edit … spec.md directly`）⇒ **0 份 delta 是唯一路径**；② `validate --changes --strict` 对 0-delta change **会红** ⇒ `.openspec.yaml` 的 `skip_specs: true` 是**仓内 strict 校验保持绿的必要条件** ⇒ **出口 B（不走归档器）会破坏校验基线** ⇒ **出口 A 唯一可行**；③ 工具对该声明的 INFO 措辞 = 「change declares **no spec-level behavior changes**」⇒ 与本 change（改**表述**、⛔ 不改**可验证行为**）**精确匹配**。⚠️ 可判别性仍靠 **标记行 + JSON 字段 + 本 Entry**（与 ⏸ 暂存归档结构同形）⇒ **提请 architect 确认 `AGENTS.md` 分类表是否补记该变体**（⛔ 本 change 不改 `AGENTS.md`）。
+
+**⑦ 残余（本 change 登记，未修）**：**R-10** superseded spec 存在性裁定（`cpptlm-d1-p1-pipeline-scoreboard`）· **R-11** 4 份同源 spec 内容重复（合并/退役）· **R-12** `abi_guards.h` 悬空引用 · **R-13** spec 内部旧状态行 · **R-14** `19-pcie-ip-microarchitecture.md` 已迁 ArchForge · **R-1 批 2**（70 份正文 >500，裁剪**会动 Requirements 段** ⇒ 另一档风险）· **R-1 批 3~5**（其余 59 份 Purpose）· **R-9** 清单增殖 · **R-2** 13 键 golden。
+
+**⑧ 关联**:Entry **#441**(立项 · metis 预审全处置)· **#440**(verifier 验收)· **#439**(R-7 收口)· **#438**(全量梳理)· `.rddf/reviews/cpptlm-spec-purpose-batch1-verify.md`(verifier 待做)· `openspec/changes/archive/2026-11-15-cpptlm-spec-purpose-batch1/` · `scripts/test/cep_spec_purpose_batch1_check.py` · `test/spec_purpose_batch1_attribution.json`

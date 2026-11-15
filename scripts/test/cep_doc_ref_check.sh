@@ -138,6 +138,10 @@ VIRTUAL_PATHS=(
   "docs/adr/ADR-CEP-00-...md"                       # 同上
   "openspec/.../tasks.md"                          # 省略号(散文引用,per obj §4.7.3 载体分工表的通用写法)
   "docs/research/…"                                # 省略号(散文引用)—— 台账 Entry #90 ④b 记录过同类误伤
+  "include/cudart/"                                  # **已物理删除**(HSK-6,commit 369cf71,2027-02-09):整个目录不存在 —— 台账 Entry #441 残余 **R-10**(superseded spec 存在性裁定)与 **R-12**(悬空引用)的登记处
+  "include/cudart/abi_guards.h"                      # **已物理删除**:同上 —— R-12:`openspec/specs/pcie-slice-prerequisites/spec.md:14` 的跨仓 ABI 静态断言锚点已随 HSK-6 删除
+  "include/cudart/cpptlm_bridge.h"                   # **已物理删除**:同上 —— R-10:`cpptlm-d1-p1-pipeline-scoreboard` 的 SUPERSEDED 锚点
+  "docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md"  # **已迁 ArchForge**(仓内仅占位 README,per AGENTS.md §STRUCTURE)—— R-14:`pcie-ip-integration` 的 Requirement 要求交付该文档
   "experimental/run-<ts>-<tag>/<hN>/"              # **目录布局示意**(2026-11-10,per 批 1 前置审查):含 `<ts>`/`<tag>`/`<hN>`
                                                       #   三段**占位符** ⇒ 不是「可判存在的单一路径」(实际 run 目录名逐次不同)
                                                       #   ⇒ 由 07 号 §12.4「仓内实际布局与契约有三处差异」① 引用

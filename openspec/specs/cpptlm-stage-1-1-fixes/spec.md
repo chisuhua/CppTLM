@@ -1,7 +1,7 @@
 # cpptlm-stage-1-1-fixes Specification
 
 ## Purpose
-TBD - created by archiving change 2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes. Update Purpose after archive.
+把 PCIe 端点基础能力中的四个具体缺陷固化为可验证契约：配置空间读写不得返回「未实现」，内存映射读必须真正填充调用方缓冲区，后门读未命中必须返回明确的「不存在」错误，写入路径的同步或异步语义必须在实现与文档之间保持唯一口径。
 ## Requirements
 ### Requirement: PCIe Configuration Space Forwarding (修复 #3)
 

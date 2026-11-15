@@ -1,7 +1,7 @@
 # pcie-host-test-flr-rebar Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-pcie-host-test-flr-rebar. Update Purpose after archive.
+宿主侧 PCIe 测试夹具的宿主验证口径：测试基础设施、功能级复位与可调整尺寸地址空间三项能力，须在宿主进程内被端到端用例覆盖，而不是各自单测通过即可。
 ## Requirements
 ### Requirement: pcie-host-test-infrastructure
 

@@ -92,7 +92,7 @@ Purpose 段与 Requirement 段是**两个独立段** ⇒ 改动**不触及任何
 | **AC-01** | 16 份 Purpose **零占位** | **限段** `sed -n '/## Purpose/,/## Requirements/p'` 后 `TBD`/`TODO` 计数 = **0** |
 | **AC-02** | **定向**：16/16 不再出现 Purpose 类条目 | 逐份 `openspec validate --strict --json` 输出中**无** Purpose 相关 issue ⇒ **16/16**（永远可达） |
 | **AC-02b** | **全局**：红数下降**且闭合** | `pre − post = k`，`k` = 「修完整份转绿」的份数；**k 与剩余红数必须逐份归因到具体 spec + 具体原因**（Purpose-only 转绿 16−k 份 / 仍因正文超长 n 份）⇒ 数字**不写死**，但**必须闭合** |
-| **AC-03** | **Purpose 四条正交（逐份机判）** | ① `--json` 判 valid ② `50 ≤ len ≤ 160` **且单物理行** ③ 规范化后与该 spec 全部 Requirement 正文的 **LCS < 12**（`waiver: single-requirement` ⇒ < 16）④ ⛔ 含过程叙述 / 技术字面量 / change 引用 / 日期 ⇒ 红 |
+| **AC-03** | **Purpose 四条正交（逐份机判）** | ① `--json` 判 valid ② `50 ≤ len ≤ 160` **且单物理行** ③ **CJK-only LCS < 12** + **英文词序列公共 < 5 词**（`waiver: single-requirement` ⇒ CJK < 16）④ ⛔ 含过程叙述 / 技术字面量 / change 引用 / 日期 ⇒ 红。⚠️ **判据订正**：初稿的「含标识符 LCS < 12」实测**假阳性**（`PcieEndpointIP` 同名即触发）⇒ 拆为 CJK-only + 英文词序列两项 |
 | **AC-04** | **零语义改动 + diff 形状写死** | **16 文件 · 每文件恰 1 hunk · 删 1 行增 1 行 · 不新增空行**；`## Requirements` 段**逐字节不变** |
 | **AC-05** | **不得声称不存在的能力** | `claim_kind` ∈ {`current`,`historical`,`superseded`} 且与 spec 内 `Superseded`/`物理删除` 标记**互斥**；Purpose 标识符 ⊆ Requirement 标题 ∪ 仓内可 grep 符号；`source_evidence` **全部 `isfile` == True** 且关键字命中 |
 | **AC-06** | `cep-*` 不受影响 | 43 份逐份 `--strict` ⇒ rc≠0 = **0**；`artifact_count` **86 不变**（零冻结产物 ⇒ 免五步链） |

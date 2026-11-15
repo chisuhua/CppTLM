@@ -1,7 +1,7 @@
 # cpptlm-stage-1-4-2-1-ue-extensions-unblock Specification
 
 ## Purpose
-TBD - created by archiving change 2026-09-15-cpptlm-stage-1-4-2-1-ue-extensions-unblock. Update Purpose after archive.
+打通宿主入口路径到 PCIe 端点实施层之间被冻结在旧实现上的断点：此前的配置访问命中的是只带消息中断能力的旧端点实现，导致电源能力、电源状态拦截、访问控制扩展、可调整尺寸扩展与省电状态接线全部落不到实施层。
 ## Requirements
 ### Requirement: ABI Profile 切换 PcieEndpointIP（A-1）
 

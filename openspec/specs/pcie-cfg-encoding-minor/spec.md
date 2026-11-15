@@ -1,7 +1,7 @@
 # pcie-cfg-encoding-minor Specification
 
 ## Purpose
-TBD - created by archiving change 2026-09-03-cpptlm-dgpu-pcie-cfg-encoding-minor. Update Purpose after archive.
+把 AXI 侧地址到 PCIe 配置空间的解码对齐到 PCIe 的编码约定，避免配置解码污染 BAR 语义；BAR、内存映射、端点端口构成与对外 ABI 冻结面均不变。
 ## Requirements
 ### Requirement: pci-config-address-decoding
 

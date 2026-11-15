@@ -1,0 +1,450 @@
+{
+  "schema": "spec-purpose-attribution/v2",
+  "batch": "batch1",
+  "archive_semantics": "completed-direct-main-spec",
+  "note": "checks 字段由 scripts/test/cep_spec_purpose_batch1_check.py 重算写入，⛔ 不由人手填写。",
+  "items": [
+    {
+      "spec": "pcie-axi-datapath-hardening",
+      "claim_kind": "current",
+      "source_change": "2026-09-03-2026-09-03-cpptlm-pcie-axi-datapath-hardening",
+      "source_evidence": "openspec/changes/archive/2026-09-03-2026-09-03-cpptlm-pcie-axi-datapath-hardening/proposal.md",
+      "requirement_titles": [
+        "axi-rw-discrimination",
+        "bar-store-4byte-granularity",
+        "cfg-bar-boundary"
+      ],
+      "purpose_text": "约束 AXI 与 PCIe 之间数据通路的保真：读写方向的判别必须来自请求本身的语义而非字段组合的启发式；BAR 存储必须尊重访问粒度与字节使能；配置空间与 BAR 的边界必须精确，使落在配置区间的请求不会被静默当作 BAR 访问。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "pcie-cfg-encoding-minor",
+      "claim_kind": "current",
+      "source_change": "2026-09-03-2026-09-03-cpptlm-dgpu-pcie-cfg-encoding-minor",
+      "source_evidence": "openspec/changes/archive/2026-09-03-2026-09-03-cpptlm-dgpu-pcie-cfg-encoding-minor/proposal.md",
+      "requirement_titles": [
+        "pci-config-address-decoding",
+        "config-e2e-regression"
+      ],
+      "purpose_text": "把 AXI 侧地址到 PCIe 配置空间的解码对齐到 PCIe 的编码约定，避免配置解码污染 BAR 语义；BAR、内存映射、端点端口构成与对外 ABI 冻结面均不变。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "pcie-flr",
+      "claim_kind": "current",
+      "source_change": "2026-10-09-cpptlm-pcie-host-test-flr-rebar",
+      "source_evidence": "openspec/changes/archive/2026-10-09-cpptlm-pcie-host-test-flr-rebar/proposal.md",
+      "requirement_titles": [
+        "flr-tlp-handler (v1.1 复用既有)",
+        "flr-abi-entry (v1.1 删除)",
+        "flr-state-consistency (v1.1 修 spec 矛盾)"
+      ],
+      "purpose_text": "定义功能级复位在设备侧的处理契约：复位请求须按 PF 与 VF 两级分别处理，复位之后设备与各功能的状态必须保持一致。本能力复用端点中已存在的复位实现，不引入新的对外入口。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "pcie-host-test-flr-rebar",
+      "claim_kind": "current",
+      "source_change": "2026-10-09-cpptlm-pcie-host-test-flr-rebar",
+      "source_evidence": "openspec/changes/archive/2026-10-09-cpptlm-pcie-host-test-flr-rebar/proposal.md",
+      "requirement_titles": [
+        "pcie-host-test-infrastructure",
+        "pcie-flr (v1.1 复用既有 + 修 spec 错误)",
+        "pcie-resizable-bar-runtime (v1.1 复用既有 + uint64)"
+      ],
+      "purpose_text": "宿主侧 PCIe 测试夹具的宿主验证口径：测试基础设施、功能级复位与可调整尺寸地址空间三项能力，须在宿主进程内被端到端用例覆盖，而不是各自单测通过即可。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "pcie-host-test-infrastructure",
+      "claim_kind": "current",
+      "source_change": "2026-10-09-cpptlm-pcie-host-test-flr-rebar",
+      "source_evidence": "openspec/changes/archive/2026-10-09-cpptlm-pcie-host-test-flr-rebar/proposal.md",
+      "requirement_titles": [
+        "host-pcie-test-stub-lifecycle (v1.1 统一构造签名)",
+        "tlp-packet-round-trip (v1.0 保留)",
+        "state-trigger (v1.1 改写: 直接调既有 C++ 入口)",
+        "extension-to-existing-3-test-suites (v1.0 保留)"
+      ],
+      "purpose_text": "定义宿主进程内 PCIe 测试夹具的基础设施契约：测试桩的生命周期与构造签名必须统一，报文须在宿主与被测之间往返一致，状态触发须直接驱动既有的实现入口，并规定该基础设施如何扩展到既有测试套件而不重复其覆盖面。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "pcie-ip-integration",
+      "claim_kind": "current",
+      "source_change": "2026-09-03-2027-02-09-cpptlm-dgpu-pcie-ip-integration",
+      "source_evidence": "openspec/changes/archive/2026-09-03-2027-02-09-cpptlm-dgpu-pcie-ip-integration/proposal.md",
+      "requirement_titles": [
+        "integration-delivery"
+      ],
+      "purpose_text": "为什么需要这条交付判据：各 PCIe IP 部件单独就绪并不等于它们在同一拓扑中真正接通，本判据要求集成结果可被端到端用例验证，而不是仅靠单模块用例各自通过。",
+      "waiver": "single-requirement",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true,
+        "waiver_lead": true
+      }
+    },
+    {
+      "spec": "pcie-ip-microarch",
+      "claim_kind": "current",
+      "source_change": "2026-09-03-2026-09-01-cpptlm-dgpu-pcie-ip-microarch",
+      "source_evidence": "openspec/changes/archive/2026-09-03-2026-09-01-cpptlm-dgpu-pcie-ip-microarch/proposal.md",
+      "requirement_titles": [
+        "link-layer",
+        "flow-control-token-bucket",
+        "encoding-latency-model",
+        "phy-digital-control",
+        "bypass-mux-3-mode",
+        "sr-iov-vf-pool",
+        "axi-stream-adapter",
+        "axi4-mapper",
+        "host-bypass-and-rc",
+        "PcieSriovVfPool Stays as Value Member（新增）",
+        "AxiAdapter Split Deferred to Phase 3（新增）"
+      ],
+      "purpose_text": "划定 PCIe 端点微架构各分层的可观察行为边界与彼此衔接：链路层与其管理包及流控、编码层及其延迟模型、物理层数字控制与旁路切换、虚拟功能池，以及 AXI 侧的流适配与映射。各层的内部实现不在本规范约束范围内。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "pcie-resizable-bar-runtime",
+      "claim_kind": "current",
+      "source_change": "2026-10-09-cpptlm-pcie-host-test-flr-rebar",
+      "source_evidence": "openspec/changes/archive/2026-10-09-cpptlm-pcie-host-test-flr-rebar/proposal.md",
+      "requirement_titles": [
+        "resizable-bar-runtime-protocol (v1.1 复用既有 + uint64)",
+        "resizable-bar-abi-entry (v1.1 删除)",
+        "resizable-bar-routing-consistency (v1.1 统一归属)",
+        "resizable-bar-config-sync (v1.1 修复 64-bit 编码)"
+      ],
+      "purpose_text": "定义可调整尺寸地址空间在运行时的行为契约：尺寸变更须遵循停用、重新编程、再启用的顺序，尺寸以 64 位表达，且变更后配置空间所描述的尺寸与实际路由必须保持一致。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "pcie-slice-prerequisites",
+      "claim_kind": "current",
+      "source_change": "2026-08-28-2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites",
+      "source_evidence": "openspec/changes/archive/2026-08-28-2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites/proposal.md",
+      "requirement_titles": [
+        "pcie-slice-wire-format-in-repo-guarded",
+        "sdma-translate-callback-contract",
+        "msix-state-machine-fine-grained",
+        "doorbell-queue-stability",
+        "sdma-engine-backdoor-isolation (scope 降级 per Oracle 审查 2026-08-28)"
+      ],
+      "purpose_text": "固化 dGPU 板级 SoC 切片落地前必须成立的前置条件：报文结构的字节级布局由仓内编译期断言守护，地址翻译回调在越界、抛异常与重入下不得导致仿真崩溃，中断状态机的迁移必须可判定，门铃队列须在并发提交下保持有序，设备引擎与后门直访路径互不污染。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "pcie-tlp-wire-datapath",
+      "claim_kind": "current",
+      "source_change": "2026-09-16-2026-09-16-cpptlm-pcie-tlp-wire-datapath",
+      "source_evidence": "openspec/changes/archive/2026-09-16-2026-09-16-cpptlm-pcie-tlp-wire-datapath/proposal.md",
+      "requirement_titles": [
+        "tlp-codec-wire-format",
+        "completer-engine-full",
+        "requester-engine-outgoing",
+        "bypass-tlp-data-path",
+        "pcie-mock-ip",
+        "profile-pcie-path-routing",
+        "pcie-endpoint-tick-tlp-dispatch",
+        "end-to-end-tlp-path"
+      ],
+      "purpose_text": "定义 PCIe 传输层报文的线格式与数据通路契约：编解码的字段布局、完成方与请求方各自的引擎行为、旁路通路上的报文搬运、被测用的模拟 IP，以及各协议 profile 下经 PCIe 路径的路由选择。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "cpptlm-pcie-endpoint-ip-json-config",
+      "claim_kind": "current",
+      "source_change": "2026-09-14-2027-02-09-cpptlm-pcie-endpoint-ip-json-config",
+      "source_evidence": "openspec/changes/archive/2026-09-14-2027-02-09-cpptlm-pcie-endpoint-ip-json-config/proposal.md",
+      "requirement_titles": [
+        "PcieEndpointIP JSON Configuration Surface"
+      ],
+      "purpose_text": "划定 PcieEndpointIP 可被配置真正驱动的参数面：此前写入但未被消费的参数会在装配时消失，使仓库自带示例与实际行为不一致。本规范定义哪些键会被消费、缺省取值为何，以及无法识别的键与越界取值如何以告警形式暴露，并在回退到缺省取值后继续运行。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "cpptlm-pcie-ep-foundation",
+      "claim_kind": "current",
+      "source_change": "2026-09-10-2026-09-09-cpptlm-pcie-ep-foundation",
+      "source_evidence": "openspec/changes/archive/2026-09-10-2026-09-09-cpptlm-pcie-ep-foundation/proposal.md",
+      "requirement_titles": [
+        "PCIe Configuration Space Real Implementation",
+        "mmio_read Returns Real Data (Not Garbage)",
+        "mmio_write Data Persisted",
+        "backdoor_read Returns -ENOENT on Miss",
+        "register_backdoor_cb Actually Invoked",
+        "register_dma_translate_cb Returns Real Translation (Not pa=0)",
+        "MSI-X Interrupt Chain Complete",
+        "MSI-X Capability + 4-8 Vectors",
+        "DMA Engine Scatter-Gather Support",
+        "IOMMU-Compatible DMA Address Translation",
+        "Power Management D0/D3 States",
+        "P2P DMA Support",
+        "Resizable BAR Capability"
+      ],
+      "purpose_text": "锁定宿主侧委托 dGPU 板卡仿真时 PCIe 端点侧的真实语义：配置空间与内存映射的读写、寄存器回调、地址翻译回调与消息中断的初始化与清除，这些入口都必须返回真实数据与真实翻译结果，而不是桩值、空实现或伪装成功。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "cpptlm-stage-1-1-fixes",
+      "claim_kind": "current",
+      "source_change": "2026-09-10-2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes",
+      "source_evidence": "openspec/changes/archive/2026-09-10-2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/proposal.md",
+      "requirement_titles": [
+        "PCIe Configuration Space Forwarding (修复 #3)",
+        "Backdoor Read Miss Returns -ENOENT (修复 #6)",
+        "MMIO Read Data Copy (修复 #5, Oracle R7 裁决 2026-09-10)",
+        "MMIO Write Async Semantics Clarification (修复 #7)"
+      ],
+      "purpose_text": "把 PCIe 端点基础能力中的四个具体缺陷固化为可验证契约：配置空间读写不得返回「未实现」，内存映射读必须真正填充调用方缓冲区，后门读未命中必须返回明确的「不存在」错误，写入路径的同步或异步语义必须在实现与文档之间保持唯一口径。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "cpptlm-stage-1-2-msix",
+      "claim_kind": "current",
+      "source_change": "2026-09-11-2026-09-10-cpptlm-stage-1-2-msix",
+      "source_evidence": "openspec/changes/archive/2026-09-11-2026-09-10-cpptlm-stage-1-2-msix/proposal.md",
+      "requirement_titles": [
+        "MSI-X trigger_irq_async 真实实现",
+        "Existing ABI contract preserved"
+      ],
+      "purpose_text": "定义消息中断从注册到触发的完整链路契约：初始化、更新与清除三入口所登记的中断回调必须能被真实的触发路径调用到；此前回调虽已接线却全仓无调用方，中断实际从未发生。修复中断链的同时须保持既有 ABI 契约不变。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "cpptlm-stage-1-4-2-1",
+      "claim_kind": "current",
+      "source_change": "2026-09-14-2026-09-10-cpptlm-stage-1-4-2-1",
+      "source_evidence": "openspec/changes/archive/2026-09-14-2026-09-10-cpptlm-stage-1-4-2-1/proposal.md",
+      "requirement_titles": [
+        "PCIe PM Capability (Stage 1.4)",
+        "P2P DMA Routing + ACS (Stage 2.1)",
+        "Resizable BAR Capability (Stage 2.1)",
+        "ACS Extended Cap (Stage 2.1) — **NEW**"
+      ],
+      "purpose_text": "覆盖 dGPU 侧 PCIe 的电源管理与拓扑增强两层能力：电源管理要求设备能在工作态与低功耗态之间切换并对状态变化作出正确响应；拓扑与隔离增强要求对等路由、访问控制与可调整尺寸的地址空间在配置与运行时都可被正确识别与使用。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    },
+    {
+      "spec": "cpptlm-stage-1-4-2-1-ue-extensions-unblock",
+      "claim_kind": "current",
+      "source_change": "2026-09-15-2026-09-15-cpptlm-stage-1-4-2-1-ue-extensions-unblock",
+      "source_evidence": "openspec/changes/archive/2026-09-15-2026-09-15-cpptlm-stage-1-4-2-1-ue-extensions-unblock/proposal.md",
+      "requirement_titles": [
+        "ABI Profile 切换 PcieEndpointIP（A-1）",
+        "Board Shell Pass-Through to PcieEndpointIP（A-2）",
+        "ABI MMIO Power-State Gate（A-3）",
+        "PCIe Cap (0x10) + LNKCTL ASPM 接线（A-4）",
+        "ReBAR Extended Capability 安装（A-5）"
+      ],
+      "purpose_text": "打通宿主入口路径到 PCIe 端点实施层之间被冻结在旧实现上的断点：此前的配置访问命中的是只带消息中断能力的旧端点实现，导致电源能力、电源状态拦截、访问控制扩展、可调整尺寸扩展与省电状态接线全部落不到实施层。",
+      "waiver": null,
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "symbols_traceable": true,
+        "evidence_exists": true,
+        "evidence_keyword_hit": true
+      }
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # pcie-flr Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-pcie-host-test-flr-rebar. Update Purpose after archive.
+定义功能级复位在设备侧的处理契约：复位请求须按 PF 与 VF 两级分别处理，复位之后设备与各功能的状态必须保持一致。本能力复用端点中已存在的复位实现，不引入新的对外入口。
 ## Requirements
 ### Requirement: flr-tlp-handler (v1.1 复用既有)
 

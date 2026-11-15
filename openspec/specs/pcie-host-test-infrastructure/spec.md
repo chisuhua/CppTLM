@@ -1,7 +1,7 @@
 # pcie-host-test-infrastructure Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-pcie-host-test-flr-rebar. Update Purpose after archive.
+定义宿主进程内 PCIe 测试夹具的基础设施契约：测试桩的生命周期与构造签名必须统一，报文须在宿主与被测之间往返一致，状态触发须直接驱动既有的实现入口，并规定该基础设施如何扩展到既有测试套件而不重复其覆盖面。
 ## Requirements
 ### Requirement: host-pcie-test-stub-lifecycle (v1.1 统一构造签名)
 

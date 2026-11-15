@@ -1,7 +1,7 @@
 # cpptlm-stage-1-4-2-1 Specification
 
 ## Purpose
-TBD - created by archiving change 2026-09-10-cpptlm-stage-1-4-2-1. Update Purpose after archive.
+覆盖 dGPU 侧 PCIe 的电源管理与拓扑增强两层能力：电源管理要求设备能在工作态与低功耗态之间切换并对状态变化作出正确响应；拓扑与隔离增强要求对等路由、访问控制与可调整尺寸的地址空间在配置与运行时都可被正确识别与使用。
 ## Requirements
 ### Requirement: PCIe PM Capability (Stage 1.4)
 

@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-15T12:26:39Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-15T12:38:32Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-14T06:10:42Z",
-      "by": "user",
-      "reason": "per 用户口令「启动」⇒ 启动 P0 = ADR-CEP-21 阶段 1 立项(improvement 5 段 → metis 1 轮 → 交 builder 建 change)。"
-    },
     {
       "role": "builder",
       "at": "2026-11-14T06:46:24Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-15T12:26:39Z",
       "by": "user",
       "reason": "per 用户口令「按你建议的顺序推进」⇒ 步骤 2:立项 R-1 批 1(17 份非 cep-* spec 的 Purpose 占位修复)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-15T12:38:32Z",
+      "by": "user",
+      "reason": "per 用户口令「按你建议的顺序推进」⇒ 步骤 3:实施 R-1 批 1(16 份 Purpose 落地 + 校验脚本 + 归因载体)。"
     }
   ],
   "auto_switch_window": null
