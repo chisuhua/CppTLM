@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-16T09:22:54Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-16T09:25:23Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-15T03:32:55Z",
-      "by": "user",
-      "reason": "per 用户口令「切 planner 对后续还有哪些任务内容都梳理一遍，再给出后续任务内容和实施路径，再切 builder 进行实施」⇒ 对 5 项实测收敛缺口(G-1 kResponderMappedBits 真空 / G-2 ADR-CEP-20 决策块零覆盖 / G-3 F-1 main spec 超长 / G-4 镜像权威归属 / G-5 ArchForge 缺席零保护)做 gap 分析 + 立项 G-1+G-2。"
-    },
     {
       "role": "builder",
       "at": "2026-11-15T03:54:55Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-16T09:22:54Z",
       "by": "user",
       "reason": "per 用户口令「切 planner 落台账」⇒ 为 cpptlm-simmodule-exposed-port-wiring 与 cpptlm-cep-mesh-interconnect-submodule 两个已实施 change 落台账 entry(§11 授权记录) + 把 5 份活文档的 KPI 当前态 0/3 改为实测 2/3(cep_docs_sync_check 断言①/cep_gate_selftest 同源红)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-16T09:25:23Z",
+      "by": "user",
+      "reason": "per 用户口令「回 builder 归档」⇒ 归档 cpptlm-simmodule-exposed-port-wiring 与 cpptlm-cep-mesh-interconnect-submodule(openspec archive,合并 delta)+ KPI 2/3 → 0/3 回填 + 台账归档 entry(照 Entry #449 的 [builder] 归档条目先例)。"
     }
   ],
   "auto_switch_window": null

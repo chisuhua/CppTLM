@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 2/3**（`cpptlm-simmodule-exposed-port-wiring` + `cpptlm-cep-mesh-interconnect-submodule` 于 2026-11-16 **立项** ⇒ 各占 1 slot,per 台账 Entry #450;此前 `cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-simmodule-exposed-port-wiring` + `cpptlm-cep-mesh-interconnect-submodule` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #451;此前二者于 2026-11-16 **立项** ⇒ 各占 1 slot,per 台账 Entry #450;此前 `cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -24732,4 +24732,28 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 
 **待后续步骤**:builder 归档两 change(`openspec archive`,合并 delta 含 mesh 新 spec `cep-mesh-interconnect-submodule`)→ KPI 回 **0/3** → verifier 独立验收。
 
-**⑤ 关联**:Entry **#449**(mesh carrier 归档 · 前置链)· **#448**(mesh carrier 立项+实施)· **#447**(剩余任务梳理)· `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md` · `.rddf/reviews/ADR-X.15.md` · `openspec/changes/cpptlm-simmodule-exposed-port-wiring/` · `openspec/changes/cpptlm-cep-mesh-interconnect-submodule/`
+**⑤ 关联**:Entry **#449**(mesh carrier 归档 · 前置链)· **#448**(mesh carrier 立项+实施)· **#447**(剩余任务梳理)· `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md` · `.rddf/reviews/ADR-X.15.md` · `openspec/changes/archive/2026-11-16-cpptlm-simmodule-exposed-port-wiring/` · `openspec/changes/archive/2026-11-16-cpptlm-cep-mesh-interconnect-submodule/`
+
+### Entry #451 — 2026-11-16 [builder](**两 change 归档** —— Step 7c 框架层 + 层次化 mesh 拓扑层 · KPI **2/3 → 0/3** · 冻结产物 **87 → 88** · cep-* main spec **44 → 45** · 归档 change **152 → 154**)
+
+**主题**:归档 `cpptlm-simmodule-exposed-port-wiring`(框架层)+ `cpptlm-cep-mesh-interconnect-submodule`(拓扑层)。立项/实施记录见 **Entry #450**。
+
+**完成归档语义(delta 已正式合并,⛔ 未用 `--skip-specs`)**:
+- `openspec archive cpptlm-simmodule-exposed-port-wiring` ⇒ `openspec/specs/simmodule-nested/spec.md`(**+1 added / ~1 modified**):MODIFIED「SimModule JSON 多层嵌套实例化」的 2 条过时 scenario(取消「ChStream 子模块 `getInternal*Port` 返 `nullptr` 属已知架构限制」+「仅靠 `findInternalPath`/`isExposedPort` 验证」)+ ADDED「SimModule 暴露端口的数据通路接入」。合并后**零残留过时表述**(实测 grep)。
+- `openspec archive cpptlm-cep-mesh-interconnect-submodule` ⇒ **新建** `openspec/specs/cep-mesh-interconnect-submodule/spec.md`(1 added)。
+- 归档件:`openspec/changes/archive/2026-11-16-cpptlm-simmodule-exposed-port-wiring/` · `openspec/changes/archive/2026-11-16-cpptlm-cep-mesh-interconnect-submodule/`。
+- **0 active**(实测 `openspec list --json`)。
+
+**体量变化(实测)**:cep-* main spec **44 → 45** · 全仓 main spec **130 → 131** · 归档 change **152 → 154** · 冻结产物 **87 → 88**(新增 main spec 属 `FROZEN_GLOBS` ⇒ 已跑 `cep_freeze_check.sh --update --authorized-by "Entry #451"`)。
+
+**KPI**:**2/3 → 0/3**(两 change 归档 ⇒ slot 释放)· **6 处活口径**已回填。
+
+**⚠️ 实施期对 AC-07 的诚实修正**:原「换形态只改蓝图(不改主 config 的 modules/connections)」**不成立** —— 主拓扑的暴露标签按**内部 router 名**映射,换蓝图后 router 命名/数量变化时标签必须同步(`r11` 不存在则 `node3_*` 失效)。已改为「**换蓝图可复用(不改容器类)**」并以 `MESH-6` + `configs/interconnect/cep_mesh_1x2.json` 验证(8 断言);AC-05 的「同名蓝图复用」不受此限。
+
+**实测(归档前全绿)**:`[exposed]` 33/10 · `[mesh]` **205/15**(含 MESH-6) · `[simmodule]` 184/44 · `[cep]` 12374/534 · `[e2e]` 7397/145 · `[pcie]` 36779/452 · `[realip]` 366/51。
+
+**AGENTS.md 数字连带**:cep-* main spec 44 → 45(5 处)· 归档 change 152 → 154。
+
+**待后续**:verifier 独立验收(切角色)。
+
+**⑥ 关联**:Entry **#450**(立项记录)· **#449**(mesh carrier 归档 · 前置链)· **#448**(mesh carrier 立项+实施)· `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md` · `.rddf/reviews/ADR-X.15.md` · `openspec/changes/archive/2026-11-16-cpptlm-simmodule-exposed-port-wiring/` · `openspec/changes/archive/2026-11-16-cpptlm-cep-mesh-interconnect-submodule/`

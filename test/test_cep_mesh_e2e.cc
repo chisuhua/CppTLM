@@ -332,3 +332,39 @@ TEST_CASE("MESH-5 (J-5): 决定性变异 —— 蓝图断开环边必红,且**�
     //    —— 那样「装配失败」也会被判红 ⇒ 变异「因错误的原因红」)
     REQUIRE(r.outcome == MeshOutcome::NotArrived);
 }
+
+TEST_CASE("MESH-6 (AC-07): 换蓝图复用 —— 同一容器装配 1×2 蓝图(不改容器类)", "[cep][e2e][mesh]") {
+    // ⚠️ AC-07 的**可达形态**：`CepMeshInterconnect` 由 `params.template` 决定内部互联件，
+    //    换蓝图**不需要**改容器类。但主拓扑的**暴露标签**按内部 router 名映射
+    //    ⇒ router 命名/数量变化时，暴露标签声明必须同步（label→internal 的固有限制）。
+    //    本用例用**独立最小主拓扑**（不复用 cep_mesh_e2e 的 node0/3 标签）验证换蓝图。
+    const auto root = repo_root();
+    json cfg;
+    cfg["modules"] = json::array({
+        json{{"name", "fabric"},
+             {"type", "CepMeshInterconnect"},
+             {"params", {{"template", (root / "configs" / "interconnect" / "cep_mesh_1x2.json").string()}}},
+             {"outputs", json::array({json{{"internal", "r01.req_out[4]"}, {"external", "top_req_out"}}})},
+             {"inputs", json::array({json{{"internal", "r00.req_in[4]"}, {"external", "top_req_in"}}})}},
+        json{{"name", "peer"}, {"type", "RouterTLM"},
+             {"params", {{"node_x", 0}, {"node_y", 0}, {"mesh_x", 1}, {"mesh_y", 2}}}},
+    });
+    cfg["connections"] = json::array({
+        json{{"src", "peer.1"}, {"dst", "fabric.top_req_in"}},
+        json{{"src", "fabric.top_req_out"}, {"dst", "peer.1"}},
+    });
+
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE(factory.instantiateAll(cfg));
+    auto* fabric = dynamic_cast<tlm::cep::CepMeshInterconnect*>(factory.getInstance("fabric"));
+    REQUIRE(fabric != nullptr);
+    // 蓝图被装配成 2 个 router（而非 2×2 的 4 个）
+    REQUIRE(fabric->getInternalFactory().getAllInstances().size() == 2);
+    REQUIRE(fabric->getInternalInstance("r00") != nullptr);
+    REQUIRE(fabric->getInternalInstance("r01") != nullptr);
+    REQUIRE(fabric->getInternalInstance("r11") == nullptr);
+    // 暴露标签指向 1×2 蓝图内的 router ⇒ 仍可接线
+    REQUIRE(fabric->getInternalInputPort("r00.req_in[4]")->isBound());
+    REQUIRE(fabric->getInternalOutputPort("r01.req_out[4]")->isBound());
+}

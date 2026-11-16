@@ -1,0 +1,20 @@
+{
+  "name": "cep_mesh_1x2",
+  "description": "CEP 互联蓝图 —— 1×2 RouterTLM XY mesh 的最小变体(节点编号 node = y*mesh_x + x,故 mesh_x=1 ⇒ node0=(0,0) · node1=(0,1))。⚠️ 本文件是**蓝图**:① 只放互联件(router),⛔ 不含业务模块;② ⛔ 不含 outputs/inputs(端口暴露归主拓扑);③ 内部 router 名 r00/r01 是**与主拓扑的接口契约**(主拓扑的 outputs.internal 按名指过去)⇒ ⛔ 改名即破坏契约。用途:证明「同一 `CepMeshInterconnect` 容器可换蓝图复用」——⛔ 注意:换蓝图时若 router **命名/数量**变化,主拓扑的暴露标签映射必须同步(r11 不存在则 node3_* 标签失效),这是 label→internal 映射的固有限制,非容器缺陷。",
+  "modules": [
+    {
+      "name": "r00",
+      "type": "RouterTLM",
+      "params": { "node_x": 0, "node_y": 0, "mesh_x": 1, "mesh_y": 2 }
+    },
+    {
+      "name": "r01",
+      "type": "RouterTLM",
+      "params": { "node_x": 0, "node_y": 1, "mesh_x": 1, "mesh_y": 2 }
+    }
+  ],
+  "connections": [
+    { "src": "r00.2", "dst": "r01.0", "latency": 1, "bandwidth": 100 },
+    { "src": "r01.0", "dst": "r00.2", "latency": 1, "bandwidth": 100 }
+  ]
+}

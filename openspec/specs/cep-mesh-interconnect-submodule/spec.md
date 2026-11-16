@@ -1,6 +1,9 @@
-# cep-mesh-interconnect-submodule Specification (delta)
+# cep-mesh-interconnect-submodule Specification
 
-## ADDED Requirements
+## Purpose
+让互联拓扑从业务拓扑中独立出来：把 router 与链路收进一个可复用的容器（`CepMeshInterconnect`），由独立蓝图文件承载互联件、由主拓扑只保留业务模块与跨层接线，从而使同一份互联蓝图可被不同主拓扑复用、同一容器类可换蓝图装配不同形态，且改造前后业务事务的 mesh 级行为不变。
+
+## Requirements
 
 ### Requirement: cep-mesh-interconnect-submodule
 
