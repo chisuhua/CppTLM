@@ -1,5 +1,5 @@
 {
-  "artifact_count": 86,
+  "artifact_count": 87,
   "artifacts": {
     "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "64364ed7d1d9def7919c8bce2e7f3c9e35c31c1b93bf252dc8ec4aff1f24fe95",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4db673d7d582ac6231c6b3fa26ff78ef02dbea4483261b3cfcd7f4403201bd26",
@@ -48,6 +48,7 @@
     "openspec/specs/cep-channel-dependency-gate/spec.md": "c2bc8b77ae40addf06ba6de8e78cf797b12804022a674aac72b167c13090c2c8",
     "openspec/specs/cep-chi-rnf-subset/spec.md": "85ec7d65db8f498a73162f9c1f83e246ff1258a5f8f1a32d3b458f6989fad248",
     "openspec/specs/cep-cohif-carrier/spec.md": "039c11cb5a1a9fb6dac933a392c514f9cf4011eb21f034b81c71420eac970013",
+    "openspec/specs/cep-cohif-network-adapter/spec.md": "e46b4e246c896e8f7bd79373915789914855927f783ed1095ad25fa3547aa9db",
     "openspec/specs/cep-collective-plane-base/spec.md": "e5c1864fe98b98faafc7d9d3296c4d80fe187d3b8d4bb3680af8c026663578f7",
     "openspec/specs/cep-collective-plane-contract/spec.md": "8364e7a776a0a73aa59fbb503084bc0d5598dcc5d1ff62c5d28e54285ccc4f7a",
     "openspec/specs/cep-core-contracts/spec.md": "0a72bd5588bd5d037ff79a8d6f7ca3f9f8c3d4811c4f2ca308978eb56e8cfd94",
@@ -88,10 +89,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #436",
+  "authorized_by": "Entry #449",
   "exclusions": [],
-  "frozen_at": "2026-11-15",
-  "frozen_at_commit": "08a67003e9f36f06f01df2f5088fb2ab21d8bfbd",
+  "frozen_at": "2026-11-16",
+  "frozen_at_commit": "dc037fe737fc4d66d10dd7d013c8c501d402a991",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
