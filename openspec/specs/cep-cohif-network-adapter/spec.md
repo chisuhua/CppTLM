@@ -49,14 +49,26 @@
 - **WHEN** 5 条跨 Stub↔PE 边界的 `flow_id` 被投影到 `NoCFlitBundle.flit_category`
 - **THEN** 该投影 SHALL 被登记为**有损**(`flit_category` 仅 3 值,装不下 5 个 `flow_id`)
 - **AND** 本模块 SHALL **NOT** 声明支持多流无损恢复
-- **AND** 本模块 SHALL **NOT** 承载协议语义(credit / retry / ordering point / 多拍聚合 / Perm 规则 / 容量与队列模型)
+- **AND** 本模块 SHALL **NOT** 承载协议语义(credit / retry / ordering point / 多拍聚合 / Perm 规则 / 容量与队列模型) —— 具体地:SHALL **NOT** 解释 / 转发 / 记账 credit(丢弃语义见下条 Scenario)
 
 > **锚点**:`test/test_cep_mesh_e2e.cc` 的 `flit_category` 断言 + 本 spec 的边界句
+
+#### Scenario: 网络 ingress SHALL 丢弃 credit flit
+
+- **WHEN** 网络侧 ingress 收到 `flit_category == CATEGORY_CREDIT` 的 flit(`RouterTLM` 把 credit 编成 flit 走在与数据**同一** `resp_out` 通道,且 `reverse_port(LOCAL) == LOCAL` ⇒ 经 LOCAL 口进入的 flit,其 credit 回流到本模块)
+- **THEN** 本模块 SHALL **丢弃**该 flit
+- **AND** SHALL **NOT** 计入 `flits_received`
+- **AND** SHALL **NOT** 写 `last_recv_dst_node` / `last_recv_hops`
+- **AND** SHALL **NOT** 向 PE 侧投影(⛔ 否则产出事务号 / 地址 / 数据全 0 的伪 Completion)
+- **AND** 该丢弃 SHALL 计入 `credits_dropped()`
+
+> **锚点**:`test/test_cep_mesh_e2e.cc` 的 MESH-7(AC-01)
+> **已知限制**:本模块**不**归还 credit ⇒ `LOCAL` 口的 credit 耗尽(每 `(LOCAL, vc)` 满 `BUFFER_DEPTH` 个 flit 后本地投递停滞)属**另一**缺陷,见 `.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`;本 spec 不作承诺。
 
 #### Scenario: 观测面 SHALL 只暴露原始事实
 
 - **WHEN** 读取本模块的公开观测 API
-- **THEN** 其 SHALL 提供 `stats_flits_sent_` / `stats_flits_received_` / `stats_dropped_unmapped_` / `last_dst_node()`
+- **THEN** 其 SHALL 提供 `stats_flits_sent_` / `stats_flits_received_` / `stats_dropped_unmapped_` / `stats_credits_dropped_` / `last_dst_node()`
 - **AND** SHALL **NOT** 提供 latency 聚合 / 指标组装 / 分位统计(⛔ 聚合归 `test/` 的 harness)
 
 > **锚点**:`test/test_cep_mesh_e2e.cc` 的 API 面断言
