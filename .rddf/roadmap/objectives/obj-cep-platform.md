@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **立项** ⇒ 占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -24639,3 +24639,50 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 **⑦ 连带**：`docs/guide/cep-usage.md` §12.8 的「ADR 归因 **18** 条」**已 stale**（实测 **19**）⇒ 本轮**未改**（该表自述「导航,非状态源」+ 加状态列 = 造第二状态源 ⇒ 属 **R-19 类**登记处问题，另议）。另：登记册引用 `docs/soc_arch/architecture/00-overview.md`（已迁 ArchForge）⇒ 按 `AGENTS.md`「提及已删除文件须登记 `VIRTUAL_PATHS`」补 **1 条** ⇒ `cep_doc_ref_check --strict` 保持绿。
 
 **⑧ 关联**:**#446**（批 3 verifier 验收）· **#445**（批 3 收口）· **#444**（全量核对 + 立项）· **#443**~**#441**（批 1）· **#438**（上轮全量梳理）· `.rddf/roadmap/objectives/obj-cep-platform-remaining.md`（**本轮产出的单一真源登记册**）
+
+### Entry #448 — 2026-11-16 [builder](**CEP coherence 流量穿过真实 mesh** —— 新增 `CohIfNICTLM` + 2×2 mesh 联合拓扑 + 端到端判据 · **0 BLOCKER / 4 SHOULD_FIX 全处置** · 实测全绿 · KPI **0/3 → 1/3**)
+
+**主题**:change `cpptlm-cep-mesh-e2e-carrier` 立项 + 实施(承接 **Entry #444** §2.2 类 B「真·功能缺口」· §3 波 2 的第一块 · 与 **Entry #447** 的剩余任务登记册同源)。
+
+**⚠️ 前置事实纠正(本 Entry 的第一发现)**:G1(StubCacheCore ChStream 端口面)**已于 2026-11-09 归档完成**(Entry #305 · `StubCacheEndpointTLM` + `CohIfResponderTLM`)⇒ 此前把「G1 缺失」写进 §2.2 是**误判** ⇒ 缺口**收窄**为「CohIf ↔ 网络适配层 + mesh 联合拓扑」。
+
+#### §0 缺口(逐项实测,⛔ 不采信台账措辞)
+
+| 面 | 实测 |
+|---|---|
+| CEP 现有 e2e 判据的拓扑 | 全为**点对点**(`cep_cohif_pe_minimal.json` 两引擎直连 / `cep_chi_rnf_e2e_a|_b.json` 点对点)· 引擎是 `NullProtocolEngine` |
+| CEP 的「互联网络」声明面 | `fabric.json` 只有 2 个网络命名空间 + `vc_count` · **无节点 / 无链路 / 无路由** |
+| `dst_node` 的填充者 | 桥**明确不填**(`cohif_noc_bridge.hh`「无权改写路由器负责的字段」)· `RouterTLM` 的路由**只**从 `flit.bundle.dst_node` 取目标 ⇒ **路由不了** |
+| `NICTLM` 能否复用 | PE 侧是 `CacheReqBundle` ⇒ 与 `CohIfBundle` **类型不通** ⇒ **不能**复用 |
+
+#### §1 critic 审(`arch` 档 · plan+build)—— **0 BLOCKER / 4 SHOULD_FIX / 5 NIT · 全处置**
+
+| # | finding | 处置 |
+|:--:|---|---|
+| S-1 | **D-2 连接清单在真实 PortPair 语义下两个方向都通不了**,且**全仓无「JSON 装配下 router 间双向 flit 链路」的实测先例** | **升级为硬前置探针**(`test/test_noc_mesh_binding_semantics.cc`,5 用例)⇒ 实测定稿:router↔router **2 条** · router↔NIC **2 条** · 2×2 的 4 条环边 · hops 逐跳 1→2→3 |
+| S-2 | `last_dst_node()` 是**出站**查表结果 ⇒ 在切片内恒为 0 ⇒ J-2 必红 | 改用**入站侧**可观测量 `last_recv_dst_node()` |
+| S-3 | 「至少一个 flit 的 `hops` ≥ 1」**没有命名可观测量**(flit 在 router 内是瞬态的) | 新增 `last_recv_hops()`(入站侧) |
+| S-4 | `chi`(协议引擎)是**悬空模块**(13 行连接无一行触及)且与 `ADR-CEP-19` SU 2026-11-09 的登记实施态相悖 | **删掉 `chi`**(该 SU 已登记「RN-F 不服务 request ⇒ 业务事务必须直连 home」)⇒ 边界句落 delta spec |
+| N-1~5 | 行号引用 / 模块数口径 / 映射表字段归属 / AC 措辞 | 全修 |
+
+#### §2 实施产物(**零架构裁决 + 零冻结面改动**)
+
+- **新增**:`include/tlm/cep/cohif_nic.hh`(**header-only** · 照仓内 CEP 惯例)· `configs/cep_mesh_e2e.json` · `test/test_cep_mesh_e2e.cc` · `test/test_noc_mesh_binding_semantics.cc`(探针**转正**为回归载体)· `openspec/changes/cpptlm-cep-mesh-e2e-carrier/specs/cep-cohif-network-adapter/spec.md`(delta · 归档时合并为 main spec)
+- **改动**:`include/chstream_register.hh`(+1 include + 4 行注册)· `scripts/CMakeLists.txt`(CEP config 清单 +1)· 5 处 KPI 活口径(0/3 → **1/3**)
+- **实测**:`nic_b.last_recv_dst_node()==3` · `last_recv_hops()==3` · `r.flits=45` / `r.packets=45` / `r.hops=90` · Completion 回程抵达 stub ✅ · 变异按**正确原因**红(`NotArrived`)✅
+- **零回归**:`[cep]` **533** 用例 / 12321 断言 · `[e2e]` **144** 用例 / 7358 断言 · `ctest -R cep` **100/100** · 45 闸数量不变
+- **冻结面**:13 个既有文件**全部零 diff**(含 `include/bundles/**` / `router_tlm.hh` / `nic_tlm.hh` / 既有 8 个 CEP 头文件 / `module_factory.cc`)· 既有 43 份 `cep-*` main spec **零 diff** ⇒ **零冻结面产物 ⇒ 免五步链**
+- **`module_factory.cc` 的 `is_dual` 硬编码 `static_cast`**:只用于 `bind_pe_ports`/`bind_net_ports`(**不碰 `ModuleT`**),`tick()` 走**虚分派** ⇒ 运行时安全 ⇒ **零 diff**(订正 critic S-4 的预登记条件项)
+
+#### §3 实施期实测发现的 2 处 design 缺陷(已回写 `design.md`)
+
+1. **`OutputStreamAdapter::valid()` 语义 = 「有数据待发」** ⇒ **可写**条件是 `!valid()`(实现时先写反了 ⇒ flit 永不发出)· 照 `NICTLM::tick()` 的既有判据。
+2. **断开一条「对称的 2 条」connection 不足以切断链路** —— 另一条仍提供 `resp_out` 路径 ⇒ 变异必须**成对**删除。
+
+#### §4 待 architect 裁决(**不在本 change 实施**)
+
+**Q1** 多流无损(`flit_category` 3 值装不下 5 个 `flow_id`)· **Q2** CEP 的 mesh 拓扑声明面 · **Q3** `NICTLM` 的静默失败 · **Q4** 协议引擎不参与本切片的业务事务路径(⇒ **不得**对外表述为「CEP 协议已在真实 mesh 上验证」)· **Q5** `is_write` 由 `perm` 近似 + 单 VC。
+
+#### §5 关联
+
+Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批 3 归档)· **#444**(目标达成度全量核对 · §2.2 类 B · §3 波 2)· **#305**(`cpptlm-cep-stub-cache-chstream-surface` 归档 —— G1 已完成的真源)· `.rddf/improvements/cpptlm-cep-mesh-e2e-carrier.md` · `openspec/changes/cpptlm-cep-mesh-e2e-carrier/` · `openspec/changes/cpptlm-cep-mesh-e2e-carrier/specs/cep-cohif-network-adapter/spec.md`(delta · 归档时合并为 main spec)

@@ -41,6 +41,7 @@
 #include "tlm/cep/ualink_protocol_engine.hh"  // 2026-11-07: UalinkProtocolEngine(ualink_4 的记账级专用承载)
 #include "tlm/cep/cohif_responder.hh"     // 2026-11-08(Entry #297): home 简化模型(最小应答语义)
 #include "tlm/cep/stub_cache_endpoint.hh" // 2026-11-08(Entry #297): 端口面 wrapper(异构 dual-port)
+#include "tlm/cep/cohif_nic.hh"           // 2026-11-16: CohIfNICTLM(CohIf ↔ NoCFlit 网络接口;承担 dst_node 填充)
 #include "tlm/gpu/streaming_multiprocessor_tlm.hh" // SM 重构 Task 4: SM 顶层 + 12 子模块
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
@@ -251,6 +252,14 @@ inline void register_chstream_bidirectional(const std::string& type_name) {
         .registerDualPortAdapter<tlm::cep::StubCacheEndpointTLM, bundles::CacheReqBundle,          \
                                  bundles::CacheRespBundle, bundles::CohIfBundle,                  \
                                  bundles::CohIfBundle>("StubCacheEndpointTLM");                    \
+    /* 2026-11-16(change `cpptlm-cep-mesh-e2e-carrier`):CEP 网络接口 —— CohIf ↔ NoCFlit        \
+       **异构** dual-port(CohIf/CohIf ↔ NoCFlit/NoCFlit)。承担 `dst_node` 的填充职责           \
+       (⛔ 桥「无权改写路由器负责的字段」⇒ 不填 ⇒ 路由不了)。                                   \
+       ⛔ 不得用对称 `REGISTER_CHSTREAM_BIDIRECTIONAL`(要求两侧同 BundleT)。                      */ \
+    ModuleFactory::registerObject<tlm::cep::CohIfNICTLM>("CohIfNICTLM");                         \
+    ChStreamAdapterFactory::get()                                                                 \
+        .registerDualPortAdapter<tlm::cep::CohIfNICTLM, bundles::CohIfBundle, bundles::CohIfBundle, \
+                                 bundles::NoCFlitBundle, bundles::NoCFlitBundle>("CohIfNICTLM");   \
     ChStreamAdapterFactory::get()                                                                   \
         .registerAdapter<tlm::LinkTLM, bundles::NoCFlitBundle, bundles::NoCFlitBundle>("LinkTLM");  \
     ChStreamAdapterFactory::get()                                                                   \

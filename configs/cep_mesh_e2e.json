@@ -1,0 +1,203 @@
+{
+  "name": "cep_mesh_e2e",
+  "description": "CEP coherence 流量**穿过真实 RouterTLM XY mesh**(2×2)抵达对端 —— change `cpptlm-cep-mesh-e2e-carrier` 的联合拓扑。路径:业务流量(TrafficGen)→ 端口面 wrapper(`StubCacheEndpointTLM`)→ **CohIf 网络接口**(`CohIfNICTLM` × 2)→ RouterTLM 2×2 mesh(16 条 connection,4 个 router 全参与)→ 对端 `CohIfNICTLM` → home 简化模型(`CohIfResponderTLM`)→ Completion 原路返回。⚠️ **连接条数是实测定稿的**(探针 `test/test_zz_mesh_probe.cc`,5 用例):router↔router 与 router↔NIC **各需 2 条**(缺一 ⇒ flit 停在源 router);2×2 的 4 条环边(r00-r01-r11-r10-r00)构成 X-first 的去程(r00→r01→r11)与回程(r11→r10→r00)两条路径。⚠️ `nic_a`/`nic_b` **各自**都配 `address_regions`(0x1000-0x2000 映射到对方节点)⇒ 回程的 `lookup_node` 也能命中。",
+  "modules": [
+    {
+      "name": "tg",
+      "type": "TrafficGenTLM",
+      "params": {
+        "seed": 20261116
+      }
+    },
+    {
+      "name": "w",
+      "type": "StubCacheEndpointTLM"
+    },
+    {
+      "name": "home",
+      "type": "CohIfResponderTLM",
+      "params": {
+        "emit_completions": true
+      }
+    },
+    {
+      "name": "nic_a",
+      "type": "CohIfNICTLM",
+      "params": {
+        "node_id": 0,
+        "mesh_x": 2,
+        "mesh_y": 2,
+        "address_regions": [
+          {
+            "base": "0x1000",
+            "size": "0x1000",
+            "target_node": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "nic_b",
+      "type": "CohIfNICTLM",
+      "params": {
+        "node_id": 3,
+        "mesh_x": 2,
+        "mesh_y": 2,
+        "address_regions": [
+          {
+            "base": "0x1000",
+            "size": "0x1000",
+            "target_node": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "r00",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 0,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "r01",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 0,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "r10",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "r11",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    }
+  ],
+  "connections": [
+    {
+      "src": "tg",
+      "dst": "w.0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "w.1",
+      "dst": "nic_a.0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "nic_a.0",
+      "dst": "w.1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "nic_a.1",
+      "dst": "r00.4",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "r00.4",
+      "dst": "nic_a.1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "r00.1",
+      "dst": "r01.3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "r01.3",
+      "dst": "r00.1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "r01.0",
+      "dst": "r11.2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "r11.2",
+      "dst": "r01.0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "r11.3",
+      "dst": "r10.1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "r10.1",
+      "dst": "r11.3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "r10.2",
+      "dst": "r00.0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "r00.0",
+      "dst": "r10.2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "r11.4",
+      "dst": "nic_b.1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "nic_b.1",
+      "dst": "r11.4",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "nic_b.0",
+      "dst": "home.0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "home.0",
+      "dst": "nic_b.0",
+      "latency": 0,
+      "bandwidth": 100
+    }
+  ],
+  "cep": {
+    "protocol_instances": "include/tlm/cep/protocol_instances.json"
+  }
+}

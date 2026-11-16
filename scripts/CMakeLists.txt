@@ -74,6 +74,7 @@ if(Python3_EXECUTABLE)
         "${CMAKE_SOURCE_DIR}/configs/cep_chi_rnf_e2e_b.json"
         "${CMAKE_SOURCE_DIR}/configs/cep_chi_rnf_pe_minimal.json"
         "${CMAKE_SOURCE_DIR}/configs/cep_cohif_pe_minimal.json"
+        "${CMAKE_SOURCE_DIR}/configs/cep_mesh_e2e.json"
         "${CMAKE_SOURCE_DIR}/configs/cep_mesif_pe_minimal.json"
         "${CMAKE_SOURCE_DIR}/configs/cep_moesi_gpu_pe_minimal.json"
         "${CMAKE_SOURCE_DIR}/configs/cep_tilelink_pe_minimal.json"
