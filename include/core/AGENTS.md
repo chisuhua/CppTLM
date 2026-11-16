@@ -60,6 +60,7 @@ SimObject (基类 — 所有仿真模块)
 ## 注意事项
 
 - `module_factory.hh` 中 `stream_adapters_`/`ch_initiator_ports_`/`ch_target_ports_` 成员由 Step 7 注入阶段使用
+- **Step 7c（`cpptlm-simmodule-exposed-port-wiring` / ADR-X.15）**：`src/core/module_factory.cc` 新增隔离连接阶段，把 `SimModule` 暴露端口（`outputs`/`inputs`）与顶层 ChStream 端点建成真实 `PortPair`。方向按内部端口名后缀推导（`req_in`↔对端`req_out`、`resp_in`↔`resp_out`、`req_out`↔`req_in`、`resp_out`↔`resp_in`），单向、无自动响应镜像；失败一律硬错误；仅支持**单层** exposed（嵌套暴露报错）；`SimplePort::isBound()` 用于防 PortPair 静默覆盖。⚠️ 未声明 exposed 的 SimModule 的 `<实例>.<端口>` 引用（如 `pcie_ep.axi_slave_in`）维持既有普通端口语义，不受影响。
 - `parsePortSpec(full_name)` — 解析 `"xbar.0"` → `("xbar", "0")` 端口索引语法
 - PluginLoader 使用 `dlopen/dlsym` 动态加载共享库
 

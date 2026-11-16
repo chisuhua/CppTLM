@@ -26,6 +26,7 @@
 #include "tlm/cluster/apu_soc.hh"
 #include "tlm/cluster/gpu_internal_fabric.hh"  // P3 Task 22 (GpuInternalFabric wrapper)
 #include "tlm/cluster/soc_internal_noc.hh"      // cpptlm-dgpu-soc-internal-noc-minimal (2026-10-08, SoC 内部 NoC functional routing)
+#include "tlm/cep/cep_mesh_interconnect.hh"     // 2026-11-16: CEP 互联拓扑容器(蓝图由 params.template 承载)
 #include "tlm/gpu/gpu_soc_tlm.hh"
 #include "tlm/gpu/dgpu_soc.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
@@ -38,6 +39,9 @@ using namespace cpptlm::tlm;
 
 // 注册表写入是 expression statement, C++ 全局作用域禁止 expression statement,
 // 必须包成变量初始化: const auto _reg_X = REGISTER_MODULE(X);  触发 static init
+// ⚠️ CEP 互联容器用**显式短名**注册 —— `REGISTER_MODULE` 宏字符串化的是 `#T`
+//    (`tlm::cep::CepMeshInterconnect`),JSON 里写长名不合仓内短名惯例。
+const bool _reg_cepmeshinterconnect = (ModuleFactory::registerModule<tlm::cep::CepMeshInterconnect>("CepMeshInterconnect"), true);
 const bool _reg_cpucluster = (REGISTER_MODULE(CpuCluster), true);
 const bool _reg_computecluster = (REGISTER_MODULE(ComputeCluster), true);
 const bool _reg_tpccluster = (REGISTER_MODULE(TpcCluster), true);

@@ -1,0 +1,36 @@
+{
+  "name": "cep_mesh_2x2",
+  "description": "CEP 互联蓝图 —— 2×2 RouterTLM XY mesh(节点编号 node = y*mesh_x + x:node0=(0,0) · node1=(1,0) · node2=(0,1) · node3=(1,1))。⚠️ 本文件是**蓝图**:① 只放互联件(router),⛔ 不含业务模块;② ⛔ 不含 outputs/inputs(端口暴露归主拓扑);③ 内部 router 名 r00/r01/r10/r11 是**与主拓扑的接口契约**(主拓扑的 outputs.internal 按名指过去)⇒ ⛔ 改名即破坏契约。连接条数由实测确定(change cpptlm-cep-mesh-e2e-carrier 的 T1.3 探针):router↔router **2 条对称**,缺一 ⇒ flit 停在源 router。4 条环边覆盖 X-first 的去程(r00→r01→r11)与回程(r11→r10→r00)。",
+  "modules": [
+    {
+      "name": "r00",
+      "type": "RouterTLM",
+      "params": { "node_x": 0, "node_y": 0, "mesh_x": 2, "mesh_y": 2 }
+    },
+    {
+      "name": "r01",
+      "type": "RouterTLM",
+      "params": { "node_x": 1, "node_y": 0, "mesh_x": 2, "mesh_y": 2 }
+    },
+    {
+      "name": "r10",
+      "type": "RouterTLM",
+      "params": { "node_x": 0, "node_y": 1, "mesh_x": 2, "mesh_y": 2 }
+    },
+    {
+      "name": "r11",
+      "type": "RouterTLM",
+      "params": { "node_x": 1, "node_y": 1, "mesh_x": 2, "mesh_y": 2 }
+    }
+  ],
+  "connections": [
+    { "src": "r00.1", "dst": "r01.3", "latency": 1, "bandwidth": 100 },
+    { "src": "r01.3", "dst": "r00.1", "latency": 1, "bandwidth": 100 },
+    { "src": "r01.0", "dst": "r11.2", "latency": 1, "bandwidth": 100 },
+    { "src": "r11.2", "dst": "r01.0", "latency": 1, "bandwidth": 100 },
+    { "src": "r11.3", "dst": "r10.1", "latency": 1, "bandwidth": 100 },
+    { "src": "r10.1", "dst": "r11.3", "latency": 1, "bandwidth": 100 },
+    { "src": "r10.2", "dst": "r00.0", "latency": 1, "bandwidth": 100 },
+    { "src": "r00.0", "dst": "r10.2", "latency": 1, "bandwidth": 100 }
+  ]
+}

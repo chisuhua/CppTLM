@@ -39,7 +39,9 @@
 
 #include "module_factory.hh"
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
+#include <cstring>
 #include <format>
 #include <fstream>
 #include <set>
@@ -1181,6 +1183,257 @@ bool ModuleFactory::instantiateAll(const json& config) {
             ch_resp_out[dst_name][dst_idx]->setDelay(latency);
             DPRINTF(CONN, "[ChStream] Connected %s.resp_out[%u] -> %s.resp_in[%u] (latency=%d)\n",
                     dst_name.c_str(), dst_idx, src_name.c_str(), src_idx, latency);
+        }
+    }
+
+    // ========================
+    // 7c. 创建 PortPairs（SimModule 暴露端口 ↔ 顶层 ChStream 端点）
+    // ========================
+    // per `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md`（Proposed）。
+    //
+    // ⚠️ **隔离**：本阶段只处理「至少一端是 SimModule 暴露标签」的 connection；
+    //    两端都非 exposed ⇒ 直接 continue ⇒ 纯 ChStream 路径**零变化**（ADR 决策 4）。
+    // ⚠️ **方向按内部端口后缀推导**（ADR 决策 2），⛔ 不得用暴露标签字面推断 ——
+    //    承载请求的 exposed **output**（如 CpuCluster 的 `cpu0.req_out`）字面会判反。
+    // ⚠️ **失败一律硬错误**（ADR 决策 6），⛔ 不得沿用 Step 7b 的静默 continue 惯例。
+    // ⚠️ **未声明 exposed 的 SimModule 走既有「自身普通端口」语义**（如
+    //    `pcie_ep.axi_slave_in`）⇒ 本阶段对其**零影响**（ADR 决策 6 ① 的可达性限定）。
+    {
+        // 内部端口后缀 → 对端角色
+        enum class ExposedSuffix { ReqIn, RespIn, ReqOut, RespOut, Unknown };
+        auto suffix_of = [](const std::string& port_name) -> ExposedSuffix {
+            auto starts_with = [](const std::string& s, const char* p) {
+                const size_t n = std::strlen(p);
+                if (s.rfind(p, 0) != 0) return false;
+                // 后缀后必须是 '['（多端口镜像）或字符串结束
+                return s.size() == n || s[n] == '[';
+            };
+            if (starts_with(port_name, "req_in")) return ExposedSuffix::ReqIn;
+            if (starts_with(port_name, "resp_in")) return ExposedSuffix::RespIn;
+            if (starts_with(port_name, "req_out")) return ExposedSuffix::ReqOut;
+            if (starts_with(port_name, "resp_out")) return ExposedSuffix::RespOut;
+            return ExposedSuffix::Unknown;
+        };
+
+        // 端点分类：0 = 非 exposed 端点；1 = exposed 端点；-1 = 硬错误 ①
+        auto classify_endpoint = [&](const std::string& full, SimModule*& container,
+                                     std::string& internal_path, std::string& peer_module,
+                                     std::string& peer_port) -> int {
+            auto [mod_name, port_name] = parsePortSpec(full);
+            peer_module = mod_name;
+            peer_port = port_name;
+            container = nullptr;
+            internal_path.clear();
+
+            if (port_name.empty()) return 0;
+            auto it = module_instances.find(mod_name);
+            if (it == module_instances.end() || !it->second) return 0;
+
+            const std::string ip = it->second->findInternalPath(port_name);
+            if (!ip.empty()) {
+                container = it->second;
+                internal_path = ip;
+                return 1;
+            }
+            // ⚠️ 该 SimModule **声明过** exposed 端口 ⇒ 本连接引用的标签未声明 ⇒ 拼写错误
+            if (!it->second->getOutputConfigs().empty() ||
+                !it->second->getInputConfigs().empty()) {
+                std::fprintf(stderr,
+                             "[ModuleFactory] SimModule '%s' 声明过暴露端口，但连接引用了未声明的"
+                             "暴露标签 '%s'（连接 %s）\n",
+                             mod_name.c_str(), port_name.c_str(), full.c_str());
+                return -1;
+            }
+            // 未声明 exposed ⇒ 自身 PortManager 上的普通端口（既有语义，零影响）
+            return 0;
+        };
+
+        for (auto& conn : final_config["connections"]) {
+            if (!conn.contains("src") || !conn.contains("dst")) continue;
+
+            const std::string src_full = conn["src"];
+            const std::string dst_full = conn["dst"];
+            const auto conn_key = std::make_pair(src_full, dst_full);
+            if (processed_connections.count(conn_key)) continue;
+
+            SimModule* src_container = nullptr;
+            SimModule* dst_container = nullptr;
+            std::string src_internal, dst_internal;
+            std::string src_peer_mod, src_peer_port;
+            std::string dst_peer_mod, dst_peer_port;
+
+            const int src_kind =
+                classify_endpoint(src_full, src_container, src_internal, src_peer_mod, src_peer_port);
+            if (src_kind < 0) {
+                connection_failed = true;
+                continue;
+            }
+            const int dst_kind =
+                classify_endpoint(dst_full, dst_container, dst_internal, dst_peer_mod, dst_peer_port);
+            if (dst_kind < 0) {
+                connection_failed = true;
+                continue;
+            }
+
+            // 两端都非 exposed ⇒ 不属本阶段（纯 ChStream 路径，零变化）
+            if (src_kind == 0 && dst_kind == 0) continue;
+
+            // 硬错误 ⑤：两端都是 exposed —— 本阶段仅支持「一端 exposed + 一端顶层 ChStream」
+            if (src_kind == 1 && dst_kind == 1) {
+                std::fprintf(stderr,
+                             "[ModuleFactory] 连接两端都是暴露端口，本阶段仅支持「一端 exposed + "
+                             "一端顶层 ChStream 端点」: %s -> %s\n",
+                             src_full.c_str(), dst_full.c_str());
+                connection_failed = true;
+                continue;
+            }
+
+            const bool src_is_exposed = (src_kind == 1);
+            const std::string& internal_path = src_is_exposed ? src_internal : dst_internal;
+            const std::string& peer_module = src_is_exposed ? dst_peer_mod : src_peer_mod;
+            const std::string& peer_port = src_is_exposed ? dst_peer_port : src_peer_port;
+            const std::string& exposed_full = src_is_exposed ? src_full : dst_full;
+
+            // ── 内部端口后缀（ADR 决策 2）────────────────────────────────
+            // ⚠️ 取**最后**一段（嵌套路径 `inner.r0.req_out[4]` 的末段才是端口名），
+            //    否则嵌套暴露会被误判成「后缀非四类」而非「内部端口不可解析」。
+            auto [internal_owner, internal_port_name] = parsePortSpec(internal_path);
+            const size_t last_dot = internal_path.rfind('.');
+            const std::string suffix_part =
+                (last_dot == std::string::npos) ? internal_path : internal_path.substr(last_dot + 1);
+            const ExposedSuffix suffix = suffix_of(suffix_part);
+
+            // 硬错误 ④：后缀不属于四类（Step 7c 仅服务 ChStream mirror 端口）
+            if (suffix == ExposedSuffix::Unknown) {
+                std::fprintf(stderr,
+                             "[ModuleFactory] 暴露端口 '%s' 的内部端口 '%s' 不属于 "
+                             "req_in/resp_in/req_out/resp_out 四类，无法确定接线方向\n",
+                             exposed_full.c_str(), suffix_part.c_str());
+                connection_failed = true;
+                continue;
+            }
+
+            // ── 对端：必须是顶层 ChStream 模块 + 数字索引 ────────────────
+            if (ch_adapters.count(peer_module) == 0) {
+                std::fprintf(stderr,
+                             "[ModuleFactory] 暴露端口连接的对端 '%s' 不是顶层 ChStream 模块，"
+                             "无法接线（连接 %s -> %s）\n",
+                             peer_module.c_str(), src_full.c_str(), dst_full.c_str());
+                connection_failed = true;
+                continue;
+            }
+            const bool peer_is_index =
+                !peer_port.empty() &&
+                std::all_of(peer_port.begin(), peer_port.end(),
+                            [](unsigned char c) { return std::isdigit(c) != 0; });
+            if (!peer_is_index) {
+                std::fprintf(stderr,
+                             "[ModuleFactory] 暴露端口连接的对端端口 '%s.%s' 不是数字索引"
+                             "（连接 %s -> %s）\n",
+                             peer_module.c_str(), peer_port.c_str(), src_full.c_str(),
+                             dst_full.c_str());
+                connection_failed = true;
+                continue;
+            }
+            const size_t peer_idx = static_cast<size_t>(std::stoul(peer_port));
+
+            // ── 取两侧端口（Master/Slave 角色由后缀决定）──────────────
+            SimplePort* internal_port = nullptr;
+            SimplePort* peer_stream_port = nullptr;
+            const std::vector<ChStreamInitiatorPtr>* initiator_map = nullptr;
+            const std::vector<ChStreamTargetPtr>* target_map = nullptr;
+
+            switch (suffix) {
+                case ExposedSuffix::ReqIn:
+                    internal_port = src_is_exposed ? src_container->getInternalInputPort(internal_path)
+                                                  : dst_container->getInternalInputPort(internal_path);
+                    initiator_map = &ch_req_out[peer_module];
+                    break;
+                case ExposedSuffix::RespIn:
+                    internal_port = src_is_exposed ? src_container->getInternalInputPort(internal_path)
+                                                  : dst_container->getInternalInputPort(internal_path);
+                    initiator_map = &ch_resp_out[peer_module];
+                    break;
+                case ExposedSuffix::ReqOut:
+                    internal_port = src_is_exposed ? src_container->getInternalOutputPort(internal_path)
+                                                  : dst_container->getInternalOutputPort(internal_path);
+                    target_map = &ch_req_in[peer_module];
+                    break;
+                case ExposedSuffix::RespOut:
+                    internal_port = src_is_exposed ? src_container->getInternalOutputPort(internal_path)
+                                                  : dst_container->getInternalOutputPort(internal_path);
+                    target_map = &ch_resp_in[peer_module];
+                    break;
+                default:
+                    break;
+            }
+
+            // 硬错误 ②：内部端口不可解析（含嵌套容器路径）
+            if (!internal_port) {
+                std::fprintf(stderr,
+                             "[ModuleFactory] 暴露端口 '%s' 的内部端口 '%s' 不可解析"
+                             "（嵌套容器暴露当前不支持）\n",
+                             exposed_full.c_str(), internal_path.c_str());
+                connection_failed = true;
+                continue;
+            }
+
+            // 硬错误 ③：对端索引越界
+            if (initiator_map) {
+                if (peer_idx >= initiator_map->size()) {
+                    std::fprintf(stderr,
+                                 "[ModuleFactory] 暴露端口连接的对端索引 %zu 越界（模块 %s）\n",
+                                 peer_idx, peer_module.c_str());
+                    connection_failed = true;
+                    continue;
+                }
+                peer_stream_port = (*initiator_map)[peer_idx];
+            } else {
+                if (peer_idx >= target_map->size()) {
+                    std::fprintf(stderr,
+                                 "[ModuleFactory] 暴露端口连接的对端索引 %zu 越界（模块 %s）\n",
+                                 peer_idx, peer_module.c_str());
+                    connection_failed = true;
+                    continue;
+                }
+                peer_stream_port = (*target_map)[peer_idx];
+            }
+            if (!peer_stream_port) {
+                std::fprintf(stderr,
+                             "[ModuleFactory] 暴露端口连接的对端端口为空（模块 %s 索引 %zu）\n",
+                             peer_module.c_str(), peer_idx);
+                connection_failed = true;
+                continue;
+            }
+
+            // ── isBound 守卫（ADR 决策 2b）：防 PortPair 静默覆盖 ─────────
+            if (internal_port->isBound() || peer_stream_port->isBound()) {
+                std::fprintf(stderr,
+                             "[ModuleFactory] 暴露端口连接 '%s -> %s' 的端口已被绑定，"
+                             "拒绝静默覆盖既有 PortPair\n",
+                             src_full.c_str(), dst_full.c_str());
+                connection_failed = true;
+                continue;
+            }
+
+            // ── 建 pair（Master=initiator 在前，与 Step 7b 同序）────────
+            // PortPair 对称（simple_port.hh:41-50），但延迟按 initiator 侧设置（ADR 决策 8）
+            SimplePort* master = nullptr;
+            SimplePort* slave = nullptr;
+            if (suffix == ExposedSuffix::ReqIn || suffix == ExposedSuffix::RespIn) {
+                master = peer_stream_port;   // 对端 initiator
+                slave = internal_port;       // 内部 target
+            } else {
+                master = internal_port;       // 内部 initiator
+                slave = peer_stream_port;     // 对端 target
+            }
+
+            processed_connections.insert(conn_key);
+            port_pairs_.push_back(std::make_unique<PortPair>(master, slave));
+            const int latency = conn.value("latency", 0);
+            master->setDelay(latency);
+            DPRINTF(CONN, "[Exposed] Connected %s <-> %s (latency=%d)\n", src_full.c_str(),
+                    dst_full.c_str(), latency);
         }
     }
 

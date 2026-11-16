@@ -32,6 +32,11 @@ public:
     void setDelay(int d) { delay_cycles = d; }
     int getDelay() {return delay_cycles; }
 
+    // ⚠️ 是否已被 PortPair 绑定 —— per ADR-X.15 决策 2b:
+    // `PortPair` 构造**无条件** bind(simple_port.hh:46-49) ⇒ 对同一端口二次连接会
+    // **静默覆盖**既有 PortPair(flit 被劫持且零报错)。建 pair 前 MUST 先校验本项。
+    bool isBound() const { return pair != nullptr; }
+
     virtual ~SimplePort() = default;
 
 friend class TopologyDumper;

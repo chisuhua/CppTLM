@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-16T02:14:30Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-16T08:02:33Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-14T14:51:01Z",
-      "by": "user",
-      "reason": "五步链第 2~5 步已由 builder 执行完毕(产物 commit 884a6e0f / 清单 commit 501dfe4f / 无参复验 rc=0)⇒ 回 planner 落闭合回执(台账唯一写入方),避免 Entry #425 的链表停在 ⬜ 而被读成未闭合。"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-14T17:07:01Z",
-      "by": "user",
-      "reason": "per 用户口令「继续」⇒ 承接 planner 立项(台账 Entry #427):补 design.md / tasks.md + 实施 4 产物(W1 期望表 / W2 判据 / W3 脚本侧持久 fixture / W4 ctest 注册)+ 0 回归 + 归档五步链 + KPI 回填 1/3 -> 0/3。"
-    },
     {
       "role": "verifier",
       "at": "2026-11-15T03:04:55Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-16T02:14:30Z",
       "by": "user",
       "reason": "per 用户指令「请梳理和总结剩余的任务」⇒ 任务域 = 路线图/残余清单梳理(planner 产出域)。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-16T07:29:44Z",
+      "by": "user",
+      "reason": "per 用户裁决「先切 architect 评审」⇒ 实施期发现路径 B(真子模块 + exposed 端口)的前提不成立:SimModule 暴露端口在 module_factory 里既不被 Step 6(带索引端点被 Wildcard::match(\"*\",x) 恒真吞掉)也不被 Step 7b(非 ChStream 适配器)接入,扁平 config 能跑是因为走 Step 7b ChStream 直连。需 architect 评审「SimModule 暴露端口如何接入连接解析」并出决策(ADR)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-16T08:02:33Z",
+      "by": "user",
+      "reason": "per 用户裁决「切 builder 立项实施 Step 7c」⇒ 依据 ADR-X.15(Proposed, oracle APPROVE + critic APPROVE_WITH_CONDITIONS, 0 BLOCKER)立项实施 change `cpptlm-simmodule-exposed-port-wiring`:在 module_factory.cc 新增 Step 7c(隔离处理 SimModule exposed 连接的��向 PortPair)+ SimplePort::isBound 守卫,并让层次化 cep_mesh_e2e 跑通。"
     }
   ],
   "auto_switch_window": null
