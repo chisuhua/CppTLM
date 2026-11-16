@@ -24775,3 +24775,33 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 **KPI**:保持 **0/3**(本 entry 不新开 change)。
 
 **⑤ 关联**:Entry **#451**(两 change 归档)· **#450**(立项记录)· **#449**(前置 mesh carrier)· `.rddf/reviews/*-verify.md`(2 份验收报告)· `.rddf/improvements/cpptlm-router-routing-table-key-direction.md`(F-3 草稿)· `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md`(Status Update 已登记该发现)
+
+### Entry #453 — 2026-11-16 [planner](**F-3 根因订正** —— 原判「routing_table_ 键不含方向」**已证伪**;真根因 = **in-band credit flit 泄漏给非 router 消费者**)
+
+**主题**:对 Entry #452 的 F-3 根因做**订正**。原判经复核**证伪**,并给出经代码 + 逐周期实测双证据支持的真根因。
+
+**证伪原判(路由表键)**:
+- 原判前提 =「请求/响应共用 tx id ⇒ BODY/TAIL flit 命中残留 `out_port=LOCAL` 条目」。
+- **实测证伪**:`CohIfNICTLM::pack_flit` 对每个 flit 写 `flit_type = FLIT_HEAD_TAIL`;`NoCFlitBundle::is_head()` 对 `FLIT_HEAD_TAIL` 返回 **true** ⇒ `RouterTLM::stage_route_computation` **永远走 HEAD 分支 `computeRoute`**,BODY/TAIL 的 `routing_table_` 查表分支**不可达** ⇒ 碰撞不可能发生在本场景。
+
+**真根因(双证据)**:
+1. **代码**:`include/framework/bidirectional_port_adapter.hh:132-136` 的 `fill_credit(NoCFlitBundle&,vc)` 把 credit **编成一个 flit**(`flit_category=CATEGORY_CREDIT`,`flit_type=FLIT_HEAD_TAIL`;`dst_node`/`hops` 保持 0),并在 `:321-324` 经 **`resp_out_port_` 同一通道**发出(`Packet::type=PKT_CREDIT_RETURN`)。`src/tlm/router_tlm.cc` 对**每个**入向 flit 回 credit,且 `reverse_port(LOCAL)==LOCAL` ⇒ 经 LOCAL 口进入的 flit 会把 credit 送回 `resp_out[LOCAL]`,即**跟着数据一起流向挂在 LOCAL 上的 NIC**。
+2. **逐周期实测**(层次化 `cep_mesh_e2e.json`,300 周期):
+   - `cyc=13 nic_b recv=1 last(dst=3 hops=3)` ← 真请求
+   - `cyc=18 nic_b recv=4 last(dst=0 hops=0)` ← **credit 紧跟真请求到达**
+   - 之后「真请求 dst=3/hops=3」与「credit dst=0/hops=0」交替出现。
+   ⇒ 与「每收 1 真请求紧跟 1 个 hops=0 flit」完全吻合。
+
+**缺陷点**:`CohIfNICTLM::handle_net_ingress` **不辨 credit**(不查 `Packet::type`、也不查 `flit_category==CATEGORY_CREDIT`)⇒ ①`flits_received` 虚增;②`last_recv_dst_node_/last_recv_hops_` 被覆写为 0;③`pe_resp_out_.write(unpack_flit(credit))` 向业务侧灌入**全零伪 Completion**(`unpack_flit` 把非 REQUEST 一律投影为 Completion)。
+
+**这同时解释了**:为何 `last_recv_*` 是**顺序敏感**计数器(跨装配方式不稳定)⇒ Entry #452 的 F-1(Step7c AC-07)/F-2(mesh AC-04)判据必须改为 **mesh 级**的**根本原因**。**平铺基线同样存在**此污染(`nic_a.last_recv_hops==0` 即 credit),故它不是层次化引入的。
+
+**backlog 收益**:错误草稿 `.rddf/improvements/cpptlm-router-routing-table-key-direction.md` **已删除**;替换为 **`.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md`**(🔴 未立项 · 5 段 + AC-01~AC-05 + 主修 = 消费者侧按 bundle 字段过滤 credit;可选 = router 侧 LOCAL 不回 credit)。
+
+**仍需同步订正的载体(⛔ 非 planner 可写)**:
+- `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md` 的 Status Update「发现 2」仍写路由表键 ⇒ **architect** 追加订正。
+- `.rddf/reviews/cpptlm-simmodule-exposed-port-wiring-verify.md` / `…-cpptlm-cep-mesh-interconnect-submodule-verify.md` 的 F-3 根因 ⇒ **verifier** 订正。
+
+**KPI**:保持 **0/3**。
+
+**⑥ 关联**:Entry **#452**(F-3 初判)· **#451**(两 change 归档)· `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md` · `include/framework/bidirectional_port_adapter.hh:126-139,299-330` · `include/tlm/cep/cohif_nic.hh`(`handle_net_ingress`)· `src/tlm/router_tlm.cc`(`return_credit_to_upstream`)
