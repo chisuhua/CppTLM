@@ -142,6 +142,7 @@ VIRTUAL_PATHS=(
   "include/cudart/abi_guards.h"                      # **已物理删除**:同上 —— R-12:`openspec/specs/pcie-slice-prerequisites/spec.md:14` 的跨仓 ABI 静态断言锚点已随 HSK-6 删除
   "include/cudart/cpptlm_bridge.h"                   # **已物理删除**:同上 —— R-10:`cpptlm-d1-p1-pipeline-scoreboard` 的 SUPERSEDED 锚点
   "docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md"  # **已迁 ArchForge**(仓内仅占位 README,per AGENTS.md §STRUCTURE)—— R-14:`pcie-ip-integration` 的 Requirement 要求交付该文档
+  "docs/soc_arch/architecture/00-overview.md"                 # **已迁 ArchForge**(仓内仅占位 README)—— R-15:`v1-architecture` 引用的总架构蓝图
   "experimental/run-<ts>-<tag>/<hN>/"              # **目录布局示意**(2026-11-10,per 批 1 前置审查):含 `<ts>`/`<tag>`/`<hN>`
                                                       #   三段**占位符** ⇒ 不是「可判存在的单一路径」(实际 run 目录名逐次不同)
                                                       #   ⇒ 由 07 号 §12.4「仓内实际布局与契约有三处差异」① 引用
