@@ -24667,7 +24667,7 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 
 #### §2 实施产物(**零架构裁决 + 零冻结面改动**)
 
-- **新增**:`include/tlm/cep/cohif_nic.hh`(**header-only** · 照仓内 CEP 惯例)· `configs/cep_mesh_e2e.json` · `test/test_cep_mesh_e2e.cc` · `test/test_noc_mesh_binding_semantics.cc`(探针**转正**为回归载体)· `openspec/changes/cpptlm-cep-mesh-e2e-carrier/specs/cep-cohif-network-adapter/spec.md`(delta · 归档时合并为 main spec)
+- **新增**:`include/tlm/cep/cohif_nic.hh`(**header-only** · 照仓内 CEP 惯例)· `configs/cep_mesh_e2e.json` · `test/test_cep_mesh_e2e.cc` · `test/test_noc_mesh_binding_semantics.cc`(探针**转正**为回归载体)· `openspec/specs/cep-cohif-network-adapter/spec.md`(归档时已合并)
 - **改动**:`include/chstream_register.hh`(+1 include + 4 行注册)· `scripts/CMakeLists.txt`(CEP config 清单 +1)· 5 处 KPI 活口径(0/3 → **1/3**)
 - **实测**:`nic_b.last_recv_dst_node()==3` · `last_recv_hops()==3` · `r.flits=45` / `r.packets=45` / `r.hops=90` · Completion 回程抵达 stub ✅ · 变异按**正确原因**红(`NotArrived`)✅
 - **零回归**:`[cep]` **533** 用例 / 12321 断言 · `[e2e]` **144** 用例 / 7358 断言 · `ctest -R cep` **100/100** · 45 闸数量不变
@@ -24685,7 +24685,7 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 
 #### §5 关联
 
-Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批 3 归档)· **#444**(目标达成度全量核对 · §2.2 类 B · §3 波 2)· **#305**(`cpptlm-cep-stub-cache-chstream-surface` 归档 —— G1 已完成的真源)· `.rddf/improvements/cpptlm-cep-mesh-e2e-carrier.md` · `openspec/changes/cpptlm-cep-mesh-e2e-carrier/` · `openspec/changes/cpptlm-cep-mesh-e2e-carrier/specs/cep-cohif-network-adapter/spec.md`(delta · 归档时合并为 main spec)
+Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批 3 归档)· **#444**(目标达成度全量核对 · §2.2 类 B · §3 波 2)· **#305**(`cpptlm-cep-stub-cache-chstream-surface` 归档 —— G1 已完成的真源)· `.rddf/improvements/cpptlm-cep-mesh-e2e-carrier.md` · `openspec/changes/archive/2026-11-16-cpptlm-cep-mesh-e2e-carrier/` · `openspec/specs/cep-cohif-network-adapter/spec.md`(归档时已合并)
 
 ### Entry #449 — 2026-11-16 [builder](**CEP coherence 流量穿过真实 mesh 归档** —— `CohIfNICTLM` + 2×2 mesh 联合拓扑 + 端到端判据落地 · KPI **1/3 → 0/3** · 冻结产物 **86 → 87**)
 
