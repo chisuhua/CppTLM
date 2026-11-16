@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "planner",
-  "updated_at": "2026-11-16T09:51:13Z",
+  "updated_at": "2026-11-16T10:48:49Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-15T05:32:12Z",
-      "by": "user",
-      "reason": "per 用户口令「再切builder进行实施」⇒ 实施已立项 change `cpptlm-cep-spec-strict-compliance`(Entry #434):8 份 Purpose + 5 份 delta 合并 + 防退闸 + 共享 helper 扩展 + removals.json + 7 步归档链 + KPI 1/3 -> 0/3。"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-15T06:24:50Z",
-      "by": "user",
-      "reason": "per 用户口令「继续推进后续任务实施」⇒ 测试收敛后选 R-4(CEP 闸族健壮性:9 闸固定影子路径并发互踩 + 决策块闸覆盖集合无自愈 + 4 处注释 stale)立项;同时登记新发现 R-7(2 份 spec ERROR 级结构性无效)与 R-5 已闭合。"
-    },
     {
       "role": "builder",
       "at": "2026-11-15T06:44:45Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-16T09:51:13Z",
       "by": "user",
       "reason": "per 用户口令「切 planner 继续处理」⇒ 处置 verifier 的报告项:F-1/F-2(AC 文本 proposal_drift 订正 + 落台账作为可持久记录,因 openspec/changes/archive/ 被 gitignore 不可入库)+ F-3(RouterTLM routing_table_ 键不含方向的 backlog improvement 草稿)+ 台账 Entry #452(验收闭合回执)。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-16T10:48:23Z",
+      "by": "user",
+      "reason": "per 用户口令「切 architect 订正，然后检查是否要修订 docs 下相应的文档」⇒ 订正 docs/adr/ADR-X.15 的 Status Update「发现 2」(旧路由表键根因已证伪 => 真根因 = in-band credit flit 泄漏给非 router 消费者)，随后核对 docs/ 下其他文档是否含该已证伪表述。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-16T10:48:49Z",
+      "by": "user",
+      "reason": "per 用户口令「切 planner 审查 cpptlm-router-credit-flit-leak-to-consumer, 并继续切 builder 进行实施」⇒ planner 侧: metis 审查该 improvement 草案(新增, 1 轮预算) + 立项(台账 Entry + KPI 0/3 -> 1/3); 之后切 builder 实施。"
     }
   ],
   "auto_switch_window": null

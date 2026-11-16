@@ -24805,3 +24805,26 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 **KPI**:保持 **0/3**。
 
 **⑥ 关联**:Entry **#452**(F-3 初判)· **#451**(两 change 归档)· `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md` · `include/framework/bidirectional_port_adapter.hh:126-139,299-330` · `include/tlm/cep/cohif_nic.hh`(`handle_net_ingress`)· `src/tlm/router_tlm.cc`(`return_credit_to_upstream`)
+
+### Entry #454 — 2026-11-16 [planner](**立项** `cpptlm-router-credit-flit-leak-to-consumer` · 经 **metis 审查**修订(3 条 P0 事实订正 + scope 收敛) · 同源另一面**分离**为 `cpptlm-router-local-port-credit-exhaustion` · KPI **0/3 → 1/3**)
+
+**主题**:verifier 报告的 F-3(credit flit 泄漏)经 Entry #453 根因订正后,由 planner **立项**为 change,并在立项前经 **metis** 做预规划差距分析(该 improvement 总计 1 轮预算)。
+
+**metis 的 3 条 P0 发现 + planner 逐条代码核实**:
+
+| # | metis 主张 | 核实结果 |
+|:--:|---|---|
+| 1 | **Why 第 2 条事实错误**:credit 回 `reverse_port(in_port)` ⇒ 只有 NIC **自己注入**的 flit 会换来落在 NIC 上的 credit;被投递给 NIC 的响应其 credit 回上一跳 router | ✅ 成立。`return_credit_to_upstream(waiting_flit.in_port,…)` 在 `router_tlm.cc:323/359/383` 三处 + `reverse_port(LOCAL)=LOCAL`(`router_tlm.hh:229`)。已订正 Why 第 2 条为对照表 |
+| 2 | **漏了同源缺陷的另一面**:`LOCAL` 输出同样 `consume_credit`,初值 `BUFFER_DEPTH=8`,终端消费者无归还通道 ⇒ 每 `(LOCAL,vc)` 8 个 flit 后**静默停滞**,`credit_timeout_` 默认 0 无检测 | ✅ 成立。`consume_credit(out_port,out_vc)` 在 `router_tlm.cc:307,367`(不分端口);`downstream_credits_` 初值 `:57`;`credit_timeout_=0`(`router_tlm.hh:298`);`credit_safety_reset()` 于 `:503-506` 直接 return |
+| 3 | **AC-04 不可证伪 / AC-05 无边界 / AC-02「真实事务数」不可求 / AC-01 可被空断言通过** | ✅ 全部采纳:AC-01 改为「先注入真 flit 再注入 credit」;AC-02 改为定性+可读计数器;AC-04 降为**回归守卫**并注明零判别力;AC-05 限定为**四处具名断言**且禁止放宽/删除 |
+
+**scope 收敛(关键决策)**:**本 change 只做消费者侧过滤**(`CohIfNICTLM::handle_net_ingress` 按 `flit_category == CATEGORY_CREDIT` 丢弃 + `stats_credits_dropped_` 可观测),**⛔ 不改 `RouterTLM`** —— 因为 credit 耗尽面的修复涉及**流控语义取舍**(LOCAL 是否参与 credit / per-port `credit_aware` 声明),按角色边界归 **architect** 决策,planner 不拍板。⇒ 已另立 improvement **`.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`**(🔴 未立项,方案 A/B 二选一 + AC-01~AC-05)。
+⚠️ 因此主 improvement 新增 **AC-06**:显式声明「本 change 只解 credit 污染,不解 credit 耗尽;长 run(> 32 flit/LOCAL 口)仍会停滞」,禁止在 AC-02 结论里暗示「零污染 ⇒ 长 run 等价」。
+
+**修订后的可实施口径**(主 improvement):改动面 **限于** `include/tlm/cep/cohif_nic.hh` + 新测试 + `openspec/specs/cep-cohif-network-adapter/spec.md:52` 的**加从句**(非新增并列条款,避免与既有「SHALL NOT 承载 credit 语义」自相矛盾);AC-01~AC-07 七条,其中 AC-03(`last_recv_dst_node==3 && hops==3`,层次化+平铺各断言)是**新增**断言(现有测试 0 条 `last_recv_*` 断言,grep 可复核);AC-07 补「伪 Completion 消失」三判据(`net_completions_in == net_requests_out` / PE 侧 `transaction_id != 0` / `foreign_consumed == 0`)。
+
+**边界结论(metis 已核实,写入 improvement)**:`flit_category` 在 `NoCFlitBundle` 的 `InputStreamAdapter` 路径上**完整可读**(字段 `noc_bundles_tlm.hh:45` · `fill_credit` 写入 · `bundle_serialization` 整结构 memcpy · `data()` 暴露);但该判据**不可推广**到 `CohIfBundle`(无 `flit_category`/`vc_id`) —— 其消费者已由 `BidirectionalPortAdapter::tick()` 的 `receive_credit` 拦截(`bidirectional_port_adapter.hh:255-274`)。
+
+**KPI**:**保持 0/3**。⚠️ 本 entry 的「立项」= improvement **approved**(`.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md` frontmatter 已置 🟡 已立项),但 **`openspec/changes/` 下尚无该 change 目录** ⇒ 按实测口径（`docs_sync_check` 的 KPI 断言以 active change 数为准）**未占 slot**。⇒ **change 目录由 builder 在 P0 生成时回填 6 处活口径为 1/3**,并在该时机登记下一 entry。
+
+**⑦ 关联**:Entry **#452**(F-3 初判)· **#453**(根因订正)· **#451**(两 change 归档)· `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md`(已立项)· `.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`(另一面 · 未立项)· metis 审查(1 轮,结论已并入本 entry)
