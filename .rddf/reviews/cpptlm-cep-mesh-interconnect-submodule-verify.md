@@ -31,7 +31,7 @@
 |:--:|---|---|---|
 | **F-1** | `proposal_drift`（轻） | **AC-03 文本写 `fabric.portN_*`**，实现为 `node0_*` / `node3_*`（8 个，4 通道 × 2 节点）⇒ AC 文本 stale（实现正确） | planner（订正 AC-03 文本） |
 | **F-2** | `proposal_drift`（轻） | **AC-05 文本「模块数 / 连接数与蓝图逐项相等」**，实际只断言**模块数**；连接数无判据 | planner（AC-05 收敛为「模块数 + 逐条 PortPair 等价（由比对平铺基线间接覆盖）」，或补连接数断言） |
-| **F-3** | `backlog`（记录） | **`RouterTLM::routing_table_` 以 `transaction_id` 为键、不含方向**（既有缺陷，回声）—— 平铺基线同样存在；两 change 均未碰 `RouterTLM`（AC-06 零回归已证）。**建议立项**修复 | planner（backlog 立项） |
+| **F-3** | `backlog`（记录）**—— 2026-11-16 根因订正** | 原判「`RouterTLM::routing_table_` 以 `transaction_id` 为键、不含方向」**已证伪**：`CohIfNICTLM::pack_flit` 一律写 `FLIT_HEAD_TAIL`，而 `is_head()` 对 `HEAD_TAIL` 返回 true ⇒ `stage_route_computation` **恒走 HEAD 分支**（`computeRoute`），BODY/TAIL 的查表分支**不可达**。**真根因 = in-band credit flit 泄漏给非 router 消费者**（`fill_credit` → 同一 `resp_out` 通道 → `reverse_port(LOCAL)==LOCAL` → `handle_net_ingress` 不辨 credit ⇒ 计数虚增 / `last_recv_*` 被覆写成 0/0 / 全零伪 Completion）。**已由 change `cpptlm-router-credit-flit-leak-to-consumer` 修复并归档 + 独立验收 PASS**（见 `.rddf/reviews/cpptlm-router-credit-flit-leak-to-consumer-verify.md`；根因订正过程见台账 Entry #453） |
 
 > 本轮**无 implementation_gap**：所有差异均为「AC 文本/判据粒度」层面，实现本身通过全部功能性判据。
 
