@@ -64,7 +64,7 @@
     "openspec/specs/cep-instance-assembly/spec.md": "6d2b352f6b7ee6f56c2dd7ced2bb167f0852b5455b46245b18ca761842f64770",
     "openspec/specs/cep-instance-authority-partition/spec.md": "8fa4011df2ea90cb70f18a5f46a360f2b33c4b0823de10b55083c35dbcf171d6",
     "openspec/specs/cep-invariant-gate/spec.md": "7d6ae0c3597c8bf23da1c29f16605bb81dbed2d3a091274d881e532be135be97",
-    "openspec/specs/cep-mesh-interconnect-submodule/spec.md": "b33a8bce4068c1fcf2ce4c3355858f02b9dbc6e41e9b1cd1b925c0262096e9d9",
+    "openspec/specs/cep-mesh-interconnect-submodule/spec.md": "c1ce04d23d4e821ea70a59721351cedcf788b28955af3ea3553ae7a27a4e6222",
     "openspec/specs/cep-mesif-adapter/spec.md": "79643d8760bbde17b95b1818116671b5b023892bc18ad8a63df81a4e530a18d2",
     "openspec/specs/cep-mesif-state-spec/spec.md": "fd02855675ed8dbf9dcfb6ef6cbeb70c4f46586f4e2abbf4c236cebeff63fa3c",
     "openspec/specs/cep-moesi-gpu-adapter/spec.md": "62d6e2193a36d369d9d6835cff2d57128cdf18334972961ff69e3093bc0be423",
@@ -93,7 +93,7 @@
   "authorized_by": "Entry #451",
   "exclusions": [],
   "frozen_at": "2026-11-16",
-  "frozen_at_commit": "0088291b62b89cfa1b1f813c868168b21baf90e0",
+  "frozen_at_commit": "26cdb7352a8abb26a8bcc9b4aa97e83ca3b30630",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
