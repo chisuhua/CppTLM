@@ -24550,3 +24550,46 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 **⑨ 残余（本 change 登记，未修）**：**R-15**（`v1-architecture` 引用已迁 ArchForge 的 `00-overview.md`）· **R-16**（3 份未实施 spec 存废 · 路由 architect）· **R-17**（2 份来源 change 归档目录缺失，曾存在于 commit `0345d283` / `689752ef`）· **R-18**（doorbell 配置 vs 代码不一致）· **R-19**（`AGENTS.md` 的 LWC handler 名与实现实际名不一致）· **R-20**（`adapter-info` 的 Scenario 引用已删除 ABI · ⚠️ `scope_exceeded`）· **R-1 批 2**（26 份正文 >500，裁剪**会动 Requirements 段** ⇒ 另一档风险）· **R-1 批 4~6**（其余 45 份 Purpose）· **R-9** 清单增殖 · **R-2** 13 键 golden · **DoD 7 口径订正**（61 条有载体 + 5 条 ⏭）· **B3b-2 = 0/4**（external，本仓不可推进）。
 
 **⑩ 关联**:Entry **#444**（本 change 立项 + 全量核对）· **#443**/**#442**/**#441**（**批 1** 的验收 / 收口 / 立项 —— 判据与范式全部复用）· **#438**（上轮全量梳理）· `.rddf/reviews/cpptlm-spec-purpose-batch3-verify.md`（verifier 待做）· `openspec/changes/archive/2026-11-16-cpptlm-spec-purpose-batch3/` · `scripts/test/cep_spec_purpose_batch3_{gen,check}.py` · `test/spec_purpose_batch3_{attribution,reconcile}.json`
+
+### Entry #446 — 2026-11-16 [verifier](**R-1 批 3 独立验收** —— AC-01~AC-10 + AC-02c 逐条 · **全通过(PASS)** · 报告落 `.rddf/reviews/`)
+
+**主题**:已归档 change `cpptlm-spec-purpose-batch3`(Entry #444 立项 / #445 收口,产物 commit `73a3af5e`,基线 `f1cb3cb8`)的**独立验收**(第 1 轮)。报告 = `.rddf/reviews/cpptlm-spec-purpose-batch3-verify.md`。
+
+**① 分流判定**:① change 含 `## 验收标准` 段 ✓ · ② **P3 archive gate 信号缺失**(`.rddf/state/iteration.json` **不存在** —— 本会话未跑 `rdd-builder` skill)✗ · ③ skill 可加载 ✓ ⇒ **条件 ② 不满足 ⇒ 走本地验收**(5 步)。⚠️ 本地验收的额外门(`iteration.json` 的 `tasks_done == tasks_total`)在该文件不存在时**无法适用** ⇒ pass 结论**完全由逐条工具证据支撑**。
+
+**② 独立性原则**:被验 change **自带**校验脚本 ⇒ 用它验自己 = 自证 ⇒ 验收**另写一份独立实现**(`/tmp/opencode/verify_batch3.py`,不同代码路径 / 不同判定口径):LCS 改**窗口 + in 判定** brute 实现 · 规范化改**反向白名单** · 锚点改 **`grep -rlw`（词边界精确）** · 归因独立重算 · diff 形状独立 `--numstat` + **逐份 Requirements 段字节比对** · **pre/post 独立构造基线影子根(`git archive`)并实跑 openspec 重算**。⇒ **两套实现结论一致**才算证据。被验脚本的判别力另验:**落地前**跑 ⇒ **0/14 绿**(占位残留被 C-1 抓到)=> 有牙。
+
+**③ 判定**:**PASS**(10/10 通过 · 0 不通过 · **0 未取证**)
+
+| AC | 判定 | 关键证据 |
+|:--:|:--:|---|
+| AC-01 零占位 | ✅ | 独立实现限段扫 14 份 ⇒ 命中 **0** |
+| AC-02 定向 | ✅ | 14 份 `--strict --json` 含 `placeholder` 类 issue 的 = **0** |
+| AC-02b 全局闭合 | ✅ | **独立影子根 + 实跑 openspec** 重算 ⇒ **pre 65 / post 55 / k = 10**;载体声明与独立复算**一致** |
+| AC-02c 闭合载体 | ✅ | `test/spec_purpose_batch3_reconcile.json` 的 **6 条机判**独立复核 ⇒ 全 True |
+| AC-03 四条正交 | ✅ | 独立实现复算 14 份(长度/单行/CJK-LCS/词序列/**15 类禁式**/C-10)=> 问题 **0** |
+| AC-04 零语义 + 形状 | ✅ | **14 文件** · 增行数非 1 的 = **0**;**Requirements 段 14/14 逐字节不变** |
+| AC-05 不声称不存在的能力 | ✅ | 独立复算 14 份(C-6 互斥 / C-7 可复现+核心名 / **C-8 `grep -rlw` 精确**)=> 问题 **0** |
+| AC-06 `cep-*` 不受影响 | ✅ | 43 份 `--strict` rc≠0 = **0** · `artifact_count` **86** |
+| AC-07 范围零 diff | ✅ | `include/` `src/` `test/*.cc` `docs/adr/` `cep-specs/` ⇒ **0** 个文件 |
+| AC-08 闸 0 回归 | ✅ | **45 闸**逐个实跑 rc=0 · 闸数(磁盘)= **45** 不变 · `ctest -R cep` **100/100** · 全量 **180/180** · `[cep]` **529/12288** · 被验脚本 **14/14** |
+| AC-09 KPI + 体量 | ✅ | active **0** · 归档 **change 目录数** **151** · `docs_sync --strict` rc=0 |
+| AC-10 归档语义可判别 | ✅ | 归档 proposal 标记行 + JSON `archive_semantics` + 无 `specs/` 目录 |
+
+**④ ⚠️ 验收侧发现（8 条 · 全部是**被验脚本/判据自身**的缺陷，非实现缺陷）**
+- **F-1**:`--reconcile` 基线取 `HEAD` 会假失效(落地已 commit ⇒ HEAD 即 post 态 ⇒ 重跑得 pre=55/k=0)—— critic 验证建议指出,builder 已修为**基线显式化**
+- **F-2**:AC-04 的「删 1 增 1」是**过严代理**(实测 1 份删 2)⇒ 改的是形状描述;实质判据「Requirements 段逐字节不变」是**结构性保证**(替换正则保留 `\n## Requirements` 起的一切字节)
+- **F-3**:C-7 核心名曾误用带日期前缀的目录名 ⇒ 12 份全判红 ⇒ 已修
+- **F-4**:C-6 大小写漏洞 ⇒ 已加 `re.IGNORECASE`;⚠️ 词表**故意不含** `SUPERSEDE`(不带 d)—— `| **supersede** | 原 X |` 语义是「**本 spec 取代了 X**」⇒ 命中 = 假红
+- **F-5**:C-9 与 design D-3/AC-02c 三处不一致(`fixed_pure` 未纳入 mc / 查 post 而非 pre / `k_equals_len_fixed` 硬编码恒真)⇒ 已修
+- **F-6**:**实施判定不能用 tasks 勾选** —— 批 1 F-6 已证「归档后执行未回勾」⇒ tasks 是记录债;实测本批 **8 份「0 勾选」中 6 份实现锚点全部命中** ⇒ 若用 tasks 会**误移出 6 份已实施 spec**
+- **F-7**:`repo_has_symbol` 递归扫 `test/` 且含 `*.py`,比文档的 `test/*.cc` 更宽 ⇒ 已收窄
+- **F-8**:**R-20**(`adapter-info` 的 Scenario 引用已删除 ABI)—— critic `scope_exceeded` ⇒ 登记不回改;本 change 的 Purpose 已回避该符号(实测 **0** 次提及)
+
+**⑤ 遗留清扫(本次范围)**:TODO/FIXME/HACK **0** · 死代码 **0** · skip/`.disabled` **0** · mock N/A · fallback = C-6 的 `DOMAIN_TOKENS` 白名单(已登记)· **资源释放**:校验器 `--reconcile` 的影子根用 `tempfile.mkdtemp` ⇒ **已 `shutil.rmtree` 回收**(实测:删除时机在 `fixed_pure` 计算后、载体落盘前 —— 提前删会导致 pre 复算失效)· 跨批遗留 = 新登记 **R-15 ~ R-20**。
+
+**⑥ 已用轮次**:**1**(上限 3)· 全程**只读取证**,未修改任何实现或规范文件。
+
+**⑦ 后续**:① **R-1 批 4~6**(其余 **45** 份 Purpose)—— ⚠️ **判据 C-1~C-10 一经落地不得改语义,只能追加**(判据每批复制一次,漏洞也会被复制)② **R-1 批 2**(26 份正文 >500 ⇒ 动 `## Requirements` 段 ⇒ 另一档风险,须另立 change + architect)③ **architect 裁决批**(B-1 后 2 条 invariant / B-2 19 条 ADR 归因 / B-3 DoD 7 口径 / C-3 R-10~R-15 / C-4 R-9·R-2 / `AGENTS.md` 归档分类表)④ R-6 版本 pinning · R-3 ArchForge 缺席(**本机不成立**)⑤ **B3b-2 = 0/4** —— ⛔ **external,本仓不可推进,不排期**。
+
+**⑧ 关联**:Entry **#445**(收口)· **#444**(立项 + 全量核对 + metis 处置)· **#443**/**#442**/**#441**(批 1 的验收/收口/立项)· **#438**(上轮全量梳理)· `.rddf/reviews/cpptlm-spec-purpose-batch3-verify.md` · `openspec/changes/archive/2026-11-16-cpptlm-spec-purpose-batch3/`
