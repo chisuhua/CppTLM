@@ -25015,3 +25015,25 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 **KPI**:保持 **1/3**(本条不新开 change;active change = `cpptlm-router-local-port-credit-exhaustion`,per Entry #459)。
 
 **⑧ 关联**:Entry **#460**(授权修订 `fabric-transport.md` 的过期 SHALL 断言)· **#459**(同源另一面 `cpptlm-router-local-port-credit-exhaustion` 立项)· **#457**(F-3 归档)· `docs/adr/ADR-X.16-router-local-port-terminal-credit.md`(`## 关联` 章 · 缺口原始登记处)· `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md`(2026-11-17 追加段第 5 条)· `.rddf/improvements/cpptlm-nictlm-credit-flit-filter.md`
+
+### Entry #462 — 2026-11-17 [builder](**执行** Entry #460 授权 —— 修订 `fabric-transport.md` 的过期 SHALL 断言 · **oracle APPROVE** · 冻结清单 `--update` 重刷)
+
+**主题**:执行台账 **Entry #460** 的授权(architect 改文 + builder 跑 freeze `--update`),闭环「CEP 真源 1 子文档仍写着已被证伪的 SHALL 级断言」这一漂移。
+
+**改了什么**(`docs/architecture/cep/fabric-transport.md` **仅 1 行**,`:43`):
+
+- **旧**:`⚠️ 仓内**不存在** Router + flit 级路径 ⇒ 拓扑的**名称 / 描述 SHALL 如实反映**这一点。`
+- **新**:`⚠️ **「经网络」须分两级如实描述**:仓内**现已存在** Router + flit 级路径 —— CohIfNICTLM ↔ RouterTLM 构成的 XY mesh(CohIfBundle → NoCFlitBundle;判据载体 test/test_cep_mesh_e2e.cc);但**协议引擎(engine)不参与**该业务事务路径(stub ↔ home 事务;per ADR-CEP-19 的 SU 2026-11-09)⇒ 拓扑的**名称 / 描述 SHALL 如实反映**其路径**含**的是「仅 ChStream 连接」还是「Router + flit」两级中的哪一级。`
+
+**审查**:oracle **APPROVE**(0 必改项;逐条读码核实能力落地、engine 边界无反例、改动范围严格在授权内)。采纳其 2 条**可选**措辞精化:「其接入的是…哪一级」→「其路径**含**…哪一级」(贴合 mesh 混合路径实情)+ 补主体限定「(**stub ↔ home 事务**)」(与 Entry #449 的精确边界对齐)。两条与改文**同批**落盘(⛔ 不得就冻结面二次改文)。
+
+**⛔ 明确未做**(per Entry #460 授权边界 + oracle 已排除的替代方案):
+- 未改 `:5` 头部「本层当前**无 CEP 自有**运行时实现」—— 限定词「自有」使其**仍准确**(`include/tlm/cep/` 内仍无 router/credit 模型)。
+- 未改 §6.3 注册表 / R1 混排装配规则 / **J-9 拓扑分档判据表** —— 授权明确排除。
+- 未给 mesh 形态立 J-9 第三档:该拓扑**既不满足 A 也不满足 B**(有 `latency=1` 且**无** `cep.bridges` 键)⇒ 属**另立 change** 的范围,⛔ 不得借本次授权顺带做。
+
+**冻结面**:该文件已在 `FROZEN_GLOBS` 内 ⇒ 改文后 `cep_freeze_check` 必红 ⇒ 已跑 `cep_freeze_check.sh --update --authorized-by "Entry #460"`(授权校验通过;产物数 **88 不变**,仅 hash 重刷)。⚠️ 顺序纪律:改文**先 commit** 再 `--update`,否则 manifest 记录的 hash 与 commit 内容不一致(provenance 警告)。
+
+**KPI**:保持 **1/3**(纯文档修订,不新开 change)。
+
+**⑨ 关联**:Entry **#460**(授权条)· **#461**(NICTLM credit 过滤缺口登记)· **#459**(同源另一面立项)· **#449**(mesh carrier 归档 · 能力落地来源)· `docs/architecture/cep/fabric-transport.md` · `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md` · `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md`(SU 2026-11-09 · engine 不参与边界)

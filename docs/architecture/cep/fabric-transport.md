@@ -40,7 +40,7 @@
 | **① 互联可达** | 「一次事务经**带 latency 的 ChStream 连接**抵达对端」—— ⛔ **不经桥** |
 | **② 桥投影** | **测试级**断言(构造 `CohIfBundle` → `pack` → 断言 `NoCFlitBundle.flit_category` 正确 → `unpack` → 断言共有字段恒等)⇒ ⛔ **不得**写成「事务穿过桥」 |
 
-> ⚠️ 仓内**不存在** Router + flit 级路径 ⇒ 拓扑的**名称 / 描述 SHALL 如实反映**这一点。
+> ⚠️ **「经网络」须分两级如实描述**:仓内**现已存在** Router + flit 级路径 —— `CohIfNICTLM` ↔ `RouterTLM` 构成的 XY mesh(`CohIfBundle` → `NoCFlitBundle`;判据载体 `test/test_cep_mesh_e2e.cc`);但**协议引擎(engine)不参与**该业务事务路径(**stub ↔ home 事务**;per `ADR-CEP-19` 的 SU 2026-11-09)⇒ 拓扑的**名称 / 描述 SHALL 如实反映**其路径**含**的是「**仅 ChStream 连接**」还是「**Router + flit**」两级中的哪一级。
 
 **J-9 拓扑分档判据(机器判;J-9 是 J-1 的分档细化,⛔ 不改 J-1~J-8 的编号与含义)**：
 
