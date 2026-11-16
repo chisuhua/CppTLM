@@ -48,7 +48,7 @@ created: 2026-11-16
 **Out of Scope**:
 - ⛔ **不裁 Requirement 正文**（26 份有 >500 issue ⇒ R-1 批 2，**会动 `## Requirements` 段 ⇒ 另一档风险**）
 - ⛔ 不动 43 份 `cep-*` · ⛔ 不动实现层 · ⛔ 不改既有 45 闸 · ⛔ 不改 `## Requirements` 段的任何字节
-- ⛔ 不动其余 45 份非 `cep-*` 的 Purpose（批 4~6）· ⛔ 不处理 R-9~R-18（登记，不在本 change 修）· ⛔ **未实施草案 spec 不在本批**（见 R-16）
+- ⛔ 不动其余 45 份非 `cep-*` 的 Purpose（批 4~6）· ⛔ 不处理 R-9~R-20（登记，不在本 change 修）· ⛔ **未实施草案 spec 不在本批**（见 R-16）
 
 ## Why
 
@@ -115,6 +115,8 @@ Purpose 段与 Requirement 段是**两个独立段** ⇒ 改动**不触及任何
 | **R-16** | **3 份 spec 的来源 change 未实施 ⇒ 孤儿 spec 存废裁定**：`dgpu-board-mvp`（`dgpu_board_mvp.hh/.cc` 不存在）· `dgpu-soc-control-hub`（`ControlHub` 0 命中 + `PcieMemoryDevice` 仍在 config）· `dgpu-soc-physical-ip-port-boundary`（`gmmu_tlm.hh:142` 未切 `NoCFlitBundle`） | 实现锚点全不命中 | **architect**（与 **R-10** 同型） |
 | **R-17** | **2 份 spec 的来源 change 归档目录缺失**（曾存在，commit `0345d283` / `689752ef` 实测）⇒ 归因走 `git-history-proposal` | `git log --all --diff-filter=A` 命中 | 各 owner（目录被移走/改名） |
 | **R-18** | `minimal-dgpu-soc-architecture` 的 Requirement `doorbell 配置 vs 代码 hardcoded 不一致` = **未收敛的不一致** ⇒ 草稿**不提**（不写进 Purpose） | spec 明写 | 各 owner |
+| **R-19** | `AGENTS.md` 记载的 LWC handler 名 `handle_cr_transaction` / `handle_doorbell_transaction` 与实现实际名 `register_doorbell_target` / `doorbell_write` 不一致 —— 本批 Purpose 无标识符故不受影响，但**登记处 stale** | `include/tlm/lwc/lwc_bus_hub.hh` 实测 | 各 owner（登记处订正） |
+| **R-20** | `dgpu-board-adapter-info/spec.md:10,21` 的 Scenario 仍引用**已删除**的 `cpptlm_emulator_get_adapter_info`（`cpptlm_emulator.h:108` per ADR-SOC-20 §2.1）⇒ Requirements 正文 staleness | ⚠️ **超本 change 范围**（critic `scope_exceeded: true`）⇒ 登记**不回改** | 各 owner（批 2 或 owner 处理） |
 | **R-1 批 2** | **26** 份有「正文 >500」issue（裁剪**会动 Requirements 段** ⇒ 另一档风险） | 实测 69 条 issue | 另立 change |
 | **R-1 批 4~6** | 其余 **45** 份 Purpose 占位（D1 5 / D2 20 / D4 17 + 3 份已移出的未实施 spec） | 实测 | 后续批次 |
 | **R-9 / R-2** | 清单增殖 / `moesi_gpu`·`mesif` 13 键 golden | — | **architect** |
@@ -125,7 +127,7 @@ Purpose 段与 Requirement 段是**两个独立段** ⇒ 改动**不触及任何
 ## Non-Goals
 
 - ⛔ 不裁正文 · ⛔ 不动 Requirement / Scenario 的任何字节 · ⛔ 不动 `cep-*` · ⛔ 不动实现层 · ⛔ 不改既有 45 闸。
-- ⛔ 不发明实现中不存在的能力（AC-05）· ⛔ 不处理 R-9~R-15 · ⛔ 不裁决 R-2 / R-9 / B3b-2 / DoD 7 口径。
+- ⛔ 不发明实现中不存在的能力（AC-05）· ⛔ 不处理 R-9~R-20 · ⛔ 不裁决 R-2 / R-9 / B3b-2 / DoD 7 口径。
 
 ---
 

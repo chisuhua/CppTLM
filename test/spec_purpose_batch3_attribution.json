@@ -33,7 +33,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -65,7 +66,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -97,7 +99,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -145,7 +148,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -188,7 +192,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -223,7 +228,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -261,7 +267,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -293,7 +300,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -329,7 +337,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -361,7 +370,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -392,7 +402,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -430,7 +441,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -454,7 +466,7 @@
         "VramNocAdapter",
         "vc_counts_"
       ],
-      "purpose_text": "在内部互联骨架之上把实际数据流接通并使其可观测：经内部网络的搬运须留下可统计的报文痕迹，各目标端须经适配器转换到内部类型，请求与响应的区分由流类别字段承载而不另造报文类型。",
+      "purpose_text": "在内部互联骨架之上把实际数据流接通并使其可观测：经内部网络的搬运须留下可统计的报文痕迹，数据流所及的目标端须经适配器转换到内部类型，请求与响应的区分由流类别字段承载而不另造报文类型。",
       "waiver": null,
       "source_archive_dir": "2026-10-09-cpptlm-dgpu-soc-internal-noc-e1",
       "checks": {
@@ -468,7 +480,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     },
     {
@@ -504,7 +517,8 @@
         "claim_kind_consistent": true,
         "evidence_reproducible": true,
         "evidence_core_hit": true,
-        "anchors_resolve": true
+        "anchors_resolve": true,
+        "carrier_matches_spec": true
       }
     }
   ]

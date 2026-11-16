@@ -42,8 +42,15 @@ STATUS_REGIONS = [
     r'(?ms)^##\s*Status\b.*?(?=^##\s|\Z)',   # `## Status` 段
     r'(?m)^status\s*:.*$',                   # front-matter
 ]
+# ⚠️ 判据订正(2026-11-16,critic SHOULD_FIX-1):原实现 **大小写敏感**
+#    ⇒ 状态位置写小写 `deprecated` / `superseded` 会**漏判**真 superseded
+#    ⇒ 加 re.IGNORECASE。
+# ⚠️ 词表**故意不含** `SUPERSEDE`(不带 d):spec 的「Status Update」段里
+#    `| **supersede** | 原 X |` 的语义是「**本 spec 取代了 X**」
+#    ⇒ 命中它 = 假红(critic 亦指出 `:400` 这处「判对但部分靠运气」)。
 SUPERSEDED_WORDS = (r'SUPERSEDED|DEPRECATED|OBSOLETE|RETIRED|REPLACED'
                     r'|已废弃|已下线|不再维护|已取代|被取代|退役|停用')
+_SUPERSEDED_RE = re.compile(SUPERSEDED_WORDS, re.IGNORECASE)
 
 # ── C-6 领域缩写白名单（C-8 兜底：领域术语，仓内可 grep 但形态各异）─────
 DOMAIN_TOKENS = {
@@ -127,8 +134,11 @@ def apply_purpose(spec, purpose_text):
 
 def repo_has_symbol(tok):
     """仓内 include/ src/ configs/ test/*.cc 是否可 grep 到该标识符（大小写不敏感）。"""
+    # ⚠️ NIT-2(critic):原实现递归扫 `test/` 且含 `--include=*.py`
+    #    ⇒ 比 design §D-3 文档写的 `test/*.cc` **更宽**（仅存在于 Python 测试的
+    #    锚点会通过）⇒ 收窄到与文档一致。
     r = subprocess.run(['grep', '-rIl', '--include=*.hh', '--include=*.h', '--include=*.cc',
-                        '--include=*.json', '--include=*.py', '-i', tok,
+                        '--include=*.json', '-i', tok,
                         'include', 'src', 'configs', 'test'],
                        capture_output=True, text=True)
     return bool(r.stdout.strip())
@@ -139,7 +149,7 @@ def spec_level_superseded(text):
     行级历史引用（如「别的 ADR 被取代」）不是本 spec 被取代）。"""
     for region in STATUS_REGIONS:
         for m in re.finditer(region, text, re.M):
-            if re.search(SUPERSEDED_WORDS, m.group(0)):
+            if _SUPERSEDED_RE.search(m.group(0)):
                 return True
     return False
 
@@ -258,6 +268,11 @@ def check_item(item):
         if not checks['waiver_lead']:
             detail.append('C-3 单 Requirement 豁免未以「为什么需要这条交付判据」起句')
 
+    # ── C-10 载体与 spec 现行文本一致（防「apply 后人为改 spec ⇒ 载体 stale」）──
+    checks['carrier_matches_spec'] = (item.get('purpose_text', '').strip() == pur.strip())
+    if not checks['carrier_matches_spec']:
+        detail.append('C-10 归因载体的 purpose_text 与 spec 现行 Purpose 不一致')
+
     ok = all(checks.values())
     return {'ok': ok, 'checks': checks, 'detail': detail}
 
@@ -303,8 +318,21 @@ def do_reconcile(doc):
                     kinds[issue_code(i['message'])] += 1
         return red, kinds
 
-    # ── pre：HEAD 基线的影子根 ─────────────────────────────────────────
-    base = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+    # ── pre：基线的影子根 ───────────────────────────────────────────────
+    # ⚠️ critic 验证建议:基线**不可取 HEAD** —— 落地已 commit 后 HEAD 即 post 态
+    #    ⇒ 重跑会得 pre=55/k=0（假失效）。⇒ 基线**显式化**:
+    #    `--reconcile --base <sha>` > 已有载体的 base_commit > HEAD
+    base = None
+    if '--base' in sys.argv:
+        base = sys.argv[sys.argv.index('--base') + 1]
+    else:
+        if os.path.isfile(RECONCILE):
+            try:
+                base = json.load(open(RECONCILE, encoding='utf-8')).get('base_commit')
+            except Exception:
+                base = None
+    if not base:
+        base = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
     shadow = tempfile.mkdtemp(prefix='batch3-pre-', dir='/tmp/opencode')
     ar = subprocess.run(f'git archive {base} openspec | tar -x -C {shadow}',
                         shell=True, capture_output=True, text=True)
@@ -312,7 +340,6 @@ def do_reconcile(doc):
         raise SystemExit(f'  ❌ 无法构造基线影子根: {ar.stderr[:200]}')
     pre_red, pre_kinds = scan(shadow)
     post_red, post_kinds = scan(ROOT)
-    shutil.rmtree(shadow, ignore_errors=True)
 
     fixed = sorted(set(pre_red) - set(post_red))
     remaining = []
@@ -331,23 +358,28 @@ def do_reconcile(doc):
     # ── C-9 机判 ──────────────────────────────────────────────────────
     union_ok = (set(post_red) | set(fixed)) == set(pre_red)
     disjoint = not (set(post_red) & set(fixed))
-    # fixed 的 pre issues 必须 ⊆ 仅 Purpose 类
+    # ⚠️ critic SHOULD_FIX-2:① `fixed_pure` 原先算了却**未纳入 mc** ⇒ 无机器强制
+    #    ② 原实现查的是 fixed 规格的 **post** issues,而 D-3/AC-02c 要求查 **pre**
+    #    ⇒ 改为在**影子根**里查 pre issues
     fixed_pure = True
     for d in fixed:
         r = subprocess.run(['openspec', 'validate', d, '--type', 'spec', '--strict', '--json'],
-                           capture_output=True, text=True, cwd=ROOT)
+                           capture_output=True, text=True, cwd=shadow)
         try:
             j = json.loads(r.stdout)
             codes = [issue_code(i['message']) for i in (j.get('items') or [{}])[0].get('issues', [])]
             if [c for c in codes if c != 'purpose.placeholder']:
                 fixed_pure = False
         except Exception:
-            pass
+            fixed_pure = False
     mc = {
         'fixed_equals_pre_minus_post': fixed == sorted(set(pre_red) - set(post_red)),
         'union_covers_pre': union_ok,
         'disjoint': disjoint,
-        'k_equals_len_fixed': True,
+        # ⚠️ critic:原为硬编码 True(恒真、无判别力)⇒ 改为真判据
+        'k_equals_len_fixed': len(fixed) == len(pre_red) - len(post_red),
+        # ⚠️ critic:原未纳入 mc ⇒ 现纳入（fixed 的 **pre** issues ⊆ 仅 Purpose 类）
+        'fixed_pre_issues_pure_purpose': fixed_pure,
         'remaining_reasons_are_real_codes': all(
             all(reason in post_kinds for reason in e['reasons']) for e in remaining),
     }
@@ -364,6 +396,7 @@ def do_reconcile(doc):
         'machine_checks': mc,
         'note': 'pre/post 均由 openspec 校验器实跑（pre = HEAD 基线影子根）⇒ 两侧口径一致。',
     }
+    shutil.rmtree(shadow, ignore_errors=True)
     with open(RECONCILE, 'w', encoding='utf-8') as fh:
         json.dump(doc_out, fh, ensure_ascii=False, indent=2)
         fh.write('\n')

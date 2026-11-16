@@ -1,7 +1,7 @@
 {
   "schema": "spec-purpose-reconcile/v1",
   "batch": "batch3",
-  "base_commit": "f1cb3cb87f31208e568136b8d5bb84bd991f13de",
+  "base_commit": "f1cb3cb8",
   "pre": {
     "red": [
       "130b-encoding",
@@ -563,6 +563,7 @@
     "union_covers_pre": true,
     "disjoint": true,
     "k_equals_len_fixed": true,
+    "fixed_pre_issues_pure_purpose": true,
     "remaining_reasons_are_real_codes": true
   },
   "note": "pre/post 均由 openspec 校验器实跑（pre = HEAD 基线影子根）⇒ 两侧口径一致。"

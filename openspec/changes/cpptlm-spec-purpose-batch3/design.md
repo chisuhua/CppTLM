@@ -40,7 +40,7 @@
 | 10 | `minimal-dgpu-soc-test-coverage` | 补齐最小板卡切片此前推迟的验证面：边界取值与地址基址写入竞态须有特征化用例，端到端链路须由用例贯通，测试标签的汇总须可被直接读出，以免覆盖面只存在于清单而不存在于执行。 | 来源 `2026-09-24-cpptlm-minimal-dgpu-soc-v1-test-coverage`（主 change 实施完成但 7 项推迟：C1.1 标签汇总 / C1.2 边界用例（`framebuffer_size_=0` + 非 4/8 字节 len）/ C1.3 PT_BASE LO/HI race 特征化 / C2.1-C2.4 E2E / C3.1 backlog 确认）· Req 4 条 |
 | 11 | `sdma-engine-tlm` | 把设备发起方向的搬运能力做成独立于设备接收方向的组件：地址翻译失败与非法描述须走显式错误路径，完成通知须保持既定的顺序语义，使上游搬运在错误与并发下都有确定结果。 | 来源 `2026-08-28-2026-08-26-cpptlm-dgpu-sdma-engine`（ADR-SOC-07 D3：PCIe master 方向必须与 slave 方向分离为独立组件；真实硬件中 SDMA 是 SoC 内独立 IP；ADR-088 §D3.8 翻译回调需要调用点）· Req 3 条（sdma-engine-component·sdma-engine-error-paths·sdma-completion-ordering） |
 | 12 | `soc-internal-noc` | 落地 SoC 内部互联的最小可用形态：为内部模块提供按节点寻址的路由骨架与统一的请求响应接口，并给出各节点在当前版本是否承接实际流量的显式说明。 | 来源 `2026-10-09-cpptlm-dgpu-soc-internal-noc-minimal`（E0：`dgpu-realip-pin-contract` 只覆盖 fabric↔vram_ctrl 一个桥接）· Req 8 条（module-identity / 4-target bridge / 4 node id / route_flit / JSON 装配 / 测试覆盖 / 零回归 / 4-IP 文档同步）· ⛔ **草稿已收窄**（删除「三条数据路径贯通」—— 与 `gmmu-pte-wf`「GMMU 不经 mesh NoC」矛盾，见 D-1 末注） |
-| 13 | `soc-internal-noc-data-flow` | 在内部互联骨架之上把实际数据流接通并使其可观测：经内部网络的搬运须留下可统计的报文痕迹，各目标端须经适配器转换到内部类型，请求与响应的区分由流类别字段承载而不另造报文类型。 | 来源 `2026-10-09-cpptlm-dgpu-soc-internal-noc-e1`（E0 痛点：驱动路径不可观测 / 4 target wire format 不一致 / req-resp 区分不清晰且另造 dual type 与 v2.1 决策矛盾；v1.1 限定 DataNoC）· Req 9 条 |
+| 13 | `soc-internal-noc-data-flow` | 在内部互联骨架之上把实际数据流接通并使其可观测：经内部网络的搬运须留下可统计的报文痕迹，数据流所及的目标端须经适配器转换到内部类型，请求与响应的区分由流类别字段承载而不另造报文类型。 | 来源 `2026-10-09-cpptlm-dgpu-soc-internal-noc-e1`（E0 痛点：驱动路径不可观测 / 4 target wire format 不一致 / req-resp 区分不清晰且另造 dual type 与 v2.1 决策矛盾；v1.1 限定 DataNoC）· Req 9 条 |
 | 14 | `vram-controller-functional-mode` | 让显存控制器在功能形态下真正参与数据路径：模式切换须可被配置显式声明，切回旧行为时须保持向后兼容，使该组件不再只是存在却未接入。 | 来源 `2026-10-11-cpptlm-vram-controller-functional-integration`（`VramControllerTLM` 类已存在，但 `bind_memory_backings()` 的第 4 路注入路径未激活；业务定位原则 4 要求 functional-mode 本期即时落地）· Req 7 条（functional 数据路径 / 模式配置 / fallback 向后兼容 / JSON simulation_mode / 测试覆盖 / 冻结面零 diff / 文档同步） |
 
 ---
@@ -203,7 +203,7 @@
 | **④** 时序形态与驱动可见面 | 2 | `dgpu-soc-timing` · `driver-visible-minimal-soc` |
 | **⑤** 内部互联（**3 份同组**） | 3 | `gmmu-pte-wf` · `soc-internal-noc` · `soc-internal-noc-data-flow` |
 
-**⚠️ 强制交叉对拍项（组 ⑤ 专属 · 解决 metis SHOULD-9 的「同组互相背书」风险）**：
+**⚠️ 强制交叉对拍项（组 ⑤ 专属 · 解决 metis SHOULD-9 的「同组互相背书」风险）**（2026-11-16 更新：critic 已执行并**通过**；另产出 SHOULD_FIX-3 ⇒ #13 的「各目标端」收窄为「**数据流所及的**目标端」，理由 = v1.1 实际只装 2 个 adapter）：
 > 组 ⑤ 的 #12 `soc-internal-noc` 与 #13 `soc-internal-noc-data-flow` 是同源 spec ⇒ **必须逐条对拍** `gmmu-pte-wf/spec.md`（GMMU **不经** mesh NoC）与 `soc_internal_noc.hh` 的 `NODE_ID_GMMU` / `NODE_ID_PCIE` 注释（本期**不接** / **无入向流量**）⇒ 任何一条 Purpose 若声称「GMMU / PCIe 侧流量经内部 NoC 贯通」⇒ **该组不签**。
 
 ⚠️ **组名已按 metis NIT-18/NIT-20 订正**：测试覆盖类（`minimal-dgpu-soc-test-coverage`）归入 **③ SoC 基线与验证**（不塞「内部互联」）；设备发现类（`dgpu-board-adapter-info`）归入 **① 板级外观与 ABI 卫生**。

@@ -49,7 +49,14 @@
 ## Phase 3 · 审查与归档
 
 - [ ] **T3.0** **归档语义备案**：出口 A（实测收敛为唯一路径）⇒ 落 **标记行 + 归因 JSON `archive_semantics`**（⛔ 本 change 不改 `AGENTS.md`）
-- [ ] **T3.1** critic 审（`arch` 档；**按 5 组签**（design §D-6）：① 板级外观与 ABI 卫生 3 ② 总线设施与内核搬运 2 ③ SoC 基线与验证 3 ④ 时序形态与驱动可见面 2 ⑤ 内部互联 3 —— 一组不过只回退该组；**组 ⑤ 强制交叉对拍**：#12/#13 的 Purpose 若声称「GMMU / PCIe 侧流量经内部 NoC 贯通」⇒ 该组不签）
+- [x] **T3.1** critic 审（`arch`+`plan`+`build` 三档；**按 5 组签**）—— ✅ **mergeable: yes / 0 BLOCKER / 4 SHOULD_FIX / 5 NIT / 5 组全签**（无一组回退）
+  - **4 条 SHOULD_FIX 全修**：
+    ① **C-6 大小写漏洞**（`re.search` 大小写敏感 ⇒ 状态位写小写 `deprecated` 会**漏判**）⇒ 加 `re.IGNORECASE`；⚠️ 词表**故意不含** `SUPERSEDE`（不带 d）—— `| **supersede** | 原 X |` 的语义是「**本 spec 取代了 X**」⇒ 命中它 = 假红（critic 亦指出 `driver-visible-minimal-soc/spec.md:400` 这处「判对但部分靠运气」）。加 IGNORECASE 后实测 **14 份状态位置仍无命中**
+    ② **C-9 与 design D-3/AC-02c 不一致** ⇒ ③ `fixed_pure` 原算了却**未纳入 mc**（⇒ AC-02c「fixed 的 pre issues ⊆ 仅 Purpose 类」**无机器强制**）④ 原查的是 fixed 规格的 **post** issues 而文档要求 **pre** ⇒ 改为在**影子根**里查 pre issues ⑤ `k_equals_len_fixed` 原**硬编码 True**（恒真无判别力）⇒ 改为真判据 `len(fixed) == len(pre.red) - len(post.red)`。⇒ C-9 机判由 5 条增为 **6 条，全 True**
+    ③ **#13 `soc-internal-noc-data-flow` 的「各目标端」超出实现**（v1.1 实际只装 **2** 个 adapter；该 spec 自身 `e1-dgpu-board-adapters-wiring` 明写「不装配 PcieControllerIP / GMMU adapter」）⇒ **收窄**为「**数据流所及的**目标端」⇒ 已重新落地
+    ④ **残余登记漏项**（`dgpu-board-adapter-info/spec.md:10,21` 的 Scenario 仍引用**已删除**的 `cpptlm_emulator_get_adapter_info`）⇒ ⚠️ critic `scope_exceeded: true`（属 Requirements 正文 staleness，**超本 change 范围**）⇒ 登记 **R-20**，**不回改**
+  - **5 条 NIT 的处置**：① #12 的「统一的请求响应接口」实现在**同源姊妹 spec**（`e1-send-request-response-api`）⇒ 系统层面为真，文档层面略有溢出 ⇒ **NIT，不返工**（⛔ 避免范围膨胀）② `repo_has_symbol` 递归扫 `test/` 且含 `*.py`，比 D-3 文档的 `test/*.cc` **更宽** ⇒ **收窄到与文档一致** ③ D-2 称 `purpose_text`「从 spec 自动抽取」，实为从 design.md 提取 ⇒ **新增 C-10**（载体 `purpose_text` == spec 现行 Purpose 的机器比对，防「apply 后人为改 spec ⇒ 载体 stale」）④ C-6 区域 2 要求 `>` + 粗体 ⇒ 非粗体/中文标题会绕过 ⇒ 已接受的残余面（T0.4 预扫描兜底）⑤ AC-04 的 diff 形状不在 C-1~C-9 机判射程内 ⇒ 仅 T2.5 人工验证（可复验，接受）
+  - **critic 的验证建议已采纳**：⚠️ `--reconcile` 的基线**不可取 HEAD**（落地已 commit ⇒ HEAD 即 post 态 ⇒ 重跑得 pre=55/k=0 = 假失效）⇒ **基线显式化**（`--reconcile --base <sha>` > 载体 `base_commit` > HEAD）⇒ 本批用 `--base f1cb3cb8`（落地前 commit）实跑 ⇒ **pre 65 → post 55 / k=10 / 6 条机判全 True**
 - [ ] **T3.2** 影子根**预演**归档 ⇒ main spec 零改动 + 归档无警告
 - [ ] **T3.3** 真仓归档（出口 A）+ 复验 14 份 `--strict`
 - [ ] **T3.4** **AC-08** 闸 0 回归（**归档前跑一次**：45 闸 + `ctest -R cep` + `[cep]` == T0）
