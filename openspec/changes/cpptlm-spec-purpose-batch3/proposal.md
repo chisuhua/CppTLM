@@ -24,27 +24,30 @@
 
 | # | 内容 | 载体 |
 |:--:|---|---|
-| **W1** | **17 份**主 spec 的 `## Purpose` 段：占位 → 实质 Purpose（canonical 草稿见 design §D-1；规则见 §D-0） | **直接编辑主 spec**（⛔ **0 份 delta**） |
+| **W1** | **14 份**主 spec 的 `## Purpose` 段：占位 → 实质 Purpose（canonical 草稿见 design §D-1；规则见 §D-0） | **直接编辑主 spec**（⛔ **0 份 delta**） |
 | **W2** | **1 个校验脚本** `scripts/test/cep_spec_purpose_batch3_check.py`（C-1~C-7） | 新文件 |
 | **W3** | **1 份归因载体** `test/spec_purpose_batch3_attribution.json`（**由 W2 脚本生成**；17 条） | 新文件 |
 | **W4** | 影子根预演 + 逐份复验 + 闸 0 回归（**归档前跑一次**） | — |
 
-**17 份清单**（D3 域 · dGPU 板级 / SoC）：`dgpu-4ip-port-contract` · `dgpu-board-abi-hygiene` · `dgpu-board-adapter-info` · `dgpu-board-mvp` · `dgpu-soc-control-hub` · `dgpu-soc-physical-ip-port-boundary` · `dgpu-soc-timing` · `driver-visible-minimal-soc` · `gmmu-pte-wf` · `lwc-bus-hub-mvp` · `minimal-dgpu-soc-abi-landing` · `minimal-dgpu-soc-architecture` · `minimal-dgpu-soc-test-coverage` · `sdma-engine-tlm` · `soc-internal-noc` · `soc-internal-noc-data-flow` · `vram-controller-functional-mode`
+**14 份清单**（D3 域 · dGPU 板级 / SoC）：`dgpu-4ip-port-contract` · `dgpu-board-abi-hygiene` · `dgpu-board-adapter-info` · `dgpu-soc-timing` · `driver-visible-minimal-soc` · `gmmu-pte-wf` · `lwc-bus-hub-mvp` · `minimal-dgpu-soc-abi-landing` · `minimal-dgpu-soc-architecture` · `minimal-dgpu-soc-test-coverage` · `sdma-engine-tlm` · `soc-internal-noc` · `soc-internal-noc-data-flow` · `vram-controller-functional-mode`
+
+**⛔ 已移出（3 份 · 来源 change **未实施** ⇒ 登记 **R-16**）**：`dgpu-board-mvp` · `dgpu-soc-control-hub` · `dgpu-soc-physical-ip-port-boundary`
 
 ## 验收标准
 
 | # | 判据 |
 |:--:|---|
-| **AC-01** | 17 份 Purpose **限段**后 `TBD`/`TODO` 计数 = **0** |
-| **AC-02** | **定向**：17/17 份的 `--strict --json` 输出中**无 Purpose 类 issue**（永远可达） |
+| **AC-01** | 14 份 Purpose **限段**后 `TBD`/`TODO` 计数 = **0** |
+| **AC-02** | **定向**：14/14 份的 `--strict --json` 输出中**无 Purpose 类 issue**（永远可达） |
 | **AC-02b** | **全局**：`pre − post = k`（k = 修完整份转绿的份数），且 k 与剩余红数**逐份归因闭合**（数字不写死，但必须闭合） |
 | **AC-03** | **Purpose 四条正交（逐份机判）**：① `--json` 判 valid ② `50 ≤ len ≤ 160` **且单物理行** ③ **CJK-only LCS < 12** + **英文词序列公共 < 5 词** ④ ⛔ 过程叙述 / 技术字面量 / change 引用 / 日期 |
-| **AC-04** | **零语义改动 + diff 形状写死**：**17 文件 · 每文件恰 1 hunk · 删 1 行增 1 行 · 不新增空行**；`## Requirements` 段**逐字节不变** |
-| **AC-05** | **不得声称不存在的能力**：`claim_kind` 与 **spec 级** `Superseded` 标记**互斥**；Purpose 标识符 ⊆ Requirement 标题 ∪ 仓内可 grep 符号 ∪ 领域缩写白名单；`source_evidence` 全部 `isfile` **且**按 `evidence_kind` 命中 |
+| **AC-04** | **零语义改动 + diff 形状写死**：**14 文件 · 每文件恰 1 hunk · 删 1 行增 1 行 · 不新增空行**；`## Requirements` 段**逐字节不变** |
+| **AC-05** | **不得声称不存在的能力**：① `claim_kind` ∈ {`current`,`historical`,`superseded`,`proposed`} 且与 **spec 级** superseded 标记**互斥**（C-6，只认状态位置 + 11 项扩展词表）② 每份的 `implementation_anchors` **全部命中**（C-8，行为符号 ⛔ 非头文件存在）③ Purpose 标识符 ⊆ Requirement 标题 ∪ 仓内可 grep 符号 ∪ 领域缩写白名单 ④ 证据**可复现**（`isfile` 或 `git show <fixed-sha>:<path>`）**且**来源 change 核心名命中证据前 2000 字符（C-7） |
+| **AC-02c** | **全局闭合载体** | `test/spec_purpose_batch3_reconcile.json` 存在且满足：`fixed = pre.red − post.red` · `set(post.red) ∪ set(fixed) == set(pre.red)` · 两集**不相交** · `k = len(fixed)` · 每个 `remaining[].reasons` 是 post 实跑的**真实 issue code** · `fixed` 的 pre issues ⊆ **仅 Purpose 类** |
 | **AC-06** | `cep-*` 不受影响：43 份逐份 `--strict` ⇒ rc≠0 = 0；`artifact_count` **86 不变**（零冻结产物 ⇒ 免五步链） |
 | **AC-07** | 范围零 diff：`include/**` / `src/**` / `test/*.cc` / `docs/adr/**` / `openspec/specs/cep-*/spec.md` 全 0 |
 | **AC-08** | 闸 0 回归（**归档前一次**）：45 闸全 rc=0（ctest 同参数）· `ctest -R cep` / `[cep]` == T0 |
-| **AC-09** | KPI **0/3 → 1/3** → **0/3** + 归档 change 数 **150 → 151** |
+| **AC-09** | KPI **0/3 → 1/3** → **0/3** + 归档 **change 目录数** **150 → 151**（⚠️ 按**目录**计数） |
 | **AC-10** | **归档语义可判别**：出口 **A**（实测收敛为唯一路径）⇒ 须落 **proposal 顶部标记行** + 归因 JSON `archive_semantics` 字段 ⇒ 归档后目录**可判别**，⛔ 不得与 ⏸ 暂存归档同形无标记 |
 
 ## 归档语义（⚠️ 归档前**备案**，不阻塞）

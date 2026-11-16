@@ -24436,7 +24436,7 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 | # | 未完成目标 | 实测 | 为什么可推进 | 成本 |
 |:--:|---|---|---|:--:|
 | **B-1** | **5 条 invariant `⏭-unmodelled`**（能力未建模 ⇒ 无可断言对象） | `test/cep_invariant_deferrals.json`：**`CEN-Ib8`**（engine egress 可观测面缺失）· **`INV-CEP-08-IC1`**（J3 通用形式不可静态判定）· **`INV-CEP-09-IC2`**（多 VC 仲裁器未建模，Stage 4+）· **`INV-CEP-13-IC1`**（组合判据未转写为结构化声明项 + 需 litmus）· **`INV-CEP-13-IC3`**（schema 13 缺「adapter 提前 ack」声明项） | 前 3 条 = **纯建模工作**（可断言对象缺失 ⇒ 建对象即可）⇒ **本仓可做**；后 2 条 = 需 schema 13→14 + `ADR-CEP-12` 追加修订 ⇒ **需 architect** | 1.5 ~ 3 d |
-| **B-2** | **19 条 ADR 归因例外** | `test/cep_adr_structural_deferrals.json` · `invariant_attribution_dispositions` len=**19**（`condition_unmet` 2 · `carrier_buildable_id_blocked` **10** · `carrier_present_id_absent` 2 · `doc_layer_manual_review` 5）⇒ ⚠️ 手册 §12.8 写「18 条」**已 stale** | `carrier_buildable_id_blocked` 的 10 条 = 「**载体建不出来**」⇒ **多数可本仓推进**（把不可静态审计的判据改成可审计形态） | 1.5 ~ 2 d |
+| **B-2** | **19 条 ADR 归因例外** | `test/cep_adr_structural_deferrals.json` · `invariant_attribution_dispositions` len=**19**（`condition_unmet` 2 · `carrier_buildable_id_blocked` **10** · `carrier_present_id_absent` 2 · `doc_layer_manual_review` 5）⇒ ⚠️ 手册 §12.8 写「18 条」**已 stale** | ⚠️ **2026-11-16 订正（metis SHOULD-14）** —— 初稿把本条归入「本仓可推进」是**错分**：逐条读 10 条 `carrier_buildable_id_blocked` 的 rationale，**全部**写「⛔ **id 被已签批 ADR 正文挡住**」（`ADR-CEP-05:…` / `06:220-221` / `07:…` / `12:…` / `14:155` / `17:372` / `18:130,174`）⇒ **不是「载体建不出来」而是「已签批 ADR 禁止在本章新造 invariant id」** ⇒ **属 architect**（须改 ADR 正文或走 Status Update）⇒ **本条已迁至类 C/D** | 1.5 ~ 2 d（architect） |
 | **B-3** | **DoD 7 口径订正**（见 §1 第 7 行） | 61 + 5 = 66 | 措辞订正，改 `07 号 §4` ⇒ **触冻结面** ⇒ 五步链 + architect | 0.3 d |
 
 ##### §2.3 类 C —— **规范面可信度**（低风险，本批正在推进）
@@ -24481,5 +24481,14 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 - **§1 / §2 / §3 全部逐项实测**（2026-11-16）：闸 45 全绿 · ctest 180/180 · `[cep]` 529/12288 · 归档 150 · KPI 0/3 · `cep-*` 43/43 --strict 绿 · `--strict` 红 65 份（59 Purpose + 69 条正文 issue / 26 份）· invariant 载体 **61** + ⏭ **5** = 66 · ADR 归因 **19** · B3b-2 **0/4**（4 族 external）。
 - **R-1 批 3 立项**：change `cpptlm-spec-purpose-batch3`（improvement + proposal + design + tasks + `.openspec.yaml`）· **17 份**（D3 域）· canonical 草稿 + **写作规则 D-0**（复用批 1 的 7 条）+ **逐条可追性核对表** + **判据差异登记**（C-6 收紧到 spec 级 · C-7 扩展 `evidence_kind` · ⛔ 不用 TBD 行做 glob 键）· KPI **0/3 → 1/3**。
 - ⚠️ **本 Entry 新登记的 2 处 stale**：手册 `docs/guide/cep-usage.md §12.8` 写「ADR 归因 **18** 条」⇒ 实测 **19**；§0 DoD 7 写「66 条 invariant 机器检查 **100% 覆盖**」⇒ 实测 **61 条有载体 + 5 条 ⏭**。
+
+#### §5 ⚠️ 本轮 **metis 预审 + 实测复核**推翻的 4 处（2026-11-16 · 留痕）
+
+| # | 初稿 | 实测 | 处置 |
+|:--:|---|---|---|
+| **M-1** | 批 3 = **17 份** | **3 份的来源 change 未实施** ⇒ 写现状即**立假账**：`dgpu-board-mvp`（`dgpu_board_mvp.hh/.cc` + `dgpu_board_v1_mvp.json.in` 均不存在）· `dgpu-soc-control-hub`（`ControlHub` **0 命中** + `PcieMemoryDevice` 仍在 `configs/dgpu_soc_minimal_v1.json:49`）· `dgpu-soc-physical-ip-port-boundary`（`gmmu_tlm.hh:142` 明写 `wire-format 统一 PcieTlpBundle`，**未**切 `NoCFlitBundle`）⇒ 3 份来源 proposal 状态均为 `🟡 Proposed Draft v0.5.0（草稿, 待评审）` | **范围 17 → 14**，登记 **R-16**（路由 architect） |
+| **M-2** | 实施判定用「来源 change 的 tasks 勾选数」 | ⛔ **不能用** —— 批 1 的 **F-6** 已证明「归档之后才执行、未回勾」⇒ tasks 是**记录债**，非实施证据。实测本批 **8 份「0 勾选」**中 **6 份实现锚点全部命中**（`gmmu-pte-wf` / `lwc-bus-hub-mvp` / `soc-internal-noc` / `soc-internal-noc-data-flow` / `vram-controller-functional-mode` / `minimal-dgpu-soc-architecture`） | 判据改为 **实现层行为锚点**（`implementation_anchors`），⛔ 不用 tasks 勾选 ⇒ 新增 **C-8** |
+| **M-3** | 2 份来源 change 是「**主 spec 直写，从未走归档器**」 | ⛔ **该推断无依据** —— `git log --all --diff-filter=A` 实测找到两个 change 目录的**真实新增 commit**：`cpptlm-dgpu-soc-timing-mvp` ⇒ **`0345d283`**（168 行 proposal，`git show` 可达，核心名命中）· `cpptlm-driver-visible-minimal-soc` ⇒ **`689752ef`**（228 行，同上）⇒ **真实情况 = 归档目录被移走 / 改名** | 措辞已改 + 登记 **R-17**；归因形态改为 **`git-history-proposal`**（`git show <fixed-sha>:<path>` + 核心名命中）⇒ **比「文件名含 token」强** |
+| **M-4** | #12 `soc-internal-noc` 的 Purpose 写「页表取数、显存搬运与条带译码三条路径经同一内部网络贯通」 | **与实现矛盾**：`gmmu-pte-wf/spec.md:28`「**GMMU 不经 mesh NoC**」· `soc-internal-noc-data-flow/spec.md:15`「GMMU page walk …**不进 SocInternalNoc**」· `soc_internal_noc.hh:63` `NODE_ID_GMMU` 注释「v1.1 **不接**」 | **草稿已收窄**为「路由骨架 + 统一请求响应接口 + 各节点是否承接流量的显式说明」；并设**组 ⑤ 强制交叉对拍项**（critic 必查） |
 
 **⑥ 关联**:Entry **#443**（批 1 verifier 验收）· **#442**（批 1 收口）· **#441**（批 1 立项）· **#438**（上轮全量梳理 —— 本 Entry 是其**批 1 完成后的再核对**）· **#340**（上一轮排序裁决）· **#419**（objective ⏸ 暂存归档 · 终局 Ⅲ-甲）· `.rddf/improvements/cpptlm-spec-purpose-batch3.md` · `openspec/changes/cpptlm-spec-purpose-batch3/` · `docs/guide/cep-usage.md §12.8` · `test/cep_b3b2_deferrals.json` · `test/cep_invariant_assertion_map.json` · `test/cep_invariant_deferrals.json` · `test/cep_adr_structural_deferrals.json`

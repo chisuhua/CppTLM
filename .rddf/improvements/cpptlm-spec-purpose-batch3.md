@@ -11,10 +11,12 @@ created: 2026-11-16
 
 # improvement: cpptlm-spec-purpose-batch3
 
-**主题**: 闭合 **R-1 批 3** —— **17 份**非 `cep-*` 主 spec 的 `## Purpose` 仍是 `TBD - created by archiving change …` 占位（**dGPU 板级 / SoC 域**）。
+**主题**: 闭合 **R-1 批 3** —— **14 份**非 `cep-*` 主 spec 的 `## Purpose` 仍是 `TBD - created by archiving change …` 占位（**dGPU 板级 / SoC 域**）。
+
+> ⚠️ **初稿 17 份 → 终稿 14 份**（metis MUST-1 复核后**实测扩大**）：3 份的来源 change 是**未实施**草案 ⇒ 移出 + 登记 **R-16**。
 
 > **范围纪律**: ⛔ 零实现层 · ⛔ **只改 `## Purpose` 段**（Requirement / Scenario 正文**零改动**）· ⛔ 不动 43 份 `cep-*`（已 --strict 全绿）· ⛔ 不裁正文（属 R-1 批 2，**另一档风险**）· ⛔ 不新增闸。
-> **估时**: **1.2 人日**（17 份 Purpose 起草 + 落地 + 归因载体 + 校验脚本 + 预演 + 逐份复验）。
+> **估时**: **1.2 人日**（14 份 Purpose 起草 + 落地 + 归因载体 + 校验脚本 + 预演 + 逐份复验）。
 > **KPI**: 占 OpenSpec slot **1/3**（改的是 `openspec/specs/` **契约面** ⇒ **不适用** doc-only 豁免 ⇒ **计入**）。
 
 ---
@@ -32,9 +34,11 @@ created: 2026-11-16
 
 ## 范围
 
-**In Scope —— 批 3 的 17 份**（D3 域 · dGPU 板级 / SoC）：
+**In Scope —— 批 3 的 14 份**（D3 域 · dGPU 板级 / SoC）：
 
-`dgpu-4ip-port-contract` · `dgpu-board-abi-hygiene` · `dgpu-board-adapter-info` · `dgpu-board-mvp` · `dgpu-soc-control-hub` · `dgpu-soc-physical-ip-port-boundary` · `dgpu-soc-timing` · `driver-visible-minimal-soc` · `gmmu-pte-wf` · `lwc-bus-hub-mvp` · `minimal-dgpu-soc-abi-landing` · `minimal-dgpu-soc-architecture` · `minimal-dgpu-soc-test-coverage` · `sdma-engine-tlm` · `soc-internal-noc` · `soc-internal-noc-data-flow` · `vram-controller-functional-mode`
+`dgpu-4ip-port-contract` · `dgpu-board-abi-hygiene` · `dgpu-board-adapter-info` · `dgpu-soc-timing` · `driver-visible-minimal-soc` · `gmmu-pte-wf` · `lwc-bus-hub-mvp` · `minimal-dgpu-soc-abi-landing` · `minimal-dgpu-soc-architecture` · `minimal-dgpu-soc-test-coverage` · `sdma-engine-tlm` · `soc-internal-noc` · `soc-internal-noc-data-flow` · `vram-controller-functional-mode`
+
+**⛔ 已移出本批（3 份 · 来源 change **未实施** ⇒ 写现状即立假账 ⇒ 登记 R-16）**：`dgpu-board-mvp`（`dgpu_board_mvp.hh/.cc` 与 `dgpu_board_v1_mvp.json.in` 均不存在）· `dgpu-soc-control-hub`（`ControlHub` 0 命中 + `PcieMemoryDevice` 仍在 `configs/dgpu_soc_minimal_v1.json:49`）· `dgpu-soc-physical-ip-port-boundary`（`gmmu_tlm.hh:142` 明写 `wire-format 统一 PcieTlpBundle`，未切 `NoCFlitBundle`）。**依据 = 实现层行为锚点**（⛔ **不用 tasks 勾选** —— 批 1 F-6 教训：归档后执行未回勾 ⇒ tasks 是记录债，非实施证据）。
 
 **载体**：
 - **0 份 delta**（⛔ Purpose 不能走 delta）
@@ -44,7 +48,7 @@ created: 2026-11-16
 **Out of Scope**:
 - ⛔ **不裁 Requirement 正文**（26 份有 >500 issue ⇒ R-1 批 2，**会动 `## Requirements` 段 ⇒ 另一档风险**）
 - ⛔ 不动 43 份 `cep-*` · ⛔ 不动实现层 · ⛔ 不改既有 45 闸 · ⛔ 不改 `## Requirements` 段的任何字节
-- ⛔ 不动其余 42 份非 `cep-*` 的 Purpose（批 4~6）· ⛔ 不处理 R-9~R-15（登记，不在本 change 修）
+- ⛔ 不动其余 45 份非 `cep-*` 的 Purpose（批 4~6）· ⛔ 不处理 R-9~R-18（登记，不在本 change 修）· ⛔ **未实施草案 spec 不在本批**（见 R-16）
 
 ## Why
 
@@ -75,12 +79,12 @@ Purpose 段与 Requirement 段是**两个独立段** ⇒ 改动**不触及任何
 
 | # | 判据 | 可验收点（机器可判） |
 |:--:|---|---|
-| **AC-01** | 17 份 Purpose **零占位** | **限段**扫 `TBD`/`TODO` 计数 = **0** |
-| **AC-02** | **定向**：17/17 无 Purpose 类 issue | 逐份 `openspec validate --strict --json` 输出中**无** `placeholder` 类 issue ⇒ **17/17**（永远可达） |
-| **AC-02b** | **全局**：`pre − post = k` 且逐份归因闭合 | `pre 65 → post`；k = 修完整份转绿的份数；k 与剩余红数**逐份归因到具体 spec + 具体原因**（数字**不写死**，但必须闭合） |
+| **AC-01** | 14 份 Purpose **零占位** | **限段**扫 `TBD`/`TODO` 计数 = **0** |
+| **AC-02** | **定向**：14/14 无 Purpose 类 issue | 逐份 `openspec validate --strict --json` 输出中**无** `placeholder` 类 issue ⇒ **17/17**（永远可达） |
+| **AC-02b** | **全局**：`pre − post = k` 且逐份归因闭合 | 载体 = `test/spec_purpose_batch3_reconcile.json`（schema `spec-purpose-reconcile/v1`）· 机判：`fixed = pre.red − post.red`；`set(post.red) ∪ set(fixed) == set(pre.red)`；两集**不相交**；`k = len(fixed)`；每个 `remaining[].reasons` 必须是 post 实跑的**真实 issue code**；`fixed` 的 pre issues ⊆ **仅 Purpose 类** |
 | **AC-03** | **Purpose 四条正交**（逐份机判） | ① `--json` 判 valid ② `50 ≤ len ≤ 160` **且单物理行** ③ **CJK-only LCS < 12** + **英文词序列公共 < 5 词** ④ ⛔ 过程叙述 / 技术字面量 / change 引用 / 日期 |
-| **AC-04** | **零语义改动 + diff 形状写死** | **17 文件 · 每文件恰 1 hunk · 删 1 行增 1 行 · 不新增空行**；`## Requirements` 段**逐字节不变** |
-| **AC-05** | **不得声称不存在的能力** | `claim_kind` 与 **spec 级** `Superseded` 标记**互斥**；Purpose 标识符 ⊆ Requirement 标题 ∪ 仓内可 grep 符号 ∪ 领域缩写白名单；`source_evidence` 全部 `isfile` **且**按 `evidence_kind` 命中 |
+| **AC-04** | **零语义改动 + diff 形状写死** | **14 文件 · 每文件恰 1 hunk · 删 1 行增 1 行 · 不新增空行**；`## Requirements` 段**逐字节不变** |
+| **AC-05** | **不得声称不存在的能力** | ① `claim_kind` 与 **spec 级** superseded 标记**互斥**（C-6）② 每份的 `implementation_anchors` **全部命中**（C-8）③ Purpose 标识符 ⊆ Requirement 标题 ∪ 仓内可 grep 符号 ∪ 领域缩写白名单 ④ 证据**可复现**且核心名命中（C-7） |
 | **AC-06** | `cep-*` 不受影响 | 43 份逐份 `--strict` ⇒ rc≠0 = **0**；`artifact_count` **86 不变**（零冻结产物 ⇒ 免五步链） |
 | **AC-07** | 范围零 diff | `include/**` / `src/**` / `test/*.cc` / `docs/adr/**` / `openspec/specs/cep-*/spec.md` 全 0 |
 | **AC-08** | 闸 0 回归（**归档前跑一次**） | **45 闸**全 rc=0（ctest 同参数）· `ctest -R cep` / `[cep]` == T0 |
@@ -91,7 +95,7 @@ Purpose 段与 Requirement 段是**两个独立段** ⇒ 改动**不触及任何
 
 | # | 能力 | 判据落点 | 新增 `INV-CEP-*` |
 |:--:|---|---|:--:|
-| **C-1** | 17 份主 spec 的 Purpose 从占位变**可读且真实** | AC-01/02/03/05 | ❌ 0 |
+| **C-1** | 14 份主 spec 的 Purpose 从占位变**可读且真实** | AC-01/02/03/05 | ❌ 0 |
 | **C-2** | 改动**零语义**（Requirements 段逐字节不变） | AC-04/06/07 | ❌ 0 |
 
 ## Impact
@@ -99,7 +103,7 @@ Purpose 段与 Requirement 段是**两个独立段** ⇒ 改动**不触及任何
 | 面 | 影响 |
 |---|---|
 | **实现层** | ⛔ 零改动 |
-| **契约** | 17 份**非 CEP** 主 spec 的 **Purpose 段**；**0 份 delta** ⇒ **零冻结产物** ⇒ 免五步链 |
+| **契约** | 14 份**非 CEP** 主 spec 的 **Purpose 段**；**0 份 delta** ⇒ **零冻结产物** ⇒ 免五步链 |
 | **闸** | 新增 **1 个校验脚本**（属本 change 自测工具，⛔ 不改变既有 **45** 个 `cep_*` 闸的数）· ctest 条目数**不变** |
 | **文档** | 归因载体 1 份 + 台账 2 条 Entry |
 
@@ -108,8 +112,11 @@ Purpose 段与 Requirement 段是**两个独立段** ⇒ 改动**不触及任何
 | # | 残余 | 实测 | 路由 |
 |:--:|---|---|---|
 | **R-15** | `v1-architecture` 引用 `docs/soc_arch/architecture/00-overview.md`（**已迁 ArchForge**，仓内仅占位 README） | 文件不存在 | 各 owner（与 **R-14** 同型） |
+| **R-16** | **3 份 spec 的来源 change 未实施 ⇒ 孤儿 spec 存废裁定**：`dgpu-board-mvp`（`dgpu_board_mvp.hh/.cc` 不存在）· `dgpu-soc-control-hub`（`ControlHub` 0 命中 + `PcieMemoryDevice` 仍在 config）· `dgpu-soc-physical-ip-port-boundary`（`gmmu_tlm.hh:142` 未切 `NoCFlitBundle`） | 实现锚点全不命中 | **architect**（与 **R-10** 同型） |
+| **R-17** | **2 份 spec 的来源 change 归档目录缺失**（曾存在，commit `0345d283` / `689752ef` 实测）⇒ 归因走 `git-history-proposal` | `git log --all --diff-filter=A` 命中 | 各 owner（目录被移走/改名） |
+| **R-18** | `minimal-dgpu-soc-architecture` 的 Requirement `doorbell 配置 vs 代码 hardcoded 不一致` = **未收敛的不一致** ⇒ 草稿**不提**（不写进 Purpose） | spec 明写 | 各 owner |
 | **R-1 批 2** | **26** 份有「正文 >500」issue（裁剪**会动 Requirements 段** ⇒ 另一档风险） | 实测 69 条 issue | 另立 change |
-| **R-1 批 4~6** | 其余 **42** 份 Purpose 占位（D1 5 / D2 20 / D4 17） | 实测 | 后续批次 |
+| **R-1 批 4~6** | 其余 **45** 份 Purpose 占位（D1 5 / D2 20 / D4 17 + 3 份已移出的未实施 spec） | 实测 | 后续批次 |
 | **R-9 / R-2** | 清单增殖 / `moesi_gpu`·`mesif` 13 键 golden | — | **architect** |
 | **R-10 / R-11** | superseded spec 存废 / 4 份同源 spec 合并退役 | — | **architect** |
 | **B3b-2 = 0/4** | CXL 2.0 / CXL 3.0 / NVLink / UALink **4 族 external 阻塞**（规范不可读） | `test/cep_b3b2_deferrals.json` | **external**（本仓不可推进） |
