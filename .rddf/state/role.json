@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-16T09:25:23Z",
+  "current_role": "verifier",
+  "updated_at": "2026-11-16T09:38:50Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-15T03:54:55Z",
-      "by": "user",
-      "reason": "per 用户口令「再切builder进行实施」⇒ 实施已立项 change `cpptlm-cep-adr-verification-carriers`(台账 Entry #431):补 design.md/tasks.md + W1 判据 / W2 快照 / W4 持久 fixture / W6 文档连带 + 0 回归 + 归档五步链 + KPI 回填 1/3 -> 0/3。"
-    },
     {
       "role": "planner",
       "at": "2026-11-15T05:02:53Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-16T09:25:23Z",
       "by": "user",
       "reason": "per 用户口令「回 builder 归档」⇒ 归档 cpptlm-simmodule-exposed-port-wiring 与 cpptlm-cep-mesh-interconnect-submodule(openspec archive,合并 delta)+ KPI 2/3 → 0/3 回填 + 台账归档 entry(照 Entry #449 的 [builder] 归档条目先例)。"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-16T09:38:50Z",
+      "by": "user",
+      "reason": "per 用户口令「最后切 verifier 验收」⇒ 对已归档的两个 change(cpptlm-simmodule-exposed-port-wiring:AC-01~AC-08 / cpptlm-cep-mesh-interconnect-submodule:AC-01~AC-07 + J-1~J-6)做独立验收,逐条取证,报告落 .rddf/reviews/。"
     }
   ],
   "auto_switch_window": null
