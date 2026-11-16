@@ -24895,7 +24895,7 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 - `include/tlm/cep/cohif_nic.hh` —— `handle_net_ingress` 丢弃 `flit_category == CATEGORY_CREDIT`(不计入 `flits_received` / 不写 `last_recv_*` / 不向 PE 侧投影)+ 新增 `stats_credits_dropped_` 与访问器 `credits_dropped()` + 文件头补 2 条边界说明(credit 丢弃 / LOCAL credit 耗尽不属本模块)。
 - ⛔ **零 diff**:`src/tlm/router_tlm.cc` · `include/tlm/router_tlm.hh` · `src/core/module_factory.cc` · `include/bundles/*` · 其余 CEP 模块。
 
-**spec(走 delta spec,⛔ 不直接改 main spec)**:change 目录 `openspec/changes/cpptlm-router-credit-flit-leak-to-consumer/`(4 件套:`proposal.md` / `design.md` / `tasks.md` / `specs/cep-cohif-network-adapter/spec.md`);delta 为 `## MODIFIED Requirements`(增「网络 ingress SHALL 丢弃 credit flit」Scenario + 观测面增 `stats_credits_dropped_`)。
+**spec(走 delta spec,⛔ 不直接改 main spec)**:change 目录 `openspec/changes/archive/2026-11-16-cpptlm-router-credit-flit-leak-to-consumer/`(4 件套:`proposal.md` / `design.md` / `tasks.md` / `specs/cep-cohif-network-adapter/spec.md`);delta 为 `## MODIFIED Requirements`(增「网络 ingress SHALL 丢弃 credit flit」Scenario + 观测面增 `stats_credits_dropped_`)。
 ⚠️ **直接改 main spec 会被冻结闸拦下**(实测 `cep_docs_sync_check` 报「冻结产物已被修改」)⇒ 归档时由 `openspec archive` 正式合并。
 
 **判据形态落地(per Entry #455)**:`test/test_cep_mesh_e2e.cc` 的 MESH-3 拆为 —— **MESH-3a(开环等价·权威)**:`home.params.emit_completions = false`(`CohIfResponderTLM` 既有开关)断开跨 mesh 回程 ⇒ 层次化与平铺的 router `flits/packets/hops` **逐项严格相等** + `nic_b_recv` 相等;**MESH-3b(闭环不变式)**:各自 `flits>0` + `hops>flits` + 无静默丢弃 + 层次化内部 router 数 == 4。
@@ -24910,7 +24910,7 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 
 **遗留**:`openspec archive` + 冻结清单更新 + KPI 回填 0/3 + 独立验收(切 verifier)—— 待收口阶段执行。
 
-**⑨ 关联**:Entry **#455**(判据裁决)· **#454**(立项 + metis 修订)· **#453**(根因订正)· **#452**(F-3 初判)· `openspec/changes/cpptlm-router-credit-flit-leak-to-consumer/`(4 件套)· `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md` · `.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`(另一面 · 未立项)· `include/tlm/cep/cohif_nic.hh` · `include/framework/bidirectional_port_adapter.hh:126-139,299-330` · `src/tlm/router_tlm.cc:321-330,357-390`
+**⑨ 关联**:Entry **#455**(判据裁决)· **#454**(立项 + metis 修订)· **#453**(根因订正)· **#452**(F-3 初判)· `openspec/changes/archive/2026-11-16-cpptlm-router-credit-flit-leak-to-consumer/`(4 件套)· `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md` · `.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`(另一面 · 未立项)· `include/tlm/cep/cohif_nic.hh` · `include/framework/bidirectional_port_adapter.hh:126-139,299-330` · `src/tlm/router_tlm.cc:321-330,357-390`
 
 ### Entry #457 — 2026-11-16 [builder](**归档** `cpptlm-router-credit-flit-leak-to-consumer` —— delta 正式合并(⛔ 未用 `--skip-specs`) · 冻结清单更新 · KPI **1/3 → 0/3**)
 
