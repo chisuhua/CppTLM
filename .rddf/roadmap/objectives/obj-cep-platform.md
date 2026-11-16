@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **立项** ⇒ 占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -24686,3 +24686,22 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 #### §5 关联
 
 Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批 3 归档)· **#444**(目标达成度全量核对 · §2.2 类 B · §3 波 2)· **#305**(`cpptlm-cep-stub-cache-chstream-surface` 归档 —— G1 已完成的真源)· `.rddf/improvements/cpptlm-cep-mesh-e2e-carrier.md` · `openspec/changes/cpptlm-cep-mesh-e2e-carrier/` · `openspec/changes/cpptlm-cep-mesh-e2e-carrier/specs/cep-cohif-network-adapter/spec.md`(delta · 归档时合并为 main spec)
+
+### Entry #449 — 2026-11-16 [builder](**CEP coherence 流量穿过真实 mesh 归档** —— `CohIfNICTLM` + 2×2 mesh 联合拓扑 + 端到端判据落地 · KPI **1/3 → 0/3** · 冻结产物 **86 → 87**)
+
+**主题**:change `cpptlm-cep-mesh-e2e-carrier` 收口(立项 + 实施见 **Entry #448** · 产物 commit `bb3d209f`)。
+
+**完成归档语义**:delta capability `cep-cohif-network-adapter` 已**合并**进 `openspec/specs/cep-cohif-network-adapter/spec.md`(新增 main spec · `## Purpose` 已按 D-0 规则手写)⇒ `openspec validate cep-cohif-network-adapter --type spec --strict` **rc=0**;归档件 = `openspec/changes/archive/2026-11-16-cpptlm-cep-mesh-e2e-carrier/`。
+
+**体量变化(实测)**:
+- `cep-*` main spec **43 → 44** · 全仓 main spec **129 → 130**
+- 归档 change 数 **151 → 152**
+- 冻结产物 **86 → 87**(新增 main spec 属 `FROZEN_GLOBS` 内 ⇒ 须 `cep_freeze_check.sh --update --authorized-by "Entry #449"`)
+
+**全仓 `--strict` 口径**:绿 **74 → 75** / 红 **55 → 55**(新 spec 自带 D-0 合规 Purpose ⇒ **零新增红**)。
+
+**KPI**:**1/3 → 0/3**(change 归档 ⇒ slot 释放)· 6 处活口径已回填。
+
+**边界(⛔ 不得读成「CEP 协议已在真实 mesh 上验证」)**:协议引擎不参与本切片的业务事务路径(`ADR-CEP-19` SU 2026-11-09:RN-F 不服务 request ⇒ 业务事务直连 home)⇒ 本 change 验证的是「**stub ↔ home 事务**穿过真实 mesh」。
+
+**⑥ 关联**:Entry **#448**(立项 + 实施 + critic 处置)· **#447**(剩余任务梳理)· **#444**(目标达成度全量核对)· **#305**(G1 已完成的真源)· `.rddf/improvements/cpptlm-cep-mesh-e2e-carrier.md` · `openspec/changes/archive/2026-11-16-cpptlm-cep-mesh-e2e-carrier/` · `openspec/specs/cep-cohif-network-adapter/spec.md`

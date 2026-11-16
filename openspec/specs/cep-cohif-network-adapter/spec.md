@@ -1,6 +1,9 @@
-# cep-cohif-network-adapter Specification (delta)
+# cep-cohif-network-adapter Specification
 
-## ADDED Requirements
+## Purpose
+让一致性事务能经由可路由的网状互联抵达对端并带回响应：网络侧目标节点由地址区间解析填充，未命中一律显式丢弃而不静默改投，跨网络的报文类别投影被如实登记为有损。
+
+## Requirements
 
 ### Requirement: cep-cohif-network-adapter
 
