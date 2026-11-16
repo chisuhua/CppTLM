@@ -30,7 +30,7 @@
     "docs/architecture/cep/collective-plane.md": "8de3e3c7a2af2f7908cb81c90d7912784e5214c9bc70fbd626d13c062f54d595",
     "docs/architecture/cep/core-traffic-gen.md": "469e533714183871a78e1d626c1124565f1a1d910c7c3d591474c070c01fee13",
     "docs/architecture/cep/directory-ordering.md": "35d799b30a420cb6ef75d3820c14935b109560b8f421421f35a9e4480eeb1b0e",
-    "docs/architecture/cep/fabric-transport.md": "f3eaddee822ca70383da0e3aaa76026c374c222f454c05f167d65c2825ddd7dd",
+    "docs/architecture/cep/fabric-transport.md": "051768b6cf4cdc8ed79a7aa1f36b422c3c005d863afda7d193c9eb368537a3ce",
     "docs/architecture/cep/parity-baseline.md": "96688d82f30c5bc5dbdb5300764af578641e5851dc39d8cf27dd33a7d930c244",
     "docs/architecture/cep/protocol-engine.md": "dc7046e32915fa8a53de293e015569073389f37bc3bb08f2e6909d311233007b",
     "docs/architecture/cep/simulation-and-experiment.md": "78e116d9effcb9c5eaa9a479a83ce38f5588488189742b2f3fa8979539172c70",
@@ -90,10 +90,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #457",
+  "authorized_by": "Entry #460",
   "exclusions": [],
-  "frozen_at": "2026-11-16",
-  "frozen_at_commit": "5928616e87ba0163bc6a1489fd5c3c9122977d63",
+  "frozen_at": "2026-11-17",
+  "frozen_at_commit": "70c271a93707fd298b58cf2ae828ba0eef61c65b",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
