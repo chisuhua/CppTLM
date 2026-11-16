@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -24491,4 +24491,62 @@ delta 合并进 `openspec/specs/cep-core-contracts/spec.md` ⇒ 该文件在 M1 
 | **M-3** | 2 份来源 change 是「**主 spec 直写，从未走归档器**」 | ⛔ **该推断无依据** —— `git log --all --diff-filter=A` 实测找到两个 change 目录的**真实新增 commit**：`cpptlm-dgpu-soc-timing-mvp` ⇒ **`0345d283`**（168 行 proposal，`git show` 可达，核心名命中）· `cpptlm-driver-visible-minimal-soc` ⇒ **`689752ef`**（228 行，同上）⇒ **真实情况 = 归档目录被移走 / 改名** | 措辞已改 + 登记 **R-17**；归因形态改为 **`git-history-proposal`**（`git show <fixed-sha>:<path>` + 核心名命中）⇒ **比「文件名含 token」强** |
 | **M-4** | #12 `soc-internal-noc` 的 Purpose 写「页表取数、显存搬运与条带译码三条路径经同一内部网络贯通」 | **与实现矛盾**：`gmmu-pte-wf/spec.md:28`「**GMMU 不经 mesh NoC**」· `soc-internal-noc-data-flow/spec.md:15`「GMMU page walk …**不进 SocInternalNoc**」· `soc_internal_noc.hh:63` `NODE_ID_GMMU` 注释「v1.1 **不接**」 | **草稿已收窄**为「路由骨架 + 统一请求响应接口 + 各节点是否承接流量的显式说明」；并设**组 ⑤ 强制交叉对拍项**（critic 必查） |
 
-**⑥ 关联**:Entry **#443**（批 1 verifier 验收）· **#442**（批 1 收口）· **#441**（批 1 立项）· **#438**（上轮全量梳理 —— 本 Entry 是其**批 1 完成后的再核对**）· **#340**（上一轮排序裁决）· **#419**（objective ⏸ 暂存归档 · 终局 Ⅲ-甲）· `.rddf/improvements/cpptlm-spec-purpose-batch3.md` · `openspec/changes/cpptlm-spec-purpose-batch3/` · `docs/guide/cep-usage.md §12.8` · `test/cep_b3b2_deferrals.json` · `test/cep_invariant_assertion_map.json` · `test/cep_invariant_deferrals.json` · `test/cep_adr_structural_deferrals.json`
+**⑥ 关联**:Entry **#443**（批 1 verifier 验收）· **#442**（批 1 收口）· **#441**（批 1 立项）· **#438**（上轮全量梳理 —— 本 Entry 是其**批 1 完成后的再核对**）· **#340**（上一轮排序裁决）· **#419**（objective ⏸ 暂存归档 · 终局 Ⅲ-甲）· `.rddf/improvements/cpptlm-spec-purpose-batch3.md` · `openspec/changes/archive/2026-11-16-cpptlm-spec-purpose-batch3/` · `docs/guide/cep-usage.md §12.8` · `test/cep_b3b2_deferrals.json` · `test/cep_invariant_assertion_map.json` · `test/cep_invariant_deferrals.json` · `test/cep_adr_structural_deferrals.json`
+
+### Entry #445 — 2026-11-16 [builder](**R-1 批 3 归档** —— **14 份**主 spec 的 Purpose 占位清零 · `--strict` 红 **65 → 55** · critic **5 组全签** · KPI **1/3 → 0/3**)
+
+**主题**:change `cpptlm-spec-purpose-batch3` 收口(立项见 Entry #444;metis 预审 + critic 审均通过)。
+
+**① 交付面**：**14 份**非 `cep-*` 主 spec（dGPU 板级 / SoC 域）的 `## Purpose` 段：占位 → 实质 Purpose，**每份增 1 行**。diff = **14 files / 14 insertions / 15 deletions**（1 份删 2 因原占位后带尾随空行）⇒ **`## Requirements` 段 14/14 逐字节不变**（实测变动 **0**）。
+配套 **4 件**：① 归因载体生成器 `scripts/test/cep_spec_purpose_batch3_gen.py`（从 design.md **机器提取** canonical 草稿 + glob 解析归档目录，⛔ **不用 spec 的 TBD 行**）② 校验脚本 `scripts/test/cep_spec_purpose_batch3_check.py`（**C-1~C-10**，带 `--apply` / `--reconcile`）③ 归因载体 `test/spec_purpose_batch3_attribution.json`（14 条 · `checks` **由脚本重算**）④ AC-02b 闭合载体 `test/spec_purpose_batch3_reconcile.json`。
+
+**② ⚠️ 范围 17 → 14**（metis MUST-1 **实测扩大**）：3 份的来源 change **未实施** ⇒ 写现状即**立假账** ⇒ 移出 + 登记 **R-16**：`dgpu-board-mvp`（`dgpu_board_mvp.hh/.cc` + `dgpu_board_v1_mvp.json.in` 均不存在）· `dgpu-soc-control-hub`（`ControlHub` **0 命中** + `PcieMemoryDevice` 仍在 `configs/dgpu_soc_minimal_v1.json:49`）· `dgpu-soc-physical-ip-port-boundary`（`gmmu_tlm.hh:142` 明写 `wire-format 统一 PcieTlpBundle`，**未**切 `NoCFlitBundle`）。⇒ 3 份来源 proposal 状态均为 `🟡 Proposed Draft v0.5.0（草稿, 待评审）`。
+
+**③ ⚠️ 实施判定**⛔ **不用 tasks 勾选**（批 1 F-6：归档后执行未回勾 ⇒ tasks 是**记录债**，非实施证据）⇒ 改用**实现层行为锚点**（`implementation_anchors`，**行为符号** ⛔ 非头文件存在）。实测本批 **8 份「0 勾选」中 6 份实现锚点全部命中** ⇒ 若用 tasks 勾选会**误移出 6 份已实施 spec**。
+
+**④ 判据（批 1 基础上 +3 新增 +2 扩展）**
+
+| 判据 | 内容 | 相对批 1 |
+|:--:|---|---|
+| **C-6** | **spec 级** superseded：判定**只认状态位置**（前 10 行 / `> **状态**` 行 / `## Status` 段 / front-matter `status:`）+ 11 项扩展词表 + `re.IGNORECASE` | **收紧**（批 1 全文扫会假红：批 3 实测 9 份命中里 8 份是**行级历史引用**；批 1 已归档**不追溯**） |
+| **C-7** | 归因闭合**单一判据**：证据**可复现**（`archived-change-proposal` = 工作树 isfile；`git-history-proposal` = `git show <fixed-sha>:<path>` 可达，⛔ ref 不可 HEAD）**且**核心名命中前 2000 字符 | **扩展**（2 份来源 change 归档目录被移走，commit `0345d283` / `689752ef` 实测） |
+| **C-8** | `implementation_anchors` **逐个**在 `include/ src/ configs/ test/*.cc` 命中；未命中 ⇒ 该 spec 不得留在本批 | **新增** |
+| **C-9** | AC-02b 闭合载体：pre/post **同一 openspec 校验器**（pre = 基线影子根）· `fixed==pre−post` · `union 覆盖 pre` · `不相交` · `k==len(pre)−len(post)` · `fixed 的 pre issues ⊆ 仅 Purpose 类` · `remaining reasons 是真实 issue code` | **新增**（6 条机判） |
+| **C-10** | 载体 `purpose_text` == spec 现行 Purpose（防「apply 后人为改 spec ⇒ 载体 stale」） | **新增**（critic NIT-3） |
+
+**⑤ AC 逐条复验**
+
+| AC | 判据 | 实测 |
+|:--:|---|---|
+| AC-01 | 14 份 Purpose 限段零占位 | **14/14** |
+| AC-02 | 定向：14/14 无 Purpose 类 issue | **14/14** |
+| AC-02b | 全局闭合 | `--strict` 红 **pre 65 → post 55 ⇒ k = 10**；**Purpose 占位 59 → 45 = −14 精确**；**「正文 >500」issue 69 → 69 不变**（本批不动正文）⇒ 本批 **10 份完全转绿**、**4 份仍红**（红因**全为「正文 >500」**）；**C-9 机判 6 条全 True** |
+| AC-03 | 四条正交（逐份机判） | **14/14**（含 **人工抽验 6 份覆盖 5 组**，见 ⑦） |
+| AC-04 | 零语义 + diff 形状 | **14 文件 · 每份恰 1 hunk · 增 1 行**；**`## Requirements` 段 14/14 逐字节不变** |
+| AC-05 | 不声称不存在的能力 | C-6 互斥 + **C-8 锚点 14/14 命中** + 标识符可追 + C-7 证据可复现且核心名命中 |
+| AC-06 | `cep-*` 不受影响 | 43 份 `--strict` rc≠0 = **0** · `artifact_count` **86 不变**（零冻结产物 ⇒ 免五步链） |
+| AC-07 | 范围零 diff | `include/**` / `src/**` / `test/*.cc` / `docs/adr/**` / `openspec/specs/cep-*/spec.md` 全 **0** |
+| AC-08 | 闸 0 回归 | **45 闸**全 rc=0 · `ctest -R cep` / `[cep]` == T0（verifier 侧复验） |
+| AC-09 | KPI + 体量 | **1/3 → 0/3** · 归档 **change 目录数 150 → 151** |
+| AC-10 | 归档语义可判别 | 出口 **A**（实测收敛为唯一路径）⇒ proposal 顶部「✅ 已完成归档 · 主 spec 直改（无 delta）」标记行 + 归因 JSON `archive_semantics` + 本 Entry |
+
+**⑥ critic（`arch`+`plan`+`build` 三档 · 5 组逐组签）**：`mergeable: yes` / **0 BLOCKER** / **4 SHOULD_FIX** / 5 NIT / **5 组全签**（无一组回退）。**4 SHOULD_FIX 全修**：① **C-6 大小写漏洞** ⇒ 加 `re.IGNORECASE`（⚠️ 词表**故意不含** `SUPERSEDE` 不带 d —— `| **supersede** | 原 X |` 的语义是「**本 spec 取代了 X**」⇒ 命中它 = 假红）② **C-9 与 design D-3/AC-02c 三处不一致**（`fixed_pure` 未纳入 mc · 查 post 而非 pre · `k_equals_len_fixed` 硬编码恒真）③ **#13 的「各目标端」超出实现**（v1.1 实际只装 2 个 adapter）⇒ 收窄为「**数据流所及的**目标端」④ **残余登记漏项** ⇒ 登记 **R-20**（⚠️ `scope_exceeded: true` ⇒ 登记**不回改**）。**NIT 处置**：#12 的 R-6 独占锚定溢出 ⇒ NIT 不返工 · `repo_has_symbol` 收窄到 `test/*.cc`（与文档一致）· 新增 **C-10** · C-6 区域 2 的非粗体状态行绕过面 = 已接受残余 · AC-04 形状仅人工验证。
+
+**⑦ 人工抽验（6 份 · 覆盖 5 组 · 含 metis 指定的 #6 / #12）**
+① `dgpu-board-adapter-info` —— 草稿**不提**已删除的 `cpptlm_emulator_get_adapter_info`（实测 **0** 次）⇒ 与 `cpptlm_emulator.h:108` 一致（能力由存活的 `get_device_info` / `open` / `close` / `visible_vram_size` 承载）
+② `lwc-bus-hub-mvp` —— 与 `lwc_bus_hub.hh` 的 `register_doorbell_target` + `doorbell_write` 一致 ⇒ ⚠️ 实际 handler 名与 `AGENTS.md` 记载不同 ⇒ 登记 **R-19**
+③ `minimal-dgpu-soc-architecture` —— 草稿**不提 doorbell** ⇒ 与该 spec 的**未收敛不一致**不冲突 ⇒ 一致（**R-18**）
+④ `driver-visible-minimal-soc` —— 「地址窗口大小 / 显存窗口 / 真容量须区分」⇒ 与 `DGpuBoard` **双 size 字段**（B11）一致
+⑤ `gmmu-pte-wf` —— 「专用访存客户端承接并绕开 mesh 互联」⇒ 与 `gmmu_tlm.hh:132-138` + `gmmu-pte-wf/spec.md:28`「GMMU 不经 mesh NoC」一致
+⑥ `soc-internal-noc` —— **组 ⑤ 强制交叉对拍通过**：Purpose 中 `GMMU` / `PCIe` / `页表` / `条带` 提及 **0 次** ⇒ **未声称流量贯通** ⇒ 与 `soc_internal_noc.hh:61,63`（`NODE_ID_PCIE`「v1.1 无入向流量」/ `NODE_ID_GMMU`「v1.1 不接」）一致
+
+**⑧ ⚠️ 本轮 5 处自身订正 / 缺陷（留痕）**
+1. **C-7 核心名误用带日期前缀的目录名** ⇒ 12 份全判红 ⇒ 修正为「核心名 = **去日期前缀**」+ 另存 `source_archive_dir`
+2. **C-8 锚点 `bar_sizes[1]` 含正则字符** ⇒ grep 失配 ⇒ 改 `bar_sizes`
+3. **AC-04 的「删 1 增 1」是过严代理** ⇒ 实测 1 份删 2（原占位后带尾随空行）⇒ **改的是形状描述不是判据强度**；实质判据「Requirements 段逐字节不变」实测 14/14 变动 0（critic 复核确认：**结构性保证** —— 替换正则保留 `\n## Requirements` 起的一切字节）
+4. **`--reconcile` 基线取 `HEAD` 会假失效**（critic 验证建议指出）⇒ 落地已 commit ⇒ HEAD 即 post 态 ⇒ 重跑得 pre=55/k=0 ⇒ **基线显式化**（`--base <sha>` > 载体 `base_commit` > HEAD）
+5. **台账引用了归档前路径** ⇒ `cep_doc_ref_check` 报红 ⇒ 订正为 `openspec/changes/archive/2026-11-16-cpptlm-spec-purpose-batch3/`（同批 1 同型）
+
+**⑨ 残余（本 change 登记，未修）**：**R-15**（`v1-architecture` 引用已迁 ArchForge 的 `00-overview.md`）· **R-16**（3 份未实施 spec 存废 · 路由 architect）· **R-17**（2 份来源 change 归档目录缺失，曾存在于 commit `0345d283` / `689752ef`）· **R-18**（doorbell 配置 vs 代码不一致）· **R-19**（`AGENTS.md` 的 LWC handler 名与实现实际名不一致）· **R-20**（`adapter-info` 的 Scenario 引用已删除 ABI · ⚠️ `scope_exceeded`）· **R-1 批 2**（26 份正文 >500，裁剪**会动 Requirements 段** ⇒ 另一档风险）· **R-1 批 4~6**（其余 45 份 Purpose）· **R-9** 清单增殖 · **R-2** 13 键 golden · **DoD 7 口径订正**（61 条有载体 + 5 条 ⏭）· **B3b-2 = 0/4**（external，本仓不可推进）。
+
+**⑩ 关联**:Entry **#444**（本 change 立项 + 全量核对）· **#443**/**#442**/**#441**（**批 1** 的验收 / 收口 / 立项 —— 判据与范式全部复用）· **#438**（上轮全量梳理）· `.rddf/reviews/cpptlm-spec-purpose-batch3-verify.md`（verifier 待做）· `openspec/changes/archive/2026-11-16-cpptlm-spec-purpose-batch3/` · `scripts/test/cep_spec_purpose_batch3_{gen,check}.py` · `test/spec_purpose_batch3_{attribution,reconcile}.json`
