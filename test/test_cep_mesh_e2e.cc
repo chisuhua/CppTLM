@@ -38,11 +38,13 @@
 #include "tlm/cep/cep_mesh_interconnect.hh"
 #include "tlm/cep/cohif_nic.hh"
 #include "tlm/cep/stub_cache_endpoint.hh"
+#include "tlm/cep/cohif_responder.hh"
 #include "tlm/router_tlm.hh"
 
 #include <nlohmann/json.hpp>
 
 #include <cstdint>
+#include <cstdio>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -180,6 +182,9 @@ struct MeshRun {
     int64_t nic_b_last_recv_dst = -1;
     int64_t nic_b_last_recv_hops = -1;
     int64_t stub_completions_in = -1;
+    int64_t stub_net_requests_out = -1;
+    int64_t home_requests_consumed = -1;
+    int64_t home_foreign_consumed = -1;
     int64_t internal_router_count = -1;
     std::vector<RouterObs> routers;  ///< r00, r01, r10, r11
 };
@@ -225,6 +230,11 @@ MeshRun run_mesh(const json& cfg, int cycles) {
     out.nic_b_last_recv_dst = static_cast<int64_t>(nic_b->last_recv_dst_node());
     out.nic_b_last_recv_hops = static_cast<int64_t>(nic_b->last_recv_hops());
     out.stub_completions_in = static_cast<int64_t>(stub->counters().net_completions_in);
+    out.stub_net_requests_out = static_cast<int64_t>(stub->counters().net_requests_out);
+    if (auto* h = dynamic_cast<tlm::cep::CohIfResponderTLM*>(factory.getInstance("home"))) {
+        out.home_requests_consumed = static_cast<int64_t>(h->counters().requests_consumed);
+        out.home_foreign_consumed = static_cast<int64_t>(h->counters().foreign_consumed);
+    }
 
     for (const char* rn : {"r00", "r01", "r10", "r11"}) {
         tlm::RouterTLM* r = nullptr;
@@ -502,4 +512,22 @@ TEST_CASE("MESH-8 (AC-02/AC-03): credit 不再污染 NIC 侧观测 —— 层次
     REQUIRE(hier.nic_b_last_recv_hops == 3);
     REQUIRE(flat.nic_b_last_recv_dst == 3);
     REQUIRE(flat.nic_b_last_recv_hops == 3);
+}
+
+TEST_CASE("MESH-9 (AC-07): 伪 Completion 消失 —— PE 侧零 foreign + 完成数不多于真实事务数",
+          "[cep][e2e][mesh][credit]") {
+    // ⚠️ 判别力来自「修复前必红」的对照实测(临时关掉过滤测得):
+    //    修复前 home.foreign_consumed = 7 且 w.net_completions_in = 11/12 > home.requests_consumed = 7
+    //    修复后 home.foreign_consumed = 0 且 w.net_completions_in = 5/7 <= home.requests_consumed = 8/7
+    const MeshRun hier = run_mesh(load_hier_topology(), 300);
+    const MeshRun flat = run_mesh(load_flat_topology(), 300);
+
+    for (const MeshRun* r : {&hier, &flat}) {
+        // ① 伪 Completion 的**直接**指纹:home 收到过 credit 投影出的全零 Completion
+        //    ⇒ `CohIfResponderTLM::consume()` 对非 Request 流走 default 分支 ⇒ foreign_consumed > 0
+        REQUIRE(r->home_foreign_consumed == 0);
+        // ② 计数虚增指纹:w 收到的 Completion 数**不得**多于 home 真实产生的 Completion 数
+        //    (伪 Completion 只经 nic_a 的 PE 侧流进 w ⇒ 修复前必然超出)
+        REQUIRE(r->stub_completions_in <= r->home_requests_consumed);
+    }
 }

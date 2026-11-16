@@ -24929,3 +24929,35 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 **剩余**:独立验收(切 verifier)—— 判据 AC-01~AC-07 + MESH-3a/3b 形态复核;报告落 `.rddf/reviews/`。
 
 **⑩ 关联**:Entry **#456**(实施)· **#455**(判据裁决)· **#454**(立项)· **#453**(根因订正)· `openspec/specs/cep-cohif-network-adapter/spec.md`(已合并)· `openspec/changes/archive/2026-11-16-cpptlm-router-credit-flit-leak-to-consumer/` · `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(冻结清单)
+
+### Entry #458 — 2026-11-16 [builder](**AC-07 收敛**为可机械取证的两条 + **MESH-9** 落地 —— 判别力对照实测(修复前必红 / 修复后绿))
+
+**主题**:自验收时发现实施缺口 —— proposal 的 **AC-07**（「伪 Completion 消失」)无对应判据。补齐时发现其**原第三条不可机械取证** ⇒ 收敛为两条**可判**判据,并以「修复前必红」实测证明其有判别力。
+
+**原 AC-07 三条 vs 实测**:
+| 原条 | 可否机械取证 | 说明 |
+|---|---|---|
+| `w.net_completions_in == w.net_requests_out` | ❌ 不成立 | 闭环下回程受 LOCAL credit 耗尽截断(8 上限)⇒ 恒不等(AC-06 已登记该限制) |
+| 到达 PE 侧的每条 `CohIf` 的 `transaction_id != 0` | ❌ 不可取证 | `CohIfResponderTLM::consume()` 的 default 分支**不记录** transaction_id,且不暴露逐条观测 ⇒ 需改 `home` 的观测面(扩 scope 到另一模块,且该要求已被下面两条**机械覆盖**) |
+| `home.counters().foreign_consumed == 0` | ✅ 可取证 | home 收到 credit 投影出的全零 Completion ⇒ 走 default 分支 ⇒ 计数 > 0 |
+
+**收敛后 AC-07(两条,均已由 MESH-9 落地)**:
+1. `home.counters().foreign_consumed == 0`
+2. `w.net_completions_in <= home.counters().requests_consumed`(伪 Completion 只经 `nic_a` 的 PE 侧流进 `w` ⇒ 修复前必然超出)
+⇒ 覆盖逻辑:伪 Completion 的**唯一**来源是 credit ⇒ 「无伪 Completion 到达 PE 侧」⟺「无全零 Completion」。
+
+**判别力对照实测(临时关掉过滤 vs 修复后,临时诊断已清理)**:
+
+| 指标 | 修复前(过滤关) | 修复后(过滤开) |
+|---|---|---|
+| `home.foreign_consumed` | **7** | **0** |
+| `w.net_completions_in` | **11 / 12** | **5 / 7** |
+| `home.requests_consumed` | 7 | 8 / 7 |
+
+⇒ 两条判据在修复前**必红**、修复后**绿** ⇒ 判别力成立(⛔ 非「恒真」判据)。
+
+**改动**:`test/test_cep_mesh_e2e.cc` 增 `MeshRun` 采集字段(`stub_net_requests_out` / `home_requests_consumed` / `home_foreign_consumed`)+ 新增 **MESH-9**(AC-07);improvement 的 AC-07 文本收敛(tracked · 可持久);归档件 proposal 的 AC-07 本地订正(归档目录 gitignore 内 · 只作本地一致)。
+
+**KPI**:保持 **0/3**(change 已归档)。
+
+**⑪ 关联**:Entry **#457**(归档)· **#456**(实施)· **#455**(判据裁决)· `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md`(AC-07 收敛)· `test/test_cep_mesh_e2e.cc`(MESH-9)· `include/tlm/cep/cohif_responder.hh:206-232`(`consume()` 的 default 分支 ⇒ foreign 记账)
