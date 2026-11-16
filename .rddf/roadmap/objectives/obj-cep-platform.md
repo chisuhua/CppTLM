@@ -24757,3 +24757,21 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 **待后续**:verifier 独立验收(切角色)。
 
 **⑥ 关联**:Entry **#450**(立项记录)· **#449**(mesh carrier 归档 · 前置链)· **#448**(mesh carrier 立项+实施)· `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md` · `.rddf/reviews/ADR-X.15.md` · `openspec/changes/archive/2026-11-16-cpptlm-simmodule-exposed-port-wiring/` · `openspec/changes/archive/2026-11-16-cpptlm-cep-mesh-interconnect-submodule/`
+
+### Entry #452 — 2026-11-16 [planner](**验收闭合回执** —— 两 change 独立验收 **PASS**(无 implementation_gap) · F-1/F-2 AC 文本订正 · F-3 登记 backlog)
+
+**主题**:verifier 对两 change 完成独立验收(报告 `.rddf/reviews/cpptlm-simmodule-exposed-port-wiring-verify.md` / `…-cpptlm-cep-mesh-interconnect-submodule-verify.md`),本 entry 为**闭合回执 + drift 处置**(台账是 AC 订正的**可持久记录** —— `openspec/changes/archive/` 被 `.gitignore:64` 忽略,归档 proposal 的文本改动不入库)。
+
+**验收结论(逐条取证)**:`cpptlm-simmodule-exposed-port-wiring` AC-01~AC-06/AC-08 **PASS**;`cpptlm-cep-mesh-interconnect-submodule` AC-01~AC-04/AC-06/AC-07 **PASS** ⇒ **无 implementation_gap**。遗留清扫全清(无 TODO / 临时调试 / skip 测试 / 未跟踪残渣)。`rdd-verifier` skill 不适用(0 active ⇒ empty queue)⇒ 本地验收路径。
+
+**F-1 处置(proposal_drift · Step7c AC-07)**:原判据 `nic_b_recv_dst_node==3` **撤销** —— `last_recv_*` 是**顺序敏感**计数器,层次化把容器子模块 tick 收成连续一组即改变周内交织;且 `RouterTLM` 路由表键不含方向(回声)。**订正后判据** = `r*.flits>0` + **mesh 级观测与平铺基线逐项相等**(与 mesh change AC-04 对齐)。
+
+**F-2 处置(proposal_drift · mesh AC-03 / AC-05)**:AC-03 标签名由 `fabric.portN_*` 订正为 `fabric.node0_*` / `fabric.node3_*`(4 通道 × 2 接入节点);AC-05 判据粒度由「模块数 + 连接数」收敛为「**模块数**(已断言)+ 连接等价性由 AC-04 的**平铺基线逐条 PortPair 对拍**间接覆盖」(实施期 pair dump 实测 **34/34** 一致)。
+
+**F-3 处置(backlog 登记)**:`RouterTLM::routing_table_` 以 `transaction_id` 单独为键、**不含方向** ⇒ 请求与响应同 tx id 时响应命中残留 `out_port=LOCAL` 而被误投回本地口(回声)。**既有缺陷,平铺基线同样存在**;两 change 均未碰 `RouterTLM`(AC-06 零回归已证)。已登记 improvement 草稿 **`.rddf/improvements/cpptlm-router-routing-table-key-direction.md`**(🔴 未立项 · 5 段 + AC-01~AC-04 + 风险:既有 e2e 的 `last_recv_*` 断言可能需重基线)。
+
+**轻覆盖记录**:Step7c AC-08 括号内的 `configs/library_cpu_demo.json` 装配**无持久判据**(实施期用临时探针验证,未留测试);主判据(Phase 8 E2E)有覆盖 ⇒ 不阻断,登记备查。
+
+**KPI**:保持 **0/3**(本 entry 不新开 change)。
+
+**⑤ 关联**:Entry **#451**(两 change 归档)· **#450**(立项记录)· **#449**(前置 mesh carrier)· `.rddf/reviews/*-verify.md`(2 份验收报告)· `.rddf/improvements/cpptlm-router-routing-table-key-direction.md`(F-3 草稿)· `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md`(Status Update 已登记该发现)
