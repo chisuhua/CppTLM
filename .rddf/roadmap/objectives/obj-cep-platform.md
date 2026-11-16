@@ -24829,11 +24829,11 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 
 **⑦ 关联**:Entry **#452**(F-3 初判)· **#453**(根因订正)· **#451**(两 change 归档)· `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md`(已立项)· `.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`(另一面 · 未立项)· metis 审查(1 轮,结论已并入本 entry)
 
-### Entry #454 — 2026-11-16 [planner](**授权修订 CEP 真源子文档的过期 SHALL 断言** —— `fabric-transport.md:45`「仓内不存在 Router + flit 级路径」已被能力落地证伪 · 授权 architect 改文 + builder 跑 freeze `--update`)
+### Entry #460 — 2026-11-17 [planner](**授权修订 CEP 真源子文档的过期 SHALL 断言** —— `fabric-transport.md:45`「仓内不存在 Router + flit 级路径」已被能力落地证伪 · 授权 architect 改文 + builder 跑 freeze `--update`)
 
 **主题**:`docs/architecture/cep/fabric-transport.md` 的 §6.3.1 有一句**SHALL 级**断言已与实际能力不符,需修订。本条 entry 是**授权记录**(per `cep_freeze_check.sh` 的授权闸门要求:改冻结产物须先在台账 §11 追加 entry)。
 
-**过期断言(原文,`:45`)**:
+**过期断言(原文,`:43`;该文件已被后续改动微调,行号由 `:45` 前移)**:
 
 > `⚠️ 仓内**不存在** Router + flit 级路径 ⇒ 拓扑的**名称 / 描述 SHALL 如实反映**这一点。`
 
@@ -24847,9 +24847,9 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 - 该文件 `:5` 的「本层当前**无 CEP 自有**运行时实现(仅 `fabric.json` 声明 + 装配期死锁自由性闸)」**仍准确**(限定词「自有」= `include/tlm/cep/` 内无 router/credit 模型)⇒ **本次不改**。
 
 **本条授权的修订范围(精确)**:
-1. **architect** 可改 `docs/architecture/cep/fabric-transport.md` **§6.3.1 的那一句**(`:45`),改为如实反映「存在 `CohIfNICTLM` ↔ `RouterTLM` flit 级路径」+ 保留「协议引擎不参与」的边界 + 补 `test/test_cep_mesh_e2e.cc` 指针。**⛔ 不改该文件的 §6.3 / R1 / J-9 判据表等任何其他内容**。
+1. **architect** 可改 `docs/architecture/cep/fabric-transport.md` **§6.3.1 的那一句**(`:43`),改为如实反映「存在 `CohIfNICTLM` ↔ `RouterTLM` flit 级路径」+ 保留「协议引擎不参与」的边界 + 补 `test/test_cep_mesh_e2e.cc` 指针。**⛔ 不改该文件的 §6.3 / R1 / J-9 判据表等任何其他内容**。
 2. 该文属**真源 1**(CEP 子文档)⇒ architect 改文后须过 **oracle 审查**。
-3. **builder** 获授权跑 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #454"`(该文件在 `FROZEN_GLOBS` 内)。
+3. **builder** 获授权跑 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #460"`(该文件在 `FROZEN_GLOBS` 内)。
 
 **触发者**:用户裁决 **路径 A**(2026-11-16)—— 在 architect 报告「该句过期但超出单角色可闭合范围」后,选择走完整闭环(planner 授权 → architect 改文 + oracle 审 → builder freeze update)。
 
@@ -24995,3 +24995,23 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 **遗留(跨角色)**:`ADR-X.16` 的 D4 锚点澄清 ⇒ **architect**(tasks T6.1);`buffer_size` param 不生效 · `NICTLM` 缺 credit 过滤 ⇒ 待 **planner** 立项为 backlog(tasks T6.2)。
 
 **⑫ 关联**:Entry **#458** · **#457** · **#456** · **#455** · **#454** · **#453** · **#452** · `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` · `.rddf/reviews/ADR-X.16.md` · `.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`
+
+### Entry #461 — 2026-11-17 [planner](**登记** `cpptlm-nictlm-credit-flit-filter` —— `NICTLM` 侧 in-band credit 过滤缺口(同根因 · `CohIfNICTLM` 侧已修) · 显式澄清**不因 ADR-X.16 消解**)
+
+**主题**:把 `NICTLM`(通用网卡)侧的 in-band credit 泄漏缺口登记为 improvement 草稿。缺口原始登记处 = `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` 的 `## 关联` 章「相邻独立缺陷」第 2 条;本条把它**升级为可执行的 backlog**,并补一处**顺序依赖澄清**。
+
+**缺口事实(实测)**:
+- `src/tlm/nic_tlm.cc` **全文零 `credit` / `CATEGORY_CREDIT` 命中**(grep)⇒ 无任何 credit 过滤。
+- `NICTLM::handle_net_resp`(`:80-95`):`:85` 取 flit → `:86` consume → `:88` **无条件 `++stats_flits_received_`** → `:90` `reassemble(flit)`。
+- `reassemble` 在 `:182` 写 `pe_resp_out_.write(resp)` ⇒ credit flit 到达即产出**垃圾 `pe_resp_out`**。
+- 三面后果:计数虚增 / `packets_received` 语义污染 / 向业务侧灌垃圾响应。
+
+**与已归档 change 的关系(同根因 · 不同消费者)**:change `cpptlm-router-credit-flit-leak-to-consumer`(Entry #454 立项 / #456 实施 / #457 归档)已修 **`CohIfNICTLM`** 侧;**`NICTLM` 侧未修**。受影响拓扑 = `ADR-X.16` F-6 列出的 `NICTLM` 挂 LOCAL 的 6 个实例(`mesh_2x2_tlm` / `mesh_4x4_tlm` / `mesh_4x4` / `nic_router_nic` / `test_e2e_simulation` / `test_nic_side_rules` / `test_noc_mesh_binding_semantics`)。
+
+**⚠️ 顺序依赖澄清(本条的主要增量)**:`ADR-X.16` 的 **D1** = 「LOCAL 端口**不参与 downstream credit 流控**」⇒ 管的是 router 的**下行**(`has_credit(LOCAL,vc)` 恒真 / `consume_credit(LOCAL,vc)` 不扣减);而本缺口的路径是 **router → LOCAL 上游**的**上行**(`return_credit_to_upstream` 把 credit 发回 `resp_out[LOCAL]`)⇒ **不受 D1 影响** ⇒ **不得**假定 ADR-X.16 落地后本缺口自动消失。两者**独立**,可并行推进。
+
+**产物**:`.rddf/improvements/cpptlm-nictlm-credit-flit-filter.md`(🔴 未立项 · 5 段 + AC-01~AC-05 + Capabilities 2 条 + Impact 明确「⛔ 不改 router 侧」与「与 ADR-X.16 独立」)。
+
+**KPI**:保持 **1/3**(本条不新开 change;active change = `cpptlm-router-local-port-credit-exhaustion`,per Entry #459)。
+
+**⑧ 关联**:Entry **#460**(授权修订 `fabric-transport.md` 的过期 SHALL 断言)· **#459**(同源另一面 `cpptlm-router-local-port-credit-exhaustion` 立项)· **#457**(F-3 归档)· `docs/adr/ADR-X.16-router-local-port-terminal-credit.md`(`## 关联` 章 · 缺口原始登记处)· `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md`(2026-11-17 追加段第 5 条)· `.rddf/improvements/cpptlm-nictlm-credit-flit-filter.md`
