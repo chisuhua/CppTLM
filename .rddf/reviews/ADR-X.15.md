@@ -75,3 +75,36 @@ oracle + critic 双审完成，0 BLOCKER，SHOULD_FIX 已并入。ADR 四要素�
 3. oracle 受限未能独立复核 `test/test_simmodule_exposed_port_wiring.cc` 的 mesh 级判据落地（实施验收已由 verifier 独立执行，属交叉验证缺口，不阻断）。
 
 **判定行**：`判定: APPROVE`
+
+---
+
+## 第三轮审查（2026-11-17 · 「缺陷已修复」追加段）— oracle 判定 REJECT → 2 处必改 → 已闭合并收口
+
+**改动形态**：`## Status Update` 追加第二段（5 条），记录消费者侧 credit 过滤已落地 / 等价判据改「开环」/ AC-07 收敛 + MESH-9 判别力对照 / 同源另一面分离至 `ADR-X.16` / 登记 `NICTLM` 同族缺口。未动 Context / Decision / 选项对比 / Consequences / Verification / Status 行。
+
+**oracle 判定**：`判定: REJECT` —— 2 处必改（均在追加段内改字，不触碰「只动 Status Update」边界）。
+
+### 逐条应答（全部 finding 均已应答）
+
+| # | finding | oracle 主张 | 处置 | 核验 |
+|:--:|---|---|---|---|
+| 1 | **必改** | 第 ⑤ 条写「per `ADR-X.16` **后果章**登记」—— 真实登记位置是 `ADR-X.16` 的 `## 关联` 章（`:107-114`「相邻独立缺陷」第 2 条）；后果章（`:73-94`）只有「沉默边界迁移」，无此登记 | ✅ **已改**：「per `ADR-X.16` 的 `## 关联` 章登记」 | 独立复核：`ADR-X.16` 章节行号 `:73 ## Consequences` / `:107 ## 关联`；NICTLM credit 缺口在 `:114` ⇒ 属关联章 ✔（后果章内唯一 "NICTLM" 出现在 `:86` 的终端消费速率句，非此登记） |
+| 2 | **必改** | 第 ② 条只承接 V-5、对 V-4 沉默 —— credit 修复 change 对**双侧**断言做了有意重基线（平铺侧同样改用 `emit_completions=false` 开环）⇒ V-4 字面条款「扁平逐断言一致」不再字面成立，而 V-4 的**实质**（Step 7c 零回归）仍成立 | ✅ **已改**：第 ② 条补入 V-4 段 —— 字面条款以修复 change 归档时点为新基线（MESH-3 → MESH-3a/3b 双侧同口径）+ **V-4 实质不受影响**（`module_factory.cc` 零 diff，`[cep]`/`[e2e]`/`[mesh]` 全绿）+ V-4/V-5 原文均不改 | 独立复核：`test/test_cep_mesh_e2e.cc:146-153` `load_flat_topology` 默认 `emit_completions` 且注释「与层次化侧同口径」；`:308` MESH-3a / `:341` MESH-3b；`git diff --stat 2582dc50..HEAD -- src/core/module_factory.cc` → **空（零 diff）** ✔ |
+| 3 | NIT（可选） | 第 ② 条「差异来自周内时序」与 Entry #455 裁决的精确机理不完全对齐（实为**闭环反馈回路**：伪 Completion 不再回喂业务侧 ⇒ 平铺注入流变化 ⇒ 转发数差 1） | ✅ **已采纳**：第 ② 条改为「差异来自**闭环反馈回路**（…），而非单纯的 tick 交织噪声」 | — |
+| 4 | NIT（可选） | 备注 Entry #457 遗留「独立验收（切 verifier）」仍 pending | ❌ **不采纳** —— 该备注**已过时**：独立验收已由 commit `7402b77b`（「独立验收 PASS —— AC-01~AC-07 逐条取证 · 0 implementation_gap」）完成 ⇒ 写 pending 即引入新的失准 | `git log --oneline`：`7402b77b docs(verify): 独立验收 PASS` ✔ |
+| 5 | NIT（可选） | 现状实测数字（`[mesh]` 251 断言 / 19 用例等）不必写进 ADR（过程日志不落 ADR） | ✅ **已符合** —— 追加段当前未写入任何实测数字 | 复核全文 ✔ |
+
+### 4 个审查点的结论（oracle 对未要求改的部分判定 PASS）
+
+| # | 审查点 | 结论 |
+|:--:|---|---|
+| 1 | 与 V-1~V-8 是否冲突 | 无实质冲突（V-5 已由 11-16 段权威覆盖，11-17 第 ② 条构成清晰 supersede）；**V-4 缝隙已由 finding 2 闭合** |
+| 2 | 是否「把未决写成已决」 | **不构成** —— Entry #455（planner 正式裁决，含禁止项清单：`==` 不得放宽为 `>0`）+ Entry #456（三组对照实测）+ Entry #458（判别力对照：修复前必红 / 修复后绿，`foreign_consumed` 7→0）+ Entry #457（delta 正式合并，未用 `--skip-specs`）证据链闭合 |
+| 3 | 「同源另一面已分离」是否成立 | **成立** —— `ADR-X.16` 决策面 = `RouterTLM` LOCAL 口流控语义（运行时），本 ADR 决策面 = Step 7c 装配接线，二者无相互依赖；`ADR-X.16` 自身 V-4 承接其回归面 |
+| 4 | `NICTLM` 缺口描述是否准确 | 机理描述**准确** —— `src/tlm/nic_tlm.cc` 全文零 `CATEGORY_CREDIT` 匹配；`handle_net_resp()` 无条件 `++stats_flits_received_` 后调 `reassemble` ⇒ credit flit 到达即污染计数并产出垃圾 `pe_resp_out`。归属可接受（延续 11-16 发现链条 + 已声明不在本 ADR 范围修 + 指向 `ADR-X.16` 为 owner），**章节指称已按 finding 1 修正** |
+
+### 收口
+
+2 处必改 + 1 条 NIT 已落地并复核；1 条 NIT 以「已过时」为由不采纳（附证据）；1 条 NIT 原本即符合。追加段收口。ADR 175 行（≤250）；`cep_docs_sync_check` 全通过 · `cep_doc_ref_check` Passed。
+
+**判定行**：`判定: REJECT → 2 处必改已闭合 → 收口`（oracle 明示「改完后无需复审全量，复核两处置换文本即可收口」）

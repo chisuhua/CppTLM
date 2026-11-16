@@ -161,3 +161,15 @@ Accepted — 2026-11-16（决策与实施记录见 `## Status Update`）
 3. **对 V-5 的影响。** V-5 原文的 `nic_b_recv_dst_node==3` / `last_recv_hops>=1` **不可作为等价性判据** —— 它们受上述 credit 污染，且取值取决于「最后一个到达的是数据还是 credit」，随周内 tick 交织变化（tick 交织又因装配方式而变）。等价性判据以 **mesh 级观测**为准：router `flits` / `packets` / `hops` 逐项相等 + NIC 收到的 flit 数相等，已在实施 change 的测试中落地。**V-5 原文不改**（Verification 章不可变），本段即为其实施期口径的权威说明。
 
 4. **登记一处已被证伪的假设**（记录于此以免复发）：排查中一度判定「`RouterTLM::routing_table_` 以 `transaction_id` 单独为键、不含方向 ⇒ 请求与其响应共用 tx id 时，响应命中残留的 `out_port = LOCAL` 条目而被误投」。该判断**不成立** —— `CohIfNICTLM::pack_flit` 对每个 flit 写 `FLIT_HEAD_TAIL`，而 `is_head()` 对 `FLIT_HEAD_TAIL` 返回 true ⇒ `stage_route_computation` 恒走 HEAD 分支（`computeRoute`），BODY/TAIL 的 `routing_table_` 查表分支**不可达** ⇒ 该碰撞在本场景不可能发生。
+
+**2026-11-17（追加）— 上条定位的缺陷已修复并归档；等价判据随之改为「开环」；同源另一面已分离立项。**
+
+1. **消费者侧 credit 过滤已落地**（change `cpptlm-router-credit-flit-leak-to-consumer`，已归档）：`CohIfNICTLM` 在网络 ingress 按 `flit_category == CATEGORY_CREDIT` **丢弃** credit flit 并计入 `credits_dropped()`；**不**计入 `flits_received`、**不**写 `last_recv_dst_node` / `last_recv_hops`、**不**向 PE 侧投影 ⇒ 上条描述的「计数虚增 / 观测被覆写 / 全零伪 Completion」三面后果均已消除。契约面同步：`openspec/specs/cep-cohif-network-adapter/spec.md` 增「网络 ingress SHALL 丢弃 credit flit」Scenario。
+
+2. **等价判据随之改为「开环」**（决策台账 Entry #455 裁决）。修复后 credit 不再回流，闭环拓扑下层次化与平铺的 router 计数不再逐项相等 —— 差异来自**闭环反馈回路**（伪 Completion 不再回喂业务侧 ⇒ 平铺侧注入流变化 ⇒ 转发数差 1），而非单纯的 tick 交织噪声 ⇒ 等价性判据改为两条：**开环**（断开跨 mesh 回程后，层次化与平铺的 router `flits`/`packets`/`hops` 逐项严格相等）+ **闭环不变式**（各自 `flits > 0`、`hops > flits`、无静默丢弃、内部 router 数 == 4）。⚠️ **V-4 的字面条款**（「扁平 `cep_mesh_e2e`（改造前）逐断言一致」）亦因该修复 change 对**双侧**断言做了有意重基线（MESH-3 → MESH-3a/3b，平铺与层次化同口径开环）而**不再字面成立**；**V-4 的实质结论不受影响** —— Step 7c 对纯 ChStream 的零回归仍成立（`src/core/module_factory.cc` 零 diff，`[cep]` / `[e2e]` / `[mesh]` 全量绿）。V-5 的 mesh 级口径由上述两条承接；**V-4 / V-5 原文均不改**（Verification 章不可变）。
+
+3. **AC-07 已收敛为可机械取证的两条**，并以 `MESH-9` 作判别力对照（修复前必红 / 修复后绿）。
+
+4. **同源另一面已分离立项。** 上述 credit 回流的另一面是「LOCAL 终端侧 credit 记账饿死」（本地投递停滞），与本 ADR 的 exposed 端口数据通路无关 ⇒ 分离为 `ADR-X.16`（Accepted：Router LOCAL 端口不参与 downstream credit 流控）+ change `cpptlm-router-local-port-credit-exhaustion`（已立项）。
+
+5. **登记一处同族缺口**：`NICTLM`（`src/tlm/nic_tlm.cc`）全文无 `CATEGORY_CREDIT` 检查 ⇒ 在 `mesh_2x2_tlm` / `mesh_4x4_tlm` 类拓扑中，router 对 LOCAL ingress 的 credit 回流会进入 `NICTLM::reassemble`，污染计数并产出垃圾 `pe_resp_out`。`CohIfNICTLM` 侧已修，`NICTLM` 侧**未修**（per `ADR-X.16` 的 `## 关联` 章登记）。⛔ 不在本 ADR 范围内修。
