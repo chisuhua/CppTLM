@@ -94,3 +94,33 @@
 **结论**：ADR-X.16 收口完成，`Accepted`。
 
 **未在本次处理（历史/范围外，仅记录）**：`docs/adr` 下既有 ADR 的形态问题不追溯；本 ADR 的相邻独立缺陷（`buffer_size` param 不生效、`NICTLM` 缺 credit 过滤）已在关联段登记，须由 planner 立项。
+
+---
+
+## 四 · 第二轮审查（2026-11-17 · D4 锚点澄清追加段）—— oracle 判定 APPROVE
+
+**改动形态**：末尾追加 `## Status Update`（原文件无此段）；`git diff` = **+21/−0**，未触碰 D1-D5 / 选项对比 / Consequences / V-1~V-6 / 关联章。
+
+**缘起**：change `cpptlm-router-local-port-credit-exhaustion` 的 **T6.1**（跨角色 · 明确列给 architect）。实施期经 metis 提出、builder 实测确认：D4 原文锚点「处于 `waiting_for_credit` 的每周期 +1」**按字面实现恒为 0**。
+
+### oracle 四问逐条（全部 PASS）
+
+| # | 审查点 | 结论 |
+|:--:|---|---|
+| 1 | 锚点订正的事实是否成立 | **成立**。VA 拒绝分支（`:228-232`：`note_credit_stall` + `release_vc` + `continue`）⇒ `vc_allocated` 保持 false ⇒ SA 跳过（`:260-261`）⇒ 该 flit 永不成为 winner ⇒ `waiting_for_credit` 唯一置位点（`:359`，ST 阶段）不可达 ⇒ 原锚点恒 0 |
+| 2 | 「以 Status Update 澄清、不改 D4 正文」是否成立 | **成立**，不构成自相矛盾。D4 的四项决策内容（周期累计语义 / 16-cycle 日志节流 / 16-cycle 阈值 / `credit_timeout_`=0）逐字保留；被订正的只是**实现代理**，且原代理按字面不可实现。规范口径已由 change spec 承接（`specs/router-local-port-flow-control/spec.md:47` 显式写明「锚点口径是 VA/SA 拒绝条件，**不是** `waiting_for_credit`」） |
+| 3 | 订正后是否仍达成 D4 原始目的 | **达成**。mesh 死锁可观测（RLC-3：裸 router ⇒ `>=16`；归还 credit 后严格相等不增长，对「无脑 +1」有真实判别力）；不可被重置掩盖（`credit_timeout_` 默认 0 未动）；**LOCAL 误触发不可能**（`has_credit(LOCAL,·)` 恒真 ⇒ 两处 `!has_credit` 分支对 LOCAL 永不成立；RLC-2 亦断言 LOCAL 注入 `stall_cycles == 0`） |
+| 4 | 是否超出范围 | **未超**（+21/−0，纯追加） |
+
+### oracle 的两条非阻断项与处置
+
+| # | 内容 | 处置 |
+|:--:|---|---|
+| 中 | 台账交叉引用待确认（oracle grep `docs/roadmap/README.md` 未命中 #459/#463） | ❌ **不成立** —— **oracle 找错文件**：台账实际落 `.rddf/roadmap/objectives/obj-cep-platform.md`，实测 `:24965` = Entry #459、`:25041` = Entry #463 ✅ 引用正确，无需改动 |
+| 低 | 计数器粒度是「(stalled flit, cycle) 事件对」而非「唯一 `(port,vc)` 周期数」（SA 分支 `continue` 不跳出 `in_vc` 循环 ⇒ 多 flit 争用同一 out_vc 时一周期可 +N） | ✅ **备案不改** —— oracle 明确「当前所有判据（V-3 阈值型 `>=16`、RLC-3 严格相等）对此粒度均稳健」，且追加段措辞「存在待发 flit 且 `has_credit == false` 的周期累计」按 per-flit 语义自洽。仅登记以防未来被当作回归借口 |
+
+### 已排除的替代方案（oracle）
+
+新建 ADR-X.17 废止 D4（成本过高，Status Update 对齐机制已足够）/ 直接改 D4 正文（违反不可变）/ 只在 change design.md 记录（真源 3 会与实现漂移）/ 改 `has_credit`·流水线让 flit 进 ST 以挽救原锚点（「改实现凑文档」反模式，破坏 V-4 零 diff 回归）。
+
+**判定行**：`判定: APPROVE`（可收口）

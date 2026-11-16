@@ -112,3 +112,24 @@ Accepted — 2026-11-16（oracle APPROVE + critic APPROVE_WITH_CONDITIONS，0 BL
 - 相邻独立缺陷（不在本 ADR 范围，须另行登记）:
   1. `buffer_size` param 不生效 —— `get_param_rules` 声明了该参数（默认 16，范围 1–64），但 `BUFFER_DEPTH` 是 `constexpr 8`（`include/tlm/router_tlm.hh:134`）。
   2. **`NICTLM` 无 credit flit 过滤**（oracle 审查时发现 · 同族缺陷）—— `src/tlm/nic_tlm.cc` 全文无 `CATEGORY_CREDIT` 检查 ⇒ 在 `mesh_2x2_tlm` / `mesh_4x4_tlm` 类拓扑里，router 对 LOCAL ingress 的正常 credit 回流（`reverse_port(4)==4`）会进入 `NICTLM::reassemble`，污染 `flits_received` 计数并产出垃圾 `pe_resp_out`。`CohIfNICTLM` 侧已由 change `cpptlm-router-credit-flit-leak-to-consumer` 过滤；`NICTLM` 侧**未修**。
+
+---
+
+## Status Update
+
+**2026-11-17 — D4 的 stall 计数**锚点**澄清（实施期订正；不改 D4 的决策内容）。**
+
+实施 change `cpptlm-router-local-port-credit-exhaustion` 时（经 metis 审查提出、builder 实测确认）发现：D4 原文写的锚点「该 `(port, vc)` 处于 `waiting_for_credit` 的每个周期 +1」**按字面实现会恒为 0** ——
+
+- `waiting_for_credit` 只在 **ST 阶段**「SA 已放行、ST 复查发现 credit 为 0」时置位（`src/tlm/router_tlm.cc` 的 SA winners 分支）；
+- 而 credit 耗尽后，**VA 阶段先拒**（`!has_credit` ⇒ `release_vc` + `continue`）且 **SA 阶段不选 winner**（`!has_credit` ⇒ `continue`）⇒ flit 停在 `input_buffer_`，**从不进入 ST** ⇒ 该位**保持 false**。
+
+**实施口径（以本段为准）**：计数器锚点 = **「存在待发 flit 且 `has_credit(out_port, out_vc) == false`」的周期累计**，即在 **VA / SA 的拒绝分支**处 +1（`RouterTLM::note_credit_stall()`）。
+
+**不变的部分**（照 D4 原文）：计数器语义（stall **周期累计**，非「阈值穿越次数」）、日志节流（每 `(port, vc)` 每 16 cycles 一次）、阈值绝对值（V-3 的 16 cycles）、`credit_timeout_` 默认值 **0**。
+
+**判别力证据**：`test/test_router_local_port_credit.cc` 的 `RLC-3 (AC-03)` —— 裸 `RouterTLM`（`adapter_ == nullptr`）向 mesh 向注入 ⇒ `credit_stall_cycles >= 16`；每周期归还 credit 后**严格相等不增长**（防「每周期无脑 +1」的假实现）。
+
+**关联指针已落实**：本 ADR 的 Metadata 写的 `backlog: cpptlm-router-local-port-credit-exhaustion` 已由 planner 立项（台账 **Entry #459**，AC-01~AC-07 对应 V-1~V-6），实施与验收见 Entry **#463** 与 `openspec/changes/cpptlm-router-local-port-credit-exhaustion/`。
+
+> ⚠️ D4 的**决策内容**（要观测、要节流、不靠周期性重置掩盖真实死锁）不变；本段只订正**锚点的实现口径**。按 ADR 不可变原则，正文不改。

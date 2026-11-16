@@ -52,5 +52,5 @@
 
 ## T6 — 待 architect（跨角色）
 
-- [ ] T6.1 在 `ADR-X.16` 追加 Status Update：**澄清 D4 的 stall 计数锚点**（原文 `waiting_for_credit` 恒为 false ⇒ 实施口径改为 VA / SA 拒绝条件）
+- [x] T6.1 在 `ADR-X.16` 追加 Status Update：**澄清 D4 的 stall 计数锚点**（原文 `waiting_for_credit` 恒为 false ⇒ 实施口径改为 VA / SA 拒绝条件）
 - [ ] T6.2 （可选）把 2 项范围外缺陷登记为 backlog improvement：`buffer_size` param 不生效 · `NICTLM` 缺 credit flit 过滤
