@@ -49,7 +49,9 @@ namespace tlm {
               stat_group_.addScalar("packets_forwarded", "Total packets forwarded", "packets")),
           stats_total_hops_(stat_group_.addScalar("total_hops", "Total hop count", "hops")),
           stats_latency_(
-              stat_group_.addDistribution("latency", "Packet latency distribution", "cycle")) {
+              stat_group_.addDistribution("latency", "Packet latency distribution", "cycle")),
+          stats_credit_stall_cycles_(stat_group_.addScalar(
+              "credit_stall_cycles", "Cycles flits waited for downstream credit", "cycles")) {
         routing_algo_ = std::make_unique<XYRouting>();
 
         for (unsigned p = 0; p < NUM_PORTS; ++p) {
@@ -224,6 +226,7 @@ namespace tlm {
 
                 if (out_vc < NUM_VCS) {
                     if (!has_credit(out_port, out_vc)) {
+                        note_credit_stall(out_port, out_vc);
                         release_vc(out_port, out_vc);
                         continue;
                     }
@@ -263,8 +266,10 @@ namespace tlm {
                     unsigned out_vc = flit.stage.out_vc;
 
                     // 检查下游是否有 credit
-                    if (!has_credit(out_port, out_vc))
+                    if (!has_credit(out_port, out_vc)) {
+                        note_credit_stall(out_port, out_vc);
                         continue;
+                    }
 
                     // 选中此 flit，加入 winners 列表
                     sa_winners_.push_back({in_port, in_vc, out_port, out_vc});
@@ -447,14 +452,30 @@ namespace tlm {
     bool RouterTLM::has_credit(unsigned out_port, unsigned vc) const {
         if (out_port >= NUM_PORTS || vc >= NUM_VCS)
             return false;
+        // D1 (ADR-X.16): LOCAL 是**终端端口** ⇒ 不参与 downstream credit 流控（预算无穷）。
+        // ⚠️ 边界检查在前 ⇒ 非法 out_port / vc 不被本分支短路放行。
+        if (out_port == static_cast<unsigned>(RouterPort::LOCAL))
+            return true;
         return downstream_credits_[out_port][vc] > 0;
     }
 
     void RouterTLM::consume_credit(unsigned out_port, unsigned vc) {
         if (out_port >= NUM_PORTS || vc >= NUM_VCS)
             return;
+        // D1 (ADR-X.16): LOCAL 不扣减（与 has_credit 的恒真配对）。
+        if (out_port == static_cast<unsigned>(RouterPort::LOCAL))
+            return;
         if (downstream_credits_[out_port][vc] > 0) {
             downstream_credits_[out_port][vc]--;
+        }
+    }
+
+    void RouterTLM::note_credit_stall(unsigned out_port, unsigned vc) {
+        ++stats_credit_stall_cycles_;
+        // 诊断日志节流：每 (port, vc) 每 16 cycles 打印一次（per ADR-X.16 D4）。
+        if (++stall_log_counter_[out_port][vc] % 16 == 0) {
+            DPRINTF(MODULE, "[CREDIT STALL] port=%u vc=%u waiting for downstream credit (%u cycles)\n",
+                    out_port, vc, stall_log_counter_[out_port][vc]);
         }
     }
 

@@ -27,7 +27,12 @@ enum class RouterPort : unsigned {
     EAST  = 1,  // +X 方向
     SOUTH = 2,  // -Y 方向
     WEST  = 3,  // -X 方向
-    LOCAL = 4,  // 本地 (连接 NICTLM)
+    // 终端端口：连接终端消费者（`NICTLM` / `CohIfNICTLM` / `ComputeUnitTLM` 等）。
+    // ⚠️ 不参与 downstream credit 流控（per ADR-X.16 D1）：`has_credit(LOCAL, vc)` 恒真、
+    //    `consume_credit(LOCAL, vc)` 不扣减 —— 反压由 ChStream 的 `valid/ready` 承担。
+    //    故把 **router** 挂在 LOCAL 上（非终端）属误用：其失败模式是下游 router 的
+    //    `input_buffer_` 满后静默丢 flit（`router_tlm.cc:152-155`），本条不提供检测。
+    LOCAL = 4,
     NUM_PORTS = 5
 };
 
@@ -217,6 +222,10 @@ private:
     void release_vc(unsigned out_port, unsigned vc);
     bool has_credit(unsigned out_port, unsigned vc) const;
     void consume_credit(unsigned out_port, unsigned vc);
+    /// 记录一个「待发 flit 因下游无 credit 而停滞」的周期（per ADR-X.16 D4）。
+    /// 锚点 = VA / SA 的拒绝条件（`has_credit(out_port, out_vc) == false`），
+    /// ⛔ 不是 `waiting_for_credit`（该位在 VA 先拒时保持 false）。
+    void note_credit_stall(unsigned out_port, unsigned vc);
 
     // ========== Credit 返回机制 ==========
     // 获取反向端口索引 (NORTH→SOUTH, EAST→WEST, etc.)
@@ -274,6 +283,10 @@ private:
     std::array<std::array<VCState, NUM_VCS>, NUM_PORTS> vc_state_;
 
     // ========== Credit 计数 [port][vc] ==========
+    /// ⚠️ `downstream_credits_[LOCAL][*]` 在 ADR-X.16 **D1** 之后为**死状态**：
+    ///    LOCAL 的 `has_credit` 恒真、`consume_credit` 不扣减 ⇒ 该行不再参与任何流控决策。
+    ///    保留数组形状（不把 LOCAL 拆出）以免改动既有索引与 `credit_safety_reset` 的遍历面；
+    ///    初值仍由构造函数置为 `BUFFER_DEPTH`（见 D1 的 T1.3 处置 = 方案 (a)「注释说明 + 不复用」）。
     std::array<std::array<uint8_t, NUM_VCS>, NUM_PORTS> downstream_credits_;
 
     // ========== 路由表 [packet_id] -> {out_port, out_vc} ==========
@@ -290,6 +303,11 @@ private:
     tlm_stats::Scalar& stats_packets_forwarded_;
     tlm_stats::Scalar& stats_total_hops_;
     tlm_stats::Distribution& stats_latency_;
+    /// 跨 (port, vc) 累计的「因下游无 credit 而停滞」周期数（ADR-X.16 D4 / V-3）
+    tlm_stats::Scalar& stats_credit_stall_cycles_;
+
+    /// per-(port, vc) 的 stall 日志节流计数：每 16 cycles 打印一次（ADR-X.16 D4）
+    std::array<std::array<unsigned, NUM_VCS>, NUM_PORTS> stall_log_counter_{};
 
     // ========== 当前周期 (由 SimCore 驱动) ==========
     uint64_t current_cycle_ = 0;

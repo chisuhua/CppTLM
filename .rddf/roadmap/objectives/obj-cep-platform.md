@@ -25037,3 +25037,29 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 **KPI**:保持 **1/3**(纯文档修订,不新开 change)。
 
 **⑨ 关联**:Entry **#460**(授权条)· **#461**(NICTLM credit 过滤缺口登记)· **#459**(同源另一面立项)· **#449**(mesh carrier 归档 · 能力落地来源)· `docs/architecture/cep/fabric-transport.md` · `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md` · `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md`(SU 2026-11-09 · engine 不参与边界)
+
+### Entry #463 — 2026-11-17 [builder](**实施** `cpptlm-router-local-port-credit-exhaustion` —— LOCAL 端口终端语义(D1) + mesh credit 停滞可观测(D4) · **零既有断言变化** · tasks **27/34**)
+
+**主题**:按 `ADR-X.16`(Accepted · 方案 A)实施「Router LOCAL 端口不参与 downstream credit 流控」+ 停滞可观测。决策源与判据见 `openspec/changes/cpptlm-router-local-port-credit-exhaustion/`(proposal AC-01~AC-07 / design D-1~D-6)。
+
+**实现(2 文件 · +42/-3)**:
+- `include/tlm/router_tlm.hh`:① `RouterPort::LOCAL` 注释改为**显式终端语义**(不参与 credit 流控 + 误用失败模式 = 下游 `input_buffer_` 静默丢 flit);② `downstream_credits_[LOCAL][*]` 标注**死状态**(T1.3 方案 (a):保留数组形状 + 注释说明,不拆 LOCAL 以免动既有索引与 `credit_safety_reset` 遍历面);③ 新增 `stats_credit_stall_cycles_` 标量 + `stall_log_counter_` 节流数组 + `note_credit_stall()` 声明。
+- `src/tlm/router_tlm.cc`:① `has_credit`:`out_port == LOCAL` 恒真(**边界检查在前** ⇒ 非法 vc 不被短路放行);② `consume_credit`:`LOCAL` 不扣减;③ **VA 拒绝分支**(`:226`)与 **SA 拒绝分支**(`:266`)调 `note_credit_stall()` —— 锚点 = `has_credit(out_port, out_vc) == false` 的**拒绝条件**(⛔ 非 `waiting_for_credit`,该位在 VA 先拒时恒 false ⇒ 按 D-3 订正口径);④ `note_credit_stall()` 每 `(port, vc)` 每 16 cycles 打一次 `DPRINTF`。
+
+**测试(新文件 `test/test_router_local_port_credit.cc` · 160 行 · 4 用例 / 12 断言)**:
+- RLC-1 (AC-01):LOCAL 40 flit 全到(无 8-flit 平台期)+ `credit_stall_cycles == 0`(AC-07)
+- RLC-2 (AC-02):4 VC 共 80 flit 全到 + `credit_stall_cycles == 0`
+- RLC-3 (AC-03):裸 router(`adapter_==nullptr`)向 mesh 向注入 ⇒ stall **≥16**;每周期 `receive_credit` 归还后**停止增长**(严格相等,非「增速下降」)
+- RLC-4 (G-2):端口枚举 / `NUM_PORTS` / `NUM_VCS` 结构契约 + 死状态处置的可达性冒烟
+
+**⛔ 零 diff 确认(T1.9)**:`src/core/module_factory.cc` · `include/tlm/cep/cohif_nic.hh` · `src/tlm/nic_tlm.cc` · `configs/**` · `include/tlm/cep/*.json` 全部零 diff。`credit_timeout_` 默认值仍为 **0**(T1.8)。
+
+**⚠️ AC-04b(T2.5)实测结论 = 零既有断言变化**:`[mesh]` 251/19 · `[cep]` 12429/539 · `[e2e]` 7451/150 · `[noc]` 790848/70 · `[router]` 103/14 · `[pcie]` 36779/452 · `[realip]` 366/51 · `ctest -R cep` **100/100**,全部与改动前逐项一致 ⇒ **无**须重推导的数值项,未触碰任何既有 `REQUIRE` 常量。理由 = `ADR-X.16` **D3**(现行拓扑零破坏:生产拓扑 LOCAL 只挂终端且终端 1 flit/cycle 消费)。已回写 `design.md` §D-4。
+
+**冻结面**:`router_tlm.hh` / `router_tlm.cc` **不在** `FROZEN_GLOBS`(grep 冻结清单 0 命中)⇒ 本次实施**无需** `cep_freeze_check --update`(冻结面更新留到 T3.4 归档时)。
+
+**剩余(7 项)**:T3.3/T3.4/T5.2/T5.3(归档链)· T5.4(verifier 验收)· **T6.1**(architect:ADR-X.16 追加 Status Update 澄清 D4 锚点)· T6.2(`buffer_size` param 不生效仍未登记 —— `NICTLM` 缺 credit 过滤已由 Entry #461 登记)。
+
+**KPI**:保持 **1/3**(change 仍 active;归档时回填 0/3)。
+
+**⑩ 关联**:Entry **#459**(立项)· **#455**(等价判据改开环裁决)· **#461**(NICTLM 缺口登记)· `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` · `openspec/changes/cpptlm-router-local-port-credit-exhaustion/`
