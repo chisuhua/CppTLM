@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-11-16（oracle APPROVE + critic APPROVE_WITH_CONDITIONS，0 BLOCKER；实施待立项 `backlog: cpptlm-simmodule-exposed-port-wiring`）
+Accepted — 2026-11-16（决策与实施记录见 `## Status Update`）
 
 ## Metadata
 
@@ -149,3 +149,15 @@ Proposed — 2026-11-16（oracle APPROVE + critic APPROVE_WITH_CONDITIONS，0 BL
 
 - `SimModule` 的**内联 `modules`** 能力要求模块条目**同时含 `connections` 数组**（`ModuleFactory::validateConfig` 的顶层必需字段）——否则内部工厂校验失败且该失败被 `SimModule::simulate_instantiate` **静默忽略**（既有嵌套 config 均遵循此约定）。容器作者须注意。
 - 层次化把容器子模块的 tick 收成**连续一组**（`SimModule::tick` 转发），与平铺时各模块按哈希序交织不同 ⇒ **NIC 侧顺序敏感计数器**（`last_recv_*`、回声命中数）会变；**mesh 级观测（router 转发/hop 计数）逐项不变**。等价性判据须用 mesh 级观测，不得用 `last_recv_*`。
+
+**2026-11-16（追加）— 上条「顺序敏感 / 回声」的机理已定位；V-5 判据口径随之收敛。**
+
+上面最后一条只记录了**现象**（NIC 侧顺序敏感计数器会变），其机理在实施后排查中定位如下。本条是**记录性补充**，不改变本 ADR 的任何决策条目，也不改动 `## Verification` 章的原文（该章不可变，见下「对 V-5 的影响」）。
+
+1. **根因 = in-band credit 泄漏给非 router 消费者。** `BundleDirectionTraits<NoCFlitBundle>::fill_credit`（`include/framework/bidirectional_port_adapter.hh:132-136`）把 credit 编成一个 flit（`flit_category = CATEGORY_CREDIT`，`dst_node` / `hops` 保持默认 0），经与数据**同一通道** `resp_out_port_` 发出（同文件 `:319` 调用 `fill_credit`、`:323` 置 `pkt->type = PKT_CREDIT_RETURN`）。`RouterTLM` 对每个转发成功的入向 flit 回 credit（`src/tlm/router_tlm.cc:323` / `:359` / `:383`），而 `reverse_port(LOCAL) == LOCAL`（`include/tlm/router_tlm.hh:229`）⇒ 经 LOCAL 口进入的 flit，其 credit 沿 `resp_out[LOCAL]` **回流到挂在 LOCAL 上的下游**。`CohIfNICTLM::handle_net_ingress`（`include/tlm/cep/cohif_nic.hh:260`）不辨 credit ⇒ ① 计入 `flits_received`；② 覆写 `last_recv_dst_node` / `last_recv_hops`（被写成 0/0）；③ 向业务侧投影出一条**全零 Completion**。**平铺基线同样受影响**（命中时机不同），故这不是层次化引入的。
+
+2. **该缺陷不改变本 ADR 的决策范围。** credit 回流与 LOCAL 口语义属既有链路层 / 路由器行为；本 ADR 只负责让 exposed 端点承载真实数据通路。修复追踪见 `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md`（未立项 backlog）与决策台账 Entry #453。
+
+3. **对 V-5 的影响。** V-5 原文的 `nic_b_recv_dst_node==3` / `last_recv_hops>=1` **不可作为等价性判据** —— 它们受上述 credit 污染，且取值取决于「最后一个到达的是数据还是 credit」，随周内 tick 交织变化（tick 交织又因装配方式而变）。等价性判据以 **mesh 级观测**为准：router `flits` / `packets` / `hops` 逐项相等 + NIC 收到的 flit 数相等，已在实施 change 的测试中落地。**V-5 原文不改**（Verification 章不可变），本段即为其实施期口径的权威说明。
+
+4. **登记一处已被证伪的假设**（记录于此以免复发）：排查中一度判定「`RouterTLM::routing_table_` 以 `transaction_id` 单独为键、不含方向 ⇒ 请求与其响应共用 tx id 时，响应命中残留的 `out_port = LOCAL` 条目而被误投」。该判断**不成立** —— `CohIfNICTLM::pack_flit` 对每个 flit 写 `FLIT_HEAD_TAIL`，而 `is_head()` 对 `FLIT_HEAD_TAIL` 返回 true ⇒ `stage_route_computation` 恒走 HEAD 分支（`computeRoute`），BODY/TAIL 的 `routing_table_` 查表分支**不可达** ⇒ 该碰撞在本场景不可能发生。

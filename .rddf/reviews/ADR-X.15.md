@@ -47,3 +47,31 @@ oracle + critic 双审完成，0 BLOCKER，SHOULD_FIX 已并入。ADR 四要素�
 - 立项实施 change 时回填 AC 编号、把 V-3 改写为「建 pair 前两侧 isBound()==false 校验通过」。
 - 同步订正 `openspec/changes/cpptlm-cep-mesh-interconnect-submodule/design.md` D-3 表 4-7 行（与落地 config 相反，config 正确）+ 其 D-5 边界改为「依赖本 ADR」。
 - `include/core/AGENTS.md` 补 Step 7c。
+
+---
+
+## 第二轮审查（2026-11-16 · 实施后追加段）— oracle 判定 APPROVE
+
+**改动形态**：描述性追加 + 状态推进（`git diff` 实测 13 insertions / 1 deletion），范围与声明一致 —— ① `## Status` 行 `Proposed` → `Accepted`；② `## Status Update` 末尾追加 4 条（真根因 / 范围声明 / V-5 口径收敛 / 已证伪假设登记）。未动 Context / Decision / 选项对比 / Consequences / Verification / 关联 任何正文。
+
+**审查路径**：按判例「Accepted ADR 的描述性措辞修订 ⇒ 只 oracle」（不触发 critic 复审）。
+
+**oracle 结论（4 问逐条）**：
+
+| # | 问题 | 结论 |
+|:--:|---|---|
+| 1 | 与正文既有条目冲突？ | **无冲突**。Decision 6 管装配期硬错误，追加段描述运行时链路层缺陷，不同层/不同生命周期；与 V-4 零回归也不冲突（credit 泄漏是既有行为，扁平基线同样受影响） |
+| 2 | 「声明 V-5 不可用但不改原文」成立？ | **成立**。V-5 章自述为前瞻判据且复选框全未勾选（非已决断言）；等价性判据**已决**（mesh 级观测，已在实施 change 落地）、credit 修复**明确未决**（backlog 指针）；ADR 不可变原则下追加段是唯一合规裁决机制 —— 它消除而非制造矛盾 |
+| 3 | 属过程日志混入？ | **不属于**。追加段主体（根因机理 + V-5 裁决）是决策性内容；第 4 条（已证伪假设）仅 3 句、有明确防复发价值且标注「不成立」 |
+| 4 | Status → Accepted 恰当？ | **恰当**。首段 Status Update 已登记同日的「Proposed → Accepted」，头部对齐是标准形态；保持 Proposed 才是原矛盾 |
+
+**行为 A/B 复核（oracle 逐条读码，全部属实）**：`fill_credit` 写 `CATEGORY_CREDIT` 且不写 `dst_node`/`hops`（`:132-136`，`credit_bundle{}` 值初始化）；经 `resp_out_port_` 同一通道（`:319`/`:323`）；`reverse_port(LOCAL)==LOCAL`（`router_tlm.hh:229`）；三处 `return_credit_to_upstream`（`router_tlm.cc:323/359/383`）；`handle_net_ingress` 无条件计数 + 覆写 `last_recv_*` + 投影全零 Completion（`cohif_nic.hh:260-271`）；证伪依据 `pack_flit` 一律 `FLIT_HEAD_TAIL`（`cohif_nic.hh:211`）+ `is_head()` 对 `FLIT_HEAD_TAIL` 返 true（`noc_bundles_tlm.hh:67-69`）+ `router_tlm.cc:177`（HEAD 走 `computeRoute`）vs `:190-199`（BODY/TAIL 查表分支）。
+
+**已排除的替代方案**：改 V-5 原文（违反 ADR 不可变）/ 只留 improvement 指针（backlog 存活期短，读者无从裁决）/ Status 保持 Proposed（即原矛盾）/ 改 Deprecated-Superseded（决策经验证，无被取代迹象）。
+
+**非阻断残留（交后续）**：
+1. 旧 Status 行携带的评审出处（oracle APPROVE + critic APPROVE_WITH_CONDITIONS）未保留 —— 实施已完成、条件已落实，长留 interim 评审态是合理默认。
+2. `cpptlm-router-credit-flit-leak-to-consumer` 立项并落地后，建议在本 ADR 再追加一条 Status Update 交叉引用（届时 V-5 字面判据的适用性可再评估），保持记录链闭合。
+3. oracle 受限未能独立复核 `test/test_simmodule_exposed_port_wiring.cc` 的 mesh 级判据落地（实施验收已由 verifier 独立执行，属交叉验证缺口，不阻断）。
+
+**判定行**：`判定: APPROVE`
