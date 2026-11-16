@@ -14,11 +14,16 @@
 //    但前者把 router 平铺在顶层、后者收进 `fabric` 容器。
 //    ⇒ 判据 = 两者的 **mesh 级观测逐项相等**（router 转发计数 / hop 计数），
 //    该写法对无关改动免疫。
-// ⚠️ **NIC 侧计数（flits_sent/flits_received）是时序敏感的**：层次化把容器子模块的
-//    tick 收成**连续一组**，与平铺时各模块按哈希序交织不同 ⇒ 同周期内的到达顺序
-//    与回声命中数会变（详见 ADR-X.15 关联段的发现记录）。故 NIC 侧只断言
-//    **不依赖顺序**的量（收到的总 flit 数 / 发出的总 flit 数），不断言
-//    `last_recv_*` 这类「最后到达者」计数器。
+// ⚠️ **NIC 侧计数的时序敏感性（2026-11-16 credit 过滤后已收窄）**：
+//    · credit flit 已在 `CohIfNICTLM` ingress 被显式丢弃（change
+//      `cpptlm-router-credit-flit-leak-to-consumer`）⇒ `flits_received` 只计**真**
+//      flit，`last_recv_*` 不再被 credit 覆写成 0/0 ⇒ 「最后到达」语义重新可用；
+//    · 但**闭环**下层次化把容器子模块的 tick 收成**连续一组**，与平铺时按哈希序交织
+//      不同 ⇒ 两侧的**注入流本身**就不同（实测 20 vs 19）⇒ 闭环下的跨装配**计数**
+//      相等在逻辑上不成立（详见本 change 的 `design.md` D-3）。
+//    ⇒ 故：跨装配的等价性判据放在**开环**面（MESH-3a —— `emit_completions=false`
+//      断开跨 mesh 回程 ⇒ 相同注入 ⇒ 转发计数逐项相等）；闭环面（MESH-3b）只断言
+//      各自的**不变量**。
 //
 // 作者 CppTLM Team / 日期 2026-11-16(2026-11-16 层次化改造)
 #include <catch2/catch_all.hpp>
@@ -27,6 +32,8 @@
 
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
+#include "core/packet_pool.hh"
+#include "bundles/bundle_serialization.hh"
 #include "metrics/stats.hh"
 #include "tlm/cep/cep_mesh_interconnect.hh"
 #include "tlm/cep/cohif_nic.hh"
@@ -36,6 +43,7 @@
 #include <nlohmann/json.hpp>
 
 #include <cstdint>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -105,7 +113,8 @@ std::filesystem::path repo_root() {
 /// 加载层次化主拓扑并把**所有仓库根相对路径**绝对化
 /// ⚠️ `cep.protocol_instances` 与 `fabric.params.template` 都以「仓库根」为
 ///    基准书写,而测试的 CWD 不固定 ⇒ 必须绝对化
-json load_hier_topology(const std::string& blueprint_override = "") {
+json load_hier_topology(const std::string& blueprint_override = "",
+                        bool emit_completions = true) {
     const auto root = repo_root();
     std::ifstream in(root / "configs" / "cep_mesh_e2e.json");
     if (!in.good()) {
@@ -122,15 +131,26 @@ json load_hier_topology(const std::string& blueprint_override = "") {
         if (m.value("type", "") == "CepMeshInterconnect") {
             m["params"]["template"] = bp;
         }
+        if (m.value("name", "") == "home") {
+            // ⚠️ `emit_completions = false` ⇒ **断开跨 mesh 回程** ⇒ 开环拓扑
+            //    (见 MESH-3a:等价性的权威判据面)
+            m["params"]["emit_completions"] = emit_completions;
+        }
     }
     return cfg;
 }
 
 /// 平铺基线拓扑
-json load_flat_topology() {
+json load_flat_topology(bool emit_completions = true) {
     json cfg = json::parse(FLAT_BASELINE);
     cfg["cep"]["protocol_instances"] =
         (repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json").string();
+    for (auto& m : cfg["modules"]) {
+        if (m.value("name", "") == "home") {
+            // ⚠️ 与层次化侧同口径:`emit_completions = false` ⇒ 开环(见 MESH-3a)
+            m["params"]["emit_completions"] = emit_completions;
+        }
+    }
     return cfg;
 }
 
@@ -154,6 +174,11 @@ struct MeshRun {
     int64_t nic_b_recv = -1;
     int64_t nic_a_dropped = -1;
     int64_t nic_b_dropped = -1;
+    int64_t nic_a_credits_dropped = -1;  ///< AC-02: 过滤掉的 credit flit 数
+    int64_t nic_b_credits_dropped = -1;
+    int64_t nic_a_last_recv_hops = -1;   ///< AC-03: 最后到达**真 flit** 的 hop 数
+    int64_t nic_b_last_recv_dst = -1;
+    int64_t nic_b_last_recv_hops = -1;
     int64_t stub_completions_in = -1;
     int64_t internal_router_count = -1;
     std::vector<RouterObs> routers;  ///< r00, r01, r10, r11
@@ -194,6 +219,11 @@ MeshRun run_mesh(const json& cfg, int cycles) {
     out.nic_b_recv = static_cast<int64_t>(nic_b->flits_received());
     out.nic_a_dropped = static_cast<int64_t>(nic_a->dropped_unmapped());
     out.nic_b_dropped = static_cast<int64_t>(nic_b->dropped_unmapped());
+    out.nic_a_credits_dropped = static_cast<int64_t>(nic_a->credits_dropped());
+    out.nic_b_credits_dropped = static_cast<int64_t>(nic_b->credits_dropped());
+    out.nic_a_last_recv_hops = static_cast<int64_t>(nic_a->last_recv_hops());
+    out.nic_b_last_recv_dst = static_cast<int64_t>(nic_b->last_recv_dst_node());
+    out.nic_b_last_recv_hops = static_cast<int64_t>(nic_b->last_recv_hops());
     out.stub_completions_in = static_cast<int64_t>(stub->counters().net_completions_in);
 
     for (const char* rn : {"r00", "r01", "r10", "r11"}) {
@@ -265,16 +295,19 @@ TEST_CASE("MESH-2 (J-2/J-3): 层次命名空间与端口暴露成立", "[cep][e2
     }
 }
 
-TEST_CASE("MESH-3 (J-4): 层次化后**行为等价** —— mesh 级观测与平铺基线逐项相等",
+TEST_CASE("MESH-3a (AC-05): **开环**下层次化与平铺的 mesh 转发语义逐项相等",
           "[cep][e2e][mesh]") {
-    const MeshRun hier = run_mesh(load_hier_topology(), 300);
-    const MeshRun flat = run_mesh(load_flat_topology(), 300);
+    // ⚠️ **开环** = `home.emit_completions = false` ⇒ 断开跨 mesh 回程 ⇒ mesh 上只剩
+    //    单向流量 ⇒ 转发计数**只由注入决定** ⇒ 两侧输入相同 ⇒ 输出必须相同。
+    //    (闭环下两侧的**注入流本身**就因反馈回路而不同 ⇒ 比较输出总量在逻辑上不成立,
+    //     见本 change 的 `design.md` D-3)
+    const MeshRun hier = run_mesh(load_hier_topology("", false), 300);
+    const MeshRun flat = run_mesh(load_flat_topology(false), 300);
 
     REQUIRE(hier.outcome == MeshOutcome::Arrived);
     REQUIRE(flat.outcome == MeshOutcome::Arrived);
 
-    // ⚠️ **mesh 级观测逐项相等** —— 这是「行为等价」的核心判据：
-    //    层次化只改「互联件放在哪一层」，**不改**互联拓扑与转发语义。
+    // ⚠️ **逐项严格相等** —— 等价性的**权威判据**(⛔ 不得放宽为 `> 0`)
     REQUIRE(hier.routers.size() == 4);
     REQUIRE(flat.routers.size() == 4);
     for (size_t i = 0; i < 4; ++i) {
@@ -282,18 +315,40 @@ TEST_CASE("MESH-3 (J-4): 层次化后**行为等价** —— mesh 级观测与�
         REQUIRE(hier.routers[i].packets == flat.routers[i].packets);
         REQUIRE(hier.routers[i].hops == flat.routers[i].hops);
     }
-    // 路由确实穿过 mesh(转发计数 > 0 且 hop 累积 > flit 数 ⇒ 多跳)
-    REQUIRE(hier.routers[0].flits > 0);
-    REQUIRE(hier.routers[3].flits > 0);
-    REQUIRE(hier.routers[3].hops > hier.routers[3].flits);
-
-    // 对端 NIC 收到了请求（不依赖到达顺序）
+    // 对端 NIC 收到的 flit 数亦相等(同注入 ⇒ 同投递)
     REQUIRE(hier.nic_b_recv == flat.nic_b_recv);
     REQUIRE(hier.nic_b_recv > 0);
+    // 确实穿网(多跳)且非平凡
+    REQUIRE(hier.routers[0].flits > 0);
+    REQUIRE(hier.routers[3].hops > hier.routers[3].flits);
     // 无静默丢弃
     REQUIRE(hier.nic_a_dropped == 0);
     REQUIRE(hier.nic_b_dropped == 0);
     // 蓝图复用:内部实例数 == 蓝图 router 数
+    REQUIRE(hier.internal_router_count == 4);
+}
+
+TEST_CASE("MESH-3b (AC-05): **闭环**下层次化与平铺各自的 mesh 不变量成立",
+          "[cep][e2e][mesh]") {
+    // ⚠️ 闭环下**两侧的注入流本身**就因反馈回路而不同(实测 20 vs 19)⇒ 比较输出
+    //    总量在逻辑上不成立 ⇒ 此处只断言各自的**不变量**;跨装配的等价性由
+    //    MESH-3a(开环)承担(见本 change 的 `design.md` D-3)。
+    const MeshRun hier = run_mesh(load_hier_topology(), 300);
+    const MeshRun flat = run_mesh(load_flat_topology(), 300);
+
+    REQUIRE(hier.outcome == MeshOutcome::Arrived);
+    REQUIRE(flat.outcome == MeshOutcome::Arrived);
+
+    for (const MeshRun* r : {&hier, &flat}) {
+        REQUIRE(r->routers.size() == 4);
+        REQUIRE(r->routers[0].flits > 0);
+        REQUIRE(r->routers[3].flits > 0);
+        REQUIRE(r->routers[3].hops > r->routers[3].flits);  // 确实多跳(非直连)
+        REQUIRE(r->nic_a_dropped == 0);                       // 无静默丢弃
+        REQUIRE(r->nic_b_dropped == 0);
+        REQUIRE(r->nic_b_recv > 0);                           // 对端确实收到
+    }
+    // 层次化的结构等价性:互联件收进容器 ⇒ 顶层不再有 router,内部 4 个在位
     REQUIRE(hier.internal_router_count == 4);
 }
 
@@ -367,4 +422,84 @@ TEST_CASE("MESH-6 (AC-07): 换蓝图复用 —— 同一容器装配 1×2 蓝图
     // 暴露标签指向 1×2 蓝图内的 router ⇒ 仍可接线
     REQUIRE(fabric->getInternalInputPort("r00.req_in[4]")->isBound());
     REQUIRE(fabric->getInternalOutputPort("r01.req_out[4]")->isBound());
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// credit flit 污染（change `cpptlm-router-credit-flit-leak-to-consumer`）
+// ════════════════════════════════════════════════════════════════════════
+
+TEST_CASE("MESH-7 (AC-01): 网络 ingress 丢弃 credit flit —— 不计数 / 不覆写观测 / 不产出业务流",
+          "[cep][e2e][mesh][credit]") {
+    // ⚠️ 判据设计：**先**注入真 flit 再注入 credit —— 否则「last_recv_* 不变」
+    //    在从未收到过东西时是 0 == 0，自动通过（空断言）。
+    using Flit = tlm::cep::CohIfNICTLM::Flit;
+    EventQueue eq;
+    tlm::cep::CohIfNICTLM nic("nic", &eq);
+
+    auto inject = [&nic](const Flit& f) {
+        Packet* pkt = PacketPool::get().acquire();
+        pkt->payload->set_data_length(sizeof(Flit));
+        REQUIRE(bundles::serialize_bundle(f, pkt->payload->get_data_ptr(),
+                                          pkt->payload->get_data_length()));
+        REQUIRE(nic.net_resp_in().process(pkt));
+        nic.tick();
+        PacketPool::get().release(pkt);
+    };
+
+    // ── 第一步：真响应 flit ⇒ 计数 +1、观测被正确记录、PE 侧收到一条 ──
+    Flit real;
+    real.transaction_id.write(7);
+    real.dst_node.write(3);
+    real.hops.write(2);
+    real.flit_type.write(Flit::FLIT_HEAD_TAIL);
+    real.flit_category.write(Flit::CATEGORY_RESPONSE);
+    inject(real);
+
+    REQUIRE(nic.flits_received() == 1);
+    REQUIRE(nic.last_recv_dst_node() == 3);
+    REQUIRE(nic.last_recv_hops() == 2);
+    REQUIRE(nic.credits_dropped() == 0);
+    REQUIRE(nic.pe_resp_out().valid());
+    REQUIRE(nic.pe_resp_out().data().transaction_id.read() == 7);
+
+    // 模拟下游消费 ⇒ 之后再判「是否被写入」才有判别力（否则新旧值无法区分）
+    nic.pe_resp_out().clear_valid();
+
+    // ── 第二步：credit flit ⇒ 三面零变化 + 丢弃计数 +1 ──
+    Flit credit;  // ⚠️ `dst_node` / `hops` 保持默认 0（与 `fill_credit` 一致）
+    credit.transaction_id.write(7);  // 故意复用同一事务号：排除「因字段不同而蒙对」
+    credit.flit_type.write(Flit::FLIT_HEAD_TAIL);
+    credit.flit_category.write(Flit::CATEGORY_CREDIT);
+    inject(credit);
+
+    REQUIRE(nic.credits_dropped() == 1);
+    REQUIRE(nic.flits_received() == 1);        // 未计入
+    REQUIRE(nic.last_recv_dst_node() == 3);    // 未被覆写为 0
+    REQUIRE(nic.last_recv_hops() == 2);        // 未被覆写为 0
+    REQUIRE_FALSE(nic.pe_resp_out().valid());  // 未产出伪 Completion
+}
+
+TEST_CASE("MESH-8 (AC-02/AC-03): credit 不再污染 NIC 侧观测 —— 层次化与平铺各自成立",
+          "[cep][e2e][mesh][credit]") {
+    const MeshRun hier = run_mesh(load_hier_topology(), 300);
+    const MeshRun flat = run_mesh(load_flat_topology(), 300);
+
+    REQUIRE(hier.outcome == MeshOutcome::Arrived);
+    REQUIRE(flat.outcome == MeshOutcome::Arrived);
+
+    // AC-02：过滤确实发生 —— 两个 NIC 都收到过 credit flit 并将其丢弃
+    REQUIRE(hier.nic_a_credits_dropped > 0);
+    REQUIRE(hier.nic_b_credits_dropped > 0);
+    REQUIRE(flat.nic_a_credits_dropped > 0);
+    REQUIRE(flat.nic_b_credits_dropped > 0);
+
+    // AC-02：不再有 `hops == 0` 的 flit 计入「最后到达」
+    REQUIRE(hier.nic_a_last_recv_hops > 0);
+
+    // AC-03：最后到达的是**真请求**（dst = node3、穿网 3 跳）——
+    //        credit 不再覆写观测 ⇒ 该判据对 tick 交织免疫（层次化与平铺各自成立）
+    REQUIRE(hier.nic_b_last_recv_dst == 3);
+    REQUIRE(hier.nic_b_last_recv_hops == 3);
+    REQUIRE(flat.nic_b_last_recv_dst == 3);
+    REQUIRE(flat.nic_b_last_recv_hops == 3);
 }

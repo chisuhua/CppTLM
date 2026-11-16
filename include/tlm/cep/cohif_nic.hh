@@ -29,6 +29,16 @@
 // ⚠️ `CohIfBundle` **无** `vc_id` ⇒ 单 VC。
 // ⚠️ 本模块**不**承载协议语义（credit / retry / ordering point / 多拍聚合 /
 //    Perm 规则 / 容量与队列模型）。
+// ⚠️ **credit flit 一律丢弃**：`RouterTLM` 的 credit 回流以 **flit 形式**走在
+//    `resp_out` 通道上（`BundleDirectionTraits<NoCFlitBundle>::fill_credit` 写
+//    `flit_category = CATEGORY_CREDIT`；`reverse_port(LOCAL) == LOCAL` ⇒ 经 LOCAL
+//    口进入 router 的 flit，其 credit 沿 `resp_out[LOCAL]` 回流到本模块）。本模块
+//    不辨 credit 时会把它当数据：计入 `flits_received`、覆写 `last_recv_*`、
+//    并向 PE 侧投影出**全零伪 Completion** ⇒ 故在 ingress 显式丢弃并计数
+//    `stats_credits_dropped_`。
+// ⚠️ **LOCAL 口的 credit 耗尽不在本模块解决**：router 对 LOCAL 输出同样记账
+//    `BUFFER_DEPTH = 8`，而本模块无归还通道 ⇒ 每 (LOCAL, vc) 8 个 flit 后本地投递
+//    停滞（既有行为，见 `.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`）。
 #ifndef TLM_CEP_COHIF_NIC_HH
 #define TLM_CEP_COHIF_NIC_HH
 
@@ -82,6 +92,8 @@ public:
     std::uint64_t flits_sent() const { return stats_flits_sent_; }
     std::uint64_t flits_received() const { return stats_flits_received_; }
     std::uint64_t dropped_unmapped() const { return stats_dropped_unmapped_; }
+    /// 网络 ingress 丢弃的 credit flit 数（`flit_category == CATEGORY_CREDIT`）
+    std::uint64_t credits_dropped() const { return stats_credits_dropped_; }
     /// 本模块**出站** flit 的查表结果（`lookup_node` 的返回值）
     std::uint32_t last_dst_node() const { return last_dst_node_; }
     /// 本模块**收到**的 flit 的 `dst_node` ⇒ 「确实投给对端」的可观测量
@@ -131,6 +143,7 @@ private:
     std::uint64_t stats_flits_sent_ = 0;
     std::uint64_t stats_flits_received_ = 0;
     std::uint64_t stats_dropped_unmapped_ = 0;
+    std::uint64_t stats_credits_dropped_ = 0;
     std::uint32_t last_dst_node_ = 0;
     std::uint32_t last_recv_dst_node_ = 0;
     std::uint32_t last_recv_hops_ = 0;
@@ -263,6 +276,13 @@ inline void CohIfNICTLM::handle_net_ingress() {
     }
     const Flit flit = net_resp_in_.data();
     net_resp_in_.consume();
+
+    // credit flit 与数据 flit 共用同一通道（见文件头「已知边界」）⇒ 显式丢弃：
+    // 不计数、不写观测、不投影 PE 侧（否则产出全零伪 Completion）。
+    if (flit.flit_category.read() == Flit::CATEGORY_CREDIT) {
+        ++stats_credits_dropped_;
+        return;
+    }
 
     ++stats_flits_received_;
     last_recv_dst_node_ = flit.dst_node.read();

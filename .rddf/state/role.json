@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-16T10:48:49Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-16T12:30:55Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-15T06:44:45Z",
-      "by": "user",
-      "reason": "per 用户口令「继续推进后续任务实施」⇒ 实施已立项 change `cpptlm-cep-gate-robustness`(Entry #436):W1 11 闸影子路径 mktemp 化 / W2 覆盖义务判据 + 双向 fixture / W3 8 处指代订正 / W4 ADR_LIST 20->23 / W6 文档连带 / 归档 1 份冻结产物 + KPI 1/3 -> 0/3。"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-15T09:57:08Z",
-      "by": "user",
-      "reason": "per 用户口令「切 planner 对后续还有哪些任务内容都梳理一遍,再给出后续任务内容和实施路径」⇒ 梳理 CEP 平台剩余任务(实测 R-1/R-2/R-3/R-6/R-7/R-9 + 状态卫生 stale + 未验收债),产出台账 Entry + improvement + 实施路径。"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-15T10:05:41Z",
-      "by": "user",
-      "reason": "per 用户口令「再切 builder 进行实施」⇒ 实施 T1(R-7 闭合:3 处标题层级修复,vram-controller 经 1 份 MODIFIED delta + pcie-slice 直改主 spec),零冻结产物免五步链。"
-    },
     {
       "role": "verifier",
       "at": "2026-11-15T11:39:55Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-16T10:48:49Z",
       "by": "user",
       "reason": "per 用户口令「切 planner 审查 cpptlm-router-credit-flit-leak-to-consumer, 并继续切 builder 进行实施」⇒ planner 侧: metis 审查该 improvement 草案(新增, 1 轮预算) + 立项(台账 Entry + KPI 0/3 -> 1/3); 之后切 builder 实施。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-16T11:03:24Z",
+      "by": "user",
+      "reason": "per 用户口令「继续切 builder 进行实施」⇒ 实施 cpptlm-router-credit-flit-leak-to-consumer(消费者侧 credit 过滤 + stats_credits_dropped_ + spec 条款 + 测试);不碰 RouterTLM。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-16T12:21:13Z",
+      "by": "user",
+      "reason": "per 用户裁决「路径 A」⇒ 落台账 Entry #454,授权 architect 修订 docs/architecture/cep/fabric-transport.md:45 的过期 SHALL 断言(原「仓内不存在 Router + flit 级路径」已被 Entry #448/#449/#451 证伪)+ 授权 builder 跑 cep_freeze_check --update(该文件在 CEP 冻结面)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-16T12:30:55Z",
+      "by": "user",
+      "reason": "per 用户裁决「选择A」+ planner Entry #455 修订 AC-05/AC-06 ⇒ 以 builder 实施:建 openspec change 目录(proposal/design/tasks + delta spec)+ MESH-3a/3b 判据改造 + 订正 :17-21 注释 + 回填 KPI 1/3。"
     }
   ],
   "auto_switch_window": null

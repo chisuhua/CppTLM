@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-simmodule-exposed-port-wiring` + `cpptlm-cep-mesh-interconnect-submodule` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #451;此前二者于 2026-11-16 **立项** ⇒ 各占 1 slot,per 台账 Entry #450;此前 `cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-router-credit-flit-leak-to-consumer` 于 2026-11-16 **立项** ⇒ 占 1 slot,per 台账 Entry #456;`cpptlm-simmodule-exposed-port-wiring` + `cpptlm-cep-mesh-interconnect-submodule` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #451;此前二者于 2026-11-16 **立项** ⇒ 各占 1 slot,per 台账 Entry #450;此前 `cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -24828,3 +24828,86 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 **KPI**:**保持 0/3**。⚠️ 本 entry 的「立项」= improvement **approved**(`.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md` frontmatter 已置 🟡 已立项),但 **`openspec/changes/` 下尚无该 change 目录** ⇒ 按实测口径（`docs_sync_check` 的 KPI 断言以 active change 数为准）**未占 slot**。⇒ **change 目录由 builder 在 P0 生成时回填 6 处活口径为 1/3**,并在该时机登记下一 entry。
 
 **⑦ 关联**:Entry **#452**(F-3 初判)· **#453**(根因订正)· **#451**(两 change 归档)· `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md`(已立项)· `.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`(另一面 · 未立项)· metis 审查(1 轮,结论已并入本 entry)
+
+### Entry #454 — 2026-11-16 [planner](**授权修订 CEP 真源子文档的过期 SHALL 断言** —— `fabric-transport.md:45`「仓内不存在 Router + flit 级路径」已被能力落地证伪 · 授权 architect 改文 + builder 跑 freeze `--update`)
+
+**主题**:`docs/architecture/cep/fabric-transport.md` 的 §6.3.1 有一句**SHALL 级**断言已与实际能力不符,需修订。本条 entry 是**授权记录**(per `cep_freeze_check.sh` 的授权闸门要求:改冻结产物须先在台账 §11 追加 entry)。
+
+**过期断言(原文,`:45`)**:
+
+> `⚠️ 仓内**不存在** Router + flit 级路径 ⇒ 拓扑的**名称 / 描述 SHALL 如实反映**这一点。`
+
+**证伪依据(能力已落地)**:
+- **Entry #448 / #449**(`cpptlm-cep-mesh-e2e-carrier`,已归档):新增 `CohIfNICTLM`,让 `CohIfBundle` 的 coherence 流量经 `RouterTLM` 构成的 XY mesh **抵达对端并带回响应**;`test/test_cep_mesh_e2e.cc` 端到端判据。
+- **Entry #450 / #451**(`cpptlm-cep-mesh-interconnect-submodule`,已归档):互联件收进 `CepMeshInterconnect` 容器 + 独立蓝图 `configs/interconnect/cep_mesh_2x2.json`;`[mesh]` **205 断言 / 15 用例**。
+⇒ 「仓内不存在 Router + flit 级路径」**已不成立**:`CohIfNICTLM` → `RouterTLM`(传 `NoCFlitBundle`,flit 级)→ 对端 NIC 的路径存在且被测试覆盖。
+
+**⛔ 仍成立的边界(修订后必须保留)**:
+- **协议引擎(engine)不参与该业务事务路径**(per `ADR-CEP-19` 的 SU 2026-11-09;Entry #448 的「边界不得过度表述」段同义)⇒ 修订**不得**表述为「协议引擎已接入 flit 路径」。
+- 该文件 `:5` 的「本层当前**无 CEP 自有**运行时实现(仅 `fabric.json` 声明 + 装配期死锁自由性闸)」**仍准确**(限定词「自有」= `include/tlm/cep/` 内无 router/credit 模型)⇒ **本次不改**。
+
+**本条授权的修订范围(精确)**:
+1. **architect** 可改 `docs/architecture/cep/fabric-transport.md` **§6.3.1 的那一句**(`:45`),改为如实反映「存在 `CohIfNICTLM` ↔ `RouterTLM` flit 级路径」+ 保留「协议引擎不参与」的边界 + 补 `test/test_cep_mesh_e2e.cc` 指针。**⛔ 不改该文件的 §6.3 / R1 / J-9 判据表等任何其他内容**。
+2. 该文属**真源 1**(CEP 子文档)⇒ architect 改文后须过 **oracle 审查**。
+3. **builder** 获授权跑 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #454"`(该文件在 `FROZEN_GLOBS` 内)。
+
+**触发者**:用户裁决 **路径 A**(2026-11-16)—— 在 architect 报告「该句过期但超出单角色可闭合范围」后,选择走完整闭环(planner 授权 → architect 改文 + oracle 审 → builder freeze update)。
+
+**KPI**:保持 **0/3**(纯文档修订,不新开 change)。
+
+**⑦ 关联**:Entry **#453**(F-3 根因订正 · 同批次文档订正)· **#451**(两 change 归档,能力落地)· **#448**/**#449**(mesh carrier 能力首次落地)· `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md`(同日追加的机理段)· `docs/guide/cep-usage.md:45`(同日已订正的第 6 层表述)
+
+### Entry #455 — 2026-11-16 [planner](**裁决** builder 实测触发的 `plan_drift`（feedback-20261116-001）⇒ 选**选项 A**：等价判据改为**开环** + 闭环不变式两条 · scope 维持「⛔ 不改 `RouterTLM`」)
+
+**主题**:builder 在实施 `cpptlm-router-credit-flit-leak-to-consumer` 时,原 MESH-3 的**闭环** router 计数判据由绿转红 ⇒ 按流程落 `rddf feedback add --kind needs-revision`(`feedback-20261116-001`)后交回 planner 裁决。本 entry 为**裁决记录**。
+
+**builder 三组对照实验**(临时诊断,已清理;数据为实测非推断):
+
+| 条件 | hier | flat | 相等? |
+|---|---|---|---|
+| 过滤**关**(= 修复前, `BUFFER_DEPTH=8`) | 15/8/7/15 | **15/8/7/15** | ✅ |
+| 过滤**开**(修复后, `BUFFER_DEPTH=8`) | 15/8/7/15 | **16/8/8/16** | ❌ 差 1 |
+| 过滤开 + `BUFFER_DEPTH=64`(消掉 LOCAL credit 上限) | 39/20/19/39 | **38/19/19/38** | ❌ 仍差 1 |
+
+**裁决依据**:
+1. 修复**只改变 flat**;**hier 与修复前基线逐项相同** ⇒ **mesh 转发语义未变**(router 拓扑与转发规则未动;MESH-4/5 仍绿)。
+2. 差异**不是** LOCAL credit 耗尽造成(第 3 行已排除)⇒ 与另一 improvement `cpptlm-router-local-port-credit-exhaustion` 无关,不必等它。
+3. 差异来自**闭环反馈回路**:伪 Completion 不再喂给业务侧 ⇒ flat 的下游响应流变化 ⇒ 注入流变化 ⇒ 转发数差 1(hier 的 tick 成组使其未受影响)。
+4. ⇒ 原判据成立**部分依赖 credit 污染的巧合** ⇒ 属**判据脆弱**,非回归。
+
+**裁决内容(选项 A)**:
+- **AC-05 修订**:MESH-3 拆为两条 —— **MESH-3a(开环等价·权威判据)**:用 `home.params.emit_completions = false` **断开跨 mesh 回程**(`CohIfResponderTLM` 的既有开关,无需新写装配代码)得开环拓扑,断言层次化与平铺的 router `flits/packets/hops` **逐项严格相等**;**MESH-3b(闭环不变式)**:闭环下各自 `flits>0` + `hops>flits` + 无静默丢弃 + 层次化内部 router 数 == 4。
+- **禁止项不变**:MESH-3a 的 `==` **不得**放宽为 `> 0`、两条断言**不得**删除、**不得**以「闭环计数不等」为由回退过滤实现;其余四处重基线仍受控。
+- **AC-06 修订**:补记「闭环计数不再严格相等」为**已知限制**(附机理),并指明等价性权威判据是 MESH-3a。
+- **scope 不变**:⛔ **不改 `RouterTLM`**(实测已证明改 credit 耗尽**不能**解决本判据问题 ⇒ 无需扩 scope)。
+
+**⚠️ 口径澄清**:本裁决**不放宽**等价性要求 —— 它把等价性的**度量面**从「闭环稳态计数」换成「**给定相同注入时的转发语义**」,后者才是层次化不改变 mesh 行为的准确命题。
+
+**KPI**:保持 **0/3**(openspec change 目录尚未建立);建立时回填 1/3。
+
+**⑧ 关联**:Entry **#454**(立项 + metis 修订)· **#453**(根因订正)· **#452**(F-3 初判)· `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md` 的 `## Feedback` 段(`feedback-20261116-001`)与「📌 修订依据」段 · `.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`(同源另一面 · 实测已排除其相关性)
+
+### Entry #456 — 2026-11-16 [builder](**实施** `cpptlm-router-credit-flit-leak-to-consumer` —— 消费者侧 credit 过滤 + MESH-3a/3b 判据落地(per Entry #455 裁决) · change 目录建立 · KPI **0/3 → 1/3**)
+
+**主题**:实施 Entry #454 立项的 change(credit flit 泄漏修复),并在 Entry #455 的 planner 裁决下把等价判据改为**开环 + 闭环不变式**两条。
+
+**实施面(源码改动仅 1 个文件)**:
+- `include/tlm/cep/cohif_nic.hh` —— `handle_net_ingress` 丢弃 `flit_category == CATEGORY_CREDIT`(不计入 `flits_received` / 不写 `last_recv_*` / 不向 PE 侧投影)+ 新增 `stats_credits_dropped_` 与访问器 `credits_dropped()` + 文件头补 2 条边界说明(credit 丢弃 / LOCAL credit 耗尽不属本模块)。
+- ⛔ **零 diff**:`src/tlm/router_tlm.cc` · `include/tlm/router_tlm.hh` · `src/core/module_factory.cc` · `include/bundles/*` · 其余 CEP 模块。
+
+**spec(走 delta spec,⛔ 不直接改 main spec)**:change 目录 `openspec/changes/cpptlm-router-credit-flit-leak-to-consumer/`(4 件套:`proposal.md` / `design.md` / `tasks.md` / `specs/cep-cohif-network-adapter/spec.md`);delta 为 `## MODIFIED Requirements`(增「网络 ingress SHALL 丢弃 credit flit」Scenario + 观测面增 `stats_credits_dropped_`)。
+⚠️ **直接改 main spec 会被冻结闸拦下**(实测 `cep_docs_sync_check` 报「冻结产物已被修改」)⇒ 归档时由 `openspec archive` 正式合并。
+
+**判据形态落地(per Entry #455)**:`test/test_cep_mesh_e2e.cc` 的 MESH-3 拆为 —— **MESH-3a(开环等价·权威)**:`home.params.emit_completions = false`(`CohIfResponderTLM` 既有开关)断开跨 mesh 回程 ⇒ 层次化与平铺的 router `flits/packets/hops` **逐项严格相等** + `nic_b_recv` 相等;**MESH-3b(闭环不变式)**:各自 `flits>0` + `hops>flits` + 无静默丢弃 + 层次化内部 router 数 == 4。
+**实测成立**:MESH-3a 的逐项相等在开环下**成立**(含 `nic_b_recv` 相等)⇒ 等价性判据已换到正确度量面。
+
+**新增用例**:MESH-7(AC-01 —— 先注入真 flit 再注入 credit,判三面零变化 + `credits_dropped` 递增;credit 故意复用同一 `transaction_id` 以排除「蒙对」)、MESH-8(AC-02 / AC-03 —— 两侧各断言 `credits_dropped>0` + `nic_b.last_recv_dst_node==3 && hops==3`)。
+⚠️ **AC-03 是新增断言**(修复前该组合不可能成立 —— credit 会把观测覆写成 0/0),现有测试修复前 0 条 `last_recv_*` 断言。
+
+**实测数据**:`[credit]` 57 断言 / 3 用例 ✅ · `[mesh]` 247 断言 / 18 用例 ✅ · `[cep]` 12424 断言 / 538 用例 ✅ · `[e2e]` 7447 断言 / 149 用例 ✅ · `ctest -R cep -j2` **100/100** ✅(⚠️ `-j4` 下 `cep_gate_selftest`(108s)因**并行资源争抢**偶发失败,单独跑通过 —— 非真实失败)。
+
+**KPI**:**0/3 → 1/3**(change 目录已建立 ⇒ 实测 active = 1;6 处活口径同步)。
+
+**遗留**:`openspec archive` + 冻结清单更新 + KPI 回填 0/3 + 独立验收(切 verifier)—— 待收口阶段执行。
+
+**⑨ 关联**:Entry **#455**(判据裁决)· **#454**(立项 + metis 修订)· **#453**(根因订正)· **#452**(F-3 初判)· `openspec/changes/cpptlm-router-credit-flit-leak-to-consumer/`(4 件套)· `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md` · `.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`(另一面 · 未立项)· `include/tlm/cep/cohif_nic.hh` · `include/framework/bidirectional_port_adapter.hh:126-139,299-330` · `src/tlm/router_tlm.cc:321-330,357-390`
