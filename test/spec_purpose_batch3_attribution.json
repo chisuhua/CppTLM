@@ -1,0 +1,511 @@
+{
+  "schema": "spec-purpose-attribution/v2",
+  "batch": "batch3",
+  "archive_semantics": "completed-direct-main-spec",
+  "note": "checks 字段由 scripts/test/cep_spec_purpose_batch3_check.py 重算写入，⛔ 不由人手填写。source_evidence_ref 必须是固定 sha（⛔ 不可写 HEAD）。",
+  "items": [
+    {
+      "spec": "dgpu-4ip-port-contract",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "dgpu-realip-pin-contract",
+      "source_evidence": "openspec/changes/archive/2026-10-09-dgpu-realip-pin-contract/proposal.md",
+      "requirement_titles": [
+        "fabric-vram-ctrl-port-contract",
+        "dgpu-4ip-port-contract-test-coverage (Change A, 双标签 `[realip][pin-contract]`)",
+        "dgpu-board-facade-production-wiring (Change B, 2026-10-08)"
+      ],
+      "implementation_anchors": [
+        "match_bar",
+        "set_pcie_controller_ip"
+      ],
+      "purpose_text": "划定四 IP 拓扑下板级外观与显存控制器之间的端口契约边界：板级对宿主的读写必须走控制器的地址译码路径，不得再由一串历史路由开关拼装决定去向；契约本身须有可执行的一致性校验与接线测试。",
+      "waiver": null,
+      "source_archive_dir": "2026-10-09-dgpu-realip-pin-contract",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "dgpu-board-abi-hygiene",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "cpptlm-dgpu-board-abi-hygiene",
+      "source_evidence": "openspec/changes/archive/2026-09-24-cpptlm-dgpu-board-abi-hygiene/proposal.md",
+      "requirement_titles": [
+        "pcie-endpoint-ip-short-name-registered",
+        "dgpu-board-internal-cast-uses-accessor",
+        "dispatch-empty-switch-removed",
+        "link-layer-stub-removed"
+      ],
+      "implementation_anchors": [
+        "REGISTER_CHSTREAM"
+      ],
+      "purpose_text": "约束板级壳的对外可维护性：模块须以注册短名对外暴露，内部类型转换须走受控访问入口，空派发分支与遗留桩不得留在生产路径上，避免壳层不断掩盖实现层的真实缺陷。",
+      "waiver": null,
+      "source_archive_dir": "2026-09-24-cpptlm-dgpu-board-abi-hygiene",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "dgpu-board-adapter-info",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "dgpu-board-adapter-info-extension",
+      "source_evidence": "openspec/changes/archive/2026-09-07-dgpu-board-adapter-info-extension/proposal.md",
+      "requirement_titles": [
+        "板卡适配器详细拓扑信息暴露",
+        "First-touch Handle 生命周期管理"
+      ],
+      "implementation_anchors": [
+        "cpptlm_emulator_open",
+        "cpptlm_emulator_close",
+        "visible_vram_size"
+      ],
+      "purpose_text": "让宿主侧能够发现板卡的详细拓扑信息并持有设备句柄：前者用于把仿真设备对齐主流仿真器的设备发现范式，后者使句柄的所有权在宿主与板卡之间有明确归属与释放路径。",
+      "waiver": null,
+      "source_archive_dir": "2026-09-07-dgpu-board-adapter-info-extension",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "dgpu-soc-timing",
+      "claim_kind": "current",
+      "evidence_kind": "git-history-proposal",
+      "source_change": "cpptlm-dgpu-soc-timing-mvp",
+      "source_evidence": "openspec/changes/cpptlm-dgpu-soc-timing-mvp/proposal.md",
+      "requirement_titles": [
+        "仿真模式切换 (per §1.4 仿真模式声明)",
+        "cycle advance 统一推进 (per TInv-3)",
+        "timing-mode 显式门控 use_zero_delay_for_test (per M5 Oracle 反馈)",
+        "MemoryTLM 数据粒度限制 (per M12 Oracle 反馈)",
+        "MemoryTLM defer_response 路径 (per design §2)",
+        "GmmuTLM TLB hit/miss + page walk (per design §3)",
+        "SdmaEngineTLM cycle accounting (per design §4 v0.2, **不**新增 outstanding/AXI master port)",
+        "VramControllerTLM 行缓冲 + bandwidth (per design §5)",
+        "CrossbarTLM 4 routes 仲裁 (per design §6, M9 Oracle 反馈: GMMU 不在 Crossbar 数据路径)",
+        "沿用 functional-mode Invariants (PT_BASE race + 指针稳定性)",
+        "共享 vram_storage_ 真源 (per TInv-1, timing-mode 适用)",
+        "backdoor 禁用性能测试 (per TInv-4)",
+        "BAR 路由优先级 (per TInv-5,沿用 minimal_v1)",
+        "translate_cb 签名兼容 (per TInv-6)",
+        "23 ABI 字节级兼容 (per NG3)",
+        "minimal_v1 functional-mode 零回归 (per §11 兼容性)",
+        "timing-mode 性能回归测试套件 (per design §8)",
+        "JSON dgpu_soc_timing_v1.json 配置 (per design §7)"
+      ],
+      "implementation_anchors": [
+        "VramControllerMode",
+        "set_mode",
+        "translate_timing"
+      ],
+      "purpose_text": "定义 dGPU SoC 的时序仿真形态：与功能形态并列共存而不替换，在该形态下推进按周期计数、地址翻译驻留、带宽上限与仲裁成为可观察的语义，同时保持功能形态的行为不变。",
+      "waiver": null,
+      "source_evidence_ref": "0345d283",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "driver-visible-minimal-soc",
+      "claim_kind": "current",
+      "evidence_kind": "git-history-proposal",
+      "source_change": "cpptlm-driver-visible-minimal-soc",
+      "source_evidence": "openspec/changes/cpptlm-driver-visible-minimal-soc/proposal.md",
+      "requirement_titles": [
+        "v1.3 P0 阻塞修正 SHALL 全部应用 (前置门 — 实施前必须完成)",
+        "PcieMemoryDevice 提升为 soc 顶层独立组件 (v1.3 B3+B4+B6 修订)",
+        "AxiMemBundle wire-format SHALL 标 D3+ chip-internal 专用 (v1.8 H1)",
+        "PcieEndpointIP 持有 PcieMemoryDevice raw pointer (N8 修订: 不再双 tick)",
+        "PcieConfigSpace BAR 寄存器从 bar_sizes 生成 (N6 立项)",
+        "GMMU 异步状态机 + AXI Master Port (N2 iova 匹配 + 访问器)",
+        "SDMA 切型范围限定 (v1.3 B2) + retry driver + slot-2 resp (N3/N7) — **v1.3 B1+B2 修订**",
+        "DGpuBoard 双 size 字段 (v1.4 B11 — BAR1 窗口 vs VRAM 大小区分)",
+        "DGpuBoard::bind_memory_backings 条件注入 (N12)",
+        "minimal_v1 JSON 配置扩展 (N6 启用 BAR2)",
+        "Coherence 域边界 (UsrLinuxEmu 端职责)",
+        "驱动视角完整最小设备 (v1.2 修订)",
+        "15 ABI Functions Unchanged",
+        "Freeze Surface Untouched"
+      ],
+      "implementation_anchors": [
+        "vram_storage_",
+        "bind_memory_backings"
+      ],
+      "purpose_text": "定义宿主侧委托 dGPU 板卡仿真时必须成立的语义：配置空间所报告的地址窗口大小、显存窗口与真容量须区分，地址翻译与数据搬运走各自归属的组件，且对外的 ABI 表面保持不变。",
+      "waiver": null,
+      "source_evidence_ref": "689752ef",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "gmmu-pte-wf",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "cpptlm-gmmu-pte-bus-correction",
+      "source_evidence": "openspec/changes/archive/2026-10-12-cpptlm-gmmu-pte-bus-correction/proposal.md",
+      "requirement_titles": [
+        "gc-gmmu-wire-format-correction (Gap I 修复, 新)",
+        "gc-sdma-translate-via-noc (Gap G1 修复, 新)",
+        "gc-soc-internal-noc-data-flow (Gap G2 修复, 新)",
+        "gc-noc-vc-counters (per e1 v1.1 AC-E1-3.5)",
+        "gc-frozen-surface-zero-diff (Hard Invariant)",
+        "gc-test-coverage (新)"
+      ],
+      "implementation_anchors": [
+        "set_vram_target",
+        "uses_vram_dedicated_client"
+      ],
+      "purpose_text": "纠正地址翻译单元取页表的路径语义：页表取数须由该单元的专用访存客户端承接并绕开 mesh 互联，而不是借用面向板外的传输层报文类型；搬运引擎经内部互联发起请求时，其计数与路由须可被观察。",
+      "waiver": null,
+      "source_archive_dir": "2026-10-12-cpptlm-gmmu-pte-bus-correction",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "lwc-bus-hub-mvp",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "cpptlm-lwc-bus-hub-mvp",
+      "source_evidence": "openspec/changes/archive/2026-10-11-cpptlm-lwc-bus-hub-mvp/proposal.md",
+      "requirement_titles": [
+        "lwc-bus-hub-core (新增)",
+        "cr-bundle-wire-format (新增)",
+        "doorbell-bundle-wire-format (新增)",
+        "gmmu-cr-in-handling (新增, Gap H 核心)",
+        "sdma-doorbell-in-handling (新增, Gap J 核心)",
+        "mmio-read-cr-bus-handling (新增, Gap K 核心)",
+        "framework-heterogeneous-adapter (新增, infrastructure)",
+        "lwc-frozen-surface-zero-diff (新增, Hard Invariant)",
+        "lwc-regress-6-suite-zero (新增)"
+      ],
+      "implementation_anchors": [
+        "register_doorbell_target",
+        "doorbell_write"
+      ],
+      "purpose_text": "为 SoC 内部的控制寄存器访问、门铃递交与消息读取三条路径提供统一的总线设施，使这些访问经由带格式的总线而非对具体实现模块的直接调用，从而让内部接口贴近真实物理 IP 边界。",
+      "waiver": null,
+      "source_archive_dir": "2026-10-11-cpptlm-lwc-bus-hub-mvp",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "minimal-dgpu-soc-abi-landing",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "cpptlm-minimal-dgpu-soc-v1-landing",
+      "source_evidence": "openspec/changes/archive/2026-09-25-2027-09-17-cpptlm-minimal-dgpu-soc-v1-landing/proposal.md",
+      "requirement_titles": [
+        "minimal-dgpu-soc-abi-driver-closed-loop",
+        "minimal-dgpu-soc-framebuffer-size-cap",
+        "minimal-dgpu-soc-override-consistency-warning"
+      ],
+      "implementation_anchors": [
+        "framebuffer_size_",
+        "bar_sizes"
+      ],
+      "purpose_text": "让最小板卡配置能够真正通过对外 ABI 被使用：显示缓冲区的容量须由配置与地址窗口尺寸共同推导并在越界时被显式上限约束，配置覆盖与代码推导不一致时须给出告警，而不是靠测试专用接口绕过。",
+      "waiver": null,
+      "source_archive_dir": "2026-09-25-2027-09-17-cpptlm-minimal-dgpu-soc-v1-landing",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "minimal-dgpu-soc-architecture",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "cpptlm-dgpu-soc-v1-architecture",
+      "source_evidence": "openspec/changes/archive/2026-09-03-2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md",
+      "requirement_titles": [
+        "单一 VRAM backing 真源(per ADR-DGPU-05 v1.4 B7)",
+        "Backing 字段命名约定(per ADR-DGPU-10)",
+        "仿真模式声明(per §1.4)",
+        "BAR 布局与代码真相对齐(per §4.1)",
+        "GMMU 是 Functional Translation Service(per §5)",
+        "5 消费者路径数据流(per §6.1)",
+        "Architecture.md 关联文档(per §0 同步规则)",
+        "doorbell 配置 vs 代码 hardcoded 不一致(per §13 R4)"
+      ],
+      "implementation_anchors": [
+        "vram_storage_"
+      ],
+      "purpose_text": "确立最小 dGPU SoC 的架构基线：显存只有一份真源且由板卡独占，多个消费者共享同一 backing；BAR 布局与 backing 字段的命名必须与代码保持同源，使配置与代码不会各说各话。",
+      "waiver": null,
+      "source_archive_dir": "2026-09-03-2027-02-09-cpptlm-dgpu-soc-v1-architecture",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "minimal-dgpu-soc-test-coverage",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "cpptlm-minimal-dgpu-soc-v1-test-coverage",
+      "source_evidence": "openspec/changes/archive/2026-09-24-cpptlm-minimal-dgpu-soc-v1-test-coverage/proposal.md",
+      "requirement_titles": [
+        "tag-aggregation-summary",
+        "boundary-edge-cases",
+        "pt-base-lo-hi-race",
+        "minimal-dgpu-soc-e2e-link"
+      ],
+      "implementation_anchors": [
+        "[minimal_dgpu_soc]"
+      ],
+      "purpose_text": "补齐最小板卡切片此前推迟的验证面：边界取值与地址基址写入竞态须有特征化用例，端到端链路须由用例贯通，测试标签的汇总须可被直接读出，以免覆盖面只存在于清单而不存在于执行。",
+      "waiver": null,
+      "source_archive_dir": "2026-09-24-cpptlm-minimal-dgpu-soc-v1-test-coverage",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "sdma-engine-tlm",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "cpptlm-dgpu-sdma-engine",
+      "source_evidence": "openspec/changes/archive/2026-08-28-2026-08-26-cpptlm-dgpu-sdma-engine/proposal.md",
+      "requirement_titles": [
+        "sdma-engine-component",
+        "sdma-engine-error-paths",
+        "sdma-completion-ordering"
+      ],
+      "implementation_anchors": [
+        "cpptlm_dma_translate_cb"
+      ],
+      "purpose_text": "把设备发起方向的搬运能力做成独立于设备接收方向的组件：地址翻译失败与非法描述须走显式错误路径，完成通知须保持既定的顺序语义，使上游搬运在错误与并发下都有确定结果。",
+      "waiver": null,
+      "source_archive_dir": "2026-08-28-2026-08-26-cpptlm-dgpu-sdma-engine",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "soc-internal-noc",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "cpptlm-dgpu-soc-internal-noc-minimal",
+      "source_evidence": "openspec/changes/archive/2026-10-09-cpptlm-dgpu-soc-internal-noc-minimal/proposal.md",
+      "requirement_titles": [
+        "soc-internal-noc-module-identity SocInternalNoc SimModule 定义",
+        "soc-internal-noc-4-target-bridge 4 Target Programmatic Bridge",
+        "soc-internal-noc-4-node-id 4 Node ID 常量 (Mesh 寻址)",
+        "soc-internal-noc-route-flit route_flit() 路由功能 (AC-2)",
+        "soc-internal-noc-4ip-doc-sync 4-IP 边界映射 (文档同步, AC-1 间接)",
+        "soc-internal-noc-json-wiring JSON 装配路径 (AC-4)",
+        "soc-internal-noc-test-coverage 测试覆盖 (AC-1 间接, AC-2, AC-3)",
+        "soc-internal-noc-zero-regression E2E 0 回归 (AC-6, AC-7)"
+      ],
+      "implementation_anchors": [
+        "SocInternalNoc",
+        "route_flit",
+        "NODE_ID_*"
+      ],
+      "purpose_text": "落地 SoC 内部互联的最小可用形态：为内部模块提供按节点寻址的路由骨架与统一的请求响应接口，并给出各节点在当前版本是否承接实际流量的显式说明。",
+      "waiver": null,
+      "source_archive_dir": "2026-10-09-cpptlm-dgpu-soc-internal-noc-minimal",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "soc-internal-noc-data-flow",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "cpptlm-dgpu-soc-internal-noc-e1",
+      "source_evidence": "openspec/changes/archive/2026-10-09-cpptlm-dgpu-soc-internal-noc-e1/proposal.md",
+      "requirement_titles": [
+        "e1-datanoc-scope (v1.1 新增)",
+        "e1-soc-internal-noc-route-flit-actual-dispatch (v1.0 保留)",
+        "e1-vc-counter (v1.1 新增, per MAJOR M2)",
+        "e1-send-request-response-api (v1.0 保留)",
+        "e1-sdma-noc-adapter (v1.0 保留, 增强)",
+        "e1-vram-noc-adapter-axi4-mapping (v1.1 新增, per MAJOR M4)",
+        "e1-datanoc-e2e (v1.1 限定 DataNoC, v1.0 是 5 E2E)",
+        "e1-dgpu-board-adapters-wiring (v1.1 缩减为 2 adapter)",
+        "e1-zero-regression (v1.1 保留)"
+      ],
+      "implementation_anchors": [
+        "VramNocAdapter",
+        "vc_counts_"
+      ],
+      "purpose_text": "在内部互联骨架之上把实际数据流接通并使其可观测：经内部网络的搬运须留下可统计的报文痕迹，各目标端须经适配器转换到内部类型，请求与响应的区分由流类别字段承载而不另造报文类型。",
+      "waiver": null,
+      "source_archive_dir": "2026-10-09-cpptlm-dgpu-soc-internal-noc-e1",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    },
+    {
+      "spec": "vram-controller-functional-mode",
+      "claim_kind": "current",
+      "evidence_kind": "archived-change-proposal",
+      "source_change": "cpptlm-vram-controller-functional-integration",
+      "source_evidence": "openspec/changes/archive/2026-10-11-cpptlm-vram-controller-functional-integration/proposal.md",
+      "requirement_titles": [
+        "vc-functional-mode-data-path (新)",
+        "vc-mode-configuration (新)",
+        "vc-fallback-compat (新, backward compat)",
+        "vc-json-simulation-mode (新)",
+        "vc-test-coverage (新)",
+        "vc-frozen-surface-zero-diff (新, Hard Invariant)",
+        "vc-docs-sync (新)"
+      ],
+      "implementation_anchors": [
+        "VramControllerMode::FunctionalZeroDelay",
+        "set_mode"
+      ],
+      "purpose_text": "让显存控制器在功能形态下真正参与数据路径：模式切换须可被配置显式声明，切回旧行为时须保持向后兼容，使该组件不再只是存在却未接入。",
+      "waiver": null,
+      "source_archive_dir": "2026-10-11-cpptlm-vram-controller-functional-integration",
+      "checks": {
+        "no_placeholder": true,
+        "ge_50_chars": true,
+        "le_160_chars": true,
+        "single_line": true,
+        "lcs_below_threshold": true,
+        "no_process_narrative": true,
+        "no_technical_literal": true,
+        "claim_kind_consistent": true,
+        "evidence_reproducible": true,
+        "evidence_core_hit": true,
+        "anchors_resolve": true
+      }
+    }
+  ]
+}

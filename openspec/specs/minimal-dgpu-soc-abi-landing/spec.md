@@ -1,7 +1,7 @@
 # minimal-dgpu-soc-abi-landing Specification
 
 ## Purpose
-TBD - created by archiving change 2027-09-17-cpptlm-minimal-dgpu-soc-v1-landing. Update Purpose after archive.
+让最小板卡配置能够真正通过对外 ABI 被使用：显示缓冲区的容量须由配置与地址窗口尺寸共同推导并在越界时被显式上限约束，配置覆盖与代码推导不一致时须给出告警，而不是靠测试专用接口绕过。
 ## Requirements
 ### Requirement: minimal-dgpu-soc-abi-driver-closed-loop
 

@@ -1,7 +1,7 @@
 # dgpu-4ip-port-contract Specification
 
 ## Purpose
-TBD - created by archiving change dgpu-realip-pin-contract. Update Purpose after archive.
+划定四 IP 拓扑下板级外观与显存控制器之间的端口契约边界：板级对宿主的读写必须走控制器的地址译码路径，不得再由一串历史路由开关拼装决定去向；契约本身须有可执行的一致性校验与接线测试。
 ## Requirements
 ### Requirement: fabric-vram-ctrl-port-contract
 

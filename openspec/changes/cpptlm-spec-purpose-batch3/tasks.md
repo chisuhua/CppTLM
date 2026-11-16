@@ -21,22 +21,30 @@
 
 ## Phase 1 · 落地（builder）
 
-- [ ] **T1.1** 写归因载体**生成器**（独立脚本）：从 `design.md` §D-1 表格**机器提取** 14 条 canonical 草稿（⛔ 不手抄）+ **glob 解析**来源归档目录（⛔ 不依赖 TBD 行）+ 从 spec **自动抽取** `requirement_titles` + 从 design 抽取 `implementation_anchors` + **glob 唯一命中**校验（命中 0 或 ≥2 ⇒ 报错退出）· `git-history-proposal` 的 `ref` 须为**固定 sha**（⛔ 不可写 `HEAD`）⇒ 写 `test/spec_purpose_batch3_attribution.json`（**⛔ 不手填 `checks`**）
-- [ ] **T1.2** 写 `scripts/test/cep_spec_purpose_batch3_check.py`（D-3 的 **C-1 ~ C-9**；带 `--apply` 落地模式 + `--reconcile` 生成 AC-02b 载体）
-- [ ] **T1.3** 逐份**只替换 Purpose 段**：正则整段替换 ⇒ **Requirements 段逐字节不动**；**单物理行**、**不新增空行**
-- [ ] **T1.4** 跑 T1.2 脚本 ⇒ **14/14 全绿**（C-1~C-9）
-- [ ] **T1.5** **判别力验证**：落地**前**跑校验 ⇒ 须 **0/14 绿**（占位残留被 C-1 抓到）⇒ 判据有牙
+- [x] **T1.1** 写归因载体**生成器**（独立脚本）：从 `design.md` §D-1 表格**机器提取** 14 条 canonical 草稿（⛔ 不手抄）+ **glob 解析**来源归档目录（⛔ 不依赖 TBD 行）+ 从 spec **自动抽取** `requirement_titles` + 从 design 抽取 `implementation_anchors` + **glob 唯一命中**校验（命中 0 或 ≥2 ⇒ 报错退出）· `git-history-proposal` 的 `ref` 须为**固定 sha**（⛔ 不可写 `HEAD`）⇒ 写 `test/spec_purpose_batch3_attribution.json`（**⛔ 不手填 `checks`**）
+- [x] **T1.2** 写 `scripts/test/cep_spec_purpose_batch3_check.py`（D-3 的 **C-1 ~ C-9**；带 `--apply` 落地模式 + `--reconcile` 生成 AC-02b 载体）
+- [x] **T1.3** 逐份**只替换 Purpose 段**：正则整段替换 ⇒ **Requirements 段逐字节不动**；**单物理行**、**不新增空行**
+- [x] **T1.4** 跑 T1.2 脚本 ⇒ **14/14 全绿**（C-1~C-9）
+- [x] **T1.5** **判别力验证**：落地**前**跑校验 ⇒ 须 **0/14 绿**（占位残留被 C-1 抓到）⇒ 判据有牙
 
 ## Phase 2 · 复验
 
-- [ ] **T2.1** **AC-01** 限段占位计数 = 0（14 份）
-- [ ] **T2.2** **AC-02** 14/14 份 `--strict --json` 无 Purpose 类 issue
-- [ ] **T2.3** **AC-02b / AC-02c** 全局：`pre − post = k` 且 k 与剩余红数**逐份归因闭合** ⇒ 载体 `test/spec_purpose_batch3_reconcile.json` 满足 C-9 的 5 条机判
-- [ ] **T2.4** **AC-03** 四条正交（脚本判定 + **人工抽验 5 组各 1 份**（5 份，**必须含** #6 `gmmu-pte-wf` 与 #12 `soc-internal-noc`）；结论**落盘**到本 tasks）
-- [ ] **T2.5** **AC-04** diff 形状：14 文件 · 每份 1 hunk · 删 1 增 1 · 不新增空行 · `## Requirements` 段逐字节不变
-- [ ] **T2.6** **AC-05** `claim_kind` 与 spec 级 superseded 互斥（C-6）+ **`implementation_anchors` 全部命中**（C-8）+ 标识符可追 + 证据可复现且核心名命中（C-7）
-- [ ] **T2.7** **AC-06/07** 43 份 `cep-*` `--strict` rc≠0 = 0 · `artifact_count` 86 不变 · 范围零 diff
-- [ ] **T2.8** **新残余登记**：**R-15**（`v1-architecture` 引用已迁 ArchForge 的 `00-overview.md`）· **R-16**（3 份未实施 spec 存废）· **R-17**（2 份来源归档目录缺失）· **R-18**（doorbell 配置 vs 代码不一致）
+- [x] **T2.1** **AC-01** 限段占位计数 = 0（14 份）
+- [x] **T2.2** **AC-02** 14/14 份 `--strict --json` 无 Purpose 类 issue
+- [x] **T2.3** **AC-02b / AC-02c** 全局闭合（实测）：`pre 65 → post 55 ⇒ k = 10`；**Purpose 占位 59 → 45 = −14 精确闭合**；**「正文 >500」issue 69 → 69 不变**（本批不动正文）⇒ 本批 **10 份完全转绿**、**4 份仍红**（红因**全为「正文 >500」**）。载体 `test/spec_purpose_batch3_reconcile.json` · C-9 机判 **5 条全 True**（`fixed==pre−post` · `union 覆盖 pre` · `不相交` · `k==len(fixed)` · `remaining reasons 是真实 issue code`）
+- [x] **T2.4** **AC-03** 四条正交（脚本判定 + **人工抽验 6 份 · 覆盖 5 组**；结论见下）
+  - **人工抽验名单与结论（2026-11-16 · 6 份 · 覆盖 5 组 · 含 design §D-6 的组 ⑤ 强制交叉对拍）**：
+    ① `dgpu-board-adapter-info`（组①）—— 草稿**不提** `cpptlm_emulator_get_adapter_info`（实测提及 **0** 次）⇒ 与 `cpptlm_emulator.h:108`「已删除 (per ADR-SOC-20 §2.1)」**一致**；草稿只声称「设备句柄的归属与释放路径」⇒ 由 `cpptlm_emulator_open` / `close`（`:106-107` + `src/abi/cpptlm_emulator.cc:340`）承载 ⇒ **一致**
+    ② `lwc-bus-hub-mvp`（组②）—— 草稿描述「控制寄存器访问 / 门铃递交 / 消息读取三条路径经统一总线」⇒ 与 `include/tlm/lwc/lwc_bus_hub.hh` 的 `register_doorbell_target` + `doorbell_write` **一致**；⚠️ 实测**实际 handler 名与 `AGENTS.md` 记载的 `handle_cr_transaction` / `handle_doorbell_transaction` 不同** ⇒ 草稿无标识符 ⇒ **不受影响**，但该差异**登记为残余 R-19**
+    ③ `minimal-dgpu-soc-architecture`（组③）—— 草稿**不提 doorbell** ⇒ 与该 spec 的 Requirement `doorbell 配置 vs 代码 hardcoded 不一致`（**未收敛的不一致**）**不冲突** ⇒ **一致**（该不一致已登记 **R-18**）
+    ④ `driver-visible-minimal-soc`（组④ · 14 条 Requirement 最重）—— 草稿「配置空间所报告的**地址窗口大小**、显存窗口与**真容量**须区分」⇒ 与 `DGpuBoard` 的**双 size 字段**（B11，`dgpu_board_shell.hh`）**一致**；草稿 ⛔ 未声称任何已删除的 ABI ⇒ **一致**
+    ⑤ `gmmu-pte-wf`（组⑤ · **metis 指定必含**）—— 草稿「页表取数须由该单元的**专用访存客户端**承接并**绕开 mesh 互联**」⇒ 与实现 `gmmu_tlm.hh:132-138`（`set_vram_target` / `uses_vram_dedicated_client` → `vram_ctrl_` 注入）+ 规范 `gmmu-pte-wf/spec.md:28`「**GMMU 不经 mesh NoC**」**一致** ⇒ **一致**
+    ⑥ `soc-internal-noc`（组⑤ · **metis 指定必含** · **强制交叉对拍**）—— 草稿「路由骨架 + 统一请求响应接口 + **各节点是否承接实际流量的显式说明**」⇒ 实测草稿中 `GMMU` / `PCIe` / `页表` / `条带` 提及 **0 次** ⇒ **未声称「GMMU / PCIe 侧流量经内部 NoC 贯通」** ⇒ 与 `soc_internal_noc.hh:61,63`（`NODE_ID_PCIE`「v1.1 **无入向流量**」· `NODE_ID_GMMU`「v1.1 **不接**」）**一致** ⇒ **交叉对拍通过**
+  - **结论**：6/6 **一致** ⇒ 无「声称不存在的能力」。⚠️ **机判边界**（design §D-3）：**纯中文的能力声称不在机判射程内** ⇒ 该边界由本次抽验 + critic 的 5 组逐组签署共同承担（批 4~6 **须保留同等人审环节**）。
+- [x] **T2.5** **AC-04** diff 形状：**14 文件 · 每份恰 1 hunk · 增 1 行 · 删 1 或 2 行**（本批 1 份 `vram-controller-functional-mode` 的原占位后带尾随空行 ⇒ 删 2）· ⛔ 不新增空行 · **`## Requirements` 段逐字节不变**（实测 14/14 变动 **0**）
+- [x] **T2.6** **AC-05** `claim_kind` 与 spec 级 superseded 互斥（C-6）+ **`implementation_anchors` 全部命中**（C-8）+ 标识符可追 + 证据可复现且核心名命中（C-7）
+- [x] **T2.7** **AC-06/07** 43 份 `cep-*` `--strict` rc≠0 = 0 · `artifact_count` 86 不变 · 范围零 diff
+- [x] **T2.8** **新残余登记**：**R-15**（`v1-architecture` 引用已迁 ArchForge 的 `00-overview.md`）· **R-16**（3 份未实施 spec 存废 · 路由 architect）· **R-17**（2 份来源归档目录缺失）· **R-18**（doorbell 配置 vs 代码不一致）· **R-19**（`AGENTS.md` 记载的 LWC handler 名 `handle_cr_transaction` / `handle_doorbell_transaction` 与实现实际名 `register_doorbell_target` / `doorbell_write` 不一致 —— 本批 Purpose 无标识符故不受影响，但**登记处 stale**）
 
 ## Phase 3 · 审查与归档
 

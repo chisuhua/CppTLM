@@ -91,7 +91,7 @@
 | 5 | `driver-visible-minimal-soc` | `vram_storage_` · `bind_memory_backings` · BAR2 aperture | ✅ 命中 |
 | 6 | `gmmu-pte-wf` | `set_vram_target` · `uses_vram_dedicated_client` | ✅ 命中 |
 | 7 | `lwc-bus-hub-mvp` | `register_doorbell_target` · `doorbell_write` | ✅ 命中 |
-| 8 | `minimal-dgpu-soc-abi-landing` | `framebuffer_size_` · `bar_sizes[1]` 派生 | ✅ 命中 |
+| 8 | `minimal-dgpu-soc-abi-landing` | `framebuffer_size_` · `bar_sizes` 派生 | ✅ 命中 |
 | 9 | `minimal-dgpu-soc-architecture` | `vram_storage_`（ADR-DGPU-10 命名） | ✅ 命中 |
 | 10 | `minimal-dgpu-soc-test-coverage` | `[minimal_dgpu_soc]` 标签用例 · PT_BASE race 特征化 | ✅ 命中 |
 | 11 | `sdma-engine-tlm` | `cpptlm_dma_translate_cb` | ✅ 命中 |
@@ -180,7 +180,8 @@
 ## D-4 · 落地方式与预期 diff 形状
 
 - **替换**：正则 `## Purpose\n(.*?)\n## Requirements` **整段替换** ⇒ `## Requirements` 段**逐字节不动**。
-- **预期 diff 形状（AC-04 写死）**：**14 文件 · 每文件恰 1 hunk · 删 1 行增 1 行 · 不新增空行 · Purpose 单物理行**。
+- **预期 diff 形状（AC-04）**：**14 文件 · 每文件恰 1 hunk · 增 1 行 · 删 1 行（占位后**无**尾随空行）或 2 行（占位后**有**尾随空行 —— 本批 1 份：`vram-controller-functional-mode`，其原占位后有 1 个空行）· ⛔ 不新增空行 · Purpose 单物理行**。
+- ⚠️ **AC-04 的判据订正（2026-11-16 实施时实测）**：初稿写死「每份删 1 增 1」⇒ 实测 **13 份符合、1 份删 2**（原占位后带尾随空行）。⇒ **改的是「过严代理」**（删行数不是判据的实质），**实质判据是「`## Requirements` 段逐字节不变」** —— 实测 **14/14 变动 0** ⇒ 判据**未放宽**，只是把「删行数」从**判据**降为**形状描述**。
 - **归因载体生成**：独立脚本从 `design.md` §D-1 表格**机器提取** 14 条 canonical 草稿（⛔ 不手抄 ⇒ 无转录误差）+ **glob 解析**来源归档目录（⛔ **不依赖 TBD 行** —— 批 1 实测其名 ≠ 归档目录名）+ 从 spec **自动抽取** `requirement_titles` + 从本表**自动抽取** `implementation_anchors`。
 - ⛔ **生成器要求**：glob 必须**唯一命中**（命中 0 或 ≥2 ⇒ 报错退出）；`git-history-proposal` 的 `ref` 必须是**固定 sha**（⛔ 不可写 `HEAD`）。
 

@@ -1,7 +1,7 @@
 # dgpu-soc-timing Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-dgpu-soc-timing-mvp. Update Purpose after archive.
+定义 dGPU SoC 的时序仿真形态：与功能形态并列共存而不替换，在该形态下推进按周期计数、地址翻译驻留、带宽上限与仲裁成为可观察的语义，同时保持功能形态的行为不变。
 ## Requirements
 ### Requirement: 仿真模式切换 (per §1.4 仿真模式声明)
 

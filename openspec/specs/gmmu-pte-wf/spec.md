@@ -1,7 +1,7 @@
 # gmmu-pte-wf Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-gmmu-pte-bus-correction. Update Purpose after archive.
+纠正地址翻译单元取页表的路径语义：页表取数须由该单元的专用访存客户端承接并绕开 mesh 互联，而不是借用面向板外的传输层报文类型；搬运引擎经内部互联发起请求时，其计数与路由须可被观察。
 ## Requirements
 ### Requirement: gc-gmmu-wire-format-correction (Gap I 修复, 新)
 

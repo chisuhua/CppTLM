@@ -1,7 +1,7 @@
 # sdma-engine-tlm Specification
 
 ## Purpose
-TBD - created by archiving change 2026-08-26-cpptlm-dgpu-sdma-engine. Update Purpose after archive.
+把设备发起方向的搬运能力做成独立于设备接收方向的组件：地址翻译失败与非法描述须走显式错误路径，完成通知须保持既定的顺序语义，使上游搬运在错误与并发下都有确定结果。
 ## Requirements
 ### Requirement: sdma-engine-component
 

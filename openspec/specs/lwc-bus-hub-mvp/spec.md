@@ -1,7 +1,7 @@
 # lwc-bus-hub-mvp Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-lwc-bus-hub-mvp. Update Purpose after archive.
+为 SoC 内部的控制寄存器访问、门铃递交与消息读取三条路径提供统一的总线设施，使这些访问经由带格式的总线而非对具体实现模块的直接调用，从而让内部接口贴近真实物理 IP 边界。
 ## Requirements
 ### Requirement: lwc-bus-hub-core (新增)
 

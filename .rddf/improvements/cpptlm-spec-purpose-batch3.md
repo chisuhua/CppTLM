@@ -83,7 +83,7 @@ Purpose 段与 Requirement 段是**两个独立段** ⇒ 改动**不触及任何
 | **AC-02** | **定向**：14/14 无 Purpose 类 issue | 逐份 `openspec validate --strict --json` 输出中**无** `placeholder` 类 issue ⇒ **17/17**（永远可达） |
 | **AC-02b** | **全局**：`pre − post = k` 且逐份归因闭合 | 载体 = `test/spec_purpose_batch3_reconcile.json`（schema `spec-purpose-reconcile/v1`）· 机判：`fixed = pre.red − post.red`；`set(post.red) ∪ set(fixed) == set(pre.red)`；两集**不相交**；`k = len(fixed)`；每个 `remaining[].reasons` 必须是 post 实跑的**真实 issue code**；`fixed` 的 pre issues ⊆ **仅 Purpose 类** |
 | **AC-03** | **Purpose 四条正交**（逐份机判） | ① `--json` 判 valid ② `50 ≤ len ≤ 160` **且单物理行** ③ **CJK-only LCS < 12** + **英文词序列公共 < 5 词** ④ ⛔ 过程叙述 / 技术字面量 / change 引用 / 日期 |
-| **AC-04** | **零语义改动 + diff 形状写死** | **14 文件 · 每文件恰 1 hunk · 删 1 行增 1 行 · 不新增空行**；`## Requirements` 段**逐字节不变** |
+| **AC-04** | **零语义改动 + diff 形状** | **14 文件 · 每文件恰 1 hunk · 增 1 行 · 删 1 行（占位后**无**尾随空行）或 2 行（占位后**有**尾随空行 —— 本批 1 份：`vram-controller-functional-mode`）· ⛔ 不新增空行**；`## Requirements` 段**逐字节不变**（实测 14/14 变动 0）。⚠️ **判据订正**：初稿的「删 1 增 1」是**过严代理** ⇒ 实质判据是「Requirements 段逐字节不变」，删行数降为形状描述 |
 | **AC-05** | **不得声称不存在的能力** | ① `claim_kind` 与 **spec 级** superseded 标记**互斥**（C-6）② 每份的 `implementation_anchors` **全部命中**（C-8）③ Purpose 标识符 ⊆ Requirement 标题 ∪ 仓内可 grep 符号 ∪ 领域缩写白名单 ④ 证据**可复现**且核心名命中（C-7） |
 | **AC-06** | `cep-*` 不受影响 | 43 份逐份 `--strict` ⇒ rc≠0 = **0**；`artifact_count` **86 不变**（零冻结产物 ⇒ 免五步链） |
 | **AC-07** | 范围零 diff | `include/**` / `src/**` / `test/*.cc` / `docs/adr/**` / `openspec/specs/cep-*/spec.md` 全 0 |

@@ -1,7 +1,7 @@
 # minimal-dgpu-soc-architecture Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-minimal-dgpu-soc-v1-architecture. Update Purpose after archive.
+确立最小 dGPU SoC 的架构基线：显存只有一份真源且由板卡独占，多个消费者共享同一 backing；BAR 布局与 backing 字段的命名必须与代码保持同源，使配置与代码不会各说各话。
 ## Requirements
 ### Requirement: 单一 VRAM backing 真源(per ADR-DGPU-05 v1.4 B7)
 

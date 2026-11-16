@@ -1,7 +1,7 @@
 # dgpu-board-adapter-info Specification
 
 ## Purpose
-TBD - created by archiving change dgpu-board-adapter-info-extension. Update Purpose after archive.
+让宿主侧能够发现板卡的详细拓扑信息并持有设备句柄：前者用于把仿真设备对齐主流仿真器的设备发现范式，后者使句柄的所有权在宿主与板卡之间有明确归属与释放路径。
 ## Requirements
 ### Requirement: 板卡适配器详细拓扑信息暴露
 CppTLM 的 C ABI (`cpptlm_emulator.h`) 及 `DGpuBoard` 外壳 MUST 暴露包含显存层次划分（Visible 与 Invisible VRAM）、GPU 虚拟地址空间大小、GPU ID 及 BDF 拓扑的完整设备描述。

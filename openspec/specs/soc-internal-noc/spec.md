@@ -1,7 +1,7 @@
 # soc-internal-noc Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-dgpu-soc-internal-noc-minimal. Update Purpose after archive.
+落地 SoC 内部互联的最小可用形态：为内部模块提供按节点寻址的路由骨架与统一的请求响应接口，并给出各节点在当前版本是否承接实际流量的显式说明。
 ## Requirements
 ### Requirement: soc-internal-noc-module-identity SocInternalNoc SimModule 定义
 

@@ -1,8 +1,7 @@
 # vram-controller-functional-mode Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-vram-controller-functional-integration. Update Purpose after archive.
-
+让显存控制器在功能形态下真正参与数据路径：模式切换须可被配置显式声明，切回旧行为时须保持向后兼容，使该组件不再只是存在却未接入。
 ## Requirements
 
 ### Requirement: vc-functional-mode-data-path (新)

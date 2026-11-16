@@ -1,0 +1,569 @@
+{
+  "schema": "spec-purpose-reconcile/v1",
+  "batch": "batch3",
+  "base_commit": "f1cb3cb87f31208e568136b8d5bb84bd991f13de",
+  "pre": {
+    "red": [
+      "130b-encoding",
+      "adr-revision-plan",
+      "axi-stream-adapter",
+      "axi4-mapper",
+      "cli-f12b-flag",
+      "cluster-factory",
+      "command-processor-fill-mvp",
+      "command-processor-skeleton-mvp",
+      "config-emitter",
+      "config-inheritance",
+      "config-lint",
+      "config-upgrade",
+      "connection-path-tracer",
+      "cpptlm-d1-p1-pipeline-scoreboard",
+      "dgpu-4ip-port-contract",
+      "dgpu-board-abi-hygiene",
+      "dgpu-board-adapter-info",
+      "dgpu-board-mvp",
+      "dgpu-soc-control-hub",
+      "dgpu-soc-physical-ip-port-boundary",
+      "dgpu-soc-timing",
+      "display-device-injection-refactor",
+      "display-fb-homogenization",
+      "display-io-mvp",
+      "doorbell-mvp",
+      "driver-visible-minimal-soc",
+      "gmmu-pte-wf",
+      "gpgpu-precision-wave2",
+      "host-bypass-and-rc",
+      "hsk9-cross-repo-doc-mirror",
+      "hsk9-icompute-api-v1-contract",
+      "hsk9-ptxemu-consumer-impl",
+      "link-layer-and-fc",
+      "lwc-bus-hub-mvp",
+      "minimal-dgpu-soc-abi-landing",
+      "minimal-dgpu-soc-architecture",
+      "minimal-dgpu-soc-test-coverage",
+      "module-group-wildcard",
+      "param-derivation",
+      "param-type-conversion",
+      "param-validation",
+      "pcie-ip-integration",
+      "pcie-ip-microarch",
+      "pcie-slice-prerequisites",
+      "pcie-tlp-wire-datapath",
+      "phy-digital-ctrl",
+      "pm4-decoder-mvp",
+      "port-aliases",
+      "port-type-system",
+      "ptxemu-bench-isolation",
+      "release-gate",
+      "sdma-engine-tlm",
+      "simmodule-depth-test-coverage",
+      "sm-microarchitecture",
+      "soc-internal-noc",
+      "soc-internal-noc-data-flow",
+      "sriov-vf-pool",
+      "static-load-analysis",
+      "submit-queue-mvp",
+      "tmu-dispatch-fill-mvp",
+      "tmu-dispatch-skeleton-mvp",
+      "usrlxemu-ioctl-stub-mvp",
+      "v1-architecture",
+      "variable-reference",
+      "vram-controller-functional-mode"
+    ],
+    "issue_counts": {
+      "purpose.placeholder": 59,
+      "requirement.too_long": 69
+    }
+  },
+  "post": {
+    "red": [
+      "130b-encoding",
+      "adr-revision-plan",
+      "axi-stream-adapter",
+      "axi4-mapper",
+      "cli-f12b-flag",
+      "cluster-factory",
+      "command-processor-fill-mvp",
+      "command-processor-skeleton-mvp",
+      "config-emitter",
+      "config-inheritance",
+      "config-lint",
+      "config-upgrade",
+      "connection-path-tracer",
+      "cpptlm-d1-p1-pipeline-scoreboard",
+      "dgpu-4ip-port-contract",
+      "dgpu-board-mvp",
+      "dgpu-soc-control-hub",
+      "dgpu-soc-physical-ip-port-boundary",
+      "dgpu-soc-timing",
+      "display-device-injection-refactor",
+      "display-fb-homogenization",
+      "display-io-mvp",
+      "doorbell-mvp",
+      "driver-visible-minimal-soc",
+      "gpgpu-precision-wave2",
+      "host-bypass-and-rc",
+      "hsk9-cross-repo-doc-mirror",
+      "hsk9-icompute-api-v1-contract",
+      "hsk9-ptxemu-consumer-impl",
+      "link-layer-and-fc",
+      "module-group-wildcard",
+      "param-derivation",
+      "param-type-conversion",
+      "param-validation",
+      "pcie-ip-integration",
+      "pcie-ip-microarch",
+      "pcie-slice-prerequisites",
+      "pcie-tlp-wire-datapath",
+      "phy-digital-ctrl",
+      "pm4-decoder-mvp",
+      "port-aliases",
+      "port-type-system",
+      "ptxemu-bench-isolation",
+      "release-gate",
+      "sdma-engine-tlm",
+      "simmodule-depth-test-coverage",
+      "sm-microarchitecture",
+      "sriov-vf-pool",
+      "static-load-analysis",
+      "submit-queue-mvp",
+      "tmu-dispatch-fill-mvp",
+      "tmu-dispatch-skeleton-mvp",
+      "usrlxemu-ioctl-stub-mvp",
+      "v1-architecture",
+      "variable-reference"
+    ],
+    "issue_counts": {
+      "purpose.placeholder": 45,
+      "requirement.too_long": 69
+    }
+  },
+  "fixed": [
+    "dgpu-board-abi-hygiene",
+    "dgpu-board-adapter-info",
+    "gmmu-pte-wf",
+    "lwc-bus-hub-mvp",
+    "minimal-dgpu-soc-abi-landing",
+    "minimal-dgpu-soc-architecture",
+    "minimal-dgpu-soc-test-coverage",
+    "soc-internal-noc",
+    "soc-internal-noc-data-flow",
+    "vram-controller-functional-mode"
+  ],
+  "remaining": [
+    {
+      "spec": "130b-encoding",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "adr-revision-plan",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "axi-stream-adapter",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "axi4-mapper",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "cli-f12b-flag",
+      "reasons": [
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "cluster-factory",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "command-processor-fill-mvp",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "command-processor-skeleton-mvp",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "config-emitter",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "config-inheritance",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "config-lint",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "config-upgrade",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "connection-path-tracer",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "cpptlm-d1-p1-pipeline-scoreboard",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "dgpu-4ip-port-contract",
+      "reasons": [
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "dgpu-board-mvp",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "dgpu-soc-control-hub",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "dgpu-soc-physical-ip-port-boundary",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "dgpu-soc-timing",
+      "reasons": [
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "display-device-injection-refactor",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "display-fb-homogenization",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "display-io-mvp",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "doorbell-mvp",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "driver-visible-minimal-soc",
+      "reasons": [
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "gpgpu-precision-wave2",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "host-bypass-and-rc",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "hsk9-cross-repo-doc-mirror",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "hsk9-icompute-api-v1-contract",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "hsk9-ptxemu-consumer-impl",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "link-layer-and-fc",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "module-group-wildcard",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "param-derivation",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "param-type-conversion",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "param-validation",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "pcie-ip-integration",
+      "reasons": [
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "pcie-ip-microarch",
+      "reasons": [
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "pcie-slice-prerequisites",
+      "reasons": [
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "pcie-tlp-wire-datapath",
+      "reasons": [
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "phy-digital-ctrl",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "pm4-decoder-mvp",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "port-aliases",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "port-type-system",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "ptxemu-bench-isolation",
+      "reasons": [
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "release-gate",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "sdma-engine-tlm",
+      "reasons": [
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "simmodule-depth-test-coverage",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "sm-microarchitecture",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "sriov-vf-pool",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "static-load-analysis",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "submit-queue-mvp",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "tmu-dispatch-fill-mvp",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "tmu-dispatch-skeleton-mvp",
+      "reasons": [
+        "purpose.placeholder",
+        "requirement.too_long"
+      ]
+    },
+    {
+      "spec": "usrlxemu-ioctl-stub-mvp",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "v1-architecture",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    },
+    {
+      "spec": "variable-reference",
+      "reasons": [
+        "purpose.placeholder"
+      ]
+    }
+  ],
+  "k": 10,
+  "batch_specs": [
+    "dgpu-4ip-port-contract",
+    "dgpu-board-abi-hygiene",
+    "dgpu-board-adapter-info",
+    "dgpu-soc-timing",
+    "driver-visible-minimal-soc",
+    "gmmu-pte-wf",
+    "lwc-bus-hub-mvp",
+    "minimal-dgpu-soc-abi-landing",
+    "minimal-dgpu-soc-architecture",
+    "minimal-dgpu-soc-test-coverage",
+    "sdma-engine-tlm",
+    "soc-internal-noc",
+    "soc-internal-noc-data-flow",
+    "vram-controller-functional-mode"
+  ],
+  "machine_checks": {
+    "fixed_equals_pre_minus_post": true,
+    "union_covers_pre": true,
+    "disjoint": true,
+    "k_equals_len_fixed": true,
+    "remaining_reasons_are_real_codes": true
+  },
+  "note": "pre/post 均由 openspec 校验器实跑（pre = HEAD 基线影子根）⇒ 两侧口径一致。"
+}

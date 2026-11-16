@@ -1,7 +1,7 @@
 # driver-visible-minimal-soc Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-driver-visible-minimal-soc. Update Purpose after archive.
+定义宿主侧委托 dGPU 板卡仿真时必须成立的语义：配置空间所报告的地址窗口大小、显存窗口与真容量须区分，地址翻译与数据搬运走各自归属的组件，且对外的 ABI 表面保持不变。
 ## Requirements
 ### Requirement: v1.3 P0 阻塞修正 SHALL 全部应用 (前置门 — 实施前必须完成)
 

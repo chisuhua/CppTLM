@@ -1,7 +1,7 @@
 # dgpu-board-abi-hygiene Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-dgpu-board-abi-hygiene. Update Purpose after archive.
+约束板级壳的对外可维护性：模块须以注册短名对外暴露，内部类型转换须走受控访问入口，空派发分支与遗留桩不得留在生产路径上，避免壳层不断掩盖实现层的真实缺陷。
 ## Requirements
 ### Requirement: pcie-endpoint-ip-short-name-registered
 

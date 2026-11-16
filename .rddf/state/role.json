@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-15T23:49:43Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-16T00:16:54Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-14T14:15:44Z",
-      "by": "user",
-      "reason": "per 用户口令「切architect」⇒ 落「16 adapter 实例」措辞澄清(07 号 §gem5 对比表「协议实现数」+ protocol-engine.md §5.1「当前口径」)—— 实况 8 实例/8 adapter,Ruby-SLICC 族 8 实例零落地 ⇒ 措辞需澄清为「下界/目标口径」(per ADR-CEP-12 理由句,ADR 不可改)⇒ 真源 1 措辞修订 ⇒ 按审查配对走 oracle 单审。"
-    },
     {
       "role": "planner",
       "at": "2026-11-14T14:42:53Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-15T23:49:43Z",
       "by": "user",
       "reason": "per 用户口令「切planner对后续还有哪些任务内容都梳理一遍,再给出后续任务内容和实施路径,再切builder进行实施」"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-16T00:16:54Z",
+      "by": "user",
+      "reason": "per 用户口令「再切builder进行实施」⇒ 实施 R-1 批 3(14 份 Purpose 落地 + 校验脚本 + 归因载体)。"
     }
   ],
   "auto_switch_window": null

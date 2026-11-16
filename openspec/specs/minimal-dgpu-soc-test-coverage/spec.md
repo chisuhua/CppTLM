@@ -1,7 +1,7 @@
 # minimal-dgpu-soc-test-coverage Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-minimal-dgpu-soc-v1-test-coverage. Update Purpose after archive.
+补齐最小板卡切片此前推迟的验证面：边界取值与地址基址写入竞态须有特征化用例，端到端链路须由用例贯通，测试标签的汇总须可被直接读出，以免覆盖面只存在于清单而不存在于执行。
 ## Requirements
 ### Requirement: tag-aggregation-summary
 
