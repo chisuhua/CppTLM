@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-16T12:30:55Z",
+  "current_role": "verifier",
+  "updated_at": "2026-11-16T13:28:39Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "verifier",
-      "at": "2026-11-15T11:39:55Z",
-      "by": "user",
-      "reason": "per 用户口令「切 verifier 做 T8 verifier 独立验收」⇒ 独立验收已归档 change `cpptlm-cep-gate-robustness`(台账 Entry #436/#437)的 AC-01~AC-15,逐条取证,报告落 .rddf/reviews/。"
-    },
     {
       "role": "builder",
       "at": "2026-11-15T12:25:59Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-16T12:30:55Z",
       "by": "user",
       "reason": "per 用户裁决「选择A」+ planner Entry #455 修订 AC-05/AC-06 ⇒ 以 builder 实施:建 openspec change 目录(proposal/design/tasks + delta spec)+ MESH-3a/3b 判据改造 + 订正 :17-21 注释 + 回填 KPI 1/3。"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-16T13:28:39Z",
+      "by": "user",
+      "reason": "builder 完成实施并归档(Entry #456/#457/#458)⇒ 按其固定审查者(same-role verifier)对已归档 change cpptlm-router-credit-flit-leak-to-consumer 做独立验收:AC-01~AC-07 逐条取证 + 遗留清扫;报告落 .rddf/reviews/"
     }
   ],
   "auto_switch_window": null
