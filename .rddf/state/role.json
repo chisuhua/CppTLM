@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-17T10:57:06Z",
+  "updated_at": "2026-11-17T13:51:15Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-16T17:47:10Z",
-      "by": "user",
-      "reason": "per 用户口令「R-3 改 #460 ... 同时给 R-5 起 improvement」⇒ ① 台账授权条 Entry #454 -> #460(消除与另一 session 的同号;#455~#459 已占,#460 空闲)② 起 improvement 草稿 cpptlm-nictlm-credit-flit-filter(ADR-X.16 关联章登记的同族缺口)。"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-16T17:49:16Z",
-      "by": "user",
-      "reason": "per 用户口令「做 R-2-1」⇒ 修订 docs/architecture/cep/fabric-transport.md:43 的过期 SHALL 断言(per 台账 Entry #460 授权;真源 1 变更 ⇒ 须过 oracle)。"
-    },
     {
       "role": "builder",
       "at": "2026-11-16T17:53:44Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-17T10:57:06Z",
       "by": "user",
       "reason": "per 用户口令「审查通过后切builder推进,直到任务完成」⇒ 实施 change cpptlm-module-param-read-declares 的 T0~T7(机制 + 装配接入 + RouterTLM 试点 + 基线台账 + 验证 + spec delta + 收口)。"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-17T13:41:43Z",
+      "by": "user",
+      "reason": "per 用户口令「直到任务完成」⇒ builder 实施完成(0fddd258)后按其固定环节切 verifier:独立验收 AC-01~AC-14 + G-1/G-2 + 遗留清扫复核 + T0.1(B-1 复核,须非实施者签收)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-17T13:51:15Z",
+      "by": "user",
+      "reason": "verifier 验收 PASS(.rddf/reviews/cpptlm-module-param-read-declares-verify.md) + T0.1 B-1 闭合 ⇒ 回 builder 完成 T7 收口(台账/KPI/归档/Purpose/冻结核查)。"
     }
   ],
   "auto_switch_window": null

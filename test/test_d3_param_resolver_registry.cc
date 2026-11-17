@@ -25,19 +25,18 @@ TEST_CASE("D.3: unknown type lookup returns end (graceful skip)", "[d3][param-re
 TEST_CASE("D.3: registerParamRules is idempotent (ODR-safe)", "[d3][param-resolver]") {
     // 通用机制：同一 type 重复注册被 early-return 忽略，不覆盖原 provider
     auto make_rules = []() -> cpptlm::ParamRules {
-        return {{"a",
-                 cpptlm::ParamRule{"a", cpptlm::ParamType::INTEGER, true, std::nullopt, std::nullopt,
-                                   std::nullopt, std::nullopt, std::nullopt, std::nullopt,
-                                   std::nullopt}}};
+        return {{"a", cpptlm::ParamRule{"a", cpptlm::ParamType::INTEGER, true, std::nullopt,
+                                        std::nullopt, std::nullopt, std::nullopt, std::nullopt,
+                                        std::nullopt, std::nullopt}}};
     };
     ModuleFactory::registerParamRules("__D3_IdempotentProbe__", make_rules);
     const size_t before = ModuleFactory::getParamRulesRegistry().size();
 
     ModuleFactory::registerParamRules("__D3_IdempotentProbe__", []() -> cpptlm::ParamRules {
-        return {{"sentinel",
-                 cpptlm::ParamRule{"sentinel", cpptlm::ParamType::INTEGER, true, std::nullopt,
-                                   std::nullopt, std::nullopt, std::nullopt, std::nullopt,
-                                   std::nullopt, std::nullopt}}};
+        return {
+            {"sentinel", cpptlm::ParamRule{"sentinel", cpptlm::ParamType::INTEGER, true,
+                                           std::nullopt, std::nullopt, std::nullopt, std::nullopt,
+                                           std::nullopt, std::nullopt, std::nullopt}}};
     });
     const size_t after = ModuleFactory::getParamRulesRegistry().size();
     REQUIRE(before == after); // early-return

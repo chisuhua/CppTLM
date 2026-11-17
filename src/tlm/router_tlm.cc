@@ -68,10 +68,10 @@ namespace tlm {
         // ⛔ 默认值缺省 ⇒ 该参数必填（缺失即 ParamValidationError ⇒ 装配失败）。
         const unsigned prev_depth = buffer_depth_;
 
-        load_param("node_x", node_x_);  // 必填
-        load_param("node_y", node_y_);  // 必填
-        load_param("mesh_x", mesh_x_);  // 必填
-        load_param("mesh_y", mesh_y_);  // 必填
+        load_param("node_x", node_x_); // 必填
+        load_param("node_y", node_y_); // 必填
+        load_param("mesh_x", mesh_x_); // 必填
+        load_param("mesh_y", mesh_y_); // 必填
         // buffer_size：1..64，默认 BUFFER_DEPTH(=8)；非法值 ⇒ 装配期失败（⛔ 不静默截断/回退）
         load_param("buffer_size", buffer_depth_, 1u, 64u, BUFFER_DEPTH);
         // credit_timeout：无符号，无范围（既有可接受值集合不收窄），默认 0 = 关闭
@@ -82,7 +82,8 @@ namespace tlm {
         // gpu_noc_cluster.cc），RouterTLM 目前只有 XYRouting 一种算法 ⇒ 该键从未被消费，
         // 取值恒为 "XY"。正是本次未知键检出机制暴露出的**既存缺陷**（不是本次引入）。
         // ⛔ 修复它（把 routing 接入算法选择）属独立 change；此处只做**显式**登记，
-        //    使未知键检查不被这条既存缺陷拖红（见 docs/implementation/module-param-baseline.md 表 B）。
+        //    使未知键检查不被这条既存缺陷拖红（见 docs/implementation/module-param-baseline.md 表
+        //    B）。
         ignore_param("routing");
 
         // ── credit 预算与缓冲深度同源（ADR-X.17 D-3 的「SHALL NOT 清除外部状态」）──
@@ -495,7 +496,8 @@ namespace tlm {
         ++stats_credit_stall_cycles_;
         // 诊断日志节流：每 (port, vc) 每 16 cycles 打印一次（per ADR-X.16 D4）。
         if (++stall_log_counter_[out_port][vc] % 16 == 0) {
-            DPRINTF(MODULE, "[CREDIT STALL] port=%u vc=%u waiting for downstream credit (%u cycles)\n",
+            DPRINTF(MODULE,
+                    "[CREDIT STALL] port=%u vc=%u waiting for downstream credit (%u cycles)\n",
                     out_port, vc, stall_log_counter_[out_port][vc]);
         }
     }

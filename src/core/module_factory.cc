@@ -418,7 +418,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
             if (it != object_instances.end() && it->second) {
                 // 已准入类型**即使没有 params 键**也必须加载一次 ——
                 // 否则 load_param 声明的默认值永不落成员、必填检查也永不触发
-                // (per ADR-X.17 D-2 / change design D-2 的收窄版：未准入且无 params 的实例维持现状跳过)
+                // (per ADR-X.17 D-2 / change design D-2 的收窄版：未准入且无 params
+                // 的实例维持现状跳过)
                 static const json kEmptyParams = json::object();
                 if (!cfg_src && cpptlm::is_param_admitted(it->second->get_module_type())) {
                     cfg_src = &kEmptyParams;
@@ -426,19 +427,19 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 if (!cfg_src) {
                     // 无参数可加载 ⇒ 跳过（未准入类型零变化）
                 } else {
-                // ⚠️ `set_config` 内部会调 `on_config_loaded()`；该虚函数**可抛异常**
-                // 表达「参数非法」(`on_config_loaded` 返回 void ⇒ 无其它失败通道)。
-                // 与 Step 4.5 的 `simulate_instantiate` 同款语义：异常 ⇒ 装配失败。
-                // (per change `cpptlm-router-buffer-size-param` 的 design D-7)
-                try {
-                    it->second->set_param_scope_flat(flat_param_scope);
-                    it->second->set_config(*cfg_src);
-                    DPRINTF(MODULE, "[CONFIG] Set params for module: %s\n", name.c_str());
-                } catch (const std::exception& e) {
-                    DPRINTF(MODULE, "[CONFIG ERROR] on_config_loaded failed for '%s': %s\n",
-                            name.c_str(), e.what());
-                    return false;
-                }
+                    // ⚠️ `set_config` 内部会调 `on_config_loaded()`；该虚函数**可抛异常**
+                    // 表达「参数非法」(`on_config_loaded` 返回 void ⇒ 无其它失败通道)。
+                    // 与 Step 4.5 的 `simulate_instantiate` 同款语义：异常 ⇒ 装配失败。
+                    // (per change `cpptlm-router-buffer-size-param` 的 design D-7)
+                    try {
+                        it->second->set_param_scope_flat(flat_param_scope);
+                        it->second->set_config(*cfg_src);
+                        DPRINTF(MODULE, "[CONFIG] Set params for module: %s\n", name.c_str());
+                    } catch (const std::exception& e) {
+                        DPRINTF(MODULE, "[CONFIG ERROR] on_config_loaded failed for '%s': %s\n",
+                                name.c_str(), e.what());
+                        return false;
+                    }
                 }
             }
         }
@@ -1232,14 +1233,19 @@ bool ModuleFactory::instantiateAll(const json& config) {
         auto suffix_of = [](const std::string& port_name) -> ExposedSuffix {
             auto starts_with = [](const std::string& s, const char* p) {
                 const size_t n = std::strlen(p);
-                if (s.rfind(p, 0) != 0) return false;
+                if (s.rfind(p, 0) != 0)
+                    return false;
                 // 后缀后必须是 '['（多端口镜像）或字符串结束
                 return s.size() == n || s[n] == '[';
             };
-            if (starts_with(port_name, "req_in")) return ExposedSuffix::ReqIn;
-            if (starts_with(port_name, "resp_in")) return ExposedSuffix::RespIn;
-            if (starts_with(port_name, "req_out")) return ExposedSuffix::ReqOut;
-            if (starts_with(port_name, "resp_out")) return ExposedSuffix::RespOut;
+            if (starts_with(port_name, "req_in"))
+                return ExposedSuffix::ReqIn;
+            if (starts_with(port_name, "resp_in"))
+                return ExposedSuffix::RespIn;
+            if (starts_with(port_name, "req_out"))
+                return ExposedSuffix::ReqOut;
+            if (starts_with(port_name, "resp_out"))
+                return ExposedSuffix::RespOut;
             return ExposedSuffix::Unknown;
         };
 
@@ -1253,9 +1259,11 @@ bool ModuleFactory::instantiateAll(const json& config) {
             container = nullptr;
             internal_path.clear();
 
-            if (port_name.empty()) return 0;
+            if (port_name.empty())
+                return 0;
             auto it = module_instances.find(mod_name);
-            if (it == module_instances.end() || !it->second) return 0;
+            if (it == module_instances.end() || !it->second)
+                return 0;
 
             const std::string ip = it->second->findInternalPath(port_name);
             if (!ip.empty()) {
@@ -1264,8 +1272,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 return 1;
             }
             // ⚠️ 该 SimModule **声明过** exposed 端口 ⇒ 本连接引用的标签未声明 ⇒ 拼写错误
-            if (!it->second->getOutputConfigs().empty() ||
-                !it->second->getInputConfigs().empty()) {
+            if (!it->second->getOutputConfigs().empty() || !it->second->getInputConfigs().empty()) {
                 std::fprintf(stderr,
                              "[ModuleFactory] SimModule '%s' 声明过暴露端口，但连接引用了未声明的"
                              "暴露标签 '%s'（连接 %s）\n",
@@ -1277,12 +1284,14 @@ bool ModuleFactory::instantiateAll(const json& config) {
         };
 
         for (auto& conn : final_config["connections"]) {
-            if (!conn.contains("src") || !conn.contains("dst")) continue;
+            if (!conn.contains("src") || !conn.contains("dst"))
+                continue;
 
             const std::string src_full = conn["src"];
             const std::string dst_full = conn["dst"];
             const auto conn_key = std::make_pair(src_full, dst_full);
-            if (processed_connections.count(conn_key)) continue;
+            if (processed_connections.count(conn_key))
+                continue;
 
             SimModule* src_container = nullptr;
             SimModule* dst_container = nullptr;
@@ -1290,21 +1299,22 @@ bool ModuleFactory::instantiateAll(const json& config) {
             std::string src_peer_mod, src_peer_port;
             std::string dst_peer_mod, dst_peer_port;
 
-            const int src_kind =
-                classify_endpoint(src_full, src_container, src_internal, src_peer_mod, src_peer_port);
+            const int src_kind = classify_endpoint(src_full, src_container, src_internal,
+                                                   src_peer_mod, src_peer_port);
             if (src_kind < 0) {
                 connection_failed = true;
                 continue;
             }
-            const int dst_kind =
-                classify_endpoint(dst_full, dst_container, dst_internal, dst_peer_mod, dst_peer_port);
+            const int dst_kind = classify_endpoint(dst_full, dst_container, dst_internal,
+                                                   dst_peer_mod, dst_peer_port);
             if (dst_kind < 0) {
                 connection_failed = true;
                 continue;
             }
 
             // 两端都非 exposed ⇒ 不属本阶段（纯 ChStream 路径，零变化）
-            if (src_kind == 0 && dst_kind == 0) continue;
+            if (src_kind == 0 && dst_kind == 0)
+                continue;
 
             // 硬错误 ⑤：两端都是 exposed —— 本阶段仅支持「一端 exposed + 一端顶层 ChStream」
             if (src_kind == 1 && dst_kind == 1) {
@@ -1327,8 +1337,9 @@ bool ModuleFactory::instantiateAll(const json& config) {
             //    否则嵌套暴露会被误判成「后缀非四类」而非「内部端口不可解析」。
             auto [internal_owner, internal_port_name] = parsePortSpec(internal_path);
             const size_t last_dot = internal_path.rfind('.');
-            const std::string suffix_part =
-                (last_dot == std::string::npos) ? internal_path : internal_path.substr(last_dot + 1);
+            const std::string suffix_part = (last_dot == std::string::npos)
+                                                ? internal_path
+                                                : internal_path.substr(last_dot + 1);
             const ExposedSuffix suffix = suffix_of(suffix_part);
 
             // 硬错误 ④：后缀不属于四类（Step 7c 仅服务 ChStream mirror 端口）
@@ -1372,28 +1383,30 @@ bool ModuleFactory::instantiateAll(const json& config) {
             const std::vector<ChStreamTargetPtr>* target_map = nullptr;
 
             switch (suffix) {
-                case ExposedSuffix::ReqIn:
-                    internal_port = src_is_exposed ? src_container->getInternalInputPort(internal_path)
-                                                  : dst_container->getInternalInputPort(internal_path);
-                    initiator_map = &ch_req_out[peer_module];
-                    break;
-                case ExposedSuffix::RespIn:
-                    internal_port = src_is_exposed ? src_container->getInternalInputPort(internal_path)
-                                                  : dst_container->getInternalInputPort(internal_path);
-                    initiator_map = &ch_resp_out[peer_module];
-                    break;
-                case ExposedSuffix::ReqOut:
-                    internal_port = src_is_exposed ? src_container->getInternalOutputPort(internal_path)
-                                                  : dst_container->getInternalOutputPort(internal_path);
-                    target_map = &ch_req_in[peer_module];
-                    break;
-                case ExposedSuffix::RespOut:
-                    internal_port = src_is_exposed ? src_container->getInternalOutputPort(internal_path)
-                                                  : dst_container->getInternalOutputPort(internal_path);
-                    target_map = &ch_resp_in[peer_module];
-                    break;
-                default:
-                    break;
+            case ExposedSuffix::ReqIn:
+                internal_port = src_is_exposed ? src_container->getInternalInputPort(internal_path)
+                                               : dst_container->getInternalInputPort(internal_path);
+                initiator_map = &ch_req_out[peer_module];
+                break;
+            case ExposedSuffix::RespIn:
+                internal_port = src_is_exposed ? src_container->getInternalInputPort(internal_path)
+                                               : dst_container->getInternalInputPort(internal_path);
+                initiator_map = &ch_resp_out[peer_module];
+                break;
+            case ExposedSuffix::ReqOut:
+                internal_port = src_is_exposed
+                                    ? src_container->getInternalOutputPort(internal_path)
+                                    : dst_container->getInternalOutputPort(internal_path);
+                target_map = &ch_req_in[peer_module];
+                break;
+            case ExposedSuffix::RespOut:
+                internal_port = src_is_exposed
+                                    ? src_container->getInternalOutputPort(internal_path)
+                                    : dst_container->getInternalOutputPort(internal_path);
+                target_map = &ch_resp_in[peer_module];
+                break;
+            default:
+                break;
             }
 
             // 硬错误 ②：内部端口不可解析（含嵌套容器路径）
@@ -1449,11 +1462,11 @@ bool ModuleFactory::instantiateAll(const json& config) {
             SimplePort* master = nullptr;
             SimplePort* slave = nullptr;
             if (suffix == ExposedSuffix::ReqIn || suffix == ExposedSuffix::RespIn) {
-                master = peer_stream_port;   // 对端 initiator
-                slave = internal_port;       // 内部 target
+                master = peer_stream_port; // 对端 initiator
+                slave = internal_port;     // 内部 target
             } else {
-                master = internal_port;       // 内部 initiator
-                slave = peer_stream_port;     // 对端 target
+                master = internal_port;   // 内部 initiator
+                slave = peer_stream_port; // 对端 target
             }
 
             processed_connections.insert(conn_key);

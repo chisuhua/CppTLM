@@ -80,3 +80,58 @@
 - **oracle 2 轮**：9 项 + 2 项 must-fix 全部闭合并经其实测核对。
 - **critic 2 轮**：第 1 轮 1 BLOCKER + 8 SHOULD_FIX + 5 NITS 全闭合;第 2 轮新增 1 BLOCKER（B-1）+ 6 SHOULD_FIX + 5 NITS —— **全部按其可套用措辞闭合并自查**。
 - ⚠️ **未获第 3 轮确认**（critic 预算用尽）⇒ ADR 状态 **`Proposed`**，实施 change 立项时须由 planner / verifier 复核 B-1 的闭合（重点：NICTLM 分支的删除时机）。
+
+---
+
+## B-1 复核（实施 change 期）
+
+- **复核人角色**：verifier（只读 + 取证，未修改实现）
+- **复核日期**：2026-11-17
+- **复核对象**：critic 第 2 轮 BLOCKER B-1 —— 「若 M4 连 NICTLM 的 CFG-08 分支一起删 ⇒ NICTLM 的 `node_id` 必填变成空窗」
+- **结论**：✅ **B-1 已按裁决闭合**（NICTLM 分支完整保留，RouterTLM 分支全量退役）
+
+### 证据 1 — NICTLM 的三处代码均在（`src/core/module_factory_validate.cc`）
+
+```
+        const json* params_src = nullptr;
+        if (mod.contains("params"))
+            params_src = &mod["params"];
+        else if (type == "NICTLM" && mod.contains("node_id"))     ← 扁平回退保留
+            params_src = &mod;
+
+        if (params_src) {
+            const auto& params = *params_src;
+            if (type == "NICTLM") {                                ← 逐键检查保留
+                if (!params.contains("node_id") || !params["node_id"].is_number_integer()) {
+                    ...
+                    return false;
+                }
+            }
+        } else if (type == "NICTLM") {                             ← 无 params 源直接失败保留（RouterTLM 已从析取移除）
+```
+
+### 证据 2 — RouterTLM 在 `validateConfig` 函数体内零引用（非注释行）
+
+```
+$ awk '/^bool ModuleFactory::validateConfig/,/^}/' src/core/module_factory_validate.cc | grep -v '^\s*//' | grep -c 'RouterTLM'
+0
+```
+
+### 证据 3 — 三条依赖该分支的测试全绿
+
+```
+$ ./build/bin/cpptlm_tests "Schema: NICTLM*"
+All tests passed (3 assertions in 3 test cases)
+
+$ ./build/bin/cpptlm_tests "[config][schema]"
+All tests passed (14 assertions in 14 test cases)
+```
+
+（对应 `test/test_config_schema_validation.cc` 的 `Schema: NICTLM missing 'node_id'` /
+`Schema: NICTLM 'node_id' not integer` / `Schema: NICTLM missing 'params' section`）
+
+### 附：B-1 的前提仍成立
+
+NICTLM **不在** `cpptlm::is_param_admitted()` 的准入表内（`include/core/param_admission.hh`），
+因此未被未知键检查覆盖 —— 与「CFG-08 仍是其 `node_id` 唯一强制点」一致。
+其迁移（把 `node_id` 改为 `load_param(..., def = nullopt)` 并删除该分支）须在 NICTLM 自己的 change 内原子完成。

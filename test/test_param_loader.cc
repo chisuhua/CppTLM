@@ -4,14 +4,14 @@
 //
 // 决策源：docs/adr/ADR-X.17-module-param-read-declares.md（V-1 / V-2 / V-6 / D-3a）
 // 判据源：openspec/changes/cpptlm-module-param-read-declares/proposal.md（AC-01~AC-12 + G-1/G-2）
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
-#include "core/sim_module.hh"
 #include "core/param_admission.hh"
 #include "core/param_errors.hh"
+#include "core/sim_module.hh"
 #include "param_fixture_module.hh"
 #include "tlm/router_tlm.hh"
 
@@ -19,27 +19,30 @@
 
 namespace {
 
-/// 夹具注册（运行时，幂等；⛔ 不用静态注册宏以避免多 TU 的 ODR 面）
-void ensure_fixture_registered() {
-    ModuleFactory::registerObject<ParamFixtureTLM>(ParamFixtureTLM::kType);
-    cpptlm::register_param_admitted(ParamFixtureTLM::kType);
-}
+    /// 夹具注册（运行时，幂等；⛔ 不用静态注册宏以避免多 TU 的 ODR 面）
+    void ensure_fixture_registered() {
+        ModuleFactory::registerObject<ParamFixtureTLM>(ParamFixtureTLM::kType);
+        cpptlm::register_param_admitted(ParamFixtureTLM::kType);
+    }
 
-json one_module(const std::string& name, const std::string& type, const json& params) {
-    return json{{"modules", json::array({json{{"name", name}, {"type", type}, {"params", params}}})},
-                {"connections", json::array()}};
-}
+    json one_module(const std::string& name, const std::string& type, const json& params) {
+        return json{
+            {"modules", json::array({json{{"name", name}, {"type", type}, {"params", params}}})},
+            {"connections", json::array()}};
+    }
 
-/// legacy 扁平形式：参数直接写在 module 条目上（无 params 子对象）
-json one_module_flat(const std::string& name, const std::string& type, const json& flat_fields) {
-    json mod = {{"name", name}, {"type", type}};
-    for (auto it = flat_fields.begin(); it != flat_fields.end(); ++it) mod[it.key()] = it.value();
-    return json{{"modules", json::array({mod})}, {"connections", json::array()}};
-}
+    /// legacy 扁平形式：参数直接写在 module 条目上（无 params 子对象）
+    json one_module_flat(const std::string& name, const std::string& type,
+                         const json& flat_fields) {
+        json mod = {{"name", name}, {"type", type}};
+        for (auto it = flat_fields.begin(); it != flat_fields.end(); ++it)
+            mod[it.key()] = it.value();
+        return json{{"modules", json::array({mod})}, {"connections", json::array()}};
+    }
 
-json router_params(unsigned x, unsigned y, unsigned mx, unsigned my) {
-    return json{{"node_x", x}, {"node_y", y}, {"mesh_x", mx}, {"mesh_y", my}};
-}
+    json router_params(unsigned x, unsigned y, unsigned mx, unsigned my) {
+        return json{{"node_x", x}, {"node_y", y}, {"mesh_x", mx}, {"mesh_y", my}};
+    }
 
 } // namespace
 
@@ -53,7 +56,8 @@ TEST_CASE("AC-01: 夹具参数越界 / 类型错 ⇒ instantiateAll 失败", "[p
     ModuleFactory factory(&eq);
 
     SECTION("越界 ⇒ false") {
-        REQUIRE_FALSE(factory.instantiateAll(one_module("fx", ParamFixtureTLM::kType, {{"gain", 0}})));
+        REQUIRE_FALSE(
+            factory.instantiateAll(one_module("fx", ParamFixtureTLM::kType, {{"gain", 0}})));
         REQUIRE_FALSE(
             factory.instantiateAll(one_module("fx", ParamFixtureTLM::kType, {{"gain", 17}})));
         REQUIRE_FALSE(
@@ -111,8 +115,8 @@ TEST_CASE("AC-11: 整型参数拒绝 8.0 / true / 1e20；无符号拒绝负值",
             factory.instantiateAll(one_module("fx_b", ParamFixtureTLM::kType, {{"gain", true}})));
     }
     SECTION("1e20 ⇒ 失败（超 storable range）") {
-        REQUIRE_FALSE(factory.instantiateAll(
-            one_module("fx_e", ParamFixtureTLM::kType, {{"gain", 1e20}})));
+        REQUIRE_FALSE(
+            factory.instantiateAll(one_module("fx_e", ParamFixtureTLM::kType, {{"gain", 1e20}})));
     }
     SECTION("无符号参数负值 ⇒ 失败；同一值以整数给出 ⇒ 成功") {
         REQUIRE_FALSE(
@@ -165,8 +169,9 @@ TEST_CASE("AC-06: 无 params 键的夹具实例 ⇒ 声明默认值落到成员"
     ModuleFactory factory(&eq);
 
     // module entry 完全无 params（夹具成员初值 99/999 故意非法 ⇒ 本断言有判别力）
-    json cfg = json{{"modules", json::array({json{{"name", "fx_np"}, {"type", ParamFixtureTLM::kType}}})},
-                    {"connections", json::array()}};
+    json cfg =
+        json{{"modules", json::array({json{{"name", "fx_np"}, {"type", ParamFixtureTLM::kType}}})},
+             {"connections", json::array()}};
     REQUIRE(factory.instantiateAll(cfg));
 
     auto* fx = factory.getInstance<ParamFixtureTLM>("fx_np");
@@ -236,8 +241,9 @@ TEST_CASE("AC-12: legacy 扁平形式的未知键豁免与必填保留", "[param
     ModuleFactory factory(&eq);
 
     SECTION("扁平形式（无 params，顶层 node_x…）⇒ 装配成功") {
-        json cfg = one_module_flat("r_flat", "RouterTLM",
-                                   json{{"node_x", 1}, {"node_y", 2}, {"mesh_x", 4}, {"mesh_y", 4}});
+        json cfg =
+            one_module_flat("r_flat", "RouterTLM",
+                            json{{"node_x", 1}, {"node_y", 2}, {"mesh_x", 4}, {"mesh_y", 4}});
         REQUIRE(factory.instantiateAll(cfg));
         auto* r = factory.getInstance<tlm::RouterTLM>("r_flat");
         REQUIRE(r != nullptr);
@@ -299,34 +305,34 @@ TEST_CASE("G-2: 嵌套 RouterTLM 缺 node_x ⇒ 内部实例不被创建（既�
 // ============================================================================
 namespace {
 
-/// 向 EAST 口注入：裸 router（无 adapter）⇒ credit 永不归还 ⇒ 转发数封顶于 credit 预算
-std::size_t inject_to_east_budget(tlm::RouterTLM& r, std::size_t inject_count) {
-    std::size_t injected = 0;
-    std::size_t drained = 0;
-    std::uint64_t txid = 700000;
-    for (unsigned cyc = 0; cyc < 4000 && drained < inject_count + 64; ++cyc) {
-        if (injected < inject_count) {
-            bundles::NoCFlitBundle f;
-            f.transaction_id.write(txid++);
-            f.src_node.write(0);
-            f.dst_node.write(1); // ⇒ EAST
-            f.vc_id.write(0);
-            f.flit_type.write(bundles::NoCFlitBundle::FLIT_HEAD_TAIL);
-            f.flit_index.write(0);
-            f.flit_count.write(1);
-            f.flit_category.write(bundles::NoCFlitBundle::CATEGORY_REQUEST);
-            r.req_in()[0].data() = f;
-            r.req_in()[0].set_valid(true);
-            ++injected;
+    /// 向 EAST 口注入：裸 router（无 adapter）⇒ credit 永不归还 ⇒ 转发数封顶于 credit 预算
+    std::size_t inject_to_east_budget(tlm::RouterTLM& r, std::size_t inject_count) {
+        std::size_t injected = 0;
+        std::size_t drained = 0;
+        std::uint64_t txid = 700000;
+        for (unsigned cyc = 0; cyc < 4000 && drained < inject_count + 64; ++cyc) {
+            if (injected < inject_count) {
+                bundles::NoCFlitBundle f;
+                f.transaction_id.write(txid++);
+                f.src_node.write(0);
+                f.dst_node.write(1); // ⇒ EAST
+                f.vc_id.write(0);
+                f.flit_type.write(bundles::NoCFlitBundle::FLIT_HEAD_TAIL);
+                f.flit_index.write(0);
+                f.flit_count.write(1);
+                f.flit_category.write(bundles::NoCFlitBundle::CATEGORY_REQUEST);
+                r.req_in()[0].data() = f;
+                r.req_in()[0].set_valid(true);
+                ++injected;
+            }
+            r.tick();
+            if (r.resp_out()[1].valid()) {
+                ++drained;
+                r.resp_out()[1].clear_valid();
+            }
         }
-        r.tick();
-        if (r.resp_out()[1].valid()) {
-            ++drained;
-            r.resp_out()[1].clear_valid();
-        }
+        return drained;
     }
-    return drained;
-}
 
 } // namespace
 
