@@ -26,7 +26,7 @@
 | [ADR-X.7-transaction-handling.md](./ADR-X.7-transaction-handling.md) | 模块/框架职责划分 | ✅ 已确认 | Phase 0-2 |
 | [ADR-X.8-fragment-handling.md](./ADR-X.8-fragment-handling.md) | 细粒度分片处理 | ✅ 已确认 | Phase 0-2 |
 | [ADR-X.9-port-type-system.md](./ADR-X.9-port-type-system.md) | Phase 3+ 端口类型系统 | ✅ 已实施 | Phase 3.2 |
-| [ADR-X.10-parameter-framework.md](./ADR-X.10-parameter-framework.md) | Phase 3+ 参数框架 | 📋 待实施 | Phase 3.3 |
+| [ADR-X.10-parameter-framework.md](./ADR-X.10-parameter-framework.md) | Phase 3+ 参数框架 | 🟡 部分实施 | Phase 3.3 · 决策 4.6 已落地，4.5/5/6/7 未落地（见该文件 §Status Update） |
 | [ADR-X.11-config-inheritance-and-fixes.md](./ADR-X.11-config-inheritance-and-fixes.md) | 配置继承与缺陷修复策略 | ✅ 已实施 | Phase 3.1 |
 | [ADR-X.12-python-config-generator.md](./ADR-X.12-python-config-generator.md) | Python 配置生成器 | 📋 提案 | Phase 3.2 |
 | [ADR-X.13-stub-multi-extension.md](./ADR-X.13-stub-multi-extension.md) | 多 TLM 扩展 stub 标记 | ✅ 已确认 | Phase 7+ |
@@ -71,6 +71,7 @@
 |------|------|
 | ✅ 已确认/已实施 | 已批准或已实施，必须遵循 |
 | 📋 待实施 | 已记录，按计划实施 |
+| 🟡 部分实施 | 部分决策已落地、部分未落地（以 ADR 文件 §Status Update 为准） |
 | ⏳ 待讨论 | 需要进一步讨论 |
 
 ---

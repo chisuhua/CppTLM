@@ -2,7 +2,7 @@
 
 > **版本**: 6.0  
 > **日期**: 2026-05-05  
-> **状态**: Phase 3.1 已完成，Phase 3.2/3.3 待实施  
+> **状态**: Phase 3.1 已完成，Phase 3.2 待实施，**Phase 3.3 部分落地**（ADR-X.10 决策 4.6;其余待实施）  
 > **关联**: 架构 v2.0, 交易处理架构 v1.0, 错误调试架构 v1.0, 复位检查点架构 v1.0, TGMS Phase 3+, ADR-X.9/X.10/X.11/X.12 v3.0/v2.0
 
 ---
@@ -20,7 +20,7 @@
 | **ADR-X.7** | 模块/框架职责划分 | ✅ 已确认 | 声明式虚方法 + 框架自动追踪 |
 | **ADR-X.8** | 细粒度分片处理 | ✅ 已确认 | TLM 智能处理 + RTL 简单透传 |
 | **ADR-X.9** | Phase 3+ 端口类型系统 | 📋 待实施 | nlohmann/json 序列化 + 端口索引定义 + 端口组 |
-| **ADR-X.10** | Phase 3+ 参数框架 | 📋 待实施 | nlohmann/json 序列化 + 双重验证 + ParamRule 统一验证 |
+| **ADR-X.10** | Phase 3+ 参数框架 | 🟡 部分实施 | nlohmann/json 序列化 + 双重验证 + ParamRule 统一验证（决策 4.6 已落地；4.5/5/6/7 未落地 —— 见该文件 §Status Update） |
 | **ADR-X.11** | 配置继承与缺陷修复策略 | ✅ 已实施 | 深合并 + 层级拓扑 + Credit Flow 扩展 |
 | **ADR-X.12** | Python 配置生成器 | 📋 提案 | Pydantic v2 + 可视化集成 + 版本管理 + 验证器 |
 | **ADR-X.13** | tlm_stub 多 Extension 升级 | ✅ 已实施 | `tlm_array<T>` + thread-safe API + SystemC TLM 2.0 等价 |
@@ -518,4 +518,4 @@ config.save("configs/mesh_2x2.json")
 
 详细脚本组织见 `scripts/README.md` 与 AGENTS.md "STRUCTURE" 节。  
 **最后更新**: 2026-05-05  
-**状态**: **Phase 3.1 已完成，Phase 3.2/3.3 待实施，ADR-X.9/X.10/X.11/X.12 已与架构对齐**
+**状态**: **Phase 3.1 已完成，Phase 3.2 待实施，Phase 3.3 部分落地（ADR-X.10 决策 4.6），ADR-X.9/X.10/X.11/X.12 已与架构对齐**

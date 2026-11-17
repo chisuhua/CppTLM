@@ -850,8 +850,17 @@ static void register_protocol_bridge(const std::string& bridge_name) {
 
 per `module_factory.hh:87-101` + Change D `getParamRulesRegistry()`:
 - 已支持 per-type ParamRules provider(早期 router_tlm 硬编码特例泛化)
-- RouterTLM / VramControllerTLM 自注册软默认
-- **06 P1 不动** — 现有机制足够
+- **RouterTLM 自注册软默认**(`src/tlm/router_tlm.cc` 的 `registerParamRules("RouterTLM", …)` —— ⚠️ 实测**生产代码中唯一注册方**;测试侧另有幂等调用 `test/test_d3_param_resolver_registry.cc:53`;`VramControllerTLM` 并未自注册)
+- **06 P1 范围不动** — 对 §11.2 P1 范围(bundle 分类 / `simulation_mode` schema / seam locator)足够;⚠️ **不等于「参数声明面已受约束」** —— 见下表
+
+**声明面的真源与消费面(2026-11-17 补 · per `docs/adr/ADR-X.10-parameter-framework.md` §Status Update)**:
+
+| 面 | 真源 | 消费者 | 现状 |
+|---|---|---|---|
+| **运行时声明面** | 各模块 `get_param_rules()`(经 `getParamRulesRegistry()` 注册) | `src/core/module_factory.cc` 的装配路径 | 消费 `required` 与 `default_int`;**`type` / `min` / `max` 无保护**(其校验器 `validate_module_params` 为零调用方死代码) |
+| **生成期声明面** | `configs/param_rules/*.json` | `cpptlm_config/validator.py` 的 PARAM-01(必填) / PARAM-02(范围) | 生效(Python 侧);⚠️ **该消费方 `cpptlm_config` 已标 Deprecated**(`cpptlm_config/AGENTS.md:4`,2026-06-17,已被 `cpptlm.topo` 等替代),而继任者 `cpptlm/` 全仓**零** `param_rules` 引用 ⇒ 该面的存续寿命受此约束 |
+
+⇒ **两面的内容应当相等**(ADR-X.10 决策 1 的缺点栏已列「需要 C++ struct 与 JSON schema 同步」);⚠️ **该一致性当前无自动化闸强制**,漂移实例见 ADR-X.10 §Status Update C 段。
 
 ### 9.5 跨 SimModule peer cache late-binding wiring
 

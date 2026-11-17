@@ -2,9 +2,10 @@
 
 > **版本**: 3.0
 > **日期**: 2026-05-05
-> **状态**: 📋 待实施（Phase 3.3）
+> **状态**: 🟡 **部分实施**（2026-11-17 起：决策 4.6 通路已落地，4.5/5/6/7 未落地；Phase 3.3 计划整体未实施 —— 见 §Status Update）
 > **关联**: TGMS Phase 3.3, proposal.md Decision 3, ARCH-012 Gap Analysis, ADR-X.9 (端口类型系统)
 > **变更**: v2.0 → v3.0: 补充术语统一、ParamRule 验证协作、set_config() 异常处理
+> **审稿报告**: `.rddf/reviews/ADR-X.10.md`（oracle 1 轮 APPROVE + critic 1 轮 APPROVE_WITH_CONDITIONS · 0 BLOCKER · SHOULD_FIX S1~S7 与 NITS N1~N3 已闭合 · N4 记理由不适用 · scope_exceeded 1 项记 backlog）
 
 ---
 
@@ -505,3 +506,67 @@ struct ParamParser {
 ---
 
 **下一步**: Phase 3.3 实施时遵循此 ADR
+
+## Status Update
+
+### 2026-11-17 — 实施状态登记 + 事实订正（architect）
+
+**背景**：change `cpptlm-router-buffer-size-param`（`RouterTLM` 的 `buffer_size` param 真正生效）于 2026-11-17 实施、验收、归档（台账 Entry #467 / #469 / #470 / #471）。归档后复核（残留任务 T0.4 / T6.1）发现本 ADR 的**实施状态**与若干**事实**需登记。本段**只记事实与实施状态，不改本 ADR 正文任何决策**（ADR 不可变原则）。
+
+**本段收口的两项裁决**（残留任务 T0.4 / T6.1）：
+
+- **T0.4** ⇒ change `cpptlm-router-buffer-size-param` 的 `design.md` **D-1 默认值裁决（选项 A：声明默认值 16 → 8）仍然成立**（论证见 D 段）;D-1 与 D-7.2 的两处**表述缺陷**以 **errata** 形式登记在本段（归档件不可改）。
+- **T6.1** ⇒ **不新造**「参数声明-实际一致性」纪律 ADR —— 该纪律已是既有决策的推论（决策 1 的缺点栏已把「C++ struct 与 JSON schema 同步」写成**已接受**的义务；决策 4.5 要求运行时 type/min/max 校验）⇒ **无新不可逆选择**;新造 ADR 将破「一文档一决策」，且其 Verification 章会退化为测试计划。纪律的权威载体分工见 G 段。
+
+**A. 决策实施状态（逐条 · 全部实测）**
+
+| 决策 | 状态 | 证据 |
+|---|---|---|
+| 决策 1（nlohmann/json 结构体序列化;规则**存放位置**见 B 段） | ⚠️ **载体已实施 · 存放位置部分偏离** | 载体 ✅:`ParamRule` 为 nlohmann/json 可序列化结构(`include/core/param_rules.hh`);⚠️ **字段级 schema 偏离**:本 ADR `:83-93` 的 `default_val`/`min_val`/`max_val`/`derive_expr`/`description`（字符串型）与实现 `include/core/param_rules.hh:31-42` 的 `default_int`/`default_float`/`default_str`/`default_bool`/`min_value`/`max_value`/`enum_values`（typed optional,**无 `derive_expr`/`description`**）不一致;`configs/param_rules/router_tlm.json` 用的是**实现侧**字段名 |
+| 决策 4.5（`ModuleFactory.validate_params()` 运行时做 type + min/max 校验） | ❌ **未实施** | `src/core/module_factory_validate.cc:474-499` 的 `validate_module_params`（`static`）**零调用方 ⇒ 死代码**；`validateConfig`（`:199`）不调它；`ParamParser::validate`（`src/core/param_parser.cc:54-67`，实现 min/max）的唯一调用点就在该死函数内 |
+| 决策 4.6（`set_config()` 失败抛异常 + `instantiateAll` catch ⇒ return false） | ⚠️ **部分实施**（2026-11-17）—— **通路**已就位，但本决策的**三个成分仅落地其一** | **通路** ✅:模块 `on_config_loaded` 自校验抛异常 + `src/core/module_factory.cc:416-423` catch ⇒ `return false`（与 Step 4.5 `simulate_instantiate` 同款既有范式）。⛔ **① 校验位置**（决策要求 `set_config` → `validate_params`）未实施 —— 全仓**无 `validate_params` 函数**（仅 `static validate_module_params`，零调用方）;⛔ **② 异常类型**（`std::invalid_argument` / `ParamValidationError`）未实施 —— 实际抛 `std::runtime_error`（`src/tlm/router_tlm.cc:90`/`:95`），`include/core/param_errors.hh:11` 的 `ParamValidationError` **无任何 throw 点**;⛔ **③ 回滚**（`cleanup(); return false;`）未实施 —— `src/` 全仓无 `cleanup()`，仅 `return false` |
+| 决策 5（`derive_expr` 三元表达式推导） | ❌ **未实施** | `include/core/param_rules.hh:31-42` 的 `ParamRule` **无 `derive_expr` 字段**；`configs/param_rules/router_tlm.json:31` 的 `derive_expr` 在 C++ / Python 两侧皆无人执行 ⇒ 静默丢弃 |
+| 决策 6（类型感知转换：latency / address / 人类友好格式） | ❌ **未实施** | `ParamType` 实际为 `INTEGER/FLOAT/STRING/BOOLEAN/ENUM`，与本 ADR 的 `INT/UNSIGNED/STRING/ADDRESS/LATENCY/BOOL` 不一致；无 latency / address 转换 |
+| 决策 7 Stage 1（required 存在 + default 填充） | ⚠️ **部分实施** | `src/core/module_factory.cc:263-291` 只做 `required` 缺失 ⇒ false + `default_int` 注入；**类型正确性检查无** |
+| 决策 7 Stage 2（derive 评估 + min/max + 参数依赖关系） | ❌ **未实施** | 同决策 4.5 |
+
+**B. 「决策 1 选了什么」存在文本歧义（标签冲突）**
+
+本 ADR 决策 1 的**选项表**（`:55-59`）与同章**「用户使用方式」**（`:104-141`）共用 A/B 标签却指不同事物：选项表 B = 「静态 `get_param_rules()` 方法」、C = 「外部规则文件」；使用方式方案 A = 「在模块配置中直接声明规则」、方案 B = 「全局参数规则文件」（= 选项表的 C）。⇒ 决策落点「✅ 选项 A」说的是**序列化载体**（nlohmann/json），规则**存放位置**则由「使用方式」段给出（全局文件，推荐）⇒ 单读文本无法判定「决策 1 选了谁」。**后续引用本决策须同时指名「载体」与「存放位置」两个维度。**
+
+**C. 现役的两套声明面与各自消费者（实测）**
+
+| 面 | 载体 | 消费者 | 活的面 |
+|---|---|---|---|
+| ① C++ 运行时声明面 | `RouterTLM::get_param_rules()`（`src/tlm/router_tlm.cc:580-606`；经 `registerParamRules` 自注册 —— **生产代码中唯一注册方**;测试侧另有一处幂等调用 `test/test_d3_param_resolver_registry.cc:53`） | `src/core/module_factory.cc:263-291` | **活**（消费 `required` + `default_int`）；`type` / `min` / `max` 面**死**（见 A 表决策 4.5） |
+| ② JSON 生成期声明面 | `configs/param_rules/{router_tlm,nic_tlm}.json` | `cpptlm_config/validator.py:16-26` 的 `load_param_rules()` ⇒ PARAM-01（`:263`）/ PARAM-02（`:281`）；标准测试路径 `scripts/test/test_off.sh:84` 跑 `pytest cpptlm_config/tests/` | **活**（生成期校验） |
+| ③ 实际约束面 | 各模块 `on_config_loaded` 逐模块自校验 | 散落、逐模块各自为政 | 仅 `buffer_size` 一条闭合 |
+
+⇒ **实测漂移四处（参数名级）**：`flit_width` 只在 ① 有（`router_tlm.cc:594-596`）、② 无 · `vc_count` 声明 2 / 实际 `NUM_VCS = 4` · `credit_timeout` 生效（`router_tlm.cc:80-82`）但 ①② 皆无 · `derive_expr` 只在 ② 有且两侧皆死。
+⇒ **另有字段级 schema 偏离**（见 A 表决策 1 行）:本 ADR 正文的 `ParamRule` 字段集与实现结构体不一致 ⇒ 即便**参数名**对齐，**字段**仍不可互译。
+⇒ **决策 1 的缺点栏原文已写「需要 C++ struct 与 JSON schema 同步」** ⇒ 两面相等是本 ADR **已接受**的义务，**不是新选择**。⚠️ 但「以 `getParamRulesRegistry()` 为 C++ 运行时唯一 rules 源」相对决策 4.5 正文「两者共享同一数据源（JSON 配置或全局规则文件）」构成一处**已登记偏离**（证据 = 本段漂移清单）—— C++ registry 是**第三个**物化面;**该偏离的归正方式待 F 段独立裁决**（不属本段范围）。
+
+**D. 事实订正（归档 change 的表述缺陷 · errata）**
+
+change `cpptlm-router-buffer-size-param` 的 `design.md` **D-1 理由②** 与 **D-7.2 的理由** 各有一处表述缺陷。归档件不可改（且不在 architect 可写范围），此处登记 errata：
+
+1. **D-1 理由②「16 无仓内依据」** —— 对**实现 / 拓扑**成立，对**文档**不成立：16 的仓内出处是 `docs/archive/phase3.1-defect-fixes-plan.md:221`（`| buffer_size | INTEGER | ❌ | 16 | 1-64 |`）、`:366`、`:435`（`CHECK(factory.get_module_param("r0","buffer_size") == 16)`）与 `docs/archive/phase3.3-config-enhancement-plan.md:361`；该 plan `:205` 自述「ADR-X.10 v3.0 决策 1（**过渡实现**），Phase 3.3 将升级为 nlohmann/json 序列化版本」，而 Phase 3.3 的**参数框架升级（决策 1/4.5/5/6/7）从未整体实施**（其 plan 亦已归档）⇒ 16 是**过渡态被永久化**的占位值。**该 plan 的 `CHECK == 16` 不构成活契约** —— `get_module_param` 全仓零命中。
+   ⇒ **裁决结论不受影响**：本 ADR 全文不含 `buffer_size`，只给 `buffer_depth` 的**范围** 1-64 ⇒ **从未规定默认值** ⇒ 声明默认值 16 → 8（对齐实现 `BUFFER_DEPTH = 8`）不与任何已签发决策冲突。
+   ⇒ D-1 理由②的括号称 `grep -rn "\"buffer_size\"" configs/` 命中 `configs/param_rules/router_tlm.json` 的声明本身 —— **在裁决时点为假**（该文件当时**无 `buffer_size` 条目** —— 实测当时有 5 条规则 `node_x`/`node_y`/`mesh_x`/`mesh_y`/`vc_count`，见 `git show 708b13c8^:configs/param_rules/router_tlm.json`）；正确表述是「`configs/` 下**零命中**」。
+2. **D-7.2 的理由**（「否则 `validateConfig` 路径（若将来被修复）也无从校验它」）**不成立** —— 未来的修复按决策 4.5 从 **C++ registry** 取 rules，**永不读 json** ⇒ json 条目对 C++ 侧永远无效。**但处置本身站得住**：`configs/param_rules/router_tlm.json` 补 `buffer_size`（1..64）后，**Python 生成期 PARAM-02 开始校验该参数范围**（改动前该键不在 json ⇒ 不校验）⇒ 这是**新增一条真实约束**，与 C++ 运行时 1..64 校验对齐。
+
+**E. 仓外行为面（对外口径）**
+
+仓内**零行为变更**（无任何 config 使用 `buffer_size`）。仓外风险面是**显式写过 `buffer_size` 的用户配置**：行为从「参数被忽略（深度恒 8）」变为「参数生效（深度 = 显式值，credit 预算同源）」；越界值（0 / >64）从「静默忽略」变为「装配失败」。**默认值 16 → 8 本身无行为面**：registry 注入的默认值 8 == `BUFFER_DEPTH`，缺省路径两侧均为深度 8。
+
+**F. 未裁决子议题（登记 · 本段不裁决）**
+
+「`configs/param_rules/*.json` 的存废定位（保留为生成期规则面 / 降级为派生副本 / 废弃）」—— 有不可逆后果（生成期校验能力、对外契约面、迁移成本），且 B 段的标签冲突使文本无法判定其既有定位 ⇒ 需**独立的 ADR 级裁决**。⚠️ **「删除 json 文件」不是可选项**：json 是 Python 生成期 PARAM-01/02 的**活**数据源（`cpptlm_config/validator.py:16-26`），删除会静默关闭生成期校验并打挂标准 pytest（`scripts/test/test_off.sh:84`）。
+⚠️ **存续寿命另受一处约束**：其唯一消费方 `cpptlm_config` 已被标记 **Legacy / Deprecated**（`cpptlm_config/AGENTS.md:4`，2026-06-17，已被 `cpptlm.topo` + `CxxCompatibleEmitter` + `cpptlm.library` 替代），而继任者 `cpptlm/` 全仓**零** `param_rules` 引用 ⇒ 本项裁决须一并回答「生成期校验能力迁往何处」，否则该面可能被整体弃用而非迁移。
+
+**G. 后续载体（纪律的权威落点）**
+
+- **可测不变量**（「声明集合 ↔ 运行时读取集合」双向相等 · 每个 `default_int` 有「未配置 ⇒ 运行时值 == 声明值」的锁定测试 · 非法值装配期 fail 泛化到全模块）⇒ 归 `openspec/specs/param-derivation/` + 闸，**不在本 ADR**（ADR 回答「为什么」，spec 回答「是什么」，闸回答「不准偏」）。
+- ⚠️ `openspec/specs/param-derivation/spec.md` 现状含**未实现条款**（「ParamRule stores all fields … accessible via getter methods」按字面为假 —— 结构体是公有字段、无 getter、无 `derive_expr`；「Dynamic derivation evaluation」零实现）与 **TBD 占位 Purpose** ⇒ 扩写前须先对齐，否则新闸会以未实现条款为基线。
+- **实施载体**：`.rddf/improvements/cpptlm-validate-params-dead-code.md`（接回死代码）· `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`（`vc_count` 声明-实际不一致）。
+- **待订正的实现注释（architect 域外 · 交 builder）**：`src/tlm/router_tlm.cc:86-89` 的注释称「`instantiateAll` 会先跑 `validateConfig` → `validate_params`（已按 ParamRules 的 min/max 做 parse + 范围校验）⇒ 本分支的抛异常在标准装配路径上**不可达**」—— 与 A 表决策 4.5 相反：`validateConfig` **不调**校验器，且**没有** `validate_params` 这个函数（只有 `static validate_module_params`）⇒ 该分支正是 AC-04 的**唯一**失败通道，⛔ 不可删。
