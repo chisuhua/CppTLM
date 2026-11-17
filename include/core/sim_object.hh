@@ -13,6 +13,11 @@
 #include <cstdlib>
 #include <cstdint>
 #include <map>
+#include <optional>
+
+#include "core/param_admission.hh"
+#include "core/param_loader.hh"
+#include "core/param_errors.hh"
 
 using json = nlohmann::json;
 
@@ -315,8 +320,21 @@ public:
      */
     virtual void set_config(const json& params) {
         config_ = params;
+        // 参数加载上下文：引用本实例的 config_ 副本（生命周期与实例一致，不悬垂）
+        param_ctx_.begin(config_, name, !param_flat_scope_);
+        param_flat_scope_ = false;
         on_config_loaded();
+        enforce_param_contract();
     }
+
+    /**
+     * @brief 声明本次 set_config 传入的是 **legacy 扁平** module entry（而非 params 子对象）
+     *
+     * 扁平形式的 cfg 里同时含 `name` / `type` / `layout` 等**条目字段** ⇒ 未知键检查必须豁免
+     * （否则它们会被当成未知参数）。⚠️ 豁免**仅**针对未知键检查；必填检查照常生效。
+     * 由 ModuleFactory 在扁平回退路径上于 set_config 之前调用（一次性，set_config 内自动复位）。
+     */
+    void set_param_scope_flat(bool flat) { param_flat_scope_ = flat; }
 
     /**
      * @brief 获取已存储的配置参数
@@ -358,8 +376,89 @@ public:
     }
 
 protected:
+    /**
+     * @brief 读取一个模块参数（声明 + 校验 + 赋值 + 登记已消费键）
+     *
+     * 一次调用携带全部信息：键名 · 目标成员 · 范围（可省）· 默认值（可省）。
+     * **默认值缺省 ⇒ 该参数必填**（缺失即抛 cpptlm::ParamValidationError）。
+     *
+     * 决策源：docs/adr/ADR-X.17-module-param-read-declares.md D-1/D-5
+     * ⛔ 默认值只落成员，**不写回** config_
+     *
+     * @param key    配置键名
+     * @param target 目标成员（其类型决定接受域）
+     * @param lo     下界（含），nullopt = 不检查
+     * @param hi     上界（含），nullopt = 不检查
+     * @param def    默认值，nullopt = 必填
+     */
+    template <class T>
+    void load_param(std::string_view key, T& target) {
+        load_param_impl<T>(key, target, std::nullopt, std::nullopt, std::nullopt);
+    }
+
+    /// 带默认值、无范围
+    template <class T>
+    void load_param(std::string_view key, T& target, T def) {
+        load_param_impl<T>(key, target, std::nullopt, std::nullopt, std::optional<T>(def));
+    }
+
+    /// 带范围、必填
+    template <class T>
+    void load_param(std::string_view key, T& target, T lo, T hi) {
+        load_param_impl<T>(key, target, std::optional<T>(lo), std::optional<T>(hi), std::nullopt);
+    }
+
+    /// 带范围、带默认值
+    template <class T>
+    void load_param(std::string_view key, T& target, T lo, T hi, T def) {
+        load_param_impl<T>(key, target, std::optional<T>(lo), std::optional<T>(hi),
+                           std::optional<T>(def));
+    }
+
+    /**
+     * @brief 登记一个「已知但当前**不消费**」的配置键（避免被误判为未知键）
+     *
+     * 用途：某些键由**其它路径**消费，或在调用方（如 `GpuNoC` 的内部配置生成）里存在但本模块
+     * 尚未实现其语义 —— 它们是「配置里有键、实现零效果」的**已知缺陷**（ADR-X.17 基线表 B）。
+     *
+     * ⛔ 每处使用都必须同步登记到 `docs/implementation/module-param-baseline.md` 的表 B，
+     *    否则视为绕开未知键检查（本函数的调用点可用 grep 穷举审计）。
+     *
+     * @param key 键名
+     */
+    void ignore_param(std::string_view key) { param_ctx_.mark_consumed(key); }
+
+    /// 核心实现（内部；把哨兵语义收敛到 optional 一次）
+    template <class T>
+    void load_param_impl(std::string_view key, T& target, const std::optional<T>& lo,
+                         const std::optional<T>& hi, const std::optional<T>& def) {
+        cpptlm::load_param(param_ctx_, key, target, lo, hi, def);
+    }
+
     /// 存储原始 JSON 配置（选项A基础实现）
     json config_;
+
+    /// 参数加载上下文（已消费键登记 ⇒ 未知键检出）
+    cpptlm::ParamLoadContext param_ctx_;
+
+    /// 本次 set_config 是否来自 legacy 扁平 module entry（⇒ 未知键检查豁免）
+    bool param_flat_scope_ = false;
+
+    /**
+     * @brief 加载后统一执行「准入判定 + 未知键失败」（ADR-X.17 D-3a）
+     *
+     * ⛔ 必须由基类执行，不由模块自行调用 —— 否则模块少调一次即可静默绕过。
+     * 仅对 cpptlm::is_param_admitted(get_module_type()) 为真的类型生效。
+     */
+    void enforce_param_contract() {
+        if (!cpptlm::is_param_admitted(get_module_type())) return;
+        if (!param_ctx_.from_params_object()) return; // legacy 扁平形式豁免
+        const auto unknown = param_ctx_.unknown_keys();
+        if (!unknown.empty()) {
+            throw cpptlm::ParamValidationError(name, unknown.front(),
+                                               unknown.front() + ": unknown parameter");
+        }
+    }
 
 public:
     

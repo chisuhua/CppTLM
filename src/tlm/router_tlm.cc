@@ -6,8 +6,6 @@
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
-#include "core/module_factory.hh"
-#include "core/param_rules.hh"
 #include "core/sim_core.hh"
 
 namespace tlm {
@@ -64,51 +62,46 @@ namespace tlm {
     }
 
     void RouterTLM::on_config_loaded() {
-        const auto& cfg = get_config();
-        if (cfg.contains("node_x")) {
-            node_x_ = cfg["node_x"].get<unsigned>();
-        }
-        if (cfg.contains("node_y")) {
-            node_y_ = cfg["node_y"].get<unsigned>();
-        }
-        if (cfg.contains("mesh_x")) {
-            mesh_x_ = cfg["mesh_x"].get<unsigned>();
-        }
-        if (cfg.contains("mesh_y")) {
-            mesh_y_ = cfg["mesh_y"].get<unsigned>();
-        }
-        if (cfg.contains("credit_timeout")) {
-            credit_timeout_ = cfg["credit_timeout"].get<uint64_t>();
-        }
-        if (cfg.contains("buffer_size")) {
-            const auto& bs = cfg["buffer_size"];
-            // ⚠️ 非法值**显式失败**(⛔ 不得静默截断 / 静默回退默认值)。
-            //    ⚠️ `validateConfig`(`src/core/module_factory_validate.cc`)**不做** param
-            //    校验 —— 它的 param 校验器 `validate_module_params` 是**零调用方的死代码**
-            //    (登记于 `.rddf/improvements/cpptlm-validate-params-dead-code.md`;
-            //    另见 `docs/adr/ADR-X.10-parameter-framework.md` §Status Update A 段)
-            //    ⇒ 本分支是 `buffer_size` 非法值在**装配期**的唯一失败通道
-            //    (由 `module_factory.cc` 的 `set_config` 调用点 catch ⇒ return false),
-            //    ⛔ **不可删**、⛔ 不可改为「静默回退默认值」。
-            if (!bs.is_number_integer() && !bs.is_number_unsigned()) {
-                throw std::runtime_error("RouterTLM: buffer_size must be an integer: " +
-                                         name);
-            }
-            const long long n = bs.get<long long>();
-            if (n < 1 || n > 64) {
-                throw std::runtime_error("RouterTLM: buffer_size out of range [1,64]: " + name);
-            }
-            buffer_depth_ = static_cast<unsigned>(n);
-            // D-2 顺序纪律:credit 预算必须与缓冲深度**同源** ⇒ 按新深度重新同步初值
-            // (此刻尚无任何 flit 流动 ⇒ 重置安全)。
+        // ── 声明即读取（ADR-X.17 D-1）──────────────────────────────────────────
+        // 每行同时完成：声明 + 类型校验 + 范围校验 + 默认值 + 赋值 + 已消费键登记。
+        // ⛔ 默认值只落成员，**不写回** config_（ADR-X.17 D-5）。
+        // ⛔ 默认值缺省 ⇒ 该参数必填（缺失即 ParamValidationError ⇒ 装配失败）。
+        const unsigned prev_depth = buffer_depth_;
+
+        load_param("node_x", node_x_);  // 必填
+        load_param("node_y", node_y_);  // 必填
+        load_param("mesh_x", mesh_x_);  // 必填
+        load_param("mesh_y", mesh_y_);  // 必填
+        // buffer_size：1..64，默认 BUFFER_DEPTH(=8)；非法值 ⇒ 装配期失败（⛔ 不静默截断/回退）
+        load_param("buffer_size", buffer_depth_, 1u, 64u, BUFFER_DEPTH);
+        // credit_timeout：无符号，无范围（既有可接受值集合不收窄），默认 0 = 关闭
+        load_param("credit_timeout", credit_timeout_, uint64_t{0});
+
+        // ── 已知但当前不消费的键（基线表 B：配置里有键、实现零效果）──
+        // `routing`：由 `GpuNoC::simulate_instantiate` 的内部配置生成（src/tlm/cluster/
+        // gpu_noc_cluster.cc），RouterTLM 目前只有 XYRouting 一种算法 ⇒ 该键从未被消费，
+        // 取值恒为 "XY"。正是本次未知键检出机制暴露出的**既存缺陷**（不是本次引入）。
+        // ⛔ 修复它（把 routing 接入算法选择）属独立 change；此处只做**显式**登记，
+        //    使未知键检查不被这条既存缺陷拖红（见 docs/implementation/module-param-baseline.md 表 B）。
+        ignore_param("routing");
+
+        // ── credit 预算与缓冲深度同源（ADR-X.17 D-3 的「SHALL NOT 清除外部状态」）──
+        // ⚠️ 仅在深度**实际变化**时重算：流量已发生后的二次加载不得刷新已消耗额度
+        //    （「此刻尚无任何 flit 流动 ⇒ 重置安全」这一前提只在**首次加载**成立）。
+        if (buffer_depth_ != prev_depth) {
             for (unsigned p = 0; p < NUM_PORTS; ++p) {
                 for (unsigned v = 0; v < NUM_VCS; ++v) {
                     downstream_credits_[p][v] = static_cast<uint8_t>(buffer_depth_);
+                    last_credit_return_cycle_[p][v] = 0;
                 }
             }
         }
-        DPRINTF(MODULE, "[CONFIG] RouterTLM %s: node=(%u,%u) mesh=(%u,%u) credit_timeout=%u\n",
-                name.c_str(), node_x_, node_y_, mesh_x_, mesh_y_, credit_timeout_);
+
+        DPRINTF(MODULE,
+                "[CONFIG] RouterTLM %s: node=(%u,%u) mesh=(%u,%u) buffer_size=%u "
+                "credit_timeout=%llu\n",
+                name.c_str(), node_x_, node_y_, mesh_x_, mesh_y_, buffer_depth_,
+                static_cast<unsigned long long>(credit_timeout_));
     }
 
     // ============================================================================
@@ -580,44 +573,6 @@ namespace tlm {
     }
 
     // RouterTLM registration is handled by REGISTER_CHSTREAM macro in chstream_register.hh
-
-    cpptlm::ParamRules RouterTLM::get_param_rules() {
-        return {
-            {"node_x", cpptlm::ParamRule{"node_x", cpptlm::ParamType::INTEGER, true, std::nullopt,
-                                         std::nullopt, std::nullopt, std::nullopt, std::nullopt,
-                                         std::nullopt, std::nullopt}},
-            {"node_y", cpptlm::ParamRule{"node_y", cpptlm::ParamType::INTEGER, true, std::nullopt,
-                                         std::nullopt, std::nullopt, std::nullopt, std::nullopt,
-                                         std::nullopt, std::nullopt}},
-            {"mesh_x", cpptlm::ParamRule{"mesh_x", cpptlm::ParamType::INTEGER, true, std::nullopt,
-                                         std::nullopt, std::nullopt, std::nullopt, std::nullopt,
-                                         std::nullopt, std::nullopt}},
-            {"mesh_y", cpptlm::ParamRule{"mesh_y", cpptlm::ParamType::INTEGER, true, std::nullopt,
-                                         std::nullopt, std::nullopt, std::nullopt, std::nullopt,
-                                         std::nullopt, std::nullopt}},
-            {"flit_width",
-             cpptlm::ParamRule{"flit_width", cpptlm::ParamType::INTEGER, false, 64, std::nullopt,
-                               std::nullopt, std::nullopt, 64, 128, std::nullopt}},
-            {"vc_count",
-             cpptlm::ParamRule{"vc_count", cpptlm::ParamType::INTEGER, false, 2, std::nullopt,
-                               std::nullopt, std::nullopt, 1, 8, std::nullopt}},
-            // 默认值 8 = `RouterTLM::BUFFER_DEPTH`(per `cpptlm-router-buffer-size-param` 的
-            // D-1 裁决:让**声明**反映**实现** ⇒ 零行为变更)
-            {"buffer_size",
-             cpptlm::ParamRule{"buffer_size", cpptlm::ParamType::INTEGER, false, 8, std::nullopt,
-                               std::nullopt, std::nullopt, 1, 64, std::nullopt}},
-        };
-    }
-
-    // D.3 (cpptlm-dgpu-realip-pin-contract Change D, 2026-10-08):
-    // 静态自注册 RouterTLM ParamRules 到 ModuleFactory 注册表。
-    // ODR-safe: cpptlm_core 多次链接时 (cpptlm_tests + libcpptlm_emulator.so)
-    // ModuleFactory::registerParamRules 内部 early-return on duplicate。
-    namespace {
-        const bool _router_param_rules_registered = []() {
-            ModuleFactory::registerParamRules("RouterTLM", &RouterTLM::get_param_rules);
-            return true;
-        }();
-    } // namespace
+    // 参数声明：见 on_config_loaded() 的逐行 load_param（ADR-X.17 D-1：无独立规则表）
 
 } // namespace tlm

@@ -25335,4 +25335,41 @@ test cases:  5 |  0 passed | 5 failed
 **显式接受 3 项测试薄弱点**(proposal §已知测试薄弱点):W-1 板级直读键登记只有台账判据(本 change 无可测对象)· W-2 AC-04 基线可能含既存装配失败 · W-3 AC-03① 靠人工 diff 而非自动闸。
 **覆盖矩阵**:11 个 Scenario 中 10 个有 AC 承载,S10 由 W-1 显式接受。
 
+
+### Entry #473 — 2026-11-17 [builder](**实施** `cpptlm-module-param-read-declares` T0~T6 —— 模块参数「读取即声明」机制落地;决策源 `ADR-X.17` v1.6)
+
+**产物**:
+- `include/core/param_loader.hh`(新):`cpptlm::load_param(ctx,key,target,lo,hi,def)` + `ParamLoadContext`(cfg 引用 + 已消费键 + `unknown_keys()`)
+- `include/core/param_admission.hh`(新,**header-only**):`is_param_admitted` / `admitted_param_types` / `register_param_admitted` —— 准入表为唯一 C++ 真源
+- `include/core/sim_object.hh`:`param_ctx_` 按实例持有 + `set_config` 内 begin/enforce + `load_param` 四形态重载 + `ignore_param` + `set_param_scope_flat`
+- `src/core/module_factory.cc`:扁平路径设 scope 标志 + 已准入类型**无 params 也加载一次**(`kEmptyParams`)
+- `src/core/module_factory_validate.cc`:删 CFG-08 的 RouterTLM 全部引用(`params_src` 扁平回退 + 四键检查 + `else if` 析取);NICTLM 分支保留
+- `src/tlm/router_tlm.{hh,cc}`:6 参数改 `load_param`(node_x/node_y/mesh_x/mesh_y 必填;buffer_size 1..64 默认 8;credit_timeout 无范围默认 0)+ 补 `get_module_type()` + 删 `registerParamRules`/`get_param_rules()` + `ignore_param("routing")`
+- 测试:`test/param_fixture_module.hh`(夹具,成员初值 99/999 故意非法)+ `test/test_param_loader.cc`(AC-01/02/05/06/07/09②/10/11/12 + G-1/G-2)+ `test/test_param_alignment.cc`(AC-04 运行时对拍,从 `admitted_param_types()` 派生)
+- `test/test_d3_param_resolver_registry.cc`:RouterTLM 用例按 design D-6 删除,保留注册表通用机制 + 新增「RouterTLM 已迁移(不在 registry + 已准入 + NICTLM 未准入)」正向契约
+- `docs/implementation/module-param-baseline.md`(新):表 A(已消费但不经 load_param)· 表 B(F-14 的 5 类 14 键 + `routing`)· §3 基线豁免
+- spec delta 3 份:`specs/param-derivation/`(声明面迁移 + flit_width 反转 + 默认值不写回)· `specs/param-validation/`(执行者 ModuleFactory → 模块内;必填=缺省默认值;vc_count Scenario 反转)· `specs/param-type-conversion/`(转换真值点 → 模块内)
+
+**实施期两处新发现(均已落盘)**:
+1. **`RouterTLM.routing` 是「配置里有键、实现零效果」** —— `GpuNoC::simulate_instantiate`(gpu_noc_cluster.cc:26-31)为每个内部 router 生成该键,而 RouterTLM 只有 XYRouting 一种算法 ⇒ 从未消费。准入后立刻使 `[simmodule][infra]` 的 GpuNoC 用例红(GpuNoC 忽略内部 instantiateAll 返回值 ⇒ 0 实例)。处置 = **`ignore_param("routing")` 显式登记**(proposal 已知残留 R-5;基线台账表 B-6);⛔ 不靠放宽未知键检查消化。
+2. **`SimModule::simulate_instantiate` 丢弃 `internal_factory->instantiateAll` 的返回值**(sim_module.hh:95-98)⇒ 嵌套实例装配失败**不会**让外层返回 false ⇒ G-2 改为断言「内部实例未被创建」(proposal 已知残留 R-6);ADR-X.17 D-3 的实例层级表述据此二次收窄(v1.6)。
+3. **`is_param_admitted` 必须 header-only** —— 首版放 `src/core/param_admission.cc`,导致 `cep_tilelink_engine_failclosed` 的独立探针编译(`cep_*_probe.cc` 直接 g++ 编译,不链接 cpptlm_core)链接失败(undefined reference)。改为 header-only(function-local static 跨 TU 唯一)后该闸恢复绿。
+
+**实测**:
+- `./build/bin/cpptlm_tests` 全量:**883191 assertions / 2371 test cases 全绿**
+- `[param]` 28 cases / `[router]` 18 cases / `[config]` 53 cases / `[d3]` 3 cases 全绿
+- `python3 -m pytest test/python/`:**232 passed**
+- `ctest -R cep`:**100/100 通过**(修复上述 header-only 问题后)
+- **AC-03①**:`git diff fa2c4916 -- test/ include/ src/` 中 REQUIRE/CHECK 删除**仅** `test_d3_param_resolver_registry.cc`(AC 已豁免),其余文件 0
+- **AC-03②**:`git diff fa2c4916 -- configs/` **空**
+- **AC-08②**:`validateConfig` 函数体非注释行对 `RouterTLM` **0 命中**
+- **AC-13**:`load_param.*"vc_count"` **0 命中**
+- **AC-14**:`ignore_param(` 调用点 1 处(`router_tlm.cc:86`)+ 定义 1 处,表 B 有对应条目
+- **AC-04**:11 个含已准入类型的配置,10 通过 + 1 基线豁免(`configs/noc_mesh.json`,全仓零引用且改动前即被 CFG-08 拦)
+- **T7.6**:模块实现侧 `get_param_rules` 零残留(仅两处注释)
+- **T7.4**:`cep_freeze_check` 通过(88 产物 hash 一致)
+- `openspec validate --strict` = valid
+
+**未完成(交 verifier)**:T0.1(B-1 复核须非本 change 作者签收)、T7.1~T7.3a/T7.5(台账/KPI/归档/独立验收)。KPI 仍为 **2/3**(归档后才释放 slot)。
+
 **⑰ 关联**:`docs/adr/ADR-X.17-module-param-read-declares.md`(Proposed · v1.5)· `.rddf/reviews/ADR-X.17.md`(oracle 2 轮 + critic 2 轮)· AC-01~AC-10 对应 ADR 的 V-1~V-7 + D-3a · 同族 backlog `.rddf/improvements/cpptlm-validate-params-dead-code.md` / `cpptlm-router-vc-count-param-inert.md`

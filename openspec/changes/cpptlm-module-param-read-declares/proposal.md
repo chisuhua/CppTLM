@@ -30,8 +30,12 @@
 3. **准入表 = 唯一 C++ 真源**（`is_param_admitted(std::string_view type)`），运行时与仓库级测试/闸**从该表派生**（⛔ 不在脚本里硬编码类型名）。
 4. **RouterTLM 试点**（`node_x` / `node_y` / `mesh_x` / `mesh_y` / `buffer_size` / `credit_timeout`;**不含 `vc_count`** —— 其值不影响运行时行为）;同 commit 删除其 `registerParamRules` 注册、`get_param_rules()` 本体、**CFG-08 的全部 RouterTLM 引用**（含 `:327` 的 `type == "RouterTLM"` 析取 → 改为 `else if (type == "NICTLM")`）。
 5. **`buffer_size` 的 credit 同源副作用显式保留**：`downstream_credits_` 重算**仅在深度实际变化时**发生（保证流量已发生后的二次加载不刷新已消耗额度）。
-6. **spec 修订走 delta 机制**（`## REMOVED` / `## MODIFIED Requirements`），⛔ 不直接编辑 main spec。
-7. 仓库级**运行时**对拍测试（⛔ 不用 grep 提取键名）：遍历 `configs/**/*.json`，对含已准入类型实例的配置调用 `instantiateAll`，断言成功。
+6. **已知「零效果」键的显式登记**（`ignore_param`）：某些键由其它路径生成/消费而本模块尚未实现其语义
+   （如 `GpuNoC` 为每个内部 router 生成的 `routing`）。这类键 **SHALL** 以 `ignore_param(key)` **显式**登记
+   （登记后不算未知键），并逐条落在 `docs/implementation/module-param-baseline.md` 的表 B。
+   ⛔ 不得靠放宽未知键检查来消化它们；该 API 的调用点可 grep 穷举审计。
+7. **spec 修订走 delta 机制**（`## REMOVED` / `## MODIFIED Requirements`），⛔ 不直接编辑 main spec。
+8. 仓库级**运行时**对拍测试（⛔ 不用 grep 提取键名）：遍历 `configs/**/*.json`，对含已准入类型实例的配置调用 `instantiateAll`，断言成功。
 
 ## Out of Scope
 
@@ -51,6 +55,8 @@
 | R-2 | `configs/param_rules/router_tlm.json:24-32` 的 `vc_count` 仍在，`flit_width` 随 `get_param_rules()` 消失 | 声明面 ① 与 ③ 的漂移**未消除** |
 | R-3 | legacy 扁平路径（`module_factory.cc:405-408` 的 `cfg_src = &mod`） | **显式保留**并在未知键检查中豁免（写进 design D-3a）;若改为特判 `params`，则扁平配置永久绕过必填 |
 | R-4 | `openspec/specs/param-validation/spec.md:14-24` 的「mesh 范围 1-16」与事实冲突（`configs/mesh_4x4.json` 有 `node_x: 0`） | 本 change 的 T6.2 只改执行者与必填术语;该范围条款的订正另案登记 |
+| **R-5** | **`RouterTLM.routing` 是「配置里有键、实现零效果」**（`GpuNoC` 为每个内部 router 生成，RouterTLM 只有 XYRouting 一种算法 ⇒ 从未被消费） | **本 change 的未知键检出机制暴露的既存缺陷**（非本次引入）⇒ 以 `ignore_param("routing")` 显式登记（`docs/implementation/module-param-baseline.md` 表 B-6）;把 `routing` 接入算法选择属独立 change |
+| **R-6** | **`SimModule::simulate_instantiate` 丢弃 `internal_factory->instantiateAll(config)` 的返回值**（只打日志）⇒ 嵌套实例的装配失败**不会**让外层 `instantiateAll` 返回 false | **既存行为**（`include/core/sim_module.hh:95-98`）;本 change 的 G-2 改为断言「内部实例未被创建」而非「外层失败」，并登记此吞掉返回值的行为为待修 |
 
 ## 验收标准
 
@@ -65,12 +71,13 @@
 | **AC-05** | 边界成对：`buffer_size` = `1` / `64` ⇒ 装配成功;`0` / `65` ⇒ 装配失败（**测试内构造，不改源码**）↔ S1 |
 | **AC-06** | **无 `params` 键**的**夹具**实例 ⇒ 声明的默认值仍落到成员（夹具 SHALL 已进准入表，见 design D-2/D-3;RouterTLM 因成员初值恰等于声明默认值而不具判别力）↔ S4 |
 | **AC-07** | **未知键在真实模块上生效**：RouterTLM 配 `params.buffer_sizes: 16` ⇒ `instantiateAll` 返回 **`false`**，错误文本含 `buffer_sizes`;⚠️ 且 `grep -nE 'unknown|buffer_sizes' src/tlm/router_tlm.cc` **零命中**（证明失败源是基类的未知键检查，不是模块内手写 throw）↔ S7 |
-| **AC-08** | ① **NICTLM 必填零变化**：`test/test_config_schema_validation.cc:122/138/219` 三条断言保持绿;② **RouterTLM 在 CFG-08 零引用**：`grep -n 'RouterTLM' src/core/module_factory_validate.cc` **全部零命中**（文件级，不限段）↔ S8 |
+| **AC-08** | ① **NICTLM 必填零变化**：`test/test_config_schema_validation.cc:122/138/219` 三条断言保持绿;② **RouterTLM 在 CFG-08 零引用**：`awk '/^bool ModuleFactory::validateConfig/,/^}/' src/core/module_factory_validate.cc | grep -v '^\s*//' | grep -c 'RouterTLM'` ⇒ **0**（⚠️ 判据限定在 `validateConfig` 函数体的**非注释行** —— 文件级零命中不可满足：`:332/:339` 的连接检查与 `:398-409` 的端口规格仍合法引用 RouterTLM）↔ S8 |
 | **AC-09** | **credit 同源 + 二次加载不刷新**：① 存量 `test_router_buffer_size_param.cc` 的 BSP-3（`inject_to_east == depth`）保持绿;② 先注入若干 flit（消耗 credit），再以**相同** `buffer_size` 二次 `set_config` ⇒ 后续 `inject_to_east` 的转发数**不增加** |
 | **AC-10** | **默认值不写回 JSON**：声明带默认值的参数、配置中不提供该键 ⇒ `instantiateAll` 后 `cfg["modules"][n]["params"]` **SHALL NOT** 出现该键（夹具 + RouterTLM 各一条）↔ S6 |
 | **AC-11** | **数值边界**：`buffer_size: 8.0`（JSON double）/ `true`（bool）/ `1e20` ⇒ 均装配失败;`credit_timeout: -1` ⇒ 装配失败（无符号）；且 `buffer_size: 8`（整数）⇒ 成功（⛔ 不得依赖 `get<int64_t>()` 的隐式转换）↔ S3 |
 | **AC-12** | **legacy 扁平路径**：① RouterTLM 扁平形式（参数写在 module 条目上，**无 `params`**）⇒ 装配**成功**且**不**因 `name` / `type` 报未知键 ② ⚠️ **同形式缺 `node_x`** ⇒ 装配**失败**（证明豁免未吞必填）③ NICTLM 扁平形式（顶层 `node_id`）行为不变 ↔ S9 |
 | **AC-13** | **无效果参数不得声明**：`grep -nE 'load_param[^;]*"vc_count"' src/tlm/router_tlm.cc` **零命中**（`vc_count` 的 `NUM_VCS` 仍是编译期常量 ⇒ 声明即退化为「声明了却无效」）↔ S11 |
+| **AC-14** | **`ignore_param` 的审计一致性**：`grep -rn 'ignore_param(' src/ include/` 的每个调用点（注释除外）都在 `docs/implementation/module-param-baseline.md` 表 B 有条目对应，且 `docs/` 的表 B 条目数 ≥ 调用点数（⛔ 不得有「静默关掉未知键检查」的调用）↔ S10 |
 
 **回归护栏（非变更探测器，改动前后均绿；仍是验收门）**
 
@@ -90,7 +97,7 @@
 | S7 已准入类型上的拼错参数名 | AC-07, AC-04② | 真实模块 + 运行时对拍 |
 | S8 未准入类型维持宽松 | AC-03, AC-08① | 全标签绿 + NICTLM 三条 |
 | S9 legacy 扁平路径豁免 | **AC-12** | 本 AC 为审查新增（此前无判据） |
-| S10 板级直读键登记 | T4.1（台账） | ⚠️ 无运行时判据 —— 见下 W-1 |
+| S10 已消费但不经 `load_param` 的键（板级直读 / 已知零效果） | T4.1（台账）+ **AC-14**（审计一致性） | W-1 说明「板级直读」部分仍无运行时判据 |
 | S11 声明了却无效果的参数不得声明 | AC-02, **AC-13** | 行为判别 + grep 断言 |
 
 ## 已知测试薄弱点（本 change 接受）

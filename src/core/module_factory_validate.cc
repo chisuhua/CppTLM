@@ -298,25 +298,17 @@ bool ModuleFactory::validateConfig(const json& config) {
             }
         }
 
+        // RouterTLM 的必填/类型检查已由模块内 load_param 承接（ADR-X.17 D-3 的 CFG-08 退役）
+        // ⇒ 本处只保留 NICTLM 的 per-type 硬编码分支（它是 node_id 必填的唯一强制点，
+        //   须在 NICTLM 自己的迁移 change 内与 load_param("node_id") 一并删除）。
         const json* params_src = nullptr;
         if (mod.contains("params"))
             params_src = &mod["params"];
-        else if (type == "RouterTLM" && mod.contains("node_x"))
-            params_src = &mod;
         else if (type == "NICTLM" && mod.contains("node_id"))
             params_src = &mod;
 
         if (params_src) {
             const auto& params = *params_src;
-            if (type == "RouterTLM") {
-                for (auto p : {"node_x", "node_y", "mesh_x", "mesh_y"}) {
-                    if (!params.contains(p) || !params[p].is_number_integer()) {
-                        DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing/invalid '%s'\n",
-                                name.c_str(), p);
-                        return false;
-                    }
-                }
-            }
             if (type == "NICTLM") {
                 if (!params.contains("node_id") || !params["node_id"].is_number_integer()) {
                     DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing/invalid 'node_id'\n",
@@ -324,7 +316,7 @@ bool ModuleFactory::validateConfig(const json& config) {
                     return false;
                 }
             }
-        } else if (type == "RouterTLM" || type == "NICTLM") {
+        } else if (type == "NICTLM") {
             DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing required params\n", name.c_str());
             return false;
         }

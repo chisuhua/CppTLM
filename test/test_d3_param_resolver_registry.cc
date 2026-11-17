@@ -1,72 +1,69 @@
-// test_d3_param_resolver_registry.cc
-// D.3 (cpptlm-dgpu-realip-pin-contract Change D, 2026-10-08):
-// ParamRules 注册表 单元测试 — 验证 ModuleFactory getParamRulesRegistry /
-// registerParamRules 工作正常, RouterTLM 自注册后可通过 type 查询。
+// test/test_d3_param_resolver_registry.cc
+// ParamRules 注册表的**通用机制**测试 + 「RouterTLM 已迁移」的契约断言
+// 作者 CppTLM Team / 日期 2026-10-08（2026-11-17 改写）
+//
+// 历史：本文件原为 `cpptlm-dgpu-realip-pin-contract` Change D 的 RouterTLM 自注册测试。
+// 2026-11-17 起 RouterTLM 迁移到「读取即声明」机制（change cpptlm-module-param-read-declares
+// / ADR-X.17 D-3），其 `get_param_rules()` 与静态注册已删除 ⇒ 原 RouterTLM 用例按
+// design D-6 删除，保留注册表的通用形态断言，并新增迁移完成的**正向**契约。
 #include "catch_amalgamated.hpp"
+
 #include "core/module_factory.hh"
+#include "core/param_admission.hh"
 #include "core/param_rules.hh"
 
+#include <algorithm>
 #include <string>
 #include <vector>
-
-using cpptlm::ParamRule;
-using cpptlm::ParamRules;
-
-TEST_CASE("D.3: ModuleFactory::getParamRulesRegistry is accessible", "[d3][param-resolver]") {
-    auto& registry = ModuleFactory::getParamRulesRegistry();
-    REQUIRE(registry.find("RouterTLM") != registry.end());
-}
-
-TEST_CASE("D.3: RouterTLM rules contain required node_x + node_y + defaults",
-          "[d3][param-resolver]") {
-    auto& registry = ModuleFactory::getParamRulesRegistry();
-    auto it = registry.find("RouterTLM");
-    REQUIRE(it != registry.end());
-
-    ParamRules rules = it->second();
-    REQUIRE(!rules.empty());
-
-    // node_x 与 node_y 为 required,无 default
-    bool found_node_x = false, found_node_y = false;
-    int default_count = 0;
-    for (const auto& [name, rule] : rules) {
-        if (name == "node_x") {
-            found_node_x = true;
-            REQUIRE(rule.required);
-            REQUIRE_FALSE(rule.default_int.has_value());
-        } else if (name == "node_y") {
-            found_node_y = true;
-            REQUIRE(rule.required);
-            REQUIRE_FALSE(rule.default_int.has_value());
-        } else if (rule.default_int.has_value()) {
-            ++default_count;
-        }
-    }
-    REQUIRE(found_node_x);
-    REQUIRE(found_node_y);
-    REQUIRE(default_count >= 1); // vc_count / buffer_size 至少有 1 个 default
-}
-
-TEST_CASE("D.3: registerParamRules is idempotent (ODR-safe)", "[d3][param-resolver]") {
-    // 重复注册相同 type 应被 early-return 忽略,不会覆盖原 provider
-    size_t before = ModuleFactory::getParamRulesRegistry().size();
-    ModuleFactory::registerParamRules("RouterTLM", []() -> ParamRules {
-        return {{"sentinel",
-                 ParamRule{"sentinel", cpptlm::ParamType::INTEGER, true, std::nullopt, std::nullopt,
-                           std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt}}};
-    });
-    size_t after = ModuleFactory::getParamRulesRegistry().size();
-    REQUIRE(before == after); // 数量未变 (early-return)
-
-    // 原 provider 仍是 RouterTLM::get_param_rules,不含 sentinel
-    ParamRules rules = ModuleFactory::getParamRulesRegistry()["RouterTLM"]();
-    for (const auto& [name, _] : rules) {
-        REQUIRE(name != "sentinel");
-    }
-}
 
 TEST_CASE("D.3: unknown type lookup returns end (graceful skip)", "[d3][param-resolver]") {
     auto& registry = ModuleFactory::getParamRulesRegistry();
     auto it = registry.find("NonExistentType_XYZ");
     REQUIRE(it == registry.end());
+}
+
+TEST_CASE("D.3: registerParamRules is idempotent (ODR-safe)", "[d3][param-resolver]") {
+    // 通用机制：同一 type 重复注册被 early-return 忽略，不覆盖原 provider
+    auto make_rules = []() -> cpptlm::ParamRules {
+        return {{"a",
+                 cpptlm::ParamRule{"a", cpptlm::ParamType::INTEGER, true, std::nullopt, std::nullopt,
+                                   std::nullopt, std::nullopt, std::nullopt, std::nullopt,
+                                   std::nullopt}}};
+    };
+    ModuleFactory::registerParamRules("__D3_IdempotentProbe__", make_rules);
+    const size_t before = ModuleFactory::getParamRulesRegistry().size();
+
+    ModuleFactory::registerParamRules("__D3_IdempotentProbe__", []() -> cpptlm::ParamRules {
+        return {{"sentinel",
+                 cpptlm::ParamRule{"sentinel", cpptlm::ParamType::INTEGER, true, std::nullopt,
+                                   std::nullopt, std::nullopt, std::nullopt, std::nullopt,
+                                   std::nullopt, std::nullopt}}};
+    });
+    const size_t after = ModuleFactory::getParamRulesRegistry().size();
+    REQUIRE(before == after); // early-return
+
+    // 原 provider 未被覆盖（不含 sentinel）—— 使用 find 避免 operator[] 隐式插入默认项
+    auto& registry = ModuleFactory::getParamRulesRegistry();
+    auto it = registry.find("__D3_IdempotentProbe__");
+    REQUIRE(it != registry.end());
+    const cpptlm::ParamRules rules = it->second();
+    REQUIRE(rules.size() == 1);
+    REQUIRE(rules.count("a") == 1);
+    REQUIRE(rules.count("sentinel") == 0);
+}
+
+TEST_CASE("D.3: RouterTLM 已迁移到 load_param（不在注册表 + 已准入）", "[d3][param-resolver]") {
+    // ADR-X.17 D-3 的准入条件 (b)：registry 中无 T 的条目
+    auto& registry = ModuleFactory::getParamRulesRegistry();
+    CHECK(registry.find("RouterTLM") == registry.end());
+
+    // 准入表是唯一 C++ 真源 ⇒ 从它判定，不在测试里硬编码第二份事实
+    CHECK(cpptlm::is_param_admitted("RouterTLM"));
+
+    // 迁移后的类型清单包含它（供仓库级对拍派生）
+    const auto admitted = cpptlm::admitted_param_types();
+    REQUIRE(std::find(admitted.begin(), admitted.end(), "RouterTLM") != admitted.end());
+
+    // 反向：NICTLM 仍未迁移（其 CFG-08 分支保留 ⇒ 不满足准入条件 (c)）
+    CHECK_FALSE(cpptlm::is_param_admitted("NICTLM"));
 }

@@ -69,11 +69,13 @@
 - **THEN** 未知键检查 SHALL 被豁免（⛔ 否则 `name` / `type` / `layout` 等条目字段会被误判为未知键）
 - **AND** 该豁免 SHALL NOT 导致必填检查被跳过
 
-#### Scenario: 板级直读消费的键 SHALL 登记为已消费
+#### Scenario: 已消费但不经 load_param 的键 SHALL 显式登记
 
-- **WHEN** 某键由板级直读路径（而非模块自身）消费
-- **THEN** 该键 SHALL 登记为「已消费但不经 `load_param`」并标注消费方
+- **WHEN** 某键由**板级直读路径**（而非模块自身）消费，或由调用方生成而本模块**尚未实现其语义**（已知零效果）
+- **THEN** 该键 SHALL 以 `ignore_param(key)` **显式**登记为「已消费但不经 `load_param`」，并标注消费方 / 缺陷编号
+- **AND** 该登记 SHALL 在参数基线台账的对应表（板级直读 = 表 A;已知零效果 = 表 B）有条目
 - **AND** 同一类型内 SHALL NOT 同时存在「`load_param` 声明的键」与「板级直读的键」
+- **AND** ⛔ 不得以放宽未知键检查（如整表跳过）的方式消化此类键
 
 ### Requirement: module-param-behavioral-evidence
 

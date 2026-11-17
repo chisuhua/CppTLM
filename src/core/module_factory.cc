@@ -52,6 +52,7 @@
 #include "core/coherence_domain.hh"
 #include "core/connection_resolver.hh"
 #include "core/load_policy.hh"
+#include "core/param_admission.hh"
 #include "core/param_errors.hh"
 #include "core/param_parser.hh"
 #include "core/plugin_load_exception.hh"
@@ -402,24 +403,42 @@ bool ModuleFactory::instantiateAll(const json& config) {
         }
 
         const json* cfg_src = mod.contains("params") ? &mod["params"] : nullptr;
-        if (!cfg_src && type == "RouterTLM" && mod.contains("node_x"))
+        // legacy 扁平回退：整个 module entry 当 cfg ⇒ 未知键检查必须豁免（含 name/type 等条目字段）
+        bool flat_param_scope = false;
+        if (!cfg_src && type == "RouterTLM" && mod.contains("node_x")) {
             cfg_src = &mod;
-        if (!cfg_src && type == "NICTLM" && mod.contains("node_id"))
+            flat_param_scope = true;
+        }
+        if (!cfg_src && type == "NICTLM" && mod.contains("node_id")) {
             cfg_src = &mod;
-        if (cfg_src) {
+            flat_param_scope = true;
+        }
+        {
             auto it = object_instances.find(name);
             if (it != object_instances.end() && it->second) {
+                // 已准入类型**即使没有 params 键**也必须加载一次 ——
+                // 否则 load_param 声明的默认值永不落成员、必填检查也永不触发
+                // (per ADR-X.17 D-2 / change design D-2 的收窄版：未准入且无 params 的实例维持现状跳过)
+                static const json kEmptyParams = json::object();
+                if (!cfg_src && cpptlm::is_param_admitted(it->second->get_module_type())) {
+                    cfg_src = &kEmptyParams;
+                }
+                if (!cfg_src) {
+                    // 无参数可加载 ⇒ 跳过（未准入类型零变化）
+                } else {
                 // ⚠️ `set_config` 内部会调 `on_config_loaded()`；该虚函数**可抛异常**
                 // 表达「参数非法」(`on_config_loaded` 返回 void ⇒ 无其它失败通道)。
                 // 与 Step 4.5 的 `simulate_instantiate` 同款语义：异常 ⇒ 装配失败。
                 // (per change `cpptlm-router-buffer-size-param` 的 design D-7)
                 try {
+                    it->second->set_param_scope_flat(flat_param_scope);
                     it->second->set_config(*cfg_src);
                     DPRINTF(MODULE, "[CONFIG] Set params for module: %s\n", name.c_str());
                 } catch (const std::exception& e) {
                     DPRINTF(MODULE, "[CONFIG ERROR] on_config_loaded failed for '%s': %s\n",
                             name.c_str(), e.what());
                     return false;
+                }
                 }
             }
         }

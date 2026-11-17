@@ -127,12 +127,28 @@ Proposed — 2026-11-17（**双审完成**：oracle 2 轮 + critic 2 轮。criti
   ⚠️ 注入的现存保护本身有洞：`required` 检查只在 `mod.contains("params")` 时生效（F-6）,legacy 顶层回退（F-10）**绕过**它 ⇒ 保留注入的保护力是**不一致的**，不构成「立即删除是净损失」的理由。
   - **「重叠」是类型级**：T 已存在 `load_param` 声明 ⇒ `getParamRulesRegistry()` 中 SHALL 不存在 T 的条目（**含任何键**）;迁移 T 时其规则表全部键随注册一并删除（未迁移键的声明归属另案）。
   - **CFG-08 的处置（`ADR-X.11` 决策 7 · 已签发）**：工厂侧 `validateConfig` 的 per-type 硬编码键表（F-16）是**第四个声明面**，且其必填检查当前是 RouterTLM/NICTLM 的**唯一强制点**。⇒ 本 ADR 裁决：**退役** —— 把该键表并入同名类型的 `load_param` 必填声明，删除 CFG-08 的 RouterTLM/NICTLM 分支（**与该类型的 `registerParamRules` 注册、`get_param_rules()` 本体同 change 删除**）。退役前**必填真值唯一 = `load_param`**（不得与 CFG-08 并存）。
-  - **必填保护的实例层级覆盖（实施期订正）**：`SimModule::simulate_instantiate` 经 `internal_factory->instantiateAll(config)` 对子模块**重跑同一路径**（`include/core/sim_module.hh:95`）⇒ **嵌套实例已受同一必填路径覆盖**（⚠️ 本段 v1.3 曾写「嵌套实例当前零必填强制」，**该结论为假**，已于 v1.5 订正）。⇒ 本决策**不改变**实例层级覆盖范围;⛔ 不得假设「迁移后会新增对嵌套实例的强制」——若实施期发现确有路径未覆盖，须在 change 内逐条登记为**新发现**，而非本决策的既有推论。
+  - **必填保护的实例层级覆盖（v1.6 实施期订正，二次）**：`SimModule::simulate_instantiate` 确实经 `internal_factory->instantiateAll(config)` 对子模块**重跑同一路径**（`include/core/sim_module.hh:95`）—— ⚠️ **但它丢弃返回值**（只 `DPRINTF` 后继续，`:96-98`）⇒ 嵌套实例的装配失败**不会**让外层 `instantiateAll` 返回 false。
+    ⇒ 准确表述：**嵌套实例的必填检查会被执行，但失败不上传**（既存缺陷，登记为 change 的已知残留 R-6）。⇒ 本决策**不改变**实例层级覆盖范围;**也不新增对嵌套失败的传播**（那属独立 change）。⛔ 任何 AC 都不得断言「嵌套缺参 ⇒ 外层返回 false」。
+    > v1.5 曾写「嵌套实例已受同一必填路径覆盖」而无保留地推到「⇒ 装配失败」，该推导超出事实 —— 已于本版收窄。
   - **未知键的失败位置（D-3a · 本决策的唯一执行点）**：`ParamLoadContext` 由 `SimObject` **基类按实例持有**（不依赖模块自己调用 `unknown_keys()`）;`SimObject::set_config` 在 `on_config_loaded()` 返回后执行一次「准入判定 + 未知键失败」：判定式 = `is_param_admitted(type()) && !ctx_.unknown_keys().empty()` ⇒ 抛 `cpptlm::ParamValidationError(module_name(), key, "unknown parameter")`（复用 `include/core/param_errors.hh` 的既有类型，⛔ 不新造异常）。⇒ **准入表 SHALL 是唯一 C++ 真源**（`is_param_admitted(type)`），仓库级闸/测试 **SHALL 从该表派生**，⛔ 不得在脚本里硬编码类型名（否则运行时与闸各持一份准入事实，复现本 ADR 要消灭的形态）。
 - ⛔ **板级直读路径（F-15）不得成为第三条真值**：某类型纳入本机制时，板级直读键 SHALL 满足**三态之一**：① 该键所属类型**整体**改走已声明入口（板级读成员 / 访问器，不再读 JSON）;或 ② 该键在**该类型的 `load_param` 声明中不存在**，且登记为「已消费但不经 `load_param`」（消费方 = 板级直读）;或 ③ 该类型**整体排除**在未知键检查之外。⇒ **同一类型内不得同时存在「`load_param` 声明的键」与「板级直读的键」**（覆盖顺序决定行为）。
 - **「T 迁移完成」的判据**：⇔ (a) T 的全部参数均由 `load_param` 声明（或按 D-2 登记为非 `load_param` 消费）**且** (b) `getParamRulesRegistry()` 中无 T 的条目 **且** (c) F-16 的 CFG-08 分支已删除（若 T 曾被 CFG-08 覆盖）;(a)(b)(c) 同时成立，才允许开启 T 的未知键检查。
 - **配套硬约束**：加载逻辑 **SHALL NOT 清除或重置非本机制写入的状态**（幂等性不足以覆盖「清空外部状态」）。实证：`CohIfNICTLM::on_config_loaded` 无条件 `regions_.clear()`（`cohif_nic.hh:185`）;`PcieEndpointTLM::on_config_loaded` 无条件重初始化 `cfg_space_` / `bar_router_` / `msix_`（`pcie_endpoint_tlm.cc:140-143`）;`PcieEndpointIP` 在 `axi_adapter` / `link_layer` 缺席时**主动 detach** AXI 适配器 / 链路层 / PHY / Bypass Mux（`pcie_endpoint_ip.cc:202-215`）。
 - 无 `params` 键的实例 **SHALL** 仍被加载一次（传空对象）—— 否则默认值永不落成员（F-6）;该动作对**全部类型**生效，故受上一条硬约束约束。
+
+### D-3b — 「已知零效果」的键 SHALL 显式登记，不得靠放宽检查消化
+
+某键由调用方生成（如容器模块为子模块生成的配置）而本模块**尚未实现其语义**时，它是
+「配置里有键、实现零效果」的**已知缺陷**（D-2 的表 B），不是未知键。
+
+⇒ 该键 SHALL 以 `ignore_param(key)` **显式**登记（登记后不算未知键），并逐条落在基线台账表 B。
+
+- ⛔ **不得**以「整表跳过未知键检查」「给该类型关掉严格模式」等方式消化 —— 那会把**真正**的拼写错误一起放过。
+- `ignore_param` 的调用点 SHALL 可 grep 穷举审计（`grep -rn 'ignore_param('`），新增调用必须同步登记表 B。
+- **准入义务（D-6）对这类键不成立**：它们**不得**进入 `load_param` 声明（值不影响行为 ⇒ 伪参数）。
+
+> 实证：本机制上线时立刻暴露 `RouterTLM.routing` —— `GpuNoC` 为每个内部 router 生成该键，
+> 但 RouterTLM 只有 XYRouting 一种算法 ⇒ 从未消费（change 的已知残留 R-5）。
 
 ### D-4 — 值域类型与成员存储类型**解耦**
 
@@ -290,6 +306,6 @@ Proposed — 2026-11-17（**双审完成**：oracle 2 轮 + critic 2 轮。criti
 | 1.0 | 2026-11-17 | 初稿：内联加载 + 消费即登记（不使用宏）;声明与读取同源;未知键检出;值域/存储类型解耦;默认只落成员不写回 JSON;行为判别测试义务 |
 | 1.1 | 2026-11-17 | 按 oracle 第 1 轮（REJECT · 9 项 must-fix）修订：收窄 D-1 的主张并修正「选项对比」表对 A 的偏袒描述;D-3 改为按类型退役 + 必填保护无空窗 + 「SHALL NOT 清除非本机制写入的状态」;迁移计划改序（M4 合并「迁移 + 撤销注册」）;Verification 三处订正（V-4 范围限定 + 基线豁免、V-6 换夹具、V-7 标护栏）;Metadata 逐条列闭合范围;F-1 订正为 20 处 / 2 类挂载点;新增 F-13 / F-14 与「缺陷幸存机制」段;关系表三行订正（`param-derivation` 取代 / `param-validation` 须修订 / `ADR-X.10` §G 遵守）;示例统一为伪代码六槽位形态 |
 | 1.2 | 2026-11-17 | 按 oracle 第 2 轮（REJECT · 本轮新增内容引入 2 项 must-fix）修订：**MF-1** F-14 的 `GmmuTLM` 行订正（`tlb_size` / `tlb_miss_latency_cycles` 由板级直读路径消费 ⇒ **不是** F-14 成员）并新增「幸存机制的适用边界」段;**MF-2** 新增 **F-15**（第三条消费路径 = 板级直读 JSON `params`）+ D-1 覆盖域说明 + D-2 消费方扩展与基线分表 + D-3 板级真值条款 + **R-6** + V-4/M5 的基线清单逐键标注消费方;另采纳 S1（选项对比表增「未知键检出」列 + 选型理由补该目标）/ S2（Metadata 闭合范围第 3、4 行补「仅对已迁移模块」）/ S3（F-4 行号）/ S4（R-2 措辞）/ S5（M4 删除注册调用与 `get_param_rules()` 本体）/ N1（F-12 行号）/ N2（本行）/ N3（D-1 反例措辞） |
-| 1.5 | 2026-11-17 | 立项期 gap 分析（metis 1 轮）实证订正 2 处：① **D-3 的「嵌套实例当前零必填强制」为假** —— `SimModule::simulate_instantiate` 经 `internal_factory->instantiateAll` 对子模块重跑同一路径（`sim_module.hh:95`）⇒ 改为「嵌套实例已受同一必填路径覆盖;本决策不改变该覆盖范围」;② **新增 D-3a（未知键的失败位置）** —— `ParamLoadContext` 由 `SimObject` 基类持有、`set_config` 在 `on_config_loaded()` 返回后执行「准入判定 + 未知键失败」、抛既有 `ParamValidationError`、准入表为唯一 C++ 真源（`is_param_admitted`）⇒ 关闭「`unknown_keys()` 无调用者 ⇒ 未知键判据可用夹具手写 throw 蒙过」的判别力空洞。 |
+| 1.6 | 2026-11-17 | 实施期（change `cpptlm-module-param-read-declares`）两处订正：① **D-3 的实例层级表述二次收窄** —— `simulate_instantiate` 虽重跑同一路径但**丢弃 `instantiateAll` 的返回值** ⇒ 「嵌套缺参 ⇒ 外层失败」不成立（G-2 改为断言「内部实例未被创建」）;② **新增 D-3b** —— 「已知零效果」的键须以 `ignore_param(key)` 显式登记并落基线表 B，⛔ 不得靠放宽未知键检查消化（实证 = `RouterTLM.routing`） |\n| 1.5 | 2026-11-17 | 立项期 gap 分析（metis 1 轮）实证订正 2 处：① **D-3 的「嵌套实例当前零必填强制」为假** —— `SimModule::simulate_instantiate` 经 `internal_factory->instantiateAll` 对子模块重跑同一路径（`sim_module.hh:95`）⇒ 改为「嵌套实例已受同一必填路径覆盖;本决策不改变该覆盖范围」;② **新增 D-3a（未知键的失败位置）** —— `ParamLoadContext` 由 `SimObject` 基类持有、`set_config` 在 `on_config_loaded()` 返回后执行「准入判定 + 未知键失败」、抛既有 `ParamValidationError`、准入表为唯一 C++ 真源（`is_param_admitted`）⇒ 关闭「`unknown_keys()` 无调用者 ⇒ 未知键判据可用夹具手写 throw 蒙过」的判别力空洞。 |
 | 1.4 | 2026-11-17 | 按 critic 第 2 轮（复审 · REJECT · 1 BLOCKER + 6 SHOULD_FIX + 5 NITS）修订：**B-1** M4 拆分（只删 CFG-08 的 **RouterTLM** 分支;NICTLM 分支须在 NICTLM 迁移 change 内与 `load_param("node_id", default=NONE)` 一并删，否则 `node_id` 必填空窗）+ `test_d3_param_resolver_registry.cc` 处置改写（幂等断言失效 + sentinel 空转 ⇒ 删除或改写）;**S-A** F-16 锚点改 `:311-326` / `:327-330`（`:478-481` 属死代码）;**S-B** F-4 补「必填强制点有两个（② 与 ④）」;**S-C** `ADR-X.16` 行改「待追加」;**S-D** M0 进迁移计划表;**S-E** V-4 判据改「⊆ 源码声明键集 ∪ 表 A 键集」;**S-F** 见 B-1 的测试处置;**N-a** 括注改纯理由;**N-b/N-c** 表 A 与 R-2 对齐覆盖域 + 三态限定;**N-d** `param-validation` 补 `:38-45`;**N-e** M0 的 carrier 口径指名 |
 | 1.3 | 2026-11-17 | 按 critic 第 1 轮（REJECT · 1 BLOCKER + 8 SHOULD_FIX + 5 NITS）修订：**BLOCKER** 登记 `ADR-X.11` 决策 7（CFG-08）为**第四个声明面**（新增 F-16）并裁决**退役**（D-3 + M4 + 关系表）;F-4 改写为「四处 + 仅 CFG-08 有强制力」;**S-1** F-15 键清单补全（`use_zero_delay_for_test` / `ptx_emu_root` / `va_region_size` / `gpu_id` / `gfx_version` / `bdf`）+ M5 基线二表 + V-4 输入=两表并集;**S-2** D-3 增「必填保护实例层级 = 全部实例（含嵌套）= 有意行为变更」+ V-3 补已迁移类型登记;**S-3** D-3 三处可判定性（重叠=类型级 /「T 迁移完成」判据 / 板级路径三态穷举）;**S-4** 关系表增真源 1 §9.4、真源 1 `10-topology-generation-management-system.md`、`param-type-conversion` spec;**S-5** spec 行改「决策取代（spec 文本待修订）」+「spec 修订前仍是活契约」;**S-6** Metadata 闭合表加「闭合=决策已作出 ≠ 能力已存在」+ 4.6 ①拆分 + M0 绑定;**S-7** §F 行改「append-only 追加子段」;**S-8** D-2 改按覆盖域表述 + 基线二表唯一定义;**N-1** 必填由 `default = NONE` 表达;**N-2** 基线二表合并定义;**N-3** 关系表加 `ADR-X.16` 行;**N-4** M4 增 `test_d3_param_resolver_registry.cc`;**N-5** 版本序修正 |

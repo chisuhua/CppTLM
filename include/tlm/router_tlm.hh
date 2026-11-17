@@ -175,6 +175,10 @@ public:
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override;
     unsigned num_ports() const override { return NUM_PORTS; }
 
+    /// 类型名 —— 参数准入表（`cpptlm::is_param_admitted`）的判定依据
+    /// ⚠️ 此前未覆写 ⇒ 返回 "SimObject" ⇒ 已准入类型无法被识别（per ADR-X.17 D-3a）
+    std::string get_module_type() const override { return "RouterTLM"; }
+
     /// **只读**观测面：运行时生效的输入缓冲深度（由 `buffer_size` param 决定）
     /// ⚠️ `input_buffer_` 是 private，且其容量判定在**稳态**下与深度无关
     ///    （egress 1 flit/cycle 会持续消化积压）⇒ 本访问器是「param 已生效」的**直接证据**；
@@ -202,10 +206,9 @@ public:
     uint32_t node_id() const { return node_x_ + node_y_ * mesh_x_; }
 
     // ========== 配置管理（Phase 1）==========
+    /// 参数加载：逐参数 `load_param`（声明即读取，无独立规则表）
+    /// 决策源 docs/adr/ADR-X.17-module-param-read-declares.md D-1
     void on_config_loaded() override;
-
-    // ========== 参数规则（Phase 3.1）==========
-    static cpptlm::ParamRules get_param_rules();
 
     // ========== Credit 超时配置 ==========
     void set_credit_timeout(uint64_t cycles) { credit_timeout_ = cycles; }
