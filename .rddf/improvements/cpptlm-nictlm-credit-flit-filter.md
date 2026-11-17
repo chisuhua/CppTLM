@@ -77,11 +77,13 @@ bool NICTLM::handle_net_resp() {
 
 | # | 判据（机器可判） |
 |:--:|---|
-| **AC-01** | 向 `NICTLM` 的 net ingress 注入 1 个 `CATEGORY_CREDIT` flit ⇒ `flits_received()` **不变**、`packets_received()` **不变**、`pe_resp_out_` **无输出** |
-| **AC-02** | 端到端（`mesh_2x2_tlm` / `mesh_4x4_tlm` 类拓扑）：`NICTLM` 收到的 flit 数 == **真实事务数**（零 credit 污染） |
-| **AC-03** | 既有 `NICTLM` 拓扑回归全绿：`test_e2e_simulation` 的 nic 用例 · `test_nic_side_rules` · `test_noc_mesh_binding_semantics` · `[cep]` / `[e2e]` / `[pcie]` 全量 |
-| **AC-04** | 判据形态与 `CohIfNICTLM` 侧**一致**（同用 bundle 字段 `flit_category == CATEGORY_CREDIT`；⛔ 不用 `Packet::type`）⇒ 两侧行为可对拍 |
-| **AC-05** | **零 diff 面**：`src/tlm/router_tlm.cc` · `include/tlm/router_tlm.hh` · `include/tlm/nic_tlm.hh` 的**接口面** · `include/abi/**`（23 ABI 冻结）· `include/bundles/**` 全部零 diff |
+| **AC-01** | **带判别力的序列**（⛔ 非「注入前计数为 0」的空断言）：先注入 1 个真响应 flit（`flit_type=FLIT_HEAD_TAIL` · `flit_category=CATEGORY_RESPONSE` · `tid=T`）⇒ 断言 `flits_received==1` · `packets_received==1` · `pe_resp_out()` 有效且 `transaction_id==T` ⇒ `clear_valid()` ⇒ 再注入 credit flit（**同 `tid=T`** · `flit_type=FLIT_HEAD_TAIL` · `flit_category=CATEGORY_CREDIT`）⇒ 断言三面**保持** 1/1/无输出 且 `credits_dropped()==1` |
+| **AC-02** | **端到端存在性 + 计数正确**（⛔ 不用 `mesh_2x2_tlm`：其 4 个 NIC 全无 `address_regions` 且无 memory ⇒ `lookup_node()` 恒 0 ⇒「真实事务数」不可定义）：在**测试自建**的最小「NIC → Router → NIC」带流量拓扑里断言 ① `credits_dropped() > 0`（credit 确实抵达该 NIC，避免 `0==0` 空断言）② `flits_received` == **测试自己注入的响应 flit 数**（零 credit 污染） |
+| **AC-03** | 既有 `NICTLM` 拓扑回归全绿：`test_e2e_simulation` 的 nic 用例 · `test_nic_side_rules` · `test_noc_mesh_binding_semantics` · `test_complex_topologies_from_config` · 本 change 触达标签 `[e2e][nic][router][noc]` 全量 + `ctest` 全量。⚠️ `[pcie]` 与 `NICTLM` **零交集**，不列入 |
+| **AC-04** | 判据形态与 `CohIfNICTLM` 侧**一致**（同用 bundle 字段 `flit_category == CATEGORY_CREDIT`；⛔ 不用 `Packet::type`）⇒ 同一 credit flit 注入两侧 ⇒ 丢弃行为**可对拍**。⚠️ 「同款」= **逐字复制判据**，⛔ **不是**共享代码（不在 `bundles` 增 `is_credit()`、不在 `framework/` 的 adapter 层做过滤） |
+| **AC-05** | **零 diff 面**：`src/tlm/router_tlm.cc` · `include/tlm/router_tlm.hh` · `include/framework/**` · `include/abi/**`（23 ABI 冻结）· `include/bundles/**` · `configs/**` 全部零 diff。⚠️ `include/tlm/nic_tlm.hh` **允许**的改动**仅限**：新增标量 `stats_credits_dropped_` + 新增访问器 `credits_dropped()`；**其余签名零改动**（⛔ 不得为「对拍方便」补 `flits_received()` / `packets_received()` 访问器 —— 那两个继续经 `get_stats_group()` 标量读取） |
+| **AC-06** | **同 `tid` 在途包不被劫持**：`reassemble` 以 `transaction_id` 单键查 `pending_packets_` ⇒ credit flit 若被当作 HEAD 处理会**新建/污染在途包状态**（比「垃圾响应」更严重）。判据：注入真 `FLIT_HEAD`（`tid=T`，多 flit 包）→ 注入 credit（`tid=T`）⇒ 断言 `pe_resp_out()` **无输出**、`pending_packets_` 状态未被 credit 改写 → 再注入同 `tid=T` 的 `FLIT_TAIL` ⇒ 断言**恰好一条**响应 |
+
 
 ---
 

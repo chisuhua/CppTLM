@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-17T01:00:30Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-17T03:13:36Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-16T07:29:44Z",
-      "by": "user",
-      "reason": "per 用户裁决「先切 architect 评审」⇒ 实施期发现路径 B(真子模块 + exposed 端口)的前提不成立:SimModule 暴露端口在 module_factory 里既不被 Step 6(带索引端点被 Wildcard::match(\"*\",x) 恒真吞掉)也不被 Step 7b(非 ChStream 适配器)接入,扁平 config 能跑是因为走 Step 7b ChStream 直连。需 architect 评审「SimModule 暴露端口如何接入连接解析」并出决策(ADR)。"
-    },
     {
       "role": "builder",
       "at": "2026-11-16T08:02:33Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-17T01:00:30Z",
       "by": "user",
       "reason": "per 用户口令「继续」⇒ 归档链:openspec archive(不用 --skip-specs)+ 新 spec Purpose 手写 + KPI 1/3->0/3 回填 + AGENTS.md 体量数字 + 冻结清单 --update + 台账 Entry。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-17T03:13:36Z",
+      "by": "user",
+      "reason": "per 用户指令「先把 cpptlm-nictlm-credit-flit-filter 立项成 openspec change(planner 起草四件套)」⇒ 建 change 目录 + proposal/design/tasks/specs + metis 审查 + KPI 0/3 -> 1/3 回填 + 台账 Entry。"
     }
   ],
   "auto_switch_window": null
