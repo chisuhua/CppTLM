@@ -48,7 +48,7 @@
     "openspec/specs/cep-channel-dependency-gate/spec.md": "c2bc8b77ae40addf06ba6de8e78cf797b12804022a674aac72b167c13090c2c8",
     "openspec/specs/cep-chi-rnf-subset/spec.md": "85ec7d65db8f498a73162f9c1f83e246ff1258a5f8f1a32d3b458f6989fad248",
     "openspec/specs/cep-cohif-carrier/spec.md": "039c11cb5a1a9fb6dac933a392c514f9cf4011eb21f034b81c71420eac970013",
-    "openspec/specs/cep-cohif-network-adapter/spec.md": "9c77ea607acde5d250bb583825c6f970d0e334c698c025a17982780384852b3d",
+    "openspec/specs/cep-cohif-network-adapter/spec.md": "3f6aeab6cfed7af458f4a1dc8f272742ee700491e0588ad249f42173a2840a07",
     "openspec/specs/cep-collective-plane-base/spec.md": "e5c1864fe98b98faafc7d9d3296c4d80fe187d3b8d4bb3680af8c026663578f7",
     "openspec/specs/cep-collective-plane-contract/spec.md": "8364e7a776a0a73aa59fbb503084bc0d5598dcc5d1ff62c5d28e54285ccc4f7a",
     "openspec/specs/cep-core-contracts/spec.md": "0a72bd5588bd5d037ff79a8d6f7ca3f9f8c3d4811c4f2ca308978eb56e8cfd94",
@@ -90,10 +90,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #460",
+  "authorized_by": "Entry #464",
   "exclusions": [],
   "frozen_at": "2026-11-17",
-  "frozen_at_commit": "70c271a93707fd298b58cf2ae828ba0eef61c65b",
+  "frozen_at_commit": "f0ce5d9cedc5fc4bfced7d53d30c07545b7110fb",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
