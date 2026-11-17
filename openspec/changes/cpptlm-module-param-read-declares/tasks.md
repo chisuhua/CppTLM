@@ -15,7 +15,7 @@
 - [ ] T1.2 ⚠️ **失败通道复用** `cpptlm::ParamValidationError`（`include/core/param_errors.hh:11-24`）;`detail` 含期望范围;⛔ 不新造异常类型
 - [ ] T1.3 ⚠️ **数值边界逐条钉**：整型只接受 `is_number_integer()`（`8.0` / `1e20` / `true` 拒绝）;无符号另加 `>= 0`
 - [ ] T1.4 新增 `include/core/param_admission.hh`：`is_param_admitted(std::string_view)`（**唯一 C++ 真源**）
-- [ ] T1.5 新增**测试夹具模块**（仅测试用）：2 个标量参数（其一带默认值）⇒ 先证明机制本身可红
+- [ ] T1.5 新增**测试夹具模块**（仅测试用，`ParamFixtureTLM`）：2 个标量参数（其一带默认值）⇒ 先证明机制本身可红;⚠️ MUST ① 经 `REGISTER_CHSTREAM` 注册（否则 `instantiateAll` 无法按 `type` 创建）② **进准入表**（`is_param_admitted("ParamFixtureTLM") == true`，否则 AC-06 不可满足 —— design D-2/D-3）
 
 ## T2 — 装配接入
 
@@ -46,31 +46,33 @@
 
 - [ ] T5.1 AC-01：夹具模块越界 / 类型错 ⇒ `instantiateAll` 返回 false 且错误信息含**模块名 + 键名 + 期望范围**
 - [ ] T5.2 AC-02：夹具模块两个参数各有「两个不同合法值 ⇒ 可观测指标不同」
-- [ ] T5.3 AC-03：`git diff <base> -- test/ include/ src/` 中除新增测试与 `test_d3_param_resolver_registry.cc` 外，既有 `REQUIRE` / `CHECK` 行无删除/改值;全标签套件全绿
-- [ ] T5.4 ⚠️ AC-04：**Catch2 运行时对拍**（遍历 `configs/**/*.json`，已准入类型实例 ⇒ 装配成功 + `unknown_keys()` 为空）;⛔ 不用 grep 提取键名
+- [ ] T5.3 AC-03：① `git diff <base> -- test/ include/ src/` 中除新增测试与 `test_d3_param_resolver_registry.cc` 外，既有 `REQUIRE` / `CHECK` 行无删除/改值 ② `git diff <base> -- configs/` **为空** ③ 全标签套件全绿 ④ `[pcie]` / `[cep]` 绿（外部副作用零变化）
+- [ ] T5.4 ⚠️ AC-04：**先跑基线**（改动前，对含已准入类型实例的 `configs/**/*.json` 逐个 `instantiateAll`，记录成功/失败清单 + 既存失败的豁免证据）→ 再写 **Catch2 运行时对拍**（同一清单中基线成功者仍成功 + `unknown_keys()` 为空）;⛔ 不用 grep 提取键名;⛔ 不静默 `try/catch` 吞失败
 - [ ] T5.5 AC-05：`buffer_size` = `1` / `64` 通过;`0` / `65` 失败（测试内构造）
 - [ ] T5.6 AC-06：无 `params` 键的**夹具**实例 ⇒ 默认值落成员
-- [ ] T5.7 AC-07：RouterTLM 配 `params.buffer_sizes` ⇒ 返回 false 且错误含该键名;⚠️ 移除夹具后仍成立
-- [ ] T5.8 AC-08：① `test_config_schema_validation.cc:122/138/219` 绿 ② `grep -n 'RouterTLM' module_factory_validate.cc` 在 `:301-330` 零命中
+- [ ] T5.7 AC-07：RouterTLM 配 `params.buffer_sizes` ⇒ 返回 false 且错误含该键名;⚠️ 且 `grep -nE 'unknown|buffer_sizes' src/tlm/router_tlm.cc` 零命中（证明失败源是基类而非模块内手写 throw）
+- [ ] T5.8 AC-08：① `test_config_schema_validation.cc:122/138/219` 绿 ② `grep -n 'RouterTLM' src/core/module_factory_validate.cc` **文件级零命中**
 - [ ] T5.9 AC-09：① 存量 BSP-3 绿 ② 消耗 credit 后同值二次 `set_config` ⇒ 后续转发数不增加
 - [ ] T5.10 AC-10：默认值**不写回** `cfg["modules"][n]["params"]`（夹具 + RouterTLM 各一条）
-- [ ] T5.11 护栏 G-1（幂等）/ G-2（嵌套 RouterTLM 缺 `node_x` ⇒ false，改动前后均成立）
-- [ ] T5.12 `ctest -R cep` + `[router]` / `[cep]` / `[e2e]` / `[pcie]` / `[noc]` / `[mesh]` / `[config][schema]` 全绿
+- [ ] T5.11 ⚠️ AC-11：`buffer_size` = `8.0` / `true` / `1e20` ⇒ 失败;`credit_timeout` = `-1` ⇒ 失败;`buffer_size` = `8` ⇒ 成功
+- [ ] T5.12 ⚠️ AC-12：RouterTLM **扁平**形式（无 `params`，顶层 `node_x` 等）⇒ 装配成功且不因 `name`/`type` 报未知键;同形式**缺 `node_x`** ⇒ 失败;NICTLM 扁平形式（顶层 `node_id`）行为不变
+- [ ] T5.13 ⚠️ AC-13：`grep -nE 'load_param[^;]*"vc_count"' src/tlm/router_tlm.cc` 零命中
+- [ ] T5.14 护栏 G-1（幂等）/ G-2（嵌套 RouterTLM 缺 `node_x` ⇒ false，改动前后均成立）
+- [ ] T5.15 `ctest -R cep` + `[router]` / `[cep]` / `[e2e]` / `[pcie]` / `[noc]` / `[mesh]` / `[config][schema]` 全绿
 
 ## T6 — spec 修订（**走 delta，不直接编辑 main spec**）
 
-- [ ] T6.1 ⚠️ 新增 `openspec/changes/cpptlm-module-param-read-declares/specs/param-derivation/spec.md`：`## REMOVED Requirements`（移除 `get_param_rules()` 强制条款 + `flit_width` 派生条款）+ `## MODIFIED Requirements`（改为「**已准入**类型 SHALL 用 `load_param`;未准入类型 MAY 保留 `get_param_rules()`（逐类型退役）」）
+- [ ] T6.1 ⚠️ 新增 `openspec/changes/cpptlm-module-param-read-declares/specs/param-derivation/spec.md`：① 先 `grep -n "^### Requirement:" openspec/specs/param-derivation/spec.md` 取**准确 Requirement 名**（`REMOVED` / `MODIFIED` 段必须逐字匹配 main spec 名，否则 `openspec validate` 报错）② `## REMOVED Requirements`（移除 `get_param_rules()` 强制条款 + `flit_width` 派生条款）③ `## MODIFIED Requirements`（改为「**已准入**类型 SHALL 用 `load_param`;未准入类型 MAY 保留 `get_param_rules()`（逐类型退役）」）
 - [ ] T6.2 ⚠️ 新增 `.../specs/param-validation/spec.md` 的 `## MODIFIED Requirements`：执行者从 ModuleFactory 改为模块内 `load_param`;`:38-45` 的「marked required」与 `def = nullopt` 术语对齐
 - [ ] T6.3 ⚠️ 新增 `.../specs/param-type-conversion/spec.md` 的 `## MODIFIED Requirements`：转换真值点从 ModuleFactory 改为模块内
-- [ ] T6.4 补 `openspec/specs/param-derivation/spec.md` 的 **TBD 占位 Purpose**（走 delta 的 `## MODIFIED`）
 - [ ] T6.5 ⛔ **真源 1 文档同步剥离**（`docs/architecture/06` §9.4 / `10-topology-generation-management-system.md` §8.2-8.4）⇒ 登记为 doc-only 后续 change（proposal 已知残留）
-- [ ] T6.6 新增 main spec `openspec/specs/module-param-load-declares/spec.md`（本 change 的 delta 合并目标）
 
 ## T7 — 收口
 
 - [ ] T7.1 台账 Entry（实施记录 + 实测 + 改动面）
 - [ ] T7.2 KPI 回填（6 处活口径）
-- [ ] T7.3 归档（`openspec archive`，⛔ 不用 `--skip-specs`）+ 新 main spec Purpose 手写
+- [ ] T7.3 归档（`openspec archive`，⛔ 不用 `--skip-specs`）⇒ **archive 自动生成** `openspec/specs/module-param-load-declares/spec.md`（⛔ 不得手工预建 —— 会与 archive 输出冲突）
+- [ ] T7.3a 手写新 main spec 的 Purpose（archive 留 `TBD - created by archiving change …`）;且**不**回填 `openspec/specs/param-derivation/spec.md` 的 Purpose —— 该 spec 属「另案订正」（delta 无法表达 Purpose，见 proposal Out of Scope 与 AC 表外说明）
 - [ ] T7.4 冻结清单核查（`cep_freeze_check` —— 预期不受影响：本 change 不产出 `cep-*` spec）
 - [ ] T7.5 独立验收（切 verifier）
 - [ ] T7.6 ⚠️ **残留清点**：`grep -rn 'get_param_rules' --include=*.cc --include=*.hh src/ include/ test/` 的结果只剩 `include/core/param_rules.hh` 与 `src/core/module_factory.cc` 的通用机制（**无任何模块实现**）;且 `grep -n 'RouterTLM' src/core/module_factory_validate.cc` 零命中（与 AC-08② 同一判据）

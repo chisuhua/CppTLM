@@ -38,6 +38,13 @@
 - **WHEN** 同一实例被二次加载
 - **THEN** 成员值 SHALL 不变
 - **AND** 加载 SHALL NOT 清除或重置**非本机制写入**的状态
+- **AND** 该「不清除」性质 SHALL 由**既有副作用套件零变化**承载判定（本 change 不迁移带此类副作用的类型 ⇒ 其行为差异只可能来自被改动的公共路径）
+
+#### Scenario: 默认值 SHALL NOT 写回配置 JSON
+
+- **WHEN** 某参数声明了默认值，而实例配置中**不提供**该键
+- **THEN** 默认值 SHALL 落到成员
+- **AND** 装配后的配置对象中 SHALL **NOT** 出现该键（⛔ 不得为「让默认值生效」而把默认值注入回 `params`）
 
 ### Requirement: module-param-unknown-key-detection
 

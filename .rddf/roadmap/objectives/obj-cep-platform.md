@@ -25326,4 +25326,13 @@ test cases:  5 |  0 passed | 5 failed
 
 **KPI**:**1/3 → 2/3**(active = 本 change + `cpptlm-nictlm-credit-flit-filter`,后者 21/28 per 其台账)。
 
+**审查补正(测试完备性,同 Entry)**:对 change 的 AC ↔ delta spec Scenario 做了逐条对照,发现并修掉 4 类缺口:
+1. **3 个 Scenario 无 AC 覆盖** ⇒ 新增 **AC-11**(数值边界:`8.0`/`true`/`1e20`/`-1` 拒绝)、**AC-12**(legacy 扁平路径:成功且不报未知键 + 缺 `node_x` 仍必填失败)、**AC-13**(`vc_count` 不入声明,grep 断言)。
+2. **design D-2 与 AC-06 自相矛盾** —— D-2 收窄为「未准入且无 `params` ⇒ 跳过 `on_config_loaded`」,而 AC-06 要求「无 `params` 的夹具实例 ⇒ 默认值落成员」⇒ 若夹具不准入则 AC-06 不可满足 ⇒ 在 **design D-2/D-3 明文裁决夹具进准入表**。
+3. **AC-04 缺基线** —— 11 个含 RouterTLM 的配置里 `configs/apu_soc_full.json` 含 `ComputeUnitTLM`/`TCCTLM` 等历史类型,是否仍注册未验证 ⇒ AC-04 改为「先跑基线记录成功/失败清单 + 既存失败登记豁免附证据,⛔ 不得静默 catch」。
+4. **2 个错误 task** —— T6.6「手工新增 main spec」会与 archive 输出冲突(archive 自动生成)⇒ 删除;T6.4「走 delta 的 `## MODIFIED` 改 Purpose」不可行(delta 格式无 Purpose 段,实测归档样例)⇒ 删除,改由 T7.3a 在 archive **之后**手写。
+**另补**:AC-03 增 `git diff <base> -- configs/` 为空;AC-08② 改文件级零命中;AC-07 增 `router_tlm.cc` 零 `unknown/buffer_sizes` 的 grep(替代不可机械化的「移除夹具后仍成立」);delta spec 补 **S6「默认值 SHALL NOT 写回配置 JSON」**(此前 AC-10 无 spec 支撑)。
+**显式接受 3 项测试薄弱点**(proposal §已知测试薄弱点):W-1 板级直读键登记只有台账判据(本 change 无可测对象)· W-2 AC-04 基线可能含既存装配失败 · W-3 AC-03① 靠人工 diff 而非自动闸。
+**覆盖矩阵**:11 个 Scenario 中 10 个有 AC 承载,S10 由 W-1 显式接受。
+
 **⑰ 关联**:`docs/adr/ADR-X.17-module-param-read-declares.md`(Proposed · v1.5)· `.rddf/reviews/ADR-X.17.md`(oracle 2 轮 + critic 2 轮)· AC-01~AC-10 对应 ADR 的 V-1~V-7 + D-3a · 同族 backlog `.rddf/improvements/cpptlm-validate-params-dead-code.md` / `cpptlm-router-vc-count-param-inert.md`

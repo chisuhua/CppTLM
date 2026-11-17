@@ -49,6 +49,9 @@ private:
 - **无 `params` 键的实例也调用一次**（传 `json::object()`）—— 否则默认值永远不落成员（现状 `cfg_src == nullptr` 时根本不调）。
   ⚠️ **与「SHALL NOT 清除外部状态」的冲突已裁决**：该条对**全部未迁移类型**生效，会首次触发它们的 `on_config_loaded` 副作用（`CohIfNICTLM::regions_.clear()` / `PcieEndpointTLM` 的 `cfg_space_` 重初始化 / `PcieEndpointIP` 的主动 detach）。
   ⇒ **收窄**：`SimObject::set_config` 只在 **`is_param_admitted(type()) == true`** 或 **该实例的 `params` 键存在** 时调用 `on_config_loaded()`;对「未准入且无 `params`」的实例**维持现状跳过**（⛔ 不引入新的副作用触发面）。AC-03 钉死该零变化。
+- ⚠️ **该收窄与 AC-06 的交界（本文件裁决）**：AC-06 要求「**无 `params` 键**的夹具实例 ⇒ 默认值落成员」。若夹具**不进**准入表，收窄条款会跳过它的 `on_config_loaded()` ⇒ **AC-06 不可满足**。
+  ⇒ **裁决：夹具模块 SHALL 进准入表**（`is_param_admitted("ParamFixtureTLM") == true`）。理由：夹具的全部参数均由 `load_param` 声明（满足 D-3 的 (a)），无 `ParamRules` 条目（(b)），无 CFG-08 分支（(c)）⇒ 它本就满足准入条件;不进反而是特例。
+  ⇒ 同理，**「无 `params` 键也加载」这条规则的适用面 = 准入类型 ∪ 有 `params` 的实例**，其余维持现状。
 - **幂等**：同一实例二次加载 ⇒ 成员被同值覆盖（幂等成立）;`consumed_` 每次 `ParamLoadContext` 构造时清空。
 
 ## D-3 — 准入判定（**唯一 C++ 真源**）
@@ -66,7 +69,8 @@ bool is_param_admitted(std::string_view type);
 - (b) `getParamRulesRegistry()` 中无 `T` 的条目;
 - (c) CFG-08 的 `T` 分支已删除。
 
-⇒ 本 change 只有 **RouterTLM** 满足 (a)(b)(c);`NICTLM` **不满足 (c)**（分支保留）⇒ **不准入**。
+⇒ 本 change 有两个类型满足 (a)(b)(c)：**RouterTLM**（试点）与**测试夹具**（`ParamFixtureTLM`，仅测试构建可见）。`NICTLM` **不满足 (c)**（分支保留）⇒ **不准入**。
+⚠️ **夹具必须在准入表内的后果**：夹具的 `params` 里任何按键都会触发未知键失败 ⇒ 夹具的测试配置 SHALL 只用其声明的键（这本身是 AC-01/06/10 的载体，不是缺陷）。
 ⚠️ 仓库级测试（AC-04）与任何辅助脚本 **SHALL** 从 `is_param_admitted()` 派生，⛔ 不得硬编码类型名。
 
 ## D-3a — 未知键的失败位置（**ADR-X.17 D-3a 的落地**）
@@ -118,6 +122,8 @@ bool is_param_admitted(std::string_view type);
 
 ## D-8 — 观测面与验证载体
 
-- AC-01/02/05/06/10 以**夹具模块**为载体;AC-07 以 **RouterTLM** 为载体（证明基类的未知键检查真的执行）。
+- AC-01/02/05/06/10/13 以**夹具模块**为载体（`vc_count` 那条 AC-13 除外 —— 它是对 `src/tlm/router_tlm.cc` 的 grep 断言）;AC-07/11 以 **RouterTLM** 为载体（证明基类的未知键检查与数值边界真的执行）。
+- **AC-12（legacy 扁平）** 需要用**两种** module entry 形态构造 RouterTLM 实例：`{"name":…, "type":"RouterTLM", "node_x":…}`（触发 `module_factory.cc:405-406` 的扁平回退）与同形态但缺 `node_x`。
+- **AC-10（默认值不写回 JSON）的机制来源**：工厂侧注入（`module_factory.cc:263-291`）只对 `getParamRulesRegistry()` 中**存在**的类型生效 ⇒ RouterTLM 的注册在 T3.4 删除后**自然不再注入**（⛔ 不另加机制）。夹具则从未注册过 ⇒ 天然满足。⇒ AC-10 是**防回归**判据（防止实施者为「让默认值生效」把默认值写回 JSON），不是机制探测器。
 - AC-04 是 **Catch2 用例**（`[param][alignment]`）：遍历 `configs/**/*.json`（排除 `configs/param_rules/**` 与非拓扑片段），对含已准入类型实例的配置 `instantiateAll` + 断言 `unknown_keys()` 为空。
 - ⛔ **不使用 grep 提取键名**（键名写成常量 / 换行 / 加注释都会让静态闸静默漏键 ⇒ 闸变松而永不红）。
