@@ -570,3 +570,12 @@ change `cpptlm-router-buffer-size-param` 的 `design.md` **D-1 理由②** 与 *
 - ⚠️ `openspec/specs/param-derivation/spec.md` 现状含**未实现条款**（「ParamRule stores all fields … accessible via getter methods」按字面为假 —— 结构体是公有字段、无 getter、无 `derive_expr`；「Dynamic derivation evaluation」零实现）与 **TBD 占位 Purpose** ⇒ 扩写前须先对齐，否则新闸会以未实现条款为基线。
 - **实施载体**：`.rddf/improvements/cpptlm-validate-params-dead-code.md`（接回死代码）· `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`（`vc_count` 声明-实际不一致）。
 - **待订正的实现注释（architect 域外 · 交 builder）**：`src/tlm/router_tlm.cc:86-89` 的注释称「`instantiateAll` 会先跑 `validateConfig` → `validate_params`（已按 ParamRules 的 min/max 做 parse + 范围校验）⇒ 本分支的抛异常在标准装配路径上**不可达**」—— 与 A 表决策 4.5 相反：`validateConfig` **不调**校验器，且**没有** `validate_params` 这个函数（只有 `static validate_module_params`）⇒ 该分支正是 AC-04 的**唯一**失败通道，⛔ 不可删。
+
+### 2026-11-17 — 指向 `ADR-X.17`（模块参数「读取即声明」机制）
+
+本 ADR 的**部分取代**与**部分闭合**关系由 `docs/adr/ADR-X.17-module-param-read-declares.md` 承载：
+
+- **部分取代**：决策 1 的「**规则存放位置**」维度（「序列化载体」维度不变）。
+- **部分闭合**（逐条见 ADR-X.17 的 Metadata 表）：决策 7 Stage 1 与 Stage 2 的 min/max 子项（**仅对已迁移模块**）· 决策 4.6 的 ①**校验位置**（全体类型，位置已就位）与 ②**校验依据**（仅已迁移模块）。
+- **未闭合**（须各自具名 owner change）：决策 7 Stage 2 的 `derive_expr` 评估与参数依赖关系 · 决策 5 · 决策 6 · 决策 4.6 的 ②异常类型与 ③回滚 · 决策 4.5 的「参数组合不合法」（跨参数约束）。
+- ⚠️ 本 ADR 正文与上述 §A~§G **既有内容零改动**（本子段为 append-only）。

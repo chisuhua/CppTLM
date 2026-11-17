@@ -133,3 +133,14 @@ Accepted — 2026-11-16（oracle APPROVE + critic APPROVE_WITH_CONDITIONS，0 BL
 **关联指针已落实**：本 ADR 的 Metadata 写的 `backlog: cpptlm-router-local-port-credit-exhaustion` 已由 planner 立项（台账 **Entry #459**，AC-01~AC-07 对应 V-1~V-6），实施与验收见 Entry **#463** 与 `openspec/changes/cpptlm-router-local-port-credit-exhaustion/`。
 
 > ⚠️ D4 的**决策内容**（要观测、要节流、不靠周期性重置掩盖真实死锁）不变；本段只订正**锚点的实现口径**。按 ADR 不可变原则，正文不改。
+
+**2026-11-17 — 「相邻独立缺陷 ①」已闭合（errata · 不改正文）**
+
+`:113` 的「相邻独立缺陷 ①：`buffer_size` param 不生效 —— `get_param_rules` 声明了该参数（默认 16，范围 1–64），但 `BUFFER_DEPTH` 是 `constexpr 8`」**已被 change `cpptlm-router-buffer-size-param`（2026-11-17 实施 / 验收 / 归档）闭合**：
+
+- 声明默认值 **16 → 8**（`get_param_rules()` 与 `configs/param_rules/router_tlm.json` 双双对齐实现值（per 该 change 的 `design.md` D-1「让声明反映实现」）;
+- 参数**真正生效**（`on_config_loaded` 读取并写入运行时成员，5 处使用点改读该成员）;
+- 非法值（`0` / `65` / 非整数）⇒ **装配期失败**;
+- ⚠️ **行号已漂移**：`BUFFER_DEPTH` 现位于 `include/tlm/router_tlm.hh:143`（原文写 `:134`）。
+
+⇒ 本 ADR 正文（含 `:113`）**不改**（ADR 不可变原则）;本条为 append-only 记录。相邻独立缺陷 ②（`NICTLM` 无 credit flit 过滤）由并发 change `cpptlm-nictlm-credit-flit-filter` 处理中。
