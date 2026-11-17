@@ -63,7 +63,7 @@
 - **AND** 该丢弃 SHALL 计入 `credits_dropped()`
 
 > **锚点**:`test/test_cep_mesh_e2e.cc` 的 MESH-7(AC-01)
-> **已知限制**:本模块**不**归还 credit ⇒ `LOCAL` 口的 credit 耗尽(每 `(LOCAL, vc)` 满 `BUFFER_DEPTH` 个 flit 后本地投递停滞)属**另一**缺陷,见 `.rddf/improvements/cpptlm-router-local-port-credit-exhaustion.md`;本 spec 不作承诺。
+> **状态更新(2026-11-17)**:上条「`LOCAL` 口 credit 耗尽」缺陷**已由 capability `router-local-port-flow-control` 承接并解决**(change `cpptlm-router-local-port-credit-exhaustion`,决策源 `docs/adr/ADR-X.16-router-local-port-terminal-credit.md`)—— `LOCAL` 端口已定义为**终端端口**,不参与 downstream credit 流控 ⇒ 不再存在「每 `(LOCAL, vc)` 满 `BUFFER_DEPTH` 个 flit 后停滞」。⚠️ 本模块**仍不**归还 credit(它不是 credit-aware 实体)⇒ 其 ingress 收到的 credit flit 仍按上条 Scenario **丢弃**并计入 `credits_dropped()`。
 
 #### Scenario: 观测面 SHALL 只暴露原始事实
 

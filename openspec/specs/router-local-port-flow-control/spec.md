@@ -1,6 +1,9 @@
-# router-local-port-flow-control Specification (delta)
+# router-local-port-flow-control Specification
 
-## ADDED Requirements
+## Purpose
+把 Router 的 LOCAL 端口从「链路端点」重新定义为「终端接入点」：credit 是 router↔router 链路上的 VC buffer 反压机制，而 LOCAL 的下游是终端消费者、没有归还方，把链路级流控套到终端端口既无归还方也无语义依据。本 capability 终止 LOCAL 的 downstream credit 记账（信用预算无穷、反压交给 ChStream 的 valid/ready），并要求 Router 的 mesh 侧 credit 停滞**可观测**——以免「router↔router 有反压、router→终端无反压」这一不对称变成看不见的静默点。
+
+## Requirements
 
 ### Requirement: router-local-port-terminal-semantics
 

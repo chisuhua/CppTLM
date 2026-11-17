@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-router-local-port-credit-exhaustion` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #459;`cpptlm-router-credit-flit-leak-to-consumer` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #457;`cpptlm-simmodule-exposed-port-wiring` + `cpptlm-cep-mesh-interconnect-submodule` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #451;此前二者于 2026-11-16 **立项** ⇒ 各占 1 slot,per 台账 Entry #450;此前 `cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **0 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-router-local-port-credit-exhaustion` 于 2026-11-17 **归档** ⇒ slot 已释放,per 台账 Entry #464;`cpptlm-router-credit-flit-leak-to-consumer` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #457;`cpptlm-simmodule-exposed-port-wiring` + `cpptlm-cep-mesh-interconnect-submodule` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #451;此前二者于 2026-11-16 **立项** ⇒ 各占 1 slot,per 台账 Entry #450;此前 `cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -25063,3 +25063,55 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 **KPI**:保持 **1/3**(change 仍 active;归档时回填 0/3)。
 
 **⑩ 关联**:Entry **#459**(立项)· **#455**(等价判据改开环裁决)· **#461**(NICTLM 缺口登记)· `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` · `openspec/changes/cpptlm-router-local-port-credit-exhaustion/`
+
+### Entry #464 — 2026-11-17 [builder](**归档** `cpptlm-router-local-port-credit-exhaustion` —— ✅ 已完成归档语义(带 delta) · KPI **1/3 → 0/3** · 冻结 **88**(hash 重刷) · 体量 main spec **131 → 132** / 归档 change **155 → 156**)
+
+**主题**:归档 change `cpptlm-router-local-port-credit-exhaustion`(决策源 `ADR-X.16` Accepted · 方案 A)。实施记录见 **Entry #463**,独立验收见 **Entry #465**。
+
+**归档执行(⛔ 未用 `--skip-specs` —— 实现已完成)**:
+- `openspec archive cpptlm-router-local-port-credit-exhaustion -y` ⇒ 归档件 `openspec/changes/archive/2026-11-17-cpptlm-router-local-port-credit-exhaustion/`(**归档目录被 `.gitignore:64` 忽略** ⇒ 不入库,与既有 156 份同理)。
+- **delta 正式合并**:`cep-cohif-network-adapter` **~1 modified**(「已知限制」句改为「已由 capability `router-local-port-flow-control` 承接并解决」+ 保留「本模块仍不归还 credit ⇒ ingress 仍丢弃 credit flit」)+ **新建** `openspec/specs/router-local-port-flow-control/spec.md`(**+2 added**:`router-local-port-terminal-semantics` / `router-mesh-credit-stall-observability`)。
+- **新 spec 的 `## Purpose` 手写**(替换归档自动生成的 TBD 占位,per D-0 规则)⇒ `openspec validate router-local-port-flow-control --type spec --strict` ⇒ **valid**;`cep-cohif-network-adapter --strict` ⇒ **valid**。
+
+**KPI**:**1/3 → 0/3**(归档 ⇒ slot 释放;实测 `openspec list --json` = **0 active**)· **6 处活口径**已回填(`obj-cep-platform.md:474` / `phases/phase-10.md:209` / `improvements/cpptlm-cep-umbrella.md:306` / `improvements/cpptlm-cep-nvlink-sharp.md:31` + `:211` / `.rddf/roadmap.md:5`)⇒ 表述由「`cpptlm-router-local-port-credit-exhaustion` 于 2026-11-17 **立项** ⇒ 占 1 slot,per Entry #459」改为「**归档** ⇒ slot 已释放,per Entry **#464**」。
+
+**体量数字(`AGENTS.md` 4 处)**:归档 change **155 → 156**(3 处)· main spec 总数 **131 → 132**(`cep-* 45 + 其他 86` → `45 + 87`)。实测:cep-* spec **45**(不变)· 全仓 main spec **132** · 归档 change **156** · active **0**。
+
+**冻结面**:该 change 的 2 份 main spec 中,`cep-cohif-network-adapter/spec.md` **在** `FROZEN_GLOBS` 内(归档合并改写其内容 ⇒ hash 变)⇒ 已跑 `cep_freeze_check.sh --update --authorized-by "Entry #464"`;**新 spec `router-local-port-flow-control` 不在** 冻结范围(实测 `0 未登记`)⇒ **产物数 88 不变**,仅 hash 重刷。⚠️ 顺序纪律:合并产物**先 commit** 再 `--update`(否则 manifest hash 与 commit 内容不一致 ⇒ provenance 警告)。
+
+**验收**:verifier 独立验收 **PASS**(AC-01~AC-07 全通过 + G-1/G-2;**无 implementation_gap**;报告 `.rddf/reviews/cpptlm-router-local-port-credit-exhaustion-verify.md`;**2 项非阻断 drift** = F-1(AC-03 反向判据用 `receive_credit` 直接归还替代 adapter 装配)+ F-2(AC-06 合并动作即本条))。
+
+**剩余待办(跨角色)**:T6.2 的另一半 —— `buffer_size` param 不生效(`get_param_rules` 声明默认 16 / 范围 1–64,但 `BUFFER_DEPTH` 是 `constexpr 8`)仍未登记为 improvement(`NICTLM` 缺 credit 过滤已由 **Entry #461** 登记)。
+
+**KPI**:保持 **0/3**。
+
+**⑪ 关联**:Entry **#465**(独立验收)· **#463**(实施记录)· **#461**(`NICTLM` 缺口登记)· **#460**(授权修订 `fabric-transport.md`)· **#459**(立项)· `docs/adr/ADR-X.16-router-local-port-terminal-credit.md`(决策源 · 含 2026-11-17 Status Update 锚点澄清)· `openspec/specs/router-local-port-flow-control/spec.md` · `openspec/specs/cep-cohif-network-adapter/spec.md`
+
+### Entry #465 — 2026-11-17 [verifier](**独立验收** `cpptlm-router-local-port-credit-exhaustion` —— AC-01~AC-07 全通过 · **0 implementation_gap** · 2 项非阻断 drift)
+
+**主题**:change `cpptlm-router-local-port-credit-exhaustion` 的独立验收(tasks **T5.4**)。报告全文落 `.rddf/reviews/cpptlm-router-local-port-credit-exhaustion-verify.md`。**记账说明**:verifier 角色不写台账,本条由 builder **代为记账**(保持台账链闭合,内容逐字取自验收报告)。
+
+**分流**:`rddf rdd-verify --dry-run` ⇒ `No eligible changes to verify (empty queue)`;且 `.rddf/state/iteration.json` 不存在 ⇒ **P3 archive gate 未触发** ⇒ 未走 `rdd-verifier` skill,走**本地验收路径**(1–5 步)。**已用轮次 1/3**。
+
+**判据来源**:① 用户指令「继续」⇒ 执行 T5.4;② proposal 的 `## Acceptance`(AC-01~AC-07 + guard G-1/G-2)**主判据**;③ commit `68a2bf01` + Entry #463;④ `ADR-X.16` 的 V-1~V-6。
+
+**逐条判定(全部 PASS)**:
+| 判据 | 判定 | 关键证据 |
+|---|---|---|
+| AC-01 | PASS | `RLC-1`:LOCAL 40 flit 全到(**无 8-flit 平台期**)+ `stall==0` |
+| AC-02 | PASS | `RLC-2`:4 VC 共 80 flit 全到 |
+| AC-03 | PASS | `RLC-3`:裸 router 向 **mesh 向**注入 ⇒ `stall >= 16`;credit 归还后**严格相等不增长**(防「无脑 +1」假实现);`credit_timeout_` 默认 0 未动(`router_tlm.hh:316`) |
+| AC-04a | PASS | 回归集全绿(`[mesh]` 251/19 · `[cep]` 12429/539 · `[e2e]` 7451/150 · `[pcie]` 36779/452 · `[exposed]` 33/10)+ **「逐项不变」的 diff 级直接证据**:`router_tlm.cc` 的 hunk 仅 4 处(构造/VA 拒绝/SA 拒绝/credit 函数)⇒ **转发路径函数与 flits/packets/hops 计数器零改动** |
+| AC-04b | PASS(空集) | 零既有断言变化 + 未触碰任何既有 `REQUIRE` 常量;结论已回写 `design.md` §D-4 |
+| AC-05 | PASS | 死状态处置可 grep(`router_tlm.hh:286`) |
+| AC-06 | PASS(delta 已备) | 2 份 delta spec 齐备且内容正确;合并动作 = Entry #464 |
+| AC-07 | PASS | `RLC-1`/`RLC-2` 均断言 `stall == 0`;结构上 LOCAL 永不进 `!has_credit` 分支 |
+| G-1 / G-2 | PASS | `[exposed]` 绿 + MESH-6 在 · `RouterPort::LOCAL` 注释已声明终端语义 |
+
+**2 项非阻断 drift**:**F-1** = AC-03 反向判据原文「挂上 `BidirectionalPortAdapter` 后停止增长」,实现用「每周期直接调 `router.receive_credit()` 归还」—— 功能等价(adapter 归还 credit 的唯一入口即 `receive_credit`)且 `credit_timeout_=0` ⇒ 不会被重置掩盖,但**未实际装配 adapter** 验证该路径 ⇒ 交 planner 收敛文本 / builder 补对照用例;**F-2** = AC-06 的合并动作属归档(Entry #464 已执行)。
+
+**遗留清扫**:无 TODO/FIXME/XXX · 无临时调试残留 · 无 skip/disabled 测试 · 无未跟踪残渣 · 注释掉的代码 0 · 未替换 mock 0。
+
+**结论**:**PASS** · **无 implementation_gap** ⇒ 可归档(Entry #464 已执行)。
+
+**⑫ 关联**:Entry **#464**(归档回执)· **#463**(实施记录)· **#459**(立项)· `.rddf/reviews/cpptlm-router-local-port-credit-exhaustion-verify.md` · `docs/adr/ADR-X.16-router-local-port-terminal-credit.md`
