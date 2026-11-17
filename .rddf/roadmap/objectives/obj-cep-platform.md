@@ -24985,7 +24985,7 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 
 **产物**:
 - improvement 改写为可实施形态(AC-01~AC-07 + G-1/G-2 + 测试装置表 + 「⛔ 实施时不得顺手改」清单)
-- change 目录 `openspec/changes/cpptlm-router-local-port-credit-exhaustion/`(4 件套 + **2 份 delta spec**:`router-local-port-flow-control` ADDED · `cep-cohif-network-adapter` MODIFIED)
+- change 目录 `openspec/changes/archive/2026-11-17-cpptlm-router-local-port-credit-exhaustion/`(4 件套 + **2 份 delta spec**:`router-local-port-flow-control` ADDED · `cep-cohif-network-adapter` MODIFIED)
 - `openspec validate --strict` ⇒ **valid**
 
 **spec 落点依据**:全仓检索确认**没有任何 main spec 承载 RouterTLM 的流控语义**(RouterTLM 仅在配置类 spec 中作为模块类型被提及)⇒ 须**新建 capability**;另 `cep-cohif-network-adapter` 的「已知限制」句在 D1 落地后**变成过期陈述** ⇒ 同批修订。
@@ -25040,7 +25040,7 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 
 ### Entry #463 — 2026-11-17 [builder](**实施** `cpptlm-router-local-port-credit-exhaustion` —— LOCAL 端口终端语义(D1) + mesh credit 停滞可观测(D4) · **零既有断言变化** · tasks **27/34**)
 
-**主题**:按 `ADR-X.16`(Accepted · 方案 A)实施「Router LOCAL 端口不参与 downstream credit 流控」+ 停滞可观测。决策源与判据见 `openspec/changes/cpptlm-router-local-port-credit-exhaustion/`(proposal AC-01~AC-07 / design D-1~D-6)。
+**主题**:按 `ADR-X.16`(Accepted · 方案 A)实施「Router LOCAL 端口不参与 downstream credit 流控」+ 停滞可观测。决策源与判据见 `openspec/changes/archive/2026-11-17-cpptlm-router-local-port-credit-exhaustion/`(proposal AC-01~AC-07 / design D-1~D-6)。
 
 **实现(2 文件 · +42/-3)**:
 - `include/tlm/router_tlm.hh`:① `RouterPort::LOCAL` 注释改为**显式终端语义**(不参与 credit 流控 + 误用失败模式 = 下游 `input_buffer_` 静默丢 flit);② `downstream_credits_[LOCAL][*]` 标注**死状态**(T1.3 方案 (a):保留数组形状 + 注释说明,不拆 LOCAL 以免动既有索引与 `credit_safety_reset` 遍历面);③ 新增 `stats_credit_stall_cycles_` 标量 + `stall_log_counter_` 节流数组 + `note_credit_stall()` 声明。
@@ -25062,7 +25062,7 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 
 **KPI**:保持 **1/3**(change 仍 active;归档时回填 0/3)。
 
-**⑩ 关联**:Entry **#459**(立项)· **#455**(等价判据改开环裁决)· **#461**(NICTLM 缺口登记)· `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` · `openspec/changes/cpptlm-router-local-port-credit-exhaustion/`
+**⑩ 关联**:Entry **#459**(立项)· **#455**(等价判据改开环裁决)· **#461**(NICTLM 缺口登记)· `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` · `openspec/changes/archive/2026-11-17-cpptlm-router-local-port-credit-exhaustion/`
 
 ### Entry #464 — 2026-11-17 [builder](**归档** `cpptlm-router-local-port-credit-exhaustion` —— ✅ 已完成归档语义(带 delta) · KPI **1/3 → 0/3** · 冻结 **88**(hash 重刷) · 体量 main spec **131 → 132** / 归档 change **155 → 156**)
 
