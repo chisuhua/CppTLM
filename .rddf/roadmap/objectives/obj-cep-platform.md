@@ -25169,3 +25169,85 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 **KPI**:**1/3 → 2/3**(change 目录已建立 ⇒ 实测 active = **2**)· **6 处活口径**已同步(`obj-cep-platform.md:474` / `phases/phase-10.md:209` / `improvements/cpptlm-cep-umbrella.md:306` / `improvements/cpptlm-cep-nvlink-sharp.md:31` + `:211` / `.rddf/roadmap.md:5`)。
 
 **⑬ 关联**:Entry **#466**(另一 session 立项 `cpptlm-nictlm-credit-flit-filter` · 本条与之**并存** ⇒ 并发 2/3)· **#464**/**#465**(上一 change 的归档 + 验收)· **#461**(NICTLM 缺口登记)· `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` · `openspec/changes/cpptlm-router-buffer-size-param/`
+
+### Entry #468 — 2026-11-17 [builder](**实施** `cpptlm-nictlm-credit-flit-filter` 的 T1 + T2 —— `NICTLM` 侧 in-band credit flit 过滤落地 · 判别力验证 **5/5 用例变红** · ctest 全量 **181/181**)
+
+**主题**:实施 change `cpptlm-nictlm-credit-flit-filter`（立项见 Entry **#466**）的 T1（实现）+ T2（测试）两段。缺陷本体 = `RouterTLM` 把 credit 以 flit 形式走在与数据**同一通道** `resp_out` 上（bundle 字段 `flit_category == CATEGORY_CREDIT`）；`reverse_port(LOCAL) == LOCAL` ⇒ 经 LOCAL 口进入 router 的 flit，其 credit 沿 `resp_out[LOCAL]` 回流到挂在 LOCAL 上的下游消费者。`CohIfNICTLM` 侧**已修**（Entry #457 归档）；本条补 **`NICTLM`** 侧。
+
+**实现落点**（⛔ 零 diff 面）：
+- `src/tlm/nic_tlm.cc` · `NICTLM::handle_net_resp`：`consume()` 之后、计数之前插入 credit 判定 ⇒ `++stats_credits_dropped_` 并 **`return true;`**（flit 已被消费 ⇒ 返回值与既有「处理了 1 个 flit」语义一致；⛔ 不写 `return false`）。
+- `src/tlm/nic_tlm.cc` · 构造函数：新增 `stats_credits_dropped_` 的 `addScalar("credits_dropped", "Total credit flits dropped", "flits")`。
+- `include/tlm/nic_tlm.hh`：新增成员 `tlm_stats::Scalar& stats_credits_dropped_` + 访问器 `std::uint64_t credits_dropped() const`（**本 change 唯一的新增公开 API**；⛔ 未补 `flits_received()` / `packets_received()` 访问器）。
+
+**测试落点**:`test/test_nictlm_credit_filter.cc`（**新建**，文件名与 delta spec 的 3 处锚点逐字一致）—— 5 个 `TEST_CASE` / **40 断言**：AC-01（带判别力序列）· 两种 flit 形状（`FLIT_HEAD_TAIL` + `FLIT_HEAD`）· AC-06（同 tid 不劫持）· AC-02（端到端）· AC-04（与 `CohIfNICTLM` 对拍）。另 `test/CMakeLists.txt` 注册 ctest 条目 `nictlm_credit_filter`（标签 `[nictlm][credit]`，**不含** `[cep]` ⇒ 须独立注册，否则「只测不跑」）。
+
+**判别力验证（关键证据）**——临时把过滤分支短路为 `if (false && ...)` 重编译后，**5/5 用例全部变红**（修复后全绿）：
+```
+test_nictlm_credit_filter.cc:109: failed: scalar_of(*g, "flits_received") == 1 for: 2 == 1
+test_nictlm_credit_filter.cc:132: failed: nic.credits_dropped() == 1 for: 0 == 1
+test_nictlm_credit_filter.cc:179: failed: !(nic.pe_resp_out().valid()) for: !true
+test_nictlm_credit_filter.cc:280: failed: ni0_credits_dropped > 0 for: 0 > 0
+test_nictlm_credit_filter.cc:308: failed: nic.credits_dropped() == 1 for: 0 == 1
+test cases:  5 |  0 passed | 5 failed
+```
+⇒ 判据**能捕获缺陷**（非恒绿）。恢复后 `All tests passed (40 assertions in 5 test cases)`。
+
+**D-3「旧值 → 新值」实测对照**（同一端到端拓扑、同一 binary；旧值 = 过滤禁用态，新值 = 修复态）：
+| 观测量 | 旧值 | 新值 | 必然性 |
+|---|:--:|:--:|---|
+| `ni0.flits_received` | **4** | **0** | ni0 是**上游**（发端）⇒ router 转发其 4 个 flit 后各回 1 个 credit ⇒ ni0 的 ingress 共收到 4 个 credit flit ⇒ 缺陷态虚增 4，修复态丢弃 ⇒ 归零（ni0 本就不应收到任何数据 flit ⇒ **0 才是真值**） |
+| `ni0.packets_received` | **4** | **0** | credit 的 `flit_type = FLIT_HEAD_TAIL` ⇒ 缺陷态被 `reassemble` 当独立包完成 ⇒ 产出 4 条**全零垃圾响应**；修复态不进 `reassemble` ⇒ 无包、无垃圾响应 |
+| `ni0.credits_dropped` | **0**（无此计数） | **4** | 新增观测面 ⇒ 精确等于 ni0 收到的 credit 数（4 = ni0 发出的 flit 数，1:1） |
+| `ni1.flits_received` | **4** | **4**（**不变**） | ni1 是**下游**（收端）⇒ 收到 `CATEGORY_REQUEST` 的**请求 flit**（非 credit）⇒ 本修复不触碰 |
+
+**既有断言数值变化：零**。全仓 grep 核查：既有测试中**无任何**对 `NICTLM` 的 `flits_received` / `packets_received` 的**断言** —— `test/test_noc_mesh_binding_semantics.cc` 的 `ni1_flits_received` / `ni1_packets_received` 仅为 `std::cout` **dump**（无 `REQUIRE`）；`test/test_cep_mesh_e2e.cc` 的 `flits_received()` 断言属 **`CohIfNICTLM`** 侧（不属本 change 触及面）；`test/test_module_stats.cc` / `test/test_stats_core.cc` 的同名标量属 **CrossbarTLM**。⇒ **未触发 D-3 第 2/3 条**。新增机器锚点 = `NIC-CREDIT-4` 对 `ni0.flits_received == 0` 与 `ni0.credits_dropped() > 0` 的**同时**断言（补上「既有 dump 无锚点」的缺口）。
+
+**实施期口径订正 3 处**（记入 design **D-6**，**AC 语义未变** ⇒ 不构成 `plan_drift`）：
+1. **D-1「unit/description 与 `CohIfNICTLM` 侧逐字一致」不成立** —— 实测 `CohIfNICTLM` 的 `stats_credits_dropped_` 是**纯 `std::uint64_t`**（`include/tlm/cep/cohif_nic.hh:146`），该类**无任何 `addScalar` 调用** ⇒ CohIf 侧**不存在** `credits_dropped` stat 标量 ⇒ 无对象可比。⇒ NICTLM 侧改用**本模块既有惯例**；「同名同义」的对称锚点是**访问器名** `credits_dropped()`（两侧都有）。
+2. **D-2「`FLIT_HEAD` ⇒ `pending_packets_` 留一条永不清除的条目」有误** —— 实测 `reassemble` 的产出条件是 `if (flit.is_tail() || is_new_packet)`，该分支内**既** `pe_resp_out_.write(resp)` **又** `pending_packets_.erase(it)` ⇒ **HEAD 类 flit 单独到达即完成并 erase** ⇒ NICTLM 侧**不存在跨周期在途包**（BODY / TAIL 单独到达直接 `return false`）。
+3. **AC-06 判据形态改为可达的等价锚点** —— 原「注入 TAIL ⇒ 恰好一条响应」不可达；改为「注入同 `tid` 的**第二个 HEAD** ⇒ 恰好一条响应」：若 credit 未被过滤，它会新建同 tid 条目 ⇒ 该 HEAD 命中条目、不走 `is_new_packet` 分支 ⇒ 产 **0** 条 ⇒ 变红。
+
+**零 diff 面核查**（基线 = 本 change 立项 commit `00ab8ef6` + 并发 session 的 `a0f8762c`；⚠️ 仓内有**并发 agent** ⇒ 按「**本 change 的改动集合**」判定，不按整棵工作树）：工作树改动 = `src/tlm/nic_tlm.cc` · `include/tlm/nic_tlm.hh` · `test/CMakeLists.txt` · `openspec/changes/cpptlm-nictlm-credit-flit-filter/design.md` + 新增 `test/test_nictlm_credit_filter.cc`。**禁改面逐项零 diff**（`git diff --quiet HEAD -- <path>` 全通过）：`src/tlm/router_tlm.cc` · `include/tlm/router_tlm.hh` · `include/framework/bidirectional_port_adapter.hh` · `include/framework/dual_port_stream_adapter.hh` · `include/bundles/noc_bundles_tlm.hh` · `include/tlm/cep/cohif_nic.hh` · `include/abi/cpptlm_emulator.h` · `configs/**`。⚠️ `test/CMakeLists.txt` 在原允许清单外 ⇒ 已**追加登记**为允许项（仅注册 ctest 条目）。
+
+**验证结果**：`cmake --build build` 无 error（99/99 → 增量）· 新单测 **40 断言 / 5 用例全绿** · 触达标签回归 `[noc]`(70 用例) / `[nic]`(15) / `[router]`(14) / `[e2e]`(151) **全绿** · `ctest` 全量 **181/181 通过,0 失败**（807s；`cep_doc_ref_check` 309s + `cep_decl_reverse_verify` 35s 为耗时大头）· `cep_docs_sync_check` ✅ · `cep_doc_ref_check` ✅ · `openspec validate --strict` valid · 遗留清扫零命中（无 TODO / FIXME / 临时 diag / skip 测试；测试内 `[NIC-CREDIT]` dump 沿既有 `[PROBE]` 惯例保留作诊断）。
+⚠️ **一次假故障已排除**：首轮 ctest 曾卡在 `[abi][msix][t-w3-3]` 达 707 秒 —— 单独复跑该测试仅 **0.754 秒** ⇒ 系**并发 agent 同时跑 ctest + 重建**导致的资源竞争，**与本改动无关**（该测试属 PCIe ABI 面，与 `NICTLM` 零交集）。
+
+**KPI**：当前实测 **2/3**（本 change + 并发 session 的 `cpptlm-router-buffer-size-param`，后者占 1 slot,per Entry **#467**）⇒ 本 change **归档后应为 1/3**（⛔ **不是** 0/3）⇒ 回填 6 处活口径时**必须先跑 `openspec list --json` 取实测值**（per tasks T5.2 已改措辞）。
+
+**未做（⛔ 本轮范围外）**：归档（`openspec archive` + delta 合并 + 新建 main spec + 冻结清单 `--update`）· KPI 回填 · 独立验收（切 verifier）—— 三者留待后续 T3 / T5。
+
+**⑦ 关联**:Entry **#466**（本 change 立项 + metis 22 条处置）· **#467**（并发 session 立项 `cpptlm-router-buffer-size-param` ⇒ KPI 2/3 的另一半）· **#465**（同源另一面验收 · 其 F-2 相邻项即本条）· **#464**（同源另一面归档）· **#463**（同源另一面实施）· **#461**（backlog 登记）· **#457**（`CohIfNICTLM` 侧归档 · 同根因已修的一侧）· `docs/adr/ADR-X.16-router-local-port-terminal-credit.md`（`## 关联` 章 · 缺口原始登记处）· `openspec/changes/cpptlm-nictlm-credit-flit-filter/`（四件套 + D-6 口径订正）· `test/test_nictlm_credit_filter.cc`
+
+### Entry #469 — 2026-11-17 [builder](**实施** `cpptlm-router-buffer-size-param` 的 T1/T2/T4 —— `buffer_size` 真正生效(容量 + credit 预算同源) · **实施期发现 2 处机制缺口** · AC-05 零既有断言变化)
+
+**主题**:按 `design.md` D-1(默认值取 **8**)实施 `RouterTLM` 的 `buffer_size` param 生效。实施记录见 commit **`708b13c8`**。
+
+**实现(4 文件)**:
+- `include/tlm/router_tlm.hh`:运行时成员 `buffer_depth_`(初值 = `BUFFER_DEPTH`)+ `BUFFER_DEPTH` 语义改为「默认深度」+ 只读访问器 `buffer_depth()`(观测面)
+- `src/tlm/router_tlm.cc`:`on_config_loaded` 读 `buffer_size`(非法 ⇒ 抛异常)+ 读后**按新深度重新同步 `downstream_credits_` 初值**(D-2「同源」纪律)+ 5 处使用点改读 `buffer_depth_` + `get_param_rules` 默认值 16 → 8
+- `configs/param_rules/router_tlm.json`:补 `buffer_size` 条目(`default_int: 8` / 1–64)
+- `src/core/module_factory.cc`:`set_config`/`on_config_loaded` 调用点 **+6 行 try/catch**(异常 ⇒ 装配失败)
+
+**⚠️ 实施期发现的两处机制缺口(均已在 `design.md` **D-7** 记录并闭合)**:
+1. **D-7.1**:`module_factory_validate.cc` 的 `validate_module_params`(`static`,`:475-499`,按 ParamRules 做 parse + min/max)**零调用方 ⇒ 死代码** ⇒ `validateConfig` 实际**不做** param 校验 ⇒ 非法 `buffer_size` 不会被前置拦截 ⇒ AC-04 只能由「`on_config_loaded` 抛异常 + 装配点 catch ⇒ return false」提供通道(与 Step 4.5 的 `simulate_instantiate` **同款既有范式**)。
+2. **D-7.2**:原 D-6 第 4 条「`configs/param_rules/router_tlm.json` 的改动可能是 no-op」**结论错误**(事实成立、结论相反)⇒ 必须在该文件**补** `buffer_size` 条目,否则双声明面(`get_param_rules()` ↔ json)仍不一致。原条已作废标记。
+
+**测试(`test/test_router_buffer_size_param.cc` · 4 用例 / 15 断言 · 全绿)**:
+- BSP-1 (AC-02):默认 ⇒ `buffer_depth()==8` 且每 port 注入 8 个(32 总量)**零丢弃**
+- BSP-2 (AC-01):`=2` ⇒ depth==2 且每 port 注入 8 个**必丢**(<32);`=16` ⇒ depth==16 且零丢弃;`=1`(下界)⇒ depth==1
+- BSP-3 (AC-03):mesh 向 credit 预算 == 深度(默认 8 / 设 4 ⇒ 4)
+- BSP-4 (AC-04):`0` / `65` / `"abc"` ⇒ 装配返回 **false**;`32`(合法)⇒ 装配成功且 `depth==32`
+
+**⚠️ 观测面边界(`design.md` D-3 补充)**:`input_buffer_` 是 private,且**「容量判定」在稳态下与深度无关**(egress 恒 1 flit/cycle ⇒ 持续注入的转发总数由**时长**决定)⇒ 实测确认**单 port 注入与多 port 汇聚的稳态吞吐都与容量无关** ⇒ 采用**两条互补判据**:① `buffer_depth()` 只读访问器(直接证据) ② **每 in_port 注入 `K > C` 时必丢**(行为证据;4 in_port 汇聚同一出口 ⇒ 注入 4/cycle 远快于消费 1/cycle ⇒ 首轮即填满)。
+
+**变异验证(判别力实证)**:注释掉 `buffer_depth_ = static_cast<unsigned>(n);` ⇒ **5 个断言红**(BSP-2 三节 + BSP-3 第二节 + BSP-4 合法值节)⇒ 判据对「param 不生效」这一缺陷态**有判别力**;恢复后 15/4 全绿。
+
+**AC-05 全量回归(零既有断言变化)**:`[router]` 118/18 · `[noc]` 790848/70 · `[cep]` 12429/539 · `[e2e]` 7458/151 · `[pcie]` 36779/452 · `[mesh]` 251/19 · `[router][credit][local]` 12/4 —— 全绿。`openspec validate --strict` ⇒ **valid**;`cep_docs_sync_check` ⇒ 全通过。
+
+**冻结面**:`configs/param_rules/router_tlm.json` / `src/core/module_factory.cc` / `router_tlm.{hh,cc}` **均不在** `FROZEN_GLOBS`(grep 冻结清单 0 命中)⇒ 本次无需 `cep_freeze_check --update`。
+
+**KPI**:保持 **2/3**(本 change 仍 active;`cpptlm-nictlm-credit-flit-filter` 为并发 session 的另一 active change,per Entry #468)。
+
+**剩余(T5 收口)**:T5.1 本条(已落)· T5.2 KPI 1/3 → 0/3(归档时)· T5.3 归档(`openspec archive` · ⛔ 不用 `--skip-specs`)· T5.4 独立验收(切 verifier)· T3.2/T3.3 归档时合并 delta + 冻结核账。
+
+**⑭ 关联**:Entry **#467**(立项 + 默认值裁决)· **#468**(并发 session 的 NICTLM 实施 —— 其正文已把本 change 记为并发 active)· `openspec/changes/cpptlm-router-buffer-size-param/`(design **D-1** 默认值裁决 / **D-3** 观测面边界 / **D-7** 两处机制缺口)· commit **`708b13c8`** · `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`(同族独立 backlog)
