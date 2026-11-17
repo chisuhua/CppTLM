@@ -4,7 +4,7 @@ priority: P1
 phase: phase-10
 category: bugfix
 type: bug
-状态: 🔴 **未立项(backlog)** —— 2026-11-17 planner 起草并登记(台账 Entry **#470**);发现于 change `cpptlm-router-buffer-size-param` 的实施期(其 `design.md` **D-7.1** 记录)
+状态: 🟡 **部分转派(2026-11-18)** —— 2026-11-17 planner 起草并登记(台账 Entry **#470**);发现于 change `cpptlm-router-buffer-size-param` 的实施期(其 `design.md` **D-7.1** 记录)。⚠️ **C++ 侧诉求已转派**给 change `cpptlm-module-param-migrate-batch2`(台账 Entry **#476**;其 tasks **T4.4** 删死代码 `validate_module_params` + **T4.5** 随迁 `ParamParser::validate`)⇒ 机制退役后,`ParamRules` 的 type/min/max 约束由**模块内 `load_param`** 承担(`ADR-X.17` D-1 / D-6)。⛔ **Python 生成期诉求仍未闭合**(`cpptlm_config/validator.py` 的 PARAM-01/02 依赖 `configs/param_rules/*.json`)⇒ 归 `ADR-X.10` **§F** 的独立 ADR 裁决(architect 域)
 created: 2026-11-17
 ---
 

@@ -4,7 +4,7 @@ priority: P2
 phase: phase-10
 category: bugfix
 type: bug
-状态: 🔴 **未立项(backlog)** —— 2026-11-17 planner 起草并登记(台账 Entry **#467**);原始登记处 = `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` 的 `## 关联` 章「相邻独立缺陷」第 1 条(该条只点了 `buffer_size`,本条是**同族第二例**)
+状态: 🔴 **未立项(backlog)· 结论不变(2026-11-18 复核)** —— 2026-11-17 planner 起草并登记(台账 Entry **#467**);原始登记处 = `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` 的 `## 关联` 章「相邻独立缺陷」第 1 条(该条只点了 `buffer_size`,本条是**同族第二例**)。⚠️ **复核结论**:「**只登记不修**」**维持** —— `ADR-X.17` **D-6** 已把 `vc_count` 排除在声明面之外(`NUM_VCS` 是编译期常量 ⇒ 声明即退化为「声明了却无效」),且 `cpptlm-module-param-read-declares`(2026-11-17 已归档)已把该声明**迁出** ⇒ C++ 侧已无残留;其 **json 侧条目**(`configs/param_rules/router_tlm.json` 的 `vc_count` + `derive_expr`)归 `ADR-X.10` **§F** 的独立 ADR 裁决(台账 Entry **#476**)
 created: 2026-11-17
 ---
 

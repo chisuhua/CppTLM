@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-module-param-read-declares` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #472；同日 **归档** ⇒ slot 已释放,per 台账 Entry #474;`cpptlm-nictlm-credit-flit-filter` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #466;`cpptlm-router-buffer-size-param` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #467；同日 **归档** ⇒ slot 已释放,per 台账 Entry #471;`cpptlm-nictlm-credit-flit-filter` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #466;`cpptlm-router-local-port-credit-exhaustion` 于 2026-11-17 **归档** ⇒ slot 已释放,per 台账 Entry #464;`cpptlm-router-credit-flit-leak-to-consumer` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #457;`cpptlm-simmodule-exposed-port-wiring` + `cpptlm-cep-mesh-interconnect-submodule` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #451;此前二者于 2026-11-16 **立项** ⇒ 各占 1 slot,per 台账 Entry #450;此前 `cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **3 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 3/3**（`cpptlm-module-param-effect-landing` + `cpptlm-module-param-migrate-batch2` 于 2026-11-18 **立项** ⇒ 占 2 slot,per 台账 Entry #475/#476；`cpptlm-module-param-read-declares` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #472；同日 **归档** ⇒ slot 已释放,per 台账 Entry #474;`cpptlm-nictlm-credit-flit-filter` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #466;`cpptlm-router-buffer-size-param` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #467；同日 **归档** ⇒ slot 已释放,per 台账 Entry #471;`cpptlm-nictlm-credit-flit-filter` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #466;`cpptlm-router-local-port-credit-exhaustion` 于 2026-11-17 **归档** ⇒ slot 已释放,per 台账 Entry #464;`cpptlm-router-credit-flit-leak-to-consumer` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #457;`cpptlm-simmodule-exposed-port-wiring` + `cpptlm-cep-mesh-interconnect-submodule` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #451;此前二者于 2026-11-16 **立项** ⇒ 各占 1 slot,per 台账 Entry #450;此前 `cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -25409,3 +25409,58 @@ test cases:  5 |  0 passed | 5 failed
 **⑰ 关联**:`docs/adr/ADR-X.17-module-param-read-declares.md`(Proposed · v1.6)· `.rddf/reviews/ADR-X.17.md`(含 `## B-1 复核（实施 change 期）`)· `.rddf/reviews/cpptlm-module-param-read-declares-verify.md` · `docs/implementation/module-param-baseline.md` · commit `0fddd258`(实施)+ `81ff1280`(格式化+验收) + 本次(归档)
 
 **⑰ 关联**:`docs/adr/ADR-X.17-module-param-read-declares.md`(Proposed · v1.5)· `.rddf/reviews/ADR-X.17.md`(oracle 2 轮 + critic 2 轮)· AC-01~AC-10 对应 ADR 的 V-1~V-7 + D-3a · 同族 backlog `.rddf/improvements/cpptlm-validate-params-dead-code.md` / `cpptlm-router-vc-count-param-inert.md`
+
+### Entry #475 — 2026-11-18 [builder](**立项** `cpptlm-module-param-effect-landing` —— 「配置里有键、实现零效果」的语义落地;KPI **1/3 → 2/3**)
+
+**立项理由**:承接 Entry #474 遗留项 ①（`RouterTLM.routing` 零效果）与 ③（F-14 那一族 5 类 / 14 键）⇒ 二者合并为一个「语义落地」change（缺陷同类、裁决规则同一）。
+
+**⚠️ 立项期实测把规模显著扩大**（`ADR-X.17` F-14 的清单**未覆盖**最大的一类):
+
+| 类别 | 类型 | 键×类型对 | 出处 |
+|---|---:|---:|---|
+| ① **零配置读取面**（类型**完全没有** `on_config_loaded` / `set_config` 覆写 ⇒ 其 `params` 全部键零效果） | **14** | **32** | ⚠️ **本次新发现** —— F-14 未覆盖 |
+| ② 有读取面但该键未消费（读到即丢 / 读了不消费） | 3 | 9 | F-14 |
+| ③ 生成方产出、模块从不消费（`RouterTLM.routing`） | 1 | 1 | F-14 邻例 |
+| **合计** | **17** | **42** | — |
+
+最刺眼者:`CPUTLM`（**95 个配置实例** / 3 键全零效果 —— `cpu_tlm.hh` 的 `start_addr_` / `request_interval_` 只被构造期与运行期用,从不赋值自配置）· `CacheTLM`（**37 个实例** / 6 键全零效果 —— 该类无任何配置读取面）· 另 `mem_type`（`src/` + `include/` 零命中）· `TrafficGenTLM` 的 `hotspot_addrs` / `hotspot_weights` / `stride`（setter 无生产调用方）。
+
+**产物**（4 件套 + 1 份 delta spec）:
+- `openspec/changes/cpptlm-module-param-effect-landing/proposal.md`（Why + What Changes + Out of Scope + 已知残留 R-1~R-3 + **AC-01~AC-09** + 护栏 G-1/G-2 + Scenario→AC 矩阵 + 已知测试薄弱点 W-1/W-2）
+- `design.md`（**D-1 键盘点清单**（17 类 / 42 键逐类型表 + 盘点方法）· **D-2 三态裁决规则**（① 接真实消费 / ② 生成方停止产出 / ③ 显式拒绝;含各态的判据 · 必交付物 · 禁止事项）· D-3 落地批次 B1/B2/B3 · D-4 与既有 improvement / ADR 的关系 · D-5 与未知键检查的交互（为何必须先修语义再迁类型））
+- `tasks.md`（**T0~T7** · 逐类型任务: T1 = F-14 五类 + 扩展键 · T2 = 零读取面 14 类 · T3 = `routing` · T4 = 逐键判别测试 · T5 = 台账 · T6 = 验证 · T7 = 收口)
+- `specs/module-param-effect-landing/spec.md`（delta · ADDED 1 Requirement / 5 Scenario）
+- `openspec validate --strict` = **valid**
+
+**关键裁决**:
+1. **三态而非「修好」** —— 键不必都有行为,但**必须**有确定效果:态②（生成方停止产出 ⇒ 配置写了即失败）与态③（伪参数只接受唯一合法值）都算「有效果」;⛔ 禁止用 `ignore_param` 长期豁免（`ADR-X.17` D-3b）。
+2. **态① 必须带行为判别测试**（`ADR-X.17` D-6）且**不得**为通过判别而新增「只为测试存在」的观测面。
+3. **态② 会改变存量配置的可装配性**（写了该键的拓扑从「装得上」变「装不上」）⇒ 这是**有意的**收紧（静默丢弃比失败更坏）;每个态② 键必须列出全仓命中清单并逐处处置（tasks T4.4）。
+
+**⛔ 明确不裁决（architect 域）**:`configs/param_rules/*.json` 的存废定位 —— `ADR-X.10` §F 明载「需**独立的 ADR 级裁决**」⇒ 本 change 不裁决、**也不删除该文件**（它是 `cpptlm_config/validator.py` PARAM-01/02 的活数据源,删除会静默关闭生成期校验并打挂 `scripts/test/test_off.sh:84` 的 pytest）。
+
+**依赖顺序**:`cpptlm-module-param-effect-landing` ⇒ `cpptlm-module-param-migrate-batch2`（类型迁移会把零效果键从「静默丢弃」突变为「未知键 ⇒ 存量配置装不上」）;⚠️ 例外:迁移 change 的 T1a（迁**已有读取面**的 20 个类型）不依赖本 change ⇒ 两条线可并行。
+
+### Entry #476 — 2026-11-18 [builder](**立项** `cpptlm-module-param-migrate-batch2` —— 机制迁移批次 2 + ParamRules 机制退役;KPI **2/3 → 3/3**)
+
+**立项理由**:承接 Entry #474 遗留项 ②（嵌套装配失败不上传）· ④（其余模块的迁移）· ⑤（`configs/param_rules` 双声明面的 **C++ 侧**）· ⑥（`param-validation` 的「mesh 范围 1-16」条款冲突）;⇒ 合并为一个「机制迁移」change（同一机制形态、同一批准入表变更、同一次 ParamRules 退役）。
+
+**⚠️ KPI 已达上限**:本次立项后 **3/3**（`cpptlm-nictlm-credit-flit-filter` 21/28 + 本 change + `cpptlm-module-param-effect-landing`）⇒ 按 AGENTS.md「OpenSpec Proposed 存量 ≤3」,**新提案需先 archive 一个现有 change**（`cpptlm-nictlm-credit-flit-filter` 完成后释放 1 slot）;⚠️ 这两个新 change 均已**占满**剩余槽位 ⇒ 其余待立项项（如派生求值实现）须等槽位释放。
+
+**产物**（4 件套 + **3 份 delta spec**）:
+- `openspec/changes/cpptlm-module-param-migrate-batch2/proposal.md`（Why + What Changes + Out of Scope + 已知残留 R-1~R-4 + **AC-01~AC-10** + 护栏 G-1/G-2 + Scenario→AC 矩阵 + 已知测试薄弱点 W-1~W-3）
+- `design.md`（D-1 准入三态判据 · **D-2 迁移清单（20 个类型**:ChStream 家族 10（`on_config_loaded` 覆写）+ SimModule 家族 10（`set_config` 覆写读 `params`）;含逐类型的键与非标量/板级直读处置 · **D-2.3 SimModule 家族的 `set_config` 覆写形态**（基类 `enforce` 与模块 `load_param` 的**顺序冲突** ⇒ 需基类改造）· **D-3 ParamRules 机制退役清单**（逐符号/逐文件）· **D-4 嵌套失败传播设计**（含幂等守卫的「已 populate **且**上次成功」修正）· D-5 依赖顺序 P0/P1a/P1b/P2/P3 · D-6 板级直读键三态处置表）
+- `tasks.md`（**T0~T8** · T0 = 基类调用序列改造 + 嵌套失败传播 + 调用点全量核实 + 既有测试语义评估 · T1 = ChStream 家族 10 类型逐个迁 · T2 = SimModule 家族 10 类型逐个迁 · T3 = 依赖 effect-landing 的部分 · T4 = ParamRules 退役（7 项）· T5 = 测试支撑 · T6 = 台账 + 2 个 backlog improvement 状态更新 · T7 = spec delta · T8 = 验证与收口)
+- delta spec 3 份:`module-param-load-declares`（MODIFIED:全量准入后的未知键检出）· `param-derivation`（**REMOVED** `ParamRule structure` + MODIFIED `Module param rules declaration`）· `param-validation`（MODIFIED `Parameter range validation` + `Required parameter enforcement`）;⚠️ **既有 Scenario 名全部保留**（`openspec` 要求 MODIFIED 不得丢既有 Scenario —— 实测报 `omits scenario(s)` 后已修)
+- `openspec validate --strict` = **valid**;`openspec validate --changes --strict` = 3 passed / 0 failed
+
+**关键裁决**:
+1. **必填真值唯一** —— CFG-08 的 per-type 硬编码分支（`NICTLM`）与模块内 `load_param` 必填声明**同 commit** 完成退役;迁移后 `load_param` 是唯一必填来源。
+2. **ParamRules 机制整体退役** —— `RouterTLM` 迁移后 `registerParamRules` 零生产调用方、`validate_module_params` 零调用方、注册表只剩空表 ⇒ 留着会让后续读者误以为「规则表仍是活的声明面」（`ADR-X.10` A 表:决策 4.5 / 5 / 6 / 7 Stage 2 **全部未实施**）。
+3. **嵌套失败必须上传播** —— `SimModule::simulate_instantiate` 丢弃 `internal_factory->instantiateAll` 的返回值 ⇒ 嵌套实例的必填声明形同虚设;⚠️ 该修正**改变外层返回语义**（此前内层失败外层仍 true）⇒ 既有依赖该语义的测试须逐条评估（tasks T0.4）。
+4. **基类调用序列需改造** —— SimModule 家族在 `set_config` 覆写内读参数 ⇒ 若基类先 `enforce` 会把模块刚声明的键误判为未知键 ⇒ 基类须提供「`begin` → 模块自读 → `enforce`」路径。
+5. **`configs/param_rules/*.json` 不动** —— `ADR-X.10` §F 未裁决 ⇒ 本 change 只退役 **C++ 侧**,json 侧留待 architect 裁决（该裁决会把问题**收窄**为「json 是否保留为生成期规则面」）。
+
+**backlog improvement 状态更新**:`cpptlm-validate-params-dead-code` 的 **C++ 侧诉求由本 change 闭合**（T4.4 / T4.5）;其 Python 生成期诉求转 `ADR-X.10` §F。`cpptlm-router-vc-count-param-inert` 的「只登记不修」结论**不变**（`vc_count` 需换 3 个核心容器的类型）。
+
+**⑰ 关联**:`openspec/changes/cpptlm-module-param-effect-landing/` · `openspec/changes/cpptlm-module-param-migrate-batch2/` · `docs/adr/ADR-X.17-module-param-read-declares.md`(Proposed · v1.6) · `docs/adr/ADR-X.10-parameter-framework.md`(§A / §C / **§F**) · `docs/implementation/module-param-baseline.md` · `.rddf/improvements/cpptlm-validate-params-dead-code.md` · `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`
