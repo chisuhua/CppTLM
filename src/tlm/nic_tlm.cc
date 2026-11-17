@@ -18,6 +18,8 @@ namespace tlm {
               stat_group_.addScalar("packets_sent", "Total packets sent", "packets")),
           stats_packets_received_(
               stat_group_.addScalar("packets_received", "Total packets received", "packets")),
+          stats_credits_dropped_(
+              stat_group_.addScalar("credits_dropped", "Total credit flits dropped", "flits")),
           stats_latency_(
               stat_group_.addDistribution("latency", "Packet end-to-end latency", "cycle")) {
     }
@@ -84,6 +86,17 @@ namespace tlm {
 
         bundles::NoCFlitBundle flit = net_resp_in_.data();
         net_resp_in_.consume();
+
+        // credit flit 与数据 flit 共用同一通道（`RouterTLM` 的 credit 回流经
+        // `BidirectionalPortAdapter::send_credit_impl` 写 `resp_out`，bundle 字段
+        // `flit_category = CATEGORY_CREDIT`；`reverse_port(LOCAL) == LOCAL` ⇒ 经 LOCAL
+        // 口进入 router 的 flit，其 credit 沿 `resp_out[LOCAL]` 回流到本模块）
+        // ⇒ 显式丢弃：不计数、不进 reassemble、不写 pe_resp_out_
+        //（否则产出事务号 / 地址 / 数据全 0 的垃圾响应）。
+        if (flit.flit_category.read() == bundles::NoCFlitBundle::CATEGORY_CREDIT) {
+            ++stats_credits_dropped_;
+            return true;  // flit 已被消费 ⇒ 返回值与既有「处理了 1 个 flit」语义一致
+        }
 
         ++stats_flits_received_;
 

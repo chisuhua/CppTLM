@@ -48,6 +48,21 @@
 
 **核对责任（⛔ 纪律须有锚点，否则是空文）**：D-3 第 1 条的「旧值 → 新值」清单**由 builder 在归档前执行并贴进 change**，证据形式 = 改动前后的标签级计数对照命令与输出（例如 `./build/bin/cpptlm_tests "[e2e][nic]" | tail -1` 的前后两值），**不**接受「读码确认」这类自我声明。⚠️ 既有 `test_noc_mesh_binding_semantics.cc` 的 `ni1.flits_received` 只是 **dump**（无断言）⇒ 该处**无机器锚点** ⇒ 必须**新增**断言，不能靠既有 dump 充当证据。
 
+**builder 归档前补录（2026-11-17）——「旧值 → 新值 → 必然性」清单**：
+
+**证据形式**：同一端到端拓扑（`test/test_nictlm_credit_filter.cc` 的 `NIC-CREDIT-4`）在**过滤分支临时禁用**与**启用**两种状态下的实测输出（同一 binary、同一 seed 无关）：
+
+| 观测量 | 旧值（过滤禁用 = 缺陷态） | 新值（过滤启用 = 修复态） | 为何是本修复的必然结果 |
+|---|:--:|:--:|---|
+| `ni0.flits_received` | **4** | **0** | ni0 是**上游**（发端）⇒ router 转发其 4 个 flit 后各回 1 个 credit ⇒ ni0 的 ingress 共收到 4 个 **credit flit** ⇒ 缺陷态把它们计入 `flits_received`（虚增 4），修复态丢弃 ⇒ 归零。ni0 本就**不应**收到任何数据 flit ⇒ **0 才是真值** |
+| `ni0.packets_received` | **4** | **0** | 同上：credit flit 的 `flit_type = FLIT_HEAD_TAIL` ⇒ 缺陷态被 `reassemble` 当作独立包完成 ⇒ 产出 4 条**全零垃圾响应**（`pe_resp_out`）；修复态不进入 `reassemble` ⇒ 无包、无垃圾响应 |
+| `ni0.credits_dropped` | **0**（无此计数） | **4** | 新增观测面 ⇒ 精确等于 ni0 收到的 credit flit 数（4 = ni0 发出的 flit 数，1:1 对应） |
+| `ni1.flits_received` | **4** | **4**（**不变**） | ni1 是**下游**（收端）⇒ 收到的是 `CATEGORY_REQUEST` 的**请求 flit**（非 credit）⇒ 本修复**不触碰** ⇒ 数值不变 |
+
+**既有断言的数值变化：零**。核查方式（全仓 grep）：既有测试中**无任何**对 `NICTLM` 的 `flits_received` / `packets_received` 的**断言** —— `test/test_noc_mesh_binding_semantics.cc` 的 `ni1_flits_received` / `ni1_packets_received` 仅为 `std::cout` **dump**（无 `REQUIRE`）；`test/test_cep_mesh_e2e.cc` 的 `flits_received()` 断言属 **`CohIfNICTLM`** 侧（不属本 change 触及面）；`test/test_module_stats.cc` / `test/test_stats_core.cc` 的同名标量属 **CrossbarTLM**（无关）。⇒ **未触发 D-3 第 2/3 条**（无需改常量、无需改判据）。
+
+**新增的机器锚点**（补上 D-3「核对责任」指出的缺口）：`test/test_nictlm_credit_filter.cc` 的 `NIC-CREDIT-4` 对 `ni0.flits_received == 0` 与 `ni0.credits_dropped() > 0` **同时**断言 ⇒ 上表的「旧值 → 新值」由**断言**而非 dump 承载。
+
 ## D-4 — spec 落点与真源同步
 
 | 动作 | 内容 |
@@ -76,3 +91,37 @@
 | `net_resp_in_.ready()` 为假 | 裸 `NICTLM` 的 `ready()` **恒真**（`stream_adapter.hh` 默认 `true`；`process()` 每次也置 `true`）⇒ 无消费者会置假 ⇒ 该分支在现行实现下**不可达**（判据沿用既有 `:81`） |
 | 同周期 credit 在 data 之后 | `NICTLM::tick()` 每周期只 `handle_net_resp()` 一次；adapter 层在 `valid()` 为真时**直接丢包**（见 D-5 第 5 条）⇒ 同周期第二个 flit **到不了模块层** ⇒ 该用例实际测的是 adapter，**不在本 change 范围** |
 
+## D-6 — 实现期口径订正（builder · 2026-11-17）
+
+> 本段由 builder 在实施期记录 **3 处**「design 表述与实际代码不符」的订正。**AC 语义未变**（AC-01~AC-06 的目标与判别力要求全部保留）⇒ 不构成 `plan_drift`，仅是判据**形态**的可达性校正。
+
+### D-6.1 — D-1 第 12 行的「unit/description 与 `CohIfNICTLM` 侧逐字一致」不成立
+
+**实测**：`CohIfNICTLM` 的 `stats_credits_dropped_` 是**纯 `std::uint64_t`**（`include/tlm/cep/cohif_nic.hh:146`），该类**无任何 `addScalar` 调用**（grep 零命中）⇒ **CohIf 侧不存在 `credits_dropped` stat 标量** ⇒ 「unit/description 逐字一致」无对象可比。
+
+**订正**：`NICTLM` 侧采用**本模块既有惯例** —— `addScalar("credits_dropped", "Total credit flits dropped", "flits")`（unit 随同类计数 `flits_received` 用 `flits`；desc 沿 `Total <X>` 句式）。「同名同义」的**对称性锚点**是**访问器名** `credits_dropped()`（**两侧都有**、返回 `std::uint64_t`、语义同为「网络 ingress 丢弃的 credit flit 数」）⇒ G-1 成立；stat group 标量名 `credits_dropped` 是 **NICTLM 侧独有**的额外可观测面（spec 已按此措辞落：只对 `NICTLM` 要求 stat group 键名）。
+
+### D-6.2 — D-2 第 29 行的括注「`FLIT_HEAD` ⇒ `pending_packets_` 留一条**永不清除**的条目」**有误**
+
+**实测**（`src/tlm/nic_tlm.cc` 的 `NICTLM::reassemble`）：产出响应的条件是 `if (flit.is_tail() || is_new_packet)`，该分支内**既** `pe_resp_out_.write(resp)` **又** `pending_packets_.erase(it)` ⇒ **HEAD 类 flit（`FLIT_HEAD` / `FLIT_HEAD_TAIL`）单独到达时立即完成并 `erase`** ⇒ **不残留任何条目**。
+
+**后果**：`NICTLM` 侧**不存在跨周期的在途包**（BODY / TAIL 类 flit 单独到达时 `find_if(tid)` 找不到条目且 `is_head()` 为假 ⇒ 直接 `return false`）。⇒ 原 AC-06 表述中的「再注入同 `tid=T` 的 `FLIT_TAIL` ⇒ 断言**恰好一条**响应」在现行实现下**不可达**（TAIL 单独到达不产响应）。
+
+### D-6.3 — AC-06 的判据形态改为**可达**的等价锚点
+
+**订正后判据**（语义目标不变：「同 `tid` 的 credit 不得劫持在途包状态」）：
+
+1. 注入真 `FLIT_HEAD`（`tid=T`）⇒ 产出响应 #1（既有语义）⇒ `clear_valid()`；
+2. 注入 credit（`tid=T`，`FLIT_HEAD_TAIL`）⇒ 断言 `pe_resp_out()` **无输出**、`credits_dropped() == 1`、`flits_received` **不变**；
+3. 再注入**同 `tid=T`** 的 `FLIT_HEAD` ⇒ 断言**恰好一条**响应（`transaction_id == T`）。
+
+**第 3 步即机器锚点**：若 credit 未被过滤，它会**新建 `tid` 相同的条目** ⇒ 第 3 步的 HEAD 将命中该条目、不走 `is_new_packet` 分支、且非 TAIL ⇒ 产出 **0** 条响应 ⇒ 判据**变红**。⇒ 「credit 未污染 `pending_packets_`」由**行为**判定，不依赖私有成员可见性。
+
+### D-6.4 — 实现落点（与 D-1 一致，无偏差）
+
+| 文件 | 改动 |
+|---|---|
+| `src/tlm/nic_tlm.cc` | `handle_net_resp`：credit 判定分支（`++stats_credits_dropped_` + `return true;`）· 构造函数加 `stats_credits_dropped_` 的 `addScalar` 初始化 |
+| `include/tlm/nic_tlm.hh` | 新增成员 `tlm_stats::Scalar& stats_credits_dropped_` + 访问器 `std::uint64_t credits_dropped() const`（**唯一**新增公开 API） |
+| `test/test_nictlm_credit_filter.cc` | 新建（5 个 `TEST_CASE`：AC-01 / 两种形状 / AC-06 / AC-02 端到端 / AC-04 对拍） |
+| `test/CMakeLists.txt` | 注册 ctest 条目 `nictlm_credit_filter`（标签 `[nictlm][credit]`，**不含** `[cep]` ⇒ 须独立注册） |

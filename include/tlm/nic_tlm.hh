@@ -118,6 +118,10 @@ public:
     cpptlm::OutputStreamAdapter<bundles::NoCFlitBundle>&   net_req_out() { return net_req_out_; }
     cpptlm::InputStreamAdapter<bundles::NoCFlitBundle>&    net_resp_in()  { return net_resp_in_; }
 
+    /// 网络 ingress 丢弃的 credit flit 数（`flit_category == CATEGORY_CREDIT`）
+    /// —— 与 `CohIfNICTLM::credits_dropped()` 同名同义（两侧可直接对拍）。
+    std::uint64_t credits_dropped() const { return stats_credits_dropped_.value(); }
+
     // 地址映射
     void add_address_region(uint64_t base, uint64_t size, uint32_t node, const std::string& type = "MEMORY_CTRL") {
         addr_map_.add_region(base, size, node, type);
@@ -159,6 +163,7 @@ private:
     tlm_stats::Scalar& stats_flits_received_;
     tlm_stats::Scalar& stats_packets_sent_;
     tlm_stats::Scalar& stats_packets_received_;
+    tlm_stats::Scalar& stats_credits_dropped_;
     tlm_stats::Distribution& stats_latency_;
 
     // StreamAdapter 指针（用于 tick 时调用 adapter->tick()）

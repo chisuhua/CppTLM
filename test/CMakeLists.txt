@@ -268,6 +268,12 @@ add_test(NAME cep_all COMMAND cpptlm_tests "[cep]" -r compact)
 #    ⇒ 必须独立注册,否则 `cep_all` 覆盖不到(即「只测不跑」)。
 add_test(NAME framework_bidirectional_multiport_inbound
          COMMAND cpptlm_tests "[adapter][bidirectional][multiport]" -r compact)
+# NICTLM 的 in-band credit flit 过滤(per change `cpptlm-nictlm-credit-flit-filter`
+# 的 AC-01/AC-02/AC-04/AC-06;台账 Entry #468)
+# ⚠️ 标签**不含** `[cep]` —— 本测试判的是**通用网卡模块**的 ingress 过滤行为,
+#    与 CEP 契约无关 ⇒ 必须独立注册,否则 `cep_all` 覆盖不到(即「只测不跑」)。
+add_test(NAME nictlm_credit_filter
+         COMMAND cpptlm_tests "[nictlm][credit]" -r compact)
 # CEP 契约同步 lint(ADR 存在性 / invariant 计数单一真源 / P 编号口径 / 4 件套)
 add_test(NAME cep_docs_sync_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_docs_sync_check.sh --strict)

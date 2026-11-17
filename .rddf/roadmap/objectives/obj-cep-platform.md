@@ -25251,3 +25251,30 @@ test cases:  5 |  0 passed | 5 failed
 **剩余(T5 收口)**:T5.1 本条(已落)· T5.2 KPI 1/3 → 0/3(归档时)· T5.3 归档(`openspec archive` · ⛔ 不用 `--skip-specs`)· T5.4 独立验收(切 verifier)· T3.2/T3.3 归档时合并 delta + 冻结核账。
 
 **⑭ 关联**:Entry **#467**(立项 + 默认值裁决)· **#468**(并发 session 的 NICTLM 实施 —— 其正文已把本 change 记为并发 active)· `openspec/changes/cpptlm-router-buffer-size-param/`(design **D-1** 默认值裁决 / **D-3** 观测面边界 / **D-7** 两处机制缺口)· commit **`708b13c8`** · `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`(同族独立 backlog)
+
+### Entry #470 — 2026-11-17 [planner](**登记** `cpptlm-validate-params-dead-code` —— `validate_module_params` 是**零调用方死代码** ⇒ `ParamRules` 的 type/min/max 约束在装配路径上**全部不生效**)
+
+**主题**:把 change `cpptlm-router-buffer-size-param` 实施期发现的**通用机制缺口**登记为独立 improvement。缺口原始记录处 = 该 change 的 `design.md` **D-7.1**。
+
+**缺口事实(实测)**:
+- `src/core/module_factory_validate.cc:474-499` 的 `validate_module_params`(按 ParamRules 做 `parse` + `type` + `min/max` 校验)是 **`static` 且零调用方** —— `grep -rn "validate_module_params" src/ include/` ⇒ **仅定义处一处**。
+- `ParamParser::validate`(`src/core/param_parser.cc:54-67`,实现 min/max 比较)的**唯一调用点就在这个死函数里** ⇒ 整套 min/max 能力**实际未被使用**。
+- `validateConfig`(`:199`)**不调**该校验器。
+- `instantiateAll` 的 Step 1.2(`module_factory.cc:265-287`)确实遍历 ParamRules 注册表,但**只做两件事**:`required` 缺失 ⇒ `return false`;**`default_int` 注入**。
+⇒ **净效果:「必填」有保护,「类型正确」与「取值在范围内」没有保护。**
+
+**已实际发生的后果**:change `cpptlm-router-buffer-size-param` 的 **AC-04**(非法 `buffer_size` ⇒ 装配期 fail)**本应由 `validateConfig` 免费提供**,实测却必须额外做两件事才成立:① `on_config_loaded` 手动校验 + 抛异常;② `module_factory.cc` 的 `set_config` 调用点**新增 6 行 try/catch**(异常 ⇒ `return false`)。而**类型/范围校验仍然缺席**(try/catch 只提供「模块自己抛了才能 fail」的通道)。
+
+**声明面三重割裂**:① C++ 声明 = `get_param_rules()`(各模块静态自注册) ② JSON 声明 = `configs/param_rules/<Type>.json`(**可能与 C++ 不一致** —— `buffer_size` 原先只在 C++ 侧有) ③ **实际约束 = 空** ⇒ `ParamRules` 目前**等价于注释**。
+
+**两条落地路径**:
+- **W1(推荐)**:`validateConfig` 接回 `validate_module_params`,rules **取自 `getParamRulesRegistry()`(C++ 单一真源,⛔ 不取 json)** ⇒ 让 `ParamRules` 从「文档」变「约束」。⚠️ 风险:接回后**此前静默通过的非法 param 会开始 fail** ⇒ 须先做**全仓 config 排查**(含 `derive_expr` 派生值是否落在 `min..max`)。
+- **W2(替代)**:删除死代码 + 在 `SimObject::on_config_loaded()` 契约里写明「非法参数 ⇒ 抛异常」是唯一范式(change `cpptlm-router-buffer-size-param` 已建立先例);代价 = 逐模块自行校验、无「声明即约束」保证。
+
+**AC(W1 为准)**:AC-01 越界 ⇒ 装配 false · AC-02 类型错 ⇒ false · AC-03 `required` 缺失 ⇒ false(须与 Step 1.2 既有检查**显式说明由哪一处负责**)· AC-04 合法配置零行为变化(全量回归 + `configs/**` 装配成功)· AC-05 双声明面**双向相等**(或 json 废弃且无残留引用)· AC-06 每条新判据配**决定性变异**。
+
+**产物**:`.rddf/improvements/cpptlm-validate-params-dead-code.md`(🔴 未立项 · 5 段 + AC-01~AC-06 + Capabilities 2 条 + Impact 含 W1/W2 两路径)。
+
+**KPI**:保持 **2/3**(本条不新开 change;active = `cpptlm-router-buffer-size-param` + `cpptlm-nictlm-credit-flit-filter`,per Entry #467/#468)。
+
+**⑮ 关联**:Entry **#469**(实施 `cpptlm-router-buffer-size-param` · 本缺口首发处)· **#467**(该项目立项 + 默认值裁决)· **#468**(并发 session 的 NICTLM 实施)· `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`(同族)· `openspec/changes/cpptlm-router-buffer-size-param/design.md` **D-7.1** · commit **`708b13c8`**(6 行 try/catch 的落地点)
