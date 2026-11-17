@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 2/3**（`cpptlm-router-buffer-size-param` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #467;`cpptlm-nictlm-credit-flit-filter` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #466;`cpptlm-router-local-port-credit-exhaustion` 于 2026-11-17 **归档** ⇒ slot 已释放,per 台账 Entry #464;`cpptlm-router-credit-flit-leak-to-consumer` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #457;`cpptlm-simmodule-exposed-port-wiring` + `cpptlm-cep-mesh-interconnect-submodule` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #451;此前二者于 2026-11-16 **立项** ⇒ 各占 1 slot,per 台账 Entry #450;此前 `cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **1 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**（`cpptlm-router-buffer-size-param` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #467；同日 **归档** ⇒ slot 已释放,per 台账 Entry #471;`cpptlm-nictlm-credit-flit-filter` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #466;`cpptlm-router-local-port-credit-exhaustion` 于 2026-11-17 **归档** ⇒ slot 已释放,per 台账 Entry #464;`cpptlm-router-credit-flit-leak-to-consumer` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #457;`cpptlm-simmodule-exposed-port-wiring` + `cpptlm-cep-mesh-interconnect-submodule` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #451;此前二者于 2026-11-16 **立项** ⇒ 各占 1 slot,per 台账 Entry #450;此前 `cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -25156,7 +25156,7 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 
 **产物**:
 - `.rddf/improvements/cpptlm-router-buffer-size-param.md`(🟡 已立项 · 5 段 + AC-01~AC-05 + Capabilities 2 条)
-- `openspec/changes/cpptlm-router-buffer-size-param/`(`.openspec.yaml` + `proposal.md` + `design.md`(D-1 默认值裁决 + D-2~D-6)+ `tasks.md`(T0~T6)+ `specs/router-buffer-size-param/spec.md`(delta · ADDED 1 条 Requirement / 3 个 Scenario))
+- `openspec/changes/archive/2026-11-17-cpptlm-router-buffer-size-param/`(`.openspec.yaml` + `proposal.md` + `design.md`(D-1 默认值裁决 + D-2~D-6)+ `tasks.md`(T0~T6)+ `specs/router-buffer-size-param/spec.md`(delta · ADDED 1 条 Requirement / 3 个 Scenario))
 - `openspec validate cpptlm-router-buffer-size-param --strict` ⇒ **valid**
 
 **同族缺口登记(独立 backlog)**:`.rddf/improvements/cpptlm-router-vc-count-param-inert.md`(🔴 未立项)。起草时做**全参数面排查**,发现 `RouterTLM` 的声明面共 **4 处**「声明-实际不一致」:| param | 声明 | 读取 | 状态 |
@@ -25168,7 +25168,7 @@ Entry **#447**(剩余任务梳理)· **#446**(批 3 独立验收)· **#445**(批
 
 **KPI**:**1/3 → 2/3**(change 目录已建立 ⇒ 实测 active = **2**)· **6 处活口径**已同步(`obj-cep-platform.md:474` / `phases/phase-10.md:209` / `improvements/cpptlm-cep-umbrella.md:306` / `improvements/cpptlm-cep-nvlink-sharp.md:31` + `:211` / `.rddf/roadmap.md:5`)。
 
-**⑬ 关联**:Entry **#466**(另一 session 立项 `cpptlm-nictlm-credit-flit-filter` · 本条与之**并存** ⇒ 并发 2/3)· **#464**/**#465**(上一 change 的归档 + 验收)· **#461**(NICTLM 缺口登记)· `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` · `openspec/changes/cpptlm-router-buffer-size-param/`
+**⑬ 关联**:Entry **#466**(另一 session 立项 `cpptlm-nictlm-credit-flit-filter` · 本条与之**并存** ⇒ 并发 2/3)· **#464**/**#465**(上一 change 的归档 + 验收)· **#461**(NICTLM 缺口登记)· `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` · `openspec/changes/archive/2026-11-17-cpptlm-router-buffer-size-param/`
 
 ### Entry #468 — 2026-11-17 [builder](**实施** `cpptlm-nictlm-credit-flit-filter` 的 T1 + T2 —— `NICTLM` 侧 in-band credit flit 过滤落地 · 判别力验证 **5/5 用例变红** · ctest 全量 **181/181**)
 
@@ -25250,7 +25250,7 @@ test cases:  5 |  0 passed | 5 failed
 
 **剩余(T5 收口)**:T5.1 本条(已落)· T5.2 KPI 1/3 → 0/3(归档时)· T5.3 归档(`openspec archive` · ⛔ 不用 `--skip-specs`)· T5.4 独立验收(切 verifier)· T3.2/T3.3 归档时合并 delta + 冻结核账。
 
-**⑭ 关联**:Entry **#467**(立项 + 默认值裁决)· **#468**(并发 session 的 NICTLM 实施 —— 其正文已把本 change 记为并发 active)· `openspec/changes/cpptlm-router-buffer-size-param/`(design **D-1** 默认值裁决 / **D-3** 观测面边界 / **D-7** 两处机制缺口)· commit **`708b13c8`** · `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`(同族独立 backlog)
+**⑭ 关联**:Entry **#467**(立项 + 默认值裁决)· **#468**(并发 session 的 NICTLM 实施 —— 其正文已把本 change 记为并发 active)· `openspec/changes/archive/2026-11-17-cpptlm-router-buffer-size-param/`(design **D-1** 默认值裁决 / **D-3** 观测面边界 / **D-7** 两处机制缺口)· commit **`708b13c8`** · `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`(同族独立 backlog)
 
 ### Entry #470 — 2026-11-17 [planner](**登记** `cpptlm-validate-params-dead-code` —— `validate_module_params` 是**零调用方死代码** ⇒ `ParamRules` 的 type/min/max 约束在装配路径上**全部不生效**)
 
@@ -25277,4 +25277,29 @@ test cases:  5 |  0 passed | 5 failed
 
 **KPI**:保持 **2/3**(本条不新开 change;active = `cpptlm-router-buffer-size-param` + `cpptlm-nictlm-credit-flit-filter`,per Entry #467/#468)。
 
-**⑮ 关联**:Entry **#469**(实施 `cpptlm-router-buffer-size-param` · 本缺口首发处)· **#467**(该项目立项 + 默认值裁决)· **#468**(并发 session 的 NICTLM 实施)· `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`(同族)· `openspec/changes/cpptlm-router-buffer-size-param/design.md` **D-7.1** · commit **`708b13c8`**(6 行 try/catch 的落地点)
+**⑮ 关联**:Entry **#469**(实施 `cpptlm-router-buffer-size-param` · 本缺口首发处)· **#467**(该项目立项 + 默认值裁决)· **#468**(并发 session 的 NICTLM 实施)· `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`(同族)· `openspec/changes/archive/2026-11-17-cpptlm-router-buffer-size-param/design.md` **D-7.1** · commit **`708b13c8`**(6 行 try/catch 的落地点)
+
+### Entry #471 — 2026-11-17 [builder](**归档** `cpptlm-router-buffer-size-param` —— KPI **2/3 → 1/3** · 新 main spec `router-buffer-size-param` 入册 · 归档前补记 O-1 跨模块影响)
+
+**主题**:完成 change `cpptlm-router-buffer-size-param` 的收口链(T5.2/T5.3/T3.2 + 验收观察 O-1 补记)。实施见 commit **`708b13c8`** / 台账 Entry **#469**;验收见 **`b0be5cf2`** / `.rddf/reviews/cpptlm-router-buffer-size-param-verify.md`(PASS · 0 implementation_gap)。
+
+**归档动作**:`openspec archive cpptlm-router-buffer-size-param --yes`(**⛔ 未用 `--skip-specs`** —— 实现已完成,delta 应合入 main specs)。
+- 新 main spec **`openspec/specs/router-buffer-size-param/spec.md`**(+1 Requirement / 3 Scenario),**`## Purpose` 已手写**(非 TBD 占位):说明「声明却静默无效」这类配置缺陷 + 三条要求(同源 / 装配期硬失败 / 默认值反映实现)。
+- 归档件:`openspec/changes/archive/2026-11-17-cpptlm-router-buffer-size-param/`(per `.gitignore` **不入库** ⇒ 持久记录只在本台账)。
+- `--yes` 的原因:23/29 tasks,**6 个未勾项中有 4 个是归档动作自身**(T3.2 delta 合并 / T3.3 冻结更新 / T5.2 KPI 回填 / T5.3 归档)、**2 个是可选跨角色项**(T0.4 architect 复核 D-1 / T6.1 ADR 层面登记通用纪律)⇒ 无实现缺口。
+
+**归档前两处补正(⛔ 均在归档前落盘,未污染 main spec)**:
+1. **`design.md` 新增 D-7.3** —— 验收观察 **O-1** 的落地记录:`module_factory.cc` 的 6 行 try/catch **同时**改变 `PcieEndpointTLM` 的失败形态(其 `on_config_loaded` 的 `throw std::invalid_argument("config_size must be 256 or 4096")` 由「异常逃出 `instantiateAll`」变为「返回 false」)。判定**正向非回归**(该 throw 本意即装配失败);回归证据 `[pcie]` 36779/452 全绿;本 change **不改** `pcie_endpoint_tlm.cc` 任何一行。
+2. **delta spec 补「验证锚点(观测面边界)」段** —— 第一条 Scenario 保留原 SHALL 语义(缓冲满则丢是对的),但显式说明「第 N+1 个被丢弃」在**稳态不可直接观测**,验证须用 ① `buffer_depth()==N` 直接证据 + ② 每 in_port 注入 `K>N` 必丢 两条互补判据(per design **D-3**)⇒ 避免归档后 main spec 留下**不可执行判据**。
+
+**KPI 回填 2/3 → 1/3(6 处活口径)**:`obj-cep-platform.md:474` · `phases/phase-10.md:209` · `improvements/cpptlm-cep-umbrella.md:306` · `improvements/cpptlm-cep-nvlink-sharp.md:31` + `:211` · `.rddf/roadmap.md:5`。历史链条**保留**(每处追加「同日归档 ⇒ slot 已释放,per 台账 Entry #471」,⛔ 未删旧叙述)。实测依据:`openspec list --json` ⇒ active = **1**(仅剩 `cpptlm-nictlm-credit-flit-filter`)。
+
+**AGENTS.md 体量数字同步(4 处)**:归档 change 数 **156 → 157** · main spec 数 **132 → 133**(cep-* 45 + 其他 **87 → 88**)。
+
+**台账路径订正(4 处)**:指向 `openspec/changes/<name>/`(归档前形态)的引用改为 `openspec/changes/archive/2026-11-17-cpptlm-router-buffer-size-param/`(Entry #467 产物行 + 关联行 / #469 关联行 / #470 关联行)—— `cep_doc_ref_check` 的「§2 path 引用可达性」要求。
+
+**闸**:`cep_docs_sync_check` ✅ 全通过(含 KPI baseline 断言 + AGENTS 体量断言)· `cep_doc_ref_check` ✅ 全通过(§2 路径可达 / §3 节号 / §5 台账锚点)。
+
+**冻结面**:新 main spec `openspec/specs/router-buffer-size-param/spec.md` **入冻结面** ⇒ 本条落盘后跑 `cep_freeze_check --update --authorized-by "Entry #471"`(顺序纪律:**先 commit 被改产物,再 --update**,否则 provenance hash 不一致)。
+
+**⑯ 关联**:Entry **#467**(立项 + D-1 默认值裁决)· **#469**(实施 · 含 D-7.1/D-7.2)· **#470**(validate_module_params 死代码登记)· `.rddf/reviews/cpptlm-router-buffer-size-param-verify.md`(验收 PASS)· commit **`708b13c8`**(实现)/ **`f87cda2a`**(O-1 补记 + spec 锚点)/ **`b0be5cf2`**(验收报告)· `openspec/specs/router-buffer-size-param/spec.md`(新 main spec)

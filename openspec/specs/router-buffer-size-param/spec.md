@@ -1,6 +1,9 @@
-# router-buffer-size-param Specification (delta)
+# router-buffer-size-param Specification
 
-## ADDED Requirements
+## Purpose
+让 `RouterTLM` 的 `buffer_size` 配置项从「已声明但静默无效」变为真正生效：此前该参数被 `get_param_rules()` 与 `configs/param_rules/router_tlm.json` 双重声明，实现却用编译期常量 `BUFFER_DEPTH` 决定深度 —— 配置项写了也不起作用，是最难察觉的一类配置缺陷。本 capability 要求缓冲深度与 credit 预算**同源**（同一个参数决定二者，否则会出现「收得多但只敢发少」的隐性不一致）、非法取值在**装配期**硬失败（不静默截断或回退默认值）、且默认值必须让**声明反映实现**（取 8 而非旧声明的 16，保证接入该参数机制零行为变更）。
+
+## Requirements
 
 ### Requirement: router-buffer-size-param-effective
 
