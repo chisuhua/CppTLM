@@ -2,20 +2,27 @@
 
 > 决策源 = `docs/adr/ADR-X.17-module-param-read-declares.md`;实施形态见本 change 的 `design.md`（D-1~D-5）。
 > 共 **T0~T7**;标 ⚠️ 的条目为审查/盘点新增。
+>
+> **进度（2026-11-18）**：**T0 + T1（除 T1.1）+ T4/T5 的 B1 部分 + T6 已完成**（B1 批次 = `TrafficGenTLM` / `MemoryTLM` / `GmmuTLM` / `LwcBusHub`）。
+> **B2（T2）/ B3（T3）未开始**;`T1.1`（`CacheTLM`）**阻塞于 R-4**（CEP 冻结面，解冻须 architect 裁决）。
+> 逐键裁决结果与实测口径见 `design.md` **D-1.6**;台账同步见 `docs/implementation/module-param-baseline.md`（表 A/B + §2bis）。
 
 ## T0 — 前置与盘点
 
-- [ ] T0.1 ⚠️ 写**盘点脚本**（可重跑）：遍历 `configs/**/*.json`（排除 `configs/param_rules/**`）⇒ 输出「类型 × 参数键 × 实例数 × 是否有读取面（`on_config_loaded` / `set_config`）」;判据 = 脚本输出的类型数 / 键×类型对数与 `design.md` D-1 一致
-- [ ] T0.2 ⚠️ **逐键裁决表**回填 `design.md` D-1：每个键一个态（①/②/③）+ 证据 + 态① 的观测量选型;⛔ 不得留「待定」
+- [x] T0.1 ⚠️ 写**盘点脚本**（可重跑）：遍历 `configs/**/*.json`（排除 `configs/param_rules/**`）⇒ 输出「类型 × 参数键 × 实例数 × 是否有读取面（`on_config_loaded` / `set_config`）」;判据 = 脚本输出的类型数 / 键×类型对数与 `design.md` D-1 一致
+  - 落盘 `scripts/test/param_effect_inventory.py`（`--json` / `--check`）;实测 36 类型 / 107 键×类型对（口径与 D-1 零效果族的差异见 D-1.6.3）
+- [x] T0.2 ⚠️ **逐键裁决表**回填 `design.md` D-1：每个键一个态（①/②/③）+ 证据 + 态① 的观测量选型;⛔ 不得留「待定」
+  - **B1 部分已回填**（D-1.6.4）;`CacheTLM` 6 键记「待裁决（R-4）」;B2/B3 的键在对应批次落地时回填
 
 ## T1 — B1 批次（`ADR-X.17` F-14 五类 + 扩展键）
 
-- [ ] T1.1 `CacheTLM` 六键（`size` / `level` / `associativity` / `protocol` / `assoc` / `line_size`）裁决 + 落地;⚠️ 该类**无容量/组相联模型** ⇒ 优先评估态②
-- [ ] T1.2 `TrafficGenTLM` 七键（`pattern` / `num_requests` / `start_addr` / `end_addr` / `hotspot_addrs` / `hotspot_weights` / `stride`）裁决 + 落地（`seed` 已消费，不动）
-- [ ] T1.3 `GmmuTLM.page_size_bytes`（读而丢弃）裁决 + 落地
-- [ ] T1.4 `LwcBusHub.max_ip_ports` 裁决 + 落地
-- [ ] T1.5 `MemoryTLM` 五键（`size` / `type` / `mem_type` / `read_latency` / `write_latency`）裁决 + 落地;⚠️ `size` 与 `capacity_gb` 语义重叠 ⇒ 评估态②
-- [ ] T1.6 B1 回归：`[router]` / `[memory]` / `[gmmu]` / `[trafficgen]` / `[lwc]` 全绿
+- [ ] T1.1 ⛔ **阻塞（R-4）** `CacheTLM` 六键（`size` / `level` / `associativity` / `protocol` / `assoc` / `line_size`）裁决 + 落地;⚠️ 该类**无容量/组相联模型** ⇒ 优先评估态②。**但该类是 CEP 冻结面**（`ADR-CEP-15` IC1,闸 = `test/test_cep_module_factory_seam.cc:133-134`）⇒ 实测改动即红闸,已回退 ⇒ 解冻 + 建模须 architect 裁决
+- [x] T1.2 `TrafficGenTLM` 七键（`pattern` / `num_requests` / `start_addr` / `end_addr` / `hotspot_addrs` / `hotspot_weights` / `stride`）裁决 + 落地（`seed` 已消费，不动）
+- [x] T1.3 `GmmuTLM.page_size_bytes`（读而丢弃）裁决 + 落地
+- [x] T1.4 `LwcBusHub.max_ip_ports` 裁决 + 落地
+- [x] T1.5 `MemoryTLM` 五键（`size` / `type` / `mem_type` / `read_latency` / `write_latency`）裁决 + 落地;⚠️ `size` 与 `capacity_gb` 语义重叠 ⇒ 评估态②
+- [x] T1.6 B1 回归：`[router]` / `[memory]` / `[gmmu]` / `[trafficgen]` / `[lwc]` 全绿
+  - 实测：`cpptlm_tests` 全量 **883307 assertions / 2386 cases** 全绿（基线 883191 / 2371 ⇒ +116 / +15 全部来自新判别测试）;`pytest` 232 passed;`ctest -R cep` 100/100
 
 ## T2 — B2 批次（零配置读取面家族 · 14 类）
 
@@ -41,23 +48,23 @@
 
 ## T4 — 测试（逐键判别）
 
-- [ ] T4.1 态① 的每个键一条**行为判别测试**（两个不同合法值 ⇒ 可观测指标不同 —— `ADR-X.17` D-6）;⛔ 不得为通过判别而新增「只为测试存在」的观测面
-- [ ] T4.2 态② 的每个键一条**装配失败**测试（配置含该键 ⇒ `instantiateAll` 返回 false 且错误含键名）
+- [ ] T4.1（**B1 部分已完成**：`test/test_param_effect_landing.cc` 15 cases / 116 assertions，覆盖 `TrafficGenTLM` 8 键 / `MemoryTLM` 4 键 / `GmmuTLM` 1 键 / `LwcBusHub` 1 键）态① 的每个键一条**行为判别测试**（两个不同合法值 ⇒ 可观测指标不同 —— `ADR-X.17` D-6）;⛔ 不得为通过判别而新增「只为测试存在」的观测面
+- [ ] T4.2（**B1 部分已完成**：`MemoryTLM` 的 `type` / `mem_type` + `size`↔`capacity_gb` 互斥）态② 的每个键一条**装配失败**测试（配置含该键 ⇒ `instantiateAll` 返回 false 且错误含键名）
 - [ ] T4.3 态③ 的每个键一条**非法值拒绝**测试（错误含键名 + 合法值集合）
-- [ ] T4.4 ⚠️ **存量配置清单**：每个态② 键列出 `grep -rn '"<key>"' configs/` 的全部命中，逐处判定（改键名 / 删键 / 保留并接受失败 ⇒ 后者须显式登记）
+- [ ] T4.4（**B1 部分已完成**：`configs/apu_soc_full.json` 删 `MemoryTLM.type: "HBM2"` 1 处;`configs/library_memory_demo.json` 删 `mem_type` 4 处;`src/tlm/cluster/memory_cluster.cc` 停止生成 `size`→保留 / `type`→删除）⚠️ **存量配置清单**：每个态② 键列出 `grep -rn '"<key>"' configs/` 的全部命中，逐处判定（改键名 / 删键 / 保留并接受失败 ⇒ 后者须显式登记）
 
 ## T5 — 台账
 
-- [ ] T5.1 `docs/implementation/module-param-baseline.md` **表 B 逐条更新**（`待修` ⇒ `已消费` / `已停止产出` / `已显式拒绝`），逐条附实现位置
-- [ ] T5.2 ⚠️ AC-07：`grep -rn 'ignore_param(' src/ include/` 的非注释调用点与表 B 条目**一一对应**（承接 `cpptlm-module-param-read-declares` 的 AC-14）
+- [ ] T5.1（**B1 部分已完成**：B-2/B-3/B-4 改「已消费」;B-5 拆分「已消费 + 已停止产出」;B-1 改「阻塞（R-4）」;新增 B-7~B-10 + §2bis + 表 A 6 键）`docs/implementation/module-param-baseline.md` **表 B 逐条更新**（`待修` ⇒ `已消费` / `已停止产出` / `已显式拒绝`），逐条附实现位置
+- [x] T5.2 ⚠️ AC-07：`grep -rn 'ignore_param(' src/ include/` 的非注释调用点与表 B 条目**一一对应**（承接 `cpptlm-module-param-read-declares` 的 AC-14）
 
 ## T6 — 验证
 
-- [ ] T6.1 `cpptlm_tests` 全量绿（assertions / cases ≥ 基线 **883191 / 2371**）
-- [ ] T6.2 `python3 -m pytest test/python/` 全绿（基线 232 passed）
-- [ ] T6.3 `ctest -R cep` 全绿（基线 100/100）
-- [ ] T6.4 `openspec validate cpptlm-module-param-effect-landing --strict` + `cep_docs_sync_check` + `cep_doc_ref_check` + `agents_md_lint` 全绿
-- [ ] T6.5 ⚠️ AC-06：`git diff <base> -- configs/` 的每处变更都对应一个态② 任务（⛔ 不得顺手删配置）
+- [x] T6.1 `cpptlm_tests` 全量绿（assertions / cases ≥ 基线 **883191 / 2371**）
+- [x] T6.2 `python3 -m pytest test/python/` 全绿（基线 232 passed）
+- [x] T6.3 `ctest -R cep` 全绿（基线 100/100）
+- [x] T6.4 `openspec validate cpptlm-module-param-effect-landing --strict` + `cep_docs_sync_check` + `cep_doc_ref_check` + `agents_md_lint` 全绿
+- [x] T6.5 ⚠️ AC-06：`git diff <base> -- configs/` 的每处变更都对应一个态② 任务（⛔ 不得顺手删配置）
 
 ## T7 — 收口
 

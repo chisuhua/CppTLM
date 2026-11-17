@@ -144,9 +144,9 @@ public:
         if (!enabled_ || pt_base() == 0) return -EIO;
 
         // 跨页检查 (v1.0 不支持跨页描述符, per design D7)
-        constexpr uint64_t page_mask = 4095;
+        const uint64_t page_mask = page_mask_; // 运行时可配（见 set_page_size_bytes）
         if ((iova & ~page_mask) != ((iova + size - 1) & ~page_mask)) return -EIO;
-        const uint64_t pte_addr = pt_base() + (iova >> 12) * 8;
+        const uint64_t pte_addr = pt_base() + (iova >> page_shift_) * 8;
 
         // ── Change C (Gap I): GMMU dedicated memory client → VramControllerTLM functional port ──
         // per NVIDIA H100 GMMU 模式 (dedicated memory client bypass mesh NoC):
@@ -227,13 +227,12 @@ public:
         out_latency_cycles = 0;
         if (!enabled_ || !mem_view_ || pt_base() == 0) return -EIO;
 
-        constexpr uint64_t page_size = 4096;
-        constexpr uint64_t page_mask = page_size - 1;
+        const uint64_t page_mask = page_mask_; // 运行时可配（见 set_page_size_bytes）
 
         // 页跨界检查 (沿用 minimal_v1 §5.1)
         if ((iova & ~page_mask) != ((iova + size - 1) & ~page_mask)) return -EIO;
 
-        const uint64_t page_num = iova >> 12;
+        const uint64_t page_num = iova >> page_shift_;
 
         // 1. TLB lookup (直接映射 idx = page_num % tlb_size)
         if (!tlb_entries_.empty()) {
@@ -301,13 +300,34 @@ public:
         state_ = State::IDLE;
     }
 
-    // on_config_loaded: v1.0 读 page_size_bytes (固定 4096); v1.1 扩展支持 2MB/1GB
+    // ── 配置加载（`ADR-X.17` D-1「读取即声明」）──────────────────────────
+    // ⚠️ 本 change（`cpptlm-module-param-effect-landing`）之前，`page_size_bytes`
+    //    是**读而丢弃**（分支体为空，实际恒用 `constexpr 4096`）⇒ 配置写了不生效。
+    //    现改为运行时可配（`page_size_bytes_` / `page_mask_` / `page_shift_`）。
     void on_config_loaded() override {
-        const auto& cfg = get_config();
-        if (cfg.is_object() && cfg.contains("page_size_bytes")) {
-            // 当前实现: 固定 4096, 参数保留以备 v1.1 扩展
+        std::uint64_t ps = page_size_bytes_;
+        if (load_param_opt("page_size_bytes", ps)) {
+            if (ps < 4096 || (ps & (ps - 1)) != 0) {
+                throw cpptlm::ParamValidationError(
+                    name, "page_size_bytes",
+                    "page_size_bytes: expected a power of two >= 4096, got " + std::to_string(ps));
+            }
+            set_page_size_bytes(ps);
         }
+        // 板级直读键（`dgpu_board_shell.cc:1056-1057` 直接调 `set_timing_params` /
+        // `set_tlb_size`）⇒ 登记为「已消费但不经 load_param」（`ADR-X.17` D-3 态②）
+        ignore_param("tlb_size");
+        ignore_param("tlb_miss_latency_cycles");
     }
+
+    /// 设置页大小（**必须** 2 的幂且 ≥ 4096 ⇒ 掩码 / 移位可用）
+    void set_page_size_bytes(uint64_t sz) noexcept {
+        page_size_bytes_ = sz;
+        page_mask_ = sz - 1;
+        page_shift_ = 0;
+        while ((1ULL << page_shift_) < sz) ++page_shift_;
+    }
+    uint64_t page_size_bytes() const noexcept { return page_size_bytes_; }
 
     void tick() override {
         // Change B (Gap H): LWC hub adapter 路径 — cr_in_ valid 时同步处理
@@ -348,16 +368,20 @@ private:
     TranslateStats translate_stats_{};
     uint64_t tlb_miss_latency_cycles_ = 50;  // default per design.md §3.1
 
+    // 页大小（`page_size_bytes` param 的真实消费点 —— 此前是 constexpr 4096）
+    uint64_t page_size_bytes_ = 4096;
+    uint64_t page_mask_ = 4095;
+    unsigned page_shift_ = 12;
+
     int translate_sync(uint64_t iova, uint32_t size, uint64_t& out_paddr) {
         if (pt_base() == 0) return -EIO;
-        constexpr uint64_t page_size = 4096;
-        constexpr uint64_t page_mask = page_size - 1;
+        const uint64_t page_mask = page_mask_; // 运行时可配（见 set_page_size_bytes）
 
         if ((iova & ~page_mask) != ((iova + size - 1) & ~page_mask)) {
             return -EIO;
         }
 
-        const uint64_t idx = iova >> 12;
+        const uint64_t idx = iova >> page_shift_;
         const uint64_t pte_addr = pt_base() + idx * 8;
         if (pte_addr + 8 > mem_view_size_) return -EIO;
 

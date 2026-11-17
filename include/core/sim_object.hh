@@ -435,6 +435,25 @@ protected:
         cpptlm::load_param(param_ctx_, key, target, lo, hi, def);
     }
 
+    /**
+     * @brief **可选**参数：键存在 ⇒ 校验并赋值;键缺失 ⇒ 保持成员当前值
+     *
+     * 与 `load_param`（无默认值 = 必填）互补：适合「默认值 = 成员当前初值」的参数。
+     *
+     * @return true = 键存在且已赋值;false = 键缺失（成员未变）
+     */
+    template <class T>
+    bool load_param_opt(std::string_view key, T& target) {
+        return cpptlm::load_param_optional(param_ctx_, key, target);
+    }
+
+    /// 带范围的可选参数
+    template <class T>
+    bool load_param_opt(std::string_view key, T& target, T lo, T hi) {
+        return cpptlm::load_param_optional(param_ctx_, key, target, std::optional<T>(lo),
+                                           std::optional<T>(hi));
+    }
+
     /// 存储原始 JSON 配置（选项A基础实现）
     json config_;
 

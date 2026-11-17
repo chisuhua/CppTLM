@@ -25464,3 +25464,39 @@ test cases:  5 |  0 passed | 5 failed
 **backlog improvement 状态更新**:`cpptlm-validate-params-dead-code` 的 **C++ 侧诉求由本 change 闭合**（T4.4 / T4.5）;其 Python 生成期诉求转 `ADR-X.10` §F。`cpptlm-router-vc-count-param-inert` 的「只登记不修」结论**不变**（`vc_count` 需换 3 个核心容器的类型）。
 
 **⑰ 关联**:`openspec/changes/cpptlm-module-param-effect-landing/` · `openspec/changes/cpptlm-module-param-migrate-batch2/` · `docs/adr/ADR-X.17-module-param-read-declares.md`(Proposed · v1.6) · `docs/adr/ADR-X.10-parameter-framework.md`(§A / §C / **§F**) · `docs/implementation/module-param-baseline.md` · `.rddf/improvements/cpptlm-validate-params-dead-code.md` · `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`
+
+### Entry #477 — 2026-11-18 [builder](**实施** `cpptlm-module-param-effect-landing` **B1 批次** —— 16 键语义落地（态① 13 / 态② 3）+ 盘点脚本;`CacheTLM` 6 键因**冻结面**阻塞)
+
+**范围**（按 change design D-3 的批次划分，本轮只做 B1）:`ADR-X.17` F-14 五类中的四类（`TrafficGenTLM` / `MemoryTLM` / `GmmuTLM` / `LwcBusHub`）+ 扩展键。
+
+**逐键裁决结果**（细节见 `design.md` D-1.6.4）:
+
+| 类型 | 键 | 态 | 落地 |
+|---|:--:|:--:|---|
+| `TrafficGenTLM` | `pattern` / `num_requests` / `start_addr` / `end_addr` / `hotspot_addrs` / `hotspot_weights` / `stride` / `seed` | ① | `apply_pattern()` + `read_addr_key()` + `parse_hotspot()` + `set_addr_range()` / `set_stride()` / `set_seed()` |
+| `MemoryTLM` | `size` / `read_latency` / `write_latency`（+ 原有 `capacity_gb`） | ① | `parse_size_bytes()`（B/KB/MB/GB,1024 进制）+ hit/miss 同值 + 写延迟成员化 |
+| `MemoryTLM` | `type` / `mem_type` | ② | `reject_unsupported_key()` ⇒ 装配期失败含键名;`memory_cluster.cc` 不再生成 `type` |
+| `GmmuTLM` | `page_size_bytes`（+ `tlb_size` / `tlb_miss_latency_cycles` 登记进表 A） | ① | `set_page_size_bytes()` 替换 `constexpr 4096`（2 的幂且 ≥ 4096） |
+| `LwcBusHub` | `max_ip_ports` | ① | 成员 `max_ip_ports_`（默认 = 编译期 32），作用于两个 register 上限 |
+| `CacheTLM` | `size` / `level` / `associativity` / `assoc` / `line_size` / `protocol` | **⛔ 阻塞** | 该类是 **CEP 冻结面**（`ADR-CEP-15` IC1，闸 = `test/test_cep_module_factory_seam.cc:133-134`）⇒ 实测改动即红闸,已回退;解冻 + 建模须 architect 裁决（R-4） |
+
+**机制新增**:`load_param_opt(key, target[, lo, hi])`（`include/core/sim_object.hh` + `include/core/param_loader.hh` 的 `load_param_optional`）—— 键存在 ⇒ 校验赋值返 `true`;缺失 ⇒ **保持成员当前值**返 `false`。理由:`load_param` 的「无默认值 ⇒ 必填」不适用于「默认值 = 成员初值」的键（否则每个可选键都要在调用点重抄初值,抄漏即静默改默认行为）。
+
+**B1 的键间一致性裁决**（⛔ 不一致即失败 —— 零效果键不得换个形式静默失效）:hotspot 家族需 `pattern == HOTSPOT`（且反之亦然）· `stride` 需 `STRIDED` · 权重数须与地址数一致 · `end_addr > start_addr`（含只给一端时与默认另一端比较）· `size` 与 `capacity_gb` 互斥。
+
+**⚠️ 两个实施期新发现**（都已登记,未顺手修）:
+
+| # | 发现 | 处置 |
+|:--:|---|---|
+| 1 | **配置管线会改写 JSON 类型** —— `VarResolver`（`include/utils/var_resolver.hh` 的 `strtod` 分支）把**数字形态字符串**（含 `0x1000` ⇒ `4096.0`）转成 JSON 数字，数组元素同样被转 ⇒ 地址键必须**两种 JSON 形态都能接**（`read_addr_key`）,不能用 `load_param<std::string>` | 已在模块内兼容 + 记入台账表 A;管线本身的行为属既有设计,不在本 change 裁决 |
+| 2 | 配置引用了**仓内不存在的类型**:`ComputeUnitTLM` / `TCCTLM`（`configs/apu_soc_full.json` / `apu_soc_phase7a.json`） | 不是零效果键（整份配置不可装配）⇒ 台账 **§2bis** 新增登记,归独立 change（R-5） |
+
+**台账同步**（`docs/implementation/module-param-baseline.md`）:表 A 从「当前为空」→ **6 键**（`TrafficGenTLM` 4 个非标量/双形态键 + `GmmuTLM` 2 个板级直读键）;表 B 的 B-2/B-3/B-4 改「已消费」、B-5 拆分「已消费 + 已停止产出」、B-1 改「⛔ 阻塞（R-4）」、**新增 B-7~B-10**（`CoherentXBarTLM` 3 键 / `GpuMeshNoC` 2 键 / `VramControllerTLM.operating_frequency_hz` / `MemoryCluster.memory_type`）;新增 **§2bis 未定义类型**。
+
+**盘点脚本**（T0.1，可重跑）:`scripts/test/param_effect_inventory.py`（`--json` / `--check`）。判定分四类:`read-surface` / `zero-ref`（类别① 强候选）/ `external-ref`（无自有读面但键被他处引用 ⇒ 须人工核实）/ `undefined-type`。实测 **36 类型 / 107 键×类型对**;类别① 强候选 **12 类 / 22 对**（立项期口径 14 类 / 32 对 —— 差异 4 条逐条记在 `design.md` D-1.6.3:未定义类型剔除、`LwcBusHub` 已修、新增 4 个漏检键、`CacheTLM.level` 只存在于运行时生成）。
+
+**判别测试**:新增 `test/test_param_effect_landing.cc`（tag `[effect]`）**15 cases / 116 assertions** —— 每个态① 键「两个不同合法值 ⇒ 可观测指标不同」（`ADR-X.17` D-6）,每个态② 键「配置写了即失败且错误含键名」。
+
+**回归**:`cpptlm_tests` 全量 **883307 assertions / 2386 cases 全绿**（基线 883191 / 2371 ⇒ 增量全部来自新测试）· `pytest test/python/` **232 passed** · `ctest -R cep` **100/100** · `[e2e]` 7458 assertions / 151 cases 绿。
+
+**遗留**:B2（14 类零读取面家族）/ B3（`RouterTLM.routing`）未开工;`CacheTLM` 6 键阻塞于 R-4（冻结面）;T7 收口（spec delta 合并 + 独立验收）待全部批次完成。

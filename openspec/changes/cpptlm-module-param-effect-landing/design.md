@@ -59,6 +59,9 @@
 
 > ⚠️ **数字会随 `configs/` 演化** ⇒ 实施期若发现新增键，**回填本表**并在 tasks 记一条;
 > AC-01 的判据 = 「重跑盘点脚本 ⇒ 类型数 / 键对数与本表一致（± 本 change 主动新增的键）」。
+>
+> ⚠️ **本表的 17 / 42 是「零效果族」口径，不是全部配置键** —— 全量键盘点与实测差异见
+> **D-1.6.2 / D-1.6.3**（脚本 `scripts/test/param_effect_inventory.py`）；两者不可混读。
 
 ## D-2 — 逐键三态裁决
 
@@ -122,3 +125,84 @@
 ⇒ **依赖顺序**：`cpptlm-module-param-effect-landing`（本 change）⇒ `cpptlm-module-param-migrate-batch2`。
 
 > ⚠️ 例外：迁移批次 2 的 **T1a**（迁移**已有读取面**的 21 个类型）不依赖本 change ⇒ 两条线可并行。
+
+## D-1.6 — 实施期回填（T0.1 盘点脚本 + T0.2 逐键裁决 · B1 批次完成态）
+
+### D-1.6.1 盘点脚本（可重跑，AC-01 的取证工具）
+
+```bash
+python3 scripts/test/param_effect_inventory.py            # 人类可读逐键表
+python3 scripts/test/param_effect_inventory.py --json     # 机读（供对拍）
+python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对拍,不一致 exit 1
+```
+
+判定口径（脚本机械部分，**不含**「值是否真的进入行为」—— 那一步见 W-1）：
+
+| 判定 | 含义 |
+|---|---|
+| `read-surface` | 类体里有 `on_config_loaded` / `set_config` 覆写 ⇒ 有自有读取面（是否消费该键**不可机械判定**） |
+| `zero-ref` | 无自有读取面 **且** 键名字面量在 `include/` + `src/` 中零出现 ⇒ **类别 ① 强候选** |
+| `external-ref` | 无自有读取面但键名在**本类型之外**被引用（板级直读 / 父模块转发 / 校验器）⇒ 须人工核实 |
+| `undefined-type` | 配置引用了仓内**没有类定义**的类型 ⇒ 整份配置不可装配（不是零效果键） |
+
+> ⚠️ 两个实现细节（会静默误判，已处理）：① 读面判定必须**限定类体**（聚合头里相邻类的
+> `on_config_loaded` 会让本类被误判为「有读面」—— 实测 `GpuMeshNoC` 曾因此漏判）；
+> ② 前向声明（`class X;`）没有类体，遇到 `;` 先于 `{` 必须跳过（否则错抓下一个类的花括号）。
+
+### D-1.6.2 实测（2026-11-18 · B1 落盘后）
+
+| 指标 | 立项期 D-1.5 | B1 落盘后实测 |
+|---|---:|---:|
+| 配置里出现的类型数 | 17 | **36** |
+| 键 × 类型对数 | 42 | **107** |
+| 类别 ① 强候选（`zero-ref`） | 14 类 / 32 对 | **12 类 / 22 对** |
+| 无自有读面但键被他处引用 | 未区分 | 17 对（板级直读 / 父模块转发 / LINT 校验） |
+| 类型未定义 | 未区分 | **2**（`ComputeUnitTLM` · `TCCTLM`） |
+
+> 立项期的 17 / 42 是**零效果族**的口径，不是全部配置键 —— 本表把它与「全量键盘点」分开，
+> 避免两个数被读成同一件事。
+
+### D-1.6.3 与立项期 D-1.2 的差异（逐条，无静默重算）
+
+| # | 差异 | 原因 | 影响 |
+|:--:|---|---|---|
+| 1 | `ComputeUnitTLM`(2 键) · `TCCTLM`(2 键) 从类别 ① **剔除** | 仓内无类定义（`grep -rn "class ComputeUnitTLM\|class TCCTLM" include/ src/` = 0 命中）;`configs/apu_soc_full.json:3` 自述「not yet registered (planned Phase 7.B/C/D)」 | 不是零效果键,而是**配置引用不存在类型** ⇒ 归「未定义类型」,不计入本 change 的键盘点;受影响配置本身**不可装配**（新增登记 R-5） |
+| 2 | `LwcBusHub.max_ip_ports` 移出类别 ① | B1 已落地（T1.4）| 已消费 |
+| 3 | **新增** `CoherentXBarTLM`(3 键) · `GpuMeshNoC`(2 键) · `VramControllerTLM.operating_frequency_hz`(1 键) · `MemoryCluster.memory_type`(1 键) | 立项期靠人工读配置遗漏 | 归 B2 批次（`MemoryCluster` 属 SimModule 家族;`CoherentXBarTLM.ports` 仅被 `module_factory_validate.cc:271` 读去做**越界告警**,值从不生效 ⇒ 伪参数候选） |
+| 4 | `CacheTLM.level` 不在脚本输出中 | `configs/` 里无该键,它由 `src/tlm/cluster/cache_cluster.cc` 在**运行时**生成 | 仍按 `ADR-X.17` F-14 登记（脚本只能看见配置文件里的键） |
+
+### D-1.6.4 B1 批次逐键裁决结果（T1.1~T1.5）
+
+| 类型 | 键 | 态 | 落地位置 | 判别测试 |
+|---|:--:|:--:|---|---|
+| `TrafficGenTLM` | `pattern` | ① | `traffic_gen_tlm.hh` `apply_pattern()`（7 个模式 → `GenMode_TLM` + `StressPattern`） | AC-03 pattern |
+| | `num_requests` | ① | `on_config_loaded` ③（负数 ⇒ 失败） | AC-03 num_requests |
+| | `start_addr` / `end_addr` | ① | `read_addr_key()` + `set_addr_range()`（`addr_dist_` 构造期绑定边界 ⇒ 必须走 setter） | AC-03 start/end |
+| | `hotspot_addrs` / `hotspot_weights` | ① | `parse_hotspot()` + `set_hotspot_config()` | AC-03 hotspot |
+| | `stride` | ① | `on_config_loaded` ⑥ + `set_stride()` | AC-03 stride |
+| | `seed` | ①（原有） | `set_seed()`（同时重播种 `rng_`） | AC-03 seed |
+| `MemoryTLM` | `capacity_gb` | ①（原有） | `set_size_bytes()` | — |
+| | `size` | ① | `parse_size_bytes()`（B/KB/MB/GB，1024 进制） | AC-03 size |
+| | `read_latency` | ① | hit **与** miss 同值（`read_latency_hit_cycles_` + `_miss_`）;细粒度拆分归板级 | AC-03 read_latency |
+| | `write_latency` | ① | `write_latency_cycles_`（functional legacy 采样从写死 120/100 改为读成员） | AC-03 write_latency |
+| | `type` / `mem_type` | ② | `reject_unsupported_key()` ⇒ 装配期失败含键名 | AC-04 memory |
+| `GmmuTLM` | `page_size_bytes` | ① | `set_page_size_bytes()`（成员 + 掩码 + 移位，替换 `constexpr 4096`）;2 的幂且 ≥ 4096,否则失败 | AC-03 gmmu |
+| | `tlb_size` / `tlb_miss_latency_cycles` | 表 A | `ignore_param()` 登记（消费方是**板级** `dgpu_board_shell.cc:1056-1057`） | 台账表 A |
+| `LwcBusHub` | `max_ip_ports` | ① | 成员 `max_ip_ports_`（默认 = 编译期 `kMaxIpPorts = 32`），作用于两个 register 上限判断 | AC-03 lwc |
+| `CacheTLM` | `size` · `level` · `associativity` · `assoc` · `line_size` · `protocol` | **待裁决** | ⛔ 不在本 change 范围 —— 该类是**冻结面**（`ADR-CEP-15` IC1：`cache_tlm.hh` / `cache_tlm.cc` 相对 CEP 基线零 diff，闸 = `test/test_cep_module_factory_seam.cc:133-134`）⇒ 解冻须 architect 裁决（R-4） | — |
+
+**机制新增**：`load_param_opt(key, target[, lo, hi])`（`include/core/sim_object.hh`）——
+键存在 ⇒ 校验赋值返回 `true`;缺失 ⇒ **保持成员当前值**返回 `false`。
+存在理由：`load_param` 的「无默认值 ⇒ 必填」语义不适用于「默认值 = 成员初值」的键
+（否则每个可选键都要在调用点重抄一遍初值，抄漏即静默改默认行为）。
+
+**B1 的键间一致性裁决**（⛔ 不一致即显式失败 —— 零效果键不得换个形式静默失效）：
+
+| 规则 | 失败键 |
+|---|---|
+| `hotspot_addrs`/`hotspot_weights` 出现但 `pattern != HOTSPOT` | `hotspot_addrs` |
+| `pattern == HOTSPOT` 但无 `hotspot_addrs`（空离散分布 ⇒ UB） | `hotspot_addrs` |
+| `hotspot_weights.size() != hotspot_addrs.size()` | `hotspot_weights` |
+| `stride` 出现但 `pattern != STRIDED` | `stride` |
+| `end_addr <= start_addr`（含只给一端时与默认另一端比较） | `end_addr` |
+| `size` 与 `capacity_gb` 同时出现（同一量的两个真值） | `size` |

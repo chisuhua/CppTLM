@@ -143,8 +143,7 @@
       "params": {
         "capacity_gb": 16,
         "read_latency": 100,
-        "write_latency": 120,
-        "type": "HBM2"
+        "write_latency": 120
       }
     }
   ],

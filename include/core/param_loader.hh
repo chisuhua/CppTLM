@@ -57,6 +57,12 @@ public:
 
     void mark_consumed(std::string_view key) { consumed_.emplace(key); }
 
+    /// 该键是否存在于本次加载的配置中
+    bool has(std::string_view key) const {
+        if (!cfg_ || !cfg_->is_object()) return false;
+        return cfg_->find(std::string(key)) != cfg_->end();
+    }
+
     /// cfg 中的键 − 已消费键（升序，便于稳定报错）
     std::vector<std::string> unknown_keys() const {
         std::vector<std::string> out;
@@ -91,6 +97,8 @@ template <class T>
 std::string value_to_string(const T& v) {
     if constexpr (std::is_same_v<T, bool>) {
         return v ? "true" : "false";
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        return v;
     } else if constexpr (std::is_integral_v<T>) {
         return std::to_string(static_cast<long long>(v));
     } else {
@@ -232,6 +240,27 @@ void load_param(ParamLoadContext& ctx, std::string_view key, T& target,
 
     target = value;
     ctx.mark_consumed(key);
+}
+
+/**
+ * @brief 可选参数：**键存在** ⇒ 校验并赋值;**键缺失** ⇒ **保持 target 的当前值**
+ *
+ * 与 `load_param` 的区别：后者在键缺失且无默认值时**抛异常**（必填）;本函数
+ * 对「键缺失」一律**不视为错误** ⇒ 适合「该参数有默认值（= 成员当前值）、缺失即沿用」
+ * 的可选参数。
+ *
+ * @return true = 键存在且已完成校验与赋值;false = 键缺失（target 未被改动）
+ *
+ * ⚠️ 键**存在**时的校验强度与 `load_param` 的必填形态**完全相同**（类型 + 范围）。
+ */
+template <class T>
+bool load_param_optional(ParamLoadContext& ctx, std::string_view key, T& target,
+                         const std::optional<T>& lo = std::nullopt,
+                         const std::optional<T>& hi = std::nullopt) {
+    if (!ctx.has(key)) return false;
+    // 键存在 ⇒ 按「必填」语义校验（def = nullopt ⇒ 缺失才抛，而此处必然不缺失）
+    load_param(ctx, key, target, lo, hi, std::optional<T>{});
+    return true;
 }
 
 } // namespace cpptlm

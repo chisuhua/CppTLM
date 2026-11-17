@@ -19,6 +19,7 @@
 #include "metrics/stats.hh"
 #include "tlm/stress_patterns.hh"
 #include <cstdint>
+#include <string>
 #include <memory>
 #include <random>
 #include <unordered_map>
@@ -99,14 +100,230 @@ public:
     tlm_stats::StatGroup* get_stats_group() override { return &stats_; }
     std::string get_stats_path() const override { return "system.traffic_gen"; }
 
-    /// 配置侧**只**接受 `seed`(per A4.2:种子必须能进快照)。
-    /// ⚠️ 其余 `params`(`pattern` / `num_requests` / `start_addr` / `end_addr`)在
-    ///    **本 change 之前**即**未被解析**(既有行为)⇒ 本 change **不**改变它
-    ///    ⇒ 避免影响既有 configs 的仿真行为(per「改动最小化」)。
+    /// 配置加载：**逐键「读取即声明」**（`ADR-X.17` D-1）—— 一次调用完成
+    /// 类型校验 + 范围校验 + 赋值 + 「已消费键」登记。
+    ///
+    /// ⚠️ 本 change（`cpptlm-module-param-effect-landing`）**之前**，下列 8 个键
+    ///    **全部零效果**（只读 `seed`，其余被静默丢弃 ⇒ 配置写了不生效）：
+    ///    `pattern` / `num_requests` / `start_addr` / `end_addr` /
+    ///    `hotspot_addrs` / `hotspot_weights` / `stride` / `seed`
+    ///    ⇒ 本次逐键落地（态①：真实消费）。
     void on_config_loaded() override {
-        if (config_.contains("seed") && config_["seed"].is_number_unsigned()) {
-            set_seed(config_["seed"].get<std::uint64_t>());
+        const auto& cfg = get_config();
+
+        // ① pattern —— 字符串枚举 ⇒ 基础模式(GenMode_TLM) + 压力模式(StressPattern)
+        std::string pattern;
+        if (load_param_opt("pattern", pattern)) {
+            apply_pattern(pattern);
         }
+
+        // ② start_addr / end_addr —— 地址键
+        //    ⚠️ 配置管线的 `VarResolver` 会把**数字形态的字符串**转成 JSON 数字
+        //       （`"0x1000"` ⇒ `4096.0`，见 `include/utils/var_resolver.hh` 的 `strtod` 分支）
+        //       ⇒ 模块侧**必须两种形态都接受** ⇒ 走 `read_addr_value`（非 `load_param`，
+        //       因其类型检查只接受单一 JSON 类型）;键仍显式登记为「已消费」。
+        ignore_param("start_addr");
+        ignore_param("end_addr");
+        uint64_t lo = start_addr_;
+        uint64_t hi = end_addr_;
+        const bool has_lo = read_addr_key(cfg, "start_addr", lo);
+        const bool has_hi = read_addr_key(cfg, "end_addr", hi);
+        if (has_lo || has_hi) {
+            if (hi <= lo) {
+                throw cpptlm::ParamValidationError(
+                    name, "end_addr",
+                    "end_addr: expected end_addr > start_addr, got start=" + std::to_string(lo) +
+                        " end=" + std::to_string(hi));
+            }
+            set_addr_range(lo, hi); // ⚠️ 必须走 setter：addr_dist_ 在构造期绑定边界
+        }
+
+        // ③ num_requests
+        int n = num_requests_;
+        if (load_param_opt("num_requests", n)) {
+            if (n < 0) {
+                throw cpptlm::ParamValidationError(
+                    name, "num_requests",
+                    "num_requests: expected a non-negative integer, got " + std::to_string(n));
+            }
+            num_requests_ = n;
+        }
+
+        // ④ seed —— ⚠️ 必须经 set_seed（它同时重播种 rng_，直接写成员不生效）
+        std::uint64_t sd = seed_;
+        if (load_param_opt("seed", sd)) {
+            set_seed(sd);
+        }
+
+        // ⑤ hotspot_addrs / hotspot_weights —— **非标量**（数组）⇒ 不由 load_param 承载
+        //    （`ADR-X.17` D-2）⇒ 模块内解析 + **显式登记**为「已消费但不经 load_param」
+        ignore_param("hotspot_addrs");
+        ignore_param("hotspot_weights");
+        std::vector<uint64_t> hs_addrs;
+        std::vector<double> hs_weights;
+        const bool has_hs = parse_hotspot(cfg, hs_addrs, hs_weights);
+
+        // ⑥ stride —— 仅对 STRIDED 压力模式有意义
+        std::uint64_t stride = 64;
+        const bool has_stride = load_param_opt("stride", stride);
+
+        // ── 一致性裁决：零效果键不得静默失效 ─────────────────────────────
+        const bool hotspot_mode = (stress_pattern_ == StressPattern::HOTSPOT);
+        const bool strided_mode = (stress_pattern_ == StressPattern::STRIDED);
+
+        if (has_hs && !hotspot_mode) {
+            throw cpptlm::ParamValidationError(
+                name, "hotspot_addrs",
+                "hotspot_addrs: requires pattern=HOTSPOT (current pattern is not HOTSPOT)");
+        }
+        if (hotspot_mode && !has_hs) {
+            // ⚠️ HotspotStrategy 的离散分布在权重表为空时是 UB ⇒ 必须显式失败
+            throw cpptlm::ParamValidationError(name, "hotspot_addrs",
+                                               "hotspot_addrs: required when pattern=HOTSPOT");
+        }
+        if (has_hs && hs_weights.size() != hs_addrs.size()) {
+            throw cpptlm::ParamValidationError(
+                name, "hotspot_weights",
+                "hotspot_weights: expected the same count as hotspot_addrs (" +
+                    std::to_string(hs_addrs.size()) + "), got " +
+                    std::to_string(hs_weights.size()));
+        }
+        if (has_stride && !strided_mode) {
+            throw cpptlm::ParamValidationError(
+                name, "stride", "stride: requires pattern=STRIDED (current pattern is not STRIDED)");
+        }
+
+        // ── 应用（⚠️ 顺序：pattern 必须先于 hotspot / stride）────────────
+        if (hotspot_mode) {
+            set_hotspot_config(hs_addrs, hs_weights);
+        }
+        if (strided_mode && has_stride) {
+            set_stride(stride);
+        }
+    }
+
+    /// `pattern` 值 ⇒ 基础模式 + 压力模式（未知值 ⇒ 装配失败）
+    void apply_pattern(const std::string& p) {
+        if (p == "SEQUENTIAL") {
+            set_mode(GenMode_TLM::SEQUENTIAL);
+            set_stress_pattern(StressPattern::SEQUENTIAL);
+        } else if (p == "RANDOM") {
+            set_mode(GenMode_TLM::RANDOM);
+            set_stress_pattern(StressPattern::SEQUENTIAL);
+        } else if (p == "TRACE") {
+            set_mode(GenMode_TLM::TRACE);
+            set_stress_pattern(StressPattern::SEQUENTIAL);
+        } else if (p == "HOTSPOT") {
+            set_mode(GenMode_TLM::SEQUENTIAL);
+            set_stress_pattern(StressPattern::HOTSPOT);
+        } else if (p == "STRIDED") {
+            set_mode(GenMode_TLM::SEQUENTIAL);
+            set_stress_pattern(StressPattern::STRIDED);
+        } else if (p == "NEIGHBOR") {
+            set_mode(GenMode_TLM::SEQUENTIAL);
+            set_stress_pattern(StressPattern::NEIGHBOR);
+        } else if (p == "TORNADO") {
+            set_mode(GenMode_TLM::SEQUENTIAL);
+            set_stress_pattern(StressPattern::TORNADO);
+        } else {
+            throw cpptlm::ParamValidationError(
+                name, "pattern",
+                "pattern: unknown value '" + p +
+                    "' (expected one of SEQUENTIAL/RANDOM/TRACE/HOTSPOT/STRIDED/NEIGHBOR/"
+                    "TORNADO)");
+        }
+    }
+
+    /// 解析地址字面量（十进制或 `0x` 前缀十六进制）
+    uint64_t parse_addr(const std::string& s, const char* key) const {
+        auto fail = [&]() {
+            throw cpptlm::ParamValidationError(
+                name, key,
+                std::string(key) + ": invalid address '" + s +
+                    "' (expected a non-negative integer, decimal or 0x-prefixed hex)");
+        };
+        if (s.empty() || s[0] == '-') fail();
+        try {
+            size_t pos = 0;
+            const unsigned long long v = std::stoull(s, &pos, 0);
+            if (pos != s.size()) fail();
+            return static_cast<uint64_t>(v);
+        } catch (const cpptlm::ParamValidationError&) {
+            throw;
+        } catch (const std::exception&) {
+            fail();
+        }
+        return 0; // ⛔ 不可达（fail() 必抛）
+    }
+
+    /// 读取**单个**地址值：接受 JSON 数字（含 `VarResolver` 从 `"0x1000"` 转换来的 double）
+    /// 与字符串两种形态
+    uint64_t read_addr_value(const json& v, const char* key) const {
+        if (v.is_number_unsigned()) return v.get<uint64_t>();
+        if (v.is_number_integer()) {
+            const long long i = v.get<long long>();
+            if (i < 0) {
+                throw cpptlm::ParamValidationError(
+                    name, key,
+                    std::string(key) + ": expected a non-negative address, got " + std::to_string(i));
+            }
+            return static_cast<uint64_t>(i);
+        }
+        if (v.is_number_float()) {
+            const double d = v.get<double>();
+            if (d < 0 || d != static_cast<double>(static_cast<uint64_t>(d))) {
+                throw cpptlm::ParamValidationError(
+                    name, key,
+                    std::string(key) + ": expected a non-negative integral address, got " + v.dump());
+            }
+            return static_cast<uint64_t>(d);
+        }
+        if (v.is_string()) return parse_addr(v.get<std::string>(), key);
+        throw cpptlm::ParamValidationError(
+            name, key,
+            std::string(key) + ": expected an address (number or 0x-prefixed string), got " +
+                v.dump());
+    }
+
+    /// 读取**顶层**地址键（键存在才读）
+    /// @return true = 键存在且已写入 `out`
+    bool read_addr_key(const json& cfg, const char* key, uint64_t& out) const {
+        auto it = cfg.find(key);
+        if (it == cfg.end()) return false;
+        out = read_addr_value(*it, key);
+        return true;
+    }
+
+    /// 解析 `hotspot_addrs` / `hotspot_weights`（**非标量** ⇒ 模块内解析）
+    /// @return true = 配置含 `hotspot_addrs`
+    bool parse_hotspot(const json& cfg, std::vector<uint64_t>& addrs,
+                       std::vector<double>& weights) const {
+        if (!cfg.contains("hotspot_addrs")) return false;
+        const auto& a = cfg["hotspot_addrs"];
+        if (!a.is_array()) {
+            throw cpptlm::ParamValidationError(name, "hotspot_addrs",
+                                               "hotspot_addrs: expected an array of addresses");
+        }
+        for (const auto& e : a) {
+            // ⚠️ 数组元素同样经 `VarResolver` ⇒ `"0x1000"` 会变成 `4096.0` ⇒ 两种形态都接受
+            addrs.push_back(read_addr_value(e, "hotspot_addrs"));
+        }
+        if (cfg.contains("hotspot_weights")) {
+            const auto& w = cfg["hotspot_weights"];
+            if (!w.is_array()) {
+                throw cpptlm::ParamValidationError(name, "hotspot_weights",
+                                                   "hotspot_weights: expected an array of numbers");
+            }
+            for (const auto& e : w) {
+                if (!e.is_number()) {
+                    throw cpptlm::ParamValidationError(
+                        name, "hotspot_weights",
+                        "hotspot_weights: expected an array of numbers, got " + e.dump());
+                }
+                weights.push_back(e.get<double>());
+            }
+        }
+        return true;
     }
 
     void set_mode(GenMode_TLM m) { mode_ = m; }

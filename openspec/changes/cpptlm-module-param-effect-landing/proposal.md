@@ -47,6 +47,8 @@
 | R-1 | **板级直读路径**（`ADR-X.17` F-15 · `dgpu_board_shell.cc` 直读 JSON `params`）覆盖的类型（`MemoryTLM` / `VramControllerTLM` / `GmmuTLM` / `PcieEndpointIP`）其「已消费」登记归板级而非模块 | 由 `cpptlm-module-param-migrate-batch2` 的表 A 处置（`ADR-X.17` D-3 三态条款） |
 | R-2 | `derive_expr`（`configs/param_rules/router_tlm.json` 的 `vc_count` 条目）两侧皆无人执行 | `ADR-X.10` 决策 5 未实施 ⇒ 独立 change |
 | R-3 | `cpptlm_config`（Legacy / Deprecated）是 `configs/param_rules/*.json` 的唯一消费者;其继任者 `cpptlm/` 零 `param_rules` 引用 | `ADR-X.10` §F 裁决时一并回答「生成期校验能力迁往何处」 |
+| **R-4** | **`CacheTLM` 的 6 键**（`size` / `level` / `associativity` / `assoc` / `line_size` / `protocol`）**本 change 无法落地** —— 该类是 **CEP 冻结面**（`ADR-CEP-15` IC1：`cache_tlm.hh` / `cache_tlm.cc` 相对 CEP 基线零 diff，闸 = `test/test_cep_module_factory_seam.cc:133-134`）⇒ 任何改动都会红闸;且该类**无容量/组相联/协议模型**（只有 `cache_lines_` + 写死命中延迟）⇒ 态① 需先建模 | **解冻 + 建模须 architect 裁决**（是「解冻改冻结面」还是「把容量模型放在独立类」）;台账 B-1 记为 `⛔ 阻塞`，B2 批次跳过该类 |
+| **R-5** | 配置引用了**仓内不存在的类型**：`ComputeUnitTLM`（`configs/apu_soc_full.json` / `apu_soc_phase7a.json` 各 4 实例）、`TCCTLM`（同两份配置） | 两份配置本身不可装配（自述「not yet registered」）⇒ 不是零效果键;处置（实现类型 / 从配置移除）归独立 change，本 change 只登记（台账 §2bis） |
 
 ## 验收标准
 

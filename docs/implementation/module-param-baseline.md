@@ -1,6 +1,7 @@
 # 模块参数基线台账（表 A / 表 B / 基线豁免）
 
 > 归属：change `cpptlm-module-param-read-declares`（决策源 `docs/adr/ADR-X.17-module-param-read-declares.md`）
+> 更新：2026-11-18 —— 由 `cpptlm-module-param-effect-landing` 的 **B1 批次**逐键落地后回填（表 A 新增 6 键 / 表 B 逐条改状态 + 新增 B-7~B-10 / 新增 §2bis 未定义类型）
 > 日期：2026-11-17
 >
 > ⚠️ **本文件是人类可读台账，不是任何闸的输入**（change design D-4）。
@@ -17,7 +18,9 @@
 
 | 键 | 所属类型 | 消费方 | 备注 |
 |---|---|---|---|
-| （当前为空） | — | — | 本 change 只迁移 `RouterTLM`，其全部参数均经 `load_param` 声明，无表 A 键 |
+| `start_addr` / `end_addr` | `TrafficGenTLM` | 模块内 `read_addr_key()`（非 `load_param`） | 配置管线 `VarResolver`（`include/utils/var_resolver.hh` 的 `strtod` 分支）会把**数字形态字符串**（含 `0x1000`）转成 JSON 数字 ⇒ 同一键有两种 JSON 类型 ⇒ `load_param` 的单一类型检查不适用；键已 `ignore_param` 显式登记（`traffic_gen_tlm.hh`） |
+| `hotspot_addrs` / `hotspot_weights` | `TrafficGenTLM` | 模块内 `parse_hotspot()`（非 `load_param`） | **非标量**（数组）⇒ 不由 `load_param` 承载（`ADR-X.17` D-2）；键已 `ignore_param` 显式登记 |
+| `tlb_size` / `tlb_miss_latency_cycles` | `GmmuTLM` | **板级直读** | `dgpu_board_shell.cc:1056-1057` 直接调 `set_tlb_size` / `set_timing_params`;模块内 `ignore_param` 显式登记（`gmmu_tlm.hh` on_config_loaded） |
 
 **未来准入时必须先登记到本表的键**（来自 ADR-X.17 F-15 的板级直读路径
 `src/tlm/gpu/dgpu_board_shell.cc`）：
@@ -25,7 +28,7 @@
 | 键 | 所属类型 | 消费方 | 位置 |
 |---|---|---|---|
 | `read_latency_hit_cycles` / `read_latency_miss_cycles` / `write_latency_cycles` / `row_hit_cycles` / `row_miss_cycles` / `bandwidth_gbps` / `use_zero_delay_for_test` | `MemoryTLM` / `VramControllerTLM` | 板级直读 | `dgpu_board_shell.cc:1039-1059` |
-| `tlb_miss_latency_cycles` / `tlb_size` | `GmmuTLM` | 板级直读 | `dgpu_board_shell.cc:1056-1057` |
+| `tlb_miss_latency_cycles` / `tlb_size` | `GmmuTLM` | 板级直读 | `dgpu_board_shell.cc:1056-1057`（⚠️ 已在**上表**先行登记 + 模块内 `ignore_param`，准入时无需重复处置） |
 | `device_id` / `quantum_cycles` / `ptx_emu_root` | 板级 | 板级直读 | `dgpu_board_shell.cc:53-59` |
 | `bar_sizes` / `visible_vram_size` / `invisible_vram_size` / `va_region_size` / `gpu_id` / `gfx_version` / `bdf` | `PcieEndpointIP` 外观 | 板级直读 | `dgpu_board_shell.cc:75-96` |
 
@@ -42,12 +45,16 @@
 
 | # | 键 | 所属类型 | 证据 | 状态 |
 |:--:|---|---|---|---|
-| B-1 | `size` / `level` / `associativity` / `protocol` | `CacheTLM` | 该类无 `on_config_loaded` / 无 `set_config` 覆写；`size`/`level` 由 `cache_cluster.cc:25/28-29` 生成 | 待修 |
-| B-2 | `pattern` / `num_requests` / `start_addr` / `end_addr` | `TrafficGenTLM` | `traffic_gen_tlm.hh:102-110` 注释自述「其余 params 未被解析」；`set_num_requests` / `set_addr_range` 无生产调用方 | 待修 |
-| B-3 | `page_size_bytes` | `GmmuTLM` | `gmmu_tlm.hh:307-309` 的 `contains` 分支体为空；实际翻译用 `constexpr page_size = 4096` | 待修 |
-| B-4 | `max_ip_ports` | `LwcBusHub` | 全仓仅 `configs/dgpu_soc_minimal_v1.json:69` 命中；该类零配置读取面 | 待修 |
-| B-5 | `size` / `type` / `read_latency` / `write_latency` | `MemoryTLM` | `memory_tlm.hh:162-168` 只读 `capacity_gb`；`size`/`type` 由 `memory_cluster.cc:28` 生成 | 待修 |
+| B-1 | `size` / `level` / `associativity` / `protocol` / `assoc` / `line_size` | `CacheTLM` | 该类无 `on_config_loaded` / 无 `set_config` 覆写；`size`/`level` 由 `cache_cluster.cc:25/28-29` 生成 | **⛔ 阻塞：解冻需 architect 裁决** —— `cache_tlm.hh` / `cache_tlm.cc` 是 **CEP 冻结面**（`ADR-CEP-15` IC1,闸 = `test/test_cep_module_factory_seam.cc:133-134`）⇒ 本 change **未改该类**（`cpptlm-module-param-effect-landing` R-4） |
+| B-2 | `pattern` / `num_requests` / `start_addr` / `end_addr` | `TrafficGenTLM` | 改动前 `on_config_loaded` 只读 `seed` | **已消费**（`traffic_gen_tlm.hh` 的 `on_config_loaded` + `apply_pattern` / `read_addr_key` / `set_addr_range`;判别测试 `test/test_param_effect_landing.cc` `[effect]`） |
+| B-3 | `page_size_bytes` | `GmmuTLM` | 改动前 `contains` 分支体为空,实际恒用 `constexpr 4096` | **已消费**（`gmmu_tlm.hh` 的 `set_page_size_bytes` 替换 `constexpr`;2 的幂且 ≥ 4096 否则装配失败） |
+| B-4 | `max_ip_ports` | `LwcBusHub` | 改动前该类零配置读取面,上限恒为编译期 `kMaxIpPorts = 32` | **已消费**（`lwc_bus_hub.hh` 的 `max_ip_ports_`,作用于 `register_cr_target` / `register_doorbell_target` 上限判断） |
+| B-5 | `size` / `type` / `read_latency` / `write_latency` / `mem_type` | `MemoryTLM` | 改动前只读 `capacity_gb`；`size`/`type` 由 `memory_cluster.cc:28` 生成 | **`size` / `read_latency` / `write_latency` 已消费**（带单位解析 + hit/miss 同值语义数量化）;**`type` / `mem_type` 已停止产出**（态②：`reject_unsupported_key` ⇒ 配置写了即装配失败;`memory_cluster.cc` 不再生成 `type`） |
 | **B-6** | **`routing`** | **`RouterTLM`** | **本 change 的未知键检出机制暴露**：由 `GpuNoC::simulate_instantiate`（`src/tlm/cluster/gpu_noc_cluster.cc:26-31`）为每个内部 router 生成，但 `RouterTLM` 只有 `XYRouting` 一种算法 ⇒ 该键从未被消费（取值恒 `"XY"`） | **本 change 以 `ignore_param("routing")` 显式登记**（`src/tlm/router_tlm.cc` 的 `on_config_loaded`）；把 `routing` 接入算法选择属独立 change |
+| B-7 | `domain_protocol` / `snoop_filter` / `ports` | `CoherentXBarTLM` | 该类无配置读取面;`ports` 仅被 `src/core/module_factory_validate.cc:271` 读去做**越界告警**（值从不生效）⇒ 伪参数候选 | 待修（`cpptlm-module-param-effect-landing` B2 批次） |
+| B-8 | `dim` / `hops_latency` | `GpuMeshNoC` | 该类无配置读取面（只有 `set_dim` / `set_hops_latency` setter,无生产调用方传配置值） | 待修（B2 批次） |
+| B-9 | `operating_frequency_hz` | `VramControllerTLM` | 全仓 `grep -rn operating_frequency_hz include/ src/` = 0 命中（其余 7 键由板级直读消费,见上表 A 的前瞻段） | 待修（B2 批次） |
+| B-10 | `memory_type` | `MemoryCluster` | `src/tlm/cluster/memory_cluster.cc:14` 读入 `memory_type_`,但该成员**从不被读**;本 change 前它唯一的下游是生成 `MemoryTLM.type`（同样零效果）⇒ B1 停止生成后彻底悬空 | 待修（B2 批次） |
 
 ### B-6 的处置说明（为什么是显式登记而不是修复）
 
@@ -59,6 +66,19 @@
   使未知键检查不被这条既存缺陷拖红（否则 `GpuNoC` 的内部装配整体失败）。
   ⚠️ 该 API 的调用点可 grep 穷举审计（`grep -rn 'ignore_param(' src/ include/`），
   新增调用必须同步登记本表 —— 否则就是把未知键检查悄悄关掉。
+
+## 2bis. 未定义类型（配置引用了仓内**不存在**的类型）
+
+**不入表 B** —— 表 B 是「键存在但零效果」;而这里的键连宿主类都不存在 ⇒ **整份配置不可装配**,
+不是零效果。
+
+| 类型 | 出现处 | 证据 | 影响 |
+|---|---|---|---|
+| `ComputeUnitTLM` | `configs/apu_soc_full.json` / `configs/apu_soc_phase7a.json` | 全仓 `grep -rn "class ComputeUnitTLM\|struct ComputeUnitTLM" include/ src/` = **0 命中**（`include/tlm/gpu/streaming_multiprocessor_tlm.hh:14` 注明「Task 9: GpuComputeUnitTLM rename 合并入此」） | 两份配置无法装配;`configs/apu_soc_full.json:3` 自述「not yet registered (planned Phase 7.B/C/D)」⇒ 属**愿景配置**,不是活拓扑 |
+| `TCCTLM` | 同上 | 全仓 `grep -rn "TCCTLM" include/ src/` = **0 命中** | 同上 |
+
+> 由 `scripts/test/param_effect_inventory.py` 自动检出（`undefined-type`）。
+> 处置（删除配置 / 实现类型）不属本 change —— 已登记为 `cpptlm-module-param-effect-landing` R-5。
 
 ---
 

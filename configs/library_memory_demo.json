@@ -13,32 +13,28 @@
       "name": "mem_channel0",
       "type": "MemoryTLM",
       "params": {
-        "size": "2GB",
-        "mem_type": "DDR4"
+        "size": "2GB"
       }
     },
     {
       "name": "mem_channel1",
       "type": "MemoryTLM",
       "params": {
-        "size": "2GB",
-        "mem_type": "DDR4"
+        "size": "2GB"
       }
     },
     {
       "name": "mem_channel2",
       "type": "MemoryTLM",
       "params": {
-        "size": "2GB",
-        "mem_type": "DDR4"
+        "size": "2GB"
       }
     },
     {
       "name": "mem_channel3",
       "type": "MemoryTLM",
       "params": {
-        "size": "2GB",
-        "mem_type": "DDR4"
+        "size": "2GB"
       }
     },
     {

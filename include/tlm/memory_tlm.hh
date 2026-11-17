@@ -19,6 +19,7 @@
 #include "framework/stream_adapter.hh"
 #include "metrics/stats.hh"
 #include <cstdint>
+#include <string>
 #include <cstring>
 #include <queue>
 #include <vector>
@@ -159,12 +160,85 @@ public:
 
     // D-AXI v1.5 Phase 0.3 (B18): 真实接线 cfg 中的 capacity_gb
     // 消除 v1.4 §13 "1GB cap 不存在" 谎言 (Oracle/Metis 三轮敌对审查发现)
+    /// 配置加载：**逐键「读取即声明」**（`ADR-X.17` D-1）
+    ///
+    /// ⚠️ 本 change（`cpptlm-module-param-effect-landing`）之前，下列键**全部零效果**：
+    ///    `size` / `type` / `mem_type` / `read_latency` / `write_latency`
+    ///    （只读 `capacity_gb`）⇒ 本次逐键裁决：
+    ///    - `size`（带单位字符串）· `read_latency` · `write_latency` ⇒ **态① 真实消费**
+    ///    - `type` / `mem_type` ⇒ **态② 显式拒绝**（本类无内存类型模型 ⇒ 静默丢弃比失败更坏）
     void on_config_loaded() override {
-        const auto& cfg = get_config();
-        if (cfg.contains("capacity_gb") && cfg["capacity_gb"].is_number()) {
-            const uint64_t gb = cfg["capacity_gb"].get<uint64_t>();
-            set_size_bytes(gb * (1ULL << 30));
+        // ① 容量：`capacity_gb` 与 `size` **互斥**（同一量的两个真值 ⇒ 覆盖顺序决定行为）
+        std::uint64_t gb = 0;
+        const bool has_gb = load_param_opt("capacity_gb", gb);
+        std::string size_str;
+        const bool has_size = load_param_opt("size", size_str); // "2GB" ⇒ VarResolver 不转换（strtod 吃不下 'G'）
+        if (has_gb && has_size) {
+            throw cpptlm::ParamValidationError(
+                name, "size",
+                "size: mutually exclusive with capacity_gb (specify exactly one)");
         }
+        if (has_gb) set_size_bytes(gb * (1ULL << 30));
+        if (has_size) set_size_bytes(parse_size_bytes(size_str, "size"));
+
+        // ② 读延迟 —— 单值语义 = 「读延迟」（hit 与 miss **同值**）;
+        //    细粒度拆分由板级 timing-mode 键 `read_latency_hit_cycles` / `read_latency_miss_cycles` 承担
+        std::uint64_t rl = read_latency_hit_cycles_;
+        if (load_param_opt("read_latency", rl)) {
+            read_latency_hit_cycles_ = rl;
+            read_latency_miss_cycles_ = rl;
+        }
+
+        // ③ 写延迟
+        std::uint64_t wl = write_latency_cycles_;
+        if (load_param_opt("write_latency", wl)) {
+            write_latency_cycles_ = wl;
+        }
+
+        // ④ 态②：无对应语义的键 ⇒ 显式失败（⛔ 不得静默忽略 ⇒ 配置写了就该有效果）
+        reject_unsupported_key("type", "memory type is not modeled by MemoryTLM");
+        reject_unsupported_key("mem_type", "memory type is not modeled by MemoryTLM");
+    }
+
+    /// 拒绝「本类无对应语义」的键（态② ⇒ 装配期失败，报出键名与原因）
+    void reject_unsupported_key(const char* key, const char* why) const {
+        if (get_config().contains(key)) {
+            throw cpptlm::ParamValidationError(
+                name, key,
+                std::string(key) + ": " + why + " (remove this key from the configuration)");
+        }
+    }
+
+    /// 解析带单位的大小（`"512KB"` / `"2GB"` / `"4096B"`;KB/MB/GB 按 1024 进制）
+    uint64_t parse_size_bytes(const std::string& s, const char* key) const {
+        auto fail = [&]() {
+            throw cpptlm::ParamValidationError(
+                name, key,
+                std::string(key) + ": invalid size '" + s +
+                    "' (expected e.g. \"512KB\" / \"2GB\" / \"4096B\")");
+        };
+        size_t pos = 0;
+        double num = 0;
+        try {
+            num = std::stod(s, &pos);
+        } catch (const std::exception&) {
+            fail();
+        }
+        if (pos == 0 || num < 0) fail();
+        std::string unit;
+        for (size_t i = pos; i < s.size(); ++i) {
+            char c = s[i];
+            if (c == ' ' || c == '\t') continue;
+            if (c >= 'a' && c <= 'z') c = static_cast<char>(c - 'a' + 'A');
+            unit.push_back(c);
+        }
+        uint64_t mult = 0;
+        if (unit.empty() || unit == "B") mult = 1;
+        else if (unit == "KB" || unit == "K") mult = 1024ULL;
+        else if (unit == "MB" || unit == "M") mult = 1024ULL * 1024ULL;
+        else if (unit == "GB" || unit == "G") mult = 1024ULL * 1024ULL * 1024ULL;
+        else fail();
+        return static_cast<uint64_t>(num * static_cast<double>(mult));
     }
 
     void tick() override {
@@ -207,12 +281,15 @@ public:
                     req_in_.consume();
                 } else {
                     // v2.1 legacy 路径 (逐字节保留)
+                    // ⚠️ 此前写死 120 / 100 ⇒ 配置的 `write_latency` / `read_latency` 在
+                    //    functional 模式下**零效果**。改读成员（默认即 120 / 100 ⇒ 默认路径零变化）;
+                    //    functional 模式无 hit/miss 之分 ⇒ 读延迟取 hit 值。
                     if (is_write) {
                         ++stats_requests_write_;
-                        stats_latency_write_.sample(120);
+                        stats_latency_write_.sample(write_latency_cycles_);
                     } else {
                         ++stats_requests_read_;
-                        stats_latency_read_.sample(100);
+                        stats_latency_read_.sample(read_latency_hit_cycles_);
                     }
                     bool row_hit = (addr & 0xF000) == 0;
                     if (row_hit) ++stats_row_hits_;

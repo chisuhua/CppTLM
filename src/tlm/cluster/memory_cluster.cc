@@ -24,8 +24,11 @@ namespace cpptlm::tlm {
         for (int i = 0; i < channel_count_; ++i) {
             full_config["modules"].push_back(
                 {{"name", "channel_" + std::to_string(i)},
+                 // 不再生成 type —— MemoryTLM 无内存类型模型
+                 // (change cpptlm-module-param-effect-landing 改为态② 显式拒绝);
+                 // size 保留: MemoryTLM 现已按带单位字符串解析 ("1GB" => 字节数)。
                  {"type", "MemoryTLM"},
-                 {"params", {{"size", channel_size_}, {"type", memory_type_}}}});
+                 {"params", {{"size", channel_size_}}}});
         }
         const std::string arb_type = (channel_count_ == 2) ? "ArbiterTLM2" : "ArbiterTLM4";
         full_config["modules"].push_back(

@@ -52,12 +52,29 @@ public:
     void set_stream_adapter(cpptlm::StreamAdapterBase* /*a*/) override {}
     void tick() override {}
 
+    /// 配置加载（`ADR-X.17` D-1「读取即声明」）
+    /// ⚠️ 本 change（`cpptlm-module-param-effect-landing`）之前 `max_ip_ports` **零效果**
+    ///    （该类无任何配置读取面,上限恒为编译期 `kMaxIpPorts = 32`）⇒ 现为运行时上限。
+    void on_config_loaded() override {
+        unsigned mp = max_ip_ports_;
+        if (load_param_opt("max_ip_ports", mp, 1u, kMaxIpPorts)) {
+            max_ip_ports_ = mp;
+        }
+    }
+
+    /// 运行时 IP 端口上限（默认 = 编译期容量 `kMaxIpPorts`）
+    unsigned max_ip_ports() const noexcept { return max_ip_ports_; }
+    /// 已注册的 IP 端口数（CR + Doorbell）
+    std::size_t registered_ip_ports() const noexcept {
+        return cr_targets_.size() + db_targets_.size();
+    }
+
     // ── IP port 注册 (per design §1) ──
     /** @brief 注册 CR target (CrBundle), 返回 false 当 32-port 上限 */
     bool register_cr_target(const std::string& ip_name,
                             cpptlm::InputStreamAdapter<bundles::CrBundle>* cr_in) {
         if (cr_in == nullptr) return false;
-        if (cr_targets_.size() + db_targets_.size() >= kMaxIpPorts) return false;
+        if (cr_targets_.size() + db_targets_.size() >= max_ip_ports_) return false;
         cr_targets_[ip_name] = cr_in;
         if (first_cr_target_ == nullptr) first_cr_target_ = cr_in;
         return true;
@@ -67,7 +84,7 @@ public:
     bool register_doorbell_target(const std::string& ip_name,
                                   cpptlm::InputStreamAdapter<bundles::DoorbellBundle>* db_in) {
         if (db_in == nullptr) return false;
-        if (cr_targets_.size() + db_targets_.size() >= kMaxIpPorts) return false;
+        if (cr_targets_.size() + db_targets_.size() >= max_ip_ports_) return false;
         db_targets_[ip_name] = db_in;
         if (first_db_target_ == nullptr) first_db_target_ = db_in;
         return true;
@@ -149,6 +166,8 @@ public:
 
 private:
     mutable std::mutex route_mu_;
+    /// 运行时 IP 端口上限（`max_ip_ports` param 的真实消费点;默认 = 编译期容量）
+    unsigned max_ip_ports_ = kMaxIpPorts;
     std::unordered_map<std::string, cpptlm::InputStreamAdapter<bundles::CrBundle>*> cr_targets_;
     std::unordered_map<std::string, cpptlm::InputStreamAdapter<bundles::DoorbellBundle>*>
         db_targets_;
