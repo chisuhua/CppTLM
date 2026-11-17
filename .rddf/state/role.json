@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-17T06:17:57Z",
+  "current_role": "verifier",
+  "updated_at": "2026-11-17T06:24:20Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-16T10:48:23Z",
-      "by": "user",
-      "reason": "per 用户口令「切 architect 订正，然后检查是否要修订 docs 下相应的文档」⇒ 订正 docs/adr/ADR-X.15 的 Status Update「发现 2」(旧路由表键根因已证伪 => 真根因 = in-band credit flit 泄漏给非 router 消费者)，随后核对 docs/ 下其他文档是否含该已证伪表述。"
-    },
     {
       "role": "planner",
       "at": "2026-11-16T10:48:49Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-17T06:17:57Z",
       "by": "user",
       "reason": "per 用户口令「请登记为独立的improvement, 然后再切verifier验收」⇒ ① 起草 improvement cpptlm-validate-params-dead-code(validate_module_params 零调用方死代码 => 所有 ParamRules 在 instantiateAll 路径上不生效)+ 台账 entry ② 随后切 verifier 验收 cpptlm-router-buffer-size-param。"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-17T06:24:20Z",
+      "by": "user",
+      "reason": "per 用户口令「再切verifier验收」⇒ 对 change cpptlm-router-buffer-size-param 做独立验收(判据 = proposal AC-01~AC-05 + guard G-1/G-2,AC-01 载体已按 design D-3 收敛),报告落 .rddf/reviews/。"
     }
   ],
   "auto_switch_window": null
