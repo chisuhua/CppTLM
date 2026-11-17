@@ -56,7 +56,7 @@ if (cfg.contains("credit_timeout")) { … }   // ← 没有 buffer_size
 
 1. **`include/tlm/router_tlm.hh`**：保留 `BUFFER_DEPTH` 作为**默认深度**，新增运行时成员 `unsigned buffer_depth_`（初值 = 默认深度）；4 个使用点改读该成员。
 2. **`src/tlm/router_tlm.cc`**：`on_config_loaded()` 读取 `buffer_size`（若 JSON 中存在）⇒ 校验范围 1–64 ⇒ 写入 `buffer_depth_`；**非法值装配期 fail**（⛔ 不得静默截断、⛔ 不得回退默认值而静默通过）。
-3. **参数声明默认值 16 → 8**（`get_param_rules()` + `configs/param_rules/router_tlm.json`）：**让声明反映实际**，而非让所有 router 的行为突变。裁决理由见 `design.md` D-1。
+3. **参数声明默认值 16 → 8**（`get_param_rules()`），并在 `configs/param_rules/router_tlm.json` **补** `buffer_size` 条目（`default_int: 8` / `1..64`）：让**双声明面**一致且让声明反映实际。裁决理由见 `design.md` D-1；该 json 文件的必要性见 **D-7.2**（原「可能是 no-op」的判断已作废）。
 4. **`vc_count` 不动**（另立 backlog `cpptlm-router-vc-count-param-inert`）。
 
 ---
@@ -67,7 +67,7 @@ if (cfg.contains("credit_timeout")) { … }   // ← 没有 buffer_size
 
 | # | 判据 | 可验收点（机器可判） |
 |:--:|---|---|
-| **AC-01** | `buffer_size: N` ⇒ 输入缓冲实际容量 == N | 注入 N 个 flit 全部进入（不丢）；第 N+1 个被丢弃 |
+| **AC-01** | `buffer_size: N` ⇒ 缓冲深度与容量均生效 | ① `buffer_depth() == N`（只读访问器 · 直接证据）② 每 in_port 注入 `K > N` 个 ⇒ **必丢**（转发数 < 4K）—— 4 个 in_port 汇聚到同一出口，注入 4/cycle 远快于消费 1/cycle。观测面边界见 `design.md` D-3 |
 | **AC-02** | 未设 `buffer_size` ⇒ 行为与改动前**逐项一致** | 深度 == 8；`downstream_credits_` 初值 == 8；既有全部测试断言**零变化** |
 | **AC-03** | `buffer_size: N` ⇒ credit 预算与深度**同源** | `downstream_credits_[p][v]` 初值 == N |
 | **AC-04** | 非法值 ⇒ **装配期 fail** | `buffer_size` = 0 / 65 / 非整数 ⇒ 装配返回 false 且**不静默截断、不静默回退** |
@@ -91,5 +91,6 @@ if (cfg.contains("credit_timeout")) { … }   // ← 没有 buffer_size
 - **`vc_count` param**（声明 2 / 实际 `NUM_VCS = 4`）—— 修它需把 3 个 `std::array` 的第二维改为动态容器 ⇒ 成本量级不同 ⇒ **单独登记** `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`，⛔ 本 change 不修。
 - **不改变任何现有拓扑的行为**（默认深度保持 8）。
 - **不改** `NUM_VCS` / `NUM_PORTS` / `RouterPort` / 任何容器类型 / JSON schema 的其余部分。
-- **不改** `CohIfNICTLM` / `NICTLM` / `module_factory.cc`。
+- **不改** `CohIfNICTLM` / `NICTLM`。
+- **`module_factory.cc` 仅加 6 行 try/catch**（`set_config`/`on_config_loaded` 调用点 ⇒ 异常转装配失败）—— 必要性见 `design.md` **D-7.1**（该文件的 param 校验器 `validate_module_params` 是**零调用方的死代码**）；⛔ 不改该文件其它任何逻辑。
 - **不改**任何既有 `REQUIRE` 常量（AC-05 要求零数值变化）。

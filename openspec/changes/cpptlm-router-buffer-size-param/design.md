@@ -51,6 +51,37 @@
 | **非法值判据** | `buffer_size` = 0 / 65 / 非整数 ⇒ `instantiateAll` 返回 **false**（硬错误） | ⛔ 不得「静默截断到边界」或「回退默认值而通过」 |
 | **零变化判据** | 未设 `buffer_size` 时，既有全部测试断言**零变化** | D-1 的直接推论 |
 
+### ⚠️ 观测面边界（实施期实测补充，2026-11-17）
+
+`input_buffer_` 是 **private**，且**「容量判定」在稳态下与深度无关** —— egress 恒为 1 flit/cycle（`pending_link_` 是全局单队列、每周期 drain 1 个）⇒ **任何持续注入**都进入「注入 vs 消费」稳态：转发总数由**注入时长**决定，与 `buffer_depth_` 无关。
+
+⇒ 实测确认：单 port 注入**无法**观测容量；多 port 汇聚的**稳态吞吐同样与容量无关**。故采用两条互补判据：
+
+| # | 判据 | 强度 |
+|---|---|---|
+| **① 直接** | `buffer_depth()` **只读访问器** == 声明值（新增观测面，见 D-7） | 精确；证明 param 已写入运行时成员 |
+| **② 行为** | **每 in_port 注入 K 个、K > C 时必丢**（转发数 < 4K） | 4 个 in_port 汇聚到同一 LOCAL 出口 ⇒ 注入 4/cycle 远快于消费 1/cycle ⇒ 首轮即填满 ⇒ 超出部分静默丢弃 |
+
+**变异验证（判别力实证）**：注释掉 `buffer_depth_ = static_cast<unsigned>(n);` ⇒ **5 个断言红**（BSP-2 三节 + BSP-3 第二节 + BSP-4 合法值节）⇒ 判据对「param 不生效」这一缺陷态**有判别力**。
+
+---
+
+## D-7 — 实施期发现的两处机制缺口（均已在实施中闭合）
+
+### D-7.1 `validateConfig` 的 param 校验是**死代码** ⇒ AC-04 需另一通道
+
+`module_factory_validate.cc` 的 `validate_module_params`（`static`，`:475-499`，按 ParamRules 做 parse + min/max）**零调用方** ⇒ `validateConfig` 实际**不做** param 校验。⇒ 非法 `buffer_size` 不会在装配前置阶段被拦。
+
+**处置**：在 `module_factory.cc` 的 `set_config`/`on_config_loaded` 调用点加 **try/catch 6 行**（`:409-420`）—— 与仓库**既有范式**一致（Step 4.5 的 `simulate_instantiate` 已是 `try { } catch (const std::exception&) { return false; }`，`:487-493`）⇒ 「`on_config_loaded` 抛异常 ⇒ 装配失败」的语义统一。
+
+⇒ **这解释了为什么 `proposal.md` 的 Out of Scope 从「不改 `module_factory.cc`」放宽为「仅加该 try/catch」**。
+
+### D-7.2 `configs/param_rules/router_tlm.json` **不是** no-op（原 D-6 第 4 条判断有误）
+
+原判断「该文件只有 `vc_count`、无 `buffer_size` ⇒ 本 change 对它是 no-op」在**事实层面成立**，但**结论错了**：正因为该文件缺 `buffer_size` 条目，`validateConfig` 路径（若将来被修复）也无从校验它。⇒ **本 change 必须在该文件补 `buffer_size` 条目**（`default_int: 8` / `min_value: 1` / `max_value: 64`），使**双声明面**（`get_param_rules()` ↔ `configs/param_rules/router_tlm.json`）一致。
+
+⇒ **D-6 第 4 条作废**（见下方订正标记）。
+
 ---
 
 ## D-4 — 数值变化的处理纪律（AC-04b 同款）
@@ -76,4 +107,4 @@
 1. **`vc_count` param 仍不生效**（声明 2 / 实际 `NUM_VCS = 4`）—— 修它需把 `input_buffer_` / `vc_state_` / `downstream_credits_` 的**数组第二维**改为动态容器 ⇒ 成本量级不同 ⇒ 已单独登记 `.rddf/improvements/cpptlm-router-vc-count-param-inert.md`。
 2. **`downstream_credits_` 的类型仍是 `uint8_t`**（值域 0..255）—— 参数范围 1–64 ⇒ 够用 ⇒ 本 change 不动该类型；但若将来把范围上探到 >255 ⇒ 须连带改类型。
 3. **静默丢 flit 的既有行为不变**：`input_buffer_` 满 ⇒ 静默丢弃（`router_tlm.cc:152-155`）—— 本 change 只让**容量可配**，**不引入**满溢告警（那是独立议题，见 `ADR-X.16` D6 第 1 条「LOCAL↔router 误用不可见」）。
-4. **`configs/param_rules/router_tlm.json` 当前只有 `vc_count` 声明**（实测）⇒ 本 change 对该文件的改动**可能是 no-op**；实施时以实测为准，若确无 `buffer_size` 条目则该文件**零 diff**。
+4. ~~`configs/param_rules/router_tlm.json` 的改动可能是 no-op~~ ⇒ **作废**（实施期实测：该文件确无 `buffer_size` 条目，但**必须补上**，见 **D-7.2**）。

@@ -136,6 +136,10 @@ public:
     // ========== 常量配置 ==========
     static constexpr unsigned NUM_PORTS = 5;
     static constexpr unsigned NUM_VCS = 4;
+    /// **默认**输入缓冲深度 —— 亦是 `buffer_size` param 的默认值(per
+    /// `cpptlm-router-buffer-size-param` 的 D-1 裁决:让**声明**反映**实现** ⇒
+    /// `get_param_rules()` 的 `buffer_size` 默认值同步为 8)。
+    /// ⚠️ 实际生效值是运行时成员 `buffer_depth_`(可被 `buffer_size` param 覆盖)。
     static constexpr unsigned BUFFER_DEPTH = 8;
     static constexpr unsigned DEFAULT_MESH_X = 2;
     static constexpr unsigned DEFAULT_MESH_Y = 2;
@@ -170,6 +174,12 @@ public:
     // ========== ChStreamModuleBase 接口 ==========
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override;
     unsigned num_ports() const override { return NUM_PORTS; }
+
+    /// **只读**观测面：运行时生效的输入缓冲深度（由 `buffer_size` param 决定）
+    /// ⚠️ `input_buffer_` 是 private，且其容量判定在**稳态**下与深度无关
+    ///    （egress 1 flit/cycle 会持续消化积压）⇒ 本访问器是「param 已生效」的**直接证据**；
+    ///    行为侧证据见 `buffer_size` 的用例（K > C 时的丢弃）。
+    unsigned buffer_depth() const { return buffer_depth_; }
 
     // ChStreamModuleBase 统计接口
     tlm_stats::StatGroup* get_stats_group() override { return &stat_group_; }
@@ -283,10 +293,16 @@ private:
     std::array<std::array<VCState, NUM_VCS>, NUM_PORTS> vc_state_;
 
     // ========== Credit 计数 [port][vc] ==========
+    /// **运行时生效的输入缓冲深度** —— 由 `buffer_size` param 决定；未声明时 = `BUFFER_DEPTH`。
+    /// ⚠️ 缓冲深度与 credit 预算**必须同源**（per `cpptlm-router-buffer-size-param` 的 D-2）：
+    ///    `on_config_loaded()` 读到该 param 后**必须**据此重新同步 `downstream_credits_` 的初值。
+    /// 声明在 `downstream_credits_` **之前**（构造函数的初始化列表顺序 = 成员声明顺序）。
+    unsigned buffer_depth_ = BUFFER_DEPTH;
+
     /// ⚠️ `downstream_credits_[LOCAL][*]` 在 ADR-X.16 **D1** 之后为**死状态**：
     ///    LOCAL 的 `has_credit` 恒真、`consume_credit` 不扣减 ⇒ 该行不再参与任何流控决策。
     ///    保留数组形状（不把 LOCAL 拆出）以免改动既有索引与 `credit_safety_reset` 的遍历面；
-    ///    初值仍由构造函数置为 `BUFFER_DEPTH`（见 D1 的 T1.3 处置 = 方案 (a)「注释说明 + 不复用」）。
+    ///    初值仍由构造函数置为 `buffer_depth_`（见 D1 的 T1.3 处置 = 方案 (a)「注释说明 + 不复用」）。
     std::array<std::array<uint8_t, NUM_VCS>, NUM_PORTS> downstream_credits_;
 
     // ========== 路由表 [packet_id] -> {out_port, out_vc} ==========

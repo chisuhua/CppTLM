@@ -29,6 +29,14 @@
       "min_value": 1,
       "max_value": 8,
       "derive_expr": "(mesh_x >= 4) ? 8 : 4"
+    },
+    "buffer_size": {
+      "name": "buffer_size",
+      "type": "INTEGER",
+      "required": false,
+      "default_int": 8,
+      "min_value": 1,
+      "max_value": 64
     }
   }
 }

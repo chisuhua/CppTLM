@@ -5,6 +5,7 @@
 #include "tlm/router_tlm.hh"
 #include <algorithm>
 #include <cassert>
+#include <stdexcept>
 #include "core/module_factory.hh"
 #include "core/param_rules.hh"
 #include "core/sim_core.hh"
@@ -56,7 +57,7 @@ namespace tlm {
 
         for (unsigned p = 0; p < NUM_PORTS; ++p) {
             for (unsigned v = 0; v < NUM_VCS; ++v) {
-                downstream_credits_[p][v] = BUFFER_DEPTH;
+                downstream_credits_[p][v] = buffer_depth_;
                 last_credit_return_cycle_[p][v] = 0;
             }
         }
@@ -78,6 +79,29 @@ namespace tlm {
         }
         if (cfg.contains("credit_timeout")) {
             credit_timeout_ = cfg["credit_timeout"].get<uint64_t>();
+        }
+        if (cfg.contains("buffer_size")) {
+            const auto& bs = cfg["buffer_size"];
+            // ⚠️ 非法值**显式失败**(⛔ 不得静默截断 / 静默回退默认值)。
+            //    注:`instantiateAll` 会先跑 `validateConfig` → `validate_params`
+            //    (已按 ParamRules 的 min/max 做 parse + 范围校验)⇒ 本分支的抛异常
+            //    在标准装配路径上**不可达**,此处为防御性(该虚函数可被直接调用)。
+            if (!bs.is_number_integer() && !bs.is_number_unsigned()) {
+                throw std::runtime_error("RouterTLM: buffer_size must be an integer: " +
+                                         name);
+            }
+            const long long n = bs.get<long long>();
+            if (n < 1 || n > 64) {
+                throw std::runtime_error("RouterTLM: buffer_size out of range [1,64]: " + name);
+            }
+            buffer_depth_ = static_cast<unsigned>(n);
+            // D-2 顺序纪律:credit 预算必须与缓冲深度**同源** ⇒ 按新深度重新同步初值
+            // (此刻尚无任何 flit 流动 ⇒ 重置安全)。
+            for (unsigned p = 0; p < NUM_PORTS; ++p) {
+                for (unsigned v = 0; v < NUM_VCS; ++v) {
+                    downstream_credits_[p][v] = static_cast<uint8_t>(buffer_depth_);
+                }
+            }
         }
         DPRINTF(MODULE, "[CONFIG] RouterTLM %s: node=(%u,%u) mesh=(%u,%u) credit_timeout=%u\n",
                 name.c_str(), node_x_, node_y_, mesh_x_, mesh_y_, credit_timeout_);
@@ -151,7 +175,7 @@ namespace tlm {
                 req_adapter.consume();
 
                 // 检查缓冲区空间
-                if (input_buffer_[port][vc].size() < BUFFER_DEPTH) {
+                if (input_buffer_[port][vc].size() < buffer_depth_) {
                     input_buffer_[port][vc].push(flit);
                 }
             }
@@ -482,7 +506,7 @@ namespace tlm {
     void RouterTLM::receive_credit(unsigned in_port, unsigned vc) {
         if (in_port >= NUM_PORTS || vc >= NUM_VCS)
             return;
-        if (downstream_credits_[in_port][vc] < BUFFER_DEPTH) {
+        if (downstream_credits_[in_port][vc] < buffer_depth_) {
             downstream_credits_[in_port][vc]++;
         }
     }
@@ -527,12 +551,12 @@ namespace tlm {
 
         for (unsigned p = 0; p < NUM_PORTS; ++p) {
             for (unsigned v = 0; v < NUM_VCS; ++v) {
-                if (downstream_credits_[p][v] < BUFFER_DEPTH) {
+                if (downstream_credits_[p][v] < buffer_depth_) {
                     uint64_t elapsed = current_cycle_ - last_credit_return_cycle_[p][v];
                     if (elapsed >= credit_timeout_) {
                         DPRINTF(MODULE, "[CREDIT Timeout] port=%u vc=%u elapsed=%u, reset\n", p, v,
                                 elapsed);
-                        downstream_credits_[p][v] = BUFFER_DEPTH;
+                        downstream_credits_[p][v] = buffer_depth_;
                         last_credit_return_cycle_[p][v] = current_cycle_;
                     }
                 } else {
@@ -573,8 +597,10 @@ namespace tlm {
             {"vc_count",
              cpptlm::ParamRule{"vc_count", cpptlm::ParamType::INTEGER, false, 2, std::nullopt,
                                std::nullopt, std::nullopt, 1, 8, std::nullopt}},
+            // 默认值 8 = `RouterTLM::BUFFER_DEPTH`(per `cpptlm-router-buffer-size-param` 的
+            // D-1 裁决:让**声明**反映**实现** ⇒ 零行为变更)
             {"buffer_size",
-             cpptlm::ParamRule{"buffer_size", cpptlm::ParamType::INTEGER, false, 16, std::nullopt,
+             cpptlm::ParamRule{"buffer_size", cpptlm::ParamType::INTEGER, false, 8, std::nullopt,
                                std::nullopt, std::nullopt, 1, 64, std::nullopt}},
         };
     }

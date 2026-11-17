@@ -409,9 +409,18 @@ bool ModuleFactory::instantiateAll(const json& config) {
         if (cfg_src) {
             auto it = object_instances.find(name);
             if (it != object_instances.end() && it->second) {
-                it->second->set_config(*cfg_src);
-                it->second->on_config_loaded();
-                DPRINTF(MODULE, "[CONFIG] Set params for module: %s\n", name.c_str());
+                // ⚠️ `set_config` 内部会调 `on_config_loaded()`；该虚函数**可抛异常**
+                // 表达「参数非法」(`on_config_loaded` 返回 void ⇒ 无其它失败通道)。
+                // 与 Step 4.5 的 `simulate_instantiate` 同款语义：异常 ⇒ 装配失败。
+                // (per change `cpptlm-router-buffer-size-param` 的 design D-7)
+                try {
+                    it->second->set_config(*cfg_src);
+                    DPRINTF(MODULE, "[CONFIG] Set params for module: %s\n", name.c_str());
+                } catch (const std::exception& e) {
+                    DPRINTF(MODULE, "[CONFIG ERROR] on_config_loaded failed for '%s': %s\n",
+                            name.c_str(), e.what());
+                    return false;
+                }
             }
         }
 

@@ -9,22 +9,22 @@
 
 ## T1 — 实现
 
-- [ ] T1.1 `include/tlm/router_tlm.hh`：新增运行时成员 `unsigned buffer_depth_`（初值 = `BUFFER_DEPTH`，常量语义改为「默认深度」）
-- [ ] T1.2 `src/tlm/router_tlm.cc` · `on_config_loaded`：读取 `buffer_size`（若存在）⇒ 校验类型 + 范围 1–64 ⇒ 写入 `buffer_depth_`；**非法 ⇒ 装配期硬错误**（⛔ 不得静默截断 / 静默回退）
-- [ ] T1.3 `src/tlm/router_tlm.cc` · **4 个使用点**改读 `buffer_depth_`：`:59`（credit 初值）· `:154`（输入缓冲容量判定）· `:485`（`receive_credit` 上限）· `:530`/`:535`（`credit_safety_reset`）
-- [ ] T1.4 **构造顺序**（per D-2「同源」）：先设 `buffer_depth_`，**再**按它初始化 `downstream_credits_` ⇒ 否则 credit 预算与缓冲深度不同源（AC-03 必红）
-- [ ] T1.5 `src/tlm/router_tlm.cc` · `get_param_rules`：`buffer_size` 默认值 **16 → 8**
-- [ ] T1.6 ⛔ `configs/param_rules/router_tlm.json` **零 diff**（实测该文件**只有 `vc_count` 条目**、无 `buffer_size` ⇒ per D-6 第 4 条为 no-op）
-- [ ] T1.7 ⛔ 确认零改动：`vc_count` 声明 · `NUM_VCS` / `NUM_PORTS` · `input_buffer_` / `downstream_credits_` 的**容器类型** · `RouterPort` 枚举 · `CohIfNICTLM` / `NICTLM` / `module_factory.cc`
+- [x] T1.1 `include/tlm/router_tlm.hh`：新增运行时成员 `unsigned buffer_depth_`（初值 = `BUFFER_DEPTH`，常量语义改为「默认深度」）
+- [x] T1.2 `src/tlm/router_tlm.cc` · `on_config_loaded`：读取 `buffer_size`（若存在）⇒ 校验类型 + 范围 1–64 ⇒ 写入 `buffer_depth_`；**非法 ⇒ 装配期硬错误**（⛔ 不得静默截断 / 静默回退）
+- [x] T1.3 `src/tlm/router_tlm.cc` · **4 个使用点**改读 `buffer_depth_`：`:59`（credit 初值）· `:154`（输入缓冲容量判定）· `:485`（`receive_credit` 上限）· `:530`/`:535`（`credit_safety_reset`）
+- [x] T1.4 **构造顺序**（per D-2「同源」）：先设 `buffer_depth_`，**再**按它初始化 `downstream_credits_` ⇒ 否则 credit 预算与缓冲深度不同源（AC-03 必红）
+- [x] T1.5 `src/tlm/router_tlm.cc` · `get_param_rules`：`buffer_size` 默认值 **16 → 8**
+- [x] T1.6 `configs/param_rules/router_tlm.json` **补** `buffer_size` 条目（`default_int: 8` / 1–64）—— 原「零 diff」判断已由 **D-7.2** 推翻
+- [x] T1.7 ⛔ 确认零改动：`vc_count` 声明 · `NUM_VCS` / `NUM_PORTS` · `input_buffer_` / `downstream_credits_` 的**容器类型** · `RouterPort` 枚举 · `CohIfNICTLM` / `NICTLM` / `module_factory.cc`
 
 ## T2 — 测试
 
-- [ ] T2.1 **AC-01**：设 `buffer_size: N` ⇒ 输入缓冲**实际容量 == N**（注入 N 个 flit 全收；第 N+1 个被丢）
-- [ ] T2.2 **AC-02**：**未设** `buffer_size` ⇒ 深度 == 8 + `downstream_credits_` 初值 == 8 + 既有断言**零变化**
-- [ ] T2.3 **AC-03**：设 `buffer_size: N` ⇒ `downstream_credits_[p][v]` 初值 == N（credit 预算与深度**同源**）
-- [ ] T2.4 **AC-04**：`buffer_size` = 0 / 65 / 非整数 ⇒ **装配期 fail**（`instantiateAll` 返回 false；⛔ 不得静默截断、⛔ 不得回退默认值而通过）
-- [ ] T2.5 **AC-05**：`[cep]` / `[e2e]` / `[pcie]` / `[noc]` / `[mesh]` 全绿；**既有 `REQUIRE` 常量零改动**（若出现数值变化 ⇒ per D-4 逐条重推导，⛔ 禁止就地改常量）
-- [ ] T2.6 **G-1 / G-2**：`vc_count` 声明与实际值**保持现状** + `NUM_VCS` / `NUM_PORTS` 仍为编译期常量
+- [x] T2.1 **AC-01**：设 `buffer_size: N` ⇒ 输入缓冲**实际容量 == N**（注入 N 个 flit 全收；第 N+1 个被丢）
+- [x] T2.2 **AC-02**：**未设** `buffer_size` ⇒ 深度 == 8 + `downstream_credits_` 初值 == 8 + 既有断言**零变化**
+- [x] T2.3 **AC-03**：设 `buffer_size: N` ⇒ `downstream_credits_[p][v]` 初值 == N（credit 预算与深度**同源**）
+- [x] T2.4 **AC-04**：`buffer_size` = 0 / 65 / 非整数 ⇒ **装配期 fail**（`instantiateAll` 返回 false；⛔ 不得静默截断、⛔ 不得回退默认值而通过）
+- [x] T2.5 **AC-05**：`[cep]` / `[e2e]` / `[pcie]` / `[noc]` / `[mesh]` 全绿；**既有 `REQUIRE` 常量零改动**（若出现数值变化 ⇒ per D-4 逐条重推导，⛔ 禁止就地改常量）
+- [x] T2.6 **G-1 / G-2**：`vc_count` 声明与实际值**保持现状** + `NUM_VCS` / `NUM_PORTS` 仍为编译期常量
 
 ## T3 — spec
 
@@ -34,8 +34,8 @@
 
 ## T4 — 验证
 
-- [ ] T4.1 `cmake --build build` 无 error
-- [ ] T4.2 新单测全绿 + `ctest -R cep` 全绿
+- [x] T4.1 `cmake --build build` 无 error
+- [x] T4.2 新单测全绿 + `ctest -R cep` 全绿
 - [ ] T4.3 `cep_docs_sync_check` / `cep_doc_ref_check` 全通过
 - [ ] T4.4 遗留清扫：无 TODO / 临时诊断 / skip 测试 / 未跟踪残渣 / 注释掉的代码
 
