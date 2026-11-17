@@ -36,15 +36,15 @@
 
 - [x] T4.1 `cmake --build build` 无 error
 - [x] T4.2 新单测全绿 + `ctest -R cep` 全绿
-- [ ] T4.3 `cep_docs_sync_check` / `cep_doc_ref_check` 全通过
-- [ ] T4.4 遗留清扫：无 TODO / 临时诊断 / skip 测试 / 未跟踪残渣 / 注释掉的代码
+- [x] T4.3 `cep_docs_sync_check` / `cep_doc_ref_check` 全通过
+- [x] T4.4 遗留清扫：无 TODO / 临时诊断 / skip 测试 / 未跟踪残渣 / 注释掉的代码
 
 ## T5 — 收口
 
-- [ ] T5.1 台账 Entry（实施记录 + 改动面 + 实测）
+- [x] T5.1 台账 Entry（实施记录 + 改动面 + 实测）—— Entry **#469**
 - [ ] T5.2 KPI 回填 **1/3 → 0/3**（归档时 · 6 处活口径）
 - [ ] T5.3 归档（`openspec archive`，⛔ **不用** `--skip-specs`）
-- [ ] T5.4 独立验收（切 verifier）
+- [x] T5.4 独立验收（切 verifier）—— **PASS**，报告 `.rddf/reviews/cpptlm-router-buffer-size-param-verify.md`（AC-01~AC-05 + G-1/G-2 全通过 · 0 implementation_gap · 4 项观察）
 
 ## T6 — 待 architect（跨角色）
 

@@ -16,6 +16,8 @@
 
 > **锚点**：`include/tlm/router_tlm.hh` 的运行时深度成员 · `src/tlm/router_tlm.cc` 的 `on_config_loaded` 与 4 个使用点 · `test/test_router_local_port_credit.cc` 同款注入装置
 > **决策源**：本 change 的 `design.md` D-1（默认值裁决）+ D-2（实现形态 · 「同源」要求）
+>
+> ⚠️ **验证锚点（观测面边界）**：`input_buffer_` 是 private，且「容量判定」在**稳态**下与深度无关（egress 恒 1 flit/cycle 会持续消化积压 ⇒ 持续注入的转发总数由**时长**决定，与容量无关）。⇒ 「第 `N+1` 个被丢弃」**不可直接观测**，验证须用两条**互补**判据：① `RouterTLM::buffer_depth()` 只读访问器 == `N`（直接证据）② 每 in_port 注入 `K > N` 个 ⇒ **必丢**（转发数 < `4K`；4 个 in_port 汇聚同一出口，注入 4 flit/cycle 远快于消费 1 flit/cycle）。详见 `design.md` D-3。
 
 #### Scenario: 非法 buffer_size SHALL 在装配期 fail
 

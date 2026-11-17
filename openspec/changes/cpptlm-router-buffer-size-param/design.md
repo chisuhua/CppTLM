@@ -82,6 +82,20 @@
 
 ⇒ **D-6 第 4 条作废**（见下方订正标记）。
 
+### D-7.3 该 try/catch 的**跨模块**影响（验收观察 O-1，2026-11-17 补记）
+
+`module_factory.cc` 的 try/catch 不只服务 `RouterTLM` —— 它**同时**改变了另一个既有模块的失败形态：
+
+| 模块 | 位置 | 原 throws | 失败形态变化 |
+|---|---|---|---|
+| `PcieEndpointTLM` | `src/tlm/gpu/pcie_endpoint_tlm.cc::on_config_loaded` | `throw std::invalid_argument("PcieEndpointTLM: config_size must be 256 or 4096")` | 「异常逃出 `instantiateAll`」→ **「`instantiateAll` 返回 false」** |
+
+**判定：正向（非回归）**。该 throw 的**本意就是装配失败**；此前无 catch 意味着异常会穿出装配函数交给未必处理的调用方（若调用方没接，进程直接 terminate）。现在语义统一为「装配失败 ⇒ 返回 false」，与 Step 4.5 `simulate_instantiate` 的既有范式一致。
+
+**回归证据**：`[pcie]` **36779 assertions / 452 test cases 全绿** ⇒ 无测试依赖「异常传播」的旧形态。
+
+**范围声明**：本 change **不修改** `pcie_endpoint_tlm.cc` 任何一行；变化纯由 `module_factory.cc` 的 6 行 try/catch 引入。若将来需要保留「异常向上传播」的语义（供上层做细粒度错误分类），须显式引入错误码通道 —— 记为观察项，不在本 change 处理。
+
 ---
 
 ## D-4 — 数值变化的处理纪律（AC-04b 同款）
