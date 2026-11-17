@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-17T03:13:36Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-17T03:36:06Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-16T08:02:33Z",
-      "by": "user",
-      "reason": "per 用户裁决「切 builder 立项实施 Step 7c」⇒ 依据 ADR-X.15(Proposed, oracle APPROVE + critic APPROVE_WITH_CONDITIONS, 0 BLOCKER)立项实施 change `cpptlm-simmodule-exposed-port-wiring`:在 module_factory.cc 新增 Step 7c(隔离处理 SimModule exposed 连接的��向 PortPair)+ SimplePort::isBound 守卫,并让层次化 cep_mesh_e2e 跑通。"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-16T09:22:54Z",
-      "by": "user",
-      "reason": "per 用户口令「切 planner 落台账」⇒ 为 cpptlm-simmodule-exposed-port-wiring 与 cpptlm-cep-mesh-interconnect-submodule 两个已实施 change 落台账 entry(§11 授权记录) + 把 5 份活文档的 KPI 当前态 0/3 改为实测 2/3(cep_docs_sync_check 断言①/cep_gate_selftest 同源红)。"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-16T09:25:23Z",
-      "by": "user",
-      "reason": "per 用户口令「回 builder 归档」⇒ 归档 cpptlm-simmodule-exposed-port-wiring 与 cpptlm-cep-mesh-interconnect-submodule(openspec archive,合并 delta)+ KPI 2/3 → 0/3 回填 + 台账归档 entry(照 Entry #449 的 [builder] 归档条目先例)。"
-    },
     {
       "role": "verifier",
       "at": "2026-11-16T09:38:50Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-17T03:13:36Z",
       "by": "user",
       "reason": "per 用户指令「先把 cpptlm-nictlm-credit-flit-filter 立项成 openspec change(planner 起草四件套)」⇒ 建 change 目录 + proposal/design/tasks/specs + metis 审查 + KPI 0/3 -> 1/3 回填 + 台账 Entry。"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-17T03:29:03Z",
+      "by": "user",
+      "reason": "per 用户指令「给出 2 个需先决策/立项项(buffer_size、IC3 留痕闸)完整的背景和决策影响,和你的建议」⇒ 架构决策咨询域(调研 + 方案讨论,不落文档,待用户裁决)。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-17T03:34:20Z",
+      "by": "user",
+      "reason": "per 用户口令「切 planner 起 cpptlm-router-buffer-size-param 的 improvement 草稿 + 立项四件套(含 AC-01~AC-05 与默认值裁决写进 design),并把 vc_count 一致性缺口登记为独立 backlog」。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-17T03:36:06Z",
+      "by": "user",
+      "reason": "per 用户口令「切 builder 实施 cpptlm-nictlm-credit-flit-filter,T1+T2」⇒ 实施 handle_net_resp credit 分支 + nic_tlm.hh 标量与访问器 + 新建 test/test_nictlm_credit_filter.cc。"
     }
   ],
   "auto_switch_window": null
