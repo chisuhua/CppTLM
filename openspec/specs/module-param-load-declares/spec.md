@@ -1,6 +1,13 @@
-# module-param-load-declares Specification (delta)
+# module-param-load-declares Specification
 
-## ADDED Requirements
+## Purpose
+模块内可配置参数（如 `RouterTLM` 的 `buffer_size`）的**声明与读取同源**：一次 `load_param(key, target[, lo, hi][, def])` 调用同时完成类型校验、范围校验、默认值填充、赋值与「已消费键」登记；加载结束后由 `SimObject::set_config` 统一检出**未知键**并使装配失败。
+
+本规范约束「已准入类型」（`cpptlm::is_param_admitted()`，唯一 C++ 真源）── 未准入类型维持既有声明面与行为，逐类型迁移。不覆盖：非标量参数（数组 / 嵌套对象 / 字符串枚举）、`configs/param_rules/*.json` 的存废、Python 链与代码生成。
+
+决策源：`docs/adr/ADR-X.17-module-param-read-declares.md`；基线台账：`docs/implementation/module-param-baseline.md`。
+
+## Requirements
 
 ### Requirement: module-param-read-declares
 

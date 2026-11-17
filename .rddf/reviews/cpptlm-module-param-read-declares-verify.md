@@ -4,7 +4,7 @@
 - **日期**：2026-11-17
 - **被判对象**：commit `0fddd258`（实施）+ 其后格式化提交（clang-format 仅作用于本次改动的 5 个文件）
 - **判据来源（按优先级）**：
-  1. `openspec/changes/cpptlm-module-param-read-declares/proposal.md` 的 `## 验收标准`（AC-01~AC-14 + 护栏 G-1/G-2）
+  1. `openspec/changes/archive/2026-11-17-cpptlm-module-param-read-declares/proposal.md` 的 `## 验收标准`（AC-01~AC-14 + 护栏 G-1/G-2）
   2. 同 change 的 delta spec（11 个 Scenario）
   3. `docs/adr/ADR-X.17-module-param-read-declares.md` 的 Verification（V-1~V-7）
 - **已用轮次**：1 / 3（`RDDF_VERIFIER_MAX_LOOPS`）
