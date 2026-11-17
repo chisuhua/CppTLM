@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-11-17T09:53:42Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-17T10:33:17Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-16T13:53:24Z",
-      "by": "user",
-      "reason": "per 用户口令「切 architect 继续」⇒ 对 backlog `cpptlm-router-local-port-credit-exhaustion`(LOCAL 口 credit 耗尽)做架构决策(方案 A: LOCAL 终端不参与 credit / 方案 B: per-port credit_aware 声明)并出 ADR;按契约 oracle -> critic 双审后收口。"
-    },
     {
       "role": "planner",
       "at": "2026-11-16T16:55:27Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-17T09:53:42Z",
       "by": "user",
       "reason": "per 用户口令「切architect给出 ADR 走评审,然后修订过期和冲突的其他ADR,最后切planner立项」⇒ ① 起草 ADR-X.17(模块参数声明即绑定 · 参数表+模板 · 不用宏)走 oracle→critic ② 修订过期/冲突 ADR(ADR-X.10 追加裁决 / ADR-X.16 追加缺陷闭合 / ADR-X.12 关系)③ 切 planner 立项。"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-17T10:33:17Z",
+      "by": "user",
+      "reason": "per 用户口令「最后切planner立项」⇒ 为 ADR-X.17(模块参数「读取即声明」)立项:cpptlm-module-param-read-declares(improvement 5 段 + openspec change 四件套 + 台账 entry)。"
     }
   ],
   "auto_switch_window": null
