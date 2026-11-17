@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-11-16T18:28:59Z",
+  "current_role": "verifier",
+  "updated_at": "2026-11-17T00:57:29Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "verifier",
-      "at": "2026-11-16T01:22:06Z",
-      "by": "user",
-      "reason": "per 用户口令「再切builder进行实施」后的收尾 ⇒ 步骤 5:独立验收 cpptlm-spec-purpose-batch3(AC-01~AC-10),报告落 .rddf/reviews/。"
-    },
     {
       "role": "planner",
       "at": "2026-11-16T02:14:30Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-16T18:28:59Z",
       "by": "user",
       "reason": "per change cpptlm-router-local-port-credit-exhaustion 的 T6.1(跨角色 · 明确列给 architect)⇒ 在 ADR-X.16 追加 Status Update 澄清 D4 的 stall 计数锚点(waiting_for_credit 恒 false ⇒ 实施口径 = VA/SA 拒绝条件)。"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-17T00:57:29Z",
+      "by": "user",
+      "reason": "per 用户口令「继续」⇒ 执行 change cpptlm-router-local-port-credit-exhaustion 的 T5.4 独立验收(判据 = proposal AC-01~AC-07 + ADR-X.16 V-1~V-6),报告落 .rddf/reviews/。"
     }
   ],
   "auto_switch_window": null
