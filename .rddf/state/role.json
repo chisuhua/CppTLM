@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-11-17T07:35:13Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-17T08:44:52Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-16T12:21:13Z",
-      "by": "user",
-      "reason": "per 用户裁决「路径 A」⇒ 落台账 Entry #454,授权 architect 修订 docs/architecture/cep/fabric-transport.md:45 的过期 SHALL 断言(原「仓内不存在 Router + flit 级路径」已被 Entry #448/#449/#451 证伪)+ 授权 builder 跑 cep_freeze_check --update(该文件在 CEP 冻结面)。"
-    },
     {
       "role": "builder",
       "at": "2026-11-16T12:30:55Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-17T07:35:13Z",
       "by": "user",
       "reason": "per 用户口令「切architect讨论T0.4, T6.1」⇒ ① T0.4 复核 D-1 默认值裁决(取 8) ② T6.1 讨论是否需要「参数声明-实际一致性」通用纪律 ADR(本 change 根因 + vc_count 同族第二例)。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-17T08:44:52Z",
+      "by": "user",
+      "reason": "per 用户口令「现在切回 builder 修」⇒ 修正 src/tlm/router_tlm.cc:86-89 的错误注释(architect 域外,oracle S4 指出的三处事实错 + 一处主动风险)。"
     }
   ],
   "auto_switch_window": null

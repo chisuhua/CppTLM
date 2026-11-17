@@ -83,9 +83,13 @@ namespace tlm {
         if (cfg.contains("buffer_size")) {
             const auto& bs = cfg["buffer_size"];
             // ⚠️ 非法值**显式失败**(⛔ 不得静默截断 / 静默回退默认值)。
-            //    注:`instantiateAll` 会先跑 `validateConfig` → `validate_params`
-            //    (已按 ParamRules 的 min/max 做 parse + 范围校验)⇒ 本分支的抛异常
-            //    在标准装配路径上**不可达**,此处为防御性(该虚函数可被直接调用)。
+            //    ⚠️ `validateConfig`(`src/core/module_factory_validate.cc`)**不做** param
+            //    校验 —— 它的 param 校验器 `validate_module_params` 是**零调用方的死代码**
+            //    (登记于 `.rddf/improvements/cpptlm-validate-params-dead-code.md`;
+            //    另见 `docs/adr/ADR-X.10-parameter-framework.md` §Status Update A 段)
+            //    ⇒ 本分支是 `buffer_size` 非法值在**装配期**的唯一失败通道
+            //    (由 `module_factory.cc` 的 `set_config` 调用点 catch ⇒ return false),
+            //    ⛔ **不可删**、⛔ 不可改为「静默回退默认值」。
             if (!bs.is_number_integer() && !bs.is_number_unsigned()) {
                 throw std::runtime_error("RouterTLM: buffer_size must be an integer: " +
                                          name);
