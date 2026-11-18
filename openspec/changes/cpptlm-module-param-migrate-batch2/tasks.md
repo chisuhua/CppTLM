@@ -73,11 +73,11 @@
 
 ## T5 — 测试与验收支撑
 
-- [ ] T5.1 ⚠️ AC-01：准入表断言（从 `admitted_param_types()` 派生，⛔ 测试内不硬编码第二份清单）
-- [ ] T5.2 ⚠️ AC-07：**≥3 个不同类型**的拼错键 ⇒ 装配失败且错误含键名
-- [ ] T5.3 ⚠️ AC-05：嵌套容器内缺必填 ⇒ 外层 `instantiateAll` 返回 false
-- [ ] T5.4 ⚠️ AC-08：板级直读键三态合规核对（`ignore_param` 调用点 ↔ 台账表 A）
-- [ ] T5.5 ⚠️ AC-02：逐类型行为判别测试（每个声明键两条不同合法值 ⇒ 可观测指标不同）
+- [x] T5.1 ⚠️ AC-01：准入表断言（从 `admitted_param_types()` 派生，⛔ 测试内不硬编码第二份清单） ⇒ **已落地**（`test/test_param_migrate_batch2.cc` 的 `[batch2][admission]`）：断言准入表的**结构不变量**（非空 / 无空名 / 自洽 `is_param_admitted` / 严格升序无重复 / 负例不成立 / 多次调用不漂移），⛔ **测试内零硬编码类型清单**（全部从 `admitted_param_types()` 派生）
+- [x] T5.2 ⚠️ AC-07：**≥3 个不同类型**的拼错键 ⇒ 装配失败且错误含键名 ⇒ **已落地**：**4 个不同类型**（`NICTLM.nodeid` / `MemoryTLM.capacit_gb` / `CpuCluster.num_cpu` / `SdmaEngineTLM.max_inflght`）⇒ 直接调 `set_config` 并断言 `ParamValidationError::param_name` **等于该拼错键名**（`ModuleFactory` 会把异常折成 `false`，键名只能在异常对象上断言;AC-07 的「错误含键名」由此取证）
+- [x] T5.3 ⚠️ AC-05：嵌套容器内缺必填 ⇒ 外层 `instantiateAll` 返回 false ⇒ **已由 T0.2 的 `test/test_nested_failure_propagation.cc` 覆盖**（3 case：缺必填 ⇒ 外层 false / 齐备 ⇒ 外层 true 不误伤 / 失败后 `instantiate_succeeded()` 为 false）
+- [x] T5.4 ⚠️ AC-08：板级直读键三态合规核对（`ignore_param` 调用点 ↔ 台账表 A） ⇒ **已核对 + 判据落地**。`grep -rn 'ignore_param("' include/ src/` 的 **21 个调用点**（含 `PcieEndpointIP` 的 11 键循环）逐条映射台账：`MemoryTLM` 7 键 / `GmmuTLM` 2 键 / `PcieEndpointIP` 11 键 → §1.1;`NICTLM`+`CohIfNICTLM` 的 `address_regions` / `CPUTLM` 的 `start_addr`+`request_interval` / `TrafficGenTLM` 的 4 键 → §1.2 与表 A —— **零未登记项**。判据测试见 `[batch2][admission]` 的 AC-08 段（这些键**不得**被判为未知键）
+- [x] T5.5 ⚠️ AC-02：逐类型行为判别测试（每个声明键两条不同合法值 ⇒ 可观测指标不同） ⇒ **覆盖见 `test/test_param_migrate_batch2.cc` 的 23 个 case / 165 assertions**（`[batch2][nic|memory|vram|gmmu|sdma|cohif-nic|cohif-resp|cpucluster|cachecluster|memorycluster|computecluster|tpccluster|gpccluster|gpucluster|apusoc|cepm|gpunoc]`）+ **`RouterTLM` / `TrafficGenTLM`** 的判别在 C1 的 `test_param_effect_landing.cc`（AC-03 / AC-08）;⚠️ 逐键 ⇒ 测试的映射是**纪律而非机制**（`ADR-X.17` D-6 明示 W-1），本批已逐键台账化
 
 ## T6 — 台账与文档
 

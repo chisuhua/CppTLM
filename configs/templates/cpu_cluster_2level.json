@@ -4,42 +4,19 @@
     {
       "name": "cpu",
       "type": "CpuCluster",
-      "params": {
-        "num_cpus": 2,
-        "cluster_id": "cpu0"
-      },
+      "params": { "num_cpus": 2, "cluster_id": "cpu0" },
       "modules": [
-        {
-          "name": "cpu0",
-          "type": "CPUTLM",
-          "params": {}
-        },
-        {
-          "name": "cpu1",
-          "type": "CPUTLM",
-          "params": {}
-        },
+        { "name": "cpu0", "type": "CPUTLM", "params": {} },
+        { "name": "cpu1", "type": "CPUTLM", "params": {} },
         {
           "name": "l2cache",
           "type": "CacheCluster",
-          "params": {
-            "l1_count": 2,
-            "l1_size": "16KB",
-            "l2_size": "256KB"
-          }
+          "params": { "l1_count": 2, "l1_size": "16KB", "l2_size": "256KB" }
         }
       ],
       "connections": [
-        {
-          "src": "cpu0",
-          "dst": "l2cache.l1_0",
-          "latency": 1
-        },
-        {
-          "src": "cpu1",
-          "dst": "l2cache.l1_1",
-          "latency": 1
-        }
+        { "src": "cpu0", "dst": "l2cache.l1_0", "latency": 1 },
+        { "src": "cpu1", "dst": "l2cache.l1_1", "latency": 1 }
       ]
     }
   ],

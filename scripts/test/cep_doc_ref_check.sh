@@ -98,6 +98,7 @@ done
 #   · 花括号展开 / 多路径合写 / 目录列表 —— 无法作为单一路径判存在
 # ⚠️ 新增条目必须写清理由 —— 这个白名单是「有意例外」的登记处，不是消音器。
 VIRTUAL_PATHS=(
+  "include/core/param_rules.hh"  # **已删除**(2026-11-19,per 台账 Entry #492 —— change `cpptlm-module-param-migrate-batch2` 的 T4 退役 ParamRules 机制)⇒ 台账该 Entry 记录的是「删了什么」,引用的必然是已不存在的路径;⛔ 台账 append-only 不可回改 ⇒ 闸侧豁免（`ParamType` 已迁入 `include/core/param_parser.hh`）
   "docs/roadmap/cep-interface-alignment"            # 跨仓:ArchForge 侧文档
   "docs/architecture/32-cep-based-coherence"        # 跨仓:ArchForge 侧文档
   "docs/adr/ADR-SOC-25"                             # 跨仓:ArchForge 侧 ADR

@@ -672,3 +672,123 @@ TEST_CASE("T4.6: RouterTLM 已迁移到 load_param（准入表成员 = 注册表
     CHECK(cpptlm::is_param_admitted("NICTLM"));
     CHECK(cpptlm::is_param_admitted("MemoryTLM"));
 }
+
+// ============================================================================
+// T5 — 测试与验收支撑（AC-01 / AC-07 / AC-08）
+// ============================================================================
+
+// ── T5.1 AC-01：准入表断言（**从 `admitted_param_types()` 派生**）──────────
+//    ⛔ 测试内**不硬编码第二份类型清单**（那是 `ADR-X.17` 要消灭的形态）：
+//    这里断言的是「准入表自身的结构不变量」，具体成员由逐类型判据（T1/T2/T3）覆盖。
+TEST_CASE("AC-01: 准入表结构不变量（派生自 admitted_param_types()，无第二份清单）",
+          "[param][migrate][batch2][admission]") {
+    const auto admitted = cpptlm::admitted_param_types();
+
+    // ① 非空
+    REQUIRE_FALSE(admitted.empty());
+
+    for (const auto& t : admitted) {
+        // ② 无空名 / 无首尾空白（类型名来自 `get_module_type()`，不该有空白）
+        CHECK_FALSE(t.empty());
+        CHECK(t.front() != ' ');
+        CHECK(t.back() != ' ');
+        // ③ 自洽：出现在清单里的类型，`is_param_admitted` 必须为真
+        CHECK(cpptlm::is_param_admitted(t));
+    }
+
+    // ④ 严格升序 ⇒ 无重复（`set` 的天然语义，此处把它变成可失败的判据）
+    CHECK(std::is_sorted(admitted.begin(), admitted.end()));
+    CHECK(std::adjacent_find(admitted.begin(), admitted.end()) == admitted.end());
+
+    // ⑤ 负例：不存在的类型不得被准入（否则「准入」不构成筛选）
+    CHECK_FALSE(cpptlm::is_param_admitted("NoSuchModuleType"));
+
+    // ⑥ 幂等：重复调用返回同一内容（不得因某次装配而漂移）
+    const auto again = cpptlm::admitted_param_types();
+    CHECK(again == admitted);
+}
+
+// ── T5.2 AC-07：≥3 个不同类型的拼错键 ⇒ 装配期失败且错误含键名 ──────────────
+//    直接调 `set_config`（`ModuleFactory` 会把异常折叠成 `false`，
+//    错误文本只在 `ParamValidationError::param_name` 上可断言）
+TEST_CASE("AC-07: 三种不同类型的拼错键 ⇒ ParamValidationError 且 param_name 含键名",
+          "[param][migrate][batch2][admission]") {
+    register_all_types();
+    EventQueue eq;
+
+    auto expect_unknown_key = [](auto&& fn, const char* key) {
+        try {
+            fn();
+            FAIL("expected cpptlm::ParamValidationError for key '" << key << "'");
+        } catch (const cpptlm::ParamValidationError& e) {
+            CHECK(e.param_name == key);
+            CHECK(!std::string(e.what()).empty());
+        }
+    };
+
+    // 三个**不同**类型（ChStream 家族 / SimModule 家族各取样）
+    SECTION("NICTLM: nodeid（应为 node_id）") {
+        tlm::NICTLM nic("nic", &eq);
+        expect_unknown_key([&] { nic.set_config(json{{"node_id", 0}, {"nodeid", 7}}); },
+                           "nodeid");
+    }
+    SECTION("MemoryTLM: capacit_gb（应为 capacity_gb）") {
+        MemoryTLM mem("mem", &eq);
+        expect_unknown_key([&] { mem.set_config(json{{"capacit_gb", 4}}); }, "capacit_gb");
+    }
+    SECTION("CpuCluster: num_cpu（应为 num_cpus）") {
+        CpuCluster cc("cc", &eq);
+        expect_unknown_key([&] { cc.set_config(json{{"num_cpu", 2}}); }, "num_cpu");
+    }
+    SECTION("SdmaEngineTLM: max_inflght（应为 max_inflight）") {
+        tlm::gpu::SdmaEngineTLM sdma("sdma", &eq);
+        expect_unknown_key([&] { sdma.set_config(json{{"max_inflght", 4}}); }, "max_inflght");
+    }
+}
+
+// ── T5.4 AC-08：板级直读键三态合规（`ignore_param` ↔ 台账表 A）─────────────
+//    台账映射（`docs/implementation/module-param-baseline.md`）：
+//      · `MemoryTLM` 7 键（`read_latency_hit_cycles` / `read_latency_miss_cycles` /
+//        `write_latency_cycles` / `use_zero_delay_for_test` / `row_hit_cycles` /
+//        `row_miss_cycles` / `bandwidth_gbps`）§1.1 板级直读
+//      · `GmmuTLM` 2 键（`tlb_size` / `tlb_miss_latency_cycles`）§1.1 板级直读
+//    判据：这些键**不得**被判为未知键（否则板级 injection 装配必失败）。
+TEST_CASE("AC-08: 板级直读键（台账表 A）不被判为未知键", "[param][migrate][batch2][admission]") {
+    register_all_types();
+    EventQueue eq;
+
+    SECTION("MemoryTLM 的 7 个板级直读键") {
+        MemoryTLM mem("mem", &eq);
+        REQUIRE_NOTHROW(mem.set_config(json{{"read_latency_hit_cycles", 100},
+                                            {"read_latency_miss_cycles", 200},
+                                            {"write_latency_cycles", 120},
+                                            {"use_zero_delay_for_test", false},
+                                            {"row_hit_cycles", 30},
+                                            {"row_miss_cycles", 60},
+                                            {"bandwidth_gbps", 512}}));
+    }
+    SECTION("VramControllerTLM 继承同一批键（+ 自己的 vram_size_bytes）") {
+        VramControllerTLM vram("vram", &eq);
+        REQUIRE_NOTHROW(vram.set_config(json{{"vram_size_bytes", 1ULL << 20},
+                                             {"read_latency_hit_cycles", 100},
+                                             {"row_hit_cycles", 30},
+                                             {"bandwidth_gbps", 512}}));
+        CHECK(vram.size_cap() == (1ULL << 20));
+    }
+    SECTION("GmmuTLM 的 2 个板级直读键") {
+        tlm::gpu::GmmuTLM gmmu("gmmu", &eq);
+        REQUIRE_NOTHROW(
+            gmmu.set_config(json{{"tlb_size", 64}, {"tlb_miss_latency_cycles", 50}}));
+    }
+    SECTION("CohIfNICTLM / NICTLM 的 address_regions（非标量）") {
+        tlm::cep::CohIfNICTLM cnic("cnic", &eq);
+        REQUIRE_NOTHROW(cnic.set_config(
+            json{{"node_id", 0},
+                 {"address_regions", json::array({json{{"base", 0x1000}, {"size", 0x1000}}})}}));
+        tlm::NICTLM nic("nic", &eq);
+        REQUIRE_NOTHROW(nic.set_config(
+            json{{"node_id", 0},
+                 {"address_regions",
+                  json::array({json{{"base", 0x1000}, {"size", 0x1000}, {"target_node", 0}}})}}));
+    }
+}

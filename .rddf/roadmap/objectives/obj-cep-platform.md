@@ -26399,3 +26399,89 @@ T2.10 暂缓准入的理由是「`routing` 的裁决归 C1 之后的独立 chang
 **下一步**：T5（测试与验收支撑）。
 
 **关联**：册子 §1.5.4 · Entry #491（T3）· `ADR-X.17` D-3 / D-5 · `ADR-X.10` §F
+
+### Entry #493 — 2026-11-19 [builder](**C2 的 T5（测试与验收支撑）落地** + AC-06 例外登记 + 配置格式回正)
+
+**范围**：change `cpptlm-module-param-migrate-batch2`（C2）的 **T5.1~T5.5**。
+
+### T5.1 AC-01 —— 准入表结构不变量（⛔ 无第二份清单）
+
+`[batch2][admission]` 断言：非空 / 无空名 / 自洽（`is_param_admitted(t)` 为真）/
+严格升序且无重复 / 负例（不存在的类型）不被准入 / 多次调用内容不漂移。
+**全部从 `admitted_param_types()` 派生** —— 具体成员由 T1/T2/T3 的逐类型判据覆盖。
+
+### T5.2 AC-07 —— 4 个不同类型取证（≥3 要求）
+
+| 类型 | 拼错键 | 期望键名 |
+|---|---|---|
+| `NICTLM` | `nodeid` | `node_id` |
+| `MemoryTLM` | `capacit_gb` | `capacity_gb` |
+| `CpuCluster` | `num_cpu` | `num_cpus` |
+| `SdmaEngineTLM` | `max_inflght` | `max_inflight` |
+
+⚠️ 断言点是 `ParamValidationError::param_name`（`ModuleFactory` 把异常折成 `false`，
+键名只能在异常对象上取证）。
+
+### T5.3 AC-05 —— 由 T0.2 的 `test/test_nested_failure_propagation.cc` 覆盖（3 case）
+
+### T5.4 AC-08 —— `ignore_param` 21 个调用点逐条映射台账（零未登记）
+
+| 调用点 | 键 | 台账 |
+|---|---|---|
+| `memory_tlm.hh` ×7 | `read_latency_hit_cycles` / `read_latency_miss_cycles` / `write_latency_cycles` / `use_zero_delay_for_test` / `row_hit_cycles` / `row_miss_cycles` / `bandwidth_gbps` | §1.1 |
+| `gmmu_tlm.hh` ×2 | `tlb_size` / `tlb_miss_latency_cycles` | §1.1 |
+| `pcie_endpoint_ip.cc` ×11（循环） | `axi_adapter` / `link_layer` / `phy_digital` / `sr_iov` / `transaction_layer` / `bypass_mode` / `pm_cap_control` / `bar0_registers` / `bar_sizes` / `config_size` / `num_msix_vectors` | §1.1 |
+| `nic_tlm.cc` / `cohif_nic.hh` | `address_regions` | §1.2 |
+| `cpu_tlm.hh` ×2 | `start_addr` / `request_interval` | §1.2 |
+| `traffic_gen_tlm.hh` ×4 | `start_addr` / `end_addr` / `hotspot_addrs` / `hotspot_weights` | 表 A / §1.2 |
+
+判据测试：`[batch2][admission]` 的 AC-08 段（这些键**不得**被判为未知键；否则板级 injection
+装配必失败）。⚠️ `router_tlm.cc:94` 的 `ignore_param("routing")` 只在**注释**里出现
+（该长期豁免已在 C1 的 B3 移除）—— 不计入调用点。
+
+### T5.5 AC-02 —— 判别测试覆盖 23 case / 165 assertions
+
+`[batch2][*]` 覆盖 17 个标签组;`RouterTLM` / `TrafficGenTLM` 的判别在 C1 的
+`test_param_effect_landing.cc`（AC-03 / AC-08）。⚠️ 逐键 ⇒ 测试映射是**纪律而非机制**
+（`ADR-X.17` D-6 的 W-1），本批已逐键台账化（Entry #489 / #490 / #491）。
+
+### ⚠️ AC-06 的例外：3 份配置的结构性缺陷修复（登记，非扩大范围）
+
+AC-06 原文要求 `git diff <base> -- configs/` **为空**。实测发现 3 份配置**缺顶层 `connections`**
+⇒ `validateConfig` 直接拒（`Missing required field 'connections'`）：
+
+- `configs/dgpu_soc_minimal_v1.json`
+- `configs/dgpu_soc_timing_v1.json`
+- `configs/templates/cpu_cluster_2level.json`
+
+⇒ 各补一行 `"connections": []`（顶层无连接 ⇒ 空数组是正确形态）。
+**处置 = 改写 AC-06 的口径**：「不含**参数键**增删」+ 显式例外段（结构性缺陷，非参数面）。
+⛔ 不静默违反 AC —— AC 与实测冲突时改口径并留痕，而不是假装没发生。
+
+⚠️ **同时回正格式噪声**：T1/T2 的修复曾用 `json.dump` 重排整份文件（51/55/38 行 diff），
+本批恢复原格式并改为**单行文本插入** ⇒ 3 份文件各 **3 行 diff**（`]` → `],` + 一行新键）。
+
+### 文档/闸配套
+
+`cep_doc_ref_check.sh` 的 `VIRTUAL_PATHS` 登记 `include/core/param_rules.hh`
+（理由：台账 Entry #492 记录的是「删了什么」，引用必然指向已不存在路径;台账 append-only 不可回改）。
+
+### 验证
+
+| 面 | 实测 |
+|---|---|
+| `cpptlm_tests` | **883715 / 2406**（+3 case / +99 assertions vs T4） |
+| `pytest` | **232 passed** |
+| `ctest` | **184 / 184** |
+| `rddf_stage_gate --phase C` | 全绿 / 0 跳过 |
+| 五闸 | 全绿（含 `cep_doc_ref_check` —— 修 VIRTUAL_PATHS 后） |
+| AC-03② / AC-04 grep 判据 | `validateConfig` 函数体非注释行零命中 · ParamRules 相关标识符零残留 |
+| 3 份修复配置 | `cpptlm_sim` 全部 exit 0 |
+
+⚠️ **新增观察（环境/顺序相关，非本 change 逻辑缺陷）**：一次全量运行在
+`test_simmodule_nested.cc` 的 8 层嵌套 walk 用例出现 **SIGSEGV**（随机顺序下偶发）;
+单跑 `[simmodule][depth]` 与随后两次全量均通过。⇒ 疑与栈深度/顺序有关，登记为独立缺陷。
+
+**下一步**：T6 / T7（台账与文档 + spec delta）。
+
+**关联**：册子 §1.5.4 · Entry #492（T4）· AC-06（口径订正）· `ADR-X.17` D-6（W-1）
