@@ -27,16 +27,21 @@
 
 ## T2 — P1a：迁移（SimModule 家族 · 10 个类型）
 
-- [ ] T2.1 `CpuCluster`：`cluster_id` / `num_cpus` 声明化 + 判别测试 + 准入
-- [ ] T2.2 `CacheCluster`：`l1_count` 声明化 + `l1_size` / `l2_size`（**字符串** + 单位解析，解析逻辑归模块内）+ 判别测试 + 准入
-- [ ] T2.3 `MemoryCluster`：`channel_count` / `memory_type` 声明化 + `channel_size`（字符串）+ 判别测试 + 准入
-- [ ] T2.4 `ComputeCluster`：`cu_count` 声明化 + `cu_template`（**对象**）态②登记 + 判别测试 + 准入
-- [ ] T2.5 `TpcCluster`：`tpc_id` / `cu_per_tpc` 声明化 + `cu_template` 态②登记 + 判别测试 + 准入
-- [ ] T2.6 `GpcCluster`：`gpc_id` / `tpc_per_gpc` / `cu_per_tpc` 声明化 + `cu_template` 态②登记 + 判别测试 + 准入
-- [ ] T2.7 `GpuCluster`：`gpc_count` / `tpc_per_gpc` / `cu_per_tpc` 声明化 + `cu_template` 态②登记 + 判别测试 + 准入
-- [ ] T2.8 `ApuSoC`：`cpu_topology` / `gpu_topology`（**嵌套块**）态②登记 + 准入
-- [ ] T2.9 `CepMeshInterconnect`：`template`（嵌套块）态②登记 + 准入
-- [ ] T2.10 ⚠️ `GpuNoC`：`mesh_size` 声明化 + 准入;⚠️ `routing` 依赖 effect-landing（态②/③ 未裁决）⇒ **本任务暂缓准入**
+- [x] T2.1 `CpuCluster`：`cluster_id` / `num_cpus` 声明化 + 判别测试 + 准入 ⇒ **已落地**：`num_cpus` / `cluster_id` 改 `load_param_opt`（原 `params["x"].get<T>()` ——类型不符抛的是 nlohmann `type_error`，不含「参数名+期望类型」）;已准入;判别测试 `[batch2][cpucluster]`（两值 ⇒ getter 不同 + 拼错键必失败）
+- [x] T2.2 `CacheCluster`：`l1_count` 声明化 + `l1_size` / `l2_size`（**字符串** + 单位解析，解析逻辑归模块内）+ 判别测试 + 准入 ⇒ **已落地**：`l1_count` 态①；`l1_size` / `l2_size` **带单位字符串** ⇒ `load_param_opt` 取值、解析归模块内（D-2 态①）;⚠️ **结构小修**：旧实现先调 `SimModule::set_config()`（内含 enforce）**再**自读 ⇒ 准入后自读键会被误判为未知键 ⇒ 改 `set_config_with`（enforce 晚于自读）;已准入;判别测试 `[batch2][cachecluster]`（`l1_count` 2/5 ⇒ 子模块数 3/6 + 尺寸字符串落成员）
+- [x] T2.3 `MemoryCluster`：`channel_count` / `memory_type` 声明化 + `channel_size`（字符串）+ 判别测试 + 准入 ⇒ **已落地**：`channel_count` 态① + `channel_size`（带单位字符串）;⚠️ `memory_type` **已由 C1 落态②拒绝**（B-10：本仓无内存类型模型 ⇒ 零效果）⇒ 本批**保持拒绝**、不复改为「声明化」（那会造出一个无效果的读取）;已准入;判别测试 `[batch2][memorycluster]`（channel_count 2/4 ⇒ 子模块数 3/5 + `memory_type` 必失败）
+- [x] T2.4 `ComputeCluster`：`cu_count` 声明化 + `cu_template`（**对象**）态②登记 + 判别测试 + 准入 ⇒ **已落地**：`cu_count` 态①（<1 / >64 钳位**保留在模块内** —— 合法性裁决不是 `load_param` 的职责）;⚠️ `cu_template` 实测是**路径字符串**（design 记为「对象」）⇒ 按实测落 D-2 态①（取值 + 模块内加载）;已准入;判别测试 `[batch2][computecluster]`（cu_count 2/5/0 ⇒ 2/5/1 钳位）
+- [x] T2.5 `TpcCluster`：`tpc_id` / `cu_per_tpc` 声明化 + `cu_template` 态②登记 + 判别测试 + 准入 ⇒ **已落地**：`tpc_id` / `cu_per_tpc` 态① + `cu_template`（路径字符串，同 T2.4）;已准入;判别测试 `[batch2][tpccluster]`
+- [x] T2.6 `GpcCluster`：`gpc_id` / `tpc_per_gpc` / `cu_per_tpc` 声明化 + `cu_template` 态②登记 + 判别测试 + 准入 ⇒ **已落地**：`gpc_id` / `tpc_per_gpc` / `cu_per_tpc` 态① + `cu_template`（路径字符串）;已准入;判别测试 `[batch2][gpccluster]`
+- [x] T2.7 `GpuCluster`：`gpc_count` / `tpc_per_gpc` / `cu_per_tpc` 声明化 + `cu_template` 态②登记 + 判别测试 + 准入 ⇒ **已落地**：`gpc_count` / `tpc_per_gpc` / `cu_per_tpc` 态① + `cu_template`（路径字符串）;已准入;判别测试 `[batch2][gpucluster]`
+- [x] T2.8 `ApuSoC`：`cpu_topology` / `gpu_topology`（**嵌套块**）态②登记 + 准入 ⇒ **已落地**：`cpu_topology` / `gpu_topology` 实测是**蓝图路径字符串**（design 记为「嵌套块」）⇒ 按实测落 D-2 态① + `coherent_xbar_name` 一并声明;已准入;判别测试 `[batch2][apusoc]`（跑通 cpu/gpu 双蓝图装配）
+- [x] T2.9 `CepMeshInterconnect`：`template`（嵌套块）态②登记 + 准入 ⇒ **已落地**：`template`（蓝图路径字符串）态① —— 旧实现先 enforce 再自读，同 T2.2 的结构缺陷（已改 `set_config_with`）;已准入;判别测试 `[batch2][cepm]`
+- [x] T2.10 ⚠️ `GpuNoC`：`mesh_size` 声明化 + 准入;⚠️ `routing` 依赖 effect-landing（态②/③ 未裁决）⇒ **本任务暂缓准入** ⇒ **部分落地（按任务原文）**：`mesh_size` 已声明化（`load_param_opt`）+ 判别测试;⚠️ **本批不准入** —— `routing` 的裁决归 C1 之后的独立 change（本类只透传给 `RouterTLM`，而后者已落态③「只接受 XY」）⇒ 准入会让两个裁决点互相牵制;判据测试显式断言 `CHECK_FALSE(is_param_admitted("GpuNoC"))` 锁定该状态
+
+> ⚠️ **T2 附带修复**：`configs/templates/cpu_cluster_2level.json` **缺顶层 `connections`**
+> ⇒ `validateConfig` 直接拒（与 T1 修的 2 份同型缺陷）。此前被 `test_param_alignment` 跳过
+> （其类型未准入）；CpuCluster/CacheCluster 准入后被判据捕获 ⇒ 补 `"connections": []`
+> （顶层只列 1 个模块、无顶层连接 ⇒ 空数组是正确形态）。
 
 ## T3 — P1b：依赖 effect-landing 的部分
 

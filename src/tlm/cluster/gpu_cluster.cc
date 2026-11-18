@@ -5,15 +5,19 @@
 namespace cpptlm::tlm {
 
     void GpuCluster::set_config(const nlohmann::json& params) {
-        SimModule::set_config(params);
-        if (params.contains("gpc_count"))
-            gpc_count_ = params["gpc_count"].get<int>();
-        if (params.contains("tpc_per_gpc"))
-            tpc_per_gpc_ = params["tpc_per_gpc"].get<int>();
-        if (params.contains("cu_per_tpc"))
-            cu_per_tpc_ = params["cu_per_tpc"].get<int>();
-        if (params.contains("cu_template"))
-            cu_template_path_ = params["cu_template"].get<std::string>();
+        // change `cpptlm-module-param-migrate-batch2` T2.x：**声明即读取**（`ADR-X.17` D-1）。
+        // ⛔ 旧写法先调 `SimModule::set_config()`（含 enforce）**再**自读 ⇒ 准入后
+        //    自读声明的键会被误判为未知键（design D-2.3：enforce 必须晚于模块自读）。
+        if (!params.is_object()) {
+            SimObject::set_config(params);
+            return;
+        }
+        set_config_with(params, [this]() {
+            load_param_opt("gpc_count", gpc_count_);
+            load_param_opt("tpc_per_gpc", tpc_per_gpc_);
+            load_param_opt("cu_per_tpc", cu_per_tpc_);
+            load_param_opt("cu_template", cu_template_path_);
+        });
     }
 
     void GpuCluster::simulate_instantiate(const nlohmann::json& cfg) {

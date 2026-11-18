@@ -25,6 +25,12 @@ public:
     void set_gpu_topology(const GpuTopology& topo) override { topo_ = topo; }
     GpuTopology get_gpu_topology() const override { return topo_; }
 
+    // ── 参数观测面（`ADR-X.17` D-6 行为判别要求：两个合法值 ⇒ 可观测读数不同）
+    int gpc_count() const { return gpc_count_; }
+    int tpc_per_gpc() const { return tpc_per_gpc_; }
+    int cu_per_tpc() const { return cu_per_tpc_; }
+    const std::string& cu_template() const { return cu_template_path_; }
+
 private:
     int gpc_count_ = 1;
     int tpc_per_gpc_ = 2;

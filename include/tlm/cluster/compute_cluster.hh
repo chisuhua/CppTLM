@@ -20,6 +20,10 @@ public:
 
     void set_config(const nlohmann::json& params) override;
     std::string get_module_type() const override { return "ComputeCluster"; }
+
+    // ── 参数观测面（`ADR-X.17` D-6 行为判别要求：两个合法值 ⇒ 可观测读数不同）
+    int cu_count() const { return cu_count_; }
+    const std::string& cu_template() const { return cu_template_path_; }
     void simulate_instantiate(const nlohmann::json& cfg);
 
 private:

@@ -52,14 +52,23 @@ public:
     std::string get_module_type() const override { return "CepMeshInterconnect"; }
 
     /// 读 `params.template`（其余 params 交基类）
+    ///
+    /// change `cpptlm-module-param-migrate-batch2` T2.9：**声明即读取**（`ADR-X.17` D-1）。
+    /// ⛔ 旧写法先调 `SimModule::set_config()`（含 enforce）**再**自读 ⇒ 准入后
+    ///    `template` 会被误判为未知键（design D-2.3）。
     void set_config(const nlohmann::json& params) override {
-        SimModule::set_config(params);
-        if (params.contains("template") && params["template"].is_string()) {
-            const auto path = params["template"].get<std::string>();
-            if (!path.empty()) {
+        if (!params.is_object()) {
+            SimObject::set_config(params);
+            return;
+        }
+        set_config_with(params, [this]() {
+            // `template` 是**蓝图路径字符串**（design 记为「嵌套块」，实测配置一律为路径）
+            // ⇒ D-2 态①：`load_param` 取值，文件加载归模块内（`simulate_instantiate`）。
+            std::string path = template_path_;
+            if (load_param_opt("template", path) && !path.empty()) {
                 template_path_ = path;
             }
-        }
+        });
     }
 
     /// ⚠️ 顺序照 `ComputeCluster::simulate_instantiate`（⛔ 不可颠倒）：

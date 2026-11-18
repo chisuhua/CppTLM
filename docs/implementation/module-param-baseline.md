@@ -2,6 +2,7 @@
 
 > 归属：change `cpptlm-module-param-read-declares`（决策源 `docs/adr/ADR-X.17-module-param-read-declares.md`）
 > 更新：2026-11-18 —— 由 `cpptlm-module-param-effect-landing` 的 **B1 批次**逐键落地后回填（表 A 新增 6 键 / 表 B 逐条改状态 + 新增 B-7~B-10 / 新增 §2bis 未定义类型）
+> 更新：2026-11-19 —— `cpptlm-module-param-migrate-batch2` 的 **T1（ChStream 家族 10 类型）** + **T2（SimModule 家族 10 类型）** 落地后回填（见 §1.1 / §1.4）
 > 日期：2026-11-17
 >
 > ⚠️ **本文件是人类可读台账，不是任何闸的输入**（change design D-4）。
@@ -51,6 +52,26 @@
 | `address_regions` | `NICTLM` / `CohIfNICTLM` | 模块内解析（对象数组） | **非标量** ⇒ D-2；已 `ignore_param` |
 | `start_addr` / `request_interval` | `CPUTLM` | 模块内 `parse_addr_json`（非 `load_param`） | ⚠️ **与 `TrafficGenTLM` 同因**：`VarResolver` 把 `"0x1000"` / `"10"` 转成 **float** ⇒ `load_param` 的单一类型检查会拒；已 `ignore_param` + 共享 `cpptlm::parse_addr_json` |
 | `vram_size_bytes`（VramControllerTLM） | 该键**是** `load_param_opt`（标量、模块自读） | — | ⛔ **不属本表**（它是标准声明式读取，列此仅为避免与板级 `vram_size_bytes` 混淆） |
+
+### 1.4 SimModule 家族（T2 批次，2026-11-19）
+
+SimModule 家族的参数在 **`set_config()` 覆写里自读**（`set_config_with` ⇒ `begin → 自读 → enforce`）。
+本批 10 个类型的处置（⚠️ 清单与实测有出入处已逐条注明）：
+
+| 类型 | 键 | 处置 |
+|---|---|---|
+| `CpuCluster` | `num_cpus` / `cluster_id` | 态①（`load_param_opt`，可选） |
+| `CacheCluster` | `l1_count` / `l1_size` / `l2_size` | 态①（尺寸为**带单位字符串**，解析归模块内） |
+| `MemoryCluster` | `channel_count` / `channel_size` | 态①；`memory_type` ⇒ **态② 拒绝**（C1 的 B-10 已裁决，本批保持） |
+| `ComputeCluster` / `TpcCluster` / `GpcCluster` / `GpuCluster` | 几何计数 + `cu_template` | 态①（⚠️ `cu_template` 实测是**路径字符串**，不是 design 记的「对象」） |
+| `ApuSoC` | `cpu_topology` / `gpu_topology` / `coherent_xbar_name` | 态①（⚠️ 前两键实测是**蓝图路径**，不是「嵌套块」） |
+| `CepMeshInterconnect` | `template` | 态①（同上：路径字符串） |
+| `GpuNoC` | `mesh_size` | 态①，但 **本批不准入**（`routing` 裁决归后续 change） |
+
+⛔ **结构性纪律（本批修掉的老形态）**：SimModule 家族的多数旧实现是
+「先 `SimModule::set_config(params)`（内含 enforce）**再**自读参数」 ——
+准入后自读声明的键在 enforce 时刻尚未登记 ⇒ **被误判为未知键**。
+⇒ 全部改为 `set_config_with(params, self_read)`（`design D-2.3`：enforce 必须晚于自读）。
 
 ### 1.3 `PcieEndpointTLM` —— **显式排除**（T1.10）
 

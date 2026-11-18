@@ -32,17 +32,22 @@ public:
     std::string get_module_type() const override { return "CpuCluster"; }
 
     // 解析 JSON params 字段:num_cpus (默认 4), cluster_id (默认 "")
+    //
+    // change `cpptlm-module-param-migrate-batch2` T2.1：改为**声明即读取**
+    // （`ADR-X.17` D-1）。两键都可选 ⇒ `load_param_opt`（缺失即保持默认）。
+    // ⛔ 旧写法 `params["x"].get<T>()` 在类型不符时抛的是 nlohmann 的 `type_error`，
+    //    错误信息不含「参数名 + 期望类型」⇒ 不满足 D-3 的可诊断要求。
     void set_config(const nlohmann::json& params) override {
-        if (params.is_object()) {
-            if (params.contains("num_cpus")) {
-                num_cpus_ = params["num_cpus"].get<int>();
-            }
-            if (params.contains("cluster_id")) {
-                cluster_id_ = params["cluster_id"].get<std::string>();
-            }
+        // 非对象（null / 数组）⇒ 无键可读，保持原存储语义
+        if (!params.is_object()) {
+            SimObject::set_config(params);
+            return;
         }
-        // 调用基类实现以保留 params 存储与 on_config_loaded() 触发
-        SimModule::set_config(params);
+        // ⚠️ 必须走 `set_config_with`：enforce 要等模块自读登记完键之后才执行
+        set_config_with(params, [this]() {
+            load_param_opt("num_cpus", num_cpus_);
+            load_param_opt("cluster_id", cluster_id_);
+        });
     }
 
     // 显式转发到 internal_factory 所有 SimObject 子模块

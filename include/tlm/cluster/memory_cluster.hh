@@ -19,6 +19,10 @@ public:
     std::string get_module_type() const { return "MemoryCluster"; }
     void simulate_instantiate(const nlohmann::json& cfg);
 
+    // ── 参数观测面（`ADR-X.17` D-6 行为判别要求：两个合法值 ⇒ 可观测读数不同）
+    int channel_count() const { return channel_count_; }
+    const std::string& channel_size() const { return channel_size_; }
+
 private:
     int channel_count_ = 2;
     std::string channel_size_ = "1GB";

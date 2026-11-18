@@ -13,17 +13,21 @@
 namespace cpptlm::tlm {
 
     void ApuSoC::set_config(const nlohmann::json& params) {
-        SimModule::set_config(params);
-        if (params.contains("cpu_topology")) {
-            cpu_topology_ = params["cpu_topology"].get<std::string>();
+        // change `cpptlm-module-param-migrate-batch2` T2.x：**声明即读取**（`ADR-X.17` D-1）。
+        // ⛔ 旧写法先调 `SimModule::set_config()`（含 enforce）**再**自读 ⇒ 准入后
+        //    自读声明的键会被误判为未知键（design D-2.3：enforce 必须晚于模块自读）。
+        if (!params.is_object()) {
+            SimObject::set_config(params);
+            return;
         }
-        if (params.contains("gpu_topology")) {
-            gpu_topology_ = params["gpu_topology"].get<std::string>();
-        }
-        // P1: 可选 coherent_xbar_name (默认 "xbar", 已初始化)
-        if (params.contains("coherent_xbar_name")) {
-            coherent_xbar_name_ = params["coherent_xbar_name"].get<std::string>();
-        }
+        set_config_with(params, [this]() {
+            // `cpu_topology` / `gpu_topology` 是**蓝图路径字符串**（design 记为「嵌套块」，
+            // 实测配置一律为路径 —— 处置按实测：D-2 态① 取值 + 模块内加载）。
+            load_param_opt("cpu_topology", cpu_topology_);
+            load_param_opt("gpu_topology", gpu_topology_);
+            // P1: 可选 coherent_xbar_name (默认 "xbar", 已初始化)
+            load_param_opt("coherent_xbar_name", coherent_xbar_name_);
+        });
     }
 
     static nlohmann::json wrap_template_as_module(const nlohmann::json& tmpl,

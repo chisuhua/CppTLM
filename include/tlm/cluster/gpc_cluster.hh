@@ -17,6 +17,12 @@ public:
 
     void set_config(const nlohmann::json& params);
     std::string get_module_type() const { return "GpcCluster"; }
+
+    // ── 参数观测面（`ADR-X.17` D-6 行为判别要求：两个合法值 ⇒ 可观测读数不同）
+    int gpc_id() const { return gpc_id_; }
+    int tpc_per_gpc() const { return tpc_per_gpc_; }
+    int cu_per_tpc() const { return cu_per_tpc_; }
+    const std::string& cu_template() const { return cu_template_path_; }
     void simulate_instantiate(const nlohmann::json& cfg);
 
 private:

@@ -63,6 +63,27 @@ inline std::set<std::string, std::less<>>& param_admission_table() {
         // `emit_completions`/`completion_latency_cycles`/`emit_snoops`/`snoop_interval_cycles`
         // 全部态①（可选，类型不符 ⇒ 装配期失败）。
         "CohIfResponderTLM",
+        // ── T2 SimModule 家族（P1b）────────────────────────────────────────
+        // 全部在 `set_config` 覆写里经 `set_config_with` 自读（enforce 晚于自读）。
+        // CpuCluster: `num_cpus` / `cluster_id` 态①（可选）。
+        "CpuCluster",
+        // CacheCluster: `l1_count` 态① + `l1_size`/`l2_size`（带单位字符串，解析归模块内）。
+        "CacheCluster",
+        // MemoryCluster: `channel_count` 态① + `channel_size`（带单位字符串）+ `memory_type` 态②拒绝。
+        "MemoryCluster",
+        // ComputeCluster: `cu_count` 态①（钳位归模块内）+ `cu_template`（路径字符串）。
+        "ComputeCluster",
+        // TpcCluster / GpcCluster / GpuCluster: 几何计数 + `cu_template`（路径字符串）。
+        "TpcCluster",
+        "GpcCluster",
+        "GpuCluster",
+        // ApuSoC: `cpu_topology`/`gpu_topology`（路径字符串）+ `coherent_xbar_name`。
+        "ApuSoC",
+        // CepMeshInterconnect: `template`（路径字符串）。
+        "CepMeshInterconnect",
+        // ⚠️ `GpuNoC` **不准入**（T2.10）：`routing` 的裁决归 C1 之后的独立 change
+        //    （本类只是透传给 `RouterTLM`，而后者已落态③「只接受 XY」）
+        //    ⇒ 准入会让两个裁决点互相牵制。`mesh_size` 已声明化，但本批不准入。
     };
     return table;
 }

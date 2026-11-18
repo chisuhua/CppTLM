@@ -5,11 +5,21 @@
 namespace cpptlm::tlm {
 
     void GpuNoC::set_config(const nlohmann::json& params) {
-        SimModule::set_config(params);
-        if (params.contains("mesh_size"))
-            mesh_size_ = params["mesh_size"].get<int>();
-        if (params.contains("routing"))
-            routing_ = params["routing"].get<std::string>();
+        // change `cpptlm-module-param-migrate-batch2` T2.x：**声明即读取**（`ADR-X.17` D-1）。
+        // ⛔ 旧写法先调 `SimModule::set_config()`（含 enforce）**再**自读 ⇒ 准入后
+        //    自读声明的键会被误判为未知键（design D-2.3：enforce 必须晚于模块自读）。
+        if (!params.is_object()) {
+            SimObject::set_config(params);
+            return;
+        }
+        set_config_with(params, [this]() {
+            load_param_opt("mesh_size", mesh_size_);
+            // ⚠️ `routing` **暂不裁决**（T2.10）：本类只是把它**透传**给内部 `RouterTLM`，
+            //    而 `RouterTLM` 侧已于 C1 落**态③ 显式拒绝（伪参数）** —— 只接受 "XY"。
+            //    ⇒ 本类仍按透传语义读取（⛔ 本批**不准入** `GpuNoC`：`routing` 的
+            //    效果裁决归 C1 之后的独立 change，准入会让两个裁决点互相牵制）。
+            load_param_opt("routing", routing_);
+        });
     }
 
     void GpuNoC::simulate_instantiate(const nlohmann::json& cfg) {

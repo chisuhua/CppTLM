@@ -25,10 +25,20 @@
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "core/param_admission.hh"
+#include "tlm/cep/cep_mesh_interconnect.hh"
 #include "tlm/cep/cohif_nic.hh"
 #include "tlm/cep/cohif_responder.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/gpu/sdma_engine_tlm.hh"
+#include "tlm/cluster/apu_soc.hh"
+#include "tlm/cluster/cache_cluster.hh"
+#include "tlm/cluster/compute_cluster.hh"
+#include "tlm/cluster/cpu_cluster.hh"
+#include "tlm/cluster/gpc_cluster.hh"
+#include "tlm/cluster/gpu_cluster.hh"
+#include "tlm/cluster/gpu_noc_cluster.hh"
+#include "tlm/cluster/memory_cluster.hh"
+#include "tlm/cluster/tpc_cluster.hh"
 #include "tlm/memory_tlm.hh"
 #include "tlm/nic_tlm.hh"
 #include "tlm/vram_controller_tlm.hh"
@@ -368,4 +378,252 @@ TEST_CASE("AC-02: CohIfResponderTLM 四键生效（两值 ⇒ 读数不同）",
     ModuleFactory factory(&eq);
     REQUIRE_FALSE(factory.instantiateAll(
         one_module("cresp_bad", "CohIfResponderTLM", json{{"emit_completions", "yes"}})));
+}
+
+// ============================================================================
+// T2 — SimModule 家族（P1b）
+//
+// 观测面：模块自身的公开 getter（`ADR-X.17` D-6 要求「两个合法值 ⇒ 读数不同」）。
+// 带单位字符串（`"16KB"`）的键只断言**字符串已落成员**；解析正确性由内层
+// `CacheTLM` / `MemoryTLM` 的既有判据覆盖（本文件不重复造）。
+// ============================================================================
+
+namespace {
+
+    /// 取模块类型 T 实例的辅助（失败 ⇒ REQUIRE 终止该 case）
+    template <typename T>
+    T* get_as(ModuleFactory& factory, const std::string& name) {
+        return dynamic_cast<T*>(factory.getInstance(name));
+    }
+
+} // namespace
+
+// ── T2.1 CpuCluster ──────────────────────────────────────────────────────
+TEST_CASE("AC-02: CpuCluster.num_cpus / cluster_id 生效", "[param][migrate][batch2][cpucluster]") {
+    register_all_types();
+
+    auto probe = [](int n, const std::string& id) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(
+            one_module("cc", "CpuCluster", json{{"num_cpus", n}, {"cluster_id", id}})));
+        auto* c = get_as<CpuCluster>(factory, "cc");
+        REQUIRE(c != nullptr);
+        return std::make_pair(c->num_cpus(), c->cluster_id());
+    };
+
+    const auto a = probe(2, "alpha");
+    const auto b = probe(8, "beta");
+    CHECK(a == std::make_pair(2, std::string("alpha")));
+    CHECK(b == std::make_pair(8, std::string("beta")));
+    CHECK(a != b);
+
+    // 拼错键 ⇒ 装配失败（准入已启用）
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE_FALSE(factory.instantiateAll(
+        one_module("cc_typo", "CpuCluster", json{{"num_cpu", 2}})));
+}
+
+// ── T2.2 CacheCluster ────────────────────────────────────────────────────
+TEST_CASE("AC-02: CacheCluster.l1_count 决定子模块数 + 尺寸字符串落成员",
+          "[param][migrate][batch2][cachecluster]") {
+    register_all_types();
+
+    auto sub_count = [](int l1n) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(
+            one_module("cache_c", "CacheCluster", json{{"l1_count", l1n}})));
+        auto* c = get_as<cpptlm::tlm::CacheCluster>(factory, "cache_c");
+        REQUIRE(c != nullptr);
+        // 判别力：l1_count 直接决定 L1 实例数（+1 个 L2）
+        CHECK(c->l1_count() == l1n);
+        return c->getInternalFactory().getAllInstances().size();
+    };
+
+    CHECK(sub_count(2) == 3u);
+    CHECK(sub_count(5) == 6u);
+
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE(factory.instantiateAll(one_module(
+        "cache_sz", "CacheCluster", json{{"l1_size", "32KB"}, {"l2_size", "1MB"}})));
+    auto* c = get_as<cpptlm::tlm::CacheCluster>(factory, "cache_sz");
+    REQUIRE(c != nullptr);
+    CHECK(c->l1_size() == "32KB");
+    CHECK(c->l2_size() == "1MB");
+}
+
+// ── T2.3 MemoryCluster ───────────────────────────────────────────────────
+TEST_CASE("AC-02: MemoryCluster.channel_count 生效 + memory_type 态②拒绝",
+          "[param][migrate][batch2][memorycluster]") {
+    register_all_types();
+
+    auto sub_count = [](int ch) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(
+            one_module("mem_c", "MemoryCluster", json{{"channel_count", ch}, {"channel_size", "2GB"}})));
+        auto* c = get_as<cpptlm::tlm::MemoryCluster>(factory, "mem_c");
+        REQUIRE(c != nullptr);
+        CHECK(c->channel_size() == "2GB");
+        return c->getInternalFactory().getAllInstances().size();
+    };
+
+    // 2 / 4 通道（ArbiterTLM2 / ArbiterTLM4）+ 1 个 arbiter
+    CHECK(sub_count(2) == 3u);
+    CHECK(sub_count(4) == 5u);
+
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE_FALSE(factory.instantiateAll(
+        one_module("mem_bad", "MemoryCluster", json{{"memory_type", "DDR4"}})));
+}
+
+// ── T2.4 ComputeCluster ──────────────────────────────────────────────────
+TEST_CASE("AC-02: ComputeCluster.cu_count / cu_template 生效",
+          "[param][migrate][batch2][computecluster]") {
+    register_all_types();
+
+    auto probe = [](int n) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "cu", "ComputeCluster",
+            json{{"cu_count", n}, {"cu_template", "configs/templates/compute_unit_v1.json"}})));
+        auto* c = get_as<cpptlm::tlm::ComputeCluster>(factory, "cu");
+        REQUIRE(c != nullptr);
+        CHECK(c->cu_template() == "configs/templates/compute_unit_v1.json");
+        return c->cu_count();
+    };
+
+    CHECK(probe(2) == 2);
+    CHECK(probe(5) == 5);
+
+    // 钳位语义保留（< 1 ⇒ 1）—— 合法性裁决归模块内，不是 `load_param` 的职责
+    CHECK(probe(0) == 1);
+}
+
+// ── T2.5 TpcCluster ──────────────────────────────────────────────────────
+TEST_CASE("AC-02: TpcCluster.tpc_id / cu_per_tpc 生效", "[param][migrate][batch2][tpccluster]") {
+    register_all_types();
+
+    auto probe = [](int id, int cu) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "tpc", "TpcCluster",
+            json{{"tpc_id", id},
+                 {"cu_per_tpc", cu},
+                 {"cu_template", "configs/templates/compute_unit_v1.json"}})));
+        auto* c = get_as<cpptlm::tlm::TpcCluster>(factory, "tpc");
+        REQUIRE(c != nullptr);
+        CHECK(c->tpc_id() == id);
+        return c->cu_per_tpc();
+    };
+
+    CHECK(probe(0, 2) == 2);
+    CHECK(probe(3, 4) == 4);
+}
+
+// ── T2.6 GpcCluster ──────────────────────────────────────────────────────
+TEST_CASE("AC-02: GpcCluster.gpc_id / tpc_per_gpc / cu_per_tpc 生效",
+          "[param][migrate][batch2][gpccluster]") {
+    register_all_types();
+
+    auto probe = [](int id, int tpc) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "gpc", "GpcCluster",
+            json{{"gpc_id", id},
+                 {"tpc_per_gpc", tpc},
+                 {"cu_per_tpc", 2},
+                 {"cu_template", "configs/templates/compute_unit_v1.json"}})));
+        auto* c = get_as<cpptlm::tlm::GpcCluster>(factory, "gpc");
+        REQUIRE(c != nullptr);
+        CHECK(c->gpc_id() == id);
+        CHECK(c->cu_per_tpc() == 2);
+        return c->tpc_per_gpc();
+    };
+
+    CHECK(probe(0, 1) == 1);
+    CHECK(probe(2, 2) == 2);
+}
+
+// ── T2.7 GpuCluster ──────────────────────────────────────────────────────
+TEST_CASE("AC-02: GpuCluster.gpc_count / 几何参数生效", "[param][migrate][batch2][gpucluster]") {
+    register_all_types();
+
+    auto probe = [](int gpc, int tpc, int cu) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "gpu", "GpuCluster",
+            json{{"gpc_count", gpc},
+                 {"tpc_per_gpc", tpc},
+                 {"cu_per_tpc", cu},
+                 {"cu_template", "configs/templates/compute_unit_v1.json"}})));
+        auto* c = get_as<cpptlm::tlm::GpuCluster>(factory, "gpu");
+        REQUIRE(c != nullptr);
+        return std::make_tuple(c->gpc_count(), c->tpc_per_gpc(), c->cu_per_tpc());
+    };
+
+    CHECK(probe(1, 1, 1) == std::make_tuple(1, 1, 1));
+    CHECK(probe(2, 2, 2) == std::make_tuple(2, 2, 2));
+}
+
+// ── T2.8 ApuSoC ──────────────────────────────────────────────────────────
+TEST_CASE("AC-02: ApuSoC.cpu_topology / gpu_topology 生效", "[param][migrate][batch2][apusoc]") {
+    register_all_types();
+
+    auto probe = [](const std::string& cpu_path) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "apu", "ApuSoC",
+            json{{"cpu_topology", cpu_path},
+                 {"gpu_topology", "configs/templates/gpu_2gpc_2tpc_2cu.json"}})));
+        auto* c = get_as<cpptlm::tlm::ApuSoC>(factory, "apu");
+        REQUIRE(c != nullptr);
+        return c->cpu_topology();
+    };
+
+    CHECK(probe("configs/templates/cpu_cluster_2level.json") ==
+          "configs/templates/cpu_cluster_2level.json");
+}
+
+// ── T2.9 CepMeshInterconnect ─────────────────────────────────────────────
+TEST_CASE("AC-02: CepMeshInterconnect.template 生效", "[param][migrate][batch2][cepm]") {
+    register_all_types();
+
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE(factory.instantiateAll(one_module(
+        "fabric", "CepMeshInterconnect", json{{"template", "configs/interconnect/cep_mesh_2x2.json"}})));
+    auto* c = get_as<tlm::cep::CepMeshInterconnect>(factory, "fabric");
+    REQUIRE(c != nullptr);
+    CHECK(c->template_path() == "configs/interconnect/cep_mesh_2x2.json");
+}
+
+// ── T2.10 GpuNoC（⚠️ 本批**不准入**）─────────────────────────────────────
+TEST_CASE("AC-02: GpuNoC.mesh_size 生效，但本批**未准入**（routing 待裁决）",
+          "[param][migrate][batch2][gpunoc]") {
+    register_all_types();
+
+    // ⚠️ 准入状态断言：T2.10 明确「本任务暂缓准入」（`routing` 的裁决归后续 change）
+    CHECK_FALSE(cpptlm::is_param_admitted("GpuNoC"));
+
+    auto probe = [](int n) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module("noc", "GpuNoC", json{{"mesh_size", n}})));
+        auto* c = get_as<cpptlm::tlm::GpuNoC>(factory, "noc");
+        REQUIRE(c != nullptr);
+        return c->mesh_size();
+    };
+
+    CHECK(probe(2) == 2);
+    CHECK(probe(3) == 3);
 }

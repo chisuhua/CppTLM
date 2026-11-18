@@ -8,21 +8,32 @@
 namespace cpptlm::tlm {
 
     void ComputeCluster::set_config(const nlohmann::json& params) {
-        SimModule::set_config(params);
-        if (params.contains("cu_template") && !params["cu_template"].get<std::string>().empty()) {
-            cu_template_path_ = params["cu_template"].get<std::string>();
+        // change `cpptlm-module-param-migrate-batch2` T2.4：**声明即读取**（`ADR-X.17` D-1）。
+        // ⛔ 旧写法先调 `SimModule::set_config()`（含 enforce）**再**自读 ⇒ 准入后
+        //    自读声明的键会被误判为未知键（design D-2.3）。
+        if (!params.is_object()) {
+            SimObject::set_config(params);
+            return;
         }
-        if (params.contains("cu_count")) {
-            cu_count_ = params["cu_count"].get<int>();
-            if (cu_count_ < 1) {
-                cu_count_ = 1;
-                DPRINTF(MODULE, "[WARN] ComputeCluster: cu_count < 1, clamped to 1\n");
+        set_config_with(params, [this]() {
+            std::string tmpl = cu_template_path_;
+            if (load_param_opt("cu_template", tmpl) && !tmpl.empty()) {
+                cu_template_path_ = tmpl;
             }
-            if (cu_count_ > 64) {
-                cu_count_ = 64;
-                DPRINTF(MODULE, "[WARN] ComputeCluster: cu_count > 64, clamped to 64\n");
+            int n = cu_count_;
+            if (load_param_opt("cu_count", n)) {
+                // 钳位语义保留（合法性裁决属模块自身，非 `load_param` 的职责）
+                if (n < 1) {
+                    n = 1;
+                    DPRINTF(MODULE, "[WARN] ComputeCluster: cu_count < 1, clamped to 1\n");
+                }
+                if (n > 64) {
+                    n = 64;
+                    DPRINTF(MODULE, "[WARN] ComputeCluster: cu_count > 64, clamped to 64\n");
+                }
+                cu_count_ = n;
             }
-        }
+        });
     }
 
     void ComputeCluster::simulate_instantiate(const nlohmann::json& cfg) {

@@ -5,20 +5,24 @@
 namespace cpptlm::tlm {
 
     void MemoryCluster::set_config(const nlohmann::json& params) {
-        SimModule::set_config(params);
-        if (params.contains("channel_count"))
-            channel_count_ = params["channel_count"].get<int>();
-        if (params.contains("channel_size"))
-            channel_size_ = params["channel_size"].get<std::string>();
-        // ⚠️ `memory_type` **不再读取**（`ADR-X.17` D-2 态②）—— 内存**类型**在本仓
-        //    无任何模型（无 DRAM/HBM 行为差异）⇒ 该键**零效果** ⇒ 显式拒绝而非静默丢弃。
-        //    台账 `docs/implementation/module-param-baseline.md` B-10 已登记该缺陷。
-        if (params.contains("memory_type")) {
-            throw cpptlm::ParamValidationError(
-                name, "memory_type",
-                "memory_type: MemoryTLM has no memory-type model (no DRAM/HBM behaviour "
-                "difference) ⇒ this key has no effect (remove it from the configuration)");
+        // change `cpptlm-module-param-migrate-batch2` T2.3：**声明即读取**（`ADR-X.17` D-1）。
+        // ⛔ 旧写法先调 `SimModule::set_config()`（含 enforce）**再**自读 ⇒ 准入后
+        //    自读声明的键会被误判为未知键（design D-2.3：enforce 必须晚于模块自读）。
+        if (!params.is_object()) {
+            SimObject::set_config(params);
+            return;
         }
+        set_config_with(params, [this]() {
+            load_param_opt("channel_count", channel_count_);
+            // 带单位字符串（`"1GB"`）⇒ 解析归模块内（D-2 态①）
+            load_param_opt("channel_size", channel_size_);
+            // ⚠️ `memory_type` **态② 显式拒绝**（`ADR-X.17` D-2）—— 内存**类型**在本仓
+            //    无任何模型（无 DRAM/HBM 行为差异）⇒ 该键**零效果** ⇒ 拒绝而非静默丢弃。
+            //    台账 `docs/implementation/module-param-baseline.md` B-10 登记了该缺陷。
+            reject_unsupported_param(
+                "memory_type",
+                "this cluster has no memory-type model (no DRAM/HBM behaviour difference)");
+        });
     }
 
     void MemoryCluster::simulate_instantiate(const nlohmann::json& cfg) {

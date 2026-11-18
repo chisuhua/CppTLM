@@ -7,13 +7,20 @@
 namespace cpptlm::tlm {
 
     void TpcCluster::set_config(const nlohmann::json& params) {
-        SimModule::set_config(params);
-        if (params.contains("tpc_id"))
-            tpc_id_ = params["tpc_id"].get<int>();
-        if (params.contains("cu_per_tpc"))
-            cu_per_tpc_ = params["cu_per_tpc"].get<int>();
-        if (params.contains("cu_template"))
-            cu_template_path_ = params["cu_template"].get<std::string>();
+        // change `cpptlm-module-param-migrate-batch2` T2.x：**声明即读取**（`ADR-X.17` D-1）。
+        // ⛔ 旧写法先调 `SimModule::set_config()`（含 enforce）**再**自读 ⇒ 准入后
+        //    自读声明的键会被误判为未知键（design D-2.3：enforce 必须晚于模块自读）。
+        if (!params.is_object()) {
+            SimObject::set_config(params);
+            return;
+        }
+        set_config_with(params, [this]() {
+            load_param_opt("tpc_id", tpc_id_);
+            load_param_opt("cu_per_tpc", cu_per_tpc_);
+            // `cu_template` 是**路径字符串**（实测配置一律为 `"configs/templates/..."`）
+            // ⇒ D-2 态①：`load_param` 取值，文件加载归模块内（`simulate_instantiate`）。
+            load_param_opt("cu_template", cu_template_path_);
+        });
     }
 
     void TpcCluster::simulate_instantiate(const nlohmann::json& cfg) {

@@ -5,13 +5,21 @@
 namespace cpptlm::tlm {
 
     void CacheCluster::set_config(const nlohmann::json& params) {
-        SimModule::set_config(params);
-        if (params.contains("l1_count"))
-            l1_count_ = params["l1_count"].get<int>();
-        if (params.contains("l1_size"))
-            l1_size_ = params["l1_size"].get<std::string>();
-        if (params.contains("l2_size"))
-            l2_size_ = params["l2_size"].get<std::string>();
+        // change `cpptlm-module-param-migrate-batch2` T2.2：**声明即读取**（`ADR-X.17` D-1）。
+        // ⛔ 旧写法先调 `SimModule::set_config()`（其中已含 enforce）**再**自读 ⇒
+        //    自读声明的键在 enforce 时刻尚未登记 ⇒ 准入后会被误判为未知键。
+        //    这正是 design D-2.3 裁决的「enforce 必须晚于模块自读」。
+        if (!params.is_object()) {
+            SimObject::set_config(params);
+            return;
+        }
+        set_config_with(params, [this]() {
+            load_param_opt("l1_count", l1_count_);
+            // `l1_size` / `l2_size` 是**带单位的字符串**（`"16KB"`）⇒ 解析归模块内
+            // （`ADR-X.17` D-2 态①：`load_param` 只负责取值与类型校验）。
+            load_param_opt("l1_size", l1_size_);
+            load_param_opt("l2_size", l2_size_);
+        });
     }
 
     void CacheCluster::simulate_instantiate(const nlohmann::json& cfg) {

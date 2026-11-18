@@ -20,6 +20,11 @@ public:
     std::string get_module_type() const { return "CacheCluster"; }
     void simulate_instantiate(const nlohmann::json& cfg);
 
+    // ── 参数观测面（`ADR-X.17` D-6 行为判别要求：两个合法值 ⇒ 可观测读数不同）
+    int l1_count() const { return l1_count_; }
+    const std::string& l1_size() const { return l1_size_; }
+    const std::string& l2_size() const { return l2_size_; }
+
 private:
     int l1_count_ = 4;
     std::string l1_size_ = "16KB";

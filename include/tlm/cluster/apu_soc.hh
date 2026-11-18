@@ -19,6 +19,11 @@ public:
 
     void set_config(const nlohmann::json& params);
     std::string get_module_type() const { return "ApuSoC"; }
+
+    // ── 参数观测面（`ADR-X.17` D-6 行为判别要求：两个合法值 ⇒ 可观测读数不同）
+    const std::string& cpu_topology() const { return cpu_topology_; }
+    const std::string& gpu_topology() const { return gpu_topology_; }
+    const std::string& coherent_xbar_name() const { return coherent_xbar_name_; }
     void simulate_instantiate(const nlohmann::json& cfg);
     void incorporate_parent(SimModule* parent);
 

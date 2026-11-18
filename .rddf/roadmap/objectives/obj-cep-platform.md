@@ -26186,3 +26186,84 @@ design D-2 列的是 **5 个标量键**;实测本类配置面是 **11 个键**�
 **下一步**：T2（P1a：SimModule 家族 10 个类型迁移）。
 
 **关联**：册子 §1.5.4 · Entry #488（T0）· `docs/implementation/module-param-baseline.md` §1.1~§1.3
+
+### Entry #490 — 2026-11-19 [builder](**C2 的 T2（P1b）落地** —— SimModule 家族 10 个类型，准入表 8 → 17)
+
+**范围**：change `cpptlm-module-param-migrate-batch2`（C2）的 **T2.1~T2.10**（P1b 批次）。
+
+### 准入表 8 → 17（`include/core/param_admission.hh`）
+
+新增 9 个类型：`CpuCluster` / `CacheCluster` / `MemoryCluster` / `ComputeCluster` /
+`TpcCluster` / `GpcCluster` / `GpuCluster` / `ApuSoC` / `CepMeshInterconnect`。
+
+⚠️ **`GpuNoC` 不准入**（T2.10 原文如此）—— `routing` 的裁决归 C1 之后的独立 change
+（本类只把它透传给 `RouterTLM`，而后者已落态③「只接受 XY」）⇒ 准入会让两个裁决点互相牵制。
+判据测试显式断言 `CHECK_FALSE(is_param_admitted("GpuNoC"))` 锁定该状态。
+
+### ⛔ 本批修掉的结构性缺陷（SimModule 家族的普遍形态）
+
+**旧写法**：`SimModule::set_config(params)`（内含 `enforce`）**然后**再自读 `params` 的键。
+**问题**：准入后 ⇒ 自读声明的键在 `enforce` 时刻**尚未登记** ⇒ 被误判为未知键 ⇒ 假失败。
+（这正是 design D-2.3「enforce 必须晚于模块自读」要解决的那一类）
+
+**修法**：全部改 `set_config_with(params, self_read)`（`begin → 自读 → enforce`）。
+涉及 9 个 `set_config` 覆写（CpuCluster / CacheCluster / MemoryCluster / ComputeCluster /
+TpcCluster / GpcCluster / GpuCluster / ApuSoC / CepMeshInterconnect）。
+
+### 清单与实测的 3 处出入（按实测处置，逐条记录）
+
+| 项 | design 记录 | 实测 | 处置 |
+|---|---|---|---|
+| `cu_template`（T2.4~T2.7） | 「对象」⇒ 态②登记 | **路径字符串**（`configs/templates/...`） | 态①：`load_param_opt` 取值 + 模块内加载文件 |
+| `cpu_topology` / `gpu_topology`（T2.8） | 「嵌套块」⇒ 态②登记 | **蓝图路径字符串** | 同上 |
+| `template`（T2.9） | 「嵌套块」 | **蓝图路径字符串** | 同上 |
+
+另：`MemoryCluster.memory_type`（T2.3 原文写「声明化」）**保持 C1 的态②拒绝**
+（B-10 已裁决：本仓无内存类型模型 ⇒ 零效果）—— 声名化会造出一个**无效果的读取**。
+
+### 附带修复：`configs/templates/cpu_cluster_2level.json` 缺顶层 `connections`
+
+与 T1 修的 2 份同型缺陷 ⇒ `validateConfig` 直接拒。此前被 `test_param_alignment` 跳过
+（其类型未准入）；CpuCluster/CacheCluster 准入后立即被该判据捕获 ⇒ 补 `"connections": []`。
+
+### 观测面：给 10 个类补只读 getter（`ADR-X.17` D-6 的判别要求）
+
+`l1_count` / `l1_size` / `l2_size` / `channel_count` / `channel_size` / `cu_count` /
+`cu_template` / `tpc_id` / `cu_per_tpc` / `gpc_id` / `tpc_per_gpc` / `gpc_count` /
+`cpu_topology` / `gpu_topology` / `coherent_xbar_name` / `mesh_size` / `routing`。
+⛔ 只加只读口，不改既有 setter 的钳位/推导语义（getter 反映真实存储值）。
+
+### 判据（`test/test_param_migrate_batch2.cc`，新增 10 case / 78 assertions）
+
+| tag | 判别方式 |
+|---|---|
+| `[batch2][cpucluster]` | `num_cpus`/`cluster_id` 两值 ⇒ getter 不同；拼错键必失败 |
+| `[batch2][cachecluster]` | `l1_count` 2/5 ⇒ 子模块数 **3/6**（真实装配差异）；尺寸字符串落成员 |
+| `[batch2][memorycluster]` | `channel_count` 2/4 ⇒ 子模块数 **3/5**；`memory_type` 必失败 |
+| `[batch2][computecluster]` | `cu_count` 2/5/**0** ⇒ 2/5/**1**（钳位语义保留） |
+| `[batch2][tpccluster]` / `[gpccluster]` / `[gpucluster]` | 几何参数两值 ⇒ getter 不同 |
+| `[batch2][apusoc]` | 经 cpu/gpu 双蓝图**真实装配成功** |
+| `[batch2][cepm]` | `template` 路径落成员 |
+| `[batch2][gpunoc]` | `mesh_size` 两值 + **显式锁定「未准入」** |
+
+### 调试记录（避免下次重复踩）
+
+`test_param_alignment` 报 `cpu_cluster_2level` 装配失败，但**无任何错误输出** ——
+原因是 `validateConfig` 的失败只走 `DPRINTF`（release 编译下被剔除）。
+定位手段：临时在 `instantiateAll` 入口/出口打印调用 id + 模块清单，
+对比「有 IN 无 OUT」的那次调用即失败点。⚠️ 该临时代码**已全部移除**（`git diff` 无残留）。
+⇒ **教训**：`validateConfig` 的失败在 release 下是静默的 —— 后续诊断直接从
+「哪些必填字段缺失」入手（本次即缺 `connections`）。
+
+### 验证
+
+| 面 | 实测 |
+|---|---|
+| `cpptlm_tests` | **883646 / 2410**（+10 case / +78 assertions vs T1） |
+| `pytest` | **232 passed** |
+| `ctest` | **184 / 184** |
+| 七闸 | 全绿（`rddf_stage_gate` 0 跳过 · `config_type_registration_check` · `agents_md_lint` · `docs_sync_check --strict` · `cep_docs_sync_check` · `cep_doc_ref_check` · 冻结面 89 hash） |
+
+**下一步**：T3（P1b：依赖 effect-landing 的剩余键）。
+
+**关联**：册子 §1.5.4 · Entry #489（T1）· `docs/implementation/module-param-baseline.md` §1.4
