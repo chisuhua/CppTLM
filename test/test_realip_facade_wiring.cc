@@ -35,9 +35,9 @@ namespace {
                                       {{"config_size", 4096},
                                        {"num_msix_vectors", 16},
                                        {"bar_sizes", {4096, 16777216, 8589934592}}}}},
+                                    // `capacity_gb` 已落态②（容量由注入 backing 决定）
                                     {{"type", "PcieMemoryDevice"},
-                                     {"name", "pcie_memory"},
-                                     {"params", {{"capacity_gb", 8}}}},
+                                     {"name", "pcie_memory"}},
                                     {{"type", "SdmaEngineTLM"},
                                      {"name", "sdma"},
                                      {"params", {{"max_inflight", 4}}}},

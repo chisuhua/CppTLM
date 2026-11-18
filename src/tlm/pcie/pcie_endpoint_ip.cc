@@ -161,9 +161,16 @@ namespace tlm::pcie {
     void PcieEndpointIP::simulate_instantiate(const json& cfg) {
         // 决策 3: 双格式 — Module entry {"name","type","params"} (Step 4.5) 或直接 params
         const json params = cfg.contains("params") ? cfg["params"] : cfg;
+        // ⚠️ 失败可观测性（change C2 T0.2 / design D-4）：composite 装配失败必须
+        //    经 `instantiate_succeeded()` 上报（签名被 CEP 冻结面锁定 ⇒ 用成员通道）。
+        //    默认成功；下方任一步失败会把它翻成 false。
+        instantiate_ok_ = true;
         if (internal_factory && internal_factory->getAllInstances().empty()) {
             // 惰性构造 composite child (仅 enabled=true, 决策 4)
             ensure_composite_instantiated(params);
+        }
+        if (!instantiate_ok_) {
+            return;
         }
         // 始终消费 (幂等): 支撑 reconfigure (R-B) 与 Step 2 双调 on_config_loaded
         attach_composition(params);
@@ -216,6 +223,13 @@ namespace tlm::pcie {
                 PcieBypassMux::detach_from_endpoint(getName());
             } else {
                 ensure_composite_instantiated(params);
+                // ⚠️ `ensure_composite_instantiated` 失败时已置 `instantiate_ok_ = false`
+                //    ⇒ 本函数保持 `void`（声明在冻结面）；`simulate_instantiate` 的
+                //    调用方经 `instantiate_succeeded()` 读取（change C2 T0.2）。
+                if (!instantiate_ok_) {
+                    composite_active_ = false;
+                    return;
+                }
                 composite_active_ = true;
                 if (auto* lpm = this->composite()) {
                     lpm->link().set_fc_capacity(ll_json.value("fc_token_bucket_capacity", 256u));
@@ -544,6 +558,8 @@ namespace tlm::pcie {
     }
 
     void PcieEndpointIP::ensure_composite_instantiated(const nlohmann::json& params) {
+        // ⚠️ 签名保持 `void` —— 声明在 `include/tlm/pcie/pcie_endpoint_ip.hh`
+        //    （CEP 冻结面 / INV-CEP-07-IC5 零 diff）⇒ 失败经 `instantiate_ok_` 上报。
         if (!params.contains("link_layer") || !params["link_layer"].value("enabled", true)) {
             return; // 惰性构造: enabled=true 才建 (for_endpoint→nullptr 语义保持)
         }
@@ -560,7 +576,12 @@ namespace tlm::pcie {
         composite_cfg["type"] = "PcieLinkPhyMuxTLM";
         composite_cfg["params"] = params.value("params", nlohmann::json::object());
         wrap["modules"].push_back(composite_cfg);
-        internal_factory->instantiateAll(wrap);
+        if (!internal_factory->instantiateAll(wrap)) {
+            // ⚠️ composite 装配失败 ⇒ 经 `instantiate_ok_` 上报（change C2 T0.2）
+            instantiate_ok_ = false;
+            composite_active_ = false;
+            return;
+        }
         composite_active_ = true;
     }
 

@@ -289,15 +289,16 @@ TEST_CASE("G-2: 嵌套 RouterTLM 缺 node_x ⇒ 内部实例不被创建（既�
                       {"modules", json::array({inner})}};
     json cfg = json{{"modules", json::array({outer})}, {"connections", json::array()}};
 
-    // ⚠️ 既存行为（**非**本 change 引入）：SimModule::simulate_instantiate 调
-    //    internal_factory->instantiateAll(config) 后**丢弃返回值**（只打日志）⇒
-    //    内部装配失败不会让外层返回 false。本断言只钉「内部实例确实没建成」，
-    //    不虚构「外层失败」（该吞掉返回值的行为登记为已知残留 R-5，不属本 change 范围）。
-    factory.instantiateAll(cfg);
+    // ⚠️ **语义已变更**（change `cpptlm-module-param-migrate-batch2` T0.2 / design D-4）：
+    //    本用例原先记录「内层装配失败**不会**让外层返回 false」（旧行为 —— 返回值被丢弃，
+    //    登记为已知残留 R-5）。T0.2 之后**内层失败必须传播** ⇒ `instantiateAll` 返回 false。
+    //    ⛔ 断言不得再依赖旧语义（否则等于把「失败被静默吞掉」钉成契约）。
+    REQUIRE_FALSE(factory.instantiateAll(cfg));
 
-    auto* outer_mod = factory.getInstance<SimModule>("outer_c");
-    REQUIRE(outer_mod != nullptr);
-    CHECK(outer_mod->getInternalFactory().getInstance("inner_r") == nullptr);
+    // 失败时**实例表不提交**（`instances = std::move(object_instances)` 在函数末尾，
+    // Step 4.5 的 early-return 到不了那里）⇒ 零半构造残留 —— 与 R-5 的 AC-02 同语义。
+    CHECK(factory.getInstance<SimModule>("outer_c") == nullptr);
+    CHECK(factory.getInstance("inner_r") == nullptr);
 }
 
 // ============================================================================

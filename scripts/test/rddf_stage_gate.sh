@@ -18,6 +18,26 @@ cd "$REPO_ROOT" || exit 2
 
 CARRIER="scripts/test/rddf_ac_carrier.tsv"
 RED=$'\033[0;31m'; GRN=$'\033[0;32m'; YLW=$'\033[0;33m'; RST=$'\033[0m'
+
+# ── 参数解析（当前只有 --phase，见文件头「用法」）────────────────────────
+# ⚠️ `--phase` 只影响 P-2a 的「下一阶段」判定（见 P-2 段），不影响其余判据。
+PHASE_ARG=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --phase)
+            PHASE_ARG="${2:-}"
+            if [ -z "$PHASE_ARG" ]; then
+                echo "  ✗ --phase 缺少取值（合法值：A / B / C）" >&2
+                exit 2
+            fi
+            shift 2
+            ;;
+        *)
+            echo "  ✗ 未知参数: $1（合法参数：--phase <A|B|C>）" >&2
+            exit 2
+            ;;
+    esac
+done
 FAILED=0
 SKIPPED=0
 
@@ -95,7 +115,53 @@ echo "═══ P-2 顺序由机关保证（不得提前开工下一阶段）═
 #    design D-4 明写「不同位置 ⇒ 可并行」。用文件级判据会**误伤**当前阶段的合法工作
 #    （实测：R-5 的 T2 一落地就红）。
 #    可判定的语义是「**有没有声称做完下一阶段的活**」 ⇒ 判据 = 下一阶段 tasks 的 `[x]` 数。
-NEXT_C="cpptlm-module-param-migrate-batch2"
+#
+# ⚠️ **「下一阶段」随阶段推进而变**：
+#    · 显式 `--phase <A|B|C>` ⇒ 按该阶段查下一阶段;
+#    · **无 `--phase`** ⇒ 从「哪个 change 仍在 `openspec/changes/`（未归档）」**推导当前阶段**：
+#      三段的 change 依次为 A=`cpptlm-module-param-effect-landing`、
+#      B=`cpptlm-config-type-registration-align`、C=`cpptlm-module-param-migrate-batch2`。
+#      当前阶段 = **最早一个仍未归档**的那个;下一阶段 = 它之后那个（没有 ⇒ 无对象）。
+#      ⛔ 硬编码 `NEXT_C=C2` 在 C2 **自己开工后**会把当前阶段的合法勾选判成「提前开工」
+#      （实测：C2 的 T0 一勾选 P-2a 就红）—— 判据必须随阶段推进而移动。
+_stage_of() {  # $1 = change 名 → 输出 A/B/C（未知 ⇒ 空）
+    case "$1" in
+        cpptlm-module-param-effect-landing)   echo A ;;
+        cpptlm-config-type-registration-align) echo B ;;
+        cpptlm-module-param-migrate-batch2)    echo C ;;
+    esac
+}
+_next_after() {  # $1 = A/B/C → 输出下一阶段（末段 ⇒ 空）
+    case "$1" in
+        A) echo B ;;
+        B) echo C ;;
+        *) echo "" ;;
+    esac
+}
+_change_of_stage() {  # $1 = A/B/C → change 名
+    case "$1" in
+        A) echo cpptlm-module-param-effect-landing ;;
+        B) echo cpptlm-config-type-registration-align ;;
+        C) echo cpptlm-module-param-migrate-batch2 ;;
+    esac
+}
+
+CUR_STAGE="$PHASE_ARG"
+if [ -z "$CUR_STAGE" ]; then
+    for _s in A B C; do
+        _c="$(_change_of_stage "$_s")"
+        if [ -d "openspec/changes/$_c" ]; then CUR_STAGE="$_s"; break; fi
+    done
+fi
+
+if [ -z "$CUR_STAGE" ]; then
+    ok "P-2a 三个阶段均已归档 ⇒ 无下一阶段可提前开工"
+else
+    NEXT_STAGE="$(_next_after "$CUR_STAGE")"
+    if [ -z "$NEXT_STAGE" ]; then
+        ok "P-2a 当前阶段 ($CUR_STAGE) 已是序列末段 ⇒ 无下一阶段可提前开工"
+    else
+        NEXT_C="$(_change_of_stage "$NEXT_STAGE")"
 resolve_path "openspec/changes/$NEXT_C/tasks.md"
 NEXT_TASKS="$RESOLVE_PATH"
 if [ ! -f "$NEXT_TASKS" ]; then
@@ -107,6 +173,8 @@ else
         fail "P-2a 下一阶段 ($NEXT_C) 已有 $_done 个 task 被勾选 ⇒ 阶段顺序被跳过"
     else
         ok "P-2a 下一阶段 ($NEXT_C) 零 task 勾选 ⇒ 未提前开工"
+    fi
+fi
     fi
 fi
 

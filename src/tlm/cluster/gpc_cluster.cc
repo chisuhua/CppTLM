@@ -18,10 +18,14 @@ namespace cpptlm::tlm {
 
     void GpcCluster::simulate_instantiate(const nlohmann::json& cfg) {
         // 幂等守卫: 防双激活二次生成覆盖 instances map 泄漏第一批子树 (fix-asan 根因 2)。
-        if (!internal_factory->getAllInstances().empty()) {
+        // ⚠️ 判定含「上次成功」——失败路径下 internal_factory 可能部分填充 (design D-4)。
+        if (already_instantiated()) {
             return;
         }
         SimModule::simulate_instantiate(cfg);
+        if (!instantiate_succeeded()) {
+            return;
+        }
         nlohmann::json tpc_cfgs = nlohmann::json::array();
         for (int i = 0; i < tpc_per_gpc_; ++i) {
             nlohmann::json tpc_entry;
@@ -36,7 +40,7 @@ namespace cpptlm::tlm {
         nlohmann::json gpc_cfg;
         gpc_cfg["modules"] = tpc_cfgs;
         gpc_cfg["connections"] = nlohmann::json::array();
-        internal_factory->instantiateAll(gpc_cfg);
+        instantiate_ok_ = internal_factory->instantiateAll(gpc_cfg);
     }
 
 } // namespace cpptlm::tlm

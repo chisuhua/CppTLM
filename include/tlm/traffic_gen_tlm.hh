@@ -235,54 +235,13 @@ public:
     }
 
     /// 解析地址字面量（十进制或 `0x` 前缀十六进制）
-    uint64_t parse_addr(const std::string& s, const char* key) const {
-        auto fail = [&]() {
-            throw cpptlm::ParamValidationError(
-                name, key,
-                std::string(key) + ": invalid address '" + s +
-                    "' (expected a non-negative integer, decimal or 0x-prefixed hex)");
-        };
-        if (s.empty() || s[0] == '-') fail();
-        try {
-            size_t pos = 0;
-            const unsigned long long v = std::stoull(s, &pos, 0);
-            if (pos != s.size()) fail();
-            return static_cast<uint64_t>(v);
-        } catch (const cpptlm::ParamValidationError&) {
-            throw;
-        } catch (const std::exception&) {
-            fail();
-        }
-        return 0; // ⛔ 不可达（fail() 必抛）
-    }
-
-    /// 读取**单个**地址值：接受 JSON 数字（含 `VarResolver` 从 `"0x1000"` 转换来的 double）
-    /// 与字符串两种形态
+    /// 读取一个地址值 —— 委托共享实现（`include/core/param_loader.hh`）
+    ///
+    /// ⚠️ **不得**在本类另写一份 —— 同因同策的类已有 `CPUTLM`，
+    ///    两份实现必然漂移（先例：本类与 CPUTLM 曾各写一套，CPUTLM 那份漏了
+    ///    `is_number_float` 分支 ⇒ `"0x1000"` 写法在 CPUTLM 上装配失败）。
     uint64_t read_addr_value(const json& v, const char* key) const {
-        if (v.is_number_unsigned()) return v.get<uint64_t>();
-        if (v.is_number_integer()) {
-            const long long i = v.get<long long>();
-            if (i < 0) {
-                throw cpptlm::ParamValidationError(
-                    name, key,
-                    std::string(key) + ": expected a non-negative address, got " + std::to_string(i));
-            }
-            return static_cast<uint64_t>(i);
-        }
-        if (v.is_number_float()) {
-            const double d = v.get<double>();
-            if (d < 0 || d != static_cast<double>(static_cast<uint64_t>(d))) {
-                throw cpptlm::ParamValidationError(
-                    name, key,
-                    std::string(key) + ": expected a non-negative integral address, got " + v.dump());
-            }
-            return static_cast<uint64_t>(d);
-        }
-        if (v.is_string()) return parse_addr(v.get<std::string>(), key);
-        throw cpptlm::ParamValidationError(
-            name, key,
-            std::string(key) + ": expected an address (number or 0x-prefixed string), got " +
-                v.dump());
+        return cpptlm::parse_addr_json(name, key, v);
     }
 
     /// 读取**顶层**地址键（键存在才读）

@@ -66,12 +66,16 @@ public:
     ///    先让基类用**主 config** 解析 `outputs`/`inputs`，再装配蓝图。
     void simulate_instantiate(const nlohmann::json& cfg) override {
         // 幂等守卫（防双激活二次装配）
-        if (internal_factory && !internal_factory->getAllInstances().empty()) {
+        // ⚠️ 判定含「上次成功」——失败路径下 internal_factory 可能部分填充 (design D-4)。
+        if (already_instantiated()) {
             return;
         }
         // ① 基类：幂等守卫 + instantiateAll(cfg) + **parsePortConfigs(cfg)**
         //    ⇒ 端口暴露表用**主拓扑**的 outputs/inputs 填充（蓝图里没有它们）
         SimModule::simulate_instantiate(cfg);
+        if (!instantiate_succeeded()) {
+            return;
+        }
 
         if (template_path_.empty()) {
             return;

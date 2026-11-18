@@ -25989,3 +25989,101 @@ D-1 表删三行（C1 `design.md`）· R-5 `tasks.md` T1.3/T1.4 补生成器漂�
 **下一步**：阶段 C（C2 `cpptlm-module-param-migrate-batch2`）—— 按册子 §1.5.2 的执行序列，前置已完成（`bash scripts/test/rddf_stage_gate.sh --phase C` 应绿）。
 
 **关联**：册子 §1.5.2 · Entry #480（立项）· #486（实施）· #485（C1 归档）
+
+### Entry #488 — 2026-11-18 [builder](**阶段 C 开工 —— C2 的 T0 机制层落地**：基类调用序列 + 嵌套失败传播 + 6 个既有缺陷暴露)
+
+**范围**：change `cpptlm-module-param-migrate-batch2`（C2）的 **T0.1~T0.4**（design D-2.3 / D-4）。
+
+### T0.1 —— 基类调用序列改造（D-2.3）
+
+`SimObject` 新增两个 protected 助手 + 一个模板入口：
+
+| 成员 | 作用 |
+|---|---|
+| `begin_param_load(params)` | 保存 `config_` + `param_ctx_.begin()`（清空已消费键表） |
+| `end_param_load()` | `enforce_param_contract()`（未知键 + 必填） |
+| `set_config_with(params, self_read)` | 三段式 `begin → 模块自读 → enforce` 的模板封装 |
+
+`set_config()` 本身改为走同一对助手（行为不变）。SimModule 家族（`set_config` 覆写里自读）用 `set_config_with` 或显式两段。
+
+⛔ 关键纪律：**`enforce` 必须晚于模块自读** —— 否则模块自己 `load_param` 声明的键在 enforce 时刻尚未登记 ⇒ 被误判为未知参数 ⇒ 假失败。这正是 D-2.3 裁决的核心。
+
+### T0.2 —— 嵌套失败传播（D-4）**改用第二方案**
+
+⚠️ **签名保持 `void`，不改 `bool`** —— 实测发现改 bool 会红掉 `test_cep_module_factory_seam` 的
+「4 个 frozen headers 零 diff」断言：`include/tlm/pcie/pcie_endpoint_ip.hh` 属 `INV-CEP-07-IC5`
+（`override` 声明改了返回类型 ⇒ 失配 ⇒ 编译失败）。这与 C1/R-5 的冻结面裁定同型。
+
+⇒ 采用 design D-4 明写的**第二个方案**：`instantiate_ok_` 成员 + `instantiate_succeeded()` 公开读取口。
+
+```cpp
+bool instantiate_ok_ = false;                                  // protected
+bool instantiate_succeeded() const { return instantiate_ok_; }  // public
+
+// 幂等守卫改为「已 populate **且**上次成功」
+bool already_instantiated() const {
+    return internal_factory && !internal_factory->getAllInstances().empty() && instantiate_ok_;
+}
+```
+
+⚠️ 守卫为何必须含「上次成功」：失败路径下 `internal_factory` 可能**部分填充**（D-4 裁决：失败不做回滚）
+⇒ 只看「已 populate」会把失败误判为已完成 ⇒ 后续重试被静默吞掉。
+
+**传播链（4 处接入）**：
+1. `ModuleFactory::instantiateAll` **Step 4.5**（顶层 SimModule）
+2. `ModuleFactory::instantiateAll` 的 **`config` 文件路径分支**
+3. `DGpuBoard::load_soc_config`（板级 soc）
+4. `SimModule::simulate_instantiate` 自身的**子 SimModule 递归** + `ApuSoC` 的自管递归
+
+**基类内联装配的判据收紧**：只有 `cfg["modules"]` 非空时才调 `internal_factory->instantiateAll()`
+（否则该调用会因顶层缺 `modules`/`connections` 在 `validateConfig` 失败 —— 那是「本级无嵌套拓扑」的
+正常形态，不是失败），且内层 config 缺 `connections` 时补空数组。
+
+**判据**：`test/test_nested_failure_propagation.cc`（3 case / 9 assertions）——
+正向（缺必填 ⇒ false + 零残留）/ 反向（齐备 ⇒ true 且内层建出来，不误伤）/ 失败通道可读。
+
+### ⚠️ T0.4 —— 失败传播**暴露的 6 个既有缺陷**（全部是「内联副本与真实配置漂移」或 C1 遗留）
+
+这些不是判据本身错，而是**此前被静默吞掉**的真实缺陷。逐一修复（⛔ 未改判据口径）：
+
+| # | 缺陷 | 修法 |
+|:--:|---|---|
+| 1 | `CPUTLM.start_addr` 用 `load_param_opt` 读 `"0x1000"` ⇒ `VarResolver` 把它转成 **float 4096.0** ⇒ `load_param` 拒绝（`TrafficGenTLM` 早有 `read_addr_value` 绕开，CPUTLM 漏了 —— **C1 遗留**） | 把读法提升为 `cpptlm::parse_addr_json` / `parse_addr_text`（`include/core/param_loader.hh`）；CPUTLM 与 TrafficGenTLM **共用**（⛔ 不留第二份实现） |
+| 2 | `test_simmodule_nested.cc` ×2 显式写 resp 连接（`mem.resp_out → cache.resp_in`）⇒ 连接解析器只处理**请求方向**、响应路径**自动派生** ⇒ 显式写会被当请求方向、被 `check_port_compatibility` 判不兼容 | 删 2 条冗余 resp 连接（行为等价，注释说明「只写请求方向」） |
+| 3 | `test_dgpu_pcie_device_perspective.cc` ×6 内联板级配置含已删的 `tmu`（`TmuDispatchProcessorTLM`，R-5 已从真实配置删） | 删 `tmu` 条目 + 3 条指向它的连接 |
+| 4 | 同上，`gpu` 用 `"config": 文件路径`（真实配置已改内联 `params`）⇒ 该路径经 `instantiate()` 也走吞掉失败的老路 | 改内联 `params`（与真实配置一致） |
+| 5 | `test_display_device_injection.cc` ×2 + `test_realip_facade_wiring.cc` ×1 的 `PcieMemoryDevice.capacity_gb`（C1 已落态②） | 内联副本同步真实配置（删该键） |
+| 6 | `test_param_loader.cc` G-2 用例**正是**依赖旧语义（「内层失败但外层 true」）的那条 | 改 `REQUIRE_FALSE(instantiateAll)` + 零残留断言 |
+
+⚠️ **同步纪律（新发现，写入测试注释）**：任何「从配置里删类型/删键」的改动都必须同时扫
+`test/` 下的**内联副本**（`grep -rn '"<type>"' test/`）—— 否则失败不再被吞，会直接打红。
+
+### R-5 的 AC-08 已闭合（连带收益）
+
+R-5 归档时 AC-08（嵌套失败传播）标 `blocked-by` C2 的 T0.2。**现在闭合**：
+```bash
+$ ./build/bin/cpptlm_sim /tmp/nested_bogus.json    # ApuSoC 内联 modules 含未知类型
+⇒ exit=1（此前为 0 —— 检测到但不传播）
+```
+
+### 门禁 P-2a 的修复（随阶段推进而移动）
+
+原 P-2a 硬编码 `NEXT_C=cpptlm-module-param-migrate-batch2` ⇒ **C2 自己一开工就红**
+（把自己的 `[x]` 判成「提前开工」）。修法：`--phase <A|B|C>` 显式指定；
+无 `--phase` 时从「哪个 change 仍未归档」**推导当前阶段**，再查其下一阶段。
+三情形实测：`--phase A/B` 报红（真实历史事实，前两阶段已完成）、`--phase C` 绿。
+
+### 验证
+
+| 面 | 实测 |
+|---|---|
+| `cpptlm_tests` | **883436 / 2386**（+4 case / +9 assertions = 新判据文件） |
+| `pytest` | **232 passed** |
+| `ctest` | **184 / 184** |
+| 五闸 | `agents_md_lint` · `docs_sync_check --strict` · `cep_docs_sync_check` · `cep_doc_ref_check` · `rddf_stage_gate`（0 跳过）全绿 |
+| 冻结面 | **89 个产物** hash 全一致 |
+| 配置装配 | 12 份顶层配置 `cpptlm_sim` exit 0（含此前失败的 `example_simmodule_nested_3level_static`）;⚠️ **2 份 pre-existing 失败与本次无关**：`dgpu_soc_minimal_v1` / `dgpu_soc_timing_v1` 缺**顶层 `connections`** ⇒ `validateConfig` 直接拒（2026-11-18 实测，**改动前**即如此，git stash 后复现）⇒ 不属 C2 范围，登记为独立缺陷 |
+
+**下一步**：T1（P1a：ChStream 家族 10 个类型迁移）。
+
+**关联**：册子 §1.5.4 · Entry #487（R-5 归档）· `scripts/test/rddf_stage_gate.sh`（P-2a 阶段感知）

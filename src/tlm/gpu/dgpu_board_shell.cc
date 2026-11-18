@@ -70,6 +70,14 @@ namespace tlm::gpu {
             }
             const auto& soc_cfg = board_cfg["modules"][0];
             soc_->simulate_instantiate(soc_cfg);
+            if (!soc_->instantiate_succeeded()) {
+                // ⚠️ 嵌套装配失败 ⇒ 向上传播（change C2 T0.2 / design D-4）：
+                //    此前板级路径丢弃该结果 ⇒ 嵌套参数校验失败会静默通过。
+                std::lock_guard<std::mutex> lock(inject_mu_);
+                last_exception_ = std::make_exception_ptr(
+                    std::runtime_error("board nested assembly failed"));
+                return false;
+            }
             // Pre-fill device_info_ from pcie_ep params
             uint64_t derived_bar1_size = 0;
             for (const auto& mod : board_cfg["modules"][0].value("modules", json::array())) {

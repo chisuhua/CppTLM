@@ -16,10 +16,15 @@ namespace cpptlm::tlm {
 
     void CacheCluster::simulate_instantiate(const nlohmann::json& cfg) {
         // 幂等守卫: 同根因 as 4 cluster fix (PR #27), 当前无活路径触发, 防御性补齐。
-        if (!internal_factory->getAllInstances().empty()) {
+        // ⚠️ 判定含「上次成功」——失败路径下 internal_factory 可能部分填充,
+        //    仅看「已 populate」会把失败误判为已完成 (design D-4)。
+        if (already_instantiated()) {
             return;
         }
         SimModule::simulate_instantiate(cfg);
+        if (!instantiate_succeeded()) {
+            return;
+        }
         nlohmann::json full_config = {{"modules", nlohmann::json::array()}};
         full_config["modules"].push_back(
             {{"name", "l2"}, {"type", "CacheTLM"}, {"params", {{"size", l2_size_}, {"level", 2}}}});
@@ -33,7 +38,7 @@ namespace cpptlm::tlm {
             full_config["connections"].push_back(
                 {{"src", "l1_" + std::to_string(i)}, {"dst", "l2"}, {"latency", 5}});
         }
-        internal_factory->instantiateAll(full_config);
+        instantiate_ok_ = internal_factory->instantiateAll(full_config);
     }
 
 } // namespace cpptlm::tlm

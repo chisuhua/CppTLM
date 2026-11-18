@@ -25,6 +25,12 @@ namespace {
     constexpr size_t VRAM_TEST_OFFSET = 0x2000;
 
     // Inline board config mirrors configs/dgpu_board_v1.json (cwd-independent).
+    //
+    // ⚠️ 与真实配置的**同步纪律**（change C2 T0.2 暴露）：本副本曾含
+    //    `tmu`（`TmuDispatchProcessorTLM`）—— 该类**无基类** ⇒ 进不了注册表 ⇒
+    //    R-5 已把它从 `configs/dgpu_board_v1.json` 移除，但本内联副本未同步。
+    //    ⛔ 今后任何**从配置里删类型/删键**的改动都必须同步扫描 `test/` 下的内联副本
+    //    （`grep -rn '"<type>"' test/`）—— 否则失败会被 T0.2 的传播打成红。
     nlohmann::json load_board_config() {
         constexpr const char* kBoardCfg = R"({
             "name": "dgpu_board_v1",
@@ -50,11 +56,11 @@ namespace {
                     },
                     { "name": "sdma", "type": "SdmaEngineTLM", "params": { "max_inflight": 4 } },
                     { "name": "cp",   "type": "CommandProcessorTLM" },
-                    { "name": "tmu",  "type": "TmuDispatchProcessorTLM" },
                     { "name": "sq",   "type": "SubmitQueueTLM" },
                     { "name": "cq",   "type": "CompletionRingTLM" },
                     { "name": "gpu",  "type": "GpuCluster",
-                      "config": "configs/templates/gpu_2gpc_2tpc_2cu.json" },
+                      "params": { "gpc_count": 2, "tpc_per_gpc": 2, "cu_per_tpc": 2,
+                                  "cu_template": "configs/templates/compute_unit_v1.json" } },
                     { "name": "vram", "type": "MemoryTLM", "params": { "capacity_gb": 1 } }
                 ],
                 "connections": [
@@ -62,12 +68,9 @@ namespace {
                     { "src": "pcie_ep.mem_out",  "dst": "vram.0" },
                     { "src": "cp.fetch_out",     "dst": "vram.0" },
                     { "src": "cp.dma_req",       "dst": "sdma.desc_in" },
-                    { "src": "cp.dispatch",      "dst": "tmu.dispatch_in" },
-                    { "src": "tmu.cta_out",      "dst": "sq.cta_in" },
                     { "src": "sq.dispatch",      "dst": "gpu.cta_in" },
                     { "src": "gpu.done",         "dst": "cq.done_in[0]" },
                     { "src": "sdma.done_out",    "dst": "cq.done_in[1]" },
-                    { "src": "cq.done_out",      "dst": "tmu.done_in" },
                     { "src": "gpu.done",         "dst": "sq.done_in[0]" }
                 ],
                 "outputs": [

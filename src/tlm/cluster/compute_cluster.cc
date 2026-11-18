@@ -27,10 +27,14 @@ namespace cpptlm::tlm {
 
     void ComputeCluster::simulate_instantiate(const nlohmann::json& cfg) {
         // 幂等守卫: 防双激活二次生成覆盖 instances map 泄漏第一批子树 (fix-asan 根因 2)。
-        if (!internal_factory->getAllInstances().empty()) {
+        // ⚠️ 判定含「上次成功」——失败路径下 internal_factory 可能部分填充 (design D-4)。
+        if (already_instantiated()) {
             return;
         }
         SimModule::simulate_instantiate(cfg);
+        if (!instantiate_succeeded()) {
+            return;
+        }
         // P1 fix: 子 ComputeCluster 场景下 cu_template_path_ 为空 (默认),
         // 但父 ComputeCluster 已在 cu_entry["modules"] 提供蓝图实例, 通过基类
         // SimModule::simulate_instantiate(cfg) 已实例化 cfg.modules.
@@ -54,7 +58,7 @@ namespace cpptlm::tlm {
             cu_entry["connections"] = nlohmann::json::array();
             cu_cfg["modules"].push_back(cu_entry);
         }
-        internal_factory->instantiateAll(cu_cfg);
+        instantiate_ok_ = internal_factory->instantiateAll(cu_cfg);
     }
 
 } // namespace cpptlm::tlm

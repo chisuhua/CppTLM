@@ -101,6 +101,11 @@ TEST_CASE("D3a-2: PcieEndpointIP display_device_ 改为 raw ptr + set_display_de
 // ============================================================================
 TEST_CASE("D3a-2: DGpuBoard::bind_display_backings 注入完整路径", "[pcie][pcie-display][d3a2]") {
     // 内联镜像 configs/dgpu_soc_minimal_v1.json (cwd-independent, 与现有测试模式一致)
+    //
+    // ⚠️ `pcie_memory` 的 `capacity_gb` 已移除 —— 该键于 C1 落**态②**
+    //    （容量由注入的 backing 决定,per ADR-DGPU-05）⇒ 写了即装配失败。
+    //    本内联副本曾与真实配置不同步（真实配置已清空 params），
+    //    T0.2 的嵌套失败传播把它暴露出来（此前被静默吞掉）。
     nlohmann::json cfg = nlohmann::json::parse(R"({
         "name": "dgpu_soc_minimal_v1",
         "display_routing_enabled": false,
@@ -113,8 +118,7 @@ TEST_CASE("D3a-2: DGpuBoard::bind_display_backings 注入完整路径", "[pcie][
                 { "name": "pcie_ep", "type": "PcieEndpointIP",
                   "params": { "config_size": 4096, "num_msix_vectors": 16,
                               "bar_sizes": [4096, 16777216, 8589934592] } },
-                { "name": "pcie_memory", "type": "PcieMemoryDevice",
-                  "params": { "capacity_gb": 8 } },
+                { "name": "pcie_memory", "type": "PcieMemoryDevice" },
                 { "name": "sdma", "type": "SdmaEngineTLM", "params": { "max_inflight": 4 } },
                 { "name": "gmmu", "type": "GmmuTLM", "params": { "page_size_bytes": 4096 } }
             ],
@@ -290,8 +294,7 @@ TEST_CASE("D3a-2: DGpuBoard set_display_fb_size override 优先级", "[pcie][pci
                 { "name": "pcie_ep", "type": "PcieEndpointIP",
                   "params": { "config_size": 4096, "num_msix_vectors": 16,
                               "bar_sizes": [4096, 16777216, 8589934592] } },
-                { "name": "pcie_memory", "type": "PcieMemoryDevice",
-                  "params": { "capacity_gb": 8 } },
+                { "name": "pcie_memory", "type": "PcieMemoryDevice" },
                 { "name": "sdma", "type": "SdmaEngineTLM", "params": { "max_inflight": 4 } },
                 { "name": "gmmu", "type": "GmmuTLM", "params": { "page_size_bytes": 4096 } }
             ],

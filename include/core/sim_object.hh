@@ -313,18 +313,52 @@ public:
 
     /**
      * @brief 设置配置参数（选项A基础实现）
-     * 
+     *
      * 基类存储原始 JSON，子类可重写 on_config_loaded() 做解析和验证。
-     * 
+     *
      * @param params JSON 配置对象
+     *
+     * @note **调用序列契约**（per change `cpptlm-module-param-migrate-batch2` T0.1 /
+     *       design D-2.3）：**begin → 模块自读 → enforce** 三段式。
+     *       `enforce_param_contract()`（未知键 + 必填真值唯一）**必须**在模块自读
+     *       **之后**执行 —— 否则模块自己声明的键会被误判为「未知键」而误报失败。
+     *       三段分别由 `begin_param_load()` / `on_config_loaded()` / `end_param_load()` 承担。
      */
     virtual void set_config(const json& params) {
-        config_ = params;
-        // 参数加载上下文：引用本实例的 config_ 副本（生命周期与实例一致，不悬垂）
-        param_ctx_.begin(config_, name, !param_flat_scope_);
-        param_flat_scope_ = false;
+        begin_param_load(params);
         on_config_loaded();
-        enforce_param_contract();
+        end_param_load();
+    }
+
+    /**
+     * @brief **SimModule 家族**专用的参数加载入口（`begin` → 模块自读 → `enforce`）
+     *
+     * SimModule 家族（`ApuSoC` / `CacheCluster` / `CpuCluster` / …）在 **`set_config()`
+     * 覆写里**自读参数（design D-2.3），而 `on_config_loaded()` 是 ChStream 家族的
+     * 读取点。两族形态不同 ⇒ 不能共用同一个 `set_config()` 实现。
+     *
+     * 本入口把「自读」作为回调交给基类统一编排，**保证 `enforce` 晚于自读**：
+     *
+     * ```cpp
+     * void CacheCluster::set_config(const json& params) {
+     *     SimModule::set_config_with(params, [this, &params]() {
+     *         load_param("l1_count", l1_count_);   // 自读（登记已消费键）
+     *         ...
+     *     });
+     * }
+     * ```
+     *
+     * ⚠️ **不要**用「先调 `SimModule::set_config()`（含 enforce）再自读」的写法 ——
+     * 那会让模块自读的键在 enforce 时刻**尚未登记** ⇒ 被误判为未知参数 ⇒ 假失败。
+     *
+     * @param params    本次加载的 JSON（通常是 `params` 子对象）
+     * @param self_read 模块自读回调（登记已消费键 + 赋值）
+     */
+    template <typename SelfRead>
+    void set_config_with(const json& params, SelfRead&& self_read) {
+        begin_param_load(params);
+        self_read();
+        end_param_load();
     }
 
     /**
@@ -492,6 +526,44 @@ protected:
             throw cpptlm::ParamValidationError(name, unknown.front(),
                                                unknown.front() + ": unknown parameter");
         }
+    }
+
+    /**
+     * @brief 参数加载的**第 ① 段**：开启一次加载（保存 config_ + 清空已消费键表）
+     *
+     * 与 `end_param_load()` 配套，供**在 `set_config()` 覆写里自读参数**的派生类
+     * （SimModule 家族：`ApuSoC` / `CacheCluster` / `CpuCluster` / …）使用：
+     *
+     * ```cpp
+     * void CacheCluster::set_config(const json& params) {
+     *     SimModule::begin_param_load(params);   // ① 开加载
+     *     load_param("l1_count", l1_count_);    // ② 模块自读（登记已消费键）
+     *     SimModule::end_param_load();           // ③ 未知键 + 必填校验
+     * }
+     * ```
+     *
+     * ⛔ **不得**只调 `end_param_load()` 而跳过 `begin_param_load()` —— 那会让
+     * `param_ctx_` 指向**上一次**加载的 JSON（悬垂 / 读到别的模块的键）。
+     * ⛔ **不得**在 `begin_param_load()` 之前调用 `load_param()` —— 此刻尚无加载上下文。
+     *
+     * @note 该形态由 change `cpptlm-module-param-migrate-batch2` 的 T0.1 引入
+     *       （design D-2.3）：**基类 `enforce` 必须晚于模块自读**，
+     *       否则模块自己声明的键会被误判为「未知参数」。
+     */
+    void begin_param_load(const json& params) {
+        config_ = params;
+        // 参数加载上下文：引用本实例的 config_ 副本（生命周期与实例一致，不悬垂）
+        param_ctx_.begin(config_, name, !param_flat_scope_);
+        param_flat_scope_ = false;
+    }
+
+    /**
+     * @brief 参数加载的**第 ③ 段**：执行「准入判定 + 未知键失败」
+     *
+     * @see begin_param_load()（成对使用）
+     */
+    void end_param_load() {
+        enforce_param_contract();
     }
 
 public:

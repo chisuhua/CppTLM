@@ -354,11 +354,13 @@ bool ModuleFactory::instantiateAll(const json& config) {
     //   + `CMakeLists.txt:70-72`）⇒ Release / CI 默认构建下连日志都没有。这正是
     //   `ADR-X.17`「读取即声明」在**类型面**的缺口。
     //
-    // ⛔ 不提供 `--strict` 开关：嵌套路径会丢弃本函数的返回值（`SimModule::simulate_instantiate`）
+    // ⛔ 不提供 `--strict` 开关：嵌套路径此前会丢弃本函数的返回值
     //   ⇒ 开关救不了;而给了开关就留下「非严格模式即可」的叙事出口（同 `kCompositeOnly` 的
     //   做法：直接 return false，无开关）。
-    // ⚠️ 只扫**顶层** `modules[]` —— 嵌套传播归 `cpptlm-module-param-migrate-batch2`
-    //   （本 change 的 AC-08 `blocked-by`）⇒ ⛔ 不碰 `simulate_instantiate` 签名。
+    // ✅ **嵌套传播已由 `cpptlm-module-param-migrate-batch2` 的 T0.2 落地**
+    //   （`SimModule::simulate_instantiate` 现经 `instantiate_succeeded()` 上报失败，
+    //    由 Step 4.5 向上传播）⇒ 嵌套层的同一检查由内层
+    //   `internal_factory->instantiateAll()` 的同一次预扫描覆盖（每层工厂各扫自己那层）。
     // ⚠️ 零类型名硬编码 —— 判据只查运行时注册表（⛔ 不引入第二份类型白名单）。
     if (final_config.contains("modules") && final_config["modules"].is_array()) {
         auto& obj_registry = ModuleFactory::getObjectRegistry();
@@ -551,6 +553,13 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 if (f.is_open()) {
                     json internal_cfg = json::parse(f);
                     sim_mod->instantiate(internal_cfg);
+                    if (!sim_mod->instantiate_succeeded()) {
+                        // ⚠️ 嵌套装配失败 ⇒ 向上传播（change C2 T0.2）
+                        std::fprintf(stderr,
+                                     "[ModuleFactory] ERROR: nested assembly failed for module '%s'\n",
+                                     name.c_str());
+                        return false;
+                    }
                 } else {
                     DPRINTF(MODULE, "[ERROR] Cannot open config: %s\n", config_file.c_str());
                 }
@@ -577,9 +586,20 @@ bool ModuleFactory::instantiateAll(const json& config) {
             continue;
         try {
             sim->simulate_instantiate(mod);
+            if (!sim->instantiate_succeeded()) {
+                // ⚠️ 嵌套装配失败 ⇒ 向上传播（change C2 T0.2 / design D-4）
+                //    此前 `simulate_instantiate` 丢弃 `instantiateAll` 的返回值
+                //    ⇒ 嵌套实例的必填声明即使执行了，失败也不会让外层返回 false。
+                std::fprintf(stderr,
+                             "[ModuleFactory] ERROR: nested assembly failed for module '%s'\n",
+                             name.c_str());
+                return false;
+            }
         } catch (const std::exception& e) {
             DPRINTF(MODULE, "[ERROR] simulate_instantiate failed for '%s': %s\n", name.c_str(),
                     e.what());
+            std::fprintf(stderr, "[ModuleFactory] ERROR: simulate_instantiate failed for '%s': %s\n",
+                         name.c_str(), e.what());
             return false;
         }
     }

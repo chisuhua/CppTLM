@@ -290,6 +290,14 @@ TEST_CASE("SimModule 2-level runtime nesting: both layers activated", "[simmodul
 //        会触发 pre-existing ChStream 端口共享 bug: 响应只发往最后一个连接
 //        的 CPU. 此限制非 SimModule 嵌套相关, 属于底层 ChStream 行为.
 // =====================================================================
+// ⚠️ 连接只写**请求方向**（`src.req_out → dst.req_in`）—— 连接解析器
+//    （`src/core/module_factory.cc` Step 7b）会**自动派生**对应的
+//    `dst.resp_out → src.resp_in` 响应路径。
+//    ⛔ 不要显式写 resp 连接：它会被当作**请求方向**解析（端口角色矩阵按
+//    `req_out`/`req_in` 定义）⇒ 被 `check_port_compatibility` 判为不兼容。
+//    这两个用例原先各显式写了 2 条 resp 连接（冗余）——
+//    T0.2 的嵌套失败传播把它们暴露出来（此前被静默吞掉）。
+// =====================================================================
 TEST_CASE("SimModule CpuCluster E2E: cpu0 receives response after 100 cycles", "[simmodule]") {
     registerSimModuleTypes();
     EventQueue eq;
@@ -308,9 +316,7 @@ TEST_CASE("SimModule CpuCluster E2E: cpu0 receives response after 100 cycles", "
                 ],
                 "connections": [
                     {"src": "cpu0.req_out",  "dst": "cache.req_in",  "latency": 1},
-                    {"src": "cache.req_out", "dst": "mem.req_in",    "latency": 1},
-                    {"src": "mem.resp_out",  "dst": "cache.resp_in", "latency": 1},
-                    {"src": "cache.resp_out","dst": "cpu0.resp_in",  "latency": 1}
+                    {"src": "cache.req_out", "dst": "mem.req_in",    "latency": 1}
                 ]
             }
         ],
@@ -357,9 +363,7 @@ TEST_CASE("SimModule CpuCluster outputs exposed-port wiring", "[simmodule]") {
                 ],
                 "connections": [
                     {"src": "cpu0.req_out",   "dst": "cache.req_in",   "latency": 1},
-                    {"src": "cache.req_out",  "dst": "mem.req_in",     "latency": 1},
-                    {"src": "mem.resp_out",   "dst": "cache.resp_in",  "latency": 1},
-                    {"src": "cache.resp_out", "dst": "cpu0.resp_in",   "latency": 1}
+                    {"src": "cache.req_out",  "dst": "mem.req_in",     "latency": 1}
                 ],
                 "outputs": [
                     {"internal": "cpu0.req_out",  "external": "cpu0_to_bus"}

@@ -52,6 +52,17 @@ protected:
     // 子类需要访问 internal_factory 以遍历子模块 (CpuCluster::tick 等)
     std::unique_ptr<ModuleFactory> internal_factory;
 
+    /// 上一次 `simulate_instantiate` 是否成功（幂等守卫的第二个条件）
+    ///
+    /// ⚠️ 失败路径下 `internal_factory` 可能**部分填充**（design D-4 裁决：失败不做回滚）
+    /// ⇒ 仅看「已 populate」会把「失败」误判为「已完成」⇒ 后续重试被静默吞掉。
+    bool instantiate_ok_ = false;
+
+    /// 幂等守卫判定：已 populate **且**上次成功 ⇒ 可短路
+    bool already_instantiated() const {
+        return internal_factory && !internal_factory->getAllInstances().empty() && instantiate_ok_;
+    }
+
 private:
     json config;
 
@@ -75,12 +86,34 @@ public:
         simulate_instantiate(cfg);
     }
 
+    /// 上一次 `simulate_instantiate` 是否成功（**失败传播的读取口**）
+    ///
+    /// ⚠️ 调用方必须在本方法返回后检查本值 —— `ModuleFactory::instantiateAll`
+    ///    Step 4.5 已接入（失败 ⇒ 整体 false）。
+    bool instantiate_succeeded() const { return instantiate_ok_; }
+
     // ========================
     // 模拟激活入口 (v2.2 新增): 幂等守卫 + 限深检查 + 递归激活子 SimModule
+    //
+    // ⚠️ **失败必须可被上层观测**（change `cpptlm-module-param-migrate-batch2`
+    //    T0.2 / design D-4）：此前本方法**丢弃** `internal_factory->instantiateAll()`
+    //    的返回值 ⇒ 嵌套实例的必填声明即使执行了，失败也不会让外层 `instantiateAll`
+    //    返回 false ⇒ 嵌套路径上的参数校验形同虚设。
+    //
+    // **失败通道用成员而非返回值**（design D-4 的第二个方案）：
+    //   `simulate_instantiate` 的签名被 CEP 冻结面锁定
+    //   （`include/tlm/pcie/pcie_endpoint_ip.hh` 的 `override` 声明属
+    //    `INV-CEP-07-IC5` 的 4 个 frozen headers 之一，零 diff 硬约束）
+    //   ⇒ 返回值从 `void` 改 `bool` 会让该 override 失配 ⇒ 编译失败。
+    //   ⇒ 用 `instantiate_ok_` 成员 + `instantiate_succeeded()` 读取口，
+    //     语义等价且**零签名变更**。
     // ========================
     virtual void simulate_instantiate(const json& cfg) {
-        // 幂等守卫:已 populate 则不重复构造 (只触发子 SimModule 递归激活)
-        if (internal_factory && !internal_factory->getAllInstances().empty()) {
+        // 幂等守卫:已 populate **且**上次成功 ⇒ 短路（只触发子 SimModule 递归激活）
+        // ⚠️ 判定是「已 populate **且**上次成功」而非仅「已 populate」——
+        //    失败路径下 internal_factory 可能**部分填充**（design D-4 裁决：失败不做回滚），
+        //    仅看「已 populate」会把「失败」误判为「已完成」⇒ 后续重试被静默吞掉。
+        if (already_instantiated()) {
             return;
         }
         ++depth_;
@@ -92,20 +125,37 @@ public:
                 + std::to_string(depth_) + " (path: " + buildDepthPath() + ")");
         }
         config = cfg;
-        if (!internal_factory->instantiateAll(config)) {
-            DPRINTF(MODULE, "[ERROR] SimModule '%s' instantiation failed: schema validation error\n", name.c_str());
+        bool ok = true;
+        // 装配本级内联的子模块。
+        // ⚠️ **仅当本条目确实内联了 `modules` 时才装配** —— 否则 `instantiateAll()`
+        //    会因顶层缺 `modules`/`connections` 而在 `validateConfig` 处失败，
+        //    那不是「嵌套装配失败」而是「本级没有嵌套拓扑」的正常形态。
+        // ⚠️ 内层工厂需要**顶层形态**的 config（`modules` + `connections`）——
+        //    module entry 只保证有 `modules`，`connections` 缺失时补空数组。
+        if (cfg.contains("modules") && cfg["modules"].is_array() && !cfg["modules"].empty()) {
+            json inner = cfg;
+            if (!inner.contains("connections")) inner["connections"] = json::array();
+            if (!internal_factory->instantiateAll(inner)) {
+                DPRINTF(MODULE, "[ERROR] SimModule '%s' instantiation failed: nested assembly error\n",
+                        name.c_str());
+                ok = false;
+            }
         }
         parsePortConfigs(cfg);
         // 递归激活内部 SimModule 子模块
-        if (cfg.contains("modules")) {
+        if (cfg.contains("modules") && cfg["modules"].is_array()) {
             for (auto& child_cfg : cfg["modules"]) {
                 if (!child_cfg.contains("name")) continue;
                 auto* child = internal_factory->getInstance(child_cfg["name"]);
                 if (auto* sub = dynamic_cast<SimModule*>(child)) {
                     sub->simulate_instantiate(child_cfg);
+                    if (!sub->instantiate_succeeded()) {
+                        ok = false;
+                    }
                 }
             }
         }
+        instantiate_ok_ = ok;
     }
 
     const std::vector<ExposedPortConfig>& getOutputConfigs() const { return output_configs; }

@@ -18,10 +18,14 @@ namespace cpptlm::tlm {
 
     void TpcCluster::simulate_instantiate(const nlohmann::json& cfg) {
         // 幂等守卫: 防双激活二次生成覆盖 instances map 泄漏第一批子树 (fix-asan 根因 2)。
-        if (!internal_factory->getAllInstances().empty()) {
+        // ⚠️ 判定含「上次成功」——失败路径下 internal_factory 可能部分填充 (design D-4)。
+        if (already_instantiated()) {
             return;
         }
         SimModule::simulate_instantiate(cfg);
+        if (!instantiate_succeeded()) {
+            return;
+        }
         if (cu_template_path_.empty()) {
             throw std::runtime_error("TpcCluster: cu_template must be set");
         }
@@ -35,7 +39,7 @@ namespace cpptlm::tlm {
         nlohmann::json compute_grp_cfg;
         compute_grp_cfg["modules"] = nlohmann::json::array({compute_grp_entry});
         compute_grp_cfg["connections"] = nlohmann::json::array();
-        internal_factory->instantiateAll(compute_grp_cfg);
+        instantiate_ok_ = internal_factory->instantiateAll(compute_grp_cfg);
     }
 
 } // namespace cpptlm::tlm

@@ -45,7 +45,8 @@ namespace cpptlm::tlm {
     }
 
     void ApuSoC::simulate_instantiate(const nlohmann::json& cfg) {
-        if (internal_factory && !internal_factory->getAllInstances().empty()) {
+        // ⚠️ 判定含「上次成功」——失败路径下 internal_factory 可能部分填充 (design D-4)。
+        if (already_instantiated()) {
             return;
         }
 
@@ -67,7 +68,7 @@ namespace cpptlm::tlm {
             wrap["modules"].push_back(wrap_template_as_module(tmpl, "gpu", "GpuCluster"));
         }
 
-        internal_factory->instantiateAll(wrap);
+        bool ok = internal_factory->instantiateAll(wrap);
 
         if (cfg.contains("modules")) {
             for (auto& child_cfg : cfg["modules"]) {
@@ -76,9 +77,13 @@ namespace cpptlm::tlm {
                 auto* child = internal_factory->getInstance(child_cfg["name"]);
                 if (auto* sub = dynamic_cast<SimModule*>(child)) {
                     sub->simulate_instantiate(child_cfg);
+                    if (!sub->instantiate_succeeded()) {
+                        ok = false;
+                    }
                 }
             }
         }
+        instantiate_ok_ = ok;
     }
 
     void ApuSoC::incorporate_parent(SimModule* /*parent*/) {

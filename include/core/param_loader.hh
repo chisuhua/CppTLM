@@ -264,6 +264,82 @@ bool load_param_optional(ParamLoadContext& ctx, std::string_view key, T& target,
 }
 
 /**
+ * @brief 解析一个地址字符串（十进制或 `0x` 前缀十六进制）
+ *
+ * ⚠️ 存在的理由同 `parse_size_bytes`：地址**不能**由 `load_param` 单一承载 ——
+ * 配置管线的 `VarResolver`（`include/utils/var_resolver.hh` 的 `strtod` 分支）会把
+ * **数字形态的字符串**（含 `"0x1000"`）转成 JSON **浮点数**（`4096.0`）
+ * ⇒ 同一键在配置里有两种 JSON 类型（string / float）⇒ `load_param` 的单一类型检查
+ * 会把合法的 `0x` 写法拒掉。
+ *
+ * @param module_name 出错时进错误信息的模块名
+ * @param key         出错时进错误信息的参数键名
+ * @param s           待解析文本
+ * @return 地址
+ *
+ * ⛔ 失败抛 `ParamValidationError`（不静默回退默认值）。
+ */
+inline uint64_t parse_addr_text(const std::string& module_name, const std::string& key,
+                                const std::string& s) {
+    auto fail = [&]() {
+        throw ParamValidationError(
+            module_name, key,
+            key + ": invalid address '" + s +
+                "' (expected a non-negative integer, decimal or 0x-prefixed hex)");
+    };
+    if (s.empty() || s[0] == '-') fail();
+    try {
+        std::size_t pos = 0;
+        const unsigned long long v = std::stoull(s, &pos, 0);
+        if (pos != s.size()) fail();
+        return static_cast<uint64_t>(v);
+    } catch (const ParamValidationError&) {
+        throw;
+    } catch (const std::exception&) {
+        fail();
+    }
+    return 0; // ⛔ 不可达（fail() 必抛）
+}
+
+/**
+ * @brief 读取一个**地址型**参数的 JSON 值（接受数字 / 浮点 / 字符串三种形态）
+ *
+ * `VarResolver` 会把 `"0x1000"` 转成 `4096.0`（浮点）⇒ 地址键必须接受 float，
+ * 且**只接受整数值**的 float（`4096.5` ⇒ 失败，不静默截断）。
+ *
+ * @param module_name 出错时进错误信息的模块名
+ * @param key         出错时进错误信息的参数键名
+ * @param v           配置里的 JSON 值
+ * @return 地址
+ */
+inline uint64_t parse_addr_json(const std::string& module_name, const std::string& key,
+                                const nlohmann::json& v) {
+    if (v.is_number_unsigned()) return v.get<uint64_t>();
+    if (v.is_number_integer()) {
+        const long long i = v.get<long long>();
+        if (i < 0) {
+            throw ParamValidationError(
+                module_name, key,
+                key + ": expected a non-negative address, got " + std::to_string(i));
+        }
+        return static_cast<uint64_t>(i);
+    }
+    if (v.is_number_float()) {
+        const double d = v.get<double>();
+        if (d < 0 || d != static_cast<double>(static_cast<uint64_t>(d))) {
+            throw ParamValidationError(
+                module_name, key,
+                key + ": expected a non-negative integral address, got " + v.dump());
+        }
+        return static_cast<uint64_t>(d);
+    }
+    if (v.is_string()) return parse_addr_text(module_name, key, v.get<std::string>());
+    throw ParamValidationError(
+        module_name, key,
+        key + ": expected an address (number or 0x-prefixed string), got " + v.dump());
+}
+
+/**
  * @brief 解析带单位的大小（`"512KB"` / `"2GB"` / `"4096B"`;KB/MB/GB 按 1024 进制）
  *
  * 与 `load_param` 分开的原因：带单位的大小**不能**用 JSON 数字表达（`"2GB"` 是字符串），

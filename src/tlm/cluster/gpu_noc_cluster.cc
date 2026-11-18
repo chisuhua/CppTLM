@@ -14,10 +14,14 @@ namespace cpptlm::tlm {
 
     void GpuNoC::simulate_instantiate(const nlohmann::json& cfg) {
         // 幂等守卫: 同根因 as 4 cluster fix (PR #27), 当前无活路径触发, 防御性补齐。
-        if (!internal_factory->getAllInstances().empty()) {
+        // ⚠️ 判定含「上次成功」——失败路径下 internal_factory 可能部分填充 (design D-4)。
+        if (already_instantiated()) {
             return;
         }
         SimModule::simulate_instantiate(cfg);
+        if (!instantiate_succeeded()) {
+            return;
+        }
         nlohmann::json full_config = {{"modules", nlohmann::json::array()},
                                       {"connections", nlohmann::json::array()}};
         int n = mesh_size_ * mesh_size_;
@@ -31,7 +35,7 @@ namespace cpptlm::tlm {
                                                 {"mesh_y", mesh_size_},
                                                 {"routing", routing_}}}});
         }
-        internal_factory->instantiateAll(full_config);
+        instantiate_ok_ = internal_factory->instantiateAll(full_config);
     }
 
 } // namespace cpptlm::tlm

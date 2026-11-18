@@ -17,6 +17,9 @@ namespace tlm::cluster {
     void GpuInternalFabric::simulate_instantiate(const nlohmann::json& cfg) {
         // 基类 instantiateAll + 递归子 SimModule (line 81-109 sim_module.hh)
         SimModule::simulate_instantiate(cfg);
+        if (!instantiate_succeeded()) {
+            return;
+        }
 
         // 幂等守卫: T22b 直接 C++ attach_crossbar 已调 → crossbar_ 非空, 不覆盖
         if (crossbar_ != nullptr) {
