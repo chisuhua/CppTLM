@@ -25719,3 +25719,73 @@ test cases:  5 |  0 passed | 5 failed
 D-1 表删三行（C1 `design.md`）· R-5 `tasks.md` T1.3/T1.4 补生成器漂移键 · C1 `tasks.md` T7.2 与 C2 `tasks.md` T8.7 改「7 处」· C2 T3.1 加机械前置命令 · C2 T2.3 / design D-6 消解与 C1 的矛盾 · `scripts/test/` 下的 `rddf_stage_gate.sh`（**待建**） + ctest 注册（§1.5.6 P-1~P-6）。
 
 **关联**:册子 `obj-cep-platform-remaining.md` §0.1 / §1.5 / §1.5.5 / §1.5.6 / §2 波 0 / §3 Q-4~Q-7 · Entry #482（本规划初版）· Entry #481（设计类型归档）
+
+### Entry #484 — 2026-11-18 [builder](**C1 阶段 A 全部实施完成** —— B2 剩余 12 键全处置 + B3 `routing` 态③ + 门禁落地;待独立验收)
+
+**范围**：change `cpptlm-module-param-effect-landing` 的阶段 A（A0~A4），按册子 `obj-cep-platform-remaining.md` §1.5.2 的修订后序列执行。用户 2026-11-18 拍板 Q-4 ② / Q-5 ③ / Q-7 ① 后开工。
+
+### A0 — critic 的 BLOCKER 1 闭合 + 顺序机关
+
+| 项 | 内容 |
+|---|---|
+| D-1 表删三行 | `GPUTLM`(4) · `MemoryClusterTLM`(2) · `SharedMemoryTLM`(2) —— 随类型归档移除（Entry #481）⇒ 统计 **17→14 类 / 42→34 对**;逐行注记（⛔ 不泛化豁免） |
+| **AC-01 改判** | 实测暴露：D-1 表（**零效果族登记口径**）与盘点脚本（**当前有无读面口径**）**天然不同** —— 本 change 的处置本身给多数类型**新增了读面**（`on_config_loaded` 的态② 拒绝路径）⇒ 脚本自然不再算它们零读面（实测 `no_read_surface_type_count = 3` vs D-1.2 的 11 类）⇒ **数字直比恒不成立**。新判据 = D-1 表每个类型 ∈ 脚本 `rows[].type` ∪ `undefined_types`（可机械判定） |
+| **顺序机关** | 新增 `scripts/test/rddf_stage_gate.sh`（P-1~P-6）+ 载体表 `scripts/test/rddf_ac_carrier.tsv` + ctest 注册 `rddf_stage_gate`。⚠️ 开发中门禁**两次抓到真问题**（P-1 锚点写错 / P-2a 用 change 目录判据误伤「改 C2 的 tasks」）⇒ 判据已收紧为「**实现面文件**」 |
+
+### A2a — 7 键落态②
+
+| 类型 | 键 | 依据 |
+|---|---|---|
+| `PcieControllerIP` | `bar_bases` · `bar_sizes` · `link_speed_gts` | stateless facade **有意**从 `PcieEndpointIP::bar_sizes_` 动态读（no static snapshot）⇒ 零消费面;⚠️ **同名不同语义**（板级读 **`pcie_ep` 节点**）⇒ **逐节点分清**，⛔ 不按键名一刀切。**D-3 的类型内互斥在本类不触发** |
+| `StreamingMultiprocessorTLM` | `execution_latency` · `warp_size` | 前者全仓零概念（延迟由 12 子模块模型决定）;后者**不是**该类成员（只在 `GpuTopologyParams` 这一另一结构里） |
+| `CoherentXBarTLM` | `domain_protocol` · `snoop_filter` | 无协议状态机（`snoop_broadcast()` 无条件 write-through，per ADR-CEP-15 协议语义边界冻结）;无 filter（ArchForge `snoop_filter.md` 标「🟡 规划中」）。⚠️ 覆写**必须调基类**（否则继承的 `ports`/`port_count` 拒绝失效） |
+
+### A2b / A2c — 态① ×5 + 态③ ×1
+
+| 类型 | 键 | 态 | 关键点 |
+|---|---|:--:|---|
+| `GpuMeshNoC` | `dim` · `hops_latency` | ① | 两成员**真被** `route_latency()` / `d2d_forward_payload()` 读;判别测试用**既有** `last_transfer_latency_cycles()`（⛔ 不造观测面） |
+| `CPUTLM` | `start_addr` · `request_interval` | ① | 两成员真被运行期读（`:87` 窗口 / `:90` timer 取模）;⚠️ **必须同步 `cur_addr_`**（否则首请求仍用旧默认地址 = 配置被静默忽略） |
+| `CPUTLM` | `pattern` | ③ | 合法值**唯一**（`SEQUENTIAL`）—— 本类只有线性扫描;⚠️ 别与 `TrafficGenTLM.pattern`（4 种模式）混 |
+
+**实测**：`CPUTLM` 接上后**未打破任何既有测试**（metis 曾估会打破若干断言 ⇒ 实测 3 个 C++ 用例零地址断言、python 侧断的是配置内容不随接线变红）。
+
+### A3 — `RouterTLM.routing` 态③
+
+- **移除** `ignore_param("routing")` 长期豁免（`ADR-X.17` D-3b 明禁）⇒ 改为读入 + 校验 ∈ {`"XY"`} + 非法值失败（含键名 + 合法值集合）
+- ⚠️ 实测 `routing` 在 `configs/` **零命中**（只由 `GpuNoC::simulate_instantiate` 运行时生成，取值恒 `"XY"`）⇒ 拒绝路径在真实配置上不触发，但手写拼错会被挡住
+
+### ⚠️ 连带修掉：生成器漂移（oracle 断裂 A 的实证）
+
+重跑生成器后发现它仍在 emit **已态②** 的键 ⇒ `apu_soc_full.json` **装配失败**（`test_param_alignment:129`）：
+- `CacheTLM.protocol`（`generate_apu_soc.py`）
+- `MemoryTLM.read_latency` / `write_latency` / `type`
+- `CoherentXBarTLM.snoop_filter` / `domain_protocol`
+
+⇒ 生成器停发这些键 + 重跑两个生成器。**这正是 R-5 的 AC-05「重跑生成器 ⇒ `git diff --exit-code configs/` 为空」会爆炸的同一根因**（册子 B2 已登记）。
+
+### T7.5 残留清点
+
+| 检查项 | 结果 |
+|---|---|
+| TODO / FIXME / 临时日志 | **零命中** |
+| 被 skip 的测试 | **零命中** |
+| 未替换的 mock / 临时 fallback | **零命中** |
+| `ignore_param` 活调用 | **4 处**（`TrafficGenTLM.start_addr`/`end_addr` · `hotspot_addrs`/`hotspot_weights` · `GmmuTLM.tlb_size`/`tlb_miss_latency_cycles`）—— ⚠️ 全部为**台账表 A** 的合规登记（「已消费但**不经** `load_param`」，消费方已逐键标注：模块内 `read_addr_key()` / `parse_hotspot()` / 板级 `dgpu_board_shell.cc:1056-1057`），**不是** D-3b 禁止的长期掩盖 |
+
+### 验证（全绿）
+
+| 面 | 实测 |
+|---|---|
+| `cpptlm_tests` | **883279 / 2379**（B1 基线 883191 / 2371 ⇒ +88 断言 / +8 case） |
+| `pytest` | **232 passed** |
+| `ctest` | **182 / 182**（含新增 `rddf_stage_gate`） |
+| 五闸 | `agents_md_lint` · `docs_sync_check --strict` · `cep_docs_sync_check` · `cep_doc_ref_check` · `rddf_stage_gate`（**0 项跳过**） |
+
+### 剩余（T7.3 / T7.4 / T7.2）
+
+- **T7.4 独立验收**（切 verifier;AC-01~AC-09 + G-1/G-2 逐条取证）← **下一步**
+- **T7.3** spec delta 合并（`openspec archive`，⛔ 不用 `--skip-specs`）+ 新 main spec 的 Purpose 手写
+- **T7.2** KPI 回填（**7 处**，含 `AGENTS.md`）
+
+**关联**：册子 `obj-cep-platform-remaining.md` §1.5.2 · Entry #481（类型归档）· #482/#483（规划 + 审查）· `scripts/test/rddf_ac_carrier.tsv`（AC 载体映射）

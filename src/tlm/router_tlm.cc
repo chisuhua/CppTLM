@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
+#include <string>
+#include "core/param_errors.hh"
 #include "core/sim_core.hh"
 
 namespace tlm {
@@ -84,7 +86,25 @@ namespace tlm {
         // ⛔ 修复它（把 routing 接入算法选择）属独立 change；此处只做**显式**登记，
         //    使未知键检查不被这条既存缺陷拖红（见 docs/implementation/module-param-baseline.md 表
         //    B）。
-        ignore_param("routing");
+        // ── `routing` ⇒ **态③ 显式拒绝（伪参数）**（2026-11-18，用户拍板 Q-5 ③）──
+        // 该键的**合法值唯一**（"XY"）—— RouterTLM 目前只有 `XYRouting` 一种算法
+        // （见本文件 :54 的 `routing_algo_ = std::make_unique<XYRouting>()`），且该键由
+        // `GpuNoC::simulate_instantiate` 的内部配置生成（`src/tlm/cluster/gpu_noc_cluster.cc`，
+        // 取值恒为 "XY"）⇒ 它的价值是「**挡住拼错**」而非「选行为」（`ADR-X.17` D-2 态③）。
+        // ⚠️ 本处置**取代**此前的 `ignore_param("routing")` 长期豁免 ——
+        //    `ADR-X.17` D-3b 明禁「用 `ignore_param` 长期掩盖」。
+        // ⚠️ 实测 `routing` 在 `configs/` **零命中**（只由上述运行时生成）⇒ 本拒绝路径
+        //    在真实配置上不会触发;但一旦有人**手写**进配置，拼错会被立刻挡住。
+        {
+            std::string routing = "XY";
+            load_param_opt("routing", routing);
+            if (routing != "XY") {
+                throw cpptlm::ParamValidationError(
+                    name, "routing",
+                    "routing: only \"XY\" is supported (legal value set: {\"XY\"}); "
+                    "RouterTLM currently has a single routing algorithm");
+            }
+        }
 
         // ── credit 预算与缓冲深度同源（ADR-X.17 D-3 的「SHALL NOT 清除外部状态」）──
         // ⚠️ 仅在深度**实际变化**时重算：流量已发生后的二次加载不得刷新已消耗额度

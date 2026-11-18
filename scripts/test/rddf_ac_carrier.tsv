@@ -30,5 +30,5 @@ AC-04	test	test/test_param_effect_landing.cc	AC-04: CoherentXBarTLM 两键
 AC-05	test	test/test_param_effect_landing.cc	AC-05: CPUTLM.pattern
 AC-06	cmd	./build/bin/cpptlm_tests	--list-tests
 AC-07	doc	docs/implementation/module-param-baseline.md	表 B
-AC-08	TODO	-	-
+AC-08	test	test/test_param_effect_landing.cc	AC-08: RouterTLM.routing
 AC-09	cmd	./build/bin/cpptlm_tests	[effect]

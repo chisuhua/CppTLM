@@ -41,6 +41,7 @@
 #include "tlm/lwc/lwc_bus_hub.hh"
 #include "tlm/memory_tlm.hh"
 #include "tlm/pcie/pcie_controller_ip.hh"
+#include "tlm/router_tlm.hh"
 #include "tlm/traffic_gen_tlm.hh"
 #include "tlm/vram_controller_tlm.hh"
 
@@ -963,4 +964,29 @@ TEST_CASE("AC-02: CPUTLM.start_addr / request_interval ⇒ 态①（真被运行
 
     CHECK(fast.req_out().data().transaction_id.read() >
           slow.req_out().data().transaction_id.read());
+}
+
+TEST_CASE("AC-08: RouterTLM.routing ⇒ 态③（合法值唯一 XY，非法值必须失败）",
+          "[param][effect][router][state3]") {
+    EventQueue eq;
+    // ⚠️ RouterTLM 的 `node_x` / `node_y` / `mesh_x` / `mesh_y` 是**必填** ⇒ 基准配置须带它们
+    auto base = [] { return json{{"node_x", 0}, {"node_y", 0}, {"mesh_x", 2}, {"mesh_y", 2}}; };
+
+    // 态③ 判据：合法值通过 / 缺省通过 / 非法值失败（错误含键名 + 合法值集合）
+    tlm::RouterTLM ok("r_ok", &eq);
+    {
+        auto c = base();
+        c["routing"] = "XY";
+        CHECK_NOTHROW(ok.set_config(c));
+    }
+
+    tlm::RouterTLM none("r_none", &eq);
+    CHECK_NOTHROW(none.set_config(base()));
+
+    tlm::RouterTLM bad("r_bad", &eq);
+    {
+        auto c = base();
+        c["routing"] = "YX";
+        expect_param_error([&] { bad.set_config(c); }, "routing");
+    }
 }

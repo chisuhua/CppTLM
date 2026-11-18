@@ -20,7 +20,7 @@
 |---|---|---|---|
 | `start_addr` / `end_addr` | `TrafficGenTLM` | 模块内 `read_addr_key()`（非 `load_param`） | 配置管线 `VarResolver`（`include/utils/var_resolver.hh` 的 `strtod` 分支）会把**数字形态字符串**（含 `0x1000`）转成 JSON 数字 ⇒ 同一键有两种 JSON 类型 ⇒ `load_param` 的单一类型检查不适用；键已 `ignore_param` 显式登记（`traffic_gen_tlm.hh`） |
 | `hotspot_addrs` / `hotspot_weights` | `TrafficGenTLM` | 模块内 `parse_hotspot()`（非 `load_param`） | **非标量**（数组）⇒ 不由 `load_param` 承载（`ADR-X.17` D-2）；键已 `ignore_param` 显式登记 |
-| `tlb_size` / `tlb_miss_latency_cycles` | `GmmuTLM` | **板级直读** | `dgpu_board_shell.cc:1056-1057` 直接调 `set_tlb_size` / `set_timing_params`;模块内 `ignore_param` 显式登记（`gmmu_tlm.hh` on_config_loaded） |
+| `tlb_size` / `tlb_miss_latency_cycles` | `GmmuTLM` | **板级直读**（⚠️ 本表 = 「已消费但**不经** `load_param`」的合规登记，**不是** `ADR-X.17` D-3b 禁止的「长期掩盖」—— 消费方已逐键标注） | `dgpu_board_shell.cc:1056-1057` 直接调 `set_tlb_size` / `set_timing_params`;模块内 `ignore_param` 显式登记（`gmmu_tlm.hh` on_config_loaded） |
 
 **未来准入时必须先登记到本表的键**（来自 ADR-X.17 F-15 的板级直读路径
 `src/tlm/gpu/dgpu_board_shell.cc`）：
@@ -50,7 +50,7 @@
 | B-3 | `page_size_bytes` | `GmmuTLM` | 改动前 `contains` 分支体为空,实际恒用 `constexpr 4096` | **已消费**（`gmmu_tlm.hh` 的 `set_page_size_bytes` 替换 `constexpr`;2 的幂且 ≥ 4096 否则装配失败） |
 | B-4 | `max_ip_ports` | `LwcBusHub` | 改动前该类零配置读取面,上限恒为编译期 `kMaxIpPorts = 32` | **已消费**（`lwc_bus_hub.hh` 的 `max_ip_ports_`,作用于 `register_cr_target` / `register_doorbell_target` 上限判断） |
 | B-5 | `size` / `type` / `read_latency` / `write_latency` / `mem_type` | `MemoryTLM` | 改动前只读 `capacity_gb`；`size`/`type` 由 `memory_cluster.cc:28` 生成 | **`size` / `read_latency` / `write_latency` 已消费**（带单位解析 + hit/miss 同值语义数量化）;**`type` / `mem_type` 已停止产出**（态②：`reject_unsupported_key` ⇒ 配置写了即装配失败;`memory_cluster.cc` 不再生成 `type`） |
-| **B-6** | **`routing`** | **`RouterTLM`** | **本 change 的未知键检出机制暴露**：由 `GpuNoC::simulate_instantiate`（`src/tlm/cluster/gpu_noc_cluster.cc:26-31`）为每个内部 router 生成，但 `RouterTLM` 只有 `XYRouting` 一种算法 ⇒ 该键从未被消费（取值恒 `"XY"`） | **本 change 以 `ignore_param("routing")` 显式登记**（`src/tlm/router_tlm.cc` 的 `on_config_loaded`）；把 `routing` 接入算法选择属独立 change |
+| **B-6** | **`routing`** | **`RouterTLM`** | 由 `GpuNoC::simulate_instantiate`（`src/tlm/cluster/gpu_noc_cluster.cc:26-31`）为每个内部 router 生成，但 `RouterTLM` 只有 `XYRouting` 一种算法 ⇒ 合法值**唯一**（`"XY"`） | **已显式拒绝（态③，2026-11-18）** —— `on_config_loaded` 读入 + 校验 ∈ {`"XY"`} + 非法值失败（含键名 + 合法值集合）;⛔ **已移除** 此前的 `ignore_param("routing")` 长期豁免（`ADR-X.17` D-3b 明禁）。⚠️ 实测 `routing` 在 `configs/` 零命中 ⇒ 拒绝路径在真实配置上不触发 |
 | B-7 | `domain_protocol` / `snoop_filter` / `ports` | `CoherentXBarTLM` | 该类无配置读取面;`ports` 此前只被 `module_factory_validate.cc` 的 LINT007 读去做**越界告警**（值从不生效） | **`ports` 已显式拒绝**（2026-11-18 态②：端口数是编译期常量 `NUM_PORTS`）;`domain_protocol` / `snoop_filter` **仍待修**（B2 批次后续） |
 | B-8 | `dim` / `hops_latency` | `GpuMeshNoC` | 该类无配置读取面（只有 `set_dim` / `set_hops_latency` setter,无生产调用方传配置值） | 待修（B2 批次后续） |
 | B-9 | `operating_frequency_hz` | `VramControllerTLM` | 全仓零命中（其余 7 键由板级直读消费,见上表 A 的前瞻段） | **已显式拒绝**（2026-11-18 态②：频率是编译期锚点 `kOperatingFrequencyHz`，与 timing 契约双向绑定;做成运行时可配需「GB/s 带宽输入」这个尚不存在的面） |
