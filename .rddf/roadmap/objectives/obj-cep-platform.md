@@ -25675,3 +25675,47 @@ test cases:  5 |  0 passed | 5 failed
 **KPI**:无变化（本轮**未立新 change**）;3/3 满的状态由 §0.1 记录。
 
 **关联**:册子 `obj-cep-platform-remaining.md` §0.1 / §1.5 / §2 波 0 / §3 Q-4~Q-6 · Entry #481（设计类型归档）· Entry #480（R-5 立项）
+
+### Entry #483 — 2026-11-18 [planner](**规划审查与修订** —— oracle + metis → critic 三段审查;critic 判 **REJECT / mergeable: no**（3 BLOCKER）⇒ 已按审查修订)
+
+**审查链**（用户指定顺序）：`oracle`（对抗式：这份排期会在哪里坏）+ `metis`（gap 分析）→ `critic`（plan 档，7 字段契约）。
+**critic 结论**：`REJECT` · `mergeable: no` · `scope_exceeded: false` · **3 BLOCKER + 3 SHOULD_FIX + 2 NITS**。
+
+### 3 个 BLOCKER 与闭合
+
+| # | BLOCKER | 实测证据 | 闭合动作 |
+|:--:|---|---|---|
+| **B1** | **C1 的 AC-01 现在就是红的** | `proposal.md:57` AC-01 判据 =「D-1 表的类型数/键×类型对数与 `param_effect_inventory.py` 实测一致」，而 `design.md:27-33` 仍列 `GPUTLM`(4 键)·`MemoryClusterTLM`(2)·`SharedMemoryTLM`(2) —— 三者 `.hh` 已在 commit `39bca057` 删除、3 份配置也已删 ⇒ 脚本实测必不含 ⇒ **AC-01 必红** | ✅ **C1 `proposal.md` AC-01 已增补「已归档类型豁免」逐行条款**（planner 权限内）;⏭️ D-1 表**删三行**（17→14 类 / 42→34 对）属 builder 的活 ⇒ 已登记为册子 **A0** 子步 + 判据 `param_effect_inventory.py --json \| grep -c "GPUTLM\|MemoryClusterTLM\|SharedMemoryTLM"` = **0**（**现为 3 ⇒ 必红**） |
+| **B2** | **R-5 的 AC-07 永远不可达** | `proposal.md:101` 写「≥ **883336 / 2393**」，实测 **883242 / 2372**（差值来自归档删测试 −26 case + 新增判别 case）⇒ 按 proposal 原文 R-5 **不可能验收** | ✅ **R-5 `proposal.md` AC-07 已改写为「≥ 实施日重测基线」+ 内嵌重测命令**（⛔ 不写死数字）;册子新增 **B0** 子步 |
+| **B3** | **R-5 的 delta spec 宽于实现 ⇒ 默认 archive 冻错契约** | `spec.md:7` 原文「配置引用的**每一个**模块 `type`」**未限顶层**，而实现（`design.md:25,36`）**只扫顶层 `modules[]`**、嵌套归 C2 的 T0.2 ⇒ 默认 `openspec archive` 会把**未实现的嵌套能力**合进 main spec ⇒ 按 AGENTS.md「✅ 已完成归档 = 能力已在契约内」语义，**归档动作本身在撒谎** | ✅ **R-5 delta spec 的 Requirement 已收窄为「顶层 `modules[]`」** + 范围限定说明移入 Scenario（⚠️ 移入正文会触发 openspec 的「Requirement >500 字符」strict 告警）;册子 B5 增 BLOCKER 前置 + 风险 #7 |
+
+### SHOULD_FIX / NITS 的闭合
+
+| # | finding | 闭合 |
+|:--:|---|---|
+| S1 | 依赖边**无一条 `file:line`**;「顺序」只靠文风保证 | ✅ 依赖图每条箭头已补锚点（C1 `design.md:107`/`:125-127` · C2 `tasks.md:43` · R-5 `design.md:59`/`:62`）;✅ 新增 **§1.5.6 本规划自身的验收判据 P-1~P-6**（依赖边可验证 / 顺序由机关保证 / AC 可寻址 / 跨阶段判别力不丢 / KPI 回填非「改数字」 / 风险可失败）;✅ 修正过度陈述「C1 → C2 硬前置」→「**C1.B3 → C2.T3**」（C2 仅 T3 依赖 C1，且 B1 已完成 ⇒ 只剩 B3;串行是 risk-averse 选择，非机制约束） |
+| S2 | **KPI 活口径处数不一致** —— C1 T7.2 与 C2 T8.7 写「6 处」vs R-5 T6.2 写「7 处」 | ✅ 册子风险表增 **#6**（归档前以 `grep -rn "KPI\|3/3\|2/3" AGENTS.md` 实测处数 ⇒ 当前实测 **7 处**）;⏭️ 两个 tasks.md 的改写属 builder 的活 |
+| S3 | metis 的备选「C1 以 B1 完成态提前归档 + 19 task 移交 C2」—— **critic 判定不成立**，但否决理由须落盘 | ✅ 册子 §1.5.5 增「**已评估备选及否决理由**」表（三条理由：移交对象含签批级判据 ⇒ 同类撒谎归档 / B3 改入 C2 = change 边界修订须走显式流程 / `[~]` 不被 openspec task 状态机识别 ⇒ 归档目录显示未完成 task） |
+| N1 | A1 称「5 个失效 task」有误 | ✅ 订正为 **3 个失效**（`T2.4`/`T2.9`/`T2.10`）+ **2 个已移交 R-5**（`T2.3`/`T2.12`，零动作）;✅ 并注明失效 task 不可用 `[~]`（openspec 只认 `[ ]`/`[x]`） |
+| N2 | 「可并行」与 Q-6 建议①并存易误读 | ✅ 依赖图改注「**文件冲突面可接受**」+「⚠️ 但**实际不可并行**：单 worktree + `role-claims.json` 每 role 唯一 active claim ⇒ 不存在两个 builder ⇒ **不会发生 rebase**」（R-5 design D-4 的「先合并者 rebase」是理论表述）;✅ Q-6 删「并行」选项 |
+
+### oracle 的额外发现（metis 漏项，已并入）
+
+⚠️ **生成器漂移面比 R-5 自己的清单更大** —— R-5 T1.3 只列 `standard.py:187`、T1.4 只列 `ComputeUnitTLM`/`TCCTLM`，但实测**仍在 emit 已被 C1 判态②的键**：`examples/generate_apu_soc.py:98/102`（CacheTLM `protocol`）· `:117`（CoherentXBarTLM `snoop_filter`/`domain_protocol`）· `cpptlm/library/standard.py:176`（`memory_type`）`:185`（`mem_type`）⇒ **不补齐 ⇒ R-5 的 AC-05 必红** ⇒ 已登记到册子 B2。
+
+⚠️ **C2 的内部清单与 C1 落地结果矛盾** —— C2 T2.3 要求 `MemoryCluster.memory_type` 声明化，而 C1 已判态②**且成员已删**;C2 design D-6 把 `VramControllerTLM.operating_frequency_hz` 列为 ignore_param，而 C1 已落**显式拒绝** ⇒ 已登记到册子 C-a。
+
+⚠️ **嵌套失败信号被丢弃** —— `include/core/sim_module.hh:95-97` 只 `DPRINTF` 且仅 Debug 生效 ⇒ C1 的态②/态③ 拒绝在**嵌套配置**上不可观测（A2a 的 7 键正落在嵌套形态的类型上）⇒ 已登记到册子 A2a。
+
+⚠️ **`param-type-conversion` 的 Scenario 未同步** —— `openspec/specs/param-type-conversion/spec.md:50` 的 Requirement **已**正确（「转换 SHALL 在模块内完成」），但 **Scenario**（`:57`/`:62`）仍写「ModuleFactory SHALL convert ... before storing」⇒ 是 **Scenario 矛盾**（非双真值契约）;C2 change 内 `grep param-type-conversion` 零命中 ⇒ 已登记为册子 **C-d′**（判据 `grep -c "ModuleFactory SHALL convert" .../spec.md` = 0，现为 2）。
+
+### metis 的 1 条误判（经复核**不成立**，未采纳）
+
+❌ metis 称「`pattern` 有 `RANDOM` ⇒ 态③ 的『合法值唯一』不成立」—— 实测 `RANDOM` 那 5 处属 **`TrafficGenTLM`**（其 `pattern` 有 4 个值）;**`CPUTLM.pattern` 全部 14 处都是 `SEQUENTIAL`** ⇒ 态③ **成立**。
+⚠️ 同类：metis 称 `CPUTLM.start_addr` 影响「≥10 份 config / ≥20 处」—— 实测 **5 份配置 / 15 个实例**（4 份 example_emitter 家族 14 处 + `tlm_e2e_test.json` 1 处 = 默认值 ⇒ 零变化）。
+
+### 本轮**未**改动（属 builder 权限，已登记为待执行子步）
+
+D-1 表删三行（C1 `design.md`）· R-5 `tasks.md` T1.3/T1.4 补生成器漂移键 · C1 `tasks.md` T7.2 与 C2 `tasks.md` T8.7 改「7 处」· C2 T3.1 加机械前置命令 · C2 T2.3 / design D-6 消解与 C1 的矛盾 · `scripts/test/` 下的 `rddf_stage_gate.sh`（**待建**） + ctest 注册（§1.5.6 P-1~P-6）。
+
+**关联**:册子 `obj-cep-platform-remaining.md` §0.1 / §1.5 / §1.5.5 / §1.5.6 / §2 波 0 / §3 Q-4~Q-7 · Entry #482（本规划初版）· Entry #481（设计类型归档）

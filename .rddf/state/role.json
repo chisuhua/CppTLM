@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-18T08:24:27.797Z",
+  "updated_at": "2026-11-18T09:02:00.395Z",
   "updated_by": "user",
   "session_id": "ses_e12ab77b0ffeCo1J1LJkifL2SP",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-17T03:13:36Z",
-      "by": "user",
-      "reason": "per 用户指令「先把 cpptlm-nictlm-credit-flit-filter 立项成 openspec change(planner 起草四件套)」⇒ 建 change 目录 + proposal/design/tasks/specs + metis 审查 + KPI 0/3 -> 1/3 回填 + 台账 Entry。"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-17T03:29:03Z",
-      "by": "user",
-      "reason": "per 用户指令「给出 2 个需先决策/立项项(buffer_size、IC3 留痕闸)完整的背景和决策影响,和你的建议」⇒ 架构决策咨询域(调研 + 方案讨论,不落文档,待用户裁决)。"
-    },
     {
       "role": "planner",
       "at": "2026-11-17T03:34:20Z",
@@ -124,13 +112,25 @@
       "at": "2026-11-18T08:24:27.797Z",
       "by": "user",
       "reason": ""
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-18T09:00:01.882Z",
+      "by": "user",
+      "reason": ""
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-18T09:02:00.395Z",
+      "by": "user",
+      "reason": ""
     }
   ],
   "auto_switch_window": null,
   "sessions": {
     "ses_e12ab77b0ffeCo1J1LJkifL2SP": {
       "current_role": "builder",
-      "updated_at": "2026-11-18T08:24:27.797Z"
+      "updated_at": "2026-11-18T09:02:00.395Z"
     }
   }
 }

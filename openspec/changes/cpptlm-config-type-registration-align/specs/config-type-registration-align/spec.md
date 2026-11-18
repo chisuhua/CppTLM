@@ -4,7 +4,8 @@
 
 ### Requirement: config-type-registration-align
 
-配置（`configs/**`）引用的每一个模块 `type` SHALL 在**运行时注册表**（`ModuleFactory::getRegisteredTypes()`）中存在;若不存在，装配 SHALL **失败**并报出**类型名 + 实例名 + 来源文件**。
+配置**顶层 `modules[]`** 引用的每一个模块 `type` SHALL 在**运行时注册表**（`ModuleFactory::getRegisteredTypes()`）中存在;若不存在，装配 SHALL **失败**并报出**类型名 + 实例名 + 来源文件**。
+
 
 #### Scenario: 未注册类型 SHALL 使装配失败且报出类型名
 
@@ -13,6 +14,10 @@
 > ⛔ **不得**用「严格模式开关」弱化：开关救不了嵌套路径（`SimModule::simulate_instantiate` 丢弃返回值），且会给后人留下「非严格模式即可」的叙事出口 —— 与 `ADR-X.17`「⛔ 禁止用静默豁免长期掩盖」冲突。
 >
 > ⛔ **不得**引入第二份类型白名单：判据集合 SHALL 从**运行时注册表**派生（零源码解析、零硬编码类型名）。
+>
+> **范围限定（⚠️ 与实现对齐，2026-11-18 增补）**：本条**只覆盖顶层 `modules[]`**。
+> **为何必须限定**：当前实现（`src/core/module_factory.cc` 的 Step 0.3 预扫描）**只扫顶层** —— 内联嵌套 `modules`（SimModule 内的子模块）的失败传播由 `cpptlm-module-param-migrate-batch2` 的 **T0.2** 承接（`SimModule::simulate_instantiate` 改造）。⚠️ 若本条写成「**每一个**」，则默认 `openspec archive`（⛔ 不用 `--skip-specs`）会把**未实现的嵌套能力**合进 main spec ⇒ 与 `AGENTS.md`「✅ 已完成归档 = 能力已在契约内」的语义**直接冲突**（归档动作本身在撒谎）。
+> **后续**：C2 落地时应对本条出 **MODIFIED** 升级以摘除「顶层」限定。
 
 - **WHEN** 拓扑配置中某个模块的 `type` 不在运行时注册表中
 - **THEN** 装配 SHALL **失败**（返回 false）

@@ -98,7 +98,7 @@
 | **AC-04** | **4 处漂移清零** —— 运行时注册表 ∩ 配置 `type` 集合的**差集为空**;3 份受影响配置逐个可装配 |
 | **AC-05** | **生成器一致** —— 重跑 `examples/generate_apu_soc.py` 与 `examples/generate_library_configs.py` ⇒ `git diff --exit-code configs/` 为空 |
 | **AC-06** | **闸有判别力** —— 向 fixture config 注入假 type ⇒ 闸**红**;移除 ⇒ 闸**绿**（只验绿 = 没验） |
-| **AC-07** | **零回归** —— `cpptlm_tests` 全量绿（≥ **883336 / 2393**）;`pytest test/python/` **232 passed**;`ctest` 全量绿 |
+| **AC-07** | **零回归** —— `cpptlm_tests` 全量绿且断言数 ≥ **实施日重测基线**（重测命令 `./build/bin/cpptlm_tests 2>&1 \| tail -3`;⛔ **不得写死数字** —— 本 change 的**类型归档本身会删测试**（−26 case）⇒ 任何硬编码下限都会在归档后**不可达**;2026-11-18 实测 = **883242 / 2372**）;`pytest test/python/` **232 passed**;`ctest` 全量绿 |
 | **AC-08** | **嵌套传播** —— 外层 SimModule 内联 `modules` 含未知类型 ⇒ 外层 `instantiateAll == false`;⚠️ **blocked-by** `cpptlm-module-param-migrate-batch2` T0.2 ⇒ 未落地则标 `blocked-by` 并显式登记,⛔ 不许静默跳过 |
 | **AC-10** | **设计类型归档完成** —— `GPUTLM` / `SharedMemoryTLM` / `MemoryClusterTLM` / `GpuSocTLM` 四个类型**不在** `ModuleFactory::getRegisteredTypes()` 中；其 `.hh` / `.cc` / 测试文件 / 3 份配置 / 孤儿模板均已删除；`apu_soc_phase7b.json` 可装配且模块数 = **7**;⚛️ **保留项仍在**（`CPUTLM` / `StreamingMultiprocessorTLM` / `GpuMeshNoC` / `CoherentXBarTLM` / `PcieControllerIP` / `PcieMemoryDevice`） |
 | **AC-09** | **文档与台账同步** —— `docs/implementation/module-param-baseline.md` §2bis 改「已闭合」;`scripts/README.md` 新脚本行;`AGENTS.md`（新增 CLI flag）;台账 Entry |
