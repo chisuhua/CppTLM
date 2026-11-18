@@ -35,6 +35,7 @@
 #include "tlm/coherent_xbar_tlm.hh"
 #include "tlm/crossbar_tlm.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
+#include "tlm/gpu/gpu_mesh_noc_tlm.hh"
 #include "tlm/gpu/pcie_memory_device.hh"
 #include "tlm/gpu/streaming_multiprocessor_tlm.hh"
 #include "tlm/lwc/lwc_bus_hub.hh"
@@ -880,4 +881,86 @@ TEST_CASE("AC-04: CoherentXBarTLM 两键 ⇒ 显式失败（无协议状态机 /
 
     cpptlm::tlm::CoherentXBarTLM x2("x2", &eq);
     CHECK_NOTHROW(x2.set_config(json::object()));
+}
+
+// ============================================================================
+// A2b / A2c —— 态①（接真实消费）的行为判别测试 + 态③（伪参数）的非法值拒绝
+//   per ADR-X.17 D-6「行为判别义务」：两个不同合法值 ⇒ 可观测指标必须不同。
+//   ⚠️ 观测量用**已存在的**运行时面（D-2.1 禁造只为测试存在的观测面）。
+// ============================================================================
+TEST_CASE("AC-02: GpuMeshNoC.dim / hops_latency ⇒ 态①（D2D 延迟模型真消费）",
+          "[param][effect][gpu-noc]") {
+    EventQueue eq;
+    std::vector<uint8_t> src(16, 0xAA), dst_a(16, 0), dst_b(16, 0);
+
+    // hops_latency=1 vs 4 ⇒ 最坏路径延迟必须不同（route_latency = (|dx|+|dy|) × hops_latency）
+    tlm::GpuMeshNoC a("a", &eq);
+    a.set_config(json{{"hops_latency", 1}});
+    a.d2d_forward_payload(dst_a.data(), src.data(), 16);
+    const uint32_t lat1 = a.last_transfer_latency_cycles();
+
+    tlm::GpuMeshNoC b("b", &eq);
+    b.set_config(json{{"hops_latency", 4}});
+    b.d2d_forward_payload(dst_b.data(), src.data(), 16);
+    const uint32_t lat4 = b.last_transfer_latency_cycles();
+
+    CHECK(lat4 > lat1);               // 判别力：值不同 ⇒ 行为不同
+    CHECK(a.get_hops_latency() == 1); // 配置真被写入
+    CHECK(b.get_hops_latency() == 4);
+
+    // dim 同理（最坏路径 = {0,0}→{dim-1,dim-1}）
+    tlm::GpuMeshNoC c("c", &eq);
+    c.set_config(json{{"dim", 2}});
+    tlm::GpuMeshNoC d("d", &eq);
+    d.set_config(json{{"dim", 8}});
+    CHECK(d.get_dim() == 8);
+    CHECK(d.route_latency({0, 0}, {7, 7}) > c.route_latency({0, 0}, {1, 1}));
+}
+
+TEST_CASE("AC-05: CPUTLM.pattern ⇒ 态③（合法值唯一，非法值必须失败）",
+          "[param][effect][cpu][state3]") {
+    EventQueue eq;
+    // 合法值：SEQUENTIAL ⇒ 通过
+    CPUTLM ok("cpu_ok", &eq);
+    CHECK_NOTHROW(ok.set_config(json{{"pattern", "SEQUENTIAL"}}));
+    // 缺省（键缺失）⇒ 通过
+    CPUTLM none("cpu_none", &eq);
+    CHECK_NOTHROW(none.set_config(json::object()));
+    // ⛔ 非法值 ⇒ 装配失败，且错误含键名 + 合法值集合
+    CPUTLM bad("cpu_bad", &eq);
+    expect_param_error([&] { bad.set_config(json{{"pattern", "RANDOM"}}); }, "pattern");
+}
+
+TEST_CASE("AC-02: CPUTLM.start_addr / request_interval ⇒ 态①（真被运行期读）",
+          "[param][effect][cpu]") {
+    EventQueue eq;
+
+    // start_addr：配置改了 ⇒ 首个请求的地址必须随之改变（`cur_addr_` 须同步）
+    CPUTLM c1("c1", &eq);
+    c1.set_config(json{{"start_addr", 0x2000}});
+    c1.tick(); // 发首个请求
+    REQUIRE(c1.req_out().valid());
+    CHECK(c1.req_out().data().address.read() == 0x2000);
+
+    CPUTLM c2("c2", &eq);
+    c2.set_config(json{{"start_addr", 0x3000}});
+    c2.tick();
+    REQUIRE(c2.req_out().valid());
+    CHECK(c2.req_out().data().address.read() == 0x3000); // 判别力：不同值 ⇒ 不同地址
+
+    // request_interval：间隔 1 与 10 ⇒ 同样 tick 数内发出的请求数必须不同
+    // ⚠️ 观测量用**既有**的 `req_out().data().transaction_id`（每发一请求 +1），
+    //    ⛔ 不为测试新增观测面（`ADR-X.17` D-2.1）。
+    CPUTLM fast("fast", &eq);
+    fast.set_config(json{{"request_interval", 1}});
+    for (int i = 0; i < 20; ++i)
+        fast.tick();
+
+    CPUTLM slow("slow", &eq);
+    slow.set_config(json{{"request_interval", 10}});
+    for (int i = 0; i < 20; ++i)
+        slow.tick();
+
+    CHECK(fast.req_out().data().transaction_id.read() >
+          slow.req_out().data().transaction_id.read());
 }

@@ -219,6 +219,19 @@ python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对�
 | 4 | **存量配置清理 5 处**：`dgpu_soc_minimal_v1.json`（`data_flow` + `vc_counts_enabled` + `operating_frequency_hz`）· `apu_soc_v1.json`（`ports`）· `example_emitter_soc.json`（`port_count`）· `library_memory_demo.json`（`n_ports` + `memory_type`） | 态② 会让「写了该键」的配置**装不上** ⇒ 必须同步清理 |
 | 5 | **2 个测试数据里的 `memory_type` 清理**（`test_p2_residual.cc` / `test_simmodule_infra_clusters.cc`） | 它们传的是「从未透传成功」的键 ⇒ 现在会抛 |
 
+### D-1.6.6 B2 批次（A2a/A2b/A2c）—— 7 键态② + 2 键态① + 3 键（态③+态①×2）
+
+| 类型 | 键 | 态 | 为什么 | 落地 |
+|---|---|:--:|---|---|
+| `PcieControllerIP` | `bar_bases` · `bar_sizes` · `link_speed_gts` | ② | stateless facade，**有意**从 `PcieEndpointIP::bar_sizes_` 动态读（no static snapshot）⇒ 零消费面;⚠️ **同名不同语义**（板级读的是 **`pcie_ep` 节点**） | `on_config_loaded` 拒绝;3 份配置 `pcie_ctrl.params` 清空 |
+| `StreamingMultiprocessorTLM` | `execution_latency` · `warp_size` | ② | 前者全仓零概念（延迟由 12 子模块决定）;后者**不是**该类成员（只在 `GpuTopologyParams`） | `on_config_loaded` 拒绝;配置侧零命中 |
+| `CoherentXBarTLM` | `domain_protocol` · `snoop_filter` | ② | 无协议状态机（`snoop_broadcast()` 无条件 write-through）;无 filter（ArchForge `snoop_filter.md` 标「🟡 规划中」） | `on_config_loaded` 拒绝 + **调基类**（否则继承的 `ports` 拒绝失效） |
+| `GpuMeshNoC` | `dim` · `hops_latency` | **①** | 两成员**真被** `route_latency()` / `d2d_forward_payload()` 读 ⇒ 可接真实消费 | `load_param_opt`;判别测试用既有 `last_transfer_latency_cycles()` |
+| `CPUTLM` | `pattern` | **③** | 合法值**唯一**（`SEQUENTIAL`）—— 本类只有线性扫描，无多模式生成 | 新增 `on_config_loaded` + 校验 + 非法值失败;⛔ 不做模式实现 |
+| `CPUTLM` | `start_addr` · `request_interval` | **①** | 两成员**真被**运行期读（`:87` 窗口 · `:90` timer 取模） | `load_param_opt` + ⚠️ **同步 `cur_addr_`**（否则首请求仍用旧默认地址） |
+
+> **连带（生成器漂移，oracle 断裂 A 的实证）**：重跑生成器后发现它仍在 emit 已被态② 的键 —— `CacheTLM.protocol` · `MemoryTLM.read_latency`/`write_latency`/`type` · `CoherentXBarTLM.snoop_filter`/`domain_protocol` ⇒ **`apu_soc_full.json` 装配失败**（`test_param_alignment:129`）⇒ 生成器已停发这些键 + 重跑。这正是 R-5 的 **AC-05** 会爆炸的同一根因。
+
 > **剩余 B2（未做）—— 12 键**：`CoherentXBarTLM.domain_protocol` / `snoop_filter`(2) · `PcieControllerIP`(3) · `StreamingMultiprocessorTLM`(2) · `GpuMeshNoC`(2) · `CPUTLM`(3)。
 >
 > ✅ **已追加处置**：`PcieMemoryDevice.capacity_gb`（**态②**：容量由注入 backing 决定 ⇒ 配置值不可能有效果）—— 2026-11-18 落地。

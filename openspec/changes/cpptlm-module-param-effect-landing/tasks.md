@@ -33,7 +33,7 @@
 > （`scripts/test/param_effect_inventory.py`）复核后**增 4 类 / 删 2 类**（差异逐条见 `design.md` D-1.6.3）:
 > **删**的 2 类是 `ComputeUnitTLM` / `TCCTLM` —— **仓内无类定义**（配置引用了不存在的类型 ⇒ 整份配置不可装配）⇒ **不是零效果键**，转 **R-5**（独立 change）;**增**的 4 类是盘点漏检（`CoherentXBarTLM` / `GpuMeshNoC` / `VramControllerTLM` / `MemoryCluster`）⇒ 已补入 T2.13~T2.16。
 
-- [ ] T2.1 `CPUTLM` 三键（`pattern` / `request_interval` / `start_addr`）裁决 + 落地（**95 个配置实例** ⇒ 影响面最大）
+- [x] T2.1 `CPUTLM` 三键（`pattern` / `request_interval` / `start_addr`）裁决 + 落地（**95 个配置实例** ⇒ 影响面最大） ⇒ **用户拍板 Q-4 ②**（2026-11-18）：`pattern` ⇒ **态③**（合法值唯一 `SEQUENTIAL` —— 本类只有线性扫描，无多模式流量生成;⚠️ 别与 `TrafficGenTLM.pattern` 混，那个有 4 种）;`start_addr` / `request_interval` ⇒ **态①**（两成员**真被**运行期读）。⚠️ 两处关键：① 态③ 落地形态 = **给 CPUTLM 新增读取面**（原无 `on_config_loaded`）+ 校验 + 非法值失败，⛔ 不顺手做模式实现;② `cur_addr_` 是构造期由 `start_addr_` 初始化的 ⇒ 配置改了 `start_addr` 后**必须同步游标**（否则首个请求仍从旧默认地址发 = 配置被静默忽略）—— 已实现。判别测试 3 条（态③ 非法值 / start_addr 改地址 / interval 改请求数）;全量 **883275 / 2378** ⇒ **未打破任何既有测试**（原以为会打破的 3 个 C++ 用例实测零地址断言）。
 - [x] T2.2 `CrossbarTLM.port_count` / `ports` 裁决 + 落地（**态②**：端口数是编译期常量 `NUM_PORTS` ⇒ 显式拒绝;LINT007 告警段已退役;`apu_soc_v1.json` / `example_emitter_soc.json` 已清理）
 - [ ] T2.3 ~~`ComputeUnitTLM`（`kernel_id` / `workgroup_size`）裁决 + 落地~~ ⇒ **转 R-5**（该类型在 `include/` + `src/` **零类定义**;`configs/apu_soc_full.json:3` 自述「not yet registered」⇒ 处置是「实现类型 / 从配置移除」，**不是**「让键有效果」）
 - [x] T2.4 `GPUTLM` 四键（`kernel_id` / `workgroup_size` / `start_addr` / `end_addr`）裁决 + 落地 ⇒ **失效闭环**：该类型已于 2026-11-18 随**设计类型归档**移除（`.hh` 物理删除 + 3 份配置删除，per change `cpptlm-config-type-registration-align` T7.1 · 台账 Entry #481）⇒ 本 task 的对象已不存在，无需裁决。**该 4 键不再出现在盘点中**。
@@ -46,7 +46,7 @@
 - [x] T2.11 `SocInternalNoc` 两键（`data_flow` / `vc_counts_enabled`）裁决 + 落地（**态②**：该类已 archived,NoC 语义由 `GpuInternalFabric` 承担;`dgpu_soc_minimal_v1.json` 已清理）
 - [ ] T2.12 ~~`TCCTLM` 两键（`coalescing` / `size`）裁决 + 落地~~ ⇒ **转 R-5**（同 T2.3：仓内零类定义）
 - [x] T2.13 `CoherentXBarTLM` 三键（`domain_protocol` / `snoop_filter` / `ports`）—— **`ports` 已落地**（态②，继承 `CrossbarTLM` 的拒绝）;`domain_protocol` / `snoop_filter` **待后续批次** ⇒ **三键全部落地**（2026-11-18）：`ports`（继承 `CrossbarTLM`）+ `domain_protocol`（无协议状态机 —— `snoop_broadcast()` 是无条件 write-through 透传，per ADR-CEP-15 的协议语义边界冻结）+ `snoop_filter`（无 filter 概念;ArchForge 契约 `snoop_filter.md` 标「🟡 规划中」）⇒ 全部态② 显式拒绝。⚠️ 覆写**必须调基类**（否则继承的 `ports` 拒绝失效）—— 已加判别测试。`configs/apu_soc_full.json` + 生成器 `generate_apu_soc.py` 的 2 键已清。
-- [ ] T2.14 `GpuMeshNoC` 两键（`dim` / `hops_latency`）裁决 + 落地（该类只有 `set_dim` / `set_hops_latency` setter，无生产调用方传配置值）
+- [x] T2.14 `GpuMeshNoC` 两键（`dim` / `hops_latency`）裁决 + 落地 ⇒ **态①**（2026-11-18）：两成员**真被**运行期读（`route_latency()` 与 `d2d_forward_payload()` 的延迟模型都用 `hops_latency_`;`get_dim()` / 最坏路径循环用 `dim_`）⇒ `on_config_loaded` 用 `load_param_opt` 接真实消费。判别测试用**既有**观测量 `last_transfer_latency_cycles()`（⛔ 不造新观测面，per D-2.1）：`hops_latency` 1 vs 4 ⇒ 延迟不同。
 - [x] T2.15 `VramControllerTLM.operating_frequency_hz` 裁决 + 落地（**态②**：频率是编译期锚点 `kOperatingFrequencyHz`，与 timing 契约双向绑定;运行时可配需「GB/s 带宽输入」这个尚不存在的面 ⇒ 独立 feature;`dgpu_soc_minimal_v1.json` 已清理）
 - [x] T2.16 `MemoryCluster.memory_type` 裁决 + 落地（**态②**：无内存类型模型 ⇒ 显式拒绝 + 成员已删;2 个测试数据里的该键已清理）
 - [ ] T2.17 B2 回归：全量套件绿 + `configs/` 存量写法逐处登记（态② 键的命中清单）

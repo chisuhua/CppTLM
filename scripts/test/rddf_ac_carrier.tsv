@@ -18,6 +18,8 @@
 AC-01	cmd	scripts/test/param_effect_inventory.py	--json
 AC-01	doc	openspec/changes/cpptlm-module-param-effect-landing/design.md	### D-1.2 类别 ①
 AC-02	doc	openspec/changes/cpptlm-module-param-effect-landing/design.md	### D-1.6.5 B2 批次
+AC-02	test	test/test_param_effect_landing.cc	AC-02: GpuMeshNoC.dim / hops_latency
+AC-02	test	test/test_param_effect_landing.cc	AC-02: CPUTLM.start_addr / request_interval
 AC-03	doc	openspec/changes/cpptlm-module-param-effect-landing/design.md	### D-1.5 清单统计
 AC-04	test	test/test_param_effect_landing.cc	AC-04: 端口数类键
 AC-04	test	test/test_lint007_ports_validation.cc	LINT007a
@@ -25,7 +27,7 @@ AC-04	test	test/test_param_effect_landing.cc	AC-04: PcieMemoryDevice.capacity_gb
 AC-04	test	test/test_param_effect_landing.cc	AC-04: PcieControllerIP 三键
 AC-04	test	test/test_param_effect_landing.cc	AC-04: StreamingMultiprocessorTLM 两键
 AC-04	test	test/test_param_effect_landing.cc	AC-04: CoherentXBarTLM 两键
-AC-05	TODO	-	-
+AC-05	test	test/test_param_effect_landing.cc	AC-05: CPUTLM.pattern
 AC-06	cmd	./build/bin/cpptlm_tests	--list-tests
 AC-07	doc	docs/implementation/module-param-baseline.md	表 B
 AC-08	TODO	-	-

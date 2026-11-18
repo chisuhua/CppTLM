@@ -62,6 +62,8 @@
 | B-15 | `bar_bases` / `bar_sizes` / `link_speed_gts` | `PcieControllerIP` | 该类是 **stateless facade**，**有意**从 `PcieEndpointIP::bar_sizes_` 动态读（no static snapshot）⇒ 三键零消费面;⚠️ **同名不同语义**：板级 `dgpu_board_shell.cc:76-79` 读的是 **`pcie_ep` 节点**的 `bar_sizes`（`PcieEndpointIP` **有**消费面） | **已显式拒绝**（2026-11-18 态②）;3 份配置的 `pcie_ctrl.params` 已清空 |
 | B-16 | `execution_latency` / `warp_size` | `StreamingMultiprocessorTLM` | `execution_latency` 全仓零概念（延迟由 12 子模块决定）;`warp_size` **不是**该类成员（只在 `GpuTopologyParams` 这一另一结构里） | **已显式拒绝**（2026-11-18 态②）;配置侧零命中（唯一配置模板已随类型归档删除） |
 | B-17 | `domain_protocol` / `snoop_filter` | `CoherentXBarTLM` | 无协议状态机（`snoop_broadcast()` 无条件 write-through）;无 filter 概念（ArchForge `snoop_filter.md` 标「🟡 规划中」） | **已显式拒绝**（2026-11-18 态②）;`apu_soc_full.json` + 生成器已清 |
+| B-18 | `dim` / `hops_latency` | `GpuMeshNoC` | 两成员**真被**运行期读（`route_latency()` + `d2d_forward_payload()` 的延迟模型）⇒ 不是零效果，只是**无配置读取面** | **已接真实消费**（2026-11-18 态①）;判别测试用既有 `last_transfer_latency_cycles()` |
+| B-19 | `pattern` / `start_addr` / `request_interval` | `CPUTLM` | 该类原**无** `on_config_loaded`;`start_addr_` / `request_interval_` 两成员**真被**运行期读（`:87` 窗口边界 · `:90` timer 取模）;`pattern` 无对应概念（只有线性扫描） | `start_addr`/`request_interval` **已接真实消费**（态①）;`pattern` **已显式拒绝**（态③：合法值唯一 `SEQUENTIAL`）—— 2026-11-18 |
 
 ### B-6 的处置说明（为什么是显式登记而不是修复）
 
