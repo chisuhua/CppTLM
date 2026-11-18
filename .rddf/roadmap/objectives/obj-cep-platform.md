@@ -25642,6 +25642,6 @@ test cases:  5 |  0 passed | 5 failed
 
 **文档同步**：`AGENTS.md` STRUCTURE 树删 3 个已归档头文件 + configs 段标注 3 份删除的配置。
 
-**⚠️ 跨仓待办（R-5，本 change 不做）**：ArchForge 侧 `gpu-gputlm.md` / `gpu-shared-memory.md` / `gpu-memory-cluster.md` 的「✅ 已实施」状态需在其仓内改为「⏸ 已归档」。另登记：`coherent_xbar.md` 的 Header 写 `include/tlm/interconnect/coherent_xbar_tlm.hh`，实际是 `include/tlm/coherent_xbar_tlm.hh`（路径 + 状态双漂移）。
+**⚠️ 跨仓待办（R-5，本 change 不做）**：ArchForge 侧 `gpu-gputlm.md` / `gpu-shared-memory.md` / `gpu-memory-cluster.md` 的「✅ 已实施」状态需在其仓内改为「⏸ 已归档」。另登记：ArchForge `coherent_xbar.md` 的 Header 指向 interconnect 目录下的 `coherent_xbar_tlm.hh`，而 CppTLM 的实际位置是 `include/tlm/coherent_xbar_tlm.hh`（路径 + 状态双漂移）。
 
 **关联**：`openspec/changes/cpptlm-config-type-registration-align/{proposal,design,tasks}.md`（④ 段 / D-8 / T7）· Entry #480（本 change 立项）

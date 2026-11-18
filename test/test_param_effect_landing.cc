@@ -35,6 +35,7 @@
 #include "tlm/coherent_xbar_tlm.hh"
 #include "tlm/crossbar_tlm.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
+#include "tlm/gpu/pcie_memory_device.hh"
 #include "tlm/lwc/lwc_bus_hub.hh"
 #include "tlm/memory_tlm.hh"
 #include "tlm/traffic_gen_tlm.hh"
@@ -820,4 +821,18 @@ TEST_CASE("AC-04: VramControllerTLM.operating_frequency_hz ⇒ 显式失败（�
     // 正向对照：板级 timing 键（由 `dgpu_board_shell.cc` 直读消费）不应被拒
     VramControllerTLM v2("v2", &eq);
     CHECK_NOTHROW(v2.set_config(json{{"bandwidth_gbps", 32}}));
+}
+
+TEST_CASE("AC-04: PcieMemoryDevice.capacity_gb ⇒ 显式失败（容量由注入 backing 决定）",
+          "[param][effect][pcie-memory]") {
+    EventQueue eq;
+    // ⚠️ 该类的容量**不是配置说了算** —— backing 由 `DGpuBoard` 注入，
+    //    bound = `backing_view_size_`（per ADR-DGPU-05 单一 VRAM 真源 + D-AXI v1.4 B8）
+    //    ⇒ `capacity_gb` 不可能产生任何效果 ⇒ 态②（显式拒绝）。
+    tlm::gpu::PcieMemoryDevice dev("mem0", &eq);
+    expect_param_error([&] { dev.set_config(json{{"capacity_gb", 8}}); }, "capacity_gb");
+
+    // 正向对照：无该键 ⇒ 不失败（防误伤）
+    tlm::gpu::PcieMemoryDevice dev2("mem1", &eq);
+    CHECK_NOTHROW(dev2.set_config(json::object()));
 }

@@ -46,7 +46,7 @@
         {
           "name": "pcie_memory",
           "type": "PcieMemoryDevice",
-          "params": { "capacity_gb": 8 }
+          "params": {}
         },
         {
           "name": "sdma",

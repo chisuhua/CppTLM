@@ -202,6 +202,7 @@ python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对�
 | `SocInternalNoc` | `data_flow` · `vc_counts_enabled` | ② | 该类已随 `cpptlm-dgpu-soc-internal-noc-e1` **archived**;NoC 语义由 `GpuInternalFabric` 承担 | `SocInternalNoc::on_config_loaded` |
 | `VramControllerTLM` | `operating_frequency_hz` | ② | 频率是**编译期锚点** `kOperatingFrequencyHz`（与 `dgpu-realip-pin-contract` D.4 + `timing-mode.md §2.4` 双向绑定）;运行时可配需「GB/s 带宽输入」这个**尚不存在**的配置面来闭合语义链 ⇒ 实现它 = 新功能（D3 seam 正式落地） | `VramControllerTLM::on_config_loaded` |
 | `MemoryCluster` | `memory_type` | ② | 本仓**无内存类型模型**（无 DRAM/HBM 行为差异） | `MemoryCluster::set_config` + 删除 `memory_type_` 成员 |
+| `PcieMemoryDevice` | `capacity_gb` | ② | 容量由**注入的 backing** 决定（`backing_view_size_`;ADR-DGPU-05 单一 VRAM 真源 + D-AXI v1.4 B8）⇒ 配置值不可能有效果（该类**零配置读取面**） | `PcieMemoryDevice::on_config_loaded`（态②拒绝）;2 份配置已清理 |
 
 **连带处置**（⛔ 不只是加拒绝逻辑）：
 
@@ -213,7 +214,9 @@ python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对�
 | 4 | **存量配置清理 5 处**：`dgpu_soc_minimal_v1.json`（`data_flow` + `vc_counts_enabled` + `operating_frequency_hz`）· `apu_soc_v1.json`（`ports`）· `example_emitter_soc.json`（`port_count`）· `library_memory_demo.json`（`n_ports` + `memory_type`） | 态② 会让「写了该键」的配置**装不上** ⇒ 必须同步清理 |
 | 5 | **2 个测试数据里的 `memory_type` 清理**（`test_p2_residual.cc` / `test_simmodule_infra_clusters.cc`） | 它们传的是「从未透传成功」的键 ⇒ 现在会抛 |
 
-> **剩余 B2（未做）—— 13 键**：`CoherentXBarTLM.domain_protocol` / `snoop_filter`(2) · `PcieControllerIP`(3) · `PcieMemoryDevice`(1) · `StreamingMultiprocessorTLM`(2) · `GpuMeshNoC`(2) · `CPUTLM`(3)。
+> **剩余 B2（未做）—— 12 键**：`CoherentXBarTLM.domain_protocol` / `snoop_filter`(2) · `PcieControllerIP`(3) · `StreamingMultiprocessorTLM`(2) · `GpuMeshNoC`(2) · `CPUTLM`(3)。
+>
+> ✅ **已追加处置**：`PcieMemoryDevice.capacity_gb`（**态②**：容量由注入 backing 决定 ⇒ 配置值不可能有效果）—— 2026-11-18 落地。
 >
 > ⚠️ **2026-11-18 范围缩减（21 → 13 键）**：`GPUTLM`(4) · `MemoryClusterTLM`(2) · `SharedMemoryTLM`(2) 共 **8 键**已随**类型归档**一并消失 ——
 > 用户裁定「ArchForge 有计划做的设计 IP ⇒ CppTLM 只保留影响框架层的示例，多余示例归档」，

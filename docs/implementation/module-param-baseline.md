@@ -58,6 +58,7 @@
 | B-11 | `data_flow` / `vc_counts_enabled` | `SocInternalNoc` | 该类已随 `cpptlm-dgpu-soc-internal-noc-e1` **archived**;实际 NoC 语义由 `GpuInternalFabric` 承担 ⇒ 两键无消费面 | **已显式拒绝**（2026-11-18 态②）;`configs/dgpu_soc_minimal_v1.json` 的 2 键已清理 |
 | B-12 | `n_ports` / `ports` | `ArbiterTLM` | 端口数由**模板参数 `N_PORTS`** 决定（编译期）⇒ 两键均无消费面 | **已显式拒绝**（2026-11-18 态②）;`configs/library_memory_demo.json` 的 `n_ports` 已清理 |
 | B-13 | `port_count` / `ports` | `CrossbarTLM` | 端口数是编译期常量 `NUM_PORTS`;`ports` 此前只被 LINT007 读去做**告警** | **已显式拒绝**（2026-11-18 态②）;LINT007 告警段已**退役**（否则是死代码）;`configs/apu_soc_v1.json` / `example_emitter_soc.json` 的键已清理 |
+| B-14 | `capacity_gb` | `PcieMemoryDevice` | 该类**零配置读取面**（无 `on_config_loaded` / `set_config`）;容量由**注入的 backing** 决定（`backing_view_size_`,per ADR-DGPU-05 单一 VRAM 真源 + D-AXI v1.4 B8）⇒ 配置值**不可能有效果** | **已显式拒绝**（2026-11-18 态②）;`dgpu_soc_minimal_v1.json` / `dgpu_soc_timing_v1.json` 的该键已清理 |
 
 ### B-6 的处置说明（为什么是显式登记而不是修复）
 

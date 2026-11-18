@@ -38,7 +38,7 @@
 - [ ] T2.3 ~~`ComputeUnitTLM`（`kernel_id` / `workgroup_size`）裁决 + 落地~~ ⇒ **转 R-5**（该类型在 `include/` + `src/` **零类定义**;`configs/apu_soc_full.json:3` 自述「not yet registered」⇒ 处置是「实现类型 / 从配置移除」，**不是**「让键有效果」）
 - [ ] T2.4 `GPUTLM` 四键（`kernel_id` / `workgroup_size` / `start_addr` / `end_addr`）裁决 + 落地
 - [ ] T2.5 `PcieControllerIP` 三键（`bar_bases` / `bar_sizes` / `link_speed_gts`）裁决 + 落地;⚠️ `bar_sizes` 另有**板级消费方**（`dgpu_board_shell.cc:78-79`）⇒ 按 `ADR-X.17` D-3 三态条款分开处置
-- [ ] T2.6 `PcieMemoryDevice.capacity_gb` 裁决 + 落地（⚠️ backing 归 `DGpuBoard` —— per `ADR-DGPU-05`;该键与注入的 backing 语义重叠 ⇒ 评估态②）
+- [x] T2.6 `PcieMemoryDevice.capacity_gb` 裁决 + 落地（**态②**：容量由**注入的 backing** 决定（`backing_view_size_`;ADR-DGPU-05 单一 VRAM 真源 + D-AXI v1.4 B8）⇒ 该类**零配置读取面** ⇒ 配置值不可能有效果 ⇒ 显式拒绝;`dgpu_soc_minimal_v1.json` / `dgpu_soc_timing_v1.json` 已清理;判别测试 = `test_param_effect_landing.cc` 的「AC-04: PcieMemoryDevice.capacity_gb」）
 - [ ] T2.7 `StreamingMultiprocessorTLM` 两键（`execution_latency` / `warp_size`）裁决 + 落地
 - [x] T2.8 `ArbiterTLM.n_ports` / `ports` 裁决 + 落地（**态②**：端口数由模板参数 `N_PORTS` 决定;`library_memory_demo.json` 已清理;`memory_cluster.cc` 不再生成 `ports`）
 - [ ] T2.9 `MemoryClusterTLM` 两键（`capacity_gb` / `channels`）裁决 + 落地（⚠️ 与 `MemoryCluster` 是两个类）

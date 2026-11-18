@@ -49,27 +49,42 @@ namespace tlm::gpu {
      */
     class PcieMemoryDevice : public ChStreamModuleBase {
     public:
+        /// 配置加载（`ADR-X.17` D-1「读取即声明」）
+        ///
+        /// ⚠️ `capacity_gb` ⇒ **态② 显式拒绝**：本设备的容量**由注入的 backing 决定**
+        ///    （`backing_view_size_`;per ADR-DGPU-05 单一 VRAM 真源 + D-AXI v1.4 B8
+        ///    「bound = injected backing size」）⇒ 配置里的容量值**不可能产生任何效果**
+        ///    ⇒ 显式拒绝（配置写了即装配失败并报出键名）,⛔ 不静默丢弃。
+        ///    ⚠️ BAR0 的 `kRegMemSizeLo/Hi` 读的是**注入后的** `backing_view_size_`
+        ///    （`kDefaultMemSize` 只是**未注入**时的兜底）⇒ 与本键无关。
+        void on_config_loaded() override {
+            reject_unsupported_param(
+                "capacity_gb",
+                "the capacity is defined by the injected backing view (backing_view_size_, "
+                "per ADR-DGPU-05 single-VRAM-source); this key has no effect");
+        }
+
         static constexpr unsigned NUM_PORTS = 2;
         // 端口索引（per design.md §4 Port index ordering lock）
-        static constexpr unsigned PORT_SDMA = 0;  // sdma.mem_out 接入
-        static constexpr unsigned PORT_GMMU = 1;  // gmmu.req_out 接入
+        static constexpr unsigned PORT_SDMA = 0; // sdma.mem_out 接入
+        static constexpr unsigned PORT_GMMU = 1; // gmmu.req_out 接入
 
         // ── 尺寸常量 ──
-        static constexpr size_t kRegSize = 4096;                              // BAR 0 寄存器空间
-        static constexpr uint64_t kDefaultMemSize = 8ULL * 1024 * 1024 * 1024;  // 8GB
+        static constexpr size_t kRegSize = 4096;                               // BAR 0 寄存器空间
+        static constexpr uint64_t kDefaultMemSize = 8ULL * 1024 * 1024 * 1024; // 8GB
 
         // ── 寄存器偏移 ──
-        static constexpr uint32_t kRegDeviceIdentity = 0x00;  // R: vendor_id+device_id
-        static constexpr uint32_t kRegMemSizeLo       = 0x10;  // RW: 容量低 32-bit
-        static constexpr uint32_t kRegMemSizeHi       = 0x14;  // RW: 容量高 32-bit
-        static constexpr uint32_t kRegMemBaseLo       = 0x18;  // RW: 主机可见基地址低 32-bit
-        static constexpr uint32_t kRegMemBaseHi       = 0x1C;  // RW: 主机可见基地址高 32-bit
-        static constexpr uint32_t kRegStatus          = 0x20;  // RW: bit 0=ready, bit 1=error
-        static constexpr uint32_t kRegScratch        = 0xF0;  // RW: 16-byte scratch 寄存器
+        static constexpr uint32_t kRegDeviceIdentity = 0x00; // R: vendor_id+device_id
+        static constexpr uint32_t kRegMemSizeLo = 0x10;      // RW: 容量低 32-bit
+        static constexpr uint32_t kRegMemSizeHi = 0x14;      // RW: 容量高 32-bit
+        static constexpr uint32_t kRegMemBaseLo = 0x18;      // RW: 主机可见基地址低 32-bit
+        static constexpr uint32_t kRegMemBaseHi = 0x1C;      // RW: 主机可见基地址高 32-bit
+        static constexpr uint32_t kRegStatus = 0x20;         // RW: bit 0=ready, bit 1=error
+        static constexpr uint32_t kRegScratch = 0xF0;        // RW: 16-byte scratch 寄存器
 
         // 设备身份常量
-        static constexpr uint16_t kVendorId  = 0x1002;  // AMD/ATI
-        static constexpr uint16_t kDeviceId  = 0x0002;  // Memory device
+        static constexpr uint16_t kVendorId = 0x1002; // AMD/ATI
+        static constexpr uint16_t kDeviceId = 0x0002; // Memory device
 
         // 状态位
         static constexpr uint32_t kStatusReady = 0x1u;
@@ -89,17 +104,21 @@ namespace tlm::gpu {
         PcieMemoryDevice(PcieMemoryDevice&&) = delete;
         PcieMemoryDevice& operator=(PcieMemoryDevice&&) = delete;
 
-        std::string get_module_type() const override { return "PcieMemoryDevice"; }
-        unsigned num_ports() const override { return NUM_PORTS; }
+        std::string get_module_type() const override {
+            return "PcieMemoryDevice";
+        }
+        unsigned num_ports() const override {
+            return NUM_PORTS;
+        }
 
 
         // ── ChStream SlavePort/MasterPort（多端口适配器要求 public）──
-        cpptlm::InputStreamAdapter<bundles::PcieTlpBundle>  req_in[NUM_PORTS];
+        cpptlm::InputStreamAdapter<bundles::PcieTlpBundle> req_in[NUM_PORTS];
         cpptlm::OutputStreamAdapter<bundles::PcieTlpBundle> resp_out[NUM_PORTS];
 
         // v1.3 B3 撤销 N4: 单 MultiPortStreamAdapter* adapter_ (非 adapters_[2])
         void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
-            adapter_ = a;  // 单 adapter 存储
+            adapter_ = a; // 单 adapter 存储
         }
 
         // ── MMIO read/write (BAR 0 寄存器, byte-level, 支持 1/2/4 字节 + unaligned) ──
@@ -133,7 +152,9 @@ namespace tlm::gpu {
         void tick() override;
 
         // ── 状态查询 ──
-        uint64_t cycle_counter() const noexcept { return cycle_counter_; }
+        uint64_t cycle_counter() const noexcept {
+            return cycle_counter_;
+        }
 
         // ── Change A (cpptlm-vram-controller-functional-integration): VramController 注入 ──
         // functional-mode 数据路径: handle_slave_port(port=0) 委托给 vram_controller_ 的
@@ -146,15 +167,19 @@ namespace tlm::gpu {
         }
 
         // ── 设备身份 (供 DGpuBoard::pcie_config_read 路径使用) ──
-        uint16_t vendor_id() const noexcept { return kVendorId; }
-        uint16_t device_id() const noexcept { return kDeviceId; }
+        uint16_t vendor_id() const noexcept {
+            return kVendorId;
+        }
+        uint16_t device_id() const noexcept {
+            return kDeviceId;
+        }
 
     private:
         void init_identity_regs();
         // v1.4 B9: 检查 memory_read/write 返回值; 失败置 SLVERR (resp.kind=CPLD + data=0xDEAD)
         void handle_slave_port(unsigned p);
 
-        cpptlm::StreamAdapterBase* adapter_ = nullptr;  // 单 adapter (非数组, v1.3 B3)
+        cpptlm::StreamAdapterBase* adapter_ = nullptr; // 单 adapter (非数组, v1.3 B3)
 
         // BAR 0 寄存器空间
         std::array<uint8_t, kRegSize> registers_{};
@@ -171,6 +196,6 @@ namespace tlm::gpu {
         uint64_t cycle_counter_ = 0;
     };
 
-}  // namespace tlm::gpu
+} // namespace tlm::gpu
 
-#endif  // CPPTLM_PCIE_MEMORY_DEVICE_H
+#endif // CPPTLM_PCIE_MEMORY_DEVICE_H
