@@ -1,0 +1,29 @@
+# AC → 判据载体映射表（rddf_stage_gate.sh 的数据源）
+#
+# 用途（per 册子 `.rddf/roadmap/objectives/obj-cep-platform-remaining.md` §1.5.6 的 P-3）：
+#   「AC 可寻址」—— 每个 AC 必须有**载体文件 + 锚点**，脚本逐条 grep 命中；
+#   否则 A5 的「独立验收」只能靠人肉复述 ⇒ 判据会退化成叙述。
+#
+# 格式（TSV，4 列）：<AC 编号> <TAB> <载体类型> <TAB> <载体路径/命令> <TAB> <锚点>
+#   载体类型：
+#     doc   —— 载体是文档；判据 = `grep -F '<锚点>' <载体路径>` 命中
+#     test  —— 载体是测试文件；判据 = `grep -F '<锚点>' <载体路径>` 命中
+#     cmd   —— 载体是命令；判据 = 执行命令 rc=0（⚠️ 仅用于只读/盘点类命令）
+#     TODO  —— **该 AC 的载体尚未产出**（阶段未到）⇒ 门禁**跳过**但**报告**
+#              ⇒ 阶段推进时必须把 TODO 换成实际载体，否则该 AC 永远不被机械校验。
+#
+# ⚠️ 换锚点 = 改判据 ⇒ 需同 commit 说明理由（append-only 台账 + 审稿记录）。
+#
+# ── C1 · cpptlm-module-param-effect-landing ────────────────────────────────
+AC-01	cmd	scripts/test/param_effect_inventory.py	--json
+AC-01	doc	openspec/changes/cpptlm-module-param-effect-landing/design.md	### D-1.2 类别 ①
+AC-02	doc	openspec/changes/cpptlm-module-param-effect-landing/design.md	### D-1.6.5 B2 批次
+AC-03	doc	openspec/changes/cpptlm-module-param-effect-landing/design.md	### D-1.5 清单统计
+AC-04	test	test/test_param_effect_landing.cc	AC-04: 端口数类键
+AC-04	test	test/test_lint007_ports_validation.cc	LINT007a
+AC-04	test	test/test_param_effect_landing.cc	AC-04: PcieMemoryDevice.capacity_gb
+AC-05	TODO	-	-
+AC-06	cmd	./build/bin/cpptlm_tests	--list-tests
+AC-07	doc	docs/implementation/module-param-baseline.md	表 B
+AC-08	TODO	-	-
+AC-09	cmd	./build/bin/cpptlm_tests	[effect]

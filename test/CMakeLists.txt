@@ -278,6 +278,14 @@ add_test(NAME nictlm_credit_filter
 add_test(NAME cep_docs_sync_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_docs_sync_check.sh --strict)
 
+# 阶段顺序门禁(per 册子 obj-cep-platform-remaining.md §1.5.6 · critic 2026-11-18)
+# —— 把「实施顺序」与「AC 可寻址」从**文风**变成**机关**:
+#    P-1 依赖边锚点命中  P-2 下一阶段未提前开工  P-3 每个 AC 至少一条载体命中
+#    P-4 判别 case 未被静默删除  P-5 KPI 活口径全同步  P-6 硬编码下限无残留
+# ⚠️ 与 CEP 契约无关 ⇒ **独立注册**(否则 `cep_all` 覆盖不到 ⇒ 「只测不跑」)。
+add_test(NAME rddf_stage_gate
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/rddf_stage_gate.sh)
+
 # ADR **结构闸**(per oracle 2026-11-09 裁决 C-1 / 台账 Entry #307 §③ T1)
 # —— 把「ADR 正文缺顶层 Verification 章」从暗变可见,并**锁住**例外登记:
 #    ① 分区完整性(新 ADR 必须显式归类)② 未登记即红 ③ 豁免锚点存活(反后门)

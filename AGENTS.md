@@ -231,6 +231,7 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 | **CEP 实现层** | `include/tlm/cep/`（43 个 header-only 文件：protocol engine / adapter / state spec / JSON schema） |
 | **CEP 契约守门脚本** | `scripts/test/cep_*.sh`（shell 闸，数量以 `ls scripts/test/cep_*.sh` 为准：冻结面校验 / 实验运行器 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture；另有 17 个 `cep_*_probe.cc` 编译探针） |
 | **CEP 契约一致性** | `scripts/test/cep_docs_sync_check.sh`（23 份 ADR 的不变量 ↔ owner ADR 实际定义条数一致）+ `scripts/test/cep_doc_ref_check.sh`（对外文档引用节号校验） |
+| **阶段顺序门禁** | `scripts/test/rddf_stage_gate.sh`（per 册子 `.rddf/roadmap/objectives/obj-cep-platform-remaining.md` §1.5.6）—— 把「实施顺序」与「AC 可寻址」变成**机关**：P-1 依赖边锚点命中 · P-2 下一阶段未提前开工 · P-3 每个 AC 至少一条载体命中（载体表 `scripts/test/rddf_ac_carrier.tsv`）· P-4 判别 case 未被静默删除 · P-5 KPI 活口径全同步 · P-6 硬编码下限无残留 |
 | **CEP 实验 4 件套** | `scripts/test/cep_experiment_run.sh`（H2/H3/H4/H6 产出与契约校验）+ `scripts/test/cep_freeze_check.sh`（产物冻结先于解读） |
 | **CEP 真实 IP 对齐** | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`（ArchForge 接口对齐清单，§6 C-4 / §7 漂移检测） |
 | **CEP 开放规格** | `openspec/specs/cep-*/`（46 份 main spec）+ `openspec/changes/archive/`（159 份已归档 change）—— 2026-11-18 实测 |

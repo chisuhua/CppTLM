@@ -41,6 +41,7 @@
 ## T3 — P1b：依赖 effect-landing 的部分
 
 - [ ] T3.1 ⛔ **前置**：`cpptlm-module-param-effect-landing` 的 B1（`TrafficGenTLM` / `MemoryTLM` / `GmmuTLM`）与 B3（`routing`）完成
+      - ⚠️ **机械前置命令**（critic 2026-11-18 要求 —— 否则「前置」只靠人读）：`bash scripts/test/rddf_stage_gate.sh --phase C` ⇒ 断言 C1 的 `tasks.md` 无未勾 task 且 C2 目录未提前开工
 - [ ] T3.2 `TrafficGenTLM` / `MemoryTLM` / `GmmuTLM` / `GpuNoC` 的剩余键按裁决结果声明化 + 准入
 - [ ] T3.3 ⚠️ 零效果键的**存量配置清单**复核（承接 effect-landing T4.4）
 
@@ -78,7 +79,7 @@
 
 ## T8 — 验证与收口
 
-- [ ] T8.1 `cpptlm_tests` 全量绿（assertions / cases ≥ 基线 **883191 / 2371**）
+- [ ] T8.1 `cpptlm_tests` 全量绿（assertions / cases ≥ **实施日重测基线**;重测命令 `./build/bin/cpptlm_tests 2>&1 | tail -3`;⛔ **不得写死数字** —— 上游两个 change（C1 类型归档 −26 case、R-5 判别 case）已改变基线 ⇒ 任何硬编码下限都会在实施后不可达;2026-11-18 实测 = **883242 / 2372**）
 - [ ] T8.2 `python3 -m pytest test/python/` 全绿（基线 232 passed）
 - [ ] T8.3 `ctest -R cep` 全绿（基线 100/100）
 - [ ] T8.4 `cep_docs_sync_check` + `cep_doc_ref_check` + `agents_md_lint` 全绿

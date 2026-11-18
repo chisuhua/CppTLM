@@ -13,7 +13,7 @@
 3. **效果面侧**：对有读取面的类型，逐键核对「读到的值是否进入运行时行为」（成员被读 / 被丢弃 / 被下游使用）;
 4. **板级路径**：`ADR-X.17` F-15 的板级直读键（`dgpu_board_shell.cc`）**单列为「板级消费」**，不算零效果。
 
-### D-1.2 类别 ① —— 零配置读取面（14 类 / 32 键×类型对）
+### D-1.2 类别 ① —— 零配置读取面（**11 类 / 24 键×类型对**）
 
 ⚠️ **本次新发现** —— `ADR-X.17` F-14 只登记了「有读取面但键未消费」与「声明了但成员不存在」，**未覆盖**「类型根本没有配置读取面」这一最大的一类。
 
@@ -24,16 +24,17 @@
 | `CrossbarTLM` | 11 | 1 | `port_count` | `include/tlm/crossbar_tlm.hh` 无配置读取面 |
 | `ComputeUnitTLM` | 4 | 2 | `kernel_id`, `workgroup_size` | 无配置读取面 |
 | `PcieControllerIP` | 3 | 3 | `bar_bases`, `bar_sizes`, `link_speed_gts` | 无配置读取面;⚠️ `bar_sizes` 在**板级**另有消费方（`dgpu_board_shell.cc:78-79` 读 `pcie_ep` 的 `bar_sizes`）⇒ 该键的「板级消费」需与本类型自身的键面分开处置（`ADR-X.17` D-3 三态条款） |
-| `GPUTLM` | 3 | 4 | `end_addr`, `kernel_id`, `start_addr`, `workgroup_size` | 无配置读取面 |
 | `PcieMemoryDevice` | 2 | 1 | `capacity_gb` | 无配置读取面（`PcieMemoryDevice` 退化为 PCIe 外观层，backing 由 `DGpuBoard` 注入 —— per `ADR-DGPU-05`） |
 | `StreamingMultiprocessorTLM` | 2 | 2 | `execution_latency`, `warp_size` | 无配置读取面 |
 | `ArbiterTLM` | 1 | 1 | `n_ports` | 无配置读取面 |
 | `LwcBusHub` | 1 | 1 | `max_ip_ports` | 无配置读取面（`ADR-X.17` F-14 已登记） |
-| `MemoryClusterTLM` | 1 | 2 | `capacity_gb`, `channels` | 无配置读取面（与 `MemoryCluster`（`cluster/memory_cluster.hh`，**有**读取面）是两个类） |
-| `SharedMemoryTLM` | 1 | 2 | `banks`, `size_kb` | 无配置读取面 |
 | `SocInternalNoc` | 1 | 2 | `data_flow`, `vc_counts_enabled` | 无配置读取面（该类已 archived —— per `openspec/changes/archive/2026-10-09-cpptlm-dgpu-soc-internal-noc-e1/`）⇒ **态 ② 的首选候选** |
 | `TCCTLM` | 1 | 2 | `coalescing`, `size` | 无配置读取面 |
-| **小计** | — | **32** | — | **14 类** |
+| **小计** | — | **24** | — | **11 类** |
+
+> ⚠️ **2026-11-18 删三行**（类型归档，per change `cpptlm-config-type-registration-align` T7.1~T7.3 · 台账 Entry #481）：
+> `GPUTLM`(4 键) · `MemoryClusterTLM`(2 键) · `SharedMemoryTLM`(2 键) —— 三者的 `.hh` 已**物理删除**、对应 3 份配置（`apu_soc_phase7a.json` / `gpu_standalone.json` / `templates/gpu_soc/gpu_soc_gb203_v1.json`）亦已删 ⇒ **不再出现在盘点脚本输出中** ⇒ D-1 表须同步删行（**14→11 类 / 32→24 键对**）。
+> ⚠️ **该豁免仅限这三行**（逐行注明），⛔ **不得**泛化为「已归档类型一律不计」—— per `proposal.md` AC-01 的增补条款。
 
 ### D-1.3 类别 ② —— 有读取面但该键未消费（3 类 / 9 键×类型对）
 
@@ -53,14 +54,14 @@
 
 | 指标 | 值 |
 |---|---:|
-| 类型数 | **17**（类别① 14 + 类别② 3） |
-| 键×类型对 | **41**（32 + 9）+ `routing` 1 = **42** |
+| 类型数 | **14**（类别① 11 + 类别② 3） |
+| 键×类型对 | **33**（24 + 9）+ `routing` 1 = **34** |
 | 其中配置零命中但被登记的键 | 1（`CacheTLM.level`） |
 
 > ⚠️ **数字会随 `configs/` 演化** ⇒ 实施期若发现新增键，**回填本表**并在 tasks 记一条;
 > AC-01 的判据 = 「重跑盘点脚本 ⇒ 类型数 / 键对数与本表一致（± 本 change 主动新增的键）」。
 >
-> ⚠️ **本表的 17 / 42 是「零效果族」口径，不是全部配置键** —— 全量键盘点与实测差异见
+> ⚠️ **本表的 14 / 34 是「零效果族」口径，不是全部配置键** —— 全量键盘点与实测差异见
 > **D-1.6.2 / D-1.6.3**（脚本 `scripts/test/param_effect_inventory.py`）；两者不可混读。
 
 ## D-2 — 逐键三态裁决
@@ -110,7 +111,7 @@
 
 | 既有物 | 关系 | 本 change 的处置 |
 |---|---|---|
-| `ADR-X.17` F-14（5 类 / 14 键） | **本 change 的子集** | 扩展为实测全量（17 类 / 42 键） |
+| `ADR-X.17` F-14（5 类 / 14 键） | **本 change 的子集** | 扩展为实测全量（**14 类 / 34 键**） |
 | `cpptlm-router-vc-count-param-inert`（backlog · 「只登记不修」） | **结论沿用** | `vc_count` 需要换 3 个核心容器的类型（`std::array` → 动态容器）⇒ 不在本 change;其 json 侧条目归 `ADR-X.10` §F 裁决 |
 | `cpptlm-validate-params-dead-code`（backlog） | **部分重叠** | 其 C++ 侧诉求（`validate_module_params` 死代码）由 `cpptlm-module-param-migrate-batch2` 承接;其 Python 生成期诉求归 `ADR-X.10` §F |
 | `ADR-X.10` 决策 5 / 决策 7 Stage 2（`derive_expr` / 跨参数约束） | **未实施** | 不在本 change |
@@ -161,6 +162,10 @@ python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对�
 
 > 立项期的 17 / 42 是**零效果族**的口径，不是全部配置键 —— 本表把它与「全量键盘点」分开，
 > 避免两个数被读成同一件事。
+>
+> ⚠️ **2026-11-18 类型归档后的同步**：D-1.2 / D-1.5 的零效果族口径已由 **17 类 / 42 对** 收窄为 **14 类 / 34 对**
+> （删 `GPUTLM` 4 + `MemoryClusterTLM` 2 + `SharedMemoryTLM` 2）;本表「B1 落盘后实测」列是**时点快照** ⇒
+> 保留原值不改，⛔ 不得与 D-1.5 的当前值混读。
 
 ### D-1.6.3 与立项期 D-1.2 的差异（逐条，无静默重算）
 
@@ -218,7 +223,7 @@ python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对�
 >
 > ✅ **已追加处置**：`PcieMemoryDevice.capacity_gb`（**态②**：容量由注入 backing 决定 ⇒ 配置值不可能有效果）—— 2026-11-18 落地。
 >
-> ⚠️ **2026-11-18 范围缩减（21 → 13 键）**：`GPUTLM`(4) · `MemoryClusterTLM`(2) · `SharedMemoryTLM`(2) 共 **8 键**已随**类型归档**一并消失 ——
+> ⚠️ **2026-11-18 范围缩减（21 → 13 → 12 键）**：`GPUTLM`(4) · `MemoryClusterTLM`(2) · `SharedMemoryTLM`(2) 共 **8 键**已随**类型归档**一并消失;`PcieMemoryDevice.capacity_gb`(1) 另于同日落态② ⇒ 剩余 **12 键** ——
 > 用户裁定「ArchForge 有计划做的设计 IP ⇒ CppTLM 只保留影响框架层的示例，多余示例归档」，
 > 由 change `cpptlm-config-type-registration-align` 的 **T7** 承接（其 design **D-8** 含逐类型证据与完整影响面）。
 > ⇒ 这 8 键**不需要**在本 change 里逐个裁决（类型已不存在）。
