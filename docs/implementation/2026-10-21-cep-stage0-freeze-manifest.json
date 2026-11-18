@@ -1,5 +1,5 @@
 {
-  "artifact_count": 88,
+  "artifact_count": 89,
   "artifacts": {
     "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "64364ed7d1d9def7919c8bce2e7f3c9e35c31c1b93bf252dc8ec4aff1f24fe95",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4db673d7d582ac6231c6b3fa26ff78ef02dbea4483261b3cfcd7f4403201bd26",
@@ -69,6 +69,7 @@
     "openspec/specs/cep-mesif-state-spec/spec.md": "fd02855675ed8dbf9dcfb6ef6cbeb70c4f46586f4e2abbf4c236cebeff63fa3c",
     "openspec/specs/cep-moesi-gpu-adapter/spec.md": "62d6e2193a36d369d9d6835cff2d57128cdf18334972961ff69e3093bc0be423",
     "openspec/specs/cep-moesi-gpu-l4-e2e/spec.md": "285b0878050b134b92475bdabb550fc1435cb7364452f1559f9e99614bb5a091",
+    "openspec/specs/cep-nictlm-credit-filter/spec.md": "65c378b7b362633c7a0a4a6d1b56a693580b482f83d8820010f9489a5511da63",
     "openspec/specs/cep-nvlink-sharp-state-spec/spec.md": "ba361a678058bdee563d1a6a15dff368e6931c48842657794239a8793f64d3f2",
     "openspec/specs/cep-nvlink-sharp/spec.md": "c2d1597fefad2e67b95ecdce857e4125bc014dc6e88e1dcf4825fb6d70699a5b",
     "openspec/specs/cep-ordering-point-checker/spec.md": "266574f920786e9b49701d56a7e55928bd3dc5bdce28adae34e4740bd3e4c091",
@@ -90,10 +91,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #478",
+  "authorized_by": "Entry #479",
   "exclusions": [],
   "frozen_at": "2026-11-18",
-  "frozen_at_commit": "1af398cf0ca034da4e972777e113d0271bcbf522",
+  "frozen_at_commit": "0924962cf6b919a9cd29c8ddb753462a28adc51a",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
