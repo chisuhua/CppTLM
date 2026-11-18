@@ -3,6 +3,7 @@
 > 归属：change `cpptlm-module-param-read-declares`（决策源 `docs/adr/ADR-X.17-module-param-read-declares.md`）
 > 更新：2026-11-18 —— 由 `cpptlm-module-param-effect-landing` 的 **B1 批次**逐键落地后回填（表 A 新增 6 键 / 表 B 逐条改状态 + 新增 B-7~B-10 / 新增 §2bis 未定义类型）
 > 更新：2026-11-19 —— `cpptlm-module-param-migrate-batch2` 的 **T1（ChStream 家族 10 类型）** + **T2（SimModule 家族 10 类型）** 落地后回填（见 §1.1 / §1.4）
+> 更新：2026-11-19 —— 同 change 的 **T4（ParamRules 机制退役）**：`include/core/param_rules.hh` / `registerParamRules` / `getParamRulesRegistry` / 工厂侧默认值注入 / `validate_module_params` / `ParamParser::validate` 已全部删除 ⇒ **本台账的表 A / 表 B 成为「已消费/已拒绝键」的唯一人工索引**（机制侧的「声明面」不再存在）。⚠️ `configs/param_rules/*.json` **未触碰**（`ADR-X.10` §F 未裁决）
 > 日期：2026-11-17
 >
 > ⚠️ **本文件是人类可读台账，不是任何闸的输入**（change design D-4）。

@@ -26485,3 +26485,48 @@ AC-06 原文要求 `git diff <base> -- configs/` **为空**。实测发现 3 份
 **下一步**：T6 / T7（台账与文档 + spec delta）。
 
 **关联**：册子 §1.5.4 · Entry #492（T4）· AC-06（口径订正）· `ADR-X.17` D-6（W-1）
+
+### Entry #494 — 2026-11-19 [builder](**C2 的 T6 + T7 落地** —— backlog 状态更新 + spec delta 就位)
+
+**范围**：change `cpptlm-module-param-migrate-batch2`（C2）的 **T6.1~T6.3** + **T7.1~T7.5**。
+
+### T6.1 台账表 A ↔ 实现逐条对应（已核对）
+
+§1.1：`MemoryTLM` 7 键 / `GmmuTLM` 2 键 / `PcieEndpointIP` 11 键;
+§1.2：`address_regions`×2 / `CPUTLM` 2 键 / `TrafficGenTLM` 4 键;
+§1.3：`PcieEndpointTLM` 不迁;§1.4：SimModule 家族。
+表 B 与 C1 的裁决**一致（未反转）**：B-6 `routing` 态③、B-10 `memory_type` 态② 本批均保持。
+
+### T6.2 / T6.3 —— 两条 backlog 的状态更新
+
+| improvement | 新状态 | 要点 |
+|---|---|---|
+| `cpptlm-validate-params-dead-code` | 🟢 **C++ 侧已闭合（2026-11-19）** | T4 不仅删了死代码，还**整体退役了机制** ⇒ 超出原预设的 W2 路径;Python 生成期诉求仍留 `ADR-X.10` §F |
+| `cpptlm-router-vc-count-param-inert` | 🔴 未立项 · **结论不变（2026-11-19 复核）** | C++ 声明面**连载体都不存在**了（`param_rules.hh` 已删）⇒ 「只登记不修」的结论更强;仅剩 json 侧条目归 §F |
+
+⚠️ **两处格式坑（已修）**：把多行文本写进 YAML 的 `状态:` 值会**破坏 frontmatter** ⇒ 改成单行 + 在正文末尾新增「状态沿革」节承载沿革信息。
+
+### T7.1~T7.5 —— spec delta 就位 + strict 校验通过
+
+| 文件 | delta 段 |
+|---|---|
+| `specs/module-param-load-declares/spec.md` | `## MODIFIED Requirements`（`module-param-unknown-key-detection`） |
+| `specs/param-derivation/spec.md` | `## REMOVED Requirements`（`ParamRule structure`）+ `## MODIFIED Requirements`（`Module param rules declaration`） |
+| `specs/param-validation/spec.md` | `## MODIFIED Requirements`（`Parameter range validation` + `Required parameter enforcement`） |
+
+⛔ **既有 Scenario 名全部保留**（各文件逐条核对）。
+
+### T7.4 AC-10 —— 「mesh 范围 1-16」条款：**已不存在**（事实核对）
+
+`grep -rn "1-16\|\[1, *16\]" openspec/specs/` ⇒ **零命中**（该条款在更早的 change 中已删除）。
+实测 `RouterTLM::on_config_loaded` 对 `node_x` / `node_y` **无范围约束**（只 `load_param` 必填），
+与 `configs/mesh_4x4.json` 的 `node_x: 0` 事实一致 ⇒ **无残留矛盾，无需订正**（AC-10 的
+「或标注为未实施」分支因此不触发）。判据与结论落在 `tasks.md` 的 T7.4 条目内。
+
+### T7.5 校验
+
+`openspec validate --changes --strict` ⇒ `✓ change/cpptlm-module-param-migrate-batch2`（1 passed / 0 failed）。
+
+**下一步**：T8（验证与收口）。
+
+**关联**：册子 §1.5.4 · Entry #493（T5）· `ADR-X.10` §F · `ADR-X.17` D-6

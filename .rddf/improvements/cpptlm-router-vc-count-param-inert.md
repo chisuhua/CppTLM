@@ -4,7 +4,7 @@ priority: P2
 phase: phase-10
 category: bugfix
 type: bug
-状态: 🔴 **未立项(backlog)· 结论不变(2026-11-18 复核)** —— 2026-11-17 planner 起草并登记(台账 Entry **#467**);原始登记处 = `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` 的 `## 关联` 章「相邻独立缺陷」第 1 条(该条只点了 `buffer_size`,本条是**同族第二例**)。⚠️ **复核结论**:「**只登记不修**」**维持** —— `ADR-X.17` **D-6** 已把 `vc_count` 排除在声明面之外(`NUM_VCS` 是编译期常量 ⇒ 声明即退化为「声明了却无效」),且 `cpptlm-module-param-read-declares`(2026-11-17 已归档)已把该声明**迁出** ⇒ C++ 侧已无残留;其 **json 侧条目**(`configs/param_rules/router_tlm.json` 的 `vc_count` + `derive_expr`)归 `ADR-X.10` **§F** 的独立 ADR 裁决(台账 Entry **#476**)
+状态: 🔴 **未立项(backlog)· 结论不变(2026-11-19 复核)** —— ⚠️ **复核补充**:本条的 **C++ 声明面已彻底归零** —— `cpptlm-module-param-read-declares` 迁出后,C++ 侧无残留;而 `ParamRules` 机制本身已由 change `cpptlm-module-param-migrate-batch2` 的 **T4** **整体删除**(`get_param_rules()` 的载体 `include/core/param_rules.hh` 不再存在)⇒ 「只登记不修」的结论**更强**:`vc_count` 现在连声明都不存在,只有 **json 侧**条目(`configs/param_rules/router_tlm.json`)未决(归 `ADR-X.10` §F,per 台账 Entry #476)。
 created: 2026-11-17
 ---
 
@@ -121,3 +121,11 @@ created: 2026-11-17
 - `docs/adr/ADR-X.16-router-local-port-terminal-credit.md` 的 `## 关联` 章「相邻独立缺陷」第 1 条（原始登记处 —— 该条只点了 `buffer_size`）
 - `openspec/changes/cpptlm-router-buffer-size-param/`（同批立项的 change）
 - 缺陷代码：`src/tlm/router_tlm.cc:573-575`（`vc_count` 声明）· `:570-572`（`flit_width` 声明）· `:65-84`（`on_config_loaded` · 实测读取集合 = `{node_x, node_y, mesh_x, mesh_y, credit_timeout}`）· `include/tlm/router_tlm.hh:138`（`NUM_VCS = 4`）· `configs/param_rules/router_tlm.json:24-31`（`vc_count` 声明 + `derive_expr`）
+
+---
+
+## 状态沿革
+
+- **2026-11-17** planner 起草并登记（台账 Entry **#467**;原始登记处 = `ADR-X.16` 的 `## 关联` 章「相邻独立缺陷」第 1 条）。
+- **2026-11-18** 复核：结论「只登记不修」维持（`ADR-X.17` D-6 把 `vc_count` 排除在声明面之外）。
+- **2026-11-19** 复核补充：`ParamRules` 机制已由 change `cpptlm-module-param-migrate-batch2` 的 T4 **整体删除** ⇒ C++ 声明面**连载体都不存在**，结论更强。仅剩 **json 侧**条目（`configs/param_rules/router_tlm.json`）未决 ⇒ `ADR-X.10` §F。

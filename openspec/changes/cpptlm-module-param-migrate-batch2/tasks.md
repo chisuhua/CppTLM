@@ -81,17 +81,17 @@
 
 ## T6 — 台账与文档
 
-- [ ] T6.1 `docs/implementation/module-param-baseline.md` **表 A** 逐条对应实现（板级直读键）;表 B 与 effect-landing 的裁决一致（两 change 不得互相矛盾）
-- [ ] T6.2 ⚠️ `cpptlm-validate-params-dead-code`（backlog）的状态更新：**C++ 侧诉求由本 change 闭合**;Python 生成期诉求转 `ADR-X.10` §F
-- [ ] T6.3 ⚠️ `cpptlm-router-vc-count-param-inert`（backlog）的状态更新：结论不变（只登记不修）;其 json 侧条目随 §F 裁决
+- [x] T6.1 `docs/implementation/module-param-baseline.md` **表 A** 逐条对应实现（板级直读键）;表 B 与 effect-landing 的裁决一致（两 change 不得互相矛盾） ⇒ **已核对**：表 A（板级直读键）逐条对应实现 —— §1.1 覆盖 `MemoryTLM` 7 键 / `GmmuTLM` 2 键 / `PcieEndpointIP` 11 键（含 `bar_sizes`）；§1.2 覆盖 `address_regions`×2 / `CPUTLM` 2 键 / `TrafficGenTLM` 4 键；§1.3 登记 `PcieEndpointTLM` 不迁；§1.4 记 SimModule 家族。表 B 与 effect-landing 的裁决一致（B-6 `routing` 态③ / B-10 `memory_type` 态② 本批均**保持**，未反转）
+- [x] T6.2 ⚠️ `cpptlm-validate-params-dead-code`（backlog）的状态更新：**C++ 侧诉求由本 change 闭合**;Python 生成期诉求转 `ADR-X.10` §F ⇒ **已更新**：状态改「🟢 C++ 侧已闭合（2026-11-19）」+ 末尾新增「状态沿革」节。⚠️ 落地路径**超出**原 improvement 预设的 W2 —— 不是「承认 ParamRules 只是文档」，而是**机制整体退役**（T4.1~T4.5）;Python 生成期诉求仍留在 `ADR-X.10` §F
+- [x] T6.3 ⚠️ `cpptlm-router-vc-count-param-inert`（backlog）的状态更新：结论不变（只登记不修）;其 json 侧条目随 §F 裁决 ⇒ **已更新**：状态「结论不变（2026-11-19 复核）」+ 末尾新增「状态沿革」节。复核补充：C++ 声明面**连载体都不存在**（`param_rules.hh` 已删）⇒ 「只登记不修」结论更强;仅剩 json 侧条目归 §F。⚠️ 两个 improvement 的 `状态:` 均改成**单行**（多行 YAML 标量会破坏 frontmatter 解析）
 
 ## T7 — spec delta
 
-- [ ] T7.1 `specs/module-param-load-declares/spec.md`：`## MODIFIED Requirements`（全量准入后的表述;⛔ 既有 Scenario 名全部保留）
-- [ ] T7.2 `specs/param-derivation/spec.md`：① `## REMOVED Requirements`（`ParamRule structure` —— 机制退役）② `## MODIFIED Requirements`（`Module param rules declaration` ⇒ 全量 `load_param`;⛔ 既有 Scenario 名全部保留）
-- [ ] T7.3 `specs/param-validation/spec.md`：`## MODIFIED Requirements`（`Parameter range validation` + `Required parameter enforcement`;⛔ 既有 Scenario 名全部保留）
-- [ ] T7.4 ⚠️ AC-10：`param-validation` 的「mesh 范围 1-16」条款订正或标注为「未实施」（事实：`configs/mesh_4x4.json` 存在 `node_x: 0`）
-- [ ] T7.5 `openspec validate cpptlm-module-param-migrate-batch2 --strict` 通过
+- [x] T7.1 `specs/module-param-load-declares/spec.md`：`## MODIFIED Requirements`（全量准入后的表述;⛔ 既有 Scenario 名全部保留） ⇒ **已就位**（delta 文件已含 `## MODIFIED Requirements` 的 `module-param-unknown-key-detection`;既有 4 个 Scenario 名全部保留）
+- [x] T7.2 `specs/param-derivation/spec.md`：① `## REMOVED Requirements`（`ParamRule structure` —— 机制退役）② `## MODIFIED Requirements`（`Module param rules declaration` ⇒ 全量 `load_param`;⛔ 既有 Scenario 名全部保留） ⇒ **已就位**：`## REMOVED Requirements`（`ParamRule structure` + 删除理由）+ `## MODIFIED Requirements`（`Module param rules declaration`;既有 3 个 Scenario 名全部保留）
+- [x] T7.3 `specs/param-validation/spec.md`：`## MODIFIED Requirements`（`Parameter range validation` + `Required parameter enforcement`;⛔ 既有 Scenario 名全部保留） ⇒ **已就位**：`## MODIFIED Requirements`（`Parameter range validation` + `Required parameter enforcement`;既有 Scenario 名全部保留，含 2 处「本 change 反转其结论」的原断言）
+- [x] T7.4 ⚠️ AC-10：`param-validation` 的「mesh 范围 1-16」条款订正或标注为「未实施」（事实：`configs/mesh_4x4.json` 存在 `node_x: 0`） ⇒ **已核对：该条款在当前 main spec 中已不存在**（`grep -rn "1-16\|\[1, *16\]" openspec/specs/` 零命中）—— 它在更早的 change 里已删除;`RouterTLM::on_config_loaded` 对 `node_x`/`node_y` **无范围约束**（只 `load_param` 必填），与 `configs/mesh_4x4.json` 的 `node_x: 0` 事实一致 ⇒ **无残留矛盾，无需订正**。判断依据落此（AC-10 的「或标注为未实施」条件因此不触发）
+- [x] T7.5 `openspec validate cpptlm-module-param-migrate-batch2 --strict` 通过 ⇒ **通过**（`openspec validate --changes --strict` ⇒ `✓ change/cpptlm-module-param-migrate-batch2`，1 passed / 0 failed）
 
 ## T8 — 验证与收口
 

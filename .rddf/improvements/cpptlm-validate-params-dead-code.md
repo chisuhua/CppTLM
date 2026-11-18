@@ -4,7 +4,7 @@ priority: P1
 phase: phase-10
 category: bugfix
 type: bug
-状态: 🟡 **部分转派(2026-11-18)** —— 2026-11-17 planner 起草并登记(台账 Entry **#470**);发现于 change `cpptlm-router-buffer-size-param` 的实施期(其 `design.md` **D-7.1** 记录)。⚠️ **C++ 侧诉求已转派**给 change `cpptlm-module-param-migrate-batch2`(台账 Entry **#476**;其 tasks **T4.4** 删死代码 `validate_module_params` + **T4.5** 随迁 `ParamParser::validate`)⇒ 机制退役后,`ParamRules` 的 type/min/max 约束由**模块内 `load_param`** 承担(`ADR-X.17` D-1 / D-6)。⛔ **Python 生成期诉求仍未闭合**(`cpptlm_config/validator.py` 的 PARAM-01/02 依赖 `configs/param_rules/*.json`)⇒ 归 `ADR-X.10` **§F** 的独立 ADR 裁决(architect 域)
+状态: 🟢 **C++ 侧已闭合(2026-11-19)** —— change `cpptlm-module-param-migrate-batch2` 的 **T4.4/T4.5** 已删 `validate_module_params`(死代码) + `ParamParser::validate`;同批 **T4.1~T4.3** 更进一步把 `ParamRules` 机制**整体退役**(`include/core/param_rules.hh` / `registerParamRules` / `getParamRulesRegistry` / 工厂侧默认值注入循环)⇒ 本 improvement 的 W2 路径落地且超出预期:参数声明面统一到 `load_param` / `load_param_opt`(判据 `test/test_param_migrate_batch2.cc` + 台账 Entry #492)。⛔ **Python 生成期诉求仍未闭合**(`cpptlm_config/validator.py` 的 PARAM-01/02 依赖 `configs/param_rules/*.json`;该目录按 T4.7 **未触碰**)⇒ 转 `ADR-X.10` **§F** 独立裁决(architect 域)。以下原状态行保留作沿革。
 created: 2026-11-17
 ---
 
@@ -137,3 +137,12 @@ static bool validate_module_params(const std::string& module_type, const json& p
 - `.rddf/improvements/cpptlm-router-buffer-size-param.md`（首个发现者）
 - 缺陷代码：`src/core/module_factory_validate.cc:474-499`（`validate_module_params` · **零调用方**）· `src/core/module_factory.cc:265-287`（Step 1.2 · **只做 required + default 注入**）· `src/core/param_parser.cc:54-67`（`ParamParser::validate` · 唯一调用点在死代码里）· `src/core/module_factory_validate.cc:199`（`validateConfig` · **不调**该校验器）
 - 相关范式先例：`src/core/module_factory.cc:487-493`（Step 4.5 `simulate_instantiate` 的 `try{...}catch{return false}`）
+
+---
+
+## 状态沿革
+
+- **2026-11-17** planner 起草并登记（台账 Entry **#470**;发现于 change `cpptlm-router-buffer-size-param` 的 `design.md` **D-7.1**）。
+- **2026-11-18** 部分转派：C++ 侧诉求转给 change `cpptlm-module-param-migrate-batch2`（台账 Entry **#476**）。
+- **2026-11-19** **C++ 侧闭合**：该 change 的 T4 删除 `validate_module_params` / `ParamParser::validate`，并把 ParamRules 机制整体退役（台账 Entry #492）。⚠️ 落地路径比本 improvement 预设的 W2 更彻底 —— 不是「承认 ParamRules 只是文档」，而是**机制消失**，约束统一由 `load_param` 的 `lo`/`hi` 与模块内校验承担。
+- **仍未闭合**：Python 生成期（`cpptlm_config/validator.py` 的 PARAM-01/02 ← `configs/param_rules/*.json`）⇒ `ADR-X.10` §F。
