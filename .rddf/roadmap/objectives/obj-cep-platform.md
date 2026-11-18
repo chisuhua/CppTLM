@@ -26267,3 +26267,60 @@ TpcCluster / GpcCluster / GpuCluster / ApuSoC / CepMeshInterconnect）。
 **下一步**：T3（P1b：依赖 effect-landing 的剩余键）。
 
 **关联**：册子 §1.5.4 · Entry #489（T1）· `docs/implementation/module-param-baseline.md` §1.4
+
+### Entry #491 — 2026-11-19 [builder](**C2 的 T3（P1b）落地** —— GpuNoC 准入解除 + 零效果键存量复核)
+
+**范围**：change `cpptlm-module-param-migrate-batch2`（C2）的 **T3.1~T3.3**。
+
+### T3.1 前置核验（机械判据，非人读）
+
+`bash scripts/test/rddf_stage_gate.sh --phase C` ⇒ **全绿 / 0 项跳过**：
+P-1 依赖边锚点命中（C1 已归档 ⇒ `resolve_path` 的归档感知三态生效）、P-3 的 9 条 AC 载体全部在位。
+⇒ C1 的 B1（TrafficGen/Memory/Gmmu）+ B3（`RouterTLM.routing` 态③）确已完成。
+
+### T3.2 `GpuNoC` 准入（T2.10 的暂缓条件解除）
+
+T2.10 暂缓准入的理由是「`routing` 的裁决归 C1 之后的独立 change」。**C1 已完成该裁决**
+（B3：`RouterTLM` 落态③ —— 合法值唯一 `"XY"`，非法值装配期失败并含键名 + 合法值集合）。
+本类的角色是**透传**（`GpuNoC::simulate_instantiate` 把 `routing_` 写进每个内部 router 的 params）
+⇒ 裁决点仍然唯一（在 `RouterTLM`），本类准入**不会**造成「两个裁决点互相牵制」。
+
+⇒ 加入准入表（准入表 17 → 18），并补一条**传递性**判据：
+`routing="FIFO"` ⇒ 内部 `RouterTLM` 拒绝 ⇒ **整体装配失败**（`[batch2][gpunoc]`）。
+
+### T3.3 零效果键的存量配置复核（机械扫描，逐条判定）
+
+扫描 `configs/**/*.json` 的**所有 `params` 对象**的键集（Python 解析，非 grep 文本匹配 ——
+后者会把 `type` / `ports` 这类**拓扑字段**误当参数键）：
+
+| 结果 | 明细 |
+|---|---|
+| ✅ 态① 合法值 | `TrafficGenTLM.pattern` × 若干（SEQUENTIAL/RANDOM/HOTSPOT/STRIDED）+ `MemoryTLM.capacity_gb` × 9 |
+| ✅ 态③ 合法值 | `CPUTLM.pattern = "SEQUENTIAL"` × 14（唯一合法值，**通过**） |
+| ✅ 零命中 | `mem_type` / `memory_type` / `operating_frequency_hz` / `n_ports` / `port_count` / `bar_bases` / `link_speed_gts` / `domain_protocol` / `snoop_filter` / `vc_counts_enabled` / `execution_latency` / `warp_size` |
+| ✅ 不属参数面 | `protocol` × 5（都在 `coherence_domains[]` **域级**块）;`type` × 411 / `ports` × 31（模块 **entry 字段**） |
+| ⚠️ 观察项（不在本 change 范围） | `dgpu_soc_v2_realip_p2.json` 的顶层 **`soc_noc` 块** 含 `data_flow` / `vc_counters_enabled` —— 是**板级开关**（非模块 `params`）;`DGpuBoard` 只按实例名找 `soc_noc` 模块、不读该块 ⇒ 该块当前**无消费方**。登记，不修（模块参数面之外） |
+
+⇒ **态②/③ 键在真实配置中零违规**，另有 `test_param_alignment` 的
+「含准入类型实例的配置全部可装配且无未知键」判据兜底。
+
+### 顺带观察（pre-existing，非本 change 引入）
+
+`./build/bin/cpptlm_sim configs/base.json` **段错误**（无任何 stderr 输出）。
+该文件是**历史 include/extends 片段**（`"include": "common/modules.json"` + `groups` + `connections`），
+**全仓零引用**（无其它配置 extends 它），也无任何测试/CI 覆盖。⇒ 登记为独立缺陷，不在 C2 范围内。
+
+### 验证
+
+| 面 | 实测 |
+|---|---|
+| `cpptlm_tests` | **883650 / 2411**（+1 case / +4 assertions vs T2） |
+| `pytest` | **232 passed** |
+| `ctest` | **184 / 184** |
+| `rddf_stage_gate --phase C` | **全绿 / 0 跳过** |
+| `config_type_registration_check` | 通过 |
+| 配置装配扫描 | 除 `base.json`（pre-existing 段错误，零引用）/ `noc_mesh.json`（既有 baseline-exempt）/ 两份蓝图片段（`compute_unit_v1` 无顶层 connections，仅作为被 include 的蓝图）外，全部 exit 0 |
+
+**下一步**：T4（ParamRules 机制退役）。
+
+**关联**：册子 §1.5.4 · Entry #490（T2）· C1 的 B3（`RouterTLM.routing` 态③）

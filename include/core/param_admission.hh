@@ -81,9 +81,10 @@ inline std::set<std::string, std::less<>>& param_admission_table() {
         "ApuSoC",
         // CepMeshInterconnect: `template`（路径字符串）。
         "CepMeshInterconnect",
-        // ⚠️ `GpuNoC` **不准入**（T2.10）：`routing` 的裁决归 C1 之后的独立 change
-        //    （本类只是透传给 `RouterTLM`，而后者已落态③「只接受 XY」）
-        //    ⇒ 准入会让两个裁决点互相牵制。`mesh_size` 已声明化，但本批不准入。
+        // ⚠️ `GpuNoC` 的准入在 **T3.2** 落地（`routing` 的裁决由 C1 的 B3 完成 ——
+        //    `RouterTLM` 落态③「合法值唯一 `XY`」，本类只是把它透传给内部 router）。
+        //    T2 批次**未**准入（当时的窗口期约束），T3 承载该动作。
+        "GpuNoC",
     };
     return table;
 }

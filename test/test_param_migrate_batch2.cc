@@ -607,13 +607,13 @@ TEST_CASE("AC-02: CepMeshInterconnect.template 生效", "[param][migrate][batch2
     CHECK(c->template_path() == "configs/interconnect/cep_mesh_2x2.json");
 }
 
-// ── T2.10 GpuNoC（⚠️ 本批**不准入**）─────────────────────────────────────
-TEST_CASE("AC-02: GpuNoC.mesh_size 生效，但本批**未准入**（routing 待裁决）",
+// ── T2.10 + T3.2 GpuNoC ─────────────────────────────────────────────────
+TEST_CASE("AC-02: GpuNoC.mesh_size 生效 + 准入（T3.2：routing 裁决已由 C1 的 B3 完成）",
           "[param][migrate][batch2][gpunoc]") {
     register_all_types();
 
-    // ⚠️ 准入状态断言：T2.10 明确「本任务暂缓准入」（`routing` 的裁决归后续 change）
-    CHECK_FALSE(cpptlm::is_param_admitted("GpuNoC"));
+    // T2.10 暂缓准入 ⇒ **T3.2 落地**（前置：C1 的 B3 已把 `RouterTLM.routing` 落态③）
+    CHECK(cpptlm::is_param_admitted("GpuNoC"));
 
     auto probe = [](int n) {
         EventQueue eq;
@@ -626,4 +626,27 @@ TEST_CASE("AC-02: GpuNoC.mesh_size 生效，但本批**未准入**（routing 待
 
     CHECK(probe(2) == 2);
     CHECK(probe(3) == 3);
+}
+
+TEST_CASE("AC-02: GpuNoC.routing 非法值 ⇒ 装配失败（态③ 透传给内部 RouterTLM）",
+          "[param][migrate][batch2][gpunoc]") {
+    register_all_types();
+
+    // 合法值 "XY"（默认）⇒ 正常装配
+    {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(
+            one_module("noc_ok", "GpuNoC", json{{"mesh_size", 2}, {"routing", "XY"}})));
+        auto* c = get_as<cpptlm::tlm::GpuNoC>(factory, "noc_ok");
+        REQUIRE(c != nullptr);
+        CHECK(c->routing() == "XY");
+    }
+    // 非法值 ⇒ 本类把值透传给内部 `RouterTLM`，后者态③ 拒绝 ⇒ 整体装配失败
+    {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE_FALSE(factory.instantiateAll(
+            one_module("noc_bad", "GpuNoC", json{{"mesh_size", 2}, {"routing", "FIFO"}})));
+    }
 }

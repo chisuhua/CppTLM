@@ -45,10 +45,21 @@
 
 ## T3 — P1b：依赖 effect-landing 的部分
 
-- [ ] T3.1 ⛔ **前置**：`cpptlm-module-param-effect-landing` 的 B1（`TrafficGenTLM` / `MemoryTLM` / `GmmuTLM`）与 B3（`routing`）完成
+- [x] T3.1 ⛔ **前置**：`cpptlm-module-param-effect-landing` 的 B1（`TrafficGenTLM` / `MemoryTLM` / `GmmuTLM`）与 B3（`routing`）完成 ⇒ **已核验**：`bash scripts/test/rddf_stage_gate.sh --phase C` **全绿（0 项跳过）** —— P-1 依赖边锚点命中（C1 已归档 ⇒ `resolve_path` 走归档感知三态）/ P-3 AC 载体在位;C1 的 B1（TrafficGen/Memory/Gmmu）+ B3（RouterTLM.routing 态③）均已落地
       - ⚠️ **机械前置命令**（critic 2026-11-18 要求 —— 否则「前置」只靠人读）：`bash scripts/test/rddf_stage_gate.sh --phase C` ⇒ 断言 C1 的 `tasks.md` 无未勾 task 且 C2 目录未提前开工
-- [ ] T3.2 `TrafficGenTLM` / `MemoryTLM` / `GmmuTLM` / `GpuNoC` 的剩余键按裁决结果声明化 + 准入
-- [ ] T3.3 ⚠️ 零效果键的**存量配置清单**复核（承接 effect-landing T4.4）
+- [x] T3.2 `TrafficGenTLM` / `MemoryTLM` / `GmmuTLM` / `GpuNoC` 的剩余键按裁决结果声明化 + 准入 ⇒ **已落地**：前三个在 T1 已声明化并准入（C1 裁决后的键集不变）;⚠️ **`GpuNoC` 在 T3 准入**（T2.10 的暂缓条件已解除 —— C1 的 B3 已把 `RouterTLM.routing` 落态③「合法值唯一 XY」）;判据：`[batch2][gpunoc]` 断言 `is_param_admitted("GpuNoC")` **为真** + `routing` 非法值（`"FIFO"`）**透传给内部 RouterTLM ⇒ 整体装配失败**（态③ 的传递性验证）
+- [x] T3.3 ⚠️ 零效果键的**存量配置清单**复核（承接 effect-landing T4.4） ⇒ **已复核（机械扫描：解析 `configs/**/*.json` 所有 `params` 对象的键集，逐条判定）**：
+
+| 键 | 命中 | 类型 | 判定 |
+|---|---|---|---|
+| `pattern` | 25 处 | `TrafficGenTLM`（态①，合法值 SEQUENTIAL/RANDOM/HOTSPOT/STRIDED）/ `CPUTLM`（态③，合法值唯一 SEQUENTIAL） | ✅ 全部合法值 |
+| `capacity_gb` | 9 处 | `MemoryTLM`（态①） | ✅ 无 `PcieMemoryDevice` 残留（B-14 已清） |
+| `mem_type` / `memory_type` / `operating_frequency_hz` / `n_ports` / `port_count` / `bar_bases` / `link_speed_gts` / `domain_protocol` / `snoop_filter` / `vc_counts_enabled` / `execution_latency` / `warp_size` | **0** | — | ✅ 已清空 |
+| `protocol` | 5 处 | 均在 `coherence_domains[]` **域级**块内（非模块 `params`） | ✅ 不属模块参数面 |
+| `ports` / `type` | 31 / 411 处 | 模块 entry 的**拓扑字段**（`type` / `ports: []`），非 `params` 键 | ✅ 不属参数面 |
+| `data_flow` | 1 处 | `dgpu_soc_v2_realip_p2.json` 的**顶层 `soc_noc` 块**（板级开关，非模块 `params`） | ⚠️ **观察项**：板级块内无消费方（`DGpuBoard` 只按实例名 `soc_noc` 找模块，不读该块）⇒ 登记，不属本 change 范围（模块参数面之外） |
+
+⇒ **态②/③ 键在真实配置中零违规**（另有 `test_param_alignment` 的「含准入类型的配置全部可装配」判据兜底）。
 
 ## T4 — P2：ParamRules 机制退役
 
