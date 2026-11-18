@@ -1,11 +1,20 @@
-# config-type-registration-align Specification (delta)
+# config-type-registration-align Specification
 
-## ADDED Requirements
+## Purpose
+
+约束**配置中的模块 `type` 必须存在于运行时注册表**（`ADR-X.17`「读取即声明」在类型面的平移）。
+
+存在的动因：`ModuleFactory::instantiateAll` 对未注册类型只打一行 `DPRINTF` 然后**继续** —— 装配"成功"但该模块被静默丢弃，拓扑缺模块，仿真结果静默失真；而 `DPRINTF` 仅在 Debug 构建生效，Release / CI 默认构建下连日志都没有。本规范把「配置里写的类型必须真的能装」变成**装配期硬失败**，并配一道零豁免的集合差闸，使这类漂移在提交前就被挡住。
+
+判据集合**只从运行时导出派生**（`cpptlm_sim --list-types --json` ⇒ `ModuleFactory::getRegisteredTypes()`）—— ⛔ 不做源码解析、⛔ 不硬编码类型名，否则会与实现漂移，并漏掉「有类但无基类」与「模板基类」这两类最难判的案例。
+
+适用范围：顶层 `modules[]` 的类型检查与配置侧差集闸。**嵌套**（`SimModule` 内联 `modules`）的失败传播不在此列 —— `simulate_instantiate` 丢弃内部装配返回值，该项由 change `cpptlm-module-param-migrate-batch2` 承接。
+
+## Requirements
 
 ### Requirement: config-type-registration-align
 
 配置**顶层 `modules[]`** 引用的每一个模块 `type` SHALL 在**运行时注册表**（`ModuleFactory::getRegisteredTypes()`）中存在;若不存在，装配 SHALL **失败**并报出**类型名 + 实例名 + 来源文件**。
-
 
 #### Scenario: 未注册类型 SHALL 使装配失败且报出类型名
 
