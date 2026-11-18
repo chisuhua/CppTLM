@@ -157,7 +157,7 @@ python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对�
 | 键 × 类型对数 | 42 | **107** |
 | 类别 ① 强候选（`zero-ref`） | 14 类 / 32 对 | **12 类 / 22 对** |
 | 无自有读面但键被他处引用 | 未区分 | 17 对（板级直读 / 父模块转发 / LINT 校验） |
-| 类型未定义 | 未区分 | **2**（`ComputeUnitTLM` · `TCCTLM`） |
+| 类型未定义（配置引用**未注册**类型） | 未区分 | **4**（`TmuDispatchProcessorTLM` · `ArbiterTLM` · `ComputeUnitTLM` · `TCCTLM`）/ 3 份配置 —— ⚠️ 见 **R-5** |
 
 > 立项期的 17 / 42 是**零效果族**的口径，不是全部配置键 —— 本表把它与「全量键盘点」分开，
 > 避免两个数被读成同一件事。
@@ -166,7 +166,7 @@ python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对�
 
 | # | 差异 | 原因 | 影响 |
 |:--:|---|---|---|
-| 1 | `ComputeUnitTLM`(2 键) · `TCCTLM`(2 键) 从类别 ① **剔除** | 仓内无类定义（`grep -rn "class ComputeUnitTLM\|class TCCTLM" include/ src/` = 0 命中）;`configs/apu_soc_full.json:3` 自述「not yet registered (planned Phase 7.B/C/D)」 | 不是零效果键,而是**配置引用不存在类型** ⇒ 归「未定义类型」,不计入本 change 的键盘点;受影响配置本身**不可装配**（新增登记 R-5） |
+| 1 | `ComputeUnitTLM`(2 键) · `TCCTLM`(2 键) 从类别 ① **剔除** | 仓内无类定义（`grep -rn "class ComputeUnitTLM\|class TCCTLM" include/ src/` = 0 命中）;`configs/apu_soc_full.json:3` 自述「not yet registered (planned Phase 7.B/C/D)」 | 不是零效果键,而是**配置引用未注册类型** ⇒ 不计入本 change 的键盘点;⚠️ **实测推翻「整份配置不可装配」的旧登记** —— 真实形态是「**装配成功但该模块被静默丢弃**」（`module_factory.cc` 约 385 行只打 `DPRINTF` 后继续;`DPRINTF` 仅 Debug 生效 ⇒ Release 下**零输出**）⇒ 拓扑缺模块 ⇒ **仿真结果静默失真**（比「装不上」更隐蔽）;完整清单（**4 类型 / 3 配置**，含 `TmuDispatchProcessorTLM` 与 `ArbiterTLM`）见 **R-5** |
 | 2 | `LwcBusHub.max_ip_ports` 移出类别 ① | B1 已落地（T1.4）| 已消费 |
 | 3 | **新增** `CoherentXBarTLM`(3 键) · `GpuMeshNoC`(2 键) · `VramControllerTLM.operating_frequency_hz`(1 键) · `MemoryCluster.memory_type`(1 键) | 立项期靠人工读配置遗漏 | 归 B2 批次（`MemoryCluster` 属 SimModule 家族;`CoherentXBarTLM.ports` 仅被 `module_factory_validate.cc:271` 读去做**越界告警**,值从不生效 ⇒ 伪参数候选） |
 | 4 | `CacheTLM.level` 不在脚本输出中 | `configs/` 里无该键,它由 `src/tlm/cluster/cache_cluster.cc` 在**运行时**生成 | 仍按 `ADR-X.17` F-14 登记（脚本只能看见配置文件里的键）;**已落地**（`level` ⇒ 命中延迟,见 D-1.6.4） |

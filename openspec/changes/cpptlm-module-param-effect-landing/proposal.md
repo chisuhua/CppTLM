@@ -48,7 +48,7 @@
 | R-2 | `derive_expr`（`configs/param_rules/router_tlm.json` 的 `vc_count` 条目）两侧皆无人执行 | `ADR-X.10` 决策 5 未实施 ⇒ 独立 change |
 | R-3 | `cpptlm_config`（Legacy / Deprecated）是 `configs/param_rules/*.json` 的唯一消费者;其继任者 `cpptlm/` 零 `param_rules` 引用 | `ADR-X.10` §F 裁决时一并回答「生成期校验能力迁往何处」 |
 | **R-4** | ~~**`CacheTLM` 的 6 键本 change 无法落地**~~ —— ✅ **已解除**（2026-11-18）:该类原为 CEP 冻结面（`ADR-CEP-15` IC1）⇒ 经**用户裁定解冻**（`ADR-CEP-15` Status Update 2026-11-18 决策 2 改判 + 台账 Entry #478）⇒ 容量模型已在 `cache_tlm.hh` 内补齐，`size` / `line_size` / `associativity` / `assoc` / `level` 走**态 ①**、`protocol` 走**态 ②**（协议语义不入本类） | **已闭合**（不再依赖 architect 裁决;连带面见 `ADR-CEP-15` SU §⑤） |
-| **R-5** | 配置引用了**仓内不存在的类型**：`ComputeUnitTLM`（`configs/apu_soc_full.json` / `apu_soc_phase7a.json` 各 4 实例）、`TCCTLM`（同两份配置） | 两份配置本身不可装配（自述「not yet registered」）⇒ 不是零效果键;处置（实现类型 / 从配置移除）归独立 change，本 change 只登记（台账 §2bis） |
+| **R-5** | 配置引用了**运行时注册表里没有的类型** —— 实测 **4 个类型 / 3 份配置**：`TmuDispatchProcessorTLM`（类存在但**从未注册** + 配置名与类名不一致;`configs/dgpu_board_v1.json`，**嵌套**）· `ArbiterTLM`（模板基类未注册，注册名只有 `ArbiterTLM2/4`;`configs/library_memory_demo.json`）· `ComputeUnitTLM`（类不存在，4 实例;`configs/apu_soc_full.json`）· `TCCTLM`（类不存在，2 实例;同上）。**失败形态 = 装配成功但模块被静默丢弃**（`module_factory.cc` 约 385 行只打 `DPRINTF` 后继续;且 `DPRINTF` 仅 Debug 构建生效 ⇒ Release 下**零输出**）⇒ **拓扑缺模块 ⇒ 仿真结果静默失真** | 机制 fail-fast（顶层）+ 4 处对齐 + 「配置 type ⊆ 运行时注册表」判据闸 ⇒ 独立 change **`cpptlm-config-type-registration-align`** 承接;台账 §2bis 已按实测订正（原登记「整份配置不可装配」与实测不符，已改） |
 
 ## 验收标准
 

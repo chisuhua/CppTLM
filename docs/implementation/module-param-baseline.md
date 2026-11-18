@@ -67,18 +67,32 @@
   ⚠️ 该 API 的调用点可 grep 穷举审计（`grep -rn 'ignore_param(' src/ include/`），
   新增调用必须同步登记本表 —— 否则就是把未知键检查悄悄关掉。
 
-## 2bis. 未定义类型（配置引用了仓内**不存在**的类型）
+## 2bis. 未注册类型（配置引用了**运行时注册表里没有**的类型）
 
-**不入表 B** —— 表 B 是「键存在但零效果」;而这里的键连宿主类都不存在 ⇒ **整份配置不可装配**,
-不是零效果。
+**不入表 B** —— 表 B 是「键存在但零效果」;这里是「**模块存在但实现里没有该类型**」⇒ 另一族缺陷。
 
-| 类型 | 出现处 | 证据 | 影响 |
-|---|---|---|---|
-| `ComputeUnitTLM` | `configs/apu_soc_full.json` / `configs/apu_soc_phase7a.json` | 全仓 `grep -rn "class ComputeUnitTLM\|struct ComputeUnitTLM" include/ src/` = **0 命中**（`include/tlm/gpu/streaming_multiprocessor_tlm.hh:14` 注明「Task 9: GpuComputeUnitTLM rename 合并入此」） | 两份配置无法装配;`configs/apu_soc_full.json:3` 自述「not yet registered (planned Phase 7.B/C/D)」⇒ 属**愿景配置**,不是活拓扑 |
-| `TCCTLM` | 同上 | 全仓 `grep -rn "TCCTLM" include/ src/` = **0 命中** | 同上 |
+> ⚠️ **2026-11-18 订正（实测推翻原登记）**:本段原写「整份配置**不可装配**」⇒ **与实测不符**。
+> 真实失败形态 = **装配成功但该模块被静默丢弃**:`ModuleFactory::instantiateAll`
+> (`src/core/module_factory.cc` 约 385 行)遇到未注册类型只打 `DPRINTF` 然后**继续** ⇒
+> **拓扑缺模块** ⇒ 仿真结果**静默失真**。且 `DPRINTF` **仅在 Debug 构建生效**
+> (`include/core/sim_core.hh:8-16` + `CMakeLists.txt:71-72`)⇒ **Release 构建下连日志都没有**。
 
-> 由 `scripts/test/param_effect_inventory.py` 自动检出（`undefined-type`）。
-> 处置（删除配置 / 实现类型）不属本 change —— 已登记为 `cpptlm-module-param-effect-landing` R-5。
+| 配置里的 type | 实际状态 | 出现处 |
+|---|---|---|
+| `TmuDispatchProcessorTLM` | 类**存在**（`include/tlm/gpu/tmu_dispatch_processor_tlm.hh` 的 `tlm::gpu::TmuDispatchProcessor`）但**从未注册** ⇒ 且配置里的名字与类名**不一致** | `configs/dgpu_board_v1.json`（**嵌套**在 `soc` 内 ⇒ 顶层 fail-fast 覆盖不到） |
+| `ArbiterTLM` | 只注册了 `ArbiterTLM2` / `ArbiterTLM4`;**模板基类 `ArbiterTLM` 本身未注册** | `configs/library_memory_demo.json` |
+| `ComputeUnitTLM` | 类**不存在**（历史 `GpuComputeUnitTLM` 已并入 `StreamingMultiprocessorTLM` —— `include/tlm/gpu/streaming_multiprocessor_tlm.hh:14` 注明 rename 合并） | `configs/apu_soc_full.json`（4 实例） |
+| `TCCTLM` | 类**不存在**（全仓 `include/` + `src/` 零命中） | `configs/apu_soc_full.json`（2 实例） |
+
+> **实测方法**:运行时枚举 `ModuleFactory::getRegisteredTypes()`（67 个注册类型）∩
+> `configs/**/*.json`（排除 `configs/param_rules/**`）的 `type` 集合 ⇒ 差集 = 上表 **4 个类型 / 3 份配置**。
+> ⛔ **不能用「类名是否存在于 include/」判定** —— `TmuDispatchProcessorTLM`（有类、名字不同）与
+> `ArbiterTLM`（模板基类）都会被漏判 ⇒ 判据必须**从运行时注册表派生**。
+> ⚠️ 原登记「`configs/apu_soc_phase7a.json` 也含 `ComputeUnitTLM`」与实测**不符**
+> （该文件仅在 `description` 文本里提到该名,`modules[]` 里**零命中**）⇒ 已订正。
+>
+> 处置（机制 fail-fast + 4 处对齐）**不属本 change** ⇒ 已登记为 `cpptlm-module-param-effect-landing` R-5
+> ⇒ 独立 change `cpptlm-config-type-registration-align` 承接。
 
 ---
 
