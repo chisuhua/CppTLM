@@ -218,6 +218,8 @@ VIRTUAL_PATHS=(
   "openspec/changes/cpptlm-cep-invariant-gate-teeth"  # 同上(2026-11-12 归档 → 2026-11-12-cpptlm-cep-invariant-gate-teeth);台账 Entry #367/#368 的归档登记指向归档前位置 —— **append-only 台账不可回改** ⇒ 豁免其「active 路径」形态;⛔ 该子串**不匹配**归档后路径(`openspec/changes/archive/2026-11-12-...`)⇒ 归档件本身仍被逐条检查
   "openspec/changes/cpptlm-cep-b3b2-archive-form"  # C6 **已归档**(2026-11-13,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-b3b2-archive-form/)⇒ 台账 Entry #384/#385 的路径引用(归档前 active 路径;⚠️ 与 C3/C4 同型)
   "openspec/changes/cpptlm-cep-dod-reading-consistency"  # C4 **已归档**(2026-11-12,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-dod-reading-consistency/spec.md)⇒ 台账 Entry #373/#374 的路径引用(归档前 active 路径;⚠️ 与 C3 同型)
+  "openspec/changes/cpptlm-module-param-effect-landing"  # **已归档**(2026-11-18,✅ 已完成归档语义 · delta **新建** openspec/specs/module-param-effect-landing/spec.md,per 台账 Entry #485)⇒ 台账 Entry #476/#484 与册子 §1.5 的路径引用(**归档前 active 路径**;append-only 台账不可回改)⇒ 豁免;⛔ 该子串不匹配归档后路径(`openspec/changes/archive/2026-11-18-...`)⇒ 归档件本身仍被逐条检查
+  "openspec/changes/cpptlm-module-param-effect-landing/proposal.md"  # 同上(Entry #476 的 change 四件套引用);归档件在 `openspec/changes/archive/2026-11-18-cpptlm-module-param-effect-landing/proposal.md`
   # —— 2026-10-26(Entry #66)队列 #5:设计示意,**builder 阶段才创建** ——
   "include/bundles/collective_bundles_tlm.hh"             # 设计示意:P3 才有真实传输通道时新建(per ADR-CEP-03 Status Update 的 Bundle 化推迟登记)
   "openspec/changes/cpptlm-cep-collective-plane-base"     # 同上(2026-10-26 归档 → 2026-10-26-cpptlm-cep-collective-plane-base);历史叙述(obj 台账 Entry #66~#69、improvement 草稿)指向归档前位置 —— **双态注册**(归档日治理第 4 步)

@@ -15,8 +15,9 @@
 # ⚠️ 换锚点 = 改判据 ⇒ 需同 commit 说明理由（append-only 台账 + 审稿记录）。
 #
 # ── C1 · cpptlm-module-param-effect-landing ────────────────────────────────
-AC-01	cmd	scripts/test/param_effect_inventory.py	--json
 AC-01	doc	openspec/changes/cpptlm-module-param-effect-landing/design.md	### D-1.2 类别 ①
+AC-01	doc	openspec/changes/cpptlm-module-param-effect-landing/design.md	### D-1.6.6 B2 批次（A2a/A2b/A2c）
+AC-01	doc	docs/implementation/module-param-baseline.md	## 2bis. 未注册类型
 AC-02	doc	openspec/changes/cpptlm-module-param-effect-landing/design.md	### D-1.6.5 B2 批次
 AC-02	test	test/test_param_effect_landing.cc	AC-02: GpuMeshNoC.dim / hops_latency
 AC-02	test	test/test_param_effect_landing.cc	AC-02: CPUTLM.start_addr / request_interval

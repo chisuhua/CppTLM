@@ -21,6 +21,45 @@ RED=$'\033[0;31m'; GRN=$'\033[0;32m'; YLW=$'\033[0;33m'; RST=$'\033[0m'
 FAILED=0
 SKIPPED=0
 
+# 归档感知的路径解析 —— 三态结果（状态记在全局 `RESOLVE_STATE`）：
+#   ok                 载体在原路径
+#   archived           载体在 `openspec/changes/archive/<date>-<name>/` 下（已归档，仍可校验）
+#   unavailable        该 change 已归档，但归档内容不在当前工作树
+#
+# ⚠️ 为什么必须有 archived 态：change 归档后其 AC 载体（design.md / tasks.md）整体迁移路径。
+#    不回退 ⇒ 每次归档都使门禁变红 ⇒ 只能手改载体表追认 ⇒ 判据历史被改写
+#    （⛔ 违背 P-4「判别 case 不得被静默删除」的初衷）。
+#
+# ⚠️ 为什么必须有 unavailable 态：`.gitignore:64` 排除了 `openspec/changes/archive/`
+#    （历史仅 3 次 commit force-add 过部分内容）⇒ **干净 clone 上归档内容根本不存在**。
+#    此时不能判 fail（那不是判据失败，是载体不可分发）也不能判 pass ⇒ **skip + 告警**，
+#    并写明原因。⚠️ 这**不削弱** P-4：判据的**活载体**（`test/` 下的测试文件）始终 tracked。
+RESOLVE_STATE=""   # ok | archived | unavailable | missing
+RESOLVE_PATH=""    # ⚠️ 路径必须走**全局变量**回传 —— 若用 `echo` + `$(...)`，赋值会发生在
+                   #    命令替换的子 shell 里 ⇒ RESOLVE_STATE 永远传不回父 shell（本脚本
+                   #    曾因此让 unavailable 态**静默失效**，变异测试才发现）。
+resolve_path() {
+    local p="$1"
+    RESOLVE_PATH="$p"
+    if [ -f "$p" ]; then RESOLVE_STATE=ok; return 0; fi
+    case "$p" in
+        openspec/changes/archive/*) RESOLVE_STATE=unavailable; return 2 ;;
+        openspec/changes/?*/*)
+            local rest="${p#openspec/changes/}"
+            local cname="${rest%%/*}"
+            local tail="${rest#*/}"
+            local hit
+            hit="$(ls -d openspec/changes/archive/*-"$cname" 2>/dev/null | head -1)"
+            if [ -n "$hit" ] && [ -f "$hit/$tail" ]; then
+                RESOLVE_PATH="$hit/$tail"; RESOLVE_STATE=archived; return 0
+            fi
+            # change 已不在 active 集 ⇒ 视为已归档（归档内容是否在工作树决定上面那条）
+            if [ ! -d "openspec/changes/$cname" ]; then RESOLVE_STATE=unavailable; return 2; fi
+            ;;
+    esac
+    RESOLVE_STATE=missing; return 1
+}
+
 fail() { echo -e "${RED}  ✗ $1${RST}"; FAILED=$((FAILED + 1)); }
 ok()   { echo -e "${GRN}  ✓ $1${RST}"; }
 skip() { echo -e "${YLW}  ⚠ $1${RST}"; SKIPPED=$((SKIPPED + 1)); }
@@ -38,6 +77,11 @@ EOF
 )
 while IFS=$'\t' read -r desc file anchor; do
     [ -z "${desc:-}" ] && continue
+    resolve_path "$file"; file="$RESOLVE_PATH"
+    if [ "$RESOLVE_STATE" = "unavailable" ]; then
+        skip "P-1 [$desc] 载体已归档且不在工作树（\`openspec/changes/archive/\` 被 gitignore）: $file"
+        continue
+    fi
     if [ ! -f "$file" ]; then fail "P-1 [$desc] 载体文件不存在: $file"; continue; fi
     if grep -qF "$anchor" "$file"; then ok "P-1 [$desc] $file"; else fail "P-1 [$desc] 锚点未命中: $file ← '$anchor'"; fi
 done <<< "$DEP_EDGES"
@@ -73,7 +117,16 @@ if [ "${PHASE_NEXT:-0}" = "1" ]; then
         *) fail "P-2b 未知阶段: $_p" ;;
     esac
     if [ -n "$PREV" ]; then
-        _open="$(grep -c '^- \[ \]' "openspec/changes/$PREV/tasks.md" 2>/dev/null || echo 0)"
+        resolve_path "openspec/changes/$PREV/tasks.md"; _pt="$RESOLVE_PATH"
+        if [ "$RESOLVE_STATE" = "unavailable" ]; then
+            skip "P-2b 阶段 $_p 的前置 $PREV 已归档且 tasks.md 不在工作树 ⇒ 无法断言完成度"
+            _pt=""
+        elif [ ! -f "$_pt" ]; then
+            fail "P-2b 阶段 $_p 的前置 $PREV 的 tasks.md 不存在: $_pt"; _pt=""
+        fi
+    fi
+    if [ -n "$PREV" ] && [ -n "${_pt:-}" ]; then
+        _open="$(grep -c '^- \[ \]' "$_pt" 2>/dev/null || echo 0)"
         if [ "$_open" -gt 0 ]; then fail "P-2b 阶段 $_p 的前置 $PREV 仍有 $_open 个未勾 task"; else ok "P-2b 阶段 $_p 的前置 $PREV 已完成"; fi
     else
         ok "P-2b 阶段 A 无前置"
@@ -100,6 +153,12 @@ else
             else
                 if bash -c "$target $anchor" >/dev/null 2>&1; then ok "P-3 [$ac] cmd rc=0"; ac_hit["$ac"]=1; else fail "P-3 [$ac] cmd 非 0: $target $anchor"; fi
             fi
+            continue
+        fi
+        resolve_path "$target"; target="$RESOLVE_PATH"
+        if [ "$RESOLVE_STATE" = "unavailable" ]; then
+            skip "P-3 [$ac] 载体已归档且不在工作树: $target"
+            ac_hit["$ac"]=1
             continue
         fi
         if [ ! -f "$target" ]; then fail "P-3 [$ac] 载体文件不存在: $target"; continue; fi

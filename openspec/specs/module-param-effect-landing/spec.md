@@ -1,6 +1,14 @@
-# module-param-effect-landing Specification (delta)
+# module-param-effect-landing Specification
 
-## ADDED Requirements
+## Purpose
+
+约束**模块配置参数键的效果面**：出现在模块 `params` 中的每个键都必须有确定效果 —— 真实消费（值进入运行时行为）、显式拒绝（非法值使装配失败）、或产出方已停止产出（配置中出现该键即装配失败）。
+
+存在的动因：模块参数从 JSON 一路传到 `load_param` 时，未经声明的键会被静默丢弃 —— 配置写了一个不起作用的键，装配成功、行为不变，缺陷只在仿真结果对不上时才暴露。本规范把「配置写了必须生效」变成可判定的约束，并为每类键规定对应的判别义务（真实消费 ⇒ 两个合法值必须产生可观测差异；显式拒绝 ⇒ 错误信息必须含键名）。
+
+适用范围：所有经 `load_param` / `load_param_opt` 读取配置的 `SimObject` 派生类型。板级模块（不经 `load_param`、由 `DgpuBoardShell` 直读的键）与未注册类型由 `docs/implementation/module-param-baseline.md` 的表 A / §2bis 单独登记。
+
+## Requirements
 
 ### Requirement: module-param-effect-landing
 
