@@ -5,18 +5,17 @@
 //   AC-04：态② 的**显式失败**测试（配置写了该键 ⇒ 装配期失败且错误含键名）
 //
 // B1 批次 = ADR-X.17 F-14 的 5 类 + 扩展键（design D-1）：
-//   CacheTLM       6 键（size / level / associativity / assoc / line_size / protocol）
-//                  ⛔ **不在本 change 范围** —— 该类是**冻结面**（`ADR-CEP-15` IC1:
-//                  `cache_tlm.hh` / `cache_tlm.cc` 相对 CEP 基线**零 diff**，闸 =
-//                  `test/test_cep_module_factory_seam.cc:133-134`）⇒ 需 architect 裁决
-//                  解冻;本 change 只登记（proposal 已知残留 R-4）
+//   CacheTLM       6 键（size / level / associativity / assoc / line_size ⇒ 态①;
+//                  protocol ⇒ 态② 显式拒绝）
+//                  ✅ **已解冻并落地** —— per `ADR-CEP-15` Status Update 2026-11-18
+//                  （决策 2 改判：文件 0 diff 冻结 ⇒ **协议语义边界**冻结）+ 台账 Entry #478
 //   MemoryTLM      6 键（capacity_gb / size / read_latency / write_latency ⇒ 态①;type / mem_type ⇒
 //   态②） TrafficGenTLM  8 键（pattern / num_requests / start_addr / end_addr / hotspot_addrs /
 //                        hotspot_weights / stride / seed）⇒ 全部态①
 //   GmmuTLM        1 键（page_size_bytes）⇒ 态①
 //   LwcBusHub      1 键（max_ip_ports）⇒ 态①
 //   ---------------------------------------------------------------
-//   合计 16 键（态① 13 / 态② 3）+ 6 键待裁决（CacheTLM 冻结面）
+//   合计 22 键（态① 18 / 态② 4）
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -542,4 +541,203 @@ TEST_CASE("AC-03: 配置里的 size 经 ModuleFactory 生效（容量随之改�
     REQUIRE(mod2 != nullptr);
     mod2->set_backing_view(backing.data(), backing.size());
     CHECK(probe_error(*mod2) == 0); // 命中
+}
+
+// ============================================================================
+// AC-03 —— CacheTLM：容量模型 5 键逐个生效（态①）
+//
+// 观测量一律用**既有**运行时面（`stats` 的 hits / misses / latency 分布）——
+// ⛔ 不为通过判别而新增「只为测试存在」的观测面（`ADR-X.17` D-6）。
+// ============================================================================
+namespace {
+
+/// 向 cache 注入一次访问（写 / 读）并 tick;返回响应
+bundles::CacheRespBundle drive_cache(CacheTLM& cache, uint64_t tid, uint64_t addr, bool is_write,
+                                     uint64_t data = 0) {
+    bundles::CacheReqBundle req;
+    req.transaction_id.write(tid);
+    req.address.write(addr);
+    req.is_write.write(is_write ? 1 : 0);
+    req.data.write(data);
+    req.size.write(8);
+    cache.req_in().consume();
+    std::memcpy(&cache.req_in().data(), &req, sizeof(req));
+    cache.req_in().set_valid(true);
+    cache.tick();
+    auto resp = cache.resp_out().data();
+    cache.resp_out().clear_valid();
+    return resp;
+}
+
+/// 命中 / 未命中计数（`stats` 内建面）
+std::pair<uint64_t, uint64_t> hit_miss(CacheTLM& cache) {
+    auto* hits = static_cast<tlm_stats::Scalar*>(cache.stats().findStat("hits"));
+    auto* misses = static_cast<tlm_stats::Scalar*>(cache.stats().findStat("misses"));
+    return {hits ? hits->value() : 0, misses ? misses->value() : 0};
+}
+
+/// 延迟分布的最小值（命中延迟是分布里的最小样本 —— 未命中固定 50）
+uint64_t min_latency(CacheTLM& cache) {
+    auto* lat = static_cast<tlm_stats::Distribution*>(cache.stats().findStat("latency"));
+    return lat ? lat->min() : 0;
+}
+
+} // namespace
+
+TEST_CASE("AC-03: CacheTLM 的 size 生效（超容量 ⇒ 逐出 ⇒ 再访问变未命中）",
+          "[param][effect][cache]") {
+    EventQueue eq;
+
+    // size = 1KB / line_size = 64 ⇒ 16 个槽 ⇒ 写入 17 个不同地址 ⇒ 首个被逐出
+    CacheTLM c("c", &eq);
+    c.set_config(json{{"size", "1KB"}, {"line_size", 64}});
+    for (uint64_t i = 0; i < 17; ++i) {
+        drive_cache(c, i + 1, i * 64, /*is_write=*/true, i + 1);
+    }
+    const auto before = hit_miss(c);
+    // 地址 0（第 1 个写入）已被逐出 ⇒ 读它 ⇒ 未命中
+    const auto resp = drive_cache(c, 100, 0, /*is_write=*/false);
+    CHECK(resp.is_hit.read() == 0);
+    const auto after = hit_miss(c);
+    CHECK(after.second == before.second + 1); // misses +1
+    CHECK(after.first == before.first);       // hits 不变
+
+    // 对照：**未配 size** ⇒ 不限容量 ⇒ 第 1 个地址仍在 ⇒ 命中（零回归）
+    CacheTLM u("u", &eq);
+    u.set_config(json::object());
+    for (uint64_t i = 0; i < 17; ++i) {
+        drive_cache(u, i + 1, i * 64, /*is_write=*/true, i + 1);
+    }
+    const auto resp_u = drive_cache(u, 100, 0, /*is_write=*/false);
+    CHECK(resp_u.is_hit.read() == 1);
+}
+
+TEST_CASE("AC-03: CacheTLM 的 associativity 生效（同组冲突 ⇒ 路数少者逐出）",
+          "[param][effect][cache]") {
+    EventQueue eq;
+
+    // associativity = 1 ⇒ 每组 1 路 ⇒ 同组的第 2 个地址逐出第 1 个
+    //   几何：size=1KB / line_size=64 ⇒ 16 槽;assoc=1 ⇒ 16 组(每组 1 路)
+    //   地址 0x0 ⇒ 组 0;地址 0x400 ⇒ (0x400/64)=16 ⇒ 16%16=0 ⇒ **同组**
+    CacheTLM a1("a1", &eq);
+    a1.set_config(json{{"size", "1KB"}, {"line_size", 64}, {"associativity", 1}});
+    drive_cache(a1, 1, 0x0, true, 0xAA);
+    drive_cache(a1, 2, 0x400, true, 0xBB);
+    CHECK(drive_cache(a1, 3, 0x0, false).is_hit.read() == 0); // 被逐出 ⇒ 未命中
+
+    // associativity = 4 ⇒ 16 槽 / 4 组 ⇒ 每组 4 路 ⇒ 同组两个地址都留下 ⇒ 命中
+    CacheTLM a4("a4", &eq);
+    a4.set_config(json{{"size", "1KB"}, {"line_size", 64}, {"associativity", 4}});
+    drive_cache(a4, 1, 0x0, true, 0xAA);
+    drive_cache(a4, 2, 0x400, true, 0xBB);
+    CHECK(drive_cache(a4, 3, 0x0, false).is_hit.read() == 1); // 仍在 ⇒ 命中
+
+    // `assoc` 是 `associativity` 的**同义别名** ⇒ 行为等价
+    CacheTLM alias("al", &eq);
+    alias.set_config(json{{"size", "1KB"}, {"line_size", 64}, {"assoc", 4}});
+    drive_cache(alias, 1, 0x0, true, 0xAA);
+    drive_cache(alias, 2, 0x400, true, 0xBB);
+    CHECK(drive_cache(alias, 3, 0x0, false).is_hit.read() == 1);
+}
+
+TEST_CASE("AC-03: CacheTLM 的 line_size 生效（改变分组 ⇒ 改变冲突行为）",
+          "[param][effect][cache]") {
+    EventQueue eq;
+
+    // line_size = 64 ⇒ 槽 16 / 组 16 ⇒ 地址 0x0(组 0) 与 0x40(组 1) **不同组** ⇒ 不冲突
+    CacheTLM l64("l64", &eq);
+    l64.set_config(json{{"size", "1KB"}, {"line_size", 64}, {"associativity", 1}});
+    drive_cache(l64, 1, 0x0, true, 0xAA);
+    drive_cache(l64, 2, 0x40, true, 0xBB);
+    CHECK(drive_cache(l64, 3, 0x0, false).is_hit.read() == 1);
+
+    // line_size = 128 ⇒ 槽 8 / 组 8 ⇒ 地址 0x0(组 0) 与 0x40(组 0) **同组** ⇒ 冲突逐出
+    CacheTLM l128("l128", &eq);
+    l128.set_config(json{{"size", "1KB"}, {"line_size", 128}, {"associativity", 1}});
+    drive_cache(l128, 1, 0x0, true, 0xAA);
+    drive_cache(l128, 2, 0x40, true, 0xBB);
+    CHECK(drive_cache(l128, 3, 0x0, false).is_hit.read() == 0);
+}
+
+TEST_CASE("AC-03: CacheTLM 的 level 生效（命中延迟随层级变）", "[param][effect][cache]") {
+    EventQueue eq;
+
+    // level 未指定 ⇒ 命中延迟 5（沿用原值,零回归）
+    CacheTLM d("d", &eq);
+    d.set_config(json::object());
+    drive_cache(d, 1, 0x1000, true, 0xAA);       // 未命中 ⇒ 50
+    drive_cache(d, 2, 0x1000, false);            // 命中   ⇒ 5
+    CHECK(min_latency(d) == 5u);
+
+    CacheTLM l1("l1", &eq);
+    l1.set_config(json{{"level", 1}});
+    drive_cache(l1, 1, 0x1000, true, 0xAA);
+    drive_cache(l1, 2, 0x1000, false);
+    CHECK(min_latency(l1) == 5u);
+
+    CacheTLM l2("l2", &eq);
+    l2.set_config(json{{"level", 2}});
+    drive_cache(l2, 1, 0x1000, true, 0xAA);
+    drive_cache(l2, 2, 0x1000, false);
+    CHECK(min_latency(l2) == 10u); // L2 比 L1 慢 ⇒ 可观测差异
+
+    CacheTLM l3("l3", &eq);
+    l3.set_config(json{{"level", 3}});
+    drive_cache(l3, 1, 0x1000, true, 0xAA);
+    drive_cache(l3, 2, 0x1000, false);
+    CHECK(min_latency(l3) == 20u);
+}
+
+// ============================================================================
+// AC-04 —— CacheTLM 的 protocol ⇒ 显式拒绝（协议语义不入本类）
+// ============================================================================
+TEST_CASE("AC-04: CacheTLM 的 protocol 键 ⇒ 显式失败（协议语义不入本类）",
+          "[param][effect][cache]") {
+    EventQueue eq;
+    CacheTLM c("c", &eq);
+    expect_param_error([&] { c.set_config(json{{"protocol", "MOESI"}}); }, "protocol");
+}
+
+// ============================================================================
+// AC-04 —— CacheTLM 的几何键缺 `size` ⇒ 显式失败（否则该键零效果）
+// ============================================================================
+TEST_CASE("AC-04: CacheTLM 的几何键缺 size ⇒ 显式失败（不得静默零效果）",
+          "[param][effect][cache]") {
+    EventQueue eq;
+
+    SECTION("line_size 单独出现") {
+        CacheTLM c("c1", &eq);
+        expect_param_error([&] { c.set_config(json{{"line_size", 64}}); }, "line_size");
+    }
+    SECTION("associativity 单独出现") {
+        CacheTLM c("c2", &eq);
+        expect_param_error([&] { c.set_config(json{{"associativity", 4}}); }, "associativity");
+    }
+    SECTION("assoc 单独出现") {
+        CacheTLM c("c3", &eq);
+        expect_param_error([&] { c.set_config(json{{"assoc", 4}}); }, "assoc");
+    }
+    SECTION("associativity 与 assoc 值不一致") {
+        CacheTLM c("c4", &eq);
+        expect_param_error(
+            [&] { c.set_config(json{{"size", "1KB"}, {"associativity", 4}, {"assoc", 8}}); },
+            "associativity");
+    }
+    SECTION("size 小于一个 line_size 单元") {
+        CacheTLM c("c5", &eq);
+        expect_param_error([&] { c.set_config(json{{"size", "32B"}, {"line_size", 64}}); }, "size");
+    }
+    SECTION("line_size 非 2 的幂") {
+        CacheTLM c("c6", &eq);
+        expect_param_error(
+            [&] { c.set_config(json{{"size", "1KB"}, {"line_size", 48}}); }, "line_size");
+    }
+    SECTION("size 非法文本") {
+        CacheTLM c("c7", &eq);
+        expect_param_error([&] { c.set_config(json{{"size", "1 gigabyte"}}); }, "size");
+    }
+    SECTION("空配置 ⇒ 不失败") {
+        CacheTLM c("c8", &eq);
+        CHECK_NOTHROW(c.set_config(json::object()));
+    }
 }

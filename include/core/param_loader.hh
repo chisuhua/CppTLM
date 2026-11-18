@@ -263,6 +263,51 @@ bool load_param_optional(ParamLoadContext& ctx, std::string_view key, T& target,
     return true;
 }
 
+/**
+ * @brief 解析带单位的大小（`"512KB"` / `"2GB"` / `"4096B"`;KB/MB/GB 按 1024 进制）
+ *
+ * 与 `load_param` 分开的原因：带单位的大小**不能**用 JSON 数字表达（`"2GB"` 是字符串），
+ * 而 `load_param` 的类型检查只接受单一 JSON 类型 ⇒ 需要一个「字符串 → 字节数」的解析口。
+ * 多个模块（`MemoryTLM` / `CacheTLM`）共用 ⇒ 落在此处，避免各写一份口径不同的解析。
+ *
+ * @param module_name 出错时进错误信息的模块名
+ * @param key         出错时进错误信息的参数键名
+ * @param text        待解析的文本（例：`"2GB"`）
+ * @return 字节数
+ *
+ * ⛔ 失败抛 `ParamValidationError`（不静默回退默认值 —— 那等于把非法配置变成零效果键）。
+ */
+inline uint64_t parse_size_bytes(const std::string& module_name, const std::string& key,
+                                 const std::string& text) {
+    auto fail = [&]() {
+        throw ParamValidationError(
+            module_name, key,
+            key + ": invalid size '" + text + "' (expected e.g. \"512KB\" / \"2GB\" / \"4096B\")");
+    };
+    std::size_t pos = 0;
+    double num = 0;
+    try {
+        num = std::stod(text, &pos);
+    } catch (const std::exception&) {
+        fail();
+    }
+    if (pos == 0 || num < 0) fail();
+    std::string unit;
+    for (std::size_t i = pos; i < text.size(); ++i) {
+        char c = text[i];
+        if (c == ' ' || c == '\t') continue;
+        if (c >= 'a' && c <= 'z') c = static_cast<char>(c - 'a' + 'A');
+        unit.push_back(c);
+    }
+    uint64_t mult = 0;
+    if (unit.empty() || unit == "B") mult = 1;
+    else if (unit == "KB" || unit == "K") mult = 1024ULL;
+    else if (unit == "MB" || unit == "M") mult = 1024ULL * 1024ULL;
+    else if (unit == "GB" || unit == "G") mult = 1024ULL * 1024ULL * 1024ULL;
+    else fail();
+    return static_cast<uint64_t>(num * static_cast<double>(mult));
+}
+
 } // namespace cpptlm
 
 #endif // CORE_PARAM_LOADER_HH

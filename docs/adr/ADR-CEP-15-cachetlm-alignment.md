@@ -233,3 +233,72 @@ CacheTLM(性能模型) ──adapter──> Coherence Interface(10 流)
 - 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
 
 **关联**:台账 **Entry #316**(授权 + 双审处置)· **#315 / #314**(第 2/1 批)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`
+
+---
+
+## Status Update(2026-11-18,per 台账 Entry #478 [scope-change])—— **决策 2 改判**:`CacheTLM` 由「文件 0 diff 冻结面」改为「**协议语义边界**冻结」
+
+> **性质**:追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例 + 本文件 §8 签发后边界「此后任何修改**只**能以追加 `## Status Update` 段的形式进行」)—— **§1 ~ §7 正文一律不改**,仅登记状态变化。
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #478**(`[scope-change]` + 冻结面五步授权链)。
+> **触发**:dGPU 侧「配置里的参数必须有确定效果」的语义落地(`ADR-X.17` F-14 家族)要求 `CacheTLM` 消费 6 个配置键(`size` / `line_size` / `associativity` / `assoc` / `level` / `protocol`);而 §2 决策 2 把该类列为 **0 diff 冻结面** ⇒ 实施期实测「改一行即红闸」(`test/test_cep_module_factory_seam.cc` 的 0 diff 断言)⇒ **必须先解冻**。
+> **裁决**:由用户(架构裁决权)直接裁定 —— **解冻该类,在 `cache_tlm.hh` 内补容量模型 + 6 键读取面**。
+
+### ① 决策 2 的改判(逐字对照)
+
+| 项 | 原(§2 决策 2) | 改判后(自本 SU 起生效) |
+|---|---|---|
+| **冻结对象** | `include/tlm/cache_tlm.hh` 与 `src/tlm/cache_tlm.cc` 在 CEP 全生命周期内 **0 修改** | **协议语义**不得进入本类 —— 几何 / 容量 / 层级参数**可配**;文件本身**不再冻结** |
+| **理由** | phase-9(dGPU Phase 2/3)依赖它;CEP 是**独立探索平台**,不接管 dGPU 业务 | 该类**本就是 dGPU 业务侧**的性能模型,不是 CEP 产物 ⇒ 用「文件 0 diff」保护它,**保护错了对象**:真正要保护的是「**协议语义不进性能模型**」这条边界,而不是「文件一个字节都不能动」 |
+| **机器检查** | `git diff --name-only <CEP 基线> -- include/tlm/cache_tlm.hh src/tlm/cache_tlm.cc` **必须为空** | ① **`protocol` 键 ⇒ 装配期失败且错误含键名**(行为判据,载体 `test/test_cep_module_factory_seam.cc`)② **源码不含协议标识符**(`snoop` / `coherence` / `MESI` / `MOESI` / `directory`;载体同上)③ **几何键不得引入协议语义**(`size` / `line_size` / `associativity` / `level` 只能是容量与延迟语义) |
+
+### ② `INV-CEP-15-IC1` 的判据改判(**id 不变**,载体迁移)
+
+| 项 | 原 | 改判后 |
+|---|---|---|
+| **判据** | `include/tlm/cache_tlm.hh` 与 `src/tlm/cache_tlm.cc` 在 CEP 生命周期内 **0 diff**(机器可检查) | **`protocol` 类键不得成为本类的可配置语义** —— 配置写了 ⇒ 装配期失败且报出键名(机器可检查) |
+| **载体** | `test/test_cep_module_factory_seam.cc` 的 4 个 frozen headers 零 diff case 内两条 `REQUIRE_FALSE(file_modified(...))` | 同文件新增独立 case(装配失败判据)+ **保留**既有「零协议标识符」case(`INV-CEP-15-IC3`) |
+| **为何是行为判据而非文本判据** | — | 文本判据只挡「已知的协议名」;行为判据挡**全部**协议名 ⇒ 新协议族登记时**无需**改闸 |
+
+> ⛔ **`## Verification` 章 V-15-1 同步改判**:该行原文写「`cache_tlm.hh` / `cache_tlm.cc` 在 CEP 生命周期内 **0 diff**」⇒ **正文不改**(per 本文件 §8「此后任何修改只能以追加 `## Status Update` 段的形式进行」)⇒ **以本 SU 为准**;V-15-1 的**载体**改指本 SU ① 的「行为判据」行。
+>
+> ⛔ **归因 id 零新造**:`INV-CEP-15-IC1` **沿用原 id**(只改判据内容)⇒ `07 号 §3.3` 的 `IC1 ~ IC3` 编号位、`test/cep_canonical_invariants.cc` 的 id 清单、`test/cep_invariant_assertion_map.json` 的 id 集合**全部不变**。
+
+### ③ 决策 2 之外,**未变更项**(明示)
+
+- **决策 1**(二者共存,不替换、不合并)—— **不变**;`CacheTLM` 仍是 dGPU 侧类,CEP 侧仍只有 Stub Cache Core 一个。
+- **决策 3**(术语共享,实现不共享)—— **不变**;新增的容量 / 组相联 / 层级术语**不引入** CEP 侧实现。
+- **决策 4**(未来「真实缓存 + CEP 协议」的路径 = **给 CacheTLM 加 adapter,而非改 CacheTLM**)—— **方向不变**,但**适用面被本 SU 收窄**:本 SU 允许改的是「**性能模型自身**的几何参数」,**不是**「把协议语义写进 `CacheTLM`」⇒ 决策 4 的路径**依然是**唯一路径。
+- **决策 5**(显式排除:不改造成 Stub / 不让 Stub 继承 / 不放副本 / **不让 `CacheTLM` 实现 canonical 10 流**)—— **全部不变**;`protocol` 键**显式拒绝**正是决策 5 第 4 条的机器化。
+- **§3 `IC2` / `IC3`** —— **不变**(`IC3` 的源码标识符检查是本次改判的**守门底线**)。
+- **§4 抓取点 1** —— **改判**(见 ① 的机器检查行);抓取点 2/3/4 **不变**。
+
+### ④ 被否决的替代方案(明示,避免事后重开)
+
+| 备选 | 否决理由 |
+|---|---|
+| **A. 不解冻,容量模型另起新类**（如 `SetAssocCacheTLM`),`CacheTLM` 保持 0 diff | ① 用户已裁定「解冻 + 在 `cache_tlm.hh` 内补」;② 更关键:另起新类 ⇒ **存量 37 处 `CacheTLM` 配置实例**全部要迁移类型名 ⇒ 配置面冲击远大于「改一个类的实现」;③ 同一职责两个类 ⇒ 后续每个缓存场景都要先问「用哪个」 |
+| **B. 解冻并让 `protocol` 成为**可选标签**(读进来不生效) | 那等于把零效果键换个地方存 ⇒ 违反 `ADR-X.17` D-6(「两个不同合法值 ⇒ 可观测指标不同」不成立)⇒ 只能有唯一合法值 ⇒ 仍是伪参数 ⇒ 仍应**显式拒绝** |
+| **C. 解冻并把 `protocol` 变成真正的协议选择器** | 决策 5 第 4 条 + `IC3` **明禁**(`CacheTLM` 不得实现 canonical 10 流、不得有协议知识);且协议侧实现与状态机在 CEP 层 ⇒ 双写协议状态机 = 两个真源 |
+| **D. 保持 0 diff,只把 6 个键登记成「本类永不支持」** | 合法但**不完整**:6 个键里 5 个(`size` / `line_size` / `associativity` / `assoc` / `level`)是**纯几何 / 延迟语义**,与协议无关 ⇒ 把它们一并拒掉是**能力损失**而非边界保护 |
+
+### ⑤ 连带面(同步处置清单)
+
+| # | 产物 | 处置 |
+|:--:|---|---|
+| 1 | `test/test_cep_module_factory_seam.cc` | 0 diff 断言**移除**;新增 `protocol` 拒绝的**行为**判据(`INV-CEP-15-IC1` 载体迁移) |
+| 2 | `docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md` 决策 6 表行 | 追加 Status Update 指针(「`cache_tlm.hh` 不修改」→ 指向本 SU) |
+| 3 | `openspec/specs/cep-core-contracts/spec.md`(`Requirement: cep-cachetlm-alignment-contract` · Scenario「CacheTLM 零 diff(IC1)」) | 场景内容改判(⛔ **场景名保留** —— openspec 的 `MODIFIED` 按场景名精确匹配且 archive 拒绝丢弃既有场景名);**改判走冻结面授权**(M1 冻结成员) |
+| 4 | `docs/architecture/cep/fabric-transport.md` 冻结面声明行 | 追加指针(「不破 `include/tlm/cache_tlm.hh`」→ CEP 侧仍不改;该文件已由 dGPU 侧解冻) |
+| 5 | `docs/architecture/cep/parity-baseline.md`(H7 对拍基准规格) | 「`CacheTLM` 是**无限容量 + 精确地址 map**」的口径**需限定**(默认配置下仍成立;显式配 `size` 后为有限容量 + 组相联替换) |
+| 6 | `openspec/changes/cpptlm-module-param-effect-landing/`(实施载体) | T1.1 由「⛔ 阻塞」转为「已落地」;`design.md` D-1.6.4 补 `CacheTLM` 行;`proposal.md` R-4 记解除 |
+| 7 | `docs/implementation/module-param-baseline.md` | 表 B **B-1** 状态改「已消费 / 已显式拒绝」 |
+
+### ⑥ 容量模型的**记账口径**(明示,避免与教科书「行粒度」混淆)
+
+- **命中判定 = 精确地址**(沿用改动前口径)⇒ **默认配置(未配 `size`)下行为逐位不变**(零回归);
+- **容量模型由 `size` 启用** ⇒ 容量槽数 = `size / line_size`,组数 = `max(1, 槽数 / associativity)`,组满则**逐出该组最近最少使用者**;
+- `line_size` / `associativity` / `assoc` **必须**与 `size` 同时出现(否则它们没有任何可观测效果 ⇒ **显式失败**,不静默忽略);
+- `level` **独立生效** ⇒ 决定命中延迟(1 → 5 / 2 → 10 / ≥3 → 20 cycle;未指定 → 5,沿用原值);
+- `protocol` **显式拒绝**。
+
+**关联**:台账 **Entry #478** · change `openspec/changes/cpptlm-module-param-effect-landing/` · `ADR-X.17-module-param-read-declares.md`(D-1 / D-6)· `ADR-CEP-07` 决策 6(见 ⑤-2)· `test/test_cep_module_factory_seam.cc`(IC1 / IC3 载体)· `test/cep_invariant_assertion_map.json`(载体映射)

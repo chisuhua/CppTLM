@@ -6,7 +6,7 @@
       避免在脚本里**手抄**一份(那是本仓反复出现的「双真源」型漂移来源)。
 
 来源(唯一真源,按优先级):
-   · `include/tlm/cep/cache_tlm.hh` —— 命中 / 未命中延迟常数(实现里的字面量);
+   · `include/tlm/cache_tlm.hh` —— 命中 / 未命中延迟常数(实现里的**默认成员初值**);
    · `scripts/cep/parity/parity_config.json` —— 时基口径(cycle → ns)与对拍参数;
      其中 `cycle_ns` 的**文档锚点**必须在 `docs/designs/dgpu-soc/timing-mode.md` 里
      找得到(脚本自检)⇒ 口径漂移会立刻报红。
@@ -28,13 +28,23 @@ TIMING_DOC = ROOT / "AGENTS.md"
 
 
 def extract_cache_latencies():
-    """从 `cache_tlm.hh` 抽取命中 / 未命中延迟常数(实现字面量)。"""
+    """从 `cache_tlm.hh` 抽取命中 / 未命中延迟常数(实现的**默认成员初值**)。
+
+    ⚠️ 形态说明(2026-11-18 变更,per `ADR-CEP-15` Status Update 2026-11-18):
+       该类新增了容量模型,命中延迟改由**成员**承载(命中延迟随 `level` 变)⇒
+       旧的字面量形态 `hit ? 5 : 50` 已不存在 ⇒ 抽取口改为读**成员初值**
+       (`uint64_t hit_latency_ = 5;` / `uint64_t miss_latency_ = 50;`)。
+       ⛔ 抽取到的两个数 = **默认配置**(`level` 未指定)下的延迟常数 —— 与对拍口径
+       「本仓侧保持固定延迟常数」一致(per `docs/architecture/cep/parity-baseline.md` §4.2)。
+    """
     text = CACHE_HDR.read_text(encoding="utf-8")
-    # 形态:`uint64_t access_latency = hit ? 5 : 50;` —— 命中在前,未命中在后
-    m = re.search(r"hit\s*\?\s*(\d+)\s*:\s*(\d+)", text)
-    if not m:
-        raise SystemExit(f"✗ 未能在 {CACHE_HDR} 抽取命中/未命中延迟常数(形态已变 ⇒ 需同步)")
-    return int(m.group(1)), int(m.group(2))
+    m_hit = re.search(r"uint64_t\s+hit_latency_\s*=\s*(\d+)\s*;", text)
+    m_miss = re.search(r"uint64_t\s+miss_latency_\s*=\s*(\d+)\s*;", text)
+    if not (m_hit and m_miss):
+        raise SystemExit(
+            f"✗ 未能在 {CACHE_HDR} 抽取命中/未命中延迟常数(形态已变 ⇒ 需同步)"
+        )
+    return int(m_hit.group(1)), int(m_miss.group(1))
 
 
 def check_cycle_ns_anchor(cycle_ns, anchor):

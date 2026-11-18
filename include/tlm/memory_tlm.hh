@@ -209,36 +209,10 @@ public:
         }
     }
 
-    /// 解析带单位的大小（`"512KB"` / `"2GB"` / `"4096B"`;KB/MB/GB 按 1024 进制）
+    /// 解析带单位的大小（`"512KB"` / `"2GB"` / `"4096B"`）—— 口径与 `CacheTLM` 共用
+    /// `cpptlm::parse_size_bytes`（避免两份解析漂移）
     uint64_t parse_size_bytes(const std::string& s, const char* key) const {
-        auto fail = [&]() {
-            throw cpptlm::ParamValidationError(
-                name, key,
-                std::string(key) + ": invalid size '" + s +
-                    "' (expected e.g. \"512KB\" / \"2GB\" / \"4096B\")");
-        };
-        size_t pos = 0;
-        double num = 0;
-        try {
-            num = std::stod(s, &pos);
-        } catch (const std::exception&) {
-            fail();
-        }
-        if (pos == 0 || num < 0) fail();
-        std::string unit;
-        for (size_t i = pos; i < s.size(); ++i) {
-            char c = s[i];
-            if (c == ' ' || c == '\t') continue;
-            if (c >= 'a' && c <= 'z') c = static_cast<char>(c - 'a' + 'A');
-            unit.push_back(c);
-        }
-        uint64_t mult = 0;
-        if (unit.empty() || unit == "B") mult = 1;
-        else if (unit == "KB" || unit == "K") mult = 1024ULL;
-        else if (unit == "MB" || unit == "M") mult = 1024ULL * 1024ULL;
-        else if (unit == "GB" || unit == "G") mult = 1024ULL * 1024ULL * 1024ULL;
-        else fail();
-        return static_cast<uint64_t>(num * static_cast<double>(mult));
+        return cpptlm::parse_size_bytes(name, key, s);
     }
 
     void tick() override {

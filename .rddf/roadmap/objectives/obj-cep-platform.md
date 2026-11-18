@@ -25500,3 +25500,48 @@ test cases:  5 |  0 passed | 5 failed
 **回归**:`cpptlm_tests` 全量 **883307 assertions / 2386 cases 全绿**（基线 883191 / 2371 ⇒ 增量全部来自新测试）· `pytest test/python/` **232 passed** · `ctest -R cep` **100/100** · `[e2e]` 7458 assertions / 151 cases 绿。
 
 **遗留**:B2（14 类零读取面家族）/ B3（`RouterTLM.routing`）未开工;`CacheTLM` 6 键阻塞于 R-4（冻结面）;T7 收口（spec delta 合并 + 独立验收）待全部批次完成。
+
+### Entry #478 — 2026-11-18 [builder](**解冻 + 落地** `CacheTLM` 容量模型 —— `ADR-CEP-15` 决策 2 改判:文件 0 diff 冻结 ⇒ **协议语义边界**冻结)
+
+**裁决来源**:用户(架构裁决权)直接裁定 —— **解冻缓存类,在 `cache_tlm.hh` 内补容量模型 + 6 键读取面(需先改 `ADR-CEP-15` 的冻结判定)**。
+
+**触发**:`cpptlm-module-param-effect-landing` 的 T1.1（`CacheTLM` 6 键）实测**改动即红闸** ⇒ 必须先解冻;该类零效果键占 37 个配置实例 × 6 键。
+
+**改判内容**(`ADR-CEP-15` Status Update 2026-11-18 · 追加式修订,正文不改):
+
+| 项 | 原(决策 2) | 改判后 |
+|---|---|---|
+| 冻结对象 | `cache_tlm.hh` / `cache_tlm.cc` **0 修改** | **协议语义**不得进入本类(几何 / 容量 / 层级参数可配) |
+| `INV-CEP-15-IC1` 判据 | 文件 `git diff` 为空 | **`protocol` 键 ⇒ 装配失败且错误含键名**(**行为**判据,**id 不变**) |
+| `IC3` / 决策 1 / 3 / 4 / 5 | — | **全部不变**(决策 4 的 adapter 路径仍是唯一路径;`IC3` 的源码标识符检查是守门底线) |
+
+**实现**(change `cpptlm-module-param-effect-landing` · T1.1):
+
+- **容量模型**(新):槽数 = `size / line_size`;组数 = `max(1, 槽数 / associativity)`;组满 ⇒ **组内 LRU 逐出**;命中判定**仍是精确地址**(不做行合并)⇒ **默认配置(未配 `size` / `level`)行为与改动前逐位一致**(零回归)。
+- **逐键裁决**:`size` / `line_size` / `associativity` / `assoc` / `level` ⇒ **态 ①**(真实消费);`protocol` ⇒ **态 ②**(`reject_unsupported_key` ⇒ 装配期失败含键名 —— 协议语义不入本类)。
+- **别名规则**:`associativity` 与 `assoc` 同义;同现且值不同 ⇒ 失败(键名 `associativity`)。
+- **孤儿键规则**:`line_size` / `associativity` / `assoc` **必须**与 `size` 同现(否则零效果 ⇒ 显式失败,报出实际出现的键名)。
+- **层级语义**:`level` ⇒ 命中延迟(1 → 5 / 2 → 10 / ≥3 → 20 cycle;未指定 → 5,沿用原值)。
+- **共享解析**:`cpptlm::parse_size_bytes` 上收到 `include/core/param_loader.hh`(`MemoryTLM` / `CacheTLM` 共用,消除两份口径)。
+
+**连带面**(逐条已处置):
+
+| # | 产物 | 处置 |
+|:--:|---|---|
+| 1 | `test/test_cep_module_factory_seam.cc` | IC1 载体**迁移**:删 0 diff 断言 ⇒ 新增 `protocol` 拒绝的**行为**判据;`IC3` 载体(源码无协议标识符)**保留** |
+| 2 | `test/cep_invariant_assertion_map.json` | 重新生成(IC1 现 2 个载体);**归因 id 零新造** ⇒ `07 号` 的 `IC1~IC3` 编号位与 `test_cep_canonical_invariants.cc` 的 id 清单**不变** |
+| 3 | `docs/adr/ADR-CEP-15-cachetlm-alignment.md` | 追加 Status Update(决策 2 改判 + IC1 判据改判 + 4 个被否决备选 + 6 项连带面 + 记账口径) |
+| 4 | `docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md` | 追加 Status Update(决策 6 表行指针) |
+| 5 | `openspec/specs/cep-core-contracts/spec.md` | IC1 场景**改判**(**场景名沿用历史命名** —— openspec 的 `MODIFIED` 按场景名精确匹配且 archive 拒绝丢弃既有场景名);Requirement 正文同步 |
+| 6 | `docs/architecture/cep/fabric-transport.md` / `parity-baseline.md` | 冻结面声明与容量口径**限定**(「无限容量 + 精确地址 map」对默认配置仍成立;显式配容量后另计) |
+| 7 | `scripts/cep/parity/cpptlm_params.py` | 对拍常量抽取器**形态同步**(旧字面量 `hit ? 5 : 50` → 成员初值)⇒ 否则 `cep_parity_e2e` 误抓 `hit ? 1 : 0`(写响应那行)⇒ 常量档判据假红 |
+| 8 | `configs/apu_soc_full.json` | 删 `protocol` ×3(态② 存量配置登记) |
+| 9 | `docs/implementation/module-param-baseline.md` | 表 B **B-1** ⇒ 已落地 |
+
+**实测**:`cpptlm_tests` 全量 **883336 assertions / 2393 cases 全绿**(基线 883307 / 2386 ⇒ +29 / +7 全来自 `CacheTLM` 判别测试)· `pytest test/python/` **232 passed** · `ctest -R cep` **100/100**(含 `cep_parity_e2e` 形态同步后复验绿)· `[effect]` **21 cases / 146 assertions** 绿。
+
+**冻结面授权记录**:本次追加/改判触及 **4 件 M1 冻结产物**(`ADR-CEP-15` / `ADR-CEP-07` / `openspec/specs/cep-core-contracts/spec.md` / `docs/architecture/cep/{fabric-transport,parity-baseline}.md`)⇒ 走**五步授权链**:产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #478"` → 清单单独 commit → 无参复验 rc=0。
+
+**遗留**:① `CacheTLM` 的**记账粒度 = 精确地址**(非教科书「行粒度」)⇒ 同行的相邻地址各占 1 槽(容量是**保守上界**);若将来需要行粒度(同一次行内相邻地址互命中)⇒ **独立决策**(不在本 change)② `protocol` 键的**存量配置**仅 `configs/apu_soc_full.json` 3 处(已删)③ B2 / B3 批次未开始。
+
+**⑱ 关联**:`openspec/changes/cpptlm-module-param-effect-landing/` · `docs/adr/ADR-CEP-15-cachetlm-alignment.md`(SU 2026-11-18)· `docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md`(SU 2026-11-18)· `docs/architecture/cep/parity-baseline.md` · `openspec/specs/cep-core-contracts/spec.md` · `test/test_cep_module_factory_seam.cc` · `docs/implementation/module-param-baseline.md`

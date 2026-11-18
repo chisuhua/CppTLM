@@ -1,16 +1,21 @@
 // test/test_cep_module_factory_seam.cc
-// CEP Stage 0 — ModuleFactory 集成 seam 契约 + 冻结面 0 diff 守门
+// CEP Stage 0 — ModuleFactory 集成 seam 契约 + 冻结面守门
 // per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
 //     Requirement: cep-integration-seam-contract
 //     + cep-cachetlm-alignment-contract
 //     + ADR-CEP-07 §2 决策 3(真实注册机制)与决策 6(冻结面)
-//     + ADR-CEP-15 §3(IC1:CacheTLM 0 diff)
+//     + ADR-CEP-15 §3(IC1:CacheTLM 协议语义边界 —— **2026-11-18 改判**,见下方 case 注释)
 // 作者: CppTLM Team / 日期: 2026-10-21
 //
 // 注:Stage 0 只断言**契约层 + 冻结面**(真实注册发生在 Stage 1)。
 #include "catch_amalgamated.hpp"
 
 #include "cep_adr_parser.hh"
+#include "chstream_register.hh"
+#include "core/event_queue.hh"
+#include "core/module_factory.hh"
+
+#include <nlohmann/json.hpp>
 
 #include <cstdio>
 #include <cstdlib>
@@ -19,6 +24,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+using json = nlohmann::json;
 
 using cpptlm::cep::read_file;
 using cpptlm::cep::repo_root;
@@ -113,8 +120,11 @@ TEST_CASE("[cep][module-factory-seam] 23 ABI 零 diff", "[cep][module-factory-se
 }
 
 // INV-CARRIER: INV-CEP-15-IC1
-// 变红理由(per ADR-CEP-06 SU#4 规则 B):`cache_tlm.hh` / `cache_tlm.cc` 在 CEP 生命周期内
-// 被改动(相对 CEP 基线非零 diff)⇒ 红
+// 变红理由(per ADR-CEP-15 §8 Status Update 2026-11-18 —— 决策 2 改判):
+//   IC1 的判据**不再是**「`cache_tlm.hh` / `cache_tlm.cc` 相对 CEP 基线 0 diff」
+//   (该文件已由 dGPU 侧参数语义落地解冻 —— per change `cpptlm-module-param-effect-landing`),
+//   而是「**协议名不得成为本类的可配置语义**」⇒ `protocol` 键必须**显式拒绝**
+//   (配置写了即装配失败且报出键名) —— 协议语义只经 adapter 进入(决策 4)。
 // ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 // 注(architect 验收 2026-11-05 S-4):本 case 内的 4 个 PCIe 冻结头断言**属
 //     `INV-CEP-07-IC5` 的判据面**,与 15-IC1 无关 —— 保留为同址合并校验,不重复挂标记。
@@ -129,9 +139,25 @@ TEST_CASE("[cep][module-factory-seam] 4 个 frozen headers 零 diff", "[cep][mod
         INFO("frozen header 被改动: " << f);
         REQUIRE_FALSE(file_modified(f));
     }
-    // CacheTLM 亦在冻结面(per ADR-CEP-15 IC1)
-    REQUIRE_FALSE(file_modified("include/tlm/cache_tlm.hh"));
-    REQUIRE_FALSE(file_modified("src/tlm/cache_tlm.cc"));
+}
+
+// INV-CARRIER: INV-CEP-15-IC1
+// 变红理由(per ADR-CEP-15 §8 Status Update 2026-11-18 —— 决策 2 改判):
+//   `protocol` 键**必须**被 `CacheTLM` 显式拒绝(装配期失败 + 错误含键名)——
+//   若某次改动让 `protocol` 被「读进来当标签」,协议语义就进了本类 ⇒ 红。
+//   ⚠️ 本 case 是**行为判据**(不是文本判据)⇒ 键名拼写/错误文案变化不影响它变绿;
+//       「源码不含协议标识符」由下一个 case(IC3)承担。
+TEST_CASE("[cep][module-factory-seam] CacheTLM 拒绝 protocol 键(协议语义不入本类)",
+          "[cep][module-factory-seam]") {
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    const json cfg = {{"modules",
+                       json::array({json{{"name", "c0"},
+                                         {"type", "CacheTLM"},
+                                         {"params", {{"protocol", "MOESI"}}}}})},
+                      {"connections", json::array()}};
+    // ⚠️ 装配失败面 = `instantiateAll` 返回 false(`ModuleFactory` 捕获参数异常并返回 false)
+    CHECK_FALSE(factory.instantiateAll(cfg));
 }
 
 // INV-CARRIER: INV-CEP-15-IC3

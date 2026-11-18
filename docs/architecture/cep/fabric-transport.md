@@ -21,7 +21,7 @@
 
 > **注意**:`REGISTER_CHSTREAM`(`include/chstream_register.hh:50`)与 `REGISTER_OBJECT`(`include/modules.hh:30`)**均无参数**,不存在 `REGISTER_CHSTREAM(T)` / `REGISTER_OBJECT(T)` 形式。
 
-**冻结面**:CEP 不进 `cpptlm_emulator.h`(23 ABI 零 diff);不改 `include/tlm/pcie/pcie_endpoint_tlm.h` `[[deprecated]]` 状态;不接管 `dgpu_board_shell.cc`;不破 `include/tlm/cache_tlm.hh`。
+**冻结面**:CEP 不进 `cpptlm_emulator.h`(23 ABI 零 diff);不改 `include/tlm/pcie/pcie_endpoint_tlm.h` `[[deprecated]]` 状态;不接管 `dgpu_board_shell.cc`;不破 `include/tlm/cache_tlm.hh`。⚠️ **口径限定(2026-11-18,per `ADR-CEP-15` Status Update)**:该文件已由 **dGPU 侧**的参数语义落地(容量模型 + 6 键读取面)解冻 ⇒ 本行的「不破」指 **CEP 侧不改它**,而非「该文件全局冻结」。CEP 与它的交互**仍只允许**经 adapter(决策 4 不变)。
 
 
 ### 6.3.1 「经网络」的定义与拓扑分档(J-9)

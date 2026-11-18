@@ -20,7 +20,7 @@
 | 类型 | 配置实例数 | 键数 | 键（并集） | 证据（读取面） |
 |---|---:|---:|---|---|
 | `CPUTLM` | 95 | 3 | `pattern`, `request_interval`, `start_addr` | `include/tlm/cpu_tlm.hh` 无 `on_config_loaded` / `set_config`;成员 `start_addr_`（`:19`）/ `request_interval_`（`:21`）只被构造期与运行期使用，从不由配置赋值 |
-| `CacheTLM` | 37 | 6 | `assoc`, `associativity`, `level`, `line_size`, `protocol`, `size` | `include/tlm/cache_tlm.hh` 无配置读取面;内部只有 `cache_lines_`（`:42`），命中延迟是写死的 `hit ? 5 : 50`（`:89`）;⚠️ `level` **配置零命中**（仅被 `ADR-X.17` F-14 登记 ⇒ 仍须裁决） |
+| `CacheTLM` | 37 | 6 | `assoc`, `associativity`, `level`, `line_size`, `protocol`, `size` | `include/tlm/cache_tlm.hh` 无配置读取面;内部只有 `cache_lines_`（`:42`），命中延迟是写死的 `hit ? 5 : 50`（`:89`）;⚠️ `level` **配置零命中**（仅被 `ADR-X.17` F-14 登记 ⇒ 仍须裁决）;✅ **已裁决并落地**（2026-11-18,`level` ⇒ 命中延迟,见 D-1.6.4） |
 | `CrossbarTLM` | 11 | 1 | `port_count` | `include/tlm/crossbar_tlm.hh` 无配置读取面 |
 | `ComputeUnitTLM` | 4 | 2 | `kernel_id`, `workgroup_size` | 无配置读取面 |
 | `PcieControllerIP` | 3 | 3 | `bar_bases`, `bar_sizes`, `link_speed_gts` | 无配置读取面;⚠️ `bar_sizes` 在**板级**另有消费方（`dgpu_board_shell.cc:78-79` 读 `pcie_ep` 的 `bar_sizes`）⇒ 该键的「板级消费」需与本类型自身的键面分开处置（`ADR-X.17` D-3 三态条款） |
@@ -85,7 +85,7 @@
 | `MemoryTLM.{size,type,mem_type}` | ⚠️ 与 `capacity_gb` **语义重叠**（`size` 与 `capacity_gb` 同时存在）⇒ 倾向态 ②（停产出 + 明确报错）而非态 ① |
 | `GmmuTLM.page_size_bytes` | GMMU 翻译的页号 / 页内偏移（改页大小 ⇒ 同一地址的翻译结果不同） |
 | `CPUTLM.{pattern,request_interval,start_addr}` | CPU 发出的请求序列 / 间隔 |
-| `CacheTLM.{size,level,associativity,protocol,assoc,line_size}` | ⚠️ 该类**无容量/组相联模型**（只有 `cache_lines_` 与写死延迟）⇒ 态 ① 需要**先建模**（工作量大）⇒ 倾向态 ② 或**推迟到独立 change**（决策点见 tasks T1.2 的裁决记录） |
+| `CacheTLM.{size,level,associativity,protocol,assoc,line_size}` | ✅ **已裁决**（2026-11-18）—— 容量模型已在 `cache_tlm.hh` 内补齐（解冻经用户裁定 + `ADR-CEP-15` SU）⇒ `size` / `line_size` / `associativity` / `assoc` / `level` 取 **态 ①**（观测量 = `stats` 的 hits / misses / latency 分布）;`protocol` 取 **态 ②**（协议语义不入本类） |
 | 其余零读取面类型的键 | 实施期逐键核实（部分类型的键在当前实现里**没有对应概念**，如 `SocInternalNoc.vc_counts_enabled`（该类已 archived）⇒ 态 ②） |
 
 ### D-2.2 态 ② 的「存量配置登记」要求
@@ -169,7 +169,7 @@ python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对�
 | 1 | `ComputeUnitTLM`(2 键) · `TCCTLM`(2 键) 从类别 ① **剔除** | 仓内无类定义（`grep -rn "class ComputeUnitTLM\|class TCCTLM" include/ src/` = 0 命中）;`configs/apu_soc_full.json:3` 自述「not yet registered (planned Phase 7.B/C/D)」 | 不是零效果键,而是**配置引用不存在类型** ⇒ 归「未定义类型」,不计入本 change 的键盘点;受影响配置本身**不可装配**（新增登记 R-5） |
 | 2 | `LwcBusHub.max_ip_ports` 移出类别 ① | B1 已落地（T1.4）| 已消费 |
 | 3 | **新增** `CoherentXBarTLM`(3 键) · `GpuMeshNoC`(2 键) · `VramControllerTLM.operating_frequency_hz`(1 键) · `MemoryCluster.memory_type`(1 键) | 立项期靠人工读配置遗漏 | 归 B2 批次（`MemoryCluster` 属 SimModule 家族;`CoherentXBarTLM.ports` 仅被 `module_factory_validate.cc:271` 读去做**越界告警**,值从不生效 ⇒ 伪参数候选） |
-| 4 | `CacheTLM.level` 不在脚本输出中 | `configs/` 里无该键,它由 `src/tlm/cluster/cache_cluster.cc` 在**运行时**生成 | 仍按 `ADR-X.17` F-14 登记（脚本只能看见配置文件里的键） |
+| 4 | `CacheTLM.level` 不在脚本输出中 | `configs/` 里无该键,它由 `src/tlm/cluster/cache_cluster.cc` 在**运行时**生成 | 仍按 `ADR-X.17` F-14 登记（脚本只能看见配置文件里的键）;**已落地**（`level` ⇒ 命中延迟,见 D-1.6.4） |
 
 ### D-1.6.4 B1 批次逐键裁决结果（T1.1~T1.5）
 
@@ -189,7 +189,10 @@ python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对�
 | `GmmuTLM` | `page_size_bytes` | ① | `set_page_size_bytes()`（成员 + 掩码 + 移位，替换 `constexpr 4096`）;2 的幂且 ≥ 4096,否则失败 | AC-03 gmmu |
 | | `tlb_size` / `tlb_miss_latency_cycles` | 表 A | `ignore_param()` 登记（消费方是**板级** `dgpu_board_shell.cc:1056-1057`） | 台账表 A |
 | `LwcBusHub` | `max_ip_ports` | ① | 成员 `max_ip_ports_`（默认 = 编译期 `kMaxIpPorts = 32`），作用于两个 register 上限判断 | AC-03 lwc |
-| `CacheTLM` | `size` · `level` · `associativity` · `assoc` · `line_size` · `protocol` | **待裁决** | ⛔ 不在本 change 范围 —— 该类是**冻结面**（`ADR-CEP-15` IC1：`cache_tlm.hh` / `cache_tlm.cc` 相对 CEP 基线零 diff，闸 = `test/test_cep_module_factory_seam.cc:133-134`）⇒ 解冻须 architect 裁决（R-4） | — |
+| `CacheTLM` | `size` · `line_size` · `associativity` · `assoc` · `level` | ① | ✅ **已解冻并落地** —— 该类原为 CEP 冻结面（`ADR-CEP-15` IC1），经**用户裁定解冻**（`ADR-CEP-15` Status Update 2026-11-18 决策 2 改判 + 台账 Entry #478）⇒ 容量模型：`size` ⇒ 槽数 = `size / line_size`，组数 = `max(1, 槽数 / associativity)`，组满 ⇒ 组内 LRU 逐出;`level` ⇒ 命中延迟（1 → 5 / 2 → 10 / ≥3 → 20 cycle）;`associativity` 与 `assoc` 是**同义别名**（同现且值不同 ⇒ 失败） | AC-03 cache（size / associativity / line_size / level） |
+| `CacheTLM` | `protocol` | ② | `reject_unsupported_key("protocol")` ⇒ 装配期失败含键名 —— **协议语义不入本类**（`ADR-CEP-15` 决策 5 + IC3）⇒ 判据载体 = `test/test_cep_module_factory_seam.cc` 的 IC1 **行为**判据 | AC-04 cache |
+
+> **解冻连带面**（`ADR-CEP-15` Status Update 2026-11-18 §⑤ 逐条）：守门闸（0 diff 断言 → `protocol` 拒绝的**行为**判据）· `ADR-CEP-07` 决策 6 表行指针 · `openspec/specs/cep-core-contracts/spec.md` 的 IC1 场景改判（**场景名沿用历史命名** —— openspec 的 `MODIFIED` 按场景名精确匹配且 archive 拒绝丢弃既有场景名）· `docs/architecture/cep/fabric-transport.md` 冻结面声明限定 · `docs/architecture/cep/parity-baseline.md` 的容量口径限定 · 对拍常量抽取器 `scripts/cep/parity/cpptlm_params.py` 形态同步（旧字面量 `hit ? 5 : 50` → 成员初值）。
 
 **机制新增**：`load_param_opt(key, target[, lo, hi])`（`include/core/sim_object.hh`）——
 键存在 ⇒ 校验赋值返回 `true`;缺失 ⇒ **保持成员当前值**返回 `false`。

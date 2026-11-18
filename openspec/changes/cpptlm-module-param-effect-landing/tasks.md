@@ -3,8 +3,8 @@
 > 决策源 = `docs/adr/ADR-X.17-module-param-read-declares.md`;实施形态见本 change 的 `design.md`（D-1~D-5）。
 > 共 **T0~T7**;标 ⚠️ 的条目为审查/盘点新增。
 >
-> **进度（2026-11-18）**：**T0 + T1（除 T1.1）+ T4/T5 的 B1 部分 + T6 已完成**（B1 批次 = `TrafficGenTLM` / `MemoryTLM` / `GmmuTLM` / `LwcBusHub`）。
-> **B2（T2）/ B3（T3）未开始**;`T1.1`（`CacheTLM`）**阻塞于 R-4**（CEP 冻结面，解冻须 architect 裁决）。
+> **进度（2026-11-18）**：**T0 + T1 全部 + T4/T5 的 B1 部分 + T6 已完成**（B1 批次 = `TrafficGenTLM` / `MemoryTLM` / `GmmuTLM` / `LwcBusHub` / `CacheTLM`）。
+> **B2（T2）/ B3（T3）未开始**;`T1.1`（`CacheTLM`）原阻塞于 R-4（CEP 冻结面）⇒ **2026-11-18 已解冻并落地**。
 > 逐键裁决结果与实测口径见 `design.md` **D-1.6**;台账同步见 `docs/implementation/module-param-baseline.md`（表 A/B + §2bis）。
 
 ## T0 — 前置与盘点
@@ -16,7 +16,10 @@
 
 ## T1 — B1 批次（`ADR-X.17` F-14 五类 + 扩展键）
 
-- [ ] T1.1 ⛔ **阻塞（R-4）** `CacheTLM` 六键（`size` / `level` / `associativity` / `protocol` / `assoc` / `line_size`）裁决 + 落地;⚠️ 该类**无容量/组相联模型** ⇒ 优先评估态②。**但该类是 CEP 冻结面**（`ADR-CEP-15` IC1,闸 = `test/test_cep_module_factory_seam.cc:133-134`）⇒ 实测改动即红闸,已回退 ⇒ 解冻 + 建模须 architect 裁决
+- [x] T1.1 `CacheTLM` 六键（`size` / `level` / `associativity` / `protocol` / `assoc` / `line_size`）裁决 + 落地
+  - ✅ **2026-11-18 解冻并落地**（R-4 已解除）—— 该类原为 CEP 冻结面（`ADR-CEP-15` IC1）⇒ 经**用户裁定解冻**（`ADR-CEP-15` Status Update 2026-11-18 决策 2 改判 + 台账 Entry #478）⇒ `size` / `line_size` / `associativity` / `assoc` / `level` 走**态 ①**（容量模型：槽数 = `size / line_size`,组数 = `max(1, 槽数 / associativity)`,组内 LRU 逐出;`level` ⇒ 命中延迟）;`protocol` 走**态 ②**（`reject_unsupported_key` ⇒ 装配期失败含键名）
+  - 连带处置:守门闸 IC1 载体迁移（0 diff 断言 → `protocol` 拒绝的**行为**判据）· `ADR-CEP-07` SU 指针 · `openspec/specs/cep-core-contracts/spec.md` IC1 场景改判 · `docs/architecture/cep/{fabric-transport,parity-baseline}.md` 口径限定 · 对拍常量抽取器 `scripts/cep/parity/cpptlm_params.py` 形态同步
+  - 存量配置:`configs/apu_soc_full.json` 删 `protocol` ×3（态②）
 - [x] T1.2 `TrafficGenTLM` 七键（`pattern` / `num_requests` / `start_addr` / `end_addr` / `hotspot_addrs` / `hotspot_weights` / `stride`）裁决 + 落地（`seed` 已消费，不动）
 - [x] T1.3 `GmmuTLM.page_size_bytes`（读而丢弃）裁决 + 落地
 - [x] T1.4 `LwcBusHub.max_ip_ports` 裁决 + 落地

@@ -45,7 +45,7 @@
 
 | # | 键 | 所属类型 | 证据 | 状态 |
 |:--:|---|---|---|---|
-| B-1 | `size` / `level` / `associativity` / `protocol` / `assoc` / `line_size` | `CacheTLM` | 该类无 `on_config_loaded` / 无 `set_config` 覆写；`size`/`level` 由 `cache_cluster.cc:25/28-29` 生成 | **⛔ 阻塞：解冻需 architect 裁决** —— `cache_tlm.hh` / `cache_tlm.cc` 是 **CEP 冻结面**（`ADR-CEP-15` IC1,闸 = `test/test_cep_module_factory_seam.cc:133-134`）⇒ 本 change **未改该类**（`cpptlm-module-param-effect-landing` R-4） |
+| B-1 | `size` / `level` / `associativity` / `protocol` / `assoc` / `line_size` | `CacheTLM` | 改动前该类无 `on_config_loaded` / 无 `set_config` 覆写；`size`/`level` 由 `cache_cluster.cc:25/28-29` 生成 | ✅ **已落地**（2026-11-18）—— 该类原为 CEP 冻结面（`ADR-CEP-15` IC1）⇒ 经**用户裁定解冻**（`ADR-CEP-15` Status Update 2026-11-18 决策 2 改判 + 台账 Entry #478）⇒ **`size` / `line_size` / `associativity` / `assoc` / `level` 已消费**（容量模型：槽数 = `size / line_size`、组数 = `max(1, 槽数 / associativity)`、组内 LRU 逐出;`level` ⇒ 命中延迟 1→5 / 2→10 / ≥3→20 cycle）;**`protocol` 已显式拒绝**（态②:协议语义不入本类 ⇒ 装配期失败含键名） |
 | B-2 | `pattern` / `num_requests` / `start_addr` / `end_addr` | `TrafficGenTLM` | 改动前 `on_config_loaded` 只读 `seed` | **已消费**（`traffic_gen_tlm.hh` 的 `on_config_loaded` + `apply_pattern` / `read_addr_key` / `set_addr_range`;判别测试 `test/test_param_effect_landing.cc` `[effect]`） |
 | B-3 | `page_size_bytes` | `GmmuTLM` | 改动前 `contains` 分支体为空,实际恒用 `constexpr 4096` | **已消费**（`gmmu_tlm.hh` 的 `set_page_size_bytes` 替换 `constexpr`;2 的幂且 ≥ 4096 否则装配失败） |
 | B-4 | `max_ip_ports` | `LwcBusHub` | 改动前该类零配置读取面,上限恒为编译期 `kMaxIpPorts = 32` | **已消费**（`lwc_bus_hub.hh` 的 `max_ip_ports_`,作用于 `register_cr_target` / `register_doorbell_target` 上限判断） |

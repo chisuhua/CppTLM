@@ -19,14 +19,14 @@
     "CEN-Ib11": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 465,
+        "line": 468,
         "kind": ".cc"
       }
     ],
     "CEN-Ib2": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 337,
+        "line": 340,
         "kind": ".cc"
       }
     ],
@@ -47,7 +47,7 @@
     "CEN-Ib5": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 364,
+        "line": 367,
         "kind": ".cc"
       }
     ],
@@ -61,7 +61,7 @@
     "CEN-Ib7": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 421,
+        "line": 424,
         "kind": ".cc"
       }
     ],
@@ -75,21 +75,21 @@
     "INV-CEP-04-IC1": [
       {
         "file": "test/test_cep_sharer_tracker_base.cc",
-        "line": 931,
+        "line": 947,
         "kind": ".cc"
       }
     ],
     "INV-CEP-04-IC2": [
       {
         "file": "test/test_cep_sharer_tracker_base.cc",
-        "line": 430,
+        "line": 446,
         "kind": ".cc"
       }
     ],
     "INV-CEP-04-IC3": [
       {
         "file": "test/test_cep_sharer_tracker_base.cc",
-        "line": 734,
+        "line": 750,
         "kind": ".cc"
       }
     ],
@@ -103,28 +103,28 @@
     "INV-CEP-04-IC6": [
       {
         "file": "test/test_cep_sharer_tracker_base.cc",
-        "line": 701,
+        "line": 717,
         "kind": ".cc"
       }
     ],
     "INV-CEP-04-IC7": [
       {
         "file": "test/test_cep_instance_declaration_contract.cc",
-        "line": 149,
+        "line": 176,
         "kind": ".cc"
       }
     ],
     "INV-CEP-05-IC1": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 525,
+        "line": 528,
         "kind": ".cc"
       }
     ],
     "INV-CEP-06-IC1": [
       {
         "file": "scripts/test/cep_experiment_run.sh",
-        "line": 80,
+        "line": 85,
         "kind": ".sh"
       }
     ],
@@ -152,14 +152,14 @@
     "INV-CEP-06-IC5": [
       {
         "file": "test/test_cep_simulation_mode_lock.cc",
-        "line": 203,
+        "line": 205,
         "kind": ".cc"
       }
     ],
     "INV-CEP-07-IC1": [
       {
         "file": "test/test_cep_simulation_mode_lock.cc",
-        "line": 241,
+        "line": 243,
         "kind": ".cc"
       }
     ],
@@ -215,7 +215,7 @@
     "INV-CEP-07A-IC2": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 626,
+        "line": 629,
         "kind": ".cc"
       }
     ],
@@ -243,14 +243,14 @@
     "INV-CEP-09-IC1": [
       {
         "file": "test/test_cep_instance_declaration_contract.cc",
-        "line": 204,
+        "line": 231,
         "kind": ".cc"
       }
     ],
     "INV-CEP-09-IC3": [
       {
         "file": "test/test_cep_channel_dependency_gate.cc",
-        "line": 482,
+        "line": 495,
         "kind": ".cc"
       }
     ],
@@ -278,14 +278,14 @@
     "INV-CEP-12-IC1": [
       {
         "file": "test/test_cep_instance_declaration_contract.cc",
-        "line": 72,
+        "line": 98,
         "kind": ".cc"
       }
     ],
     "INV-CEP-12-IC2": [
       {
         "file": "test/test_cep_mesif_instance_decl.cc",
-        "line": 183,
+        "line": 185,
         "kind": ".cc"
       },
       {
@@ -314,7 +314,7 @@
     "INV-CEP-13-IC2": [
       {
         "file": "test/test_cep_instance_declaration_contract.cc",
-        "line": 312,
+        "line": 339,
         "kind": ".cc"
       }
     ],
@@ -335,35 +335,40 @@
     "INV-CEP-14-IC3": [
       {
         "file": "test/test_cep_instance_declaration_contract.cc",
-        "line": 244,
+        "line": 271,
         "kind": ".cc"
       }
     ],
     "INV-CEP-15-IC1": [
       {
         "file": "test/test_cep_module_factory_seam.cc",
-        "line": 115,
+        "line": 122,
+        "kind": ".cc"
+      },
+      {
+        "file": "test/test_cep_module_factory_seam.cc",
+        "line": 144,
         "kind": ".cc"
       }
     ],
     "INV-CEP-15-IC2": [
       {
         "file": "test/test_cep_module_factory_seam.cc",
-        "line": 236,
+        "line": 262,
         "kind": ".cc"
       }
     ],
     "INV-CEP-15-IC3": [
       {
         "file": "test/test_cep_module_factory_seam.cc",
-        "line": 137,
+        "line": 163,
         "kind": ".cc"
       }
     ],
     "INV-CEP-16-IC1": [
       {
         "file": "scripts/test/cep_docs_sync_check.sh",
-        "line": 532,
+        "line": 539,
         "kind": ".sh"
       }
     ],

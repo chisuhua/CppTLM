@@ -361,13 +361,23 @@ CEP SHALL 以 **C1~C10** 十条合同测试承载 Stub Cache Core 的契约,且�
 
 ### Requirement: cep-cachetlm-alignment-contract
 
-CEP SHALL 与既有 `CacheTLM` **共存不替换**,且 `CacheTLM` 保持冻结面。
+CEP SHALL 与既有 `CacheTLM` **共存不替换**,且 `CacheTLM` 的**协议语义边界**保持受管。
 
 #### Scenario: CacheTLM 零 diff(IC1)
 
-- **WHEN** 契约测试检查冻结面
-- **THEN** `include/tlm/cache_tlm.hh` 与 `src/tlm/cache_tlm.cc` 的 `git diff` **为空**
+> **判据改判(2026-11-18,per `ADR-CEP-15` Status Update 2026-11-18 + 台账 Entry #478)**:本 Requirement 原写
+> 「`CacheTLM` 保持**冻结面**」+ IC1 场景的「文件 `git diff` 为空」—— 该冻结**保护错了对象**:
+> `CacheTLM` 是 **dGPU 业务侧**的性能模型(不是 CEP 产物),真正要保护的是「**协议语义不进性能模型**」,
+> 而不是「文件一个字节都不能动」(该口径使 dGPU 侧的参数语义落地无法进行,且与 `ADR-X.17` 的
+> 「配置里的键必须有确定效果」直接冲突)⇒ IC1 场景的判据**改为行为判据**;**场景名沿用历史命名**
+> (openspec 的 `MODIFIED` 按场景名精确匹配且 archive 拒绝丢弃既有场景名)—— **以场景正文为准**。
+> ⚠️ **未变更项**:IC2 / IC3 两个场景、决策 1 / 3 / 4 / 5 全部不变;`protocol` 类键**显式拒绝**正是
+> 「协议语义不入本类」的机器化。
+
+- **WHEN** 契约测试检查 `CacheTLM` 的**协议语义边界**
+- **THEN** 配置中写有 `protocol` 键 ⇒ 装配**失败**且错误信息**含该键名**(协议语义不得成为本类的可配置语义)
 - **AND** `CacheTLM` 源码**不含** `snoop` / `coherence` / `MESI` / `MOESI` / `directory` 标识符(它无协议知识)
+- **AND** 几何 / 容量 / 层级参数(`size` / `line_size` / `associativity` / `assoc` / `level`)**只承载容量与延迟语义**,不承载协议语义
 
 #### Scenario: CEP 侧只有一个缓存实现(IC2)
 

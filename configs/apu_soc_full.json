@@ -27,8 +27,7 @@
       "type": "CacheTLM",
       "params": {
         "size": "32KB",
-        "associativity": 4,
-        "protocol": "MOESI_AMD"
+        "associativity": 4
       }
     },
     {
@@ -36,8 +35,7 @@
       "type": "CacheTLM",
       "params": {
         "size": "32KB",
-        "associativity": 4,
-        "protocol": "MOESI_AMD"
+        "associativity": 4
       }
     },
     {
@@ -45,8 +43,7 @@
       "type": "CacheTLM",
       "params": {
         "size": "256KB",
-        "associativity": 8,
-        "protocol": "MOESI_AMD"
+        "associativity": 8
       }
     },
     {

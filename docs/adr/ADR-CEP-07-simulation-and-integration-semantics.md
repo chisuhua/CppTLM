@@ -331,3 +331,24 @@ tick():
 - 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
 
 **关联**:台账 **Entry #314**(授权 + 双审处置)· **#307**(4 项裁决:C-3.2 / C-3.3 / C-1)· **#313**(T3 登记表)· **#312**(T2 新 spec 入冻结集)· `test/cep_adr_structural_deferrals.json` · `scripts/test/cep_adr_structural_check.sh`
+
+---
+
+## Status Update(2026-11-18,per 台账 Entry #478 [scope-change])—— 决策 6 表行「`include/tlm/cache_tlm.hh` 不修改」的**指针更新**
+
+> **性质**:追加式修订(per ADR 不可变 + Status Update 先例)—— **§1 ~ §末正文一律不改**,仅登记状态变化。
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #478**(`[scope-change]` + 冻结面五步授权链)。
+
+### ① 决策 6 表行的状态变化(逐字对照)
+
+| 项 | 原(§2 决策 6 表) | 改判后(自本 SU 起生效) |
+|---|---|---|
+| `include/tlm/cache_tlm.hh` 现有 CacheTLM | **不修改**(A13 议题 CEP-15 决议) | **CEP 侧不修改** —— 该文件已由 **dGPU 侧**的参数语义落地解冻(容量模型 + 6 键读取面);**CEP 工作仍不得改它**。判定权的转移与新判据见 **`ADR-CEP-15` Status Update 2026-11-18**(决策 2 改判 + `INV-CEP-15-IC1` 判据改判:载体由「文件 0 diff」迁到「`protocol` 键 ⇒ 装配失败」的**行为**判据) |
+
+### ② 未变更项(明示)
+
+- 决策 6 表的**其余各行**(23 ABI 冻结 / `pcie_endpoint_tlm.h` 的 `[[deprecated]]` 状态 / DGpuBoard 板级集成边界 / ModuleFactory Step 7 沿用现有机制)—— **全部不变**;
+- 决策 6 的**其余决策**(1~5、7~9)—— **全部不变**;
+- `INV-CEP-07-IC5`(23 ABI / frozen headers 零 diff)—— **不变**;⚠️ 该 id 的载体里**不含** `cache_tlm.hh`(它在 `INV-CEP-15-IC1` 名下)⇒ 本 SU **不影响**该判据的载体集合。
+
+**关联**:台账 **Entry #478** · `ADR-CEP-15-cachetlm-alignment.md` Status Update 2026-11-18(决策 2 改判)· change `openspec/changes/cpptlm-module-param-effect-landing/`
