@@ -92,3 +92,95 @@ instantiateAll(config)
 | AC-03 | 失败后再跑合法 config 的返回值 + 实例表 | 断言进程退出码（退出码由 `src/main.cpp:101-104` 提供，**不是装配层的性质**） |
 
 > 动机（metis）：`DPRINTF` 在非 `-DDEBUG_PRINT` 构建下展开为 `do {} while(0)` ⇒ 任何以「日志存在」为判据的 AC **恒绿** ⇒ 等于没验。
+
+## D-8 — 设计类型归档（用户 2026-11-18 裁定）
+
+### D-8.1 判据
+
+**ArchForge 有计划做的设计 IP ⇒ CppTLM 不保留其行为实现**，只保留「影响框架层」的示例；多余示例归档。
+
+两步判定（实测执行）：
+1. **ArchForge 有无计划** —— 查 `docs/microarchitecture/<name>.md` 的状态行（✅ 已实施 / 🟡 规划中 / 📋 v1.0 扩展）+ `docs/roadmap/*.md` 的归属声明；
+2. **CppTLM 实现有无框架层价值** —— 判据 = **删除后框架会失去哪项能力的验证？** 若无 ⇒ 属多余示例。
+
+### D-8.2 逐类型裁决（含证据）
+
+| 类型 | ArchForge 计划 | 框架层价值实测 | 裁决 |
+|---|---|:--:|:--:|
+| `GPUTLM` | `gpu-gputlm.md`「✅ 已实施（Phase 7.A v0）」+ §7.1「**Phase 7.B 共享基类（已规划）**」+ R2「`on_config_loaded` 不读 ⇒ Phase 7.B 统一修复」 | 3 个测试；`ComputeReqBundle` 发起侧 **SM 已双向覆盖** | **归档** |
+| `SharedMemoryTLM` | `gpu-shared-memory.md`「✅ Phase 8.A Task 1」+ 📋 v1.0 SMEM/LDS | 1 个测试；`bank_conflict_cycles()` 是 stub（`return 1 + (num_threads-1)`，不用 `banks_`） | **归档** |
+| `MemoryClusterTLM` | `gpu-memory-cluster.md`「✅ Phase 8.A Task 2」+ v1.0 HBM3e | 2 个测试；`tick()` 只 `++requests_completed_` | **归档** |
+| `GpuSocTLM` | 无微架构契约（组合容器）；`modules_cluster.hh:59` 注册 | 1 个测试；`gpu_soc_tlm.hh:26/42/48/56` **持有 `MemoryClusterTLM`** | **归档（连带）** |
+
+**保留（ArchForge 有 A 计划 ≠ CppTLM 可删）**：
+
+| 类型 | 为什么保留 |
+|---|---|
+| `CPUTLM` | 95 实例，所有 cache/xbar/memory 链路测试的驱动 |
+| `StreamingMultiprocessorTLM` | **22 个测试**；ArchForge `phase9-p1-sm-gate-verification.md:12` 明写「SM 重构收尾**全部在 CppTLM 仓内**，不涉及跨仓协调」 |
+| `GpuMeshNoC` | `gpu-noc-mesh.md` ✅ Phase 8.A Task 3；mesh 拓扑 + D2D 延迟模型（3 个测试） |
+| `CoherentXBarTLM` | `coherent_xbar.md` 🟡 规划中，但 CppTLM 已实现（⚠️ **契约的 Header 路径与实际不符**：契约写 `include/tlm/interconnect/coherent_xbar_tlm.hh`，实际 `include/tlm/coherent_xbar_tlm.hh`）⇒ 跨仓登记，本 change 不改 |
+| `PcieControllerIP` / `PcieMemoryDevice` | 无契约；D-AXI 主路径的 4-IP facade / BAR2 外观层，大量测试依赖 |
+
+### D-8.3 完整影响面（实施清单，逐项实测）
+
+**A. `GPUTLM`（header-only，无 `.cc`）**
+
+| 文件 | 动作 |
+|---|---|
+| `include/tlm/gpu/gpu_tlm.hh` | 删 |
+| `include/chstream_register.hh:130` / `:266-267` | 删 `registerObject` + `registerAdapter` |
+| `configs/apu_soc_phase7a.json` | **整份删**（只剩 GPUTLM + MemoryTLM） |
+| `configs/gpu_standalone.json` | **整份删**（同上） |
+| `configs/apu_soc_phase7b.json` | 删 `compute_unit_0` + 其连接 + hierarchy 成员 + coherence domain 成员 |
+| `examples/generate_apu_soc.py` | 删 `build_apu_phase7a()` + `main()` 的 7a target；`build_apu_phase7b()` 去 `compute_unit_0`；顶部 docstring 同步 |
+| `test/test_gpu_standalone.cc` | 删（整文件） |
+| `test/test_apu_soc_from_config.cc` | 删 phase7a TEST_CASE（`:28-54`）；phase7b 改断言（8→7 模块、去 `compute_unit_0`）；bulk 去 phase7a |
+| `test/test_sm_streaming_multiprocessor_port.cc` | 改注释 + adapter 注册的 sanity 对照（改用仍存在的类型） |
+| `test/python/test_topo_{cli,e2e,layer,patch}.py` | 5 处 `add_module('gpu0','GPUTLM')` 改用仍存在的类型 |
+| `test/test_cep_contracts_crosscheck.cc:334-335` | cfgs 列表去 `apu_soc_phase7a.json`（`REQUIRE(existing >= 3)` 仍成立：剩 full / phase7b / hierarchy_tree_3level） |
+
+**B. `SharedMemoryTLM`**
+
+| 文件 | 动作 |
+|---|---|
+| `include/tlm/gpu/shared_memory_tlm.hh` + `src/tlm/gpu/shared_memory_tlm.cc` | 删 |
+| `src/CMakeLists.txt:43` | 删源登记 |
+| `include/chstream_register.hh:190` | 删注册 |
+| `test/test_shared_memory_tlm.cc` | 删（整文件） |
+
+**C. `MemoryClusterTLM` + `GpuSocTLM`（连带）**
+
+| 文件 | 动作 |
+|---|---|
+| `include/tlm/gpu/memory_cluster_tlm.hh` + `src/tlm/gpu/memory_cluster_tlm.cc` | 删 |
+| `include/tlm/gpu/gpu_soc_tlm.hh` + `src/tlm/gpu/gpu_soc_tlm.cc` | 删（持有 `MemoryClusterTLM`） |
+| `src/CMakeLists.txt:44` / `:50` | 删源登记 |
+| `include/chstream_register.hh:191` | 删 `MemoryClusterTLM` 注册 |
+| `include/modules_cluster.hh:30` / `:59` | 删 include + `REGISTER_MODULE(GpuSocTLM)` |
+| `test/test_memory_cluster_tlm.cc` + `test/test_gpu_soc_tlm.cc` | 删（整文件） |
+
+**D. 孤儿模板**
+
+| 文件 | 动作 |
+|---|---|
+| `configs/templates/gpu_soc/gpu_soc_gb203_v1.json` | **整份删**（实测全仓零引用；删 SM + ClusterTLM 后只剩 2 模块） |
+
+### D-8.4 约束
+
+- ⛔ **不得**在 CppTLM 重新长出同类实现 —— 设计真源在 ArchForge，将来需要时**按 ArchForge 契约重新立项**；
+- ⛔ **不得**删 `CPUTLM` / `StreamingMultiprocessorTLM` / `GpuMeshNoC`（理由见 D-8.2）；
+- ⚠️ **跨仓动作不在本 change**：ArchForge 侧 `gpu-gputlm.md` / `gpu-shared-memory.md` / `gpu-memory-cluster.md` 的「✅ 已实施」状态需在其仓内改为「⏸ 已归档」⇒ 登记为 **R-5**（跨仓 backlog）。
+
+### D-8.5 与 C1 的关系
+
+归档使 `cpptlm-module-param-effect-landing` 的 B2 批次**从 21 键缩到 13 键**：
+
+| 消失的键 | 数量 |
+|---|:--:|
+| `GPUTLM.{kernel_id, workgroup_size, start_addr, end_addr}` | 4 |
+| `SharedMemoryTLM.{banks, size_kb}` | 2 |
+| `MemoryClusterTLM.{capacity_gb, channels}` | 2 |
+| **小计** | **8** |
+
+剩余 13 键：`CoherentXBarTLM`(2) · `PcieControllerIP`(3) · `PcieMemoryDevice`(1) · `StreamingMultiprocessorTLM`(2) · `GpuMeshNoC`(2) · `CPUTLM`(3) —— C1 的 design/tasks 须同步缩减。

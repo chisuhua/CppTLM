@@ -40,14 +40,11 @@ set(CORE_SOURCES
     # (functional routing + interface compat, 对齐 Arteris FlexNoC)
     tlm/cluster/soc_internal_noc.cc
     # gpu_soc Phase 8.A: 基础设施层 (Task 1-4 独立模块, 不依赖 F12)
-    tlm/gpu/shared_memory_tlm.cc
-    tlm/gpu/memory_cluster_tlm.cc
     tlm/gpu/gpu_mesh_noc_tlm.cc
     # Task 12: kernel_launch_tlm.cc + cuda_core_adapter_mvp.cc + ptx_emu_submodule_mvp.cc 删除
     # Task 16 (扩展): 3 个 deprecated header 已物理删除 (2027-09-17)
     # (.hh 保留为 [[deprecated]] typedef 桥接, .cc 已无引用)
     # Task 9: 删除 gpu_compute_unit_tlm.cc (rename -> streaming_multiprocessor_tlm.cc)
-    tlm/gpu/gpu_soc_tlm.cc
     tlm/gpu/dgpu_soc.cc
     tlm/gpu/dgpu_board_shell.cc
     # SM Microarchitecture Rewrite (Task 4) — stub; Task 18 full impl

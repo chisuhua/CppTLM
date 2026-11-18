@@ -1,6 +1,6 @@
 {
-  "name": "APU SoC — Phase 7.B (CPU + Cache + GPUTLM + Crossbar + Memory)",
-  "description": "Phase 7.B: 2 CPU TrafficGen + L1+L2 caches + 1 GPUTLM CU + CrossbarTLM + MemoryTLM. Write-through simplified, bypass coherence. Mirrors apu-soc-design.md §2.3 7.B.",
+  "name": "APU SoC — Phase 7.B (CPU + Cache + Crossbar + Memory)",
+  "description": "Phase 7.B: 2 CPU TrafficGen + L1+L2 caches + CrossbarTLM + MemoryTLM. Write-through simplified, bypass coherence. Mirrors apu-soc-design.md §2.3 7.B.",
   "modules": [
     {
       "name": "cpu_0",
@@ -33,16 +33,6 @@
     {
       "name": "l2_cpu_shared",
       "type": "CacheTLM"
-    },
-    {
-      "name": "compute_unit_0",
-      "type": "GPUTLM",
-      "params": {
-        "kernel_id": 100,
-        "workgroup_size": 64,
-        "start_addr": "0x10000",
-        "end_addr": "0x40000"
-      }
     },
     {
       "name": "xbar",
@@ -85,11 +75,6 @@
       "latency": 5
     },
     {
-      "src": "compute_unit_0",
-      "dst": "xbar.1",
-      "latency": 5
-    },
-    {
       "src": "xbar",
       "dst": "hbm_memory",
       "latency": 100,
@@ -125,14 +110,6 @@
         ]
       },
       {
-        "name": "compute_cluster",
-        "children": [
-          {
-            "name": "compute_unit_0"
-          }
-        ]
-      },
-      {
         "name": "interconnect",
         "children": [
           {
@@ -156,8 +133,7 @@
       "members": [
         "l1_cpu_0",
         "l1_cpu_1",
-        "l2_cpu_shared",
-        "compute_unit_0"
+        "l2_cpu_shared"
       ],
       "protocol": "WRITE_THROUGH_SIMPLIFIED"
     }

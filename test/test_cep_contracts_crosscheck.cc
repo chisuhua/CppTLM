@@ -331,9 +331,9 @@ TEST_CASE("[cep][contract] coherence_domains 保留但改语义(IC3)", "[cep][co
     REQUIRE(dis.find("ADR-CEP-13") != std::string::npos);
 
     // 4 个既有 config 仍含该字段 → 字段不得删除
-    const std::vector<std::string> cfgs = {
-        "configs/apu_soc_full.json", "configs/apu_soc_phase7a.json", "configs/apu_soc_phase7b.json",
-        "configs/hierarchy_tree_3level.json"};
+    const std::vector<std::string> cfgs = {"configs/apu_soc_full.json",
+                                           "configs/apu_soc_phase7b.json",
+                                           "configs/hierarchy_tree_3level.json"};
     // ⚠️ 2026-11-05(architect 验收 S-6):原为 `with_field >= 3`(4 个里删 1 个不红)。
     //    改为**逐个既有 config 都必须含**该字段(IC3 = 保留字段、只改语义)。
     int existing = 0;

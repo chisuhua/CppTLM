@@ -62,7 +62,6 @@ include/                 # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
       sm/                       # ★ 12 个 ChStream SM 子模块 (Fetch/Decode/Issue/ScalarALU/
                                 #   VectorALU/MatrixCore/SIMTLane/LsuGlobal/LsuLDS/RegFileUnit/
                                 #   WritebackUnit/HazardTracker) —— 每模块 2 个头 (X.hh + X_tlm.hh)
-      gpu_tlm.hh / shared_memory_tlm.hh / memory_cluster_tlm.hh
       dma_descriptor_mvp.hh / doorbell_mvp.hh / completion_ring_mvp.hh
       command_processor_mvp.hh / submit_queue_mvp.hh / pm4_decoder_mvp.hh
       sdma_engine_tlm.hh / sdma_noc_adapter.hh / msix_table_mvp.hh
@@ -143,7 +142,9 @@ test/                   # Catch2 v3.7.0 测试套件 (370 个 test_*.cc, 全在�
 configs/                 # JSON 拓扑配置 (顶层 55 个 json, 递归 66 个)
   common/ param_rules/ templates/ test/    # 共享 + 规则 + 模板 + 测试配置
   apu_soc_v1.json         # 顶层 SoC 配置 (CPU + GPU + Crossbar)
-  apu_soc_full.json / apu_soc_phase7a.json / apu_soc_phase7b.json  # 阶段性
+  apu_soc_full.json / apu_soc_phase7b.json  # 阶段性
+  # ⚠️ apu_soc_phase7a.json / gpu_standalone.json / templates/gpu_soc/gpu_soc_gb203_v1.json
+  #    已于 2026-11-18 删除（设计类型归档 per change cpptlm-config-type-registration-align T7）
   dgpu_board_v1.json     # dGPU 板级 (23 ABI driver-visible 入口)
   dgpu_soc_minimal_v1.json  # Minimal dGPU SoC v1.8 (D-AXI 终态, functional)
   dgpu_soc_timing_v1.json  # Timing-mode dGPU SoC v0.5 (timing)

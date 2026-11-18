@@ -15,33 +15,34 @@
 #ifndef MODULES_CLUSTER_HH
 #define MODULES_CLUSTER_HH
 
-#include "tlm/cluster/cpu_cluster.hh"
+#include "core/module_factory.hh"
+#include "tlm/cep/cep_mesh_interconnect.hh" // 2026-11-16: CEP 互联拓扑容器(蓝图由 params.template 承载)
+#include "tlm/cluster/apu_soc.hh"
+#include "tlm/cluster/cache_cluster.hh"
 #include "tlm/cluster/compute_cluster.hh"
-#include "tlm/cluster/tpc_cluster.hh"
+#include "tlm/cluster/cpu_cluster.hh"
 #include "tlm/cluster/gpc_cluster.hh"
 #include "tlm/cluster/gpu_cluster.hh"
-#include "tlm/cluster/cache_cluster.hh"
-#include "tlm/cluster/memory_cluster.hh"
+#include "tlm/cluster/gpu_internal_fabric.hh" // P3 Task 22 (GpuInternalFabric wrapper)
 #include "tlm/cluster/gpu_noc_cluster.hh"
-#include "tlm/cluster/apu_soc.hh"
-#include "tlm/cluster/gpu_internal_fabric.hh"  // P3 Task 22 (GpuInternalFabric wrapper)
-#include "tlm/cluster/soc_internal_noc.hh"      // cpptlm-dgpu-soc-internal-noc-minimal (2026-10-08, SoC 内部 NoC functional routing)
-#include "tlm/cep/cep_mesh_interconnect.hh"     // 2026-11-16: CEP 互联拓扑容器(蓝图由 params.template 承载)
-#include "tlm/gpu/gpu_soc_tlm.hh"
+#include "tlm/cluster/memory_cluster.hh"
+#include "tlm/cluster/soc_internal_noc.hh" // cpptlm-dgpu-soc-internal-noc-minimal (2026-10-08, SoC 内部 NoC functional routing)
+#include "tlm/cluster/tpc_cluster.hh"
 #include "tlm/gpu/dgpu_soc.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
+#include "tlm/pcie/pcie_controller_ip.hh" // P2 PR-A facade (register_module needs full type)
 #include "tlm/pcie/pcie_endpoint_ip.hh"
-#include "tlm/pcie/pcie_controller_ip.hh"  // P2 PR-A facade (register_module needs full type)
-#include "core/module_factory.hh"
 
-// ComputeCluster / TpcCluster / GpcCluster / GpuCluster / CacheCluster / MemoryCluster / GpuNoC / ApuSoC 在 cpptlm::tlm 命名空间
+// ComputeCluster / TpcCluster / GpcCluster / GpuCluster / CacheCluster / MemoryCluster / GpuNoC /
+// ApuSoC 在 cpptlm::tlm 命名空间
 using namespace cpptlm::tlm;
 
 // 注册表写入是 expression statement, C++ 全局作用域禁止 expression statement,
 // 必须包成变量初始化: const auto _reg_X = REGISTER_MODULE(X);  触发 static init
 // ⚠️ CEP 互联容器用**显式短名**注册 —— `REGISTER_MODULE` 宏字符串化的是 `#T`
 //    (`tlm::cep::CepMeshInterconnect`),JSON 里写长名不合仓内短名惯例。
-const bool _reg_cepmeshinterconnect = (ModuleFactory::registerModule<tlm::cep::CepMeshInterconnect>("CepMeshInterconnect"), true);
+const bool _reg_cepmeshinterconnect =
+    (ModuleFactory::registerModule<tlm::cep::CepMeshInterconnect>("CepMeshInterconnect"), true);
 const bool _reg_cpucluster = (REGISTER_MODULE(CpuCluster), true);
 const bool _reg_computecluster = (REGISTER_MODULE(ComputeCluster), true);
 const bool _reg_tpccluster = (REGISTER_MODULE(TpcCluster), true);
@@ -56,7 +57,6 @@ const bool _reg_apusoc = (REGISTER_MODULE(ApuSoC), true);
 // around CrossbarTLM, inner crossbar non-owning per Oracle bg_c60653e0 §3.4
 // — must be instantiated via ModuleFactory JSON child-modules pipeline).
 const bool _reg_gpuinternalfabric = (REGISTER_MODULE(tlm::cluster::GpuInternalFabric), true);
-const bool _reg_gpusoc = (REGISTER_MODULE(GpuSocTLM), true);
 const bool _reg_dgpusoc = (REGISTER_MODULE(DGpuSoc), true);
 // Phase 2 (pcie-endpoint-ip-simmodule-refactor): EP 从 REGISTER_CHSTREAM 迁 REGISTER_MODULE
 // 双注册 (FQ + 短名): 配置 JSON "type": "PcieEndpointIP" 必须可解析 (per dgpu_soc
@@ -108,4 +108,4 @@ const bool _reg_pciecontrollerip_short =
 const bool _reg_gpuinternalfabric_short =
     (ModuleFactory::registerModule<tlm::cluster::GpuInternalFabric>("GpuInternalFabric"), true);
 
-#endif  // MODULES_CLUSTER_HH
+#endif // MODULES_CLUSTER_HH

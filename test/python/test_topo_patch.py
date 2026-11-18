@@ -119,7 +119,7 @@ class TestTopoPatch(unittest.TestCase):
     def test_topopatch_remove_from_sublayer(self):
         sub = TopoLayer('cluster')
         sub.add_module('cpu', 'CPUTLM')
-        sub.add_module('gpu', 'GPUTLM')
+        sub.add_module('gpu', 'StreamingMultiprocessorTLM')
         self.layer.add_sublayer(sub)
         patch = TopoPatch(LayerSelector(name_pattern='cluster'), PatchAction.REMOVE)
         self.layer = patch.apply_to(self.layer)

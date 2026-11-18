@@ -38,6 +38,35 @@
 - 闸**必须带反向自测**（注入假 type ⇒ 必红）;
 - ⚠️ 类型集合**构建相关**（`HybridCacheWrapper` 仅 `BUILD_RTL` 下注册）⇒ 闸按构建运行，**禁静态白名单**。
 
+### ④ 设计类型归档 —— 设计归 ArchForge，CppTLM 只留框架验证示例
+
+**判据（用户 2026-11-18 裁定）**：**ArchForge 有计划做的设计 IP ⇒ CppTLM 不保留其行为实现**，只保留「影响框架层」的示例；多余的示例归档。
+
+| 类型 | ArchForge 的计划（实测） | 在 CppTLM 的框架层价值 | 处置 |
+|---|---|---|---|
+| `GPUTLM` | `gpu-gputlm.md`「✅ 已实施」+ §7.1 **Phase 7.B 共享基类（已规划）** | **弱** —— 3 个测试；`ComputeReqBundle` 的发起侧 **SM 已双向覆盖**（`req_out_` + `req_in_`） | **归档** |
+| `SharedMemoryTLM` | `gpu-shared-memory.md`「✅ Phase 8.A Task 1」+ 📋 v1.0 SMEM/LDS 扩展 | **弱** —— 1 个测试；实现是 stub（`tick()` 空、`bank_conflict_cycles()` 不用 `banks_`） | **归档** |
+| `MemoryClusterTLM` | `gpu-memory-cluster.md`「✅ Phase 8.A Task 2」+ v1.0 HBM3e | **弱** —— 2 个测试；`tick()` 只 `++计数` | **归档** |
+| `GpuSocTLM` | 无微架构契约（组合容器） | **弱** —— 1 个测试；持有 `MemoryClusterTLM`（连带） | **归档**（连带） |
+
+**保留的**（ArchForge 计划 ≠ CppTLM 可删）：
+- `CPUTLM` —— 95 实例，是所有 cache/xbar/memory 链路测试的驱动
+- `StreamingMultiprocessorTLM` —— **22 个测试**；ArchForge `phase9-p1-sm-gate-verification.md` 明写「SM 重构收尾**全部在 CppTLM 仓内**」
+- `GpuMeshNoC` —— mesh 拓扑 + D2D 延迟模型
+- `CoherentXBarTLM` / `PcieControllerIP` / `PcieMemoryDevice`
+
+⛔ **约束**：设计真源在 ArchForge ⇒ CppTLM 删除实现后**不得**重新长出同类实现；将来需要时按 ArchForge 契约重新立项（跨仓）。
+
+**连带（用户 2026-11-18 裁定）**：
+
+| 项 | 处置 |
+|---|---|
+| `GpuSocTLM` | **一并归档**（它持有 `MemoryClusterTLM`，且组合价值已被 `ApuSoC` / `GpuCluster` 覆盖） |
+| `configs/apu_soc_phase7a.json` | **整份删**（只有 `GPUTLM + MemoryTLM`，删 GPUTLM 后无内容） |
+| `configs/gpu_standalone.json` | **整份删**（同上） |
+| `configs/templates/gpu_soc/gpu_soc_gb203_v1.json` | **整份删**（删 SM + ClusterTLM 后只剩 2 模块，且实测**全仓零引用** = 孤儿） |
+| `configs/apu_soc_phase7b.json` | **保留**（删 `compute_unit_0` 后仍有 2 CPU + 2 L1 + L2 + Crossbar + Memory） |
+
 ## Out of Scope
 
 | # | 排除项 | 理由 |
@@ -71,6 +100,7 @@
 | **AC-06** | **闸有判别力** —— 向 fixture config 注入假 type ⇒ 闸**红**;移除 ⇒ 闸**绿**（只验绿 = 没验） |
 | **AC-07** | **零回归** —— `cpptlm_tests` 全量绿（≥ **883336 / 2393**）;`pytest test/python/` **232 passed**;`ctest` 全量绿 |
 | **AC-08** | **嵌套传播** —— 外层 SimModule 内联 `modules` 含未知类型 ⇒ 外层 `instantiateAll == false`;⚠️ **blocked-by** `cpptlm-module-param-migrate-batch2` T0.2 ⇒ 未落地则标 `blocked-by` 并显式登记,⛔ 不许静默跳过 |
+| **AC-10** | **设计类型归档完成** —— `GPUTLM` / `SharedMemoryTLM` / `MemoryClusterTLM` / `GpuSocTLM` 四个类型**不在** `ModuleFactory::getRegisteredTypes()` 中；其 `.hh` / `.cc` / 测试文件 / 3 份配置 / 孤儿模板均已删除；`apu_soc_phase7b.json` 可装配且模块数 = **7**;⚛️ **保留项仍在**（`CPUTLM` / `StreamingMultiprocessorTLM` / `GpuMeshNoC` / `CoherentXBarTLM` / `PcieControllerIP` / `PcieMemoryDevice`） |
 | **AC-09** | **文档与台账同步** —— `docs/implementation/module-param-baseline.md` §2bis 改「已闭合」;`scripts/README.md` 新脚本行;`AGENTS.md`（新增 CLI flag）;台账 Entry |
 
 **回归护栏**（改动前后均绿）

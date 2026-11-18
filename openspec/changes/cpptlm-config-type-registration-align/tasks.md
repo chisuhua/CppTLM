@@ -61,3 +61,17 @@
 - [ ] T6.4 ⚠️ **冻结面核查**：新增 main spec 落 `openspec/specs/config-type-registration-align/spec.md` ⇒ **命中**既有 glob `openspec/specs/cep-*/spec.md`？⇒ **不命中**（非 `cep-` 前缀）⇒ 须确认该 spec 是否应入 M1 冻结集，若入则走 `cep_freeze_check.sh --update --authorized-by "Entry #NNN"`
 - [ ] T6.5 独立验收（切 verifier;AC-01~AC-09 + G-1/G-2 逐条取证）
 - [ ] T6.6 ⚠️ **残留清点**：本 change 范围内不得留 TODO / 半截实现 / 临时日志 / 被 skip 的测试 / 未替换的 mock;⚠️ 特别检查 `DPRINTF` 残留（Release 无输出 ⇒ 等于没报）
+
+## T7 — 设计类型归档（用户 2026-11-18 裁定）
+
+> ⚠️ **执行顺序：T7 必须先于 T2（机制）与 T5（验证）** —— 归档会删测试文件，改变回归基线；先归档再上闸，避免「基线在动的时候判红」。
+> 判据与逐项影响面见 `design.md` **D-8**。
+
+- [x] T7.1 **`GPUTLM` 归档**：删 `include/tlm/gpu/gpu_tlm.hh`;删 `chstream_register.hh:130` + `:266-267` 的两处注册;删 `configs/apu_soc_phase7a.json` + `configs/gpu_standalone.json` **整份**;`configs/apu_soc_phase7b.json` 去 `compute_unit_0`（含连接 / hierarchy / coherence_domains 成员）;`examples/generate_apu_soc.py` 删 `build_apu_phase7a()` + 7a target + 7b 的 `compute_unit_0`;删 `test/test_gpu_standalone.cc`;`test/test_apu_soc_from_config.cc` 删 phase7a case + 改 phase7b（8→7）+ 改 bulk;`test/test_sm_streaming_multiprocessor_port.cc` 改注释与 adapter sanity;4 个 Python topo 测试的 5 处 `add_module('gpu0','GPUTLM')` 改用仍存在类型;`test/test_cep_contracts_crosscheck.cc:334-335` 的 cfgs 去 `apu_soc_phase7a.json`（`REQUIRE(existing >= 3)` 仍成立）
+- [x] T7.2 **`SharedMemoryTLM` 归档**：删 `include/tlm/gpu/shared_memory_tlm.hh` + `src/tlm/gpu/shared_memory_tlm.cc`;删 `src/CMakeLists.txt:43`;删 `chstream_register.hh:190`;删 `test/test_shared_memory_tlm.cc`
+- [x] T7.3 **`MemoryClusterTLM` + `GpuSocTLM` 归档（连带）**：删两者的 `.hh` + `.cc`;删 `src/CMakeLists.txt:44` 与 `:50`;删 `chstream_register.hh:191`;删 `modules_cluster.hh:30`（include）+ `:59`（`REGISTER_MODULE(GpuSocTLM)`）;删 `test/test_memory_cluster_tlm.cc` + `test/test_gpu_soc_tlm.cc`
+- [x] T7.4 **孤儿模板归档**：删 `configs/templates/gpu_soc/gpu_soc_gb203_v1.json`（实测全仓零引用；删 SM + ClusterTLM 后只剩 2 模块）
+- [x] T7.5 ⚠️ **复核保留项未被误删**：`CPUTLM` / `StreamingMultiprocessorTLM` / `GpuMeshNoC` / `CoherentXBarTLM` / `PcieControllerIP` / `PcieMemoryDevice` 均仍在注册表内
+- [x] T7.6 ⚠️ **残留扫描**：全仓 `grep -rn` 四处类型名 ⇒ 只应剩**历史叙述**（台账 Entry / archive 件 / 已签发文档），不得剩**活代码引用**
+- [x] T7.7 ⚠️ **重新记录基线**（AC-07 的下限以归档后为准）：`cpptlm_tests` **883243 / 2371**（归档前 883353 / 2397 ⇒ -26 case）· `pytest` **232 passed** · `ctest` **181/181**
+- [ ] T7.8 ⚠️ **跨仓登记**：ArchForge 侧 `gpu-gputlm.md` / `gpu-shared-memory.md` / `gpu-memory-cluster.md` 的「✅ 已实施」需改为「⏸ 已归档」⇒ 本 change **不做**（跨仓），登记为 **R-5** backlog

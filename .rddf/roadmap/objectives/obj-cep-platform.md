@@ -25609,3 +25609,39 @@ test cases:  5 |  0 passed | 5 failed
 **产物**:`.rddf/improvements/cpptlm-config-type-registration-align.md`（5 段）· `openspec/changes/cpptlm-config-type-registration-align/{proposal.md,design.md,tasks.md,.openspec.yaml}`（**T0~T6**，含 metis 的 12 项 P0/P1 强制项）· `specs/config-type-registration-align/spec.md`（delta · ADDED 1 Requirement / 4 Scenario）;`openspec validate --strict` = **valid**。
 
 **⑲ 关联**:`openspec/changes/cpptlm-module-param-effect-landing/`（R-5 来源）· `openspec/changes/cpptlm-module-param-migrate-batch2/`（T0.2 依赖）· `docs/adr/ADR-X.17-module-param-read-declares.md` · `docs/implementation/module-param-baseline.md` §2bis · `.rddf/improvements/cpptlm-config-type-registration-align.md`
+
+### Entry #481 — 2026-11-18 [builder](**设计类型归档** —— 4 类型 + 3 配置 + 1 孤儿模板从 CppTLM 移除；判据「ArchForge 有计划的 IP ⇒ CppTLM 只留框架验证示例」)
+
+**裁定来源**：用户 2026-11-18 决策 —— 「如果 ArchForge 有计划做相关的设计 IP，那么本仓 CppTLM 只需要考虑影响框架层的示例，对多余的示例可以考虑归档」。逐类型裁决见 change `cpptlm-config-type-registration-align` 的 **design D-8**。
+
+**判据（两步，可实测）**：① ArchForge 有无该 IP 的计划（`docs/microarchitecture/<name>.md` 状态行 + `docs/roadmap/` 归属声明）；② 删掉它在 CppTLM 后，框架会失去哪项能力的验证？
+
+| 归档类型 | ArchForge 计划（实测） | 框架层价值 | 处置 |
+|---|---|---|---|
+| `GPUTLM` | `gpu-gputlm.md`「✅ 已实施」+ §7.1「Phase 7.B 共享基类（已规划）」 | 弱（3 测试；`ComputeReqBundle` 发起侧 **SM 已双向覆盖**） | 删 |
+| `SharedMemoryTLM` | `gpu-shared-memory.md`「✅ Phase 8.A Task 1」+ 📋 v1.0 | 弱（1 测试；`bank_conflict_cycles()` 是 stub，不用 `banks_`） | 删 |
+| `MemoryClusterTLM` | `gpu-memory-cluster.md`「✅ Phase 8.A Task 2」+ v1.0 | 弱（2 测试；`tick()` 只 `++计数`） | 删 |
+| `GpuSocTLM` | 无契约（组合容器） | 弱（1 测试；**持有 `MemoryClusterTLM`** ⇒ 连带） | 删 |
+
+**保留（ArchForge 有计划 ≠ CppTLM 可删）**：`CPUTLM`（95 实例 = 链路测试驱动）· `StreamingMultiprocessorTLM`（**22 测试**；ArchForge `phase9-p1-sm-gate-verification.md:12` 明写「SM 重构收尾**全部在 CppTLM 仓内**」）· `GpuMeshNoC` · `CoherentXBarTLM` · `PcieControllerIP` · `PcieMemoryDevice`。
+
+**实际改动面（逐项实测）**：
+
+| 类 | 文件 |
+|---|---|
+| 源码 | 删 `include/tlm/gpu/{gpu_tlm,shared_memory_tlm,memory_cluster_tlm,gpu_soc_tlm}.hh` + `src/tlm/gpu/{shared_memory_tlm,memory_cluster_tlm,gpu_soc_tlm}.cc` |
+| 注册 | `chstream_register.hh`：删 3 个 include + 3 处 `registerObject` + `GPUTLM` 的 `registerAdapter`;`modules_cluster.hh`：删 `gpu_soc_tlm.hh` include + `REGISTER_MODULE(GpuSocTLM)` |
+| CMake | `src/CMakeLists.txt`：删 3 处源登记 |
+| 配置 | 删 `apu_soc_phase7a.json`·`gpu_standalone.json`·`templates/gpu_soc/gpu_soc_gb203_v1.json`（**孤儿：全仓零引用**）**整份**;`apu_soc_phase7b.json` 去 `compute_unit_0`（8 → **7** 模块，重新生成） |
+| 生成器 | `examples/generate_apu_soc.py`：删 `build_apu_phase7a()` + 7a target + `--phase` choices 的 `"7a"` + 7b 的 `compute_unit_0` |
+| 测试 | 删 4 个测试文件（`test_gpu_standalone` / `test_shared_memory_tlm` / `test_memory_cluster_tlm` / `test_gpu_soc_tlm`）;改 `test_apu_soc_from_config`（删 7a case + 7b 断言 8→7 + bulk）· `test_sm_streaming_multiprocessor_port`（adapter sanity 改用 `RouterTLM`）· `test_cep_contracts_crosscheck`（cfgs 去 phase7a，`existing >= 3` 仍成立）;4 个 Python topo 测试的 5 处 `GPUTLM` 字符串改 `StreamingMultiprocessorTLM` |
+
+**验证（全绿）**：`cpptlm_tests` **883243 / 2371**（归档前 883353 / 2397 ⇒ **-26 case**）· `pytest` **232 passed** · `ctest` **181/181** · `agents_md_lint` / `docs_sync_check --strict` / `cep_docs_sync_check` / `cep_doc_ref_check` 全过。
+
+**连带收益**：C1（`cpptlm-module-param-effect-landing`）的 B2 批次从 **21 键缩到 13 键** —— 消失的 8 键 = `GPUTLM`(4) + `MemoryClusterTLM`(2) + `SharedMemoryTLM`(2)，其 design D-1.6.5 已回填。
+
+**文档同步**：`AGENTS.md` STRUCTURE 树删 3 个已归档头文件 + configs 段标注 3 份删除的配置。
+
+**⚠️ 跨仓待办（R-5，本 change 不做）**：ArchForge 侧 `gpu-gputlm.md` / `gpu-shared-memory.md` / `gpu-memory-cluster.md` 的「✅ 已实施」状态需在其仓内改为「⏸ 已归档」。另登记：`coherent_xbar.md` 的 Header 写 `include/tlm/interconnect/coherent_xbar_tlm.hh`，实际是 `include/tlm/coherent_xbar_tlm.hh`（路径 + 状态双漂移）。
+
+**关联**：`openspec/changes/cpptlm-config-type-registration-align/{proposal,design,tasks}.md`（④ 段 / D-8 / T7）· Entry #480（本 change 立项）

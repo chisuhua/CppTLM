@@ -5,18 +5,15 @@
 #include "modules.hh" // P2-T2.4: 提供 REGISTER_MODULE 宏 (参数化)
 #include "tlm/arbiter_tlm.hh"
 #include "tlm/cache_tlm.hh"
-#include "tlm/cep/cohif_noc_bridge.hh"
 #include "tlm/cep/chi_rnf_protocol_engine.hh"
+#include "tlm/cep/cohif_noc_bridge.hh"
+#include "tlm/cep/cohif_protocol_engine.hh"
 #include "tlm/cep/mesif_protocol_engine.hh"
 #include "tlm/cep/tilelink_protocol_engine.hh"
-#include "tlm/cep/cohif_protocol_engine.hh"
 #include "tlm/coherent_xbar_tlm.hh"
 #include "tlm/cpu_tlm.hh"
 #include "tlm/crossbar_tlm.hh"
 #include "tlm/gpu/gpu_mesh_noc_tlm.hh"
-#include "tlm/gpu/gpu_tlm.hh"
-#include "tlm/gpu/memory_cluster_tlm.hh"
-#include "tlm/gpu/shared_memory_tlm.hh"
 #include "tlm/link_tlm.hh"
 #include "tlm/memory_tlm.hh"
 #include "tlm/nic_tlm.hh"
@@ -30,20 +27,20 @@
 #include "core/module_factory.hh"
 #include "framework/chstream_adapter_factory.hh"
 #include "rtl/hybrid_cache_wrapper.hh"
+#include "tlm/cep/cohif_nic.hh" // 2026-11-16: CohIfNICTLM(CohIf ↔ NoCFlit 网络接口;承担 dst_node 填充)
+#include "tlm/cep/cohif_responder.hh" // 2026-11-08(Entry #297): home 简化模型(最小应答语义)
+#include "tlm/cep/moesi_gpu_protocol_engine.hh" // P3: MoesiGpuProtocolEngine(L4 E2E 的实例化载体)
+#include "tlm/cep/stub_cache_endpoint.hh" // 2026-11-08(Entry #297): 端口面 wrapper(异构 dual-port)
+#include "tlm/cep/ualink_protocol_engine.hh" // 2026-11-07: UalinkProtocolEngine(ualink_4 的记账级专用承载)
 #include "tlm/gpu/command_processor_mvp.hh" // CommandProcessorTLM
 #include "tlm/gpu/completion_ring_mvp.hh"
+#include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 #include "tlm/gpu/pcie_memory_device.hh"
-#include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/gpu/sdma_engine_tlm.hh"
-#include "tlm/lwc/lwc_bus_hub.hh" // Change B: LwcBusHub (REGISTER_CHSTREAM 注册, ChStreamModuleBase 派生)
-#include "tlm/cep/moesi_gpu_protocol_engine.hh" // P3: MoesiGpuProtocolEngine(L4 E2E 的实例化载体)
-#include "tlm/cep/ualink_protocol_engine.hh"  // 2026-11-07: UalinkProtocolEngine(ualink_4 的记账级专用承载)
-#include "tlm/cep/cohif_responder.hh"     // 2026-11-08(Entry #297): home 简化模型(最小应答语义)
-#include "tlm/cep/stub_cache_endpoint.hh" // 2026-11-08(Entry #297): 端口面 wrapper(异构 dual-port)
-#include "tlm/cep/cohif_nic.hh"           // 2026-11-16: CohIfNICTLM(CohIf ↔ NoCFlit 网络接口;承担 dst_node 填充)
 #include "tlm/gpu/streaming_multiprocessor_tlm.hh" // SM 重构 Task 4: SM 顶层 + 12 子模块
 #include "tlm/gpu/submit_queue_mvp.hh"
+#include "tlm/lwc/lwc_bus_hub.hh" // Change B: LwcBusHub (REGISTER_CHSTREAM 注册, ChStreamModuleBase 派生)
 #include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/vram_controller_tlm.hh" // Phase 4 T4: VramControllerTLM (继承 MemoryTLM)
 
@@ -57,13 +54,13 @@
 // ⚠️ 抽成函数(而非在两个宏里各写一遍)⇒ 避免两份实现漂移;`static_assert(n > 1)`
 //    留在**宏**里(它必须作用于**调用点的字面参数**,函数模板做不到这一点)。
 namespace cpptlm {
-template <typename ModuleT, typename BundleT, std::size_t N>
-inline void register_chstream_bidirectional(const std::string& type_name) {
-    ModuleFactory::registerObject<ModuleT>(type_name);
-    ChStreamAdapterFactory::get().registerBidirectionalPortAdapter<ModuleT, BundleT, N>(
-        type_name);
-}
-}  // namespace cpptlm
+    template <typename ModuleT, typename BundleT, std::size_t N>
+    inline void register_chstream_bidirectional(const std::string& type_name) {
+        ModuleFactory::registerObject<ModuleT>(type_name);
+        ChStreamAdapterFactory::get().registerBidirectionalPortAdapter<ModuleT, BundleT, N>(
+            type_name);
+    }
+} // namespace cpptlm
 
 // ============================================================
 // 多端口双向模块注册宏(Phase 4 · 队列 #7 `cpptlm-cep-cohif-carrier`)
@@ -83,26 +80,22 @@ inline void register_chstream_bidirectional(const std::string& type_name) {
 //    `ChStreamAdapterFactory::isMultiPort` 要求 `port_count > 1`;N=1 会落
 //    single 分支调 `bind_ports` —— 而 `bidirectional_port_adapter.hh` 的
 //    `bind_ports` 是**空操作 shim** ⇒ **静默不绑定**(不报错、不绑定)。
-#define REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)                    \
-    do {                                                                         \
-        static_assert((n) > 1,                                                   \
-                      "REGISTER_CHSTREAM_BIDIRECTIONAL: 端口数 N 必须 > 1 —— "     \
-                      "N=1 会落 `BidirectionalPortAdapter::bind_ports` 的**空操作 " \
-                      "shim** ⇒ **静默不绑定**(per 判据 CC-04 ③)");                \
-        cpptlm::register_chstream_bidirectional<mod_type, bundle_t, (n)>(        \
-            #mod_type);                                                          \
+#define REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)                                     \
+    do {                                                                                           \
+        static_assert((n) > 1, "REGISTER_CHSTREAM_BIDIRECTIONAL: 端口数 N 必须 > 1 —— "            \
+                               "N=1 会落 `BidirectionalPortAdapter::bind_ports` 的**空操作 "       \
+                               "shim** ⇒ **静默不绑定**(per 判据 CC-04 ③)");                       \
+        cpptlm::register_chstream_bidirectional<mod_type, bundle_t, (n)>(#mod_type);               \
     } while (0)
 
 // 具名变体 —— 注册表 key 用**短名**(本仓惯例,如 `CoherentXBarTLM`),
 // 而**不是** `#mod_type` 的字符串化(含命名空间/尖括号,不适合做 JSON 里的类型名)。
-#define REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED(type_name, mod_type, bundle_t, n)   \
-    do {                                                                         \
-        static_assert((n) > 1,                                                   \
-                      "REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED: 端口数 N 必须 > 1 —— " \
-                      "N=1 会落 `BidirectionalPortAdapter::bind_ports` 的**空操作" \
-                      "shim** ⇒ **静默不绑定**(per 判据 CC-04 ③)");                \
-        cpptlm::register_chstream_bidirectional<mod_type, bundle_t, (n)>(        \
-            type_name);                                                          \
+#define REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED(type_name, mod_type, bundle_t, n)                    \
+    do {                                                                                           \
+        static_assert((n) > 1, "REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED: 端口数 N 必须 > 1 —— "      \
+                               "N=1 会落 `BidirectionalPortAdapter::bind_ports` 的**空操作"        \
+                               "shim** ⇒ **静默不绑定**(per 判据 CC-04 ③)");                       \
+        cpptlm::register_chstream_bidirectional<mod_type, bundle_t, (n)>(type_name);               \
     } while (0)
 
 // ============================================================
@@ -112,183 +105,173 @@ inline void register_chstream_bidirectional(const std::string& type_name) {
 // 仲裁器（ArbiterTLM 模板特化）
 // 路由器（RouterTLM 5 端口 Bidirectional）
 // ============================================================
-#define REGISTER_CHSTREAM                                                                           \
-    ModuleFactory::registerObject<CacheTLM>("CacheTLM");                                            \
-    ModuleFactory::registerObject<MemoryTLM>("MemoryTLM");                                          \
-    /* Phase 4 T4 (per H1 + M10): VramControllerTLM 继承 MemoryTLM (ChStreamModuleBase 系),        \
-       走 registerObject (非 REGISTER_MODULE: is_base_of<SimModule> 静态断言失败) */                  \
-    ModuleFactory::registerObject<VramControllerTLM>("VramControllerTLM");                          \
-    ModuleFactory::registerObject<CrossbarTLM>("CrossbarTLM");                                      \
-    ModuleFactory::registerObject<cpptlm::tlm::CoherentXBarTLM>("CoherentXBarTLM");                 \
-    ModuleFactory::registerObject<CPUTLM>("CPUTLM");                                                \
-    ModuleFactory::registerObject<TrafficGenTLM>("TrafficGenTLM");                                  \
-    ModuleFactory::registerObject<ArbiterTLM<2>>("ArbiterTLM2");                                    \
-    ModuleFactory::registerObject<ArbiterTLM<4>>("ArbiterTLM4");                                    \
-    ModuleFactory::registerObject<tlm::RouterTLM>("RouterTLM");                                     \
-    ModuleFactory::registerObject<tlm::NICTLM>("NICTLM");                                           \
-    ModuleFactory::registerObject<tlm::LinkTLM>("LinkTLM");                                         \
-    ModuleFactory::registerObject<tlm::GPUTLM>("GPUTLM");                                           \
+#define REGISTER_CHSTREAM                                                                                                   \
+    ModuleFactory::registerObject<CacheTLM>("CacheTLM");                                                                    \
+    ModuleFactory::registerObject<MemoryTLM>("MemoryTLM");                                                                  \
+    /* Phase 4 T4 (per H1 + M10): VramControllerTLM 继承 MemoryTLM (ChStreamModuleBase 系),                              \
+       走 registerObject (非 REGISTER_MODULE: is_base_of<SimModule> 静态断言失败) */                                \
+    ModuleFactory::registerObject<VramControllerTLM>("VramControllerTLM");                                                  \
+    ModuleFactory::registerObject<CrossbarTLM>("CrossbarTLM");                                                              \
+    ModuleFactory::registerObject<cpptlm::tlm::CoherentXBarTLM>("CoherentXBarTLM");                                         \
+    ModuleFactory::registerObject<CPUTLM>("CPUTLM");                                                                        \
+    ModuleFactory::registerObject<TrafficGenTLM>("TrafficGenTLM");                                                          \
+    ModuleFactory::registerObject<ArbiterTLM<2>>("ArbiterTLM2");                                                            \
+    ModuleFactory::registerObject<ArbiterTLM<4>>("ArbiterTLM4");                                                            \
+    ModuleFactory::registerObject<tlm::RouterTLM>("RouterTLM");                                                             \
+    ModuleFactory::registerObject<tlm::NICTLM>("NICTLM");                                                                   \
+    ModuleFactory::registerObject<tlm::LinkTLM>("LinkTLM");                                                                 \
     /* 队列 #7 Phase 5 (per `INV-CEP-07-IC4`:CEP 模块注册走既有宏体系):                                         \
-       CohIf 协议引擎的**可注册**形态(短名 `CohIfProtocolEngine`)——                                             \
-       `NullProtocolEngine<2>` 的非模板外壳(10 流行为完全继承,无新增协议语义)。 */                                       \
-    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("CohIfProtocolEngine",                                    \
-                                           tlm::cep::CohIfNullProtocolEngine,                       \
-                                           bundles::CohIfBundle, 2);                                \
-    /* 队列 #8 Phase 5:CHI RN-F subset 的**真插件**引擎(短名 `ChiRnfProtocolEngine`)。                        \
-       `chi_rnf` 是本仓域实例(per `ADR-CEP-12 §11`)⇒ 引擎与实例声明由同一 change 交付;                              \
-       与 `CohIfProtocolEngine` 并存且**同名端口数 N=2** ⇒ JSON 侧可逐实例选择引擎类型(CR-10 的对照基础)。 */      \
-    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("ChiRnfProtocolEngine",                                    \
-                                           tlm::cep::ChiRnfProtocolEngine,                          \
-                                           bundles::CohIfBundle, 2);                                \
-    /* 队列 #9 Phase 2:MESIF 实例的**真插件**引擎(短名 `MesifProtocolEngine`)。                         \
-       与 `ChiRnfProtocolEngine` 同为 N=2 ⇒ JSON 侧可逐实例选择;`vc_binding` 由装配方              \
+       CohIf 协议引擎的**可注册**形态(短名 `CohIfProtocolEngine`)——                                         \
+       `NullProtocolEngine<2>` 的非模板外壳(10 流行为完全继承,无新增协议语义)。 */                     \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED(                                                                                  \
+        "CohIfProtocolEngine", tlm::cep::CohIfNullProtocolEngine, bundles::CohIfBundle, 2);                                 \
+    /* 队列 #8 Phase 5:CHI RN-F subset 的**真插件**引擎(短名 `ChiRnfProtocolEngine`)。                           \
+       `chi_rnf` 是本仓域实例(per `ADR-CEP-12 §11`)⇒ 引擎与实例声明由同一 change 交付;                 \
+       与 `CohIfProtocolEngine` 并存且**同名端口数 N=2** ⇒ JSON 侧可逐实例选择引擎类型(CR-10          \
+       的对照基础)。 */                                                                                               \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("ChiRnfProtocolEngine", tlm::cep::ChiRnfProtocolEngine,                           \
+                                          bundles::CohIfBundle, 2);                                                         \
+    /* 队列 #9 Phase 2:MESIF 实例的**真插件**引擎(短名 `MesifProtocolEngine`)。                                \
+       与 `ChiRnfProtocolEngine` 同为 N=2 ⇒ JSON 侧可逐实例选择;`vc_binding` 由装配方                       \
        装载声明后 `set_route(...)` 注入(引擎不解析 JSON ⇒ 声明是唯一真源)。 */                        \
-    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("MesifProtocolEngine",                                    \
-                                           tlm::cep::MesifProtocolEngine,                           \
-                                           bundles::CohIfBundle, 2);                                \
-    /* B3b 推进项(per 台账 Entry #243):TileLink-C 的**真插件**引擎(短名 `TileLinkProtocolEngine`)。        \
-       与 `MesifProtocolEngine` 同为 N=2 ⇒ JSON 侧可逐实例选择;⛔ 引擎**不解析 JSON**               \
-       (T3 映射事件语义由规约真源 `tilelink_state_spec.hh` 的 `kT3MappingCells` 提供)。            \
-       ⚠️ 事件语义**零自有副本** ⇒ 引擎内 0 处「意图 → 事件」字面映射(per design D-2)。 */          \
-    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("TileLinkProtocolEngine",                                \
-                                           tlm::cep::TileLinkProtocolEngine,                        \
-                                           bundles::CohIfBundle, 2);                                \
-    /* P3(2026-11-06,per 台账 Entry #259):MOESI-GPU 引擎注册 —— L4 事务级 E2E 的**实例化载体**。 \
-       `moesi_gpu` 是本仓首个 `status=implemented` 实例(per ADR-CEP-12 §13);此前引擎存在但      \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("MesifProtocolEngine", tlm::cep::MesifProtocolEngine,                             \
+                                          bundles::CohIfBundle, 2);                                                         \
+    /* B3b 推进项(per 台账 Entry #243):TileLink-C 的**真插件**引擎(短名                                        \
+       `TileLinkProtocolEngine`)。 与 `MesifProtocolEngine` 同为 N=2 ⇒ JSON 侧可逐实例选择;⛔                                                    \
+       引擎**不解析 JSON** (T3 映射事件语义由规约真源 `tilelink_state_spec.hh` 的                                                         \
+       `kT3MappingCells` 提供)。 ⚠️ 事件语义**零自有副本** ⇒ 引擎内 0 处「意图 → 事件」字面映射(per                          \
+       design D-2)。 */                                                                                                    \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED(                                                                                  \
+        "TileLinkProtocolEngine", tlm::cep::TileLinkProtocolEngine, bundles::CohIfBundle, 2);                               \
+    /* P3(2026-11-06,per 台账 Entry #259):MOESI-GPU 引擎注册 —— L4 事务级 E2E 的**实例化载体**。                          \
+       `moesi_gpu` 是本仓首个 `status=implemented` 实例(per ADR-CEP-12 §13);此前引擎存在但                   \
        **未注册** ⇒ 无法被 ModuleFactory 实例化 ⇒ 无「instantiate → submit → tick → 抵达」路径。 \
-       ⚠️ 引擎的 10 个 `on_*` 按决策 M-6 **只记账**(零发射)⇒ 本注册只闭合「实例化」,        \
-       ⛔ 不闭合「协议事件语义」。 */                                                                            \
-    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("MoesiGpuProtocolEngine",                                 \
-                                           tlm::cep::MoesiGpuProtocolEngine,                        \
-                                           bundles::CohIfBundle, 2);                                \
-    /* 2026-11-07(per 台账 Entry #269):UALink 引擎注册 —— `ualink_4` 的**记账级专用承载**。 \
-       ⚠️ **强度标签(必读)**:本引擎 = **记账级**(bookkeeping-only)—— 对 canonical 10 流        \
-       全部行为 = 计数器自增;⛔ **零发射** / ⛔ **零协议状态机** / ⛔ **零 UPLI 通道级语义**    \
-       (ReqCmd 编码 / 4 通道时序 / transaction tag 配对**均不实现**)。                        \
-       ⇒ 本注册只闭合「**实例化 + 承载**」,⛔ **不闭合**「UALink 协议事件语义」;              \
-       ⇒ **不得**读成「UALink 协议语义已实现」;⇒ **B3b-2 维持 0/4**(本条**不改**计数)。       \
-       观测面 = **三分法**:记账(request/completion)· 拒绝(7 条声明 false)·                    \
-       pending 不消费(snoop_resp)—— per `ADR-CEP-12` SU 2026-11-07 ④。                        \
-       依据档位 = `public_nonnormative`(4 个公开非规范来源 + 一步推断)⇒ ⛔ 不计入 B3b。        */                                                                          \
-    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("UalinkProtocolEngine",                                  \
-                                           tlm::cep::UalinkProtocolEngine,                         \
-                                           bundles::CohIfBundle, 2);                                \
-    /* 2026-11-08(per 台账 Entry #297):「完成者」= **真实 home 的简化模型**。                    \
-       ⚠️ **承载面 = 第一族(CHI RN-F)的最小应答语义**(Request→Completion · 可配发 Snoop ·    \
-       Writeback 接收即消费);⛔ **不**承载条款级语义 ⇒ ⛔ **不**构成 T1–T4 条款级证据          \
-       ⇒ **B3b-2 维持 0/4**;⛔ **不进** `protocol_instances.json`(声明面已裁**甲**)。           \
-       ⛔ **不是** ProtocolEngineBase —— 独立 `ChStreamModuleBase` 派生(对称 CohIf 端口)。     */ \
-    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("CohIfResponderTLM",                                     \
-                                           tlm::cep::CohIfResponderTLM,                            \
-                                           bundles::CohIfBundle, 2);                                \
-    /* 队列 #7 Phase 3/5:协议桥注册(per CC-05 —— 死钩子 → 活钩子)。                                               \
-       `register_protocol_bridge` 对同名 early-return(ODR-safe)⇒ 幂等。                                   \
-       桥的**消费**由 `config["cep"]["bridges"]` 驱动(ModuleFactory Step 7.5)。 */                          \
-    ModuleFactory::register_protocol_bridge("cohif_noc", []() -> cpptlm::ProtocolBridgeEr* {        \
-        return new tlm::cep::CohIfNoCProtocolBridge();                                              \
-    });                                           \
-    ModuleFactory::registerObject<tlm::SharedMemoryTLM>("SharedMemoryTLM");                         \
-    ModuleFactory::registerObject<tlm::MemoryClusterTLM>("MemoryClusterTLM");                       \
-    ModuleFactory::registerObject<tlm::GpuMeshNoC>("GpuMeshNoC");                                   \
-    /* Task 9: GpuComputeUnitTLM 删除, 由 StreamingMultiprocessorTLM 接管.                          \
-       Task 10: WavefrontTLM/MinimalWarpSchedulerTLM/VectorRegFileTLM -> SM 内部子模块 (类标 \
-       [[deprecated]], chstream_register 注销, Task 16 删除文件). Task 12: KernelLaunchTLM +                                                                         \
-       CudaCoreAdapterMVP + PtxEmuSubmoduleMVP 已物理删除. */                                  \
-    ModuleFactory::registerObject<tlm::StreamingMultiprocessorTLM>("StreamingMultiprocessorTLM");   \
-    ModuleFactory::registerObject<tlm::sm::FetchUnitTLM>("FetchUnitTLM");                           \
-    ModuleFactory::registerObject<tlm::sm::DecodeUnitTLM>("DecodeUnitTLM");                         \
-    ModuleFactory::registerObject<tlm::sm::IssueUnitTLM>("IssueUnitTLM");                           \
-    ModuleFactory::registerObject<tlm::sm::ScalarALU>("ScalarALU");                                 \
-    ModuleFactory::registerObject<tlm::sm::VectorALU>("VectorALU");                                 \
-    ModuleFactory::registerObject<tlm::sm::MatrixCore>("MatrixCore");                               \
-    ModuleFactory::registerObject<tlm::sm::SIMTLane>("SIMTLane");                                   \
-    ModuleFactory::registerObject<tlm::sm::LsuGlobal>("LsuGlobal");                                 \
-    ModuleFactory::registerObject<tlm::sm::LsuLDS>("LsuLDS");                                       \
-    ModuleFactory::registerObject<tlm::sm::RegFileUnit>("RegFileUnit");                             \
-    ModuleFactory::registerObject<tlm::sm::WritebackUnit>("WritebackUnit");                         \
-    ModuleFactory::registerObject<tlm::sm::HazardTracker>("HazardTracker");                         \
-    ModuleFactory::registerObject<tlm::gpu::PcieEndpointTLM>("PcieEndpointTLM");                    \
-    ModuleFactory::registerObject<tlm::pcie::PcieLinkPhyMuxTLM>("PcieLinkPhyMuxTLM");               \
-    ModuleFactory::registerObject<tlm::gpu::SdmaEngineTLM>("SdmaEngineTLM");                        \
-    ModuleFactory::registerObject<tlm::lwc::LwcBusHub>("LwcBusHub");                                \
-    ModuleFactory::registerObject<tlm::gpu::SubmitQueueTLM>("SubmitQueueTLM");                      \
-    ModuleFactory::registerObject<tlm::gpu::CompletionRingTLM>("CompletionRingTLM");                \
-    ModuleFactory::registerObject<tlm::gpu::CommandProcessorTLM>("CommandProcessorTLM");            \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerAdapter<CacheTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM");  \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerAdapter<MemoryTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(             \
-            "MemoryTLM");                                                                           \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerAdapter<VramControllerTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(     \
-            "VramControllerTLM");                                                                    \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerMultiPortAdapter<CrossbarTLM, bundles::CacheReqBundle, bundles::CacheRespBundle,   \
-                                  4>("CrossbarTLM");                                                \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerMultiPortAdapter<cpptlm::tlm::CoherentXBarTLM, bundles::CacheReqBundle,            \
-                                  bundles::CacheRespBundle, 4>("CoherentXBarTLM");                  \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerAdapter<CPUTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>("CPUTLM");      \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerAdapter<TrafficGenTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(         \
-            "TrafficGenTLM");                                                                       \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerMultiPortAdapter<ArbiterTLM<2>, bundles::CacheReqBundle,                           \
-                                  bundles::CacheRespBundle, 2>("ArbiterTLM2");                      \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerMultiPortAdapter<ArbiterTLM<4>, bundles::CacheReqBundle,                           \
-                                  bundles::CacheRespBundle, 4>("ArbiterTLM4");                      \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerBidirectionalPortAdapter<tlm::RouterTLM, bundles::NoCFlitBundle, 5>("RouterTLM");  \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerDualPortAdapter<tlm::NICTLM, bundles::CacheReqBundle, bundles::CacheRespBundle,    \
-                                 bundles::NoCFlitBundle, bundles::NoCFlitBundle>("NICTLM");         \
-    /* 2026-11-08(per 台账 Entry #297):端口面 wrapper —— **异构** dual-port                     \
-       (CacheReq/CacheResp ↔ CohIf/CohIf)。⛔ 不得用对称 `REGISTER_CHSTREAM_BIDIRECTIONAL`      \
-       (那要求两侧同 BundleT)。                                                               */ \
-    ModuleFactory::registerObject<tlm::cep::StubCacheEndpointTLM>("StubCacheEndpointTLM");         \
-    ChStreamAdapterFactory::get()                                                                  \
-        .registerDualPortAdapter<tlm::cep::StubCacheEndpointTLM, bundles::CacheReqBundle,          \
-                                 bundles::CacheRespBundle, bundles::CohIfBundle,                  \
-                                 bundles::CohIfBundle>("StubCacheEndpointTLM");                    \
-    /* 2026-11-16(change `cpptlm-cep-mesh-e2e-carrier`):CEP 网络接口 —— CohIf ↔ NoCFlit        \
-       **异构** dual-port(CohIf/CohIf ↔ NoCFlit/NoCFlit)。承担 `dst_node` 的填充职责           \
-       (⛔ 桥「无权改写路由器负责的字段」⇒ 不填 ⇒ 路由不了)。                                   \
-       ⛔ 不得用对称 `REGISTER_CHSTREAM_BIDIRECTIONAL`(要求两侧同 BundleT)。                      */ \
-    ModuleFactory::registerObject<tlm::cep::CohIfNICTLM>("CohIfNICTLM");                         \
-    ChStreamAdapterFactory::get()                                                                 \
-        .registerDualPortAdapter<tlm::cep::CohIfNICTLM, bundles::CohIfBundle, bundles::CohIfBundle, \
-                                 bundles::NoCFlitBundle, bundles::NoCFlitBundle>("CohIfNICTLM");   \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerAdapter<tlm::LinkTLM, bundles::NoCFlitBundle, bundles::NoCFlitBundle>("LinkTLM");  \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerAdapter<tlm::GPUTLM, bundles::ComputeReqBundle, bundles::ComputeRespBundle>(       \
-            "GPUTLM");                                                                              \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerAdapter<tlm::StreamingMultiprocessorTLM, bundles::ComputeReqBundle,                \
-                         bundles::ComputeRespBundle>("StreamingMultiprocessorTLM");                 \
-    /* HybridCacheWrapper 的 .cc 实现位于 src/rtl/，仅在 BUILD_RTL=ON 时编译。                      \
-       宏体内不能直接用 ifdef 因续行问题，改用空宏守卫                          \
-       HYBRID_CACHE_WRAPPER_REGISTER_RTL：BUILD_RTL=OFF 时展开为空注释，                   \
-       调用方无感。BUILD_RTL 通过 target_compile_definitions 传递。 */                   \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerMultiPortAdapter<tlm::gpu::PcieEndpointTLM, bundles::PcieTlpBundle,                \
-                                  bundles::PcieTlpBundle, 4>("PcieEndpointTLM");                    \
-    ModuleFactory::registerObject<tlm::gpu::PcieMemoryDevice>("PcieMemoryDevice");                   \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerMultiPortAdapter<tlm::gpu::PcieMemoryDevice, bundles::PcieTlpBundle,               \
-                                  bundles::PcieTlpBundle, 2>("PcieMemoryDevice");                   \
-    ModuleFactory::registerObject<tlm::gpu::GmmuTLM>("GmmuTLM");                                     \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerAdapter<tlm::gpu::GmmuTLM, bundles::PcieTlpBundle, bundles::PcieTlpBundle>(        \
-            "GmmuTLM");                                                                             \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerMultiPortAdapter<tlm::pcie::PcieLinkPhyMuxTLM, bundles::PcieTlpBundle,             \
-                                  bundles::PcieTlpBundle, 17>("PcieLinkPhyMuxTLM");                  \
-    ChStreamAdapterFactory::get()                                                                   \
-        .registerMultiPortAdapter<tlm::gpu::SdmaEngineTLM, bundles::PcieTlpBundle,                  \
-                                  bundles::PcieTlpBundle, 5>("SdmaEngineTLM");                      \
+       ⚠️ 引擎的 10 个 `on_*` 按决策 M-6 **只记账**(零发射)⇒ 本注册只闭合「实例化」,          \
+       ⛔ 不闭合「协议事件语义」。 */                                                                          \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED(                                                                                  \
+        "MoesiGpuProtocolEngine", tlm::cep::MoesiGpuProtocolEngine, bundles::CohIfBundle, 2);                               \
+    /* 2026-11-07(per 台账 Entry #269):UALink 引擎注册 —— `ualink_4` 的**记账级专用承载**。                               \
+       ⚠️ **强度标签(必读)**:本引擎 = **记账级**(bookkeeping-only)—— 对 canonical 10 流               \
+       全部行为 = 计数器自增;⛔ **零发射** / ⛔ **零协议状态机** / ⛔ **零 UPLI 通道级语义**     \
+       (ReqCmd 编码 / 4 通道时序 / transaction tag 配对**均不实现**)。                                         \
+       ⇒ 本注册只闭合「**实例化 + 承载**」,⛔ **不闭合**「UALink 协议事件语义」;                 \
+       ⇒ **不得**读成「UALink 协议语义已实现」;⇒ **B3b-2 维持 0/4**(本条**不改**计数)。           \
+       观测面 = **三分法**:记账(request/completion)· 拒绝(7 条声明 false)·                                   \
+       pending 不消费(snoop_resp)—— per `ADR-CEP-12` SU 2026-11-07 ④。                                            \
+       依据档位 = `public_nonnormative`(4 个公开非规范来源 + 一步推断)⇒ ⛔ 不计入 B3b。        */    \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("UalinkProtocolEngine", tlm::cep::UalinkProtocolEngine,                           \
+                                          bundles::CohIfBundle, 2);                                                         \
+    /* 2026-11-08(per 台账 Entry #297):「完成者」= **真实 home 的简化模型**。                                \
+       ⚠️ **承载面 = 第一族(CHI RN-F)的最小应答语义**(Request→Completion · 可配发 Snoop ·           \
+       Writeback 接收即消费);⛔ **不**承载条款级语义 ⇒ ⛔ **不**构成 T1–T4 条款级证据            \
+       ⇒ **B3b-2 维持 0/4**;⛔ **不进** `protocol_instances.json`(声明面已裁**甲**)。                         \
+       ⛔ **不是** ProtocolEngineBase —— 独立 `ChStreamModuleBase` 派生(对称 CohIf 端口)。     */           \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("CohIfResponderTLM", tlm::cep::CohIfResponderTLM,                                 \
+                                          bundles::CohIfBundle, 2);                                                         \
+    /* 队列 #7 Phase 3/5:协议桥注册(per CC-05 —— 死钩子 → 活钩子)。                                     \
+       `register_protocol_bridge` 对同名 early-return(ODR-safe)⇒ 幂等。                                             \
+       桥的**消费**由 `config["cep"]["bridges"]` 驱动(ModuleFactory Step 7.5)。 */                                  \
+    ModuleFactory::register_protocol_bridge("cohif_noc", []() -> cpptlm::ProtocolBridgeEr* {                                \
+        return new tlm::cep::CohIfNoCProtocolBridge();                                                                      \
+    });                                                                                                                     \
+    ModuleFactory::registerObject<tlm::GpuMeshNoC>("GpuMeshNoC");                                                           \
+    /* Task 9: GpuComputeUnitTLM 删除, 由 StreamingMultiprocessorTLM 接管.                                             \
+       Task 10: WavefrontTLM/MinimalWarpSchedulerTLM/VectorRegFileTLM -> SM 内部子模块 (类标                         \
+       [[deprecated]], chstream_register 注销, Task 16 删除文件). Task 12: KernelLaunchTLM +                          \
+       CudaCoreAdapterMVP + PtxEmuSubmoduleMVP 已物理删除. */                                                          \
+    ModuleFactory::registerObject<tlm::StreamingMultiprocessorTLM>("StreamingMultiprocessorTLM");                           \
+    ModuleFactory::registerObject<tlm::sm::FetchUnitTLM>("FetchUnitTLM");                                                   \
+    ModuleFactory::registerObject<tlm::sm::DecodeUnitTLM>("DecodeUnitTLM");                                                 \
+    ModuleFactory::registerObject<tlm::sm::IssueUnitTLM>("IssueUnitTLM");                                                   \
+    ModuleFactory::registerObject<tlm::sm::ScalarALU>("ScalarALU");                                                         \
+    ModuleFactory::registerObject<tlm::sm::VectorALU>("VectorALU");                                                         \
+    ModuleFactory::registerObject<tlm::sm::MatrixCore>("MatrixCore");                                                       \
+    ModuleFactory::registerObject<tlm::sm::SIMTLane>("SIMTLane");                                                           \
+    ModuleFactory::registerObject<tlm::sm::LsuGlobal>("LsuGlobal");                                                         \
+    ModuleFactory::registerObject<tlm::sm::LsuLDS>("LsuLDS");                                                               \
+    ModuleFactory::registerObject<tlm::sm::RegFileUnit>("RegFileUnit");                                                     \
+    ModuleFactory::registerObject<tlm::sm::WritebackUnit>("WritebackUnit");                                                 \
+    ModuleFactory::registerObject<tlm::sm::HazardTracker>("HazardTracker");                                                 \
+    ModuleFactory::registerObject<tlm::gpu::PcieEndpointTLM>("PcieEndpointTLM");                                            \
+    ModuleFactory::registerObject<tlm::pcie::PcieLinkPhyMuxTLM>("PcieLinkPhyMuxTLM");                                       \
+    ModuleFactory::registerObject<tlm::gpu::SdmaEngineTLM>("SdmaEngineTLM");                                                \
+    ModuleFactory::registerObject<tlm::lwc::LwcBusHub>("LwcBusHub");                                                        \
+    ModuleFactory::registerObject<tlm::gpu::SubmitQueueTLM>("SubmitQueueTLM");                                              \
+    ModuleFactory::registerObject<tlm::gpu::CompletionRingTLM>("CompletionRingTLM");                                        \
+    ModuleFactory::registerObject<tlm::gpu::CommandProcessorTLM>("CommandProcessorTLM");                                    \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerAdapter<CacheTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM");                          \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerAdapter<MemoryTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(                                     \
+            "MemoryTLM");                                                                                                   \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerAdapter<VramControllerTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(                             \
+            "VramControllerTLM");                                                                                           \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerMultiPortAdapter<CrossbarTLM, bundles::CacheReqBundle, bundles::CacheRespBundle,                           \
+                                  4>("CrossbarTLM");                                                                        \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerMultiPortAdapter<cpptlm::tlm::CoherentXBarTLM, bundles::CacheReqBundle,                                    \
+                                  bundles::CacheRespBundle, 4>("CoherentXBarTLM");                                          \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerAdapter<CPUTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>("CPUTLM");                              \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerAdapter<TrafficGenTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(                                 \
+            "TrafficGenTLM");                                                                                               \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerMultiPortAdapter<ArbiterTLM<2>, bundles::CacheReqBundle,                                                   \
+                                  bundles::CacheRespBundle, 2>("ArbiterTLM2");                                              \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerMultiPortAdapter<ArbiterTLM<4>, bundles::CacheReqBundle,                                                   \
+                                  bundles::CacheRespBundle, 4>("ArbiterTLM4");                                              \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerBidirectionalPortAdapter<tlm::RouterTLM, bundles::NoCFlitBundle, 5>("RouterTLM");                          \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerDualPortAdapter<tlm::NICTLM, bundles::CacheReqBundle, bundles::CacheRespBundle,                            \
+                                 bundles::NoCFlitBundle, bundles::NoCFlitBundle>("NICTLM");                                 \
+    /* 2026-11-08(per 台账 Entry #297):端口面 wrapper —— **异构** dual-port                                      \
+       (CacheReq/CacheResp ↔ CohIf/CohIf)。⛔ 不得用对称 `REGISTER_CHSTREAM_BIDIRECTIONAL`                         \
+       (那要求两侧同 BundleT)。                                                               */                     \
+    ModuleFactory::registerObject<tlm::cep::StubCacheEndpointTLM>("StubCacheEndpointTLM");                                  \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerDualPortAdapter<tlm::cep::StubCacheEndpointTLM, bundles::CacheReqBundle,                                   \
+                                 bundles::CacheRespBundle, bundles::CohIfBundle,                                            \
+                                 bundles::CohIfBundle>("StubCacheEndpointTLM");                                             \
+    /* 2026-11-16(change `cpptlm-cep-mesh-e2e-carrier`):CEP 网络接口 —— CohIf ↔ NoCFlit                            \
+       **异构** dual-port(CohIf/CohIf ↔ NoCFlit/NoCFlit)。承担 `dst_node` 的填充职责                            \
+       (⛔ 桥「无权改写路由器负责的字段」⇒ 不填 ⇒ 路由不了)。                                    \
+       ⛔ 不得用对称 `REGISTER_CHSTREAM_BIDIRECTIONAL`(要求两侧同 BundleT)。 */                                                                                                                         \
+    ModuleFactory::registerObject<tlm::cep::CohIfNICTLM>("CohIfNICTLM");                                                    \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerDualPortAdapter<tlm::cep::CohIfNICTLM, bundles::CohIfBundle,                                               \
+                                 bundles::CohIfBundle, bundles::NoCFlitBundle,                                              \
+                                 bundles::NoCFlitBundle>("CohIfNICTLM");                                                    \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerAdapter<tlm::LinkTLM, bundles::NoCFlitBundle, bundles::NoCFlitBundle>("LinkTLM");                          \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerAdapter<tlm::StreamingMultiprocessorTLM, bundles::ComputeReqBundle,                                        \
+                         bundles::ComputeRespBundle>("StreamingMultiprocessorTLM");                                         \
+    /* HybridCacheWrapper 的 .cc 实现位于 src/rtl/，仅在 BUILD_RTL=ON 时编译。                                  \
+       宏体内不能直接用 ifdef 因续行问题，改用空宏守卫                                                  \
+       HYBRID_CACHE_WRAPPER_REGISTER_RTL：BUILD_RTL=OFF 时展开为空注释，                                           \
+       调用方无感。BUILD_RTL 通过 target_compile_definitions 传递。 */                                           \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerMultiPortAdapter<tlm::gpu::PcieEndpointTLM, bundles::PcieTlpBundle,                                        \
+                                  bundles::PcieTlpBundle, 4>("PcieEndpointTLM");                                            \
+    ModuleFactory::registerObject<tlm::gpu::PcieMemoryDevice>("PcieMemoryDevice");                                          \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerMultiPortAdapter<tlm::gpu::PcieMemoryDevice, bundles::PcieTlpBundle,                                       \
+                                  bundles::PcieTlpBundle, 2>("PcieMemoryDevice");                                           \
+    ModuleFactory::registerObject<tlm::gpu::GmmuTLM>("GmmuTLM");                                                            \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerAdapter<tlm::gpu::GmmuTLM, bundles::PcieTlpBundle, bundles::PcieTlpBundle>(                                \
+            "GmmuTLM");                                                                                                     \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerMultiPortAdapter<tlm::pcie::PcieLinkPhyMuxTLM, bundles::PcieTlpBundle,                                     \
+                                  bundles::PcieTlpBundle, 17>("PcieLinkPhyMuxTLM");                                         \
+    ChStreamAdapterFactory::get()                                                                                           \
+        .registerMultiPortAdapter<tlm::gpu::SdmaEngineTLM, bundles::PcieTlpBundle,                                          \
+                                  bundles::PcieTlpBundle, 5>("SdmaEngineTLM");                                              \
     HYBRID_CACHE_WRAPPER_REGISTER_RTL
 
 // ============================================================

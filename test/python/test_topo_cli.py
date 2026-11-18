@@ -95,7 +95,7 @@ class TestTopoCLI(unittest.TestCase):
         base.add_module('cpu0', 'CPUTLM')
 
         var = TopoLayer('variant')
-        var.add_module('gpu0', 'GPUTLM')
+        var.add_module('gpu0', 'StreamingMultiprocessorTLM')
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             base_path = f.name

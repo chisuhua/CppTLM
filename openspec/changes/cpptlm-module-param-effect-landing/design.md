@@ -213,7 +213,12 @@ python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对�
 | 4 | **存量配置清理 5 处**：`dgpu_soc_minimal_v1.json`（`data_flow` + `vc_counts_enabled` + `operating_frequency_hz`）· `apu_soc_v1.json`（`ports`）· `example_emitter_soc.json`（`port_count`）· `library_memory_demo.json`（`n_ports` + `memory_type`） | 态② 会让「写了该键」的配置**装不上** ⇒ 必须同步清理 |
 | 5 | **2 个测试数据里的 `memory_type` 清理**（`test_p2_residual.cc` / `test_simmodule_infra_clusters.cc`） | 它们传的是「从未透传成功」的键 ⇒ 现在会抛 |
 
-> **剩余 B2（未做）**：`CoherentXBarTLM.domain_protocol` / `snoop_filter` · `GPUTLM`(4) · `PcieControllerIP`(3) · `PcieMemoryDevice`(1) · `StreamingMultiprocessorTLM`(2) · `MemoryClusterTLM`(2) · `SharedMemoryTLM`(2) · `GpuMeshNoC`(2) · `CPUTLM`(3)。
+> **剩余 B2（未做）—— 13 键**：`CoherentXBarTLM.domain_protocol` / `snoop_filter`(2) · `PcieControllerIP`(3) · `PcieMemoryDevice`(1) · `StreamingMultiprocessorTLM`(2) · `GpuMeshNoC`(2) · `CPUTLM`(3)。
+>
+> ⚠️ **2026-11-18 范围缩减（21 → 13 键）**：`GPUTLM`(4) · `MemoryClusterTLM`(2) · `SharedMemoryTLM`(2) 共 **8 键**已随**类型归档**一并消失 ——
+> 用户裁定「ArchForge 有计划做的设计 IP ⇒ CppTLM 只保留影响框架层的示例，多余示例归档」，
+> 由 change `cpptlm-config-type-registration-align` 的 **T7** 承接（其 design **D-8** 含逐类型证据与完整影响面）。
+> ⇒ 这 8 键**不需要**在本 change 里逐个裁决（类型已不存在）。
 
 > **解冻连带面**（`ADR-CEP-15` Status Update 2026-11-18 §⑤ 逐条）：守门闸（0 diff 断言 → `protocol` 拒绝的**行为**判据）· `ADR-CEP-07` 决策 6 表行指针 · `openspec/specs/cep-core-contracts/spec.md` 的 IC1 场景改判（**场景名沿用历史命名** —— openspec 的 `MODIFIED` 按场景名精确匹配且 archive 拒绝丢弃既有场景名）· `docs/architecture/cep/fabric-transport.md` 冻结面声明限定 · `docs/architecture/cep/parity-baseline.md` 的容量口径限定 · 对拍常量抽取器 `scripts/cep/parity/cpptlm_params.py` 形态同步（旧字面量 `hit ? 5 : 50` → 成员初值）。
 

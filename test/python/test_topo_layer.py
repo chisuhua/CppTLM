@@ -130,7 +130,7 @@ class TestTopoLayer(unittest.TestCase):
 
     def test_to_dict_roundtrip(self):
         l = TopoLayer('test')
-        l.add_module('gpu', 'GPUTLM')
+        l.add_module('gpu', 'StreamingMultiprocessorTLM')
         l.add_connection('gpu', 'mem', latency=2)
         d1 = l.to_dict()
         l2 = TopoLayer.from_dict(d1)
@@ -156,7 +156,7 @@ class TestTopoLayer(unittest.TestCase):
         l1 = TopoLayer('a')
         l1.add_module('cpu0', 'CPUTLM')
         l2 = TopoLayer('b')
-        l2.add_module('gpu0', 'GPUTLM')
+        l2.add_module('gpu0', 'StreamingMultiprocessorTLM')
         merged = l1.merge(l2)
         self.assertEqual(len(merged.modules), 2)
         names = [m.name for m in merged.modules]

@@ -1,5 +1,9 @@
 // test/test_apu_soc_from_config.cc
-// 端到端测试：从 configs/ 加载 APU SoC 拓扑（Phase 7.A/7.B）并运行仿真
+// 端到端测试：从 configs/ 加载 APU SoC 拓扑（Phase 7.B）并运行仿真
+//
+// ⚠️ 2026-11-18：Phase 7.A 配置（`apu_soc_phase7a.json`）已随 `GPUTLM` 归档而删除
+//    （per change `cpptlm-config-type-registration-align` T7.1：设计归 ArchForge，
+//    CppTLM 只留框架验证示例）⇒ 本文件不再覆盖 7.A。
 // 对应 docs/soc_arch/specs/apu-soc-design.md §2.2 (最终态) 和 §2.3 (阶段递进)
 // 标签：[e2e][apu][from-config]
 #include <filesystem>
@@ -22,38 +26,7 @@ static json loadConfig(const std::string& path) {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Phase 7.A: GPUTLM (ComputeUnit v0) + MemoryTLM direct
-// ────────────────────────────────────────────────────────────────────
-
-TEST_CASE("E2E: Load apu_soc_phase7a.json — Phase 7.A minimal APU",
-          "[e2e][apu][from-config][phase7a]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
-    ModuleFactory factory(&eq);
-
-    auto config = loadConfig("configs/apu_soc_phase7a.json");
-    REQUIRE(factory.instantiateAll(config));
-    factory.startAllTicks();
-
-    REQUIRE(factory.getInstance("gpu_unit_0") != nullptr);
-    REQUIRE(factory.getInstance("hbm_memory") != nullptr);
-    REQUIRE(factory.getInstance("gpu_unit_0")->get_module_type() == "GPUTLM");
-    REQUIRE(factory.getInstance("hbm_memory")->get_module_type() == "MemoryTLM");
-
-    // Verify hierarchy tree parses (3-level per apu-soc-design.md §2.3)
-    REQUIRE(config.contains("hierarchy"));
-    auto root = parse_hierarchy_tree(config["hierarchy"]);
-    REQUIRE(root != nullptr);
-    REQUIRE(root->get_name() == "apu_phase7a");
-    REQUIRE(root->get_children().size() == 2);
-
-    uint64_t before = eq.getCurrentCycle();
-    eq.run(50);
-    REQUIRE(eq.getCurrentCycle() == before + 50);
-}
-
-// ────────────────────────────────────────────────────────────────────
-// Phase 7.B: 2 CPU + Cache hierarchy + GPUTLM + Crossbar + Memory
+// Phase 7.B: 2 CPU + Cache hierarchy + Crossbar + Memory
 // ────────────────────────────────────────────────────────────────────
 
 TEST_CASE("E2E: Load apu_soc_phase7b.json — Phase 7.B with CPU+Cache+CU",
@@ -66,20 +39,19 @@ TEST_CASE("E2E: Load apu_soc_phase7b.json — Phase 7.B with CPU+Cache+CU",
     REQUIRE(factory.instantiateAll(config));
     factory.startAllTicks();
 
-    // 2 CPU + 2 L1 + 1 L2 + 1 GPUTLM + 1 Crossbar + 1 Memory = 8 modules
+    // 2 CPU + 2 L1 + 1 L2 + 1 Crossbar + 1 Memory = 7 modules
+    // （`compute_unit_0`(GPUTLM) 已于 2026-11-18 随类型归档移除）
     REQUIRE(factory.getInstance("cpu_0") != nullptr);
     REQUIRE(factory.getInstance("cpu_1") != nullptr);
     REQUIRE(factory.getInstance("l1_cpu_0") != nullptr);
     REQUIRE(factory.getInstance("l1_cpu_1") != nullptr);
     REQUIRE(factory.getInstance("l2_cpu_shared") != nullptr);
-    REQUIRE(factory.getInstance("compute_unit_0") != nullptr);
     REQUIRE(factory.getInstance("xbar") != nullptr);
     REQUIRE(factory.getInstance("hbm_memory") != nullptr);
 
     // Verify types
     REQUIRE(factory.getInstance("cpu_0")->get_module_type() == "TrafficGenTLM");
     REQUIRE(factory.getInstance("l1_cpu_0")->get_module_type() == "CacheTLM");
-    REQUIRE(factory.getInstance("compute_unit_0")->get_module_type() == "GPUTLM");
     REQUIRE(factory.getInstance("xbar")->get_module_type() == "CrossbarTLM");
     REQUIRE(factory.getInstance("hbm_memory")->get_module_type() == "MemoryTLM");
 
@@ -88,13 +60,12 @@ TEST_CASE("E2E: Load apu_soc_phase7b.json — Phase 7.B with CPU+Cache+CU",
     REQUIRE(xbar != nullptr);
     REQUIRE(xbar->num_ports() == 4);
 
-    // Verify hierarchy tree (4-level: root →
-    // cpu_cluster/compute_cluster/interconnect/memory_cluster)
+    // Verify hierarchy tree (root → cpu_cluster/interconnect/memory_cluster)
     REQUIRE(config.contains("hierarchy"));
     auto root = parse_hierarchy_tree(config["hierarchy"]);
     REQUIRE(root != nullptr);
     REQUIRE(root->get_name() == "apu_phase7b");
-    REQUIRE(root->get_children().size() == 4);
+    REQUIRE(root->get_children().size() == 3);
 
     // Verify coherence_domains
     REQUIRE(config.contains("coherence_domains"));
@@ -164,13 +135,12 @@ TEST_CASE("E2E: apu_soc_full.json documents target topology (Phase 7.F aspiratio
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Bulk: verify both Phase 7.A and Phase 7.B configs are valid + loadable
+// Bulk: verify Phase 7.B config is valid + loadable
 // ────────────────────────────────────────────────────────────────────
 
-TEST_CASE("E2E: Bulk load APU Phase 7.A + 7.B configs — v2.1.0 loadable subset",
+TEST_CASE("E2E: Bulk load APU Phase 7.B config — v2.1.0 loadable subset",
           "[e2e][apu][from-config][bulk]") {
     const std::vector<std::string> configs_to_test = {
-        "configs/apu_soc_phase7a.json",
         "configs/apu_soc_phase7b.json",
     };
 

@@ -25,27 +25,27 @@
 #include "core/chstream_module.hh"
 #include "framework/stream_adapter.hh"
 #include "tlm/gpu/i_compute_device.hh"
-#include "tlm/gpu/sm/fetch_unit_tlm.hh"        // Task 2.1 P1-1 拆分: 取指单元 stub
-#include "tlm/gpu/sm/decode_unit_tlm.hh"       // Task 2.1 P1-1 拆分: 译码单元 stub
-#include "tlm/gpu/sm/issue_unit_tlm.hh"        // Task 2.1 P1-1 拆分: 发射单元 stub
-#include "tlm/gpu/sm/scalar_alu_tlm.hh"        // Task 2.1 P1-1 拆分: ScalarALU stub (NOT cpptlm::gpu::ScalarALU)
-#include "tlm/gpu/sm/vector_alu_tlm.hh"        // Task 2.1 P1-1 拆分: 向量 ALU stub
-#include "tlm/gpu/sm/matrix_core_tlm.hh"       // Task 2.1 P1-1 拆分: 矩阵核心 stub
-#include "tlm/gpu/sm/simt_lane_tlm.hh"         // Task 2.1 P1-1 拆分: SIMT lane stub
-#include "tlm/gpu/sm/lsu_global_tlm.hh"        // Task 2.1 P1-1 拆分: 全局内存 stub
-#include "tlm/gpu/sm/lsu_lds_tlm.hh"           // Task 2.1 P1-1 拆分: 共享内存 stub
-#include "tlm/gpu/sm/reg_file_unit_tlm.hh"     // Task 2.1 P1-1 拆分: 寄存器文件 stub (SM-owns-state §15.5.6)
-#include "tlm/gpu/sm/writeback_unit_tlm.hh"    // Task 2.1 P1-1 拆分: 写回单元 stub
-#include "tlm/gpu/sm/hazard_tracker_tlm.hh"    // Task 2.1 P1-1 拆分: 冒险跟踪器 stub
-#include "tlm/gpu/sm/scalar_alu.hh" // Task 1.3 P1-3 ScalarALU 真值 (独立 cpptlm::gpu::ScalarALU)
-#include "tlm/gpu/sm/vector_alu.hh" // Task 2.6 P1-6 VectorALU 真值 (独立 cpptlm::gpu::VectorALU)
-#include "tlm/gpu/sm/matrix_alu.hh" // Task 2.7 P1-7 MatrixCore stub (cpptlm::gpu::MatrixCore 真值推迟 Task 4.6)
-#include "tlm/gpu/sm/simt_lane.hh" // Task 2.8 P1-8 SIMTLane 真值 (EXEC mask 64-bit + 分歧检测)
-#include "tlm/gpu/sm/lsu_global.hh" // Task 2.9 P1-9 LsuGlobal 真值 (异步内存回调骨架)
-#include "tlm/gpu/sm/lsu_lds.hh" // Task 2.10 P1-10 LsuLDS 真值 (共享内存 bank conflict 检测 stub)
-#include "tlm/gpu/sm/reg_file.hh" // Task 2.11 P1-11 RegFileUnit 真值 (取代 scalar_regs_, per Oracle F-1 P0 修复)
-#include "tlm/gpu/sm/writeback.hh" // Task 2.12 P1-12 WritebackUnit 真值 (in-flight 队列 + per-warp 写回, per Oracle F-2 re-scope)
+#include "tlm/gpu/sm/decode_unit_tlm.hh" // Task 2.1 P1-1 拆分: 译码单元 stub
+#include "tlm/gpu/sm/fetch_unit_tlm.hh"  // Task 2.1 P1-1 拆分: 取指单元 stub
 #include "tlm/gpu/sm/hazard_tracker.hh" // Task 2.13 P1-13 HazardTracker 真值 (kVirtualReg + kHardwareCounter, per Oracle F-2 P0 签名 (parent))
+#include "tlm/gpu/sm/hazard_tracker_tlm.hh" // Task 2.1 P1-1 拆分: 冒险跟踪器 stub
+#include "tlm/gpu/sm/issue_unit_tlm.hh"     // Task 2.1 P1-1 拆分: 发射单元 stub
+#include "tlm/gpu/sm/lsu_global.hh"         // Task 2.9 P1-9 LsuGlobal 真值 (异步内存回调骨架)
+#include "tlm/gpu/sm/lsu_global_tlm.hh"     // Task 2.1 P1-1 拆分: 全局内存 stub
+#include "tlm/gpu/sm/lsu_lds.hh" // Task 2.10 P1-10 LsuLDS 真值 (共享内存 bank conflict 检测 stub)
+#include "tlm/gpu/sm/lsu_lds_tlm.hh" // Task 2.1 P1-1 拆分: 共享内存 stub
+#include "tlm/gpu/sm/matrix_alu.hh" // Task 2.7 P1-7 MatrixCore stub (cpptlm::gpu::MatrixCore 真值推迟 Task 4.6)
+#include "tlm/gpu/sm/matrix_core_tlm.hh" // Task 2.1 P1-1 拆分: 矩阵核心 stub
+#include "tlm/gpu/sm/reg_file.hh" // Task 2.11 P1-11 RegFileUnit 真值 (取代 scalar_regs_, per Oracle F-1 P0 修复)
+#include "tlm/gpu/sm/reg_file_unit_tlm.hh" // Task 2.1 P1-1 拆分: 寄存器文件 stub (SM-owns-state §15.5.6)
+#include "tlm/gpu/sm/scalar_alu.hh" // Task 1.3 P1-3 ScalarALU 真值 (独立 cpptlm::gpu::ScalarALU)
+#include "tlm/gpu/sm/scalar_alu_tlm.hh" // Task 2.1 P1-1 拆分: ScalarALU stub (NOT cpptlm::gpu::ScalarALU)
+#include "tlm/gpu/sm/simt_lane.hh"     // Task 2.8 P1-8 SIMTLane 真值 (EXEC mask 64-bit + 分歧检测)
+#include "tlm/gpu/sm/simt_lane_tlm.hh" // Task 2.1 P1-1 拆分: SIMT lane stub
+#include "tlm/gpu/sm/vector_alu.hh"    // Task 2.6 P1-6 VectorALU 真值 (独立 cpptlm::gpu::VectorALU)
+#include "tlm/gpu/sm/vector_alu_tlm.hh" // Task 2.1 P1-1 拆分: 向量 ALU stub
+#include "tlm/gpu/sm/writeback.hh" // Task 2.12 P1-12 WritebackUnit 真值 (in-flight 队列 + per-warp 写回, per Oracle F-2 re-scope)
+#include "tlm/gpu/sm/writeback_unit_tlm.hh" // Task 2.1 P1-1 拆分: 写回单元 stub
 
 #include <array>
 #include <memory>
@@ -67,65 +67,115 @@ namespace tlm {
         }
         void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override;
 
-    // === SM 顶层 accessor (per Oracle 预审 Task 2.2 F-4) ===
-    // fetch_next_instr: 取 ring front + consume (封装, instr_ring_ 保持 private)
-    bool fetch_next_instr(cpptlm::gpu::InstrDescriptor& out) {
-        if (ring_count_ == 0) return false;
-        out = instr_ring_[ring_head_];
-        ring_head_ = (ring_head_ + 1) % 64;
-        --ring_count_;
-        return true;
-    }
-    // fu(): 返回 FetchUnitTLM 指针 (per Oracle F-2 P0 修复, 12 子模块唯一构造入口)
-    sm::FetchUnitTLM* fu() { return fu_.get(); }
-    // du(): 返回 DecodeUnitTLM 指针 (per Oracle 预审 Task 2.3 F-4 P1)
-    sm::DecodeUnitTLM* du() { return du_.get(); }
-    // iu(): 返回 IssueUnitTLM 指针 (per Oracle 预审 Task 2.4 F-4 P1)
-    sm::IssueUnitTLM* iu() { return iu_.get(); }
-    // sa(): 返回 ScalarALU stub 指针 (per Oracle 预审 Task 2.5 Q6)
-    sm::ScalarALU* sa() { return sa_.get(); }
-    // scalar_alu(): 返回 cpptlm::gpu::ScalarALU 真值类指针 (per Oracle Q12 Q7)
-    cpptlm::gpu::ScalarALU* scalar_alu() { return scalar_alu_.get(); }
-    // va(): 返回 VectorALU stub 指针 (per Oracle 预审 Task 2.6 F-4 P1)
-    sm::VectorALU* va() { return va_.get(); }
-    // vector_alu(): 返回 cpptlm::gpu::VectorALU 真值类指针 (va_ tick dispatch 目标)
-    cpptlm::gpu::VectorALU* vector_alu() { return vector_alu_.get(); }
-    // mc(): 返回 MatrixCore stub 指针 (per Oracle 预审 Task 2.7 F-4 P1)
-    sm::MatrixCore* mc() { return mc_.get(); }
-    // matrix_alu(): 返回 cpptlm::gpu::MatrixCore 真值类指针 (mc_ tick dispatch 目标)
-    cpptlm::gpu::MatrixCore* matrix_alu() { return matrix_alu_.get(); }
-    // sl(): 返回 SIMTLane stub 指针 (per Oracle 预审 Task 2.8 F-4 P1)
-    sm::SIMTLane* sl() { return sl_.get(); }
-    // simt_lane(): 返回 cpptlm::gpu::SIMTLane 真值类指针 (sl_ tick dispatch 目标)
-    cpptlm::gpu::SIMTLane* simt_lane() { return simt_lane_.get(); }
-    // lg(): 返回 LsuGlobal stub 指针 (per Oracle 预审 Task 2.9 F-4 P1)
-    sm::LsuGlobal* lg() { return lg_.get(); }
-    // lsu_global(): 返回 cpptlm::gpu::LsuGlobal 真值类指针 (lg_ tick dispatch 目标)
-    cpptlm::gpu::LsuGlobal* lsu_global() { return lsu_global_.get(); }
-    // ll(): 返回 LsuLDS stub 指针 (per Oracle 预审 Task 2.10 Q6 命名修正 ll_, 镜像 lg()/sl()/mc() 模式)
-    sm::LsuLDS* ll() { return ll_.get(); }
-    // lsu_lds(): 返回 cpptlm::gpu::LsuLDS 真值类指针 (ll_ tick dispatch 目标)
-    cpptlm::gpu::LsuLDS* lsu_lds() { return lsu_lds_.get(); }
-    // rf(): 返回 RegFileUnit stub 指针 (per Oracle Task 2.11 P-2 命名, 镜像 ll()/lg() 模式)
-    sm::RegFileUnit* rf() { return rf_.get(); }
-    // reg_file(): 返回 cpptlm::gpu::RegFileUnit 真值类指针 (取代 scalar_regs_, per Oracle F-1 P0)
-    cpptlm::gpu::RegFileUnit* reg_file() { return reg_file_.get(); }
-    // wb(): 返回 WritebackUnit stub 指针 (per Oracle Task 2.12 Q3, 镜像 rf() 模式)
-    sm::WritebackUnit* wb() { return wb_.get(); }
-    // writeback(): 返回 cpptlm::gpu::WritebackUnit 真值类指针 (re-scoped rf-only, per Oracle F-2 P0)
-    cpptlm::gpu::WritebackUnit* writeback() { return writeback_.get(); }
-    // ht(): 返回 HazardTracker stub 指针 (per Oracle Task 2.13 Q3, 镜像 rf() 模式)
-    sm::HazardTracker* ht() { return ht_.get(); }
-    // hazard_tracker(): 返回 cpptlm::gpu::HazardTracker 真值类指针 (kVirtualReg + kHardwareCounter)
-    cpptlm::gpu::HazardTracker* hazard_tracker() { return hazard_tracker_.get(); }
-    // mark_completed(): G8 配套接口 (per Oracle Q12, sa_ tick() dispatch 完成后调)
-    void mark_completed(uint64_t instr_id) {
-        completed_instr_ids_.insert(instr_id);
-    }
-    // ring_count(): 返回当前 ring buffer 指令数 (per Oracle 测试断言)
-    uint32_t ring_count() const { return ring_count_; }
+        // === SM 顶层 accessor (per Oracle 预审 Task 2.2 F-4) ===
+        // fetch_next_instr: 取 ring front + consume (封装, instr_ring_ 保持 private)
+        bool fetch_next_instr(cpptlm::gpu::InstrDescriptor& out) {
+            if (ring_count_ == 0)
+                return false;
+            out = instr_ring_[ring_head_];
+            ring_head_ = (ring_head_ + 1) % 64;
+            --ring_count_;
+            return true;
+        }
+        // fu(): 返回 FetchUnitTLM 指针 (per Oracle F-2 P0 修复, 12 子模块唯一构造入口)
+        sm::FetchUnitTLM* fu() {
+            return fu_.get();
+        }
+        // du(): 返回 DecodeUnitTLM 指针 (per Oracle 预审 Task 2.3 F-4 P1)
+        sm::DecodeUnitTLM* du() {
+            return du_.get();
+        }
+        // iu(): 返回 IssueUnitTLM 指针 (per Oracle 预审 Task 2.4 F-4 P1)
+        sm::IssueUnitTLM* iu() {
+            return iu_.get();
+        }
+        // sa(): 返回 ScalarALU stub 指针 (per Oracle 预审 Task 2.5 Q6)
+        sm::ScalarALU* sa() {
+            return sa_.get();
+        }
+        // scalar_alu(): 返回 cpptlm::gpu::ScalarALU 真值类指针 (per Oracle Q12 Q7)
+        cpptlm::gpu::ScalarALU* scalar_alu() {
+            return scalar_alu_.get();
+        }
+        // va(): 返回 VectorALU stub 指针 (per Oracle 预审 Task 2.6 F-4 P1)
+        sm::VectorALU* va() {
+            return va_.get();
+        }
+        // vector_alu(): 返回 cpptlm::gpu::VectorALU 真值类指针 (va_ tick dispatch 目标)
+        cpptlm::gpu::VectorALU* vector_alu() {
+            return vector_alu_.get();
+        }
+        // mc(): 返回 MatrixCore stub 指针 (per Oracle 预审 Task 2.7 F-4 P1)
+        sm::MatrixCore* mc() {
+            return mc_.get();
+        }
+        // matrix_alu(): 返回 cpptlm::gpu::MatrixCore 真值类指针 (mc_ tick dispatch 目标)
+        cpptlm::gpu::MatrixCore* matrix_alu() {
+            return matrix_alu_.get();
+        }
+        // sl(): 返回 SIMTLane stub 指针 (per Oracle 预审 Task 2.8 F-4 P1)
+        sm::SIMTLane* sl() {
+            return sl_.get();
+        }
+        // simt_lane(): 返回 cpptlm::gpu::SIMTLane 真值类指针 (sl_ tick dispatch 目标)
+        cpptlm::gpu::SIMTLane* simt_lane() {
+            return simt_lane_.get();
+        }
+        // lg(): 返回 LsuGlobal stub 指针 (per Oracle 预审 Task 2.9 F-4 P1)
+        sm::LsuGlobal* lg() {
+            return lg_.get();
+        }
+        // lsu_global(): 返回 cpptlm::gpu::LsuGlobal 真值类指针 (lg_ tick dispatch 目标)
+        cpptlm::gpu::LsuGlobal* lsu_global() {
+            return lsu_global_.get();
+        }
+        // ll(): 返回 LsuLDS stub 指针 (per Oracle 预审 Task 2.10 Q6 命名修正 ll_, 镜像
+        // lg()/sl()/mc() 模式)
+        sm::LsuLDS* ll() {
+            return ll_.get();
+        }
+        // lsu_lds(): 返回 cpptlm::gpu::LsuLDS 真值类指针 (ll_ tick dispatch 目标)
+        cpptlm::gpu::LsuLDS* lsu_lds() {
+            return lsu_lds_.get();
+        }
+        // rf(): 返回 RegFileUnit stub 指针 (per Oracle Task 2.11 P-2 命名, 镜像 ll()/lg() 模式)
+        sm::RegFileUnit* rf() {
+            return rf_.get();
+        }
+        // reg_file(): 返回 cpptlm::gpu::RegFileUnit 真值类指针 (取代 scalar_regs_, per Oracle F-1
+        // P0)
+        cpptlm::gpu::RegFileUnit* reg_file() {
+            return reg_file_.get();
+        }
+        // wb(): 返回 WritebackUnit stub 指针 (per Oracle Task 2.12 Q3, 镜像 rf() 模式)
+        sm::WritebackUnit* wb() {
+            return wb_.get();
+        }
+        // writeback(): 返回 cpptlm::gpu::WritebackUnit 真值类指针 (re-scoped rf-only, per Oracle
+        // F-2 P0)
+        cpptlm::gpu::WritebackUnit* writeback() {
+            return writeback_.get();
+        }
+        // ht(): 返回 HazardTracker stub 指针 (per Oracle Task 2.13 Q3, 镜像 rf() 模式)
+        sm::HazardTracker* ht() {
+            return ht_.get();
+        }
+        // hazard_tracker(): 返回 cpptlm::gpu::HazardTracker 真值类指针 (kVirtualReg +
+        // kHardwareCounter)
+        cpptlm::gpu::HazardTracker* hazard_tracker() {
+            return hazard_tracker_.get();
+        }
+        // mark_completed(): G8 配套接口 (per Oracle Q12, sa_ tick() dispatch 完成后调)
+        void mark_completed(uint64_t instr_id) {
+            completed_instr_ids_.insert(instr_id);
+        }
+        // ring_count(): 返回当前 ring buffer 指令数 (per Oracle 测试断言)
+        uint32_t ring_count() const {
+            return ring_count_;
+        }
 
-        // === 4 端口访问器 (GPUTLM 范式, per include/tlm/gpu/gpu_tlm.hh:177-189) ===
+        // === 4 端口访问器（原 GPUTLM 范式；GPUTLM 已于 2026-11-18 归档，
+        //     per change `cpptlm-config-type-registration-align` T7.1） ===
         // StreamAdapter::tick() 契约要求 ModuleT 提供 req_out()/resp_in() (master 方向)
         // + req_in()/resp_out() (slave 方向), 全部 4 方向 (per plan Task 1.1 v2 P0-1 修订)
         cpptlm::OutputStreamAdapter<bundles::ComputeReqBundle>& req_out() {
@@ -170,41 +220,46 @@ namespace tlm {
             // Task 2.9 P1-9 (per Oracle 预审 Task 2.9 Q5 P0 修正):
             // 异步推进 lsu_global_ pending 队列 — 无条件在 head (异步不依赖 ring,
             // ring 空早退后 pending 仍需推进, 否则归零回调永不执行)
-            lsu_global_->tick();            // 无条件推进 pending (异步不依赖 ring)
+            lsu_global_->tick(); // 无条件推进 pending (异步不依赖 ring)
             // Task 2.12 P1-12 (per Oracle Task 2.12 P-1): WB tick 在链头, 与 lsu_global_ 同处理
             // (ring 空时 WB 队列仍需推进, 否则 drain 永不执行)
-            wb_->tick();                    // 无条件推进 WB 队列 (in-flight 写回 RF)
+            wb_->tick(); // 无条件推进 WB 队列 (in-flight 写回 RF)
             // Task 2.2 P1-2 (per Oracle 预审 Task 2.2 F-1 P0 修复):
             // 取指/consume 下沉到 FetchUnitTLM.tick() (消除双消费者 bug)
             if (ring_count_ == 0)
                 return 0;
-            fu_->tick();  // 取指 + consume (Task 2.2 P1-2, 封装 via fetch_next_instr accessor)
+            fu_->tick(); // 取指 + consume (Task 2.2 P1-2, 封装 via fetch_next_instr accessor)
             // Task 2.3 P1-3: Decode 真值 (per Oracle Q4 A 策略, pipeline 推进 1 步)
-            // 保持 auto d = fu_->fetched().instr_desc; 不动 (不改用 du_->decoded(), 纯拷贝零行为变化)
-            du_->tick();  // 字段提取 (pipe + latency_class), 不 consume ring
+            // 保持 auto d = fu_->fetched().instr_desc; 不动 (不改用 du_->decoded(),
+            // 纯拷贝零行为变化)
+            du_->tick(); // 字段提取 (pipe + latency_class), 不 consume ring
             // Task 2.4 P1-4: Issue 真值 (per Oracle Q4 A 策略, pipeline 推进 1 步)
             // Round-robin warp 调度, 仍读 decoded (已 Decode, 不再 Decode, 不 consume ring)
-            iu_->tick();  // 调度 warp_id (1→2→3→0 wrap-around), 继承字段透传
+            iu_->tick(); // 调度 warp_id (1→2→3→0 wrap-around), 继承字段透传
             // Task 2.5 P1-5: 端口接线 — sa_ tick() 内部 pipe 判断 + dispatch 到 scalar_alu_ 真值
-            // (per Oracle Q12: pipe 判断只驻留 sa_, exe_once 不得保留避免双 dispatch, Task 2.2 F-1 教训)
+            // (per Oracle Q12: pipe 判断只驻留 sa_, exe_once 不得保留避免双 dispatch, Task 2.2 F-1
+            // 教训)
             sa_->tick();
             // Task 2.6 P1-6: 端口接线 — va_ tick() 内部 pipe 判断 + dispatch 到 vector_alu_ 真值
             // (per Oracle Q12 Q3 C 推荐: sa/va 并列, 各 pipe 判断, 读同一 fu()->fetched())
             va_->tick();
-            // Task 2.7 P1-7: 端口接线 stub — mc_ tick() 内部 pipe 判断 + dispatch 到 matrix_alu_ stub
-            // (per Oracle Q12 Q3 C 推荐: sa/va/mc 并列, pipe 互斥, stub 阶段不标 completed 避免假完成)
+            // Task 2.7 P1-7: 端口接线 stub — mc_ tick() 内部 pipe 判断 + dispatch 到 matrix_alu_
+            // stub (per Oracle Q12 Q3 C 推荐: sa/va/mc 并列, pipe 互斥, stub 阶段不标 completed
+            // 避免假完成)
             mc_->tick();
             // Task 2.8 P1-8: 端口接线 — sl_ tick() 内部 pipe 判断 + dispatch 到 simt_lane_ 真值
-            // (per Oracle Q12 Q3 C 推荐: sa/va/mc/sl 并列, pipe 互斥, stub 阶段不标 completed 避免假完成)
+            // (per Oracle Q12 Q3 C 推荐: sa/va/mc/sl 并列, pipe 互斥, stub 阶段不标 completed
+            // 避免假完成)
             sl_->tick();
             // Task 2.9 P1-9: 端口接线 — lg_ tick() 内部 pipe 判断 + dispatch 到 lsu_global_ 真值
-            // (per Oracle Q5 末尾 dispatch: lg 判断 pipe + is_memory → lsu_global_->execute() enqueue)
+            // (per Oracle Q5 末尾 dispatch: lg 判断 pipe + is_memory → lsu_global_->execute()
+            // enqueue)
             lg_->tick();
             // Task 2.10 P1-10: 端口接线 — ll_ tick() 内部 pipe 判断 + dispatch 到 lsu_lds_ 真值
             // (per Oracle Q4 A 推荐: lg → ll 顺序, LDS 共享内存同步语义, 对照 Global 异步)
             ll_->tick();
-            // Task 2.11 P1-11: rf_ tick() 接线准备 (per Oracle P-2, 真值写回由 WritebackUnit Task 2.12 接管)
-            // 当前 stub tick() no-op; 真实 write-back 协调推迟 Task 2.12
+            // Task 2.11 P1-11: rf_ tick() 接线准备 (per Oracle P-2, 真值写回由 WritebackUnit
+            // Task 2.12 接管) 当前 stub tick() no-op; 真实 write-back 协调推迟 Task 2.12
             rf_->tick();
             // Task 2.13 P1-13 + Task 2.13.5 P-1 修复: ht_ tick() 入链尾, F12b 闭合 12/12 wired
             // HT 真值 tick() 当前 no-op (per Oracle Q4, 由 producer/release 驱动); 此处 stub tick
@@ -312,7 +367,7 @@ namespace tlm {
         std::unique_ptr<sm::WritebackUnit> wb_;
         std::unique_ptr<sm::HazardTracker> ht_;
 
-        // === 4 适配器成员 (GPUTLM 范式, per include/tlm/gpu/gpu_tlm.hh:28-29) ===
+        // === 4 适配器成员（原 GPUTLM 范式；该类型已于 2026-11-18 归档） ===
         cpptlm::OutputStreamAdapter<bundles::ComputeReqBundle> req_out_;
         cpptlm::InputStreamAdapter<bundles::ComputeRespBundle> resp_in_;
         cpptlm::InputStreamAdapter<bundles::ComputeReqBundle> req_in_;
@@ -340,7 +395,8 @@ namespace tlm {
         std::unique_ptr<cpptlm::gpu::SIMTLane> simt_lane_;
         // === Task 2.9 P1-9 LsuGlobal 真值 (per plan, 异步内存回调骨架) ===
         // cpptlm::gpu::LsuGlobal 真值类 (include/tlm/gpu/sm/lsu_global.hh),
-        // lg_ tick() dispatch → lsu_global_->execute() enqueue; lsu_global_->tick() head 推进归零回调
+        // lg_ tick() dispatch → lsu_global_->execute() enqueue; lsu_global_->tick() head
+        // 推进归零回调
         std::unique_ptr<cpptlm::gpu::LsuGlobal> lsu_global_;
         // === Task 2.10 P1-10 LsuLDS 真值 (per plan, 共享内存 bank conflict 检测 stub) ===
         // cpptlm::gpu::LsuLDS 真值类 (include/tlm/gpu/sm/lsu_lds.hh),
@@ -349,12 +405,13 @@ namespace tlm {
         // === Task 2.11 P1-11 RegFileUnit 真值 (per plan, 取代 scalar_regs_, per Oracle F-1 P0) ===
         // cpptlm::gpu::RegFileUnit 真值类 (include/tlm/gpu/sm/reg_file.hh),
         // SM-owns-state: 持寄存器唯一真值源 (per architecture/15 §15.5.6)
-        // facade 委托保留 (set_scalar_reg/get_scalar_reg/get_register_value/initialize 全部走 reg_file_)
+        // facade 委托保留 (set_scalar_reg/get_scalar_reg/get_register_value/initialize 全部走
+        // reg_file_)
         std::unique_ptr<cpptlm::gpu::RegFileUnit> reg_file_;
-        // === Task 2.12 P1-12 WritebackUnit 真值 (per plan, in-flight 队列, per Oracle F-2 re-scope) ===
-        // cpptlm::gpu::WritebackUnit 真值类 (include/tlm/gpu/sm/writeback.hh),
-        // wb_ tick() dispatch → writeback_->tick(current_cycle) 推进 in-flight 队列 + 写回 RF
-        // re-scoped to rf-only (HT-release 推迟 Task 2.13, per Oracle F-2 P0)
+        // === Task 2.12 P1-12 WritebackUnit 真值 (per plan, in-flight 队列, per Oracle F-2
+        // re-scope) === cpptlm::gpu::WritebackUnit 真值类 (include/tlm/gpu/sm/writeback.hh), wb_
+        // tick() dispatch → writeback_->tick(current_cycle) 推进 in-flight 队列 + 写回 RF re-scoped
+        // to rf-only (HT-release 推迟 Task 2.13, per Oracle F-2 P0)
         std::unique_ptr<cpptlm::gpu::WritebackUnit> writeback_;
         // === Task 2.13 P1-13 HazardTracker 真值 (per plan, kVirtualReg + kHardwareCounter) ===
         // cpptlm::gpu::HazardTracker 真值类 (include/tlm/gpu/sm/hazard_tracker.hh),

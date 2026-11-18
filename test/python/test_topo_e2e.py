@@ -139,7 +139,7 @@ class TestTopoE2E(unittest.TestCase):
         vs.add_variant(TopoVariant('minimal', base=base))
 
         extra = TopoLayer('')
-        extra.add_module('gpu0', 'GPUTLM')
+        extra.add_module('gpu0', 'StreamingMultiprocessorTLM')
         big = base.merge(extra)
         vs.add_variant(TopoVariant('with_gpu', base=big))
 
