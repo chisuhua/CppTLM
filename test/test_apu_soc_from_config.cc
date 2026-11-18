@@ -78,31 +78,36 @@ TEST_CASE("E2E: Load apu_soc_phase7b.json — Phase 7.B with CPU+Cache+CU",
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Phase 7.F: Full APU (aspirational — instantiateAll expected to fail
-// because ComputeUnitTLM/CoherentXBarTLM/TCCTLM are NOT yet registered)
+// Phase 7.F: Full APU —— **可装配**（2026-11-18 起）
+//
+// ⚠️ 本 case 原先叫「aspirational」并**有意不调** `instantiateAll` —— 因为
+//    `ComputeUnitTLM`(×4) / `TCCTLM`(×1) 在运行时注册表里**不存在**，装配会静默丢弃它们。
+//    change `cpptlm-config-type-registration-align`（T1.4）移除了这两个**无实现**的类型条目
+//    ⇒ 配置现在可装配。本 case 相应改为**断言可装配**，并**反向断言**两类不再回归
+//    （⛔ 不删 case 换绿灯 —— 它的判别价值从「记录愿景」变成「守住诚实」）。
 // ────────────────────────────────────────────────────────────────────
 
-TEST_CASE("E2E: apu_soc_full.json documents target topology (Phase 7.F aspirational)",
-          "[e2e][apu][from-config][phase7f][aspirational]") {
+TEST_CASE("E2E: apu_soc_full.json 可装配（ComputeUnitTLM/TCCTLM 条目已移除）",
+          "[e2e][apu][from-config][phase7f][loadable]") {
     auto config = loadConfig("configs/apu_soc_full.json");
 
-    // Verify the config documents Phase 7.F target architecture
     REQUIRE(config["name"].get<std::string>().find("Phase 7.F") != std::string::npos);
-    REQUIRE(config["description"].get<std::string>().find("ComputeUnitTLM") != std::string::npos);
-    REQUIRE(config["description"].get<std::string>().find("CoherentXBarTLM") != std::string::npos);
-    REQUIRE(config["description"].get<std::string>().find("TCCTLM") != std::string::npos);
 
-    // 4 ComputeUnit + 4 GPU routers + 2 CPU + 2 L1 + 1 L2 + 1 TCC + 1 CoherentXBar + 1 HBM = 16
-    REQUIRE(config["modules"].size() == 16);
-    REQUIRE(config["connections"].size() == 15);
+    // 2 CPU + 3 Cache(L1×2+L2) + 4 GPU router + 1 CoherentXBar + 1 HBM = 11
+    REQUIRE(config["modules"].size() == 11);
+    REQUIRE(config["connections"].size() == 10);
 
-    // Verify 4 ComputeUnitTLM (Phase 7.B target)
+    // ⛔ 反向断言：无实现的两个类型**不得**回到配置里（它们会让装配静默丢模块）
     int cu_count = 0;
+    int tcc_count = 0;
     for (const auto& m : config["modules"]) {
         if (m["type"] == "ComputeUnitTLM")
             ++cu_count;
+        if (m["type"] == "TCCTLM")
+            ++tcc_count;
     }
-    REQUIRE(cu_count == 4);
+    REQUIRE(cu_count == 0);
+    REQUIRE(tcc_count == 0);
 
     // Verify 2x2 GPU mesh (4 RouterTLM)
     int router_count = 0;
@@ -129,9 +134,11 @@ TEST_CASE("E2E: apu_soc_full.json documents target topology (Phase 7.F aspiratio
     }
     REQUIRE(has_moesi);
 
-    // NOTE: We do NOT call factory.instantiateAll(config) here because
-    // ComputeUnitTLM/CoherentXBarTLM/TCCTLM are not yet registered.
-    // This will be testable after Phase 7.B/C/D implementations.
+    // ★ 本 change 的核心成果：该配置**可装配**（原先因未注册类型只能「记录愿景」）
+    EventQueue eq;
+    REGISTER_CHSTREAM;
+    ModuleFactory factory(&eq);
+    REQUIRE(factory.instantiateAll(config));
 }
 
 // ────────────────────────────────────────────────────────────────────

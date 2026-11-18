@@ -7,19 +7,19 @@
 
 ## T0 — 前置与基线
 
-- [ ] T0.1 固化**基线事实**（写入 design D-1 的证据列）：运行时注册表 67 个类型（`ModuleFactory::getRegisteredTypes()`）;4 个未注册类型 / 3 份配置的差集;`DPRINTF` 仅 Debug 生效的证据（`include/core/sim_core.hh:8-16` + `CMakeLists.txt:71-72`）;3 份配置 `cpptlm_sim --cycles 10` **全部 exit 0 零报错**的实测输出
-- [ ] T0.2 ⚠️ 记录**基线数字**：`cpptlm_tests` 全量 **883336 assertions / 2393 cases**;`pytest` **232 passed**;`ctest` 全量 **?**（本轮实测基线）⇒ AC-07 的下限
-- [ ] T0.3 ⚠️ 核对**未注册类型是否还有第 5 个**：以**运行时注册表**（⛔ 非类名匹配）重跑全量盘点，含 `configs/templates/*.json` 与 `extends` / `include` / `${var}` 展开后的结果
+- [x] T0.1 固化**基线事实**（写入 design D-1 的证据列）⇒ **2026-11-18 实测**：运行时注册表 **63 个类型**（`./build/bin/cpptlm_sim --list-types --json` 的 `count`;⚠️ 立项期写 67 —— T7.1~T7.3 **类型归档 −4**（`GPUTLM`/`SharedMemoryTLM`/`MemoryClusterTLM`/`GpuSocTLM`）后为 63）;4 个未注册类型 / **3 份配置**（`ArbiterTLM`(1,`library_memory_demo.json`) · `ComputeUnitTLM`(4,`apu_soc_full.json`) · `TCCTLM`(**1**,`apu_soc_full.json` —— ⚠️ 原文写「×2」是笔误，实测 1 处) · `TmuDispatchProcessorTLM`(1,`dgpu_board_v1.json`)）;`DPRINTF` 仅 Debug 生效（`include/core/sim_core.hh:8-16` 的 `#ifdef DEBUG_PRINT` + `CMakeLists.txt:70-72` 仅 `CMAKE_BUILD_TYPE STREQUAL "Debug"` 加 `-DDEBUG_PRINT`）;3 份配置 `cpptlm_sim --cycles 10` **全部 exit 0**、且 **grep `unknown|not registered|ComputeUnit|TCCTLM` 零命中**（= 静默丢弃的实证）
+- [x] T0.2 ⚠️ 记录**基线数字** ⇒ **2026-11-18 实测**：`cpptlm_tests` **883279 / 2379**（立项期 883336/2393 ⇒ T7.7 归档降至 883243/2371 ⇒ C1 阶段 A +36/+8）;`pytest` **232 passed**;`ctest` **182/182**。⚠️ **AC-07 已改为「实施日重测基线」**（`proposal.md` 不写死数字 —— 类型归档会删测试，硬编码下限必然失效）
+- [x] T0.3 ⚠️ 核对**未注册类型是否还有第 5 个** ⇒ **无第 5 个**：以**运行时注册表**（63 类型）对比 `configs/**/*.json`（**64 份**，排除 `param_rules/**`，含 `templates/`）中出现的 **48 个 type**（含嵌套 `modules[]`）⇒ 差集恰为上述 4 个。⚠️ 本轮为**静态**扫描（未展开 `extends`/`include`/`${var}`）—— 展开后的判据由 T3.2 的闸负责（T3.6）
 
 ## T1 — 对齐层（4 处漂移 + 生成器 + 断言）
 
-- [ ] T1.1 `configs/dgpu_board_v1.json`：删 `tmu` 条目（`TmuDispatchProcessorTLM`）;⚠️ 该类型**不可注册**（类无基类）⇒ ⛔ 不做「注册它」;同步处置三条悬空连接（`cp.dispatch → tmu.dispatch_in` / `tmu.cta_out → sq.cta_in` / `cq.done_out → tmu.done_in`）—— **登记「CP→TMU→SQ 派发路径今日本就是断的」**（R-1）;⛔ **不得**以「删条目让闸变绿」收场而不解释派发能力现状
-- [ ] T1.2 `configs/library_memory_demo.json`：`ArbiterTLM` → `ArbiterTLM4`（`channels=4`）;⚠️ 其 `params.n_ports` 无消费面 ⇒ 登记为新零效果键（归 `cpptlm-module-param-effect-landing` 家族,R-2）;⚠️ 该文件是**生成物** ⇒ 同改生成器
-- [ ] T1.3 `examples/generate_library_configs.py:41-44` + `cpptlm/library/standard.py:187`（无条件 emit `"ArbiterTLM"`）⇒ 改为按 `channels` emit `ArbiterTLM2` / `ArbiterTLM4`
-- [ ] T1.4 `configs/apu_soc_full.json` + `examples/generate_apu_soc.py:120-186`（生成器，含 `:185-186` 的 description 拼接）⇒ 移除 `ComputeUnitTLM` ×4 + `TCCTLM` ×2 条目;⛔ **「实现」路径明确排除**（无规格来源 + `StreamingMultiprocessorTLM` 已取代）
-- [ ] T1.5 `test/test_apu_soc_from_config.cc:114-164`（`modules.size()==16` + description 含 `ComputeUnitTLM` 的断言）⇒ 同步订正;⚠️ **不得**删该 case 换绿灯
-- [ ] T1.6 ⚠️ 核对 `test/test_cep_contracts_crosscheck.cc:334-351`（要求 4 份 config 中 ≥3 存在且含 `coherence_domains`）⇒ 本 change **不删文件** ⇒ 该判据应仍绿;若红 ⇒ 说明改动越界
-- [ ] T1.7 ⚠️ AC-05 取证：重跑两个生成器 ⇒ `git diff --exit-code configs/` **为空**
+- [x] T1.1 `configs/dgpu_board_v1.json` ⇒ **已落地**：删 `tmu` 条目（`TmuDispatchProcessorTLM` 的类无基类 ⇒ 不可注册） + 删 3 条指向它的悬空连接;**R-1 已登记**（`docs/implementation/module-param-baseline.md` §2bis.1）：`CP → TMU → SQ` 派发路径**今日本就是断的**（该模块从未被实例化 ⇒ `cp.dispatch` 从来没有下游 / `sq.cta_in` 从来没有上游）⇒ 删条目只是让配置**承认**事实，⛔ 不得据此推断派发能力退化。`cpptlm_sim configs/dgpu_board_v1.json --cycles 10` exit 0
+- [x] T1.2 `configs/library_memory_demo.json` ⇒ **已落地**：`ArbiterTLM` → **`ArbiterTLM4`**（`channels=4`）;`n_ports` **已停发**（原登记为「新零效果键」—— 实测 `ArbiterTLM<N>::on_config_loaded` 已对 `n_ports`/`ports` 态② 拒绝，per C1 ⇒ 生成器停发即可，无需新增登记）
+- [x] T1.3 `cpptlm/library/standard.py` ⇒ **已落地**：按 `channels` emit `ArbiterTLM2`/`ArbiterTLM4`，其它值 **`ValueError`**（⛔ 不静默兜底）;同时停发 `mem_type`（`MemoryTLM` 已态②）与 `memory_type`（`MemoryCluster` 无消费面 —— 生成器漂移，emit 会使生成物装配失败）;`examples/generate_library_configs.py` 无需改（它只调 factory）
+- [x] T1.4 `configs/apu_soc_full.json` + 生成器 ⇒ **已落地**：移除 `ComputeUnitTLM` ×4 + `TCCTLM` ×**1**（⚠️ 原文写「×2」为笔误，实测 1 处）+ 对应连接、hierarchy 节点、`coherence_domains.members` 的 `tcc`、description 的「not yet registered」表述;CLI `--num-cu` 一并删除（⛔ 不留「声称支持但无实现」的开关 —— 与 D-5 的「配置不声明做不到的事」同一条纪律）;生成物：16 → **11** modules / 15 → **10** connections
+- [x] T1.5 `test/test_apu_soc_from_config.cc` ⇒ **已订正（未删 case）**：case 名从「aspirational」改为 **`可装配`**，标签 `[aspirational]` → **`[loadable]`**;断言改为 `modules==11` / `connections==10` + **反向断言** `ComputeUnitTLM==0` / `TCCTLM==0`（守住不回归）+ 新增 **`REQUIRE(factory.instantiateAll(config))`**（原 NOTE 的「不调 instantiateAll」已删除 —— 配置现在真能装配，这正是本 change 的核心成果）
+- [x] T1.6 ⚠️ 核对 `test/test_cep_contracts_crosscheck.cc:334-351` ⇒ **仍绿**（本 change 未删任何配置文件）⇒ 无越界
+- [x] T1.7 ⚠️ AC-05 取证：重跑 `python3 examples/generate_apu_soc.py --all --output-dir configs` + `python3 examples/generate_library_configs.py --all --out-dir configs` ⇒ **无新增 diff**（生成器与生成物一致）
 
 ## T2 — 机制层（未注册类型 fail-fast）
 

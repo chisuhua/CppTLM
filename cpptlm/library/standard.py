@@ -168,12 +168,15 @@ def memory_cluster_hierarchical(
     l = TopoLayer(name=f"memory_hier_{name}")
 
     # MemoryCluster 顶层模块
+    # ⚠️ `memory_type` **不入配置**:`MemoryCluster` 无该键的消费面,而 `MemoryTLM.mem_type`
+    #    已落**态②**（显式拒绝,per change cpptlm-module-param-effect-landing）
+    #    ⇒ emit 它会使生成物**装配失败**。参数保留以兼容调用方 API（将来真做内存类型
+    #    模型时再接线,届时须同步落实现）。
     l.add_module(
         name,
         "MemoryCluster",
         channel_count=channels,
         channel_size=channel_size,
-        memory_type=memory_type,
     )
     # sublayer: N channels + arbiter
     inner = TopoLayer(name=f"{name}_inner")
@@ -182,9 +185,17 @@ def memory_cluster_hierarchical(
             f"{name}_channel{i}",
             "MemoryTLM",
             size=channel_size,
-            mem_type=memory_type,
         )
-    inner.add_module(f"{name}_arbiter", "ArbiterTLM", n_ports=channels)
+    # ⚠️ `ArbiterTLM` 是**模板基类,不可注册**（只注册实例化规格 `ArbiterTLM2`/`ArbiterTLM4`）⇒ 按
+    #    channels 选已注册类型;⛔ `n_ports` 不传 —— 端口数由模板参数 `N_PORTS` 决定,该键在
+    #    `ArbiterTLM<N>::on_config_loaded` 里被**显式拒绝**（态②）。
+    arbiter_type = {2: "ArbiterTLM2", 4: "ArbiterTLM4"}.get(channels)
+    if arbiter_type is None:
+        raise ValueError(
+            f"memory_cluster_hierarchical: channels={channels} 无对应的已注册 arbiter 类型"
+            "（只有 2 / 4 有实例化规格: ArbiterTLM2 / ArbiterTLM4）"
+        )
+    inner.add_module(f"{name}_arbiter", arbiter_type)
     l.add_sublayer(inner)
     return l
 

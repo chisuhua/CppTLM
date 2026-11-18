@@ -86,15 +86,28 @@
 > **拓扑缺模块** ⇒ 仿真结果**静默失真**。且 `DPRINTF` **仅在 Debug 构建生效**
 > (`include/core/sim_core.hh:8-16` + `CMakeLists.txt:71-72`)⇒ **Release 构建下连日志都没有**。
 
-| 配置里的 type | 实际状态 | 出现处 |
-|---|---|---|
-| `TmuDispatchProcessorTLM` | 类**存在**（`include/tlm/gpu/tmu_dispatch_processor_tlm.hh` 的 `tlm::gpu::TmuDispatchProcessor`）但**从未注册** ⇒ 且配置里的名字与类名**不一致** | `configs/dgpu_board_v1.json`（**嵌套**在 `soc` 内 ⇒ 顶层 fail-fast 覆盖不到） |
-| `ArbiterTLM` | 只注册了 `ArbiterTLM2` / `ArbiterTLM4`;**模板基类 `ArbiterTLM` 本身未注册** | `configs/library_memory_demo.json` |
-| `ComputeUnitTLM` | 类**不存在**（历史 `GpuComputeUnitTLM` 已并入 `StreamingMultiprocessorTLM` —— `include/tlm/gpu/streaming_multiprocessor_tlm.hh:14` 注明 rename 合并） | `configs/apu_soc_full.json`（4 实例） |
-| `TCCTLM` | 类**不存在**（全仓 `include/` + `src/` 零命中） | `configs/apu_soc_full.json`（2 实例） |
+| 配置里的 type | 实际状态 | 出现处 | 处置（2026-11-18 · R-5） |
+|---|---|---|---|
+| `TmuDispatchProcessorTLM` | 类**存在**（`include/tlm/gpu/tmu_dispatch_processor_tlm.hh` 的 `tlm::gpu::TmuDispatchProcessor`）但**无基类** ⇒ 进不了两个注册表;且配置里的名字与类名**不一致** | `configs/dgpu_board_v1.json`（**嵌套**在 `soc` 内 ⇒ 顶层 fail-fast 覆盖不到） | **删条目** + 删 3 条指向它的连接（`cp.dispatch→tmu.dispatch_in` / `tmu.cta_out→sq.cta_in` / `cq.done_out→tmu.done_in`）⇒ **R-1**（见下）;⛔ 不做「注册它」（无基类，改造为 `ChStreamModuleBase` 成本数量级更大） |
+| `ArbiterTLM` | 只注册了 `ArbiterTLM2` / `ArbiterTLM4`;**模板基类 `ArbiterTLM` 本身未注册** | `configs/library_memory_demo.json` | **改为 `ArbiterTLM4`**（`channels=4`）;生成器 `cpptlm/library/standard.py` 按 `channels` emit `ArbiterTLM2`/`ArbiterTLM4`（其它值 ⇒ `ValueError`，⛔ 不静默兜底）;`n_ports` **停发**（`ArbiterTLM<N>::on_config_loaded` 已态② 拒绝） |
+| `ComputeUnitTLM` | 类**不存在**（历史 `GpuComputeUnitTLM` 已并入 `StreamingMultiprocessorTLM` —— `include/tlm/gpu/streaming_multiprocessor_tlm.hh:14` 注明 rename 合并） | `configs/apu_soc_full.json`（4 实例） | **移除条目**（+ 生成器 `examples/generate_apu_soc.py`）;⛔ 「实现」路径明确排除（无规格来源 + SM 已取代） |
+| `TCCTLM` | 类**不存在**（全仓 `include/` + `src/` 零命中） | `configs/apu_soc_full.json`（**1** 实例 —— ⚠️ 原登记「2 实例」为笔误，2026-11-18 实测订正） | **移除条目**（+ 生成器） |
 
-> **实测方法**:运行时枚举 `ModuleFactory::getRegisteredTypes()`（67 个注册类型）∩
-> `configs/**/*.json`（排除 `configs/param_rules/**`）的 `type` 集合 ⇒ 差集 = 上表 **4 个类型 / 3 份配置**。
+### 2bis.1 ⚠️ R-1：`CP → TMU → SQ` 派发路径**今日本就是断的**
+
+删掉 `tmu` 条目**没有**让一条原本可用的路径失效 —— 该模块**从未被实例化**（`TmuDispatchProcessorTLM`
+不在注册表 ⇒ `instantiateAll` 遇到它只打 `DPRINTF` 然后跳过），所以：
+
+- `cp.dispatch`（`CommandProcessorTLM` 的派发输出）**从来没有下游**;
+- `sq.cta_in`（`SubmitQueueTLM` 的 CTA 输入）**从来没有上游**;
+- `cq.done_out → tmu.done_in` 指向一个**不存在的模块**。
+
+⇒ 现状的 GPU 派发链是 `cp → (断) → sq → gpu`。本次「删条目」只是让配置**承认**这个事实（此前配置宣称装了 TMU，实际没装）。⛔ 不得据此推断「派发能力因此退化」。
+**将来的接线**：`TmuDispatchProcessor` 需要先改造为 `ChStreamModuleBase` 派生（当前 `class TmuDispatchProcessor {` 无基类）才能进注册表 —— 属独立 change，登记为 backlog。
+
+> **实测方法**:运行时枚举 `ModuleFactory::getRegisteredTypes()`（**63** 个注册类型 —— 立项期 67,2026-11-18
+> 设计类型归档 −4 后为 63）∩ `configs/**/*.json`（排除 `configs/param_rules/**`）的 `type` 集合 ⇒ 差集 = 上表 **4 个类型 / 3 份配置**。
+> **取证命令**：`./build/bin/cpptlm_sim --list-types --json`（R-5 的 T3.1 新增;⛔ 无源码解析、无类型硬编码）。
 > ⛔ **不能用「类名是否存在于 include/」判定** —— `TmuDispatchProcessorTLM`（有类、名字不同）与
 > `ArbiterTLM`（模板基类）都会被漏判 ⇒ 判据必须**从运行时注册表派生**。
 > ⚠️ 原登记「`configs/apu_soc_phase7a.json` 也含 `ComputeUnitTLM`」与实测**不符**
@@ -102,6 +115,19 @@
 >
 > 处置（机制 fail-fast + 4 处对齐）**不属本 change** ⇒ 已登记为 `cpptlm-module-param-effect-landing` R-5
 > ⇒ 独立 change `cpptlm-config-type-registration-align` 承接。
+
+### 2bis.2 闭合进度（change `cpptlm-config-type-registration-align`）
+
+| 面 | 状态 | 证据 |
+|---|:--:|---|
+| **对齐层（T1）** | ✅ 已闭合 | 4 处漂移全部处置（见上表的「处置」列）;**差集归零**（实测：64 份配置 / 44 个 type / **未注册 0**） |
+| **机制层（T2）** | ⏳ 待落地 | `instantiateAll` 的 Step 0.3 预扫描 —— 落地后此格改 ✅ |
+| **判据层（T3）** | ⏳ 待落地 | `config_type_registration_check.sh` + ctest 注册 —— 落地后此格改 ✅ |
+
+> ⚠️ **判定依「机制 + 判据」而非「配置改干净」**：T1 只是把现存漂移扫掉;若无 T2（fail-fast）与 T3（闸），
+> 下一个写进配置的未注册类型仍会被**静默丢弃**。⇒ 只有 T2 + T3 落地后，本段才可标「已闭合」。
+>
+> ⚠️ 本段的 4 行保留为**历史登记**（说明「类型面为何需要机制」），⛔ 不得据此认为这些类型仍可写进配置。
 
 ---
 

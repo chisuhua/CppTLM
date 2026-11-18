@@ -49,10 +49,6 @@
           "type": "CommandProcessorTLM"
         },
         {
-          "name": "tmu",
-          "type": "TmuDispatchProcessorTLM"
-        },
-        {
           "name": "sq",
           "type": "SubmitQueueTLM"
         },
@@ -80,12 +76,9 @@
       "connections": [
         { "src": "cp.fetch_out",     "dst": "vram.0" },
         { "src": "cp.dma_req",       "dst": "sdma.desc_in" },
-        { "src": "cp.dispatch",      "dst": "tmu.dispatch_in" },
-        { "src": "tmu.cta_out",      "dst": "sq.cta_in" },
         { "src": "sq.dispatch",      "dst": "gpu.cta_in" },
         { "src": "gpu.done",         "dst": "cq.done_in[0]" },
         { "src": "sdma.done_out",    "dst": "cq.done_in[1]" },
-        { "src": "cq.done_out",      "dst": "tmu.done_in" },
         { "src": "gpu.done",         "dst": "sq.done_in[0]" }
       ],
       "outputs": [

@@ -16,10 +16,13 @@
 // HSK-8 Phase 2 Step 4: memory_bridge.hh + ptx_emu_driver.hh 已物理删除
 // (HSK-6 deprecate by 369cf71). PTX-EMU 集成走 IComputeDevice 接口 (per SM 重构).
 // Task 13: PipelineTLM/ScoreboardTLM/TensorCoreTLM + cudart 物理删除 (功能内化到 SM 子模块).
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <string>
+#include <vector>
 #include "utils/json_includer.hh"
 #include "utils/topology_dumper.hh"
 
@@ -35,7 +38,16 @@ void print_usage(const char* prog) {
               << "  --cycles <N>             Number of simulation cycles (default: 10000)\n"
               << "  --f12b-ld                Enable F12b-LD MemoryBridge (PTX-EMU bridge)\n"
               << "  --debug-config           Enable verbose config parsing output\n"
+              << "  --list-types [--json]    Print the runtime type registry and exit\n"
+              << "                           (--json: {\"count\":N,\"types\":[...]}；无 config 参数)\n"
               << "  --help, -h               Show this help message\n";
+}
+
+// 类型注册集中在一处 —— 正常仿真路径与 `--list-types` 导出必须看到**同一个**注册集，
+// 否则判据（running-time registry）会与闸的实际观测漂移。
+static void registerAllTypes() {
+    REGISTER_ALL
+    REGISTER_MODULE(CpuCluster);
 }
 
 int main(int argc, char* argv[]) {
@@ -49,6 +61,8 @@ int main(int argc, char* argv[]) {
     bool stream_stats = false;
     bool debug_config = false;
     bool f12b_ld = false;
+    bool list_types = false;
+    bool list_types_json = false;
     uint64_t stream_interval = 10000;
     std::string stream_path = "output/stats_stream.jsonl";
     uint64_t sim_cycles = 10000;
@@ -69,9 +83,32 @@ int main(int argc, char* argv[]) {
             sim_cycles = std::strtoull(argv[++i], nullptr, 10);
         } else if (strcmp(argv[i], "--f12b-ld") == 0) {
             f12b_ld = true;
+        } else if (strcmp(argv[i], "--list-types") == 0) {
+            list_types = true;
+        } else if (strcmp(argv[i], "--json") == 0) {
+            list_types_json = true;
         } else if (config_path.empty()) {
             config_path = argv[i];
         }
+    }
+
+    if (list_types) {
+        registerAllTypes();
+        std::vector<std::string> types = ModuleFactory::getRegisteredTypes();
+        std::sort(types.begin(), types.end());
+        if (list_types_json) {
+            // ⚠️ 类型名来自注册表，均为 C++ 标识符（`[A-Za-z0-9_]`）⇒ 无需 JSON 转义；
+            //    若将来注册机制允许其它字符，此处必须补转义。
+            std::cout << "{\"count\":" << types.size() << ",\"types\":[";
+            for (std::size_t i = 0; i < types.size(); ++i) {
+                if (i != 0) std::cout << ',';
+                std::cout << '"' << types[i] << '"';
+            }
+            std::cout << "]}" << std::endl;
+        } else {
+            for (const auto& t : types) std::cout << t << "\n";
+        }
+        return 0;
     }
 
     if (config_path.empty()) {
@@ -85,8 +122,7 @@ int main(int argc, char* argv[]) {
 
     EventQueue eq;
 
-    REGISTER_ALL
-    REGISTER_MODULE(CpuCluster);
+    registerAllTypes();
     ModuleFactory::listRegisteredTypes();
 
     // 加载配置文件

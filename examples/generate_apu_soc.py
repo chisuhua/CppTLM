@@ -81,9 +81,14 @@ def build_apu_phase7b(num_cpu=2):
     }
 
 
-def build_apu_full(num_cpu=2, num_cu=4, gpu_mesh_size=2):
-    """Phase 7.F: Full APU — ComputeUnitTLM × N + GPU Mesh + TCC + CoherentXBar + HBM.
-    NOTE: ComputeUnitTLM/TCCTLM/CoherentXBarTLM are NOT yet registered (Phase 7.B/C/D).
+def build_apu_full(num_cpu=2, gpu_mesh_size=2):
+    """Phase 7.F: Full APU — CPU 侧 + GPU Mesh + CoherentXBar + HBM。
+
+    ⚠️ 2026-11-18（change `cpptlm-config-type-registration-align` T1.4）：`ComputeUnitTLM`（×4）
+    与 `TCCTLM`（×1）条目**已移除** —— 两者在 `include/` + `src/` **零类定义**（`ComputeUnitTLM`
+    的历史实现已并入 `StreamingMultiprocessorTLM`；`TCCTLM` 从未实现），配置里保留它们只会让
+    装配**静默丢弃**该模块。⛔ 「实现它们」路径明确排除（无规格来源，且与本仓已有 SM 分工冲突）。
+    拓扑中 GPU 侧仍保留 2×2 mesh（`RouterTLM`），CU 与 TCC 的挂载点待 ArchForge 契约落地后重立项。
     """
     modules = []
     modules += [
@@ -103,19 +108,12 @@ def build_apu_full(num_cpu=2, num_cu=4, gpu_mesh_size=2):
     ]
     modules.append({"name": "l2_cpu_shared", "type": "CacheTLM",
                     "params": {"size": "256KB", "associativity": 8}})
-    modules += [
-        {"name": f"compute_unit_{i}", "type": "ComputeUnitTLM",
-         "params": {"kernel_id": i, "workgroup_size": 64}}
-        for i in range(num_cu)
-    ]
     for y in range(gpu_mesh_size):
         for x in range(gpu_mesh_size):
             modules.append({
                 "name": f"gpu_router_{x}_{y}", "type": "RouterTLM",
                 "params": {"node_x": x, "node_y": y, "mesh_x": gpu_mesh_size, "mesh_y": gpu_mesh_size},
             })
-    modules.append({"name": "tcc", "type": "TCCTLM",
-                    "params": {"size": "1MB", "coalescing": True}})
     # ⚠️ `snoop_filter` / `domain_protocol` 已于 2026-11-18 落**态②**（`ADR-X.17` D-2）——
     #    `CoherentXBarTLM` 无 filter 概念（snoop 无条件广播）、无协议状态机 ⇒ 写了即装配失败
     #    ⇒ 生成器**停止产出**这两个键（per change cpptlm-module-param-effect-landing A2a）。
@@ -132,14 +130,6 @@ def build_apu_full(num_cpu=2, num_cu=4, gpu_mesh_size=2):
         connections.append({"src": f"l1_cpu_{i}", "dst": "l2_cpu_shared", "latency": 3, "bandwidth": 100})
     connections.append({"src": "l2_cpu_shared", "dst": "coherent_xbar.0", "latency": 5, "bandwidth": 100})
 
-    for i in range(num_cu):
-        cu_x = i % gpu_mesh_size
-        cu_y = i // gpu_mesh_size
-        connections.append({
-            "src": f"compute_unit_{i}", "dst": f"gpu_router_{cu_x}_{cu_y}.4",
-            "latency": 1, "bandwidth": 100,
-        })
-
     for y in range(gpu_mesh_size):
         for x in range(gpu_mesh_size):
             if x + 1 < gpu_mesh_size:
@@ -148,14 +138,13 @@ def build_apu_full(num_cpu=2, num_cu=4, gpu_mesh_size=2):
             if y + 1 < gpu_mesh_size:
                 connections.append({"src": f"gpu_router_{x}_{y}.2", "dst": f"gpu_router_{x}_{y+1}.0",
                                     "latency": 1, "bandwidth": 100})
-    connections.append({"src": "tcc", "dst": "coherent_xbar.1", "latency": 5, "bandwidth": 200})
     connections.append({"src": "coherent_xbar", "dst": "hbm_memory", "latency": 100, "bandwidth": 400})
 
     return {
-        "name": f"APU SoC — Phase 7.F Full ({num_cpu}CPU + {num_cu}CU + {gpu_mesh_size}x{gpu_mesh_size} Mesh)",
-        "description": f"Phase 7.F final APU topology. Mirrors apu-soc-design.md §2.2. "
-                       f"NOTE: ComputeUnitTLM/CoherentXBarTLM/TCCTLM not yet registered "
-                       f"(planned Phase 7.B/C/D).",
+        "name": f"APU SoC — Phase 7.F Full ({num_cpu}CPU + {gpu_mesh_size}x{gpu_mesh_size} Mesh)",
+        "description": f"Phase 7.F APU topology. Mirrors apu-soc-design.md §2.2. "
+                       f"GPU 侧仅含 mesh（RouterTLM）+ CoherentXBar + HBM：ComputeUnitTLM / TCCTLM "
+                       f"在 CppTLM **无实现**，其条目已移除（见 build_apu_full 的 docstring）。",
         "modules": modules,
         "connections": connections,
         "hierarchy": {
@@ -167,8 +156,6 @@ def build_apu_full(num_cpu=2, num_cu=4, gpu_mesh_size=2):
                     {"name": "l2_cpu_shared", "children": []},
                 ]},
                 {"name": "gpu_cluster", "children": [
-                    *[{"name": f"compute_unit_{i}", "children": []} for i in range(num_cu)],
-                    {"name": "tcc", "children": []},
                     {"name": "gpu_mesh", "children": [
                         *[{"name": f"gpu_router_{x}_{y}", "children": []}
                           for y in range(gpu_mesh_size) for x in range(gpu_mesh_size)],
@@ -180,7 +167,7 @@ def build_apu_full(num_cpu=2, num_cu=4, gpu_mesh_size=2):
         },
         "coherence_domains": [{
             "name": "apu_moesi_amd",
-            "members": [f"l1_cpu_{i}" for i in range(num_cpu)] + ["l2_cpu_shared", "tcc"],
+            "members": [f"l1_cpu_{i}" for i in range(num_cpu)] + ["l2_cpu_shared"],
             "protocol": "MOESI_AMD_6_STATE",
         }],
     }
@@ -195,8 +182,6 @@ def main():
                         help="Output directory (default: configs)")
     parser.add_argument("--num-cpu", type=int, default=2,
                         help="Number of CPU TrafficGen (default: 2)")
-    parser.add_argument("--num-cu", type=int, default=4,
-                        help="Number of ComputeUnit (Phase 7.F only, default: 4)")
     parser.add_argument("--gpu-mesh", type=int, default=2,
                         help="GPU mesh dimension N (NxN, default: 2)")
     args = parser.parse_args()
@@ -207,12 +192,12 @@ def main():
     targets = []
     if args.all:
         targets = [("7b", lambda: build_apu_phase7b(args.num_cpu), "apu_soc_phase7b.json"),
-                   ("7f", lambda: build_apu_full(args.num_cpu, args.num_cu, args.gpu_mesh), "apu_soc_full.json")]
+                   ("7f", lambda: build_apu_full(args.num_cpu, args.gpu_mesh), "apu_soc_full.json")]
     else:
         if args.phase == "7b":
             targets = [("7b", lambda: build_apu_phase7b(args.num_cpu), "apu_soc_phase7b.json")]
         elif args.phase == "7f":
-            targets = [("7f", lambda: build_apu_full(args.num_cpu, args.num_cu, args.gpu_mesh),
+            targets = [("7f", lambda: build_apu_full(args.num_cpu, args.gpu_mesh),
                         "apu_soc_full.json")]
 
     os.makedirs(args.output_dir, exist_ok=True)

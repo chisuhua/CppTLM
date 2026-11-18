@@ -38,8 +38,7 @@
     },
     {
       "name": "mem_arbiter",
-      "type": "ArbiterTLM",
-      "params": {}
+      "type": "ArbiterTLM4"
     }
   ],
   "connections": [],

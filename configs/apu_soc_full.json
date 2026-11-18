@@ -1,6 +1,6 @@
 {
-  "name": "APU SoC — Phase 7.F Full (2CPU + 4CU + 2x2 Mesh)",
-  "description": "Phase 7.F final APU topology. Mirrors apu-soc-design.md §2.2. NOTE: ComputeUnitTLM/CoherentXBarTLM/TCCTLM not yet registered (planned Phase 7.B/C/D).",
+  "name": "APU SoC — Phase 7.F Full (2CPU + 2x2 Mesh)",
+  "description": "Phase 7.F APU topology. Mirrors apu-soc-design.md §2.2. GPU 侧仅含 mesh（RouterTLM）+ CoherentXBar + HBM：ComputeUnitTLM / TCCTLM 在 CppTLM **无实现**，其条目已移除（见 build_apu_full 的 docstring）。",
   "modules": [
     {
       "name": "cpu_0",
@@ -47,38 +47,6 @@
       }
     },
     {
-      "name": "compute_unit_0",
-      "type": "ComputeUnitTLM",
-      "params": {
-        "kernel_id": 0,
-        "workgroup_size": 64
-      }
-    },
-    {
-      "name": "compute_unit_1",
-      "type": "ComputeUnitTLM",
-      "params": {
-        "kernel_id": 1,
-        "workgroup_size": 64
-      }
-    },
-    {
-      "name": "compute_unit_2",
-      "type": "ComputeUnitTLM",
-      "params": {
-        "kernel_id": 2,
-        "workgroup_size": 64
-      }
-    },
-    {
-      "name": "compute_unit_3",
-      "type": "ComputeUnitTLM",
-      "params": {
-        "kernel_id": 3,
-        "workgroup_size": 64
-      }
-    },
-    {
       "name": "gpu_router_0_0",
       "type": "RouterTLM",
       "params": {
@@ -116,14 +84,6 @@
         "node_y": 1,
         "mesh_x": 2,
         "mesh_y": 2
-      }
-    },
-    {
-      "name": "tcc",
-      "type": "TCCTLM",
-      "params": {
-        "size": "1MB",
-        "coalescing": true
       }
     },
     {
@@ -171,30 +131,6 @@
       "bandwidth": 100
     },
     {
-      "src": "compute_unit_0",
-      "dst": "gpu_router_0_0.4",
-      "latency": 1,
-      "bandwidth": 100
-    },
-    {
-      "src": "compute_unit_1",
-      "dst": "gpu_router_1_0.4",
-      "latency": 1,
-      "bandwidth": 100
-    },
-    {
-      "src": "compute_unit_2",
-      "dst": "gpu_router_0_1.4",
-      "latency": 1,
-      "bandwidth": 100
-    },
-    {
-      "src": "compute_unit_3",
-      "dst": "gpu_router_1_1.4",
-      "latency": 1,
-      "bandwidth": 100
-    },
-    {
       "src": "gpu_router_0_0.1",
       "dst": "gpu_router_1_0.3",
       "latency": 1,
@@ -217,12 +153,6 @@
       "dst": "gpu_router_1_1.3",
       "latency": 1,
       "bandwidth": 100
-    },
-    {
-      "src": "tcc",
-      "dst": "coherent_xbar.1",
-      "latency": 5,
-      "bandwidth": 200
     },
     {
       "src": "coherent_xbar",
@@ -262,26 +192,6 @@
       {
         "name": "gpu_cluster",
         "children": [
-          {
-            "name": "compute_unit_0",
-            "children": []
-          },
-          {
-            "name": "compute_unit_1",
-            "children": []
-          },
-          {
-            "name": "compute_unit_2",
-            "children": []
-          },
-          {
-            "name": "compute_unit_3",
-            "children": []
-          },
-          {
-            "name": "tcc",
-            "children": []
-          },
           {
             "name": "gpu_mesh",
             "children": [
@@ -329,8 +239,7 @@
       "members": [
         "l1_cpu_0",
         "l1_cpu_1",
-        "l2_cpu_shared",
-        "tcc"
+        "l2_cpu_shared"
       ],
       "protocol": "MOESI_AMD_6_STATE"
     }
