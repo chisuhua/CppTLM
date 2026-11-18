@@ -25645,3 +25645,33 @@ test cases:  5 |  0 passed | 5 failed
 **⚠️ 跨仓待办（R-5，本 change 不做）**：ArchForge 侧 `gpu-gputlm.md` / `gpu-shared-memory.md` / `gpu-memory-cluster.md` 的「✅ 已实施」状态需在其仓内改为「⏸ 已归档」。另登记：ArchForge `coherent_xbar.md` 的 Header 指向 interconnect 目录下的 `coherent_xbar_tlm.hh`，而 CppTLM 的实际位置是 `include/tlm/coherent_xbar_tlm.hh`（路径 + 状态双漂移）。
 
 **关联**：`openspec/changes/cpptlm-config-type-registration-align/{proposal,design,tasks}.md`（④ 段 / D-8 / T7）· Entry #480（本 change 立项）
+
+### Entry #482 — 2026-11-18 [planner](**实施规划** —— 三个 active param change 的实施序列；册子升为 canonical 规划载体)
+
+**背景**:三个 active change 合计 **118 个未勾 task**（C1 24 + R-5 37 + C2 57），是当前**最大**的剩余工作；而 KPI **3/3 已满** ⇒ 在归档一个之前**任何新提案都立不了** ⇒ 必须先排期。
+
+**规划落点**:planner 的 canonical 册子 `.rddf/roadmap/objectives/obj-cep-platform-remaining.md`（本册定位 = 「剩余任务单一真源」;台账只做回执 + 指针 ⇒ 本条只记指针，不复述清单）。
+
+**册子本轮更新**:
+- **§0** 基线拆为「§0.1 当前（2026-11-18 实测）」+「§0.2 历史（2026-11-16）」⇒ 消除「唯一基线」的过期风险;实测 = main spec **135**（cep-* 46）· 归档 change **159** · 闸 **45** · 冻结面 **89** · `[cep]` **540 用例 / 12413 断言** · 全量 **883242 / 2372** · `pytest` **232** · `ctest` **181/181** · active **3** / KPI **3/3**
+- **§1.5**（新增·框架治理域）: 三个 change 的**依赖图**（逐条实测自各 change 的 `design.md`）+ **阶段 A/B/C** 逐子步 + **风险与冲突面 5 条**
+- **§2** 加 **波 0**（框架治理三 change）并置于最前 ⇒ 共 **5 波**
+- **§3** 加 **Q-4 / Q-5 / Q-6**（本轮新增的待拍板项）⇒ 共 **6 项**
+- **§4** 加口径声明第 4 条（**本册存在两套基线日期** ⇒ §1 的 CEP 域数字仍是 2026-11-16 口径，引用须带日期）
+
+**依赖图要点**（非推断）:
+- **C1 → C2 是硬前置** —— C1 design D-5「先给键确定效果，再迁移类型」+ D-3「B3 优先于 C2 的 T1」+ C2 tasks T3.1「前置：effect-landing 的 B1 与 B3 完成」
+- **R-5.T1 → R-5.T2**（R-5 design D-4）
+- **R-5 ∥ C2 可并行**（都改 `ModuleFactory` 但**不同位置**：R-5 加预扫描段 / C2 删默认值注入段）⇒ 先合并者 rebase 行号（R-4 已登记）
+- **R-5.AC-08 ← C2.T0.2**（可选；C2 未落地则该 AC 标 `blocked-by` + 显式登记）
+
+**⚠️ 风险 5 条**（册子 §1.5.5）: KPI 满 ⇒ 期间禁新提案 · C2 的 T8.1 基线数字**已过期**（`883191 / 2371` ⇒ 现 **883242 / 2372**）· C2 是最大风险（基类调用序列 + 20 类型迁移 + ParamRules 退役）· R-5 与 C2 的 `ModuleFactory` rebase · C1 已改 `include/core/sim_object.hh` ⇒ 与 C2 的 T0.1 同文件冲突面。
+
+**⏳ 待用户拍板 3 项**（册子 §3 Q-4~Q-6，均附选项与建议）:
+1. **Q-4** `CPUTLM` 三键 —— 建议 **②**（`pattern` 态③ + `start_addr`/`request_interval` 态①）;⚠️ 接上 `start_addr` = 修「4 个 CPU 全从 `0x1000` 发 ⇒ 互相撞地址」的 bug，但会让相关断言变红
+2. **Q-5** `RouterTLM.routing` —— 建议 **态③**（合法值唯一 ⇒ 伪参数）;⚠️ **必须先于 C2 的 T1**
+3. **Q-6** 阶段 B（R-5）vs 阶段 C（C2）先后 —— 建议 **R-5 先**（静默失真比缺功能更难发现）
+
+**KPI**:无变化（本轮**未立新 change**）;3/3 满的状态由 §0.1 记录。
+
+**关联**:册子 `obj-cep-platform-remaining.md` §0.1 / §1.5 / §2 波 0 / §3 Q-4~Q-6 · Entry #481（设计类型归档）· Entry #480（R-5 立项）
