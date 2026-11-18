@@ -848,6 +848,14 @@ static void register_protocol_bridge(const std::string& bridge_name) {
 
 ### 9.4 ModuleFactory 现有 ParamRules 的延伸
 
+> ⚠️ **2026-11-19 状态：本节描述的是历史形态** —— ParamRules 机制已由 change
+> `cpptlm-module-param-migrate-batch2` 的 **T4** 退役（`include/core/param_rules.hh` /
+> `ModuleFactory::registerParamRules` / `getParamRulesRegistry` / 工厂侧默认值注入与
+> `required` 检查 / 死函数 `validate_module_params` 均已删除）。
+> 参数声明面现由各模块的 **`load_param` / `load_param_opt`** 承担（判据 = `test_param_admission` +
+> `test/test_param_migrate_batch2.cc`）。下文保留作**演进史**记录；`configs/param_rules/*.json`
+> 与 Python 侧 `validator.py` 的处置未在本 change 裁决（`ADR-X.10` §F 未决）。
+
 per `module_factory.hh:87-101` + Change D `getParamRulesRegistry()`:
 - 已支持 per-type ParamRules provider(早期 router_tlm 硬编码特例泛化)
 - **RouterTLM 自注册软默认**(`src/tlm/router_tlm.cc` 的 `registerParamRules("RouterTLM", …)` —— ⚠️ 实测**生产代码中唯一注册方**;测试侧另有幂等调用 `test/test_d3_param_resolver_registry.cc:53`;`VramControllerTLM` 并未自注册)

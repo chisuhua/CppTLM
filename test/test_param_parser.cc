@@ -3,7 +3,6 @@
 // 作者 CppTLM Team / 日期 2026-05-09
 #include "catch_amalgamated.hpp"
 #include "core/param_parser.hh"
-#include "core/param_rules.hh"
 
 using namespace cpptlm;
 
@@ -48,33 +47,10 @@ TEST_CASE("ParamParser: invalid integer fails", "[param][parser]") {
     REQUIRE(result.success == false);
 }
 
-TEST_CASE("ParamParser: validate with min constraint", "[param][parser]") {
-    ParamRule rule;
-    rule.type = ParamType::INTEGER;
-    rule.min_value = 10;
-
-    auto result = ParamParser::parse("5", ParamType::INTEGER);
-    REQUIRE(result.success == true);
-    REQUIRE(ParamParser::validate(result, rule) == false);
-
-    result = ParamParser::parse("15", ParamType::INTEGER);
-    REQUIRE(result.success == true);
-    REQUIRE(ParamParser::validate(result, rule) == true);
-}
-
-TEST_CASE("ParamParser: validate with max constraint", "[param][parser]") {
-    ParamRule rule;
-    rule.type = ParamType::INTEGER;
-    rule.max_value = 100;
-
-    auto result = ParamParser::parse("200", ParamType::INTEGER);
-    REQUIRE(result.success == true);
-    REQUIRE(ParamParser::validate(result, rule) == false);
-
-    result = ParamParser::parse("50", ParamType::INTEGER);
-    REQUIRE(result.success == true);
-    REQUIRE(ParamParser::validate(result, rule) == true);
-}
+// ⚠️ `validate`（min/max）用例已于 change `cpptlm-module-param-migrate-batch2` T4 删除
+//    —— `ParamParser::validate` 随其唯一调用方（死函数 `validate_module_params`）一并退役
+//    （`ADR-X.17` D-3：范围/枚举校验改由 `load_param` 的 `lo`/`hi` 参数承担）。
+//    `parse` 本身保留（本文件仍是其判据）。
 
 TEST_CASE("evaluate_derive_expr: missing param returns 0", "[param][derive]") {
     std::map<std::string, int64_t> params = {{"other", 10}};

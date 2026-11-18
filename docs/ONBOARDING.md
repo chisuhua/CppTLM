@@ -55,7 +55,7 @@
 - **拓扑与连接**:`topology_node.hh`、`topology_parser.hh`、`connection_resolver.hh` + `src/core/connection_resolver.cc`
 - **工厂**:`module_factory.hh` ⭐complex + `src/core/module_factory.cc` ⭐complex(604 行)+ `src/core/module_factory_validate.cc` ⭐complex(396 行)
 - **数据包**:`packet.hh` ⭐complex、`packet_pool.hh`、`ext/packet_pool.hh`（v2.1 已归档 `ext/packet_to_payload.hh` 和 `ext/payload_to_packet.hh` 到 `docs-archived/dead-code-headers-2026-q2/`）
-- **其他核心**:`sim_core.hh`、`event_queue.hh`、`cmd.hh`、`coherence_domain.hh`、`virtual_channel.hh`、`load_policy.hh`、`param_parser.hh`、`param_rules.hh`、`param_errors.hh`、`error_category.hh`、`plugin_loader.hh`、`plugin_load_exception.hh`、`port_compatibility.hh`、`port_stats.hh`、`stream_adapter_base.hh`
+- **其他核心**:`sim_core.hh`、`event_queue.hh`、`cmd.hh`、`coherence_domain.hh`、`virtual_channel.hh`、`load_policy.hh`、`param_parser.hh`、`param_errors.hh`、`error_category.hh`、`plugin_loader.hh`、`plugin_load_exception.hh`、`port_compatibility.hh`、`port_stats.hh`、`stream_adapter_base.hh`
 - **注册宏**:`include/chstream_register.hh`(注册 ChStream 三件套)、`include/modules.hh`(注册 Object/Module)
 
 ### 2.4 C++ TLM 2.0 模块层 (C++ TLM Modules,15 个文件)

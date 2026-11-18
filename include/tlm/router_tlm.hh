@@ -6,7 +6,6 @@
 #define TLM_ROUTER_TLM_HH
 
 #include "core/chstream_module.hh"
-#include "core/param_rules.hh"
 #include "bundles/noc_bundles_tlm.hh"
 #include "framework/bidirectional_port_adapter.hh"
 #include "metrics/stats.hh"
@@ -137,8 +136,9 @@ public:
     static constexpr unsigned NUM_PORTS = 5;
     static constexpr unsigned NUM_VCS = 4;
     /// **默认**输入缓冲深度 —— 亦是 `buffer_size` param 的默认值(per
-    /// `cpptlm-router-buffer-size-param` 的 D-1 裁决:让**声明**反映**实现** ⇒
-    /// `get_param_rules()` 的 `buffer_size` 默认值同步为 8)。
+    /// `cpptlm-router-buffer-size-param` 的 D-1 裁决:让**声明**反映**实现**)。
+    /// ⚠️ 该默认值现由 `load_param_opt("buffer_size", ...)` 直接承载
+    /// （ParamRules 机制已于 change `cpptlm-module-param-migrate-batch2` T4 退役）。
     /// ⚠️ 实际生效值是运行时成员 `buffer_depth_`(可被 `buffer_size` param 覆盖)。
     static constexpr unsigned BUFFER_DEPTH = 8;
     static constexpr unsigned DEFAULT_MESH_X = 2;

@@ -13,6 +13,7 @@
 //   · 本文件 = **ChStream 家族**（P1a 批次，T1.x）
 //   · SimModule 家族（P1b，T2.x）在本文件另立 section（同一 change 的同一判据族）
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -649,4 +650,25 @@ TEST_CASE("AC-02: GpuNoC.routing 非法值 ⇒ 装配失败（态③ 透传给�
         REQUIRE_FALSE(factory.instantiateAll(
             one_module("noc_bad", "GpuNoC", json{{"mesh_size", 2}, {"routing", "FIFO"}})));
     }
+}
+
+// ============================================================================
+// T4.6 — ParamRules 机制退役后的**正向契约断言**（原
+// `test/test_d3_param_resolver_registry.cc` 的「RouterTLM 已迁移」条目）
+//
+// ⚠️ 该断言 **SHALL 迁移**（T4.6 明写「⛔ 不得丢失」）：
+//    机制退役后，「注册表里没有 RouterTLM 条目」这一判据的对象本身已不存在
+//    ⇒ 保留其**语义**：该类型**已迁移到 `load_param` 声明**，判据 = 准入表成员资格
+//    （`ADR-X.17` D-3 的准入条件 (a)(b)(c) 三条同时成立才可能进表）。
+// ============================================================================
+TEST_CASE("T4.6: RouterTLM 已迁移到 load_param（准入表成员 = 注册表无条目的等价判据）",
+          "[param][migrate][batch2][d3]") {
+    CHECK(cpptlm::is_param_admitted("RouterTLM"));
+
+    const auto admitted = cpptlm::admitted_param_types();
+    REQUIRE(std::find(admitted.begin(), admitted.end(), "RouterTLM") != admitted.end());
+
+    // 迁移后的类型是全量化的（不是只有 RouterTLM 一个）
+    CHECK(cpptlm::is_param_admitted("NICTLM"));
+    CHECK(cpptlm::is_param_admitted("MemoryTLM"));
 }

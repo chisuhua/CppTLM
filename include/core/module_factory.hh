@@ -13,7 +13,6 @@
 #include "core/chstream_port.hh"
 #include "framework/protocol_bridge.hh"
 #include "metrics/stats.hh"
-#include "core/param_rules.hh"  // D.3 (cpptlm-dgpu-realip-pin-contract Change D)
 
 #include <unordered_map>
 #include <unordered_set>
@@ -34,12 +33,6 @@ namespace cpptlm { class StreamAdapterBase; }
 // 分离创建函数类型
 using CreateSimObjectFunc = std::function<SimObject*(const std::string&, EventQueue*)>;
 using CreateSimModuleFunc = std::function<SimModule*(const std::string&, EventQueue*)>;
-
-// D.3 (cpptlm-dgpu-realip-pin-contract Change D, 2026-10-08): ParamRules 提供者
-// 泛化 RouterTLM 硬编码特例为注册表查询。模块自注册 ParamRules (类似
-// REGISTER_CHSTREAM 模式), ModuleFactory instantiateAll 通过 type 查表。
-// PcieControllerIP / VramControllerTLM 等未来可注册 soft-defaults 校验。
-using ParamRulesProvider = std::function<cpptlm::ParamRules()>;
 
 class ModuleFactory {
 private:
@@ -84,24 +77,6 @@ private:
     }
 
 public:
-    // D.3 (Change D): ParamRules 注册表 — type → ParamRulesProvider
-    // early-return on duplicate (与 registerObject/registerModule 一致的 ODR-safe 模式,
-    // cpptlm_core 多次链接时避免重复注册)。Public 以便测试断言 + 外部模块自注册。
-    static std::unordered_map<std::string, ParamRulesProvider>& getParamRulesRegistry() {
-        static std::unordered_map<std::string, ParamRulesProvider> registry;
-        return registry;
-    }
-
-    // D.3 (Change D): 暴露 ParamRules 注册 API (供模块自注册 / 测试断言)
-    // early-return on duplicate,与 registerObject/registerModule 一致的 ODR-safe 模式
-    static void registerParamRules(const std::string& type, ParamRulesProvider fn) {
-        auto& registry = getParamRulesRegistry();
-        if (registry.find(type) != registry.end()) {
-            return;
-        }
-        registry[type] = std::move(fn);
-    }
-
     // D.1 (Change D): 实例化作用域 — kTopLevel 默认 (JSON 顶层可实例化);
     // kCompositeOnly 标记仅作为复合组件成员 (JSON 顶层实例化视为配置错误)。
     // 动机: PcieAxiBridgeIP 等类仅作为 EP-internal composite 成员使用 (per

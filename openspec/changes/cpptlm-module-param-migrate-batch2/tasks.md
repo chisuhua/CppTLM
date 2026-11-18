@@ -63,13 +63,13 @@
 
 ## T4 — P2：ParamRules 机制退役
 
-- [ ] T4.1 删 `include/core/param_rules.hh`（`ParamRule` / `ParamRules` / `ParamType`）
-- [ ] T4.2 删 `ModuleFactory::registerParamRules` / `getParamRulesRegistry`（`include/core/module_factory.hh:87/94`）
-- [ ] T4.3 删工厂侧默认值注入 + `required` 检查循环（`src/core/module_factory.cc:263-291`）;⚠️ 默认值已由 `load_param` 落成员、**不写回 JSON**（`ADR-X.17` D-5）
-- [ ] T4.4 删 `validate_module_params`（`src/core/module_factory_validate.cc:466-499`，零调用方死代码）
-- [ ] T4.5 ⚠️ `ParamParser` 的 `validate`（min/max）随死函数删;`parse` 的其他调用方**逐一核实** ⇒ 活代码不得连带删
-- [ ] T4.6 ⚠️ `test/test_d3_param_resolver_registry.cc` 随机制退役（删文件）⇒ 但其上一 change 新增的「`RouterTLM` 已迁移」**正向契约断言 SHALL 迁移**到新文件（⛔ 不得丢失）
-- [ ] T4.7 ⛔ **不动** `configs/param_rules/*.json`（`ADR-X.10` §F 未裁决）⇒ 显式登记「本 change 不裁决」
+- [x] T4.1 删 `include/core/param_rules.hh`（`ParamRule` / `ParamRules` / `ParamType`） ⇒ **已删**。`ParamType`（`ParamParser::parse` 仍需要）**迁入** `include/core/param_parser.hh`（自此 `param_parser` 零跨头依赖）;`ParamRule` / `ParamRules` / `to_json` / `from_json` 一并消失
+- [x] T4.2 删 `ModuleFactory::registerParamRules` / `getParamRulesRegistry`（`include/core/module_factory.hh:87/94`） ⇒ **已删**（`include/core/module_factory.hh`：`ParamRulesProvider` 别名 + 两个静态成员 + `param_rules.hh` include 全部移除）
+- [x] T4.3 删工厂侧默认值注入 + `required` 检查循环（`src/core/module_factory.cc:263-291`）;⚠️ 默认值已由 `load_param` 落成员、**不写回 JSON**（`ADR-X.17` D-5） ⇒ **已删**（`src/core/module_factory.cc` 的整段 per-type 默认值注入 + `required` 检查循环）。⚠️ 默认值现由各模块 `load_param_opt` 落成员、**不写回 JSON**（`ADR-X.17` D-5 的语义本来如此 —— 旧实现的写回只在 `type==RouterTLM` 且缺键时触发）;判据：全量测试 883616 assertions 零回归
+- [x] T4.4 删 `validate_module_params`（`src/core/module_factory_validate.cc:466-499`，零调用方死代码） ⇒ **已删**（`src/core/module_factory_validate.cc`，零调用方的死函数）
+- [x] T4.5 ⚠️ `ParamParser` 的 `validate`（min/max）随死函数删;`parse` 的其他调用方**逐一核实** ⇒ 活代码不得连带删 ⇒ **已删 `validate`**（`param_parser.hh` 声明 + `param_parser.cc` 实现 + `test/test_param_parser.cc` 的 2 条用例）。⚠️ **逐一核实 `parse` 的其他调用方**：生产侧唯一调用方就是被删的 `validate_module_params`；`parse_latency` 是 `parse` 的内部实现、`evaluate_derive_expr` 无调用方 —— 但 `parse` 本身**保留不动**（T4.5 明确「活代码不得连带删」，且它是 `test_param_parser.cc` 的判据；删除属另一个 change 的范围）
+- [x] T4.6 ⚠️ `test/test_d3_param_resolver_registry.cc` 随机制退役（删文件）⇒ 但其上一 change 新增的「`RouterTLM` 已迁移」**正向契约断言 SHALL 迁移**到新文件（⛔ 不得丢失） ⇒ **已删文件**;其「`RouterTLM` 已迁移」**正向契约断言已迁移**到 `test/test_param_migrate_batch2.cc` 的 `[param][migrate][batch2][d3]`（⛔ 未丢失）—— 判据从「注册表无条目」改写为「准入表成员」（注册表已不存在，但准入三条条件 (a)(b)(c) 同时成立正是「已迁移」的定义）;⚠️ **连带删除 `test/test_param_rules.cc`**（它测的 `ParamRule` / `ParamType` JSON 序列化随 T4.1 消失，不删则编译不过）—— 同属机制退役的自然结果，非擅自扩大范围
+- [x] T4.7 ⛔ **不动** `configs/param_rules/*.json`（`ADR-X.10` §F 未裁决）⇒ 显式登记「本 change 不裁决」 ⇒ **未触碰**（`git diff` 零命中）。理由登记：`ADR-X.10` §F 未裁决该目录的去留;其消费方 `cpptlm_config/validator.py` 属生成期声明面，不在本 change 的运行时参数面范围内
 
 ## T5 — 测试与验收支撑
 

@@ -51,21 +51,6 @@ namespace cpptlm {
         return result;
     }
 
-    bool ParamParser::validate(const ParamParseResult& result, const ParamRule& rule) {
-        if (!result.success)
-            return false;
-
-        if (std::holds_alternative<int64_t>(result.value)) {
-            int64_t val = std::get<int64_t>(result.value);
-            if (rule.min_value && val < *rule.min_value)
-                return false;
-            if (rule.max_value && val > *rule.max_value)
-                return false;
-        }
-
-        return true;
-    }
-
     int64_t ParamParser::evaluate_derive_expr(const std::string& expr,
                                               const std::map<std::string, int64_t>& params) {
         size_t q_pos = expr.find('?');

@@ -2,12 +2,16 @@
 
 #pragma once
 
-#include "param_rules.hh"
 #include <string>
 #include <map>
 #include <variant>
+#include <cstdint>
 
 namespace cpptlm {
+
+// `ParamType` 原属 `core/param_rules.hh`（change `cpptlm-module-param-migrate-batch2`
+// T4 退役 ParamRules 机制时迁入 —— `ParamParser::parse` 仍需要它）。
+enum class ParamType { INTEGER, FLOAT, STRING, BOOLEAN, ENUM };
 
 struct ParamParseResult {
     bool success;
@@ -19,8 +23,6 @@ class ParamParser {
 public:
     static ParamParseResult parse(const std::string& input, ParamType type,
                                   double clock_frequency_mhz = 1000.0);
-
-    static bool validate(const ParamParseResult& result, const ParamRule& rule);
 
     static int64_t evaluate_derive_expr(const std::string& expr,
                                         const std::map<std::string, int64_t>& params);

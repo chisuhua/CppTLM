@@ -13,7 +13,9 @@
 //
 // 准入条件（ADR-X.17 D-3 的「T 迁移完成」）：
 //   (a) T 的全部参数均由 load_param 声明，或已登记为「已消费但不经 load_param」
-//   (b) getParamRulesRegistry() 中无 T 的条目
+//   (b) `ModuleFactory::getParamRulesRegistry()` 中无 T 的条目
+//       ⚠️ 该注册表已于 change `cpptlm-module-param-migrate-batch2` 的 T4 **删除**
+//       （ParamRules 机制退役）⇒ 条件 (b) 现在**恒真**，保留仅为判据的完整表述。
 //   (c) CFG-08 的 T 分支已删除
 #ifndef CORE_PARAM_ADMISSION_HH
 #define CORE_PARAM_ADMISSION_HH
@@ -30,7 +32,7 @@ namespace detail {
 /// 准入类型集合（function-local static ⇒ inline 函数内跨 TU 唯一）
 inline std::set<std::string, std::less<>>& param_admission_table() {
     static std::set<std::string, std::less<>> table = {
-        // 已迁移：模块内 load_param 声明 + 无 ParamRules 条目 + 无 CFG-08 分支
+        // 已迁移：模块内 load_param 声明 + 无 ParamRules 条目（机制已退役）+ 无 CFG-08 分支
         "RouterTLM",
         // ── change `cpptlm-module-param-migrate-batch2` T1.1 ──
         // `node_id` 必填（无默认值）+ `mesh_x`/`mesh_y` 可选 + `address_regions`（非标量）态②。

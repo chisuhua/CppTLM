@@ -26324,3 +26324,78 @@ T2.10 暂缓准入的理由是「`routing` 的裁决归 C1 之后的独立 chang
 **下一步**：T4（ParamRules 机制退役）。
 
 **关联**：册子 §1.5.4 · Entry #490（T2）· C1 的 B3（`RouterTLM.routing` 态③）
+
+### Entry #492 — 2026-11-19 [builder](**C2 的 T4（P2）落地** —— ParamRules 机制退役)
+
+**范围**：change `cpptlm-module-param-migrate-batch2`（C2）的 **T4.1~T4.7**。
+
+### 删除清单（机制退役，非重构）
+
+| # | 删除对象 | 位置 |
+|:--:|---|---|
+| 1 | `ParamRule` / `ParamRules` / `to_json` / `from_json` | `include/core/param_rules.hh`（**整文件删除**） |
+| 2 | `ParamRulesProvider` + `getParamRulesRegistry()` + `registerParamRules()` | `include/core/module_factory.hh` |
+| 3 | per-type 默认值注入 + `required` 检查循环 | `src/core/module_factory.cc` |
+| 4 | `validate_module_params`（零调用方死函数） | `src/core/module_factory_validate.cc` |
+| 5 | `ParamParser::validate`（min/max） | `include/core/param_parser.hh` + `src/core/param_parser.cc` |
+| 6 | `test/test_d3_param_resolver_registry.cc`（机制测试） | 删文件 + 正向断言迁移 |
+| 7 | `test/test_param_rules.cc`（`ParamRule` JSON 序列化测试） | 删文件（类型已不存在，不删编译不过） |
+
+### ⚠️ `ParamType` 的去处（T4.1 的隐含前提）
+
+`ParamParser::parse` 的签名仍需要 `ParamType`（T4.5 明确 `parse` 保留）。⇒ 把
+`enum class ParamType` **迁入** `include/core/param_parser.hh`（补 `#include <cstdint>`，
+原先靠 `param_rules.hh` 的传递 include）⇒ `param_parser` 自此**零跨头依赖**。
+
+### T4.5 的「逐一核实」（`parse` 的调用方）
+
+| 符号 | 生产调用方 | 判定 |
+|---|---|---|
+| `ParamParser::parse` | 唯一 = 被删的 `validate_module_params` | **保留**（T4.5 明写「活代码不得连带删」;且是 `test_param_parser.cc` 的判据;删除属另一个 change） |
+| `ParamParser::validate` | 唯一 = 被删的 `validate_module_params` | **删除**（T4.5 明确授权） |
+| `ParamParser::parse_latency` | `parse` 内部实现 | 保留 |
+| `ParamParser::evaluate_derive_expr` | **无** | 保留（不在 T4 授权范围） |
+
+### T4.6 的契约断言迁移（⛔ 不得丢失）
+
+原 `test_d3_param_resolver_registry.cc` 的「`RouterTLM` 已迁移（不在注册表 + 已准入）」：
+
+- **判据对象已不存在**（注册表本身被删）⇒ 无法字面保留「注册表无条目」。
+- **语义保留**：判据改写为 **准入表成员资格** —— `is_param_admitted("RouterTLM")` +
+  在 `admitted_param_types()` 内。这正是 `ADR-X.17` D-3 的准入条件 (a)(b)(c) 同时成立的结论。
+- 落在 `test/test_param_migrate_batch2.cc` 的 `[param][migrate][batch2][d3]`（3 条断言）。
+- `registerParamRules` 的幂等性测试随机制一并退役（无对象可测）。
+
+### T4.7 `configs/param_rules/*.json` 未触碰
+
+`git diff` 零命中。理由：`ADR-X.10` §F 未裁决该目录去留;其消费方
+`cpptlm_config/validator.py` 属**生成期**声明面，不在本 change 的运行时参数面范围。
+
+### 文档同步（两处漂移，均为事实性订正）
+
+| 文件 | 改动 |
+|---|---|
+| `docs/ONBOARDING.md` | 核心头文件清单删 `param_rules.hh`（`docs_sync_check --strict` 的缺失路径判据捕获） |
+| `docs/architecture/06-inter-module-network.md` §9.4 | 加**状态注记**：本节描述的是历史形态;机制已由 T4 退役，参数声明面改由 `load_param` 承担。⚠️ **只加事实性状态注记，未改任何设计结论**（真源 1 的架构结论变更仍需 Oracle/ADR） |
+
+另：`include/core/param_admission.hh` 的注释同步 —— 准入条件 (b)（「注册表无条目」）
+**现在恒真**（注册表已删），保留仅为判据的完整表述。
+
+### 验证
+
+| 面 | 实测 |
+|---|---|
+| `cpptlm_tests` | **883616 / 2403**（−2 文件 / −7 case vs T3 —— 全是机制自身的测试） |
+| `pytest` | **232 passed** |
+| `ctest` | **184 / 184** |
+| `rddf_stage_gate --phase C` | 全绿 / 0 跳过 |
+| 五闸 | `docs_sync_check --strict`（修 ONBOARDING 后绿）· `cep_docs_sync_check` · `cep_doc_ref_check` · `agents_md_lint` · `config_type_registration_check` 全绿 · 冻结面 89 hash 一致 |
+
+⚠️ **过程中的环境噪声（非本 change 缺陷）**：一次全量运行因残留的
+`test/stress_results/framework_test` 目录（上一轮中断留下的**未跟踪**产物）导致
+`test_stress_framework.cc:448` 的 `cannot remove: Directory not empty` 失败。
+清掉该目录后复跑全绿。⇒ 该用例对残留目录不健壮，登记为独立缺陷。
+
+**下一步**：T5（测试与验收支撑）。
+
+**关联**：册子 §1.5.4 · Entry #491（T3）· `ADR-X.17` D-3 / D-5 · `ADR-X.10` §F
