@@ -363,6 +363,28 @@ namespace tlm::pcie {
         warn_unconsumed(params, {"axi_adapter", "link_layer", "phy_digital", "sr_iov",
                                  "transaction_layer", "bypass_mode", "pm_cap_control",
                                  "bar0_registers", "bar_sizes", "config_size", "num_msix_vectors"});
+
+        // ── 已消费键的**统一登记**（change `cpptlm-module-param-migrate-batch2` T1.7）
+        //
+        // ⚠️ 本类的配置面与其它模块**不同类**：键要么是**嵌套对象**（`link_layer` /
+        //    `phy_digital` / `transaction_layer` / `sr_iov` / `axi_adapter`），要么是
+        //    **非标量**（`bar0_registers` / `bar_sizes` 数组）⇒ `ADR-X.17` D-2 的非标量类，
+        //    **不由 `load_param` 承载**；`pm_cap_control`/`config_size`/`num_msix_vectors`
+        //    是标量但由 `attach_composition` 的多层分支消费（同为「已消费」）。
+        //
+        // ⇒ 处置：**不迁 `load_param`**（那会把嵌套对象拆成几十个标量键，与本类的
+        //    「整块 attach」语义冲突，且 `simulate_instantiate` 的二次调用要求幂等），
+        //    改为 `ignore_param` 逐个登记 —— 与 `MemoryTLM` 的板级直读键同一条 D-3 态②。
+        //
+        // ⛔ 本类的**未消费键告警**（`warn_unconsumed`）保持独立 —— 它是比
+        //    「未知键失败」更细的诊断（列出**具体哪个键**没消费者）。两者不冲突：
+        //    `ignore_param` 让**已登记**的键不进未知键检查，`warn_unconsumed` 对
+        //    **未登记**的键给出具名告警。
+        for (const char* k : {"axi_adapter", "link_layer", "phy_digital", "sr_iov",
+                              "transaction_layer", "bypass_mode", "pm_cap_control",
+                              "bar0_registers", "bar_sizes", "config_size", "num_msix_vectors"}) {
+            ignore_param(k);
+        }
     }
 
     void PcieEndpointIP::warn_unconsumed(const nlohmann::json& params,

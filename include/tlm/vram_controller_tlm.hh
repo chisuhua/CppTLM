@@ -146,9 +146,13 @@ public:
 
     // on_config_loaded: 读 vram_size_bytes (per ADR-DGPU-05 单一真源)
     void on_config_loaded() override {
-        const auto& cfg = get_config();
-        if (cfg.contains("vram_size_bytes") && cfg["vram_size_bytes"].is_number()) {
-            set_size_bytes(cfg["vram_size_bytes"].get<uint64_t>());
+        // ── 声明即读取（`ADR-X.17` D-1）────────────────────────────────────
+        // `vram_size_bytes` ⇒ **态① 真实消费**（`set_size_bytes` 是容量唯一入口）。
+        // ⚠️ 用 `load_param_opt`（而非 `load_param`）—— 默认值 = 成员当前值，
+        //    缺失时保持；（本键不是必填：容量可由注入的 backing 决定）。
+        std::uint64_t vram_size = 0;
+        if (load_param_opt("vram_size_bytes", vram_size)) {
+            set_size_bytes(vram_size);
         }
         // ⚠️ `operating_frequency_hz` ⇒ **态② 显式拒绝**（`ADR-X.17` D-2）:
         //    本类的操作频率是**编译期锚点** `kOperatingFrequencyHz`（1 GHz,与
@@ -162,6 +166,7 @@ public:
             "the operating frequency is a compile-time anchor (1 GHz) bound to the timing "
             "contract; making it runtime-configurable needs a GB/s bandwidth input that does "
             "not exist yet, so this key cannot take effect");
+        // 基类继续处理它自己的键（含板级直读键的 `ignore_param` 登记）
         MemoryTLM::on_config_loaded();
     }
 

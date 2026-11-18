@@ -26087,3 +26087,102 @@ $ ./build/bin/cpptlm_sim /tmp/nested_bogus.json    # ApuSoC 内联 modules 含�
 **下一步**：T1（P1a：ChStream 家族 10 个类型迁移）。
 
 **关联**：册子 §1.5.4 · Entry #487（R-5 归档）· `scripts/test/rddf_stage_gate.sh`（P-2a 阶段感知）
+
+### Entry #489 — 2026-11-19 [builder](**C2 的 T1（P1a）落地** —— ChStream 家族 10 个类型迁移完毕，准入表 1 → 8）
+
+**范围**：change `cpptlm-module-param-migrate-batch2`（C2）的 **T1.1~T1.10**（P1a 批次）。
+
+### 准入表从 1 个类型扩到 8 个（`include/core/param_admission.hh`）
+
+`RouterTLM` → `RouterTLM` + `NICTLM` + `MemoryTLM` + `VramControllerTLM` + `GmmuTLM` +
+`TrafficGenTLM` + `SdmaEngineTLM` + `CohIfNICTLM` + `CohIfResponderTLM`。
+
+⚠️ **准入的判据是三条同时成立**（`ADR-X.17` D-3）：① 全部参数由 `load_param` 声明或已登记为
+「已消费但不经 `load_param`」;② 注册表无 ParamRules 条目;③ CFG-08 的该类型分支已删。
+
+### 逐类型处置
+
+| # | 类型 | 本批动作 |
+|:--:|---|---|
+| 1 | `NICTLM` | `node_id` **必填**（`load_param` 无默认值）+ `mesh_x`/`mesh_y` 可选 + `address_regions` 非标量登记;**CFG-08 的 NICTLM per-type 分支整段删除**（与必填声明同批 ⇒ 必填真值唯一 / F-4 双强制点闭环） |
+| 2 | `MemoryTLM` | C1 已声明化;本批补 **7 个板级直读键**的 `ignore_param` 登记（D-6）;新增 4 个观测 getter |
+| 3 | `VramControllerTLM` | `vram_size_bytes` 改 `load_param_opt`（原手写 `cfg.contains` + `is_number`）;`operating_frequency_hz` 态② 拒绝;板级键登记**自动继承**基类 |
+| 4 | `GmmuTLM` | `page_size_bytes` 态①（2 的幂 ≥ 4096）+ `tlb_*` 板级键登记（C1 已落） |
+| 5 | `TrafficGenTLM` | C1 已完成 8 键裁决;本批把 `read_addr_value` 提升为**共享** `cpptlm::parse_addr_json` |
+| 6 | `SdmaEngineTLM` | 3 键改 `load_param_opt`;新增 3 个观测 getter |
+| 7 | `PcieEndpointIP` | ⚠️ **处置与清单描述不同（有据）**——见下 |
+| 8 | `CohIfNICTLM` | 3 键改 `load_param_opt` + `address_regions` 登记 |
+| 9 | `CohIfResponderTLM` | 4 键改 `load_param_opt`（原「类型不符即静默忽略」） |
+| 10 | `PcieEndpointTLM` | **显式登记「不迁」**——见下 |
+
+### ⚠️ T1.7 `PcieEndpointIP` 的处置与 design D-2 清单**不同**（改动有据）
+
+design D-2 列的是 **5 个标量键**;实测本类配置面是 **11 个键**，且其中：
+
+- **4 个是嵌套对象**：`link_layer` / `phy_digital` / `transaction_layer` / `sr_iov` / `axi_adapter`
+- **2 个是非标量数组**：`bar0_registers` / `bar_sizes`
+- 3 个标量（`pm_cap_control` / `config_size` / `num_msix_vectors`）也由多层分支消费
+
+⇒ 属 `ADR-X.17` D-2 的**非标量类**（`load_param` 只承载标量）⇒ **不迁 `load_param`**，
+改为 `ignore_param` 逐个登记 + **保留**本类独立的 `warn_unconsumed` 具名告警
+（它比「未知键失败」更细：对**未登记**的键给出「哪个键没有消费者」）。
+
+⚠️ **二次 `on_config_loaded` 的幂等性（F-11）不受影响** —— 因为 T0.2 采用了**成员通道**
+（`instantiate_succeeded()`）而非改签名 ⇒ `simulate_instantiate` 保持 `void`，
+`attach_composition` 的重入清空逻辑不变。
+
+### ⚠️ T1.10 `PcieEndpointTLM` 显式「不迁」（三条理由）
+
+① 已 `[[deprecated]]`;② 属 **23 ABI 冻结面**（`ADR-DGPU-08` §2.3 / `ADR-088` §D5：该头零修改）;
+③ 迁 `load_param` 必须改冻结头 ⇒ 与 ABI 冻结直接冲突。
+⇒ 登记为「不迁」（台账 §1.3），⛔ 不因「清单上有它」而强行迁移。
+
+### 连带修掉 `CPUTLM` 的两处（T0.4 已修 `start_addr`，本批补 `request_interval`）
+
+`request_interval` 同样受 `VarResolver` 影响（`"10"` → float 10.0）⇒ `load_param_opt` 会拒
+⇒ 改走 `parse_addr_json`（与 `start_addr` 同一条处置）。
+⚠️ **暴露者**：`test_param_alignment` 的「含准入类型实例的配置全部可装配」判据 ——
+`tlm_e2e_test.json` 写了 `"request_interval": "10"`，此前因 CPUTLM 未准入而未被检查。
+
+### 顺带修掉 2 份 pre-existing 失败配置
+
+`configs/dgpu_soc_minimal_v1.json` / `configs/dgpu_soc_timing_v1.json` **缺顶层 `connections`**
+⇒ `validateConfig` 直接拒（Entry #488 登记为「独立缺陷」）。本批补 `"connections": []`
+（顶层只有 `soc` 一个模块、无顶层连接 ⇒ 空数组是正确形态）⇒ 两份配置现在 `cpptlm_sim` exit 0。
+
+### 判据（`test/test_param_migrate_batch2.cc`，13 case / 87 assertions）
+
+| tag | 覆盖 |
+|---|---|
+| `[batch2][nic]` ×5 | node_id / mesh / 必填缺失 / 拼错键 / address_regions |
+| `[batch2][memory]` ×3 | capacity_gb / 读写延迟 / 态② 拒绝 |
+| `[batch2][vram]` ×1 | vram_size_bytes + operating_frequency_hz 态② |
+| `[batch2][gmmu]` ×1 | page_size_bytes（含非 2 的幂 ⇒ 失败） |
+| `[batch2][sdma]` ×1 | 三键 |
+| `[batch2][cohif-nic]` ×1 | 三键 + address_regions + 拼错键必失败 |
+| `[batch2][cohif-resp]` ×1 | 四键 + 类型不符必失败 |
+
+⛔ **判别力来源**：每键**两个不同合法值 ⇒ 观测 getter 读数不同**（`ADR-X.17` D-6）——
+不是「断言 load_param 被调过」那种没验效果的写法。
+
+### 顺带：3 处「准入后语义变更」的既有测试同步
+
+| 测试 | 变更 |
+|---|---|
+| `test_d3_param_resolver_registry.cc` | 反向断言 `CHECK_FALSE(is_param_admitted("NICTLM"))` 随迁移失效 ⇒ 改正向（准入表是全量化的，不是只有 RouterTLM） |
+| `test_memory_tlm_backing.cc` | 「未知键被静默忽略」用例改用空 params + **新增**一条正向 case（准入后未知键**必须**失败） |
+| `test_param_alignment.cc` | 无需改（判据本身正确 —— 它把 2 份缺 `connections` 的配置揪出来了） |
+
+### 验证
+
+| 面 | 实测 |
+|---|---|
+| `cpptlm_tests` | **883561 / 2400**（+10 case / +87 assertions vs T0） |
+| `pytest` | **232 passed** |
+| `ctest` | **184 / 184** |
+| 五闸 + 两闸 | 全绿（`rddf_stage_gate` 0 跳过 · `config_type_registration_check` · 冻结面 89 个 hash） |
+| 配置装配 | 14 份顶层配置全部 exit 0（含此前 2 份失败的） |
+
+**下一步**：T2（P1a：SimModule 家族 10 个类型迁移）。
+
+**关联**：册子 §1.5.4 · Entry #488（T0）· `docs/implementation/module-param-baseline.md` §1.1~§1.3

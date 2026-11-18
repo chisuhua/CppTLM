@@ -32,6 +32,37 @@ inline std::set<std::string, std::less<>>& param_admission_table() {
     static std::set<std::string, std::less<>> table = {
         // 已迁移：模块内 load_param 声明 + 无 ParamRules 条目 + 无 CFG-08 分支
         "RouterTLM",
+        // ── change `cpptlm-module-param-migrate-batch2` T1.1 ──
+        // `node_id` 必填（无默认值）+ `mesh_x`/`mesh_y` 可选 + `address_regions`（非标量）态②。
+        // ⚠️ CFG-08 的 NICTLM per-type 分支已同批退役 ⇒ 必填真值唯一。
+        "NICTLM",
+        // ── T1.2 ──
+        // `capacity_gb`/`size`/`read_latency`/`write_latency` 态① + `type`/`mem_type` 态②拒绝
+        // + 7 个板级直读键 `ignore_param` 登记（D-6 / 台账表 A）。
+        "MemoryTLM",
+        // ── T1.3 ──
+        // `vram_size_bytes` 态① + `operating_frequency_hz` 态②拒绝
+        // + 继承基类的板级直读键登记。
+        "VramControllerTLM",
+        // ── T1.4 ──
+        // `page_size_bytes` 态①（2 的幂 ≥ 4096）+ `tlb_size`/`tlb_miss_latency_cycles`
+        // 板级直读键登记。
+        "GmmuTLM",
+        // ── T1.5 ──
+        // `pattern`/`num_requests`/`seed`/`stride` 态① + `start_addr`/`end_addr`
+        // 地址读法（`parse_addr_json`，非 load_param）+ `hotspot_addrs`/`hotspot_weights`
+        // 非标量登记。
+        "TrafficGenTLM",
+        // ── T1.6 ──
+        // `max_inflight`/`translate_latency`/`vram_size_bytes` 全部态①（可选）。
+        "SdmaEngineTLM",
+        // ── T1.8 ──
+        // `node_id`/`mesh_x`/`mesh_y` 态①（可选）+ `address_regions` 非标量登记。
+        "CohIfNICTLM",
+        // ── T1.9 ──
+        // `emit_completions`/`completion_latency_cycles`/`emit_snoops`/`snoop_interval_cycles`
+        // 全部态①（可选，类型不符 ⇒ 装配期失败）。
+        "CohIfResponderTLM",
     };
     return table;
 }

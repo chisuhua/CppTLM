@@ -175,21 +175,26 @@ namespace tlm::gpu {
     }
 
     void SdmaEngineTLM::on_config_loaded() {
-        const auto& cfg = get_config();
-        if (!cfg.is_object())
+        if (!get_config().is_object())
             return;
 
-        if (cfg.contains("max_inflight")) {
-            const uint32_t n = cfg.value("max_inflight", 4u);
-            set_max_inflight(n);
+        // ── 声明即读取（`ADR-X.17` D-1）────────────────────────────────────
+        // 三键都是**可选**（默认值 = 成员初值）⇒ `load_param_opt`（缺失即保持）。
+        // 每个 setter 都是**真实消费点**：
+        //   · `max_inflight` ⇒ `inflight_` 的准入上限（`submit` 的背压条件）
+        //   · `translate_latency` ⇒ 地址翻译的周期数
+        //   · `vram_size_bytes` ⇒ `is_vram_window_valid` 的越界判据
+        std::uint32_t max_inflight = max_inflight_;
+        if (load_param_opt("max_inflight", max_inflight)) {
+            set_max_inflight(max_inflight);
         }
-        if (cfg.contains("translate_latency")) {
-            const uint32_t lat = cfg.value("translate_latency", 0u);
-            set_translate_latency(lat);
+        std::uint32_t translate_latency = translate_latency_;
+        if (load_param_opt("translate_latency", translate_latency)) {
+            set_translate_latency(translate_latency);
         }
-        if (cfg.contains("vram_size_bytes")) {
-            const uint64_t sz = cfg.value("vram_size_bytes", 256ull * 1024 * 1024);
-            set_vram_size_bytes(sz);
+        std::uint64_t vram_size = vram_size_bytes_;
+        if (load_param_opt("vram_size_bytes", vram_size)) {
+            set_vram_size_bytes(vram_size);
         }
     }
 

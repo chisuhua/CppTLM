@@ -172,16 +172,18 @@ inline std::uint64_t parse_u64(const nlohmann::json& obj, const char* key) {
 }  // namespace detail
 
 inline void CohIfNICTLM::on_config_loaded() {
+    // ── 声明即读取（`ADR-X.17` D-1）────────────────────────────────────────
+    // 三键**可选**（默认值 = 成员初值）⇒ `load_param_opt`;类型不符 ⇒ 装配期失败
+    // （⛔ 旧实现 `cfg["x"].get<uint32_t>()` 在类型不符时抛的是 nlohmann 的
+    //   `type_error`，错误信息不含「参数名 + 期望类型」⇒ 不满足 D-3 的可诊断要求）。
+    load_param_opt("node_id", node_id_);
+    load_param_opt("mesh_x", mesh_x_);
+    load_param_opt("mesh_y", mesh_y_);
+
+    // `address_regions` 是**非标量**（对象数组）⇒ `ADR-X.17` D-2 态②
+    // （`load_param` 只承载标量）⇒ 模块内解析 + 显式登记「已消费」。
+    ignore_param("address_regions");
     const auto& cfg = get_config();
-    if (cfg.contains("node_id")) {
-        node_id_ = cfg["node_id"].get<std::uint32_t>();
-    }
-    if (cfg.contains("mesh_x")) {
-        mesh_x_ = cfg["mesh_x"].get<std::uint32_t>();
-    }
-    if (cfg.contains("mesh_y")) {
-        mesh_y_ = cfg["mesh_y"].get<std::uint32_t>();
-    }
     regions_.clear();
     if (cfg.contains("address_regions")) {
         for (const auto& reg : cfg["address_regions"]) {

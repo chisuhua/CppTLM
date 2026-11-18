@@ -22,19 +22,41 @@
 | `hotspot_addrs` / `hotspot_weights` | `TrafficGenTLM` | 模块内 `parse_hotspot()`（非 `load_param`） | **非标量**（数组）⇒ 不由 `load_param` 承载（`ADR-X.17` D-2）；键已 `ignore_param` 显式登记 |
 | `tlb_size` / `tlb_miss_latency_cycles` | `GmmuTLM` | **板级直读**（⚠️ 本表 = 「已消费但**不经** `load_param`」的合规登记，**不是** `ADR-X.17` D-3b 禁止的「长期掩盖」—— 消费方已逐键标注） | `dgpu_board_shell.cc:1056-1057` 直接调 `set_tlb_size` / `set_timing_params`;模块内 `ignore_param` 显式登记（`gmmu_tlm.hh` on_config_loaded） |
 
-**未来准入时必须先登记到本表的键**（来自 ADR-X.17 F-15 的板级直读路径
-`src/tlm/gpu/dgpu_board_shell.cc`）：
+### 1.1 板级直读键 —— **C2 T1 批次已全部落地**（2026-11-19）
 
-| 键 | 所属类型 | 消费方 | 位置 |
+> change `cpptlm-module-param-migrate-batch2` 的 T1（P1a）把下列类型的板级直读键
+> **逐条登记进模块内 `ignore_param`**，并把对应类型**准入了准入表**。
+> ⚠️ 登记 ≠ 豁免：消费方逐条标注（`ADR-X.17` D-3b 禁止的是「**无消费方**的长期掩盖」）。
+
+| 键 | 所属类型 | 消费方 | 模块侧登记点 |
 |---|---|---|---|
-| `read_latency_hit_cycles` / `read_latency_miss_cycles` / `write_latency_cycles` / `row_hit_cycles` / `row_miss_cycles` / `bandwidth_gbps` / `use_zero_delay_for_test` | `MemoryTLM` / `VramControllerTLM` | 板级直读 | `dgpu_board_shell.cc:1039-1059` |
-| `tlb_miss_latency_cycles` / `tlb_size` | `GmmuTLM` | 板级直读 | `dgpu_board_shell.cc:1056-1057`（⚠️ 已在**上表**先行登记 + 模块内 `ignore_param`，准入时无需重复处置） |
-| `device_id` / `quantum_cycles` / `ptx_emu_root` | 板级 | 板级直读 | `dgpu_board_shell.cc:53-59` |
-| `bar_sizes` / `visible_vram_size` / `invisible_vram_size` / `va_region_size` / `gpu_id` / `gfx_version` / `bdf` | `PcieEndpointIP` 外观 | 板级直读 | `dgpu_board_shell.cc:75-96` |
+| `read_latency_hit_cycles` / `read_latency_miss_cycles` / `write_latency_cycles` / `use_zero_delay_for_test` | `MemoryTLM`（及继承它的 `VramControllerTLM`） | 板级直读 `dgpu_board_shell.cc` 的 `set_timing_params(...)` | `memory_tlm.hh` 的 `ignore_param`（⑤ 段） |
+| `row_hit_cycles` / `row_miss_cycles` / `bandwidth_gbps` | 同上（`VramControllerTLM` 的 timing 分支） | 板级直读 `set_vram_params(...)` | 同上 |
+| `tlb_size` / `tlb_miss_latency_cycles` | `GmmuTLM` | 板级直读 `set_tlb_size` / `set_timing_params` | `gmmu_tlm.hh` 的 `ignore_param` |
+| `device_id` / `quantum_cycles` / `ptx_emu_root` | **板级自身**（非模块） | 板级直读 | ⛔ 不在模块参数面（`DGpuBoard` 自己的配置，不经任何 `SimObject::set_config`） |
+| `bar_sizes` / `visible_vram_size` / `invisible_vram_size` / `va_region_size` / `gpu_id` / `gfx_version` / `bdf` | `PcieEndpointIP` **外观** | 板级直读（板级读的是 **`pcie_ep` 节点**的 `params`） | ⚠️ 见下 |
 
-⚠️ 上述类型**当前均未准入**（`is_param_admitted()` 为 false）⇒ 本表暂不生效。
-⚠️ 按 ADR-X.17 D-3 的板级条款：同一类型内 **不得**同时存在「`load_param` 声明的键」与
-「板级直读的键」—— 某类型准入时须二选一（改走已声明入口 / 该键登记进本表）。
+**`PcieEndpointIP` 的例外**（T1.7）：本类的 11 个键（`axi_adapter` / `link_layer` /
+`phy_digital` / `sr_iov` / `transaction_layer` / `bypass_mode` / `pm_cap_control` /
+`bar0_registers` / `bar_sizes` / `config_size` / `num_msix_vectors`）要么是**嵌套对象**、
+要么是**非标量数组** ⇒ `ADR-X.17` D-2 的非标量类，**不由 `load_param` 承载**。
+处置 = `ignore_param` 逐个登记（`pcie_endpoint_ip.cc` 的 `attach_composition` 末尾），
+且**保留**本类独立的 `warn_unconsumed` 具名告警（它比「未知键失败」更细：
+对**未登记**的键给出「哪个键没消费者」）。
+
+### 1.2 其它「已消费但不经 `load_param`」的键（非板级路径）
+
+| 键 | 所属类型 | 消费方 | 备注 |
+|---|---|---|---|
+| `address_regions` | `NICTLM` / `CohIfNICTLM` | 模块内解析（对象数组） | **非标量** ⇒ D-2；已 `ignore_param` |
+| `start_addr` / `request_interval` | `CPUTLM` | 模块内 `parse_addr_json`（非 `load_param`） | ⚠️ **与 `TrafficGenTLM` 同因**：`VarResolver` 把 `"0x1000"` / `"10"` 转成 **float** ⇒ `load_param` 的单一类型检查会拒；已 `ignore_param` + 共享 `cpptlm::parse_addr_json` |
+| `vram_size_bytes`（VramControllerTLM） | 该键**是** `load_param_opt`（标量、模块自读） | — | ⛔ **不属本表**（它是标准声明式读取，列此仅为避免与板级 `vram_size_bytes` 混淆） |
+
+### 1.3 `PcieEndpointTLM` —— **显式排除**（T1.10）
+
+| 类型 | 处置 | 理由 |
+|---|---|---|
+| `PcieEndpointTLM` | **不迁、不改**（保持 `ignore_param` 之外的一切现状） | ① 已 `[[deprecated]]`（`include/tlm/gpu/pcie_endpoint_tlm.h`）;② 属 **23 ABI 冻结面**（`ADR-DGPU-08` §2.3 / `ADR-088` §D5：该头**零修改**）;③ 其配置键由既有行为承载，迁 `load_param` 必须改该冻结头 ⇒ 与 ABI 冻结直接冲突。⇒ 登记为「**不迁**」，⛔ 不因「清单上有它」而强行迁移。 |
 
 ---
 

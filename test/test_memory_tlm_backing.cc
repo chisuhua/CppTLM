@@ -5,6 +5,8 @@
 #include <cstring>
 #include <vector>
 #include "event_queue.hh"
+#include "core/param_admission.hh"
+#include "core/param_errors.hh"
 #include "tlm/memory_tlm.hh"
 #include <catch2/catch_all.hpp>
 
@@ -164,11 +166,30 @@ TEST_CASE("memory_backing: on_config_loaded absent capacity_gb leaves size_cap u
     std::vector<uint8_t> backing(4096, 0);
     mem.set_backing_view(backing.data(), backing.size());
 
-    nlohmann::json cfg = {{"other_param", 42}};
+    // ⚠️ 语义已变更（change `cpptlm-module-param-migrate-batch2` T1.2）：
+    //    `MemoryTLM` 现已**准入** ⇒ 未知键不再被静默忽略。
+    //    本用例原先用 `{"other_param": 42}` 验证「缺 capacity_gb 时 size_cap 不动」，
+    //    但那个**未知键**现在会正确地让装配失败（这正是准入生效的证据）。
+    //    ⇒ 改用**空 params**（合法的「什么都不配」形态）验证同一断言。
+    nlohmann::json cfg = nlohmann::json::object();
     mem.set_config(cfg);
 
     inject_req(&mem, 1, 0x100, false);
     mem.tick();
     REQUIRE(mem.resp_out().valid());
     REQUIRE(mem.resp_out().data().error_code.read() == 0);
+}
+
+TEST_CASE("B18+: 准入后的 MemoryTLM 拒绝未知键（准入生效的正向证据）",
+          "[memory_backing][chstream][d-axi][B18][param][migrate]") {
+    EventQueue eq;
+    MemoryTLM mem("mem", &eq);
+
+    std::vector<uint8_t> backing(4096, 0);
+    mem.set_backing_view(backing.data(), backing.size());
+
+    // 同一个键：准入前静默忽略、准入后**装配期失败**（且错误含键名）
+    CHECK(cpptlm::is_param_admitted("MemoryTLM"));
+    REQUIRE_THROWS_AS(mem.set_config(nlohmann::json{{"other_param", 42}}),
+                      cpptlm::ParamValidationError);
 }

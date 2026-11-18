@@ -14,16 +14,16 @@
 
 > 每类型四件套：**声明化**（`load_param`）· **行为判别测试**（D-6）· **准入表加项** · **旧声明面清理**。
 
-- [ ] T1.1 `NICTLM`：`node_id` / `mesh_x` / `mesh_y` 声明化 + **CFG-08 分支退役**（同 commit!）+ 准入表加项
-- [ ] T1.2 `MemoryTLM`：`capacity_gb` 声明化 + 板级直读键态②登记（D-6）;⚠️ 零效果键（`mem_type` / `read_latency` / `size` / `type` / `write_latency`）**不在本任务范围** ⇒ 依赖 effect-landing ⇒ 暂缓准入
-- [ ] T1.3 `VramControllerTLM`：全部板级直读键 ⇒ 态②登记 + 准入表加项;⚠️ 核实其与基类 `MemoryTLM::on_config_loaded` 的调用链
-- [ ] T1.4 `GmmuTLM`：`tlb_*` 态②登记;⚠️ `page_size_bytes` 依赖 effect-landing ⇒ 暂缓准入
-- [ ] T1.5 `TrafficGenTLM`：`seed` 声明化 + 准入表加项;⚠️ 其余 7 键依赖 effect-landing
-- [ ] T1.6 `SdmaEngineTLM`：`max_inflight` / `translate_latency` / `vram_size_bytes` 声明化 + 判别测试 + 准入
-- [ ] T1.7 `PcieEndpointIP`：声明化 + 判别测试 + 准入;⚠️ **二次 `on_config_loaded` 的幂等性**必须保持（F-11）;⚠️ `bar_sizes` 与板级同名 ⇒ 按 D-3 裁决单一消费方
-- [ ] T1.8 `CohIfNICTLM`：`node_id` / `mesh_x` / `mesh_y` 声明化 + `address_regions`（非标量）态②登记 + 准入
-- [ ] T1.9 `CohIfResponderTLM`：`emit_completions` / `completion_latency_cycles` / `emit_snoops` / `snoop_interval_cycles` 声明化 + 判别测试 + 准入
-- [ ] T1.10 `PcieEndpointTLM`：**显式排除**（`[[deprecated]]` + 23 ABI 冻结面 ⇒ 零修改）⇒ 在准入表与台账中登记「不迁」及理由
+- [x] T1.1 `NICTLM`：`node_id` / `mesh_x` / `mesh_y` 声明化 + **CFG-08 分支退役**（同 commit!）+ 准入表加项 ⇒ **已落地**：`node_id` **必填**（`load_param` 无默认值）+ `mesh_x`/`mesh_y` 可选（`load_param_opt`）+ `address_regions`（非标量）`ignore_param` 登记;**CFG-08 分支同批退役**（`src/core/module_factory_validate.cc` 的 NICTLM per-type 分支整段删除）⇒ 必填真值唯一（`ADR-X.17` F-4 的双强制点闭环）;已准入;判别测试 `test/test_param_migrate_batch2.cc` 的 `[batch2][nic]` 5 case
+- [x] T1.2 `MemoryTLM`：`capacity_gb` 声明化 + 板级直读键态②登记（D-6）;⚠️ 零效果键（`mem_type` / `read_latency` / `size` / `type` / `write_latency`）**不在本任务范围** ⇒ 依赖 effect-landing ⇒ 暂缓准入 ⇒ **已落地**（C1 已声明化，本批补齐 D-6 部分）：7 个**板级直读键**逐个 `ignore_param` 登记（`read_latency_hit_cycles`/`read_latency_miss_cycles`/`write_latency_cycles`/`use_zero_delay_for_test`/`row_hit_cycles`/`row_miss_cycles`/`bandwidth_gbps`）;已准入;新增观测 getter（`size_cap()` / `read_latency_hit_cycles()` / `read_latency_miss_cycles()` / `write_latency_cycles()`）供 AC-02 判别；判别测试 `[batch2][memory]` 3 case;⚠️ 准入后 `test_memory_tlm_backing.cc` 的「未知键被静默忽略」用例语义变更 —— 改为空 params + 新增一条正向 case（未知键**必须**失败）
+- [x] T1.3 `VramControllerTLM`：全部板级直读键 ⇒ 态②登记 + 准入表加项;⚠️ 核实其与基类 `MemoryTLM::on_config_loaded` 的调用链 ⇒ **已落地**：`vram_size_bytes` 改 `load_param_opt`（原先手写 `cfg.contains` + `is_number` 分支）;`operating_frequency_hz` 态② 拒绝（编译期锚点，C1 已落）;继承 `MemoryTLM::on_config_loaded()`⇒ 板级直读键登记自动继承;已准入;判别测试 `[batch2][vram]` 1 case（含态② 反向）
+- [x] T1.4 `GmmuTLM`：`tlb_*` 态②登记;⚠️ `page_size_bytes` 依赖 effect-landing ⇒ 暂缓准入 ⇒ **已落地**：`page_size_bytes` 态①（2 的幂且 ≥ 4096，C1 已落）;`tlb_size` / `tlb_miss_latency_cycles` 板级直读键 `ignore_param` 登记（C1 已落）;已准入;判别测试 `[batch2][gmmu]` 1 case（含非 2 的幂 ⇒ 失败）
+- [x] T1.5 `TrafficGenTLM`：`seed` 声明化 + 准入表加项;⚠️ 其余 7 键依赖 effect-landing ⇒ **已落地**（C1 已完成全部 8 键的裁决）：`pattern`/`num_requests`/`seed`/`stride` 态①;`start_addr`/`end_addr` 走 `parse_addr_json`（**非** `load_param` —— `VarResolver` 会把 `0x` 转 float）;`hotspot_addrs`/`hotspot_weights` 非标量登记;已准入;⚠️ 本批把 `read_addr_value` 的本地实现**提升为共享** `cpptlm::parse_addr_json`（`param_loader.hh`）供 `CPUTLM` 共用 —— 消除两份实现（CPUTLM 那份曾漏 `is_number_float` 分支 ⇒ `"0x1000"` 装配失败）
+- [x] T1.6 `SdmaEngineTLM`：`max_inflight` / `translate_latency` / `vram_size_bytes` 声明化 + 判别测试 + 准入 ⇒ **已落地**：3 键（`max_inflight`/`translate_latency`/`vram_size_bytes`）改 `load_param_opt`（原为 `cfg.contains` + `cfg.value` 手写分支）;新增 3 个观测 getter 供 AC-02 判别;已准入;判别测试 `[batch2][sdma]` 1 case
+- [x] T1.7 `PcieEndpointIP`：声明化 + 判别测试 + 准入;⚠️ **二次 `on_config_loaded` 的幂等性**必须保持（F-11）;⚠️ `bar_sizes` 与板级同名 ⇒ 按 D-3 裁决单一消费方 ⇒ **已落地**（**处置与清单描述不同 —— 有据**）：design D-2 列的是 5 个标量键，实测本类配置面是 **11 个键**，其中 4 个是**嵌套对象**（`link_layer`/`phy_digital`/`transaction_layer`/`sr_iov`）、2 个是**非标量数组**（`bar0_registers`/`bar_sizes`）⇒ 属 D-2 的非标量类，**不由 `load_param` 承载**;处置 = `ignore_param` 逐个登记（`attach_composition` 末尾）+ **保留**本类独立的 `warn_unconsumed` 具名告警（比未知键失败更细）;已准入;⚠️ **二次 `on_config_loaded` 的幂等性**（F-11）**未受影响** —— `simulate_instantiate` 保持 void 签名（T0.2 的成员通道），`attach_composition` 的重入清空逻辑不变
+- [x] T1.8 `CohIfNICTLM`：`node_id` / `mesh_x` / `mesh_y` 声明化 + `address_regions`（非标量）态②登记 + 准入 ⇒ **已落地**：`node_id`/`mesh_x`/`mesh_y` 改 `load_param_opt`（原 `cfg["x"].get<uint32_t>()` ——类型不符抛的是 nlohmann 的 `type_error`，错误信息不含「参数名+期望类型」）;`address_regions`（对象数组）`ignore_param` 登记;已准入;判别测试 `[batch2][cohif-nic]` 1 case（⚠️ `lookup_node` 是 private ⇒ 断言「配置可装配」+ 拼错键必失败，解析行为由 `test_cep_mesh_e2e` 覆盖）
+- [x] T1.9 `CohIfResponderTLM`：`emit_completions` / `completion_latency_cycles` / `emit_snoops` / `snoop_interval_cycles` 声明化 + 判别测试 + 准入 ⇒ **已落地**：4 键改 `load_param_opt`（原 `config_.contains(...) && is_boolean()/is_number_unsigned()` ——**类型不符即静默忽略** ⇒ 配置写了等于没写）;已准入;判别测试 `[batch2][cohif-resp]` 1 case（含类型不符 ⇒ 装配失败，⛔ 旧实现不会失败）
+- [x] T1.10 `PcieEndpointTLM`：**显式排除**（`[[deprecated]]` + 23 ABI 冻结面 ⇒ 零修改）⇒ 在准入表与台账中登记「不迁」及理由 ⇒ **已显式登记「不迁」+ 理由**（`docs/implementation/module-param-baseline.md` §1.3）：① 已 `[[deprecated]]`;② 属 **23 ABI 冻结面**（`ADR-DGPU-08` §2.3 / `ADR-088` §D5，该头零修改）;③ 迁 `load_param` 必须改冻结头 ⇒ 与 ABI 冻结直接冲突。⛔ 不因「清单上有它」而强行迁移
 
 ## T2 — P1a：迁移（SimModule 家族 · 10 个类型）
 

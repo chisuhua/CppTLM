@@ -63,6 +63,10 @@ TEST_CASE("D.3: RouterTLM 已迁移到 load_param（不在注册表 + 已准入�
     const auto admitted = cpptlm::admitted_param_types();
     REQUIRE(std::find(admitted.begin(), admitted.end(), "RouterTLM") != admitted.end());
 
-    // 反向：NICTLM 仍未迁移（其 CFG-08 分支保留 ⇒ 不满足准入条件 (c)）
-    CHECK_FALSE(cpptlm::is_param_admitted("NICTLM"));
+    // 反向：NICTLM 现**也已迁移**（change `cpptlm-module-param-migrate-batch2` T1.1 ——
+    // 其 CFG-08 分支与 `load_param("node_id")` 同批落地 ⇒ 满足准入条件 (c)）。
+    // ⚠️ 本断言原为 `CHECK_FALSE(...)`（NICTLM 未迁移的反例）—— 反例随迁移失效，
+    //    改为正向断言：**准入表是全量化的**，不是只有 RouterTLM 一个。
+    CHECK(cpptlm::is_param_admitted("NICTLM"));
+    REQUIRE(std::find(admitted.begin(), admitted.end(), "NICTLM") != admitted.end());
 }

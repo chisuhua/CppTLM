@@ -129,6 +129,13 @@ public:
     uint64_t backing_size() const noexcept { return backing_view_size_; }
     bool has_backing() const noexcept { return backing_view_ != nullptr; }
 
+    // ── 参数观测面（`ADR-X.17` D-6 行为判别要求：两个合法值 ⇒ 可观测指标不同）
+    //    只读 getter，反映**真实存储值**（不重复 setter 的钳位/推导逻辑）。
+    uint64_t size_cap() const noexcept { return size_cap_; }
+    uint64_t read_latency_hit_cycles() const noexcept { return read_latency_hit_cycles_; }
+    uint64_t read_latency_miss_cycles() const noexcept { return read_latency_miss_cycles_; }
+    uint64_t write_latency_cycles() const noexcept { return write_latency_cycles_; }
+
     // ── v0.3 timing-mode API (per design.md §2.1, DGpuBoard::tick 调用) ──
     // cycle advance: 由 DGpuBoard 统一推进 (TInv-3), 模块不可自行 ++cycle
     void advance_cycle() noexcept { ++current_cycle_; }
@@ -198,6 +205,20 @@ public:
         // ④ 态②：无对应语义的键 ⇒ 显式失败（⛔ 不得静默忽略 ⇒ 配置写了就该有效果）
         reject_unsupported_key("type", "memory type is not modeled by MemoryTLM");
         reject_unsupported_key("mem_type", "memory type is not modeled by MemoryTLM");
+
+        // ⑤ **板级直读键** ⇒ `ADR-X.17` D-3 态②「已消费但**不经** `load_param`」：
+        //    消费方是 `DGpuBoard::load_soc_config`（`src/tlm/gpu/dgpu_board_shell.cc`
+        //    的 `set_timing_params(...)` 直读），不是模块自身的 `load_param` 路径。
+        //    ⇒ 必须 `ignore_param` 登记，否则准入之后的未知键检查会误报它们。
+        //    ⛔ 不得改为 `load_param` —— 那会与板级路径形成**双写**（同一键两个真值）。
+        //    台账：`docs/implementation/module-param-baseline.md` 表 A。
+        ignore_param("read_latency_hit_cycles");
+        ignore_param("read_latency_miss_cycles");
+        ignore_param("write_latency_cycles");
+        ignore_param("use_zero_delay_for_test");
+        ignore_param("row_hit_cycles");
+        ignore_param("row_miss_cycles");
+        ignore_param("bandwidth_gbps");
     }
 
     /// 拒绝「本类无对应语义」的键（态② ⇒ 装配期失败，报出键名与原因）

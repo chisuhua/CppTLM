@@ -25,12 +25,32 @@
           "params": {
             "config_size": 4096,
             "num_msix_vectors": 16,
-            "bar_sizes": [4096, 16777216, 8589934592],
+            "bar_sizes": [
+              4096,
+              16777216,
+              8589934592
+            ],
             "bar0_registers": [
-              { "offset": 0,  "name": "GMMU_PT_BASE_LO", "access": "rw" },
-              { "offset": 4,  "name": "GMMU_PT_BASE_HI", "access": "rw" },
-              { "offset": 8,  "name": "GMMU_CTRL",      "access": "rw" },
-              { "offset": 16, "name": "SDMA_STATUS",    "access": "ro" }
+              {
+                "offset": 0,
+                "name": "GMMU_PT_BASE_LO",
+                "access": "rw"
+              },
+              {
+                "offset": 4,
+                "name": "GMMU_PT_BASE_HI",
+                "access": "rw"
+              },
+              {
+                "offset": 8,
+                "name": "GMMU_CTRL",
+                "access": "rw"
+              },
+              {
+                "offset": 16,
+                "name": "SDMA_STATUS",
+                "access": "ro"
+              }
             ]
           }
         },
@@ -47,12 +67,16 @@
         {
           "name": "sdma",
           "type": "SdmaEngineTLM",
-          "params": { "max_inflight": 4 }
+          "params": {
+            "max_inflight": 4
+          }
         },
         {
           "name": "gmmu",
           "type": "GmmuTLM",
-          "params": { "page_size_bytes": 4096 }
+          "params": {
+            "page_size_bytes": 4096
+          }
         },
         {
           "name": "completion",
@@ -61,7 +85,9 @@
         {
           "name": "lwc_hub",
           "type": "LwcBusHub",
-          "params": { "max_ip_ports": 8 }
+          "params": {
+            "max_ip_ports": 8
+          }
         },
         {
           "name": "soc_noc",
@@ -70,8 +96,13 @@
         }
       ],
       "connections": [
-        { "src": "sdma.2", "dst": "pcie_memory.0", "latency": 1 }
+        {
+          "src": "sdma.2",
+          "dst": "pcie_memory.0",
+          "latency": 1
+        }
       ]
     }
-  ]
+  ],
+  "connections": []
 }

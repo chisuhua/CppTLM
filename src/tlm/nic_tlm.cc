@@ -25,16 +25,19 @@ namespace tlm {
     }
 
     void NICTLM::on_config_loaded() {
+        // ── 声明即读取（`ADR-X.17` D-1）────────────────────────────────────
+        // `node_id` **必填**（无默认值）—— 它是 CFG-08 曾经的唯一强制点，
+        // 现由本行的缺省语义接管（`include/core/validate` 的 per-type 分支已退役）。
+        load_param("node_id", node_id_);
+        // `mesh_x` / `mesh_y` 可选（默认取构造期传入值）——
+        // 它们是**网格维度**而非节点坐标，缺失不构成配置错误。
+        load_param_opt("mesh_x", mesh_x_);
+        load_param_opt("mesh_y", mesh_y_);
+
+        // `address_regions` 是**非标量**（对象数组）⇒ `ADR-X.17` D-2 态②
+        // （`load_param` 只承载标量）⇒ 模块内解析 + 显式登记「已消费」。
+        ignore_param("address_regions");
         const auto& cfg = get_config();
-        if (cfg.contains("node_id")) {
-            node_id_ = cfg["node_id"].get<uint32_t>();
-        }
-        if (cfg.contains("mesh_x")) {
-            mesh_x_ = cfg["mesh_x"].get<uint32_t>();
-        }
-        if (cfg.contains("mesh_y")) {
-            mesh_y_ = cfg["mesh_y"].get<uint32_t>();
-        }
         if (cfg.contains("address_regions")) {
             for (const auto& reg : cfg["address_regions"]) {
                 add_address_region(reg["base"].get<uint64_t>(), reg["size"].get<uint64_t>(),

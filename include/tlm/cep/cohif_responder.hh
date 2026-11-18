@@ -105,19 +105,17 @@ public:
     // ── 配置 / 观测 ─────────────────────────────────────────────────
     void configure(const Config& cfg) { cfg_ = cfg; }
 
-    /// 装配期配置(**只**认下列 4 键;⛔ 其余键忽略)
+    /// 装配期配置（**只**认下列 4 键;⛔ 其余键由准入后的未知键检查拒绝）
     ///   `emit_completions` · `completion_latency_cycles` · `emit_snoops` · `snoop_interval_cycles`
+    ///
+    /// 决策源：`ADR-X.17` D-1「读取即声明」—— 旧实现用 `config_.contains(...) && is_xxx()`
+    /// 手工分支（**类型不符即静默忽略** ⇒ 配置写了等于没写）。改为 `load_param_opt`
+    /// 后：类型不符 ⇒ **装配期失败**（⛔ 不静默回退），且键自动登记为已消费。
     void on_config_loaded() override {
-        if (config_.contains("emit_completions") && config_["emit_completions"].is_boolean())
-            cfg_.emit_completions = config_["emit_completions"].get<bool>();
-        if (config_.contains("completion_latency_cycles") &&
-            config_["completion_latency_cycles"].is_number_unsigned())
-            cfg_.completion_latency_cycles = config_["completion_latency_cycles"].get<unsigned>();
-        if (config_.contains("emit_snoops") && config_["emit_snoops"].is_boolean())
-            cfg_.emit_snoops = config_["emit_snoops"].get<bool>();
-        if (config_.contains("snoop_interval_cycles") &&
-            config_["snoop_interval_cycles"].is_number_unsigned())
-            cfg_.snoop_interval_cycles = config_["snoop_interval_cycles"].get<unsigned>();
+        load_param_opt("emit_completions", cfg_.emit_completions);
+        load_param_opt("completion_latency_cycles", cfg_.completion_latency_cycles);
+        load_param_opt("emit_snoops", cfg_.emit_snoops);
+        load_param_opt("snoop_interval_cycles", cfg_.snoop_interval_cycles);
     }
     const Config& config() const { return cfg_; }
     const Counters& counters() const { return ctr_; }

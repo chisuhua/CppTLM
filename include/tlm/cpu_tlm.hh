@@ -67,15 +67,20 @@ public:
                 "this CPU model has no multi-mode traffic generation");
         }
         // 态①：真消费（两成员被运行期读取）
-        // ⚠️ `start_addr` **不能**用 `load_param` —— `VarResolver` 会把 `"0x1000"`
-        //    转成 JSON 浮点 `4096.0`（`include/utils/var_resolver.hh` 的 `strtod` 分支）
-        //    ⇒ 同一键有两种 JSON 类型 ⇒ `load_param` 的单一类型检查会拒掉合法的 `0x` 写法。
+        // ⚠️ `start_addr` / `request_interval` **不能**用 `load_param` —— `VarResolver`
+        //    会把数字形态字符串（`"0x1000"` → `4096.0` / `"10"` → `10.0`）转成 JSON
+        //    **浮点**（`include/utils/var_resolver.hh` 的 `strtod` 分支）
+        //    ⇒ 同一键有两种 JSON 类型 ⇒ `load_param` 的单一类型检查会拒掉合法写法。
         //    与 `TrafficGenTLM.read_addr_key` 同因同策（共享 `parse_addr_json`）。
         ignore_param("start_addr");
         if (config_.contains("start_addr")) {
             start_addr_ = cpptlm::parse_addr_json(name, "start_addr", config_["start_addr"]);
         }
-        load_param_opt("request_interval", request_interval_);
+        ignore_param("request_interval");
+        if (config_.contains("request_interval")) {
+            request_interval_ =
+                cpptlm::parse_addr_json(name, "request_interval", config_["request_interval"]);
+        }
         // ⚠️ `cur_addr_` 是构造期由 `start_addr_` 初始化的 ⇒ 配置改了 start_addr 后
         //    必须同步游标，否则首个请求仍从旧的默认地址发（= 配置被静默忽略）。
         cur_addr_ = start_addr_;

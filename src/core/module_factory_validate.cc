@@ -267,28 +267,15 @@ bool ModuleFactory::validateConfig(const json& config) {
         //   per change `cpptlm-module-param-effect-landing` 的 B2 批次;
         //   判据载体 = `test/test_lint007_ports_validation.cc`（已改为断言装配失败）。
 
-        // RouterTLM 的必填/类型检查已由模块内 load_param 承接（ADR-X.17 D-3 的 CFG-08 退役）
-        // ⇒ 本处只保留 NICTLM 的 per-type 硬编码分支（它是 node_id 必填的唯一强制点，
-        //   须在 NICTLM 自己的迁移 change 内与 load_param("node_id") 一并删除）。
-        const json* params_src = nullptr;
-        if (mod.contains("params"))
-            params_src = &mod["params"];
-        else if (type == "NICTLM" && mod.contains("node_id"))
-            params_src = &mod;
-
-        if (params_src) {
-            const auto& params = *params_src;
-            if (type == "NICTLM") {
-                if (!params.contains("node_id") || !params["node_id"].is_number_integer()) {
-                    DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing/invalid 'node_id'\n",
-                            name.c_str());
-                    return false;
-                }
-            }
-        } else if (type == "NICTLM") {
-            DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing required params\n", name.c_str());
-            return false;
-        }
+        // RouterTLM 与 NICTLM 的必填/类型检查均已由模块内 `load_param` 承接
+        // （`ADR-X.17` D-3 的 **CFG-08 退役**）。
+        //
+        // ⚠️ **NICTLM 的 per-type 硬编码分支已于 change
+        //    `cpptlm-module-param-migrate-batch2` 的 T1.1 删除** —— 它是 `node_id`
+        //    必填的**唯一强制点**，删除前提是同批落地的 `load_param("node_id", node_id_)`
+        //    （无默认值 ⇒ 缺失即抛 `ParamValidationError`）⇒ **必填真值唯一**
+        //    （`ADR-X.17` F-4 的「双强制点」问题闭环）。
+        //    ⛔ 不得在此重新添加 per-type 分支 —— 那是第二份必填真源。
     }
 
     DPRINTF(MODULE, "[CONFIG] Schema validation passed\n");

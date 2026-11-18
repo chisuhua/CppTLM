@@ -187,6 +187,13 @@ namespace tlm::gpu {
             vram_size_bytes_ = sz;
         }
 
+        // ── 参数观测面（`ADR-X.17` D-6 的行为判别要求：两个合法值 ⇒ 可观测指标不同）
+        //    三个 getter 都是**只读**，供判据测试断言「配置确实进了成员」。
+        //    ⛔ 不与 setter 合并（setter 有钳位语义，getter 反映真实存储值）。
+        uint32_t max_inflight() const { return max_inflight_; }
+        uint32_t translate_latency() const { return translate_latency_; }
+        uint64_t vram_size_bytes() const { return vram_size_bytes_; }
+
         // 测试断言 helper：5 个端口是否都接收到非空 adapter
         bool all_ports_have_adapter() const;
 
