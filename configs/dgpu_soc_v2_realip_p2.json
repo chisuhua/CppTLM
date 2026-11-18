@@ -23,11 +23,7 @@
         {
           "type": "PcieControllerIP",
           "name": "pcie_ctrl",
-          "params": {
-            "bar_bases": [0, 1048576, 2097152, 0, 0, 0],
-            "bar_sizes": [4096, 16777216, 8589934592, 0, 0, 0],
-            "link_speed_gts": 8
-          }
+          "params": {}
         },
         {
           "type": "PcieEndpointIP",

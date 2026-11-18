@@ -129,18 +129,13 @@
     {
       "name": "coherent_xbar",
       "type": "CoherentXBarTLM",
-      "params": {
-        "snoop_filter": true,
-        "domain_protocol": "MOESI_AMD"
-      }
+      "params": {}
     },
     {
       "name": "hbm_memory",
       "type": "MemoryTLM",
       "params": {
-        "capacity_gb": 16,
-        "read_latency": 100,
-        "write_latency": 120
+        "capacity_gb": 16
       }
     }
   ],

@@ -36,8 +36,10 @@
 #include "tlm/crossbar_tlm.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/gpu/pcie_memory_device.hh"
+#include "tlm/gpu/streaming_multiprocessor_tlm.hh"
 #include "tlm/lwc/lwc_bus_hub.hh"
 #include "tlm/memory_tlm.hh"
+#include "tlm/pcie/pcie_controller_ip.hh"
 #include "tlm/traffic_gen_tlm.hh"
 #include "tlm/vram_controller_tlm.hh"
 
@@ -835,4 +837,47 @@ TEST_CASE("AC-04: PcieMemoryDevice.capacity_gb ⇒ 显式失败（容量由注�
     // 正向对照：无该键 ⇒ 不失败（防误伤）
     tlm::gpu::PcieMemoryDevice dev2("mem1", &eq);
     CHECK_NOTHROW(dev2.set_config(json::object()));
+}
+
+TEST_CASE("AC-04: PcieControllerIP 三键 ⇒ 显式失败（facade 从 EP 动态读 BAR，无本地消费面）",
+          "[param][effect][pcie-controller]") {
+    EventQueue eq;
+    // ⚠️ 该 facade **有意**「Reads sizes dynamically from PcieEndpointIP (no static snapshot)」
+    //    ⇒ 自己不存 BAR 表 ⇒ 三个键在本类零消费面 ⇒ 态②（显式拒绝）。
+    //    ⚠️ **同名不同语义**：`pcie_ep` 节点的 `bar_sizes` 是 **PcieEndpointIP** 的键
+    //    （**有**消费面：写 config space BAR 寄存器）⇒ 不得按键名一刀切。
+    tlm::pcie::PcieControllerIP c("pc", &eq);
+    expect_param_error([&] { c.set_config(json{{"bar_bases", json::array()}}); }, "bar_bases");
+    expect_param_error([&] { c.set_config(json{{"bar_sizes", json::array()}}); }, "bar_sizes");
+    expect_param_error([&] { c.set_config(json{{"link_speed_gts", 8}}); }, "link_speed_gts");
+
+    // 正向对照：空配置 ⇒ 不失败（防误伤）
+    tlm::pcie::PcieControllerIP c2("pc2", &eq);
+    CHECK_NOTHROW(c2.set_config(json::object()));
+}
+
+TEST_CASE("AC-04: StreamingMultiprocessorTLM 两键 ⇒ 显式失败（无对应概念）",
+          "[param][effect][sm]") {
+    EventQueue eq;
+    tlm::StreamingMultiprocessorTLM sm("sm", &eq);
+    expect_param_error([&] { sm.set_config(json{{"execution_latency", 2}}); }, "execution_latency");
+    expect_param_error([&] { sm.set_config(json{{"warp_size", 64}}); }, "warp_size");
+
+    tlm::StreamingMultiprocessorTLM sm2("sm2", &eq);
+    CHECK_NOTHROW(sm2.set_config(json::object()));
+}
+
+TEST_CASE("AC-04: CoherentXBarTLM 两键 ⇒ 显式失败（无协议状态机 / 无 snoop filter）",
+          "[param][effect][coherent-xbar]") {
+    EventQueue eq;
+    cpptlm::tlm::CoherentXBarTLM x("x", &eq);
+    expect_param_error([&] { x.set_config(json{{"domain_protocol", "MOESI_AMD"}}); },
+                       "domain_protocol");
+    expect_param_error([&] { x.set_config(json{{"snoop_filter", true}}); }, "snoop_filter");
+
+    // ⚠️ 继承自 CrossbarTLM 的 `ports` 拒绝路径**不得**因覆写而失效
+    expect_param_error([&] { x.set_config(json{{"ports", 8}}); }, "ports");
+
+    cpptlm::tlm::CoherentXBarTLM x2("x2", &eq);
+    CHECK_NOTHROW(x2.set_config(json::object()));
 }

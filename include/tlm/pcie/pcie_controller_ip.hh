@@ -18,57 +18,87 @@
 
 namespace tlm::pcie {
 
-// B1 PR-B Phase Gate: composition refactor (per Oracle bg_9c11d0e8).
-// Was: `class PcieControllerIP : public PcieEndpointIP` (inheritance — wrong: controller
-//      "is-an" endpoint is a category error per controller IP wire spec; controllers
-//      own endpoints, never derive).
-// Now: `class PcieControllerIP : public SimModule` + non-owning PcieEndpointIP* ep_
-//      + attach_endpoint() setter. Consumer (`DGpuBoard::set_pcie_controller_ip`)
-//      owns lifecycle; controller IP is a facade over the EP.
-//
-// Non-owning rationale: PcieEndpointIP lifecycle is managed by DGpuBoard /
-// ModuleFactory (composite ownership pattern). The controller IP is a stateless
-// facade; resetting/replacing EP does not require recreating controller.
-class PcieControllerIP : public ::SimModule {
-public:
-    PcieControllerIP(const std::string& name, EventQueue* eq);
+    // B1 PR-B Phase Gate: composition refactor (per Oracle bg_9c11d0e8).
+    // Was: `class PcieControllerIP : public PcieEndpointIP` (inheritance — wrong: controller
+    //      "is-an" endpoint is a category error per controller IP wire spec; controllers
+    //      own endpoints, never derive).
+    // Now: `class PcieControllerIP : public SimModule` + non-owning PcieEndpointIP* ep_
+    //      + attach_endpoint() setter. Consumer (`DGpuBoard::set_pcie_controller_ip`)
+    //      owns lifecycle; controller IP is a facade over the EP.
+    //
+    // Non-owning rationale: PcieEndpointIP lifecycle is managed by DGpuBoard /
+    // ModuleFactory (composite ownership pattern). The controller IP is a stateless
+    // facade; resetting/replacing EP does not require recreating controller.
+    class PcieControllerIP : public ::SimModule {
+    public:
+        /// 配置加载（`ADR-X.17` D-1「读取即声明」）
+        ///
+        /// ⚠️ 三个键在本类**无任何消费面** ⇒ 态②：**显式拒绝**（配置写了即装配失败并报出键名）。
+        ///   · `bar_bases` / `bar_sizes` —— 本 facade **有意**「Reads sizes dynamically from
+        ///     `PcieEndpointIP::bar_sizes_`（no static snapshot）」⇒ 自己不存 BAR 表。
+        ///     ⚠️ **同名不同语义**：板级 `dgpu_board_shell.cc` 读的是 **`pcie_ep` 节点**的
+        ///     `bar_sizes`（`PcieEndpointIP` **有**消费面 —— 写 config space BAR 寄存器）⇒
+        ///     本类的同名键是**零消费的重复配置面** ⇒ 不得据此推断「BAR 配置在 controller
+        ///     上生效」。
+        ///   · `link_speed_gts` —— 全仓零消费面（无链路速率模型）。
+        void on_config_loaded() override {
+            reject_unsupported_param(
+                "bar_bases",
+                "PcieControllerIP is a stateless facade that reads BAR sizes dynamically from "
+                "PcieEndpointIP (no static snapshot); this key has no effect");
+            reject_unsupported_param(
+                "bar_sizes",
+                "PcieControllerIP is a stateless facade that reads BAR sizes dynamically from "
+                "PcieEndpointIP (no static snapshot); this key has no effect");
+            reject_unsupported_param(
+                "link_speed_gts",
+                "there is no link-rate model in this class; this key has no effect");
+        }
 
-    // B1 MUST-DO #1 (per session handoff §6 B1a): attach endpoint.
-    // Without this, `ep_` stays nullptr and `bar_size(1)` collapses to 0,
-    // making stimulus 2 (Bar1FbFastPath) always return Unknown — dormant-gate
-    // regression trap (per Metis hidden req #4 / Oracle bg_9c11d0e8).
-    void attach_endpoint(PcieEndpointIP* ep) noexcept { ep_ = ep; }
+        PcieControllerIP(const std::string& name, EventQueue* eq);
 
-    // Accessor for diagnostics / unit tests.
-    [[nodiscard]] PcieEndpointIP* endpoint() const noexcept { return ep_; }
+        // B1 MUST-DO #1 (per session handoff §6 B1a): attach endpoint.
+        // Without this, `ep_` stays nullptr and `bar_size(1)` collapses to 0,
+        // making stimulus 2 (Bar1FbFastPath) always return Unknown — dormant-gate
+        // regression trap (per Metis hidden req #4 / Oracle bg_9c11d0e8).
+        void attach_endpoint(PcieEndpointIP* ep) noexcept {
+            ep_ = ep;
+        }
 
-    // Per Oracle bg_c60653e0 §2.1: BAR0 0x100 GMMU/Display sub-dispatch REMOVED.
-    // Real PCIe EP controllers do NOT sub-split a BAR by offset — controller
-    // forwards the whole BAR0 window to internal bus; decode happens on
-    // target side (GMMU block, display block each claim their own range).
-    // Sub-dispatch belongs in target-side / GpuInternalFabric (P3), not here.
-    // Per Oracle on-card: BAR3 is upper dword of BAR2 64-bit pair — never matches.
-    enum class BarTarget : uint8_t {
-        Unknown          = 0,
-        Bar0Mmio         = 1,   // BAR0 — whole 4KB aperture (target-side decodes)
-        Bar1FbFastPath   = 2,   // BAR1 offset < bar_size(1) (framebuffer window)
-        Bar2VramAperture = 3,   // BAR2 (any offset) → PcieMemoryDevice
+        // Accessor for diagnostics / unit tests.
+        [[nodiscard]] PcieEndpointIP* endpoint() const noexcept {
+            return ep_;
+        }
+
+        // Per Oracle bg_c60653e0 §2.1: BAR0 0x100 GMMU/Display sub-dispatch REMOVED.
+        // Real PCIe EP controllers do NOT sub-split a BAR by offset — controller
+        // forwards the whole BAR0 window to internal bus; decode happens on
+        // target side (GMMU block, display block each claim their own range).
+        // Sub-dispatch belongs in target-side / GpuInternalFabric (P3), not here.
+        // Per Oracle on-card: BAR3 is upper dword of BAR2 64-bit pair — never matches.
+        enum class BarTarget : uint8_t {
+            Unknown = 0,
+            Bar0Mmio = 1,         // BAR0 — whole 4KB aperture (target-side decodes)
+            Bar1FbFastPath = 2,   // BAR1 offset < bar_size(1) (framebuffer window)
+            Bar2VramAperture = 3, // BAR2 (any offset) → PcieMemoryDevice
+        };
+
+        // Match (bar, offset) → BarTarget + sub_offset (within-BAR offset)
+        // Reads sizes dynamically from PcieEndpointIP::bar_sizes_ (no static snapshot).
+        // ResizableBar changes are reflected on next call (per Metis hidden req #2).
+        bool match_bar(uint8_t bar, uint64_t offset, BarTarget& out_target,
+                       uint64_t& out_sub_offset) noexcept;
+
+        std::string get_module_type() const override {
+            return "PcieControllerIP";
+        }
+
+    private:
+        // B1 PR-B Phase Gate: composition (non-owning).
+        // Set via attach_endpoint(). nullptr-safe: match_bar() falls back to 0 if not set,
+        // which makes Bar1FbFastPath impossible — explicit guard against silent misuse.
+        PcieEndpointIP* ep_ = nullptr;
     };
-
-    // Match (bar, offset) → BarTarget + sub_offset (within-BAR offset)
-    // Reads sizes dynamically from PcieEndpointIP::bar_sizes_ (no static snapshot).
-    // ResizableBar changes are reflected on next call (per Metis hidden req #2).
-    bool match_bar(uint8_t bar, uint64_t offset,
-                 BarTarget& out_target, uint64_t& out_sub_offset) noexcept;
-
-    std::string get_module_type() const override { return "PcieControllerIP"; }
-
-private:
-    // B1 PR-B Phase Gate: composition (non-owning).
-    // Set via attach_endpoint(). nullptr-safe: match_bar() falls back to 0 if not set,
-    // which makes Bar1FbFastPath impossible — explicit guard against silent misuse.
-    PcieEndpointIP* ep_ = nullptr;
-};
 
 } // namespace tlm::pcie
 

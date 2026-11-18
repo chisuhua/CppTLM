@@ -43,7 +43,8 @@ def build_apu_phase7b(num_cpu=2):
     modules.append({"name": "xbar", "type": "CrossbarTLM"})
     modules.append({
         "name": "hbm_memory", "type": "MemoryTLM",
-        "params": {"capacity_gb": 16, "read_latency": 100, "write_latency": 120},
+        # ⚠️ 只留被消费的 `capacity_gb`（`read_latency` / `write_latency` 已态②）
+        "params": {"capacity_gb": 16},
     })
 
     connections = []
@@ -95,11 +96,13 @@ def build_apu_full(num_cpu=2, num_cu=4, gpu_mesh_size=2):
     ]
     modules += [
         {"name": f"l1_cpu_{i}", "type": "CacheTLM",
-         "params": {"size": "32KB", "associativity": 4, "protocol": "MOESI_AMD"}}
+         # ⚠️ `protocol` 已于 2026-11-18 落**态②**（`ADR-X.17` D-2 —— 协议语义不入 CacheTLM，
+#     per ADR-CEP-15 的解冻边界）⇒ 生成器停止产出
+         "params": {"size": "32KB", "associativity": 4}}
         for i in range(num_cpu)
     ]
     modules.append({"name": "l2_cpu_shared", "type": "CacheTLM",
-                    "params": {"size": "256KB", "associativity": 8, "protocol": "MOESI_AMD"}})
+                    "params": {"size": "256KB", "associativity": 8}})
     modules += [
         {"name": f"compute_unit_{i}", "type": "ComputeUnitTLM",
          "params": {"kernel_id": i, "workgroup_size": 64}}
@@ -113,11 +116,15 @@ def build_apu_full(num_cpu=2, num_cu=4, gpu_mesh_size=2):
             })
     modules.append({"name": "tcc", "type": "TCCTLM",
                     "params": {"size": "1MB", "coalescing": True}})
-    modules.append({"name": "coherent_xbar", "type": "CoherentXBarTLM",
-                    "params": {"snoop_filter": True, "domain_protocol": "MOESI_AMD"}})
+    # ⚠️ `snoop_filter` / `domain_protocol` 已于 2026-11-18 落**态②**（`ADR-X.17` D-2）——
+    #    `CoherentXBarTLM` 无 filter 概念（snoop 无条件广播）、无协议状态机 ⇒ 写了即装配失败
+    #    ⇒ 生成器**停止产出**这两个键（per change cpptlm-module-param-effect-landing A2a）。
+    modules.append({"name": "coherent_xbar", "type": "CoherentXBarTLM", "params": {}})
+    # ⚠️ `read_latency` / `write_latency` / `type` 已于 2026-11-18 落**态②**（`ADR-X.17` D-2）——
+    #    `MemoryTLM` 只消费 `capacity_gb`（其余键零消费面）⇒ 生成器**停止产出**它们
+    #    （per change cpptlm-module-param-effect-landing 的 B1 批次）。
     modules.append({"name": "hbm_memory", "type": "MemoryTLM",
-                    "params": {"capacity_gb": 16, "read_latency": 100,
-                               "write_latency": 120, "type": "HBM2"}})
+                    "params": {"capacity_gb": 16}})
 
     connections = []
     for i in range(num_cpu):

@@ -59,6 +59,9 @@
 | B-12 | `n_ports` / `ports` | `ArbiterTLM` | 端口数由**模板参数 `N_PORTS`** 决定（编译期）⇒ 两键均无消费面 | **已显式拒绝**（2026-11-18 态②）;`configs/library_memory_demo.json` 的 `n_ports` 已清理 |
 | B-13 | `port_count` / `ports` | `CrossbarTLM` | 端口数是编译期常量 `NUM_PORTS`;`ports` 此前只被 LINT007 读去做**告警** | **已显式拒绝**（2026-11-18 态②）;LINT007 告警段已**退役**（否则是死代码）;`configs/apu_soc_v1.json` / `example_emitter_soc.json` 的键已清理 |
 | B-14 | `capacity_gb` | `PcieMemoryDevice` | 该类**零配置读取面**（无 `on_config_loaded` / `set_config`）;容量由**注入的 backing** 决定（`backing_view_size_`,per ADR-DGPU-05 单一 VRAM 真源 + D-AXI v1.4 B8）⇒ 配置值**不可能有效果** | **已显式拒绝**（2026-11-18 态②）;`dgpu_soc_minimal_v1.json` / `dgpu_soc_timing_v1.json` 的该键已清理 |
+| B-15 | `bar_bases` / `bar_sizes` / `link_speed_gts` | `PcieControllerIP` | 该类是 **stateless facade**，**有意**从 `PcieEndpointIP::bar_sizes_` 动态读（no static snapshot）⇒ 三键零消费面;⚠️ **同名不同语义**：板级 `dgpu_board_shell.cc:76-79` 读的是 **`pcie_ep` 节点**的 `bar_sizes`（`PcieEndpointIP` **有**消费面） | **已显式拒绝**（2026-11-18 态②）;3 份配置的 `pcie_ctrl.params` 已清空 |
+| B-16 | `execution_latency` / `warp_size` | `StreamingMultiprocessorTLM` | `execution_latency` 全仓零概念（延迟由 12 子模块决定）;`warp_size` **不是**该类成员（只在 `GpuTopologyParams` 这一另一结构里） | **已显式拒绝**（2026-11-18 态②）;配置侧零命中（唯一配置模板已随类型归档删除） |
+| B-17 | `domain_protocol` / `snoop_filter` | `CoherentXBarTLM` | 无协议状态机（`snoop_broadcast()` 无条件 write-through）;无 filter 概念（ArchForge `snoop_filter.md` 标「🟡 规划中」） | **已显式拒绝**（2026-11-18 态②）;`apu_soc_full.json` + 生成器已清 |
 
 ### B-6 的处置说明（为什么是显式登记而不是修复）
 

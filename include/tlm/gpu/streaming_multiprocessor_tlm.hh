@@ -59,6 +59,23 @@ namespace tlm {
     class StreamingMultiprocessorTLM : public ChStreamModuleBase,
                                        public cpptlm::gpu::IComputeDevice {
     public:
+        /// 配置加载（`ADR-X.17` D-1「读取即声明」）
+        ///
+        /// ⚠️ 两个键在本类**无对应概念** ⇒ 态②：**显式拒绝**（配置写了即装配失败并报出键名）。
+        ///   · `execution_latency` —— 全仓零概念（SM 的执行延迟由 12 个子模块各自的模型决定）。
+        ///   · `warp_size` —— SM 容器**无**该成员（`warp_size` 只存在于 `GpuTopologyParams`
+        ///     这一**另一个结构**里，见 `gpu_cluster_shared_interface.hh:20`）。
+        void on_config_loaded() override {
+            reject_unsupported_param(
+                "execution_latency",
+                "the SM execution latency is modelled by its 12 sub-modules; this class has "
+                "no such concept, so this key has no effect");
+            reject_unsupported_param(
+                "warp_size",
+                "this SM container has no warp-size member (the field of that name lives in "
+                "GpuTopologyParams, a different structure); this key has no effect");
+        }
+
         explicit StreamingMultiprocessorTLM(const std::string& name, EventQueue* eq);
         ~StreamingMultiprocessorTLM() override = default;
 

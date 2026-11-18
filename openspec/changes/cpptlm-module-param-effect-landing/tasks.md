@@ -36,16 +36,16 @@
 - [ ] T2.1 `CPUTLM` 三键（`pattern` / `request_interval` / `start_addr`）裁决 + 落地（**95 个配置实例** ⇒ 影响面最大）
 - [x] T2.2 `CrossbarTLM.port_count` / `ports` 裁决 + 落地（**态②**：端口数是编译期常量 `NUM_PORTS` ⇒ 显式拒绝;LINT007 告警段已退役;`apu_soc_v1.json` / `example_emitter_soc.json` 已清理）
 - [ ] T2.3 ~~`ComputeUnitTLM`（`kernel_id` / `workgroup_size`）裁决 + 落地~~ ⇒ **转 R-5**（该类型在 `include/` + `src/` **零类定义**;`configs/apu_soc_full.json:3` 自述「not yet registered」⇒ 处置是「实现类型 / 从配置移除」，**不是**「让键有效果」）
-- [ ] T2.4 `GPUTLM` 四键（`kernel_id` / `workgroup_size` / `start_addr` / `end_addr`）裁决 + 落地
-- [ ] T2.5 `PcieControllerIP` 三键（`bar_bases` / `bar_sizes` / `link_speed_gts`）裁决 + 落地;⚠️ `bar_sizes` 另有**板级消费方**（`dgpu_board_shell.cc:78-79`）⇒ 按 `ADR-X.17` D-3 三态条款分开处置
+- [x] T2.4 `GPUTLM` 四键（`kernel_id` / `workgroup_size` / `start_addr` / `end_addr`）裁决 + 落地 ⇒ **失效闭环**：该类型已于 2026-11-18 随**设计类型归档**移除（`.hh` 物理删除 + 3 份配置删除，per change `cpptlm-config-type-registration-align` T7.1 · 台账 Entry #481）⇒ 本 task 的对象已不存在，无需裁决。**该 4 键不再出现在盘点中**。
+- [x] T2.5 `PcieControllerIP` 三键（`bar_bases` / `bar_sizes` / `link_speed_gts`）裁决 + 落地;⚠️ `bar_sizes` 另有**板级消费方**（`dgpu_board_shell.cc:78-79`）⇒ 按 `ADR-X.17` D-3 三态条款分开处置 ⇒ **态② 已落地**（2026-11-18）：该类是 **stateless facade**，**有意**「Reads sizes dynamically from `PcieEndpointIP::bar_sizes_`（no static snapshot）」⇒ 三个键零消费面 ⇒ `on_config_loaded` 显式拒绝;⚠️ **同名不同语义**：板级读的是 **`pcie_ep` 节点**的 `bar_sizes`（`PcieEndpointIP` 有消费面）⇒ 不得按键名一刀切（per §3 Q-7 的裁决 ①）;3 份配置（`dgpu_soc_minimal_v1` / `dgpu_soc_timing_v1` / `dgpu_soc_v2_realip_p2`）的 `pcie_ctrl.params` 已清空。
 - [x] T2.6 `PcieMemoryDevice.capacity_gb` 裁决 + 落地（**态②**：容量由**注入的 backing** 决定（`backing_view_size_`;ADR-DGPU-05 单一 VRAM 真源 + D-AXI v1.4 B8）⇒ 该类**零配置读取面** ⇒ 配置值不可能有效果 ⇒ 显式拒绝;`dgpu_soc_minimal_v1.json` / `dgpu_soc_timing_v1.json` 已清理;判别测试 = `test_param_effect_landing.cc` 的「AC-04: PcieMemoryDevice.capacity_gb」）
-- [ ] T2.7 `StreamingMultiprocessorTLM` 两键（`execution_latency` / `warp_size`）裁决 + 落地
+- [x] T2.7 `StreamingMultiprocessorTLM` 两键（`execution_latency` / `warp_size`）裁决 + 落地 ⇒ **态② 已落地**（2026-11-18）：`execution_latency` 全仓零概念（延迟由 12 子模块模型决定）;`warp_size` **不是**该类的成员（只存在于 `GpuTopologyParams` 这一**另一个结构**）⇒ `on_config_loaded` 显式拒绝;配置侧零命中（其唯一配置 `templates/gpu_soc/gpu_soc_gb203_v1.json` 已于类型归档时删除）。
 - [x] T2.8 `ArbiterTLM.n_ports` / `ports` 裁决 + 落地（**态②**：端口数由模板参数 `N_PORTS` 决定;`library_memory_demo.json` 已清理;`memory_cluster.cc` 不再生成 `ports`）
-- [ ] T2.9 `MemoryClusterTLM` 两键（`capacity_gb` / `channels`）裁决 + 落地（⚠️ 与 `MemoryCluster` 是两个类）
-- [ ] T2.10 `SharedMemoryTLM` 两键（`banks` / `size_kb`）裁决 + 落地
+- [x] T2.9 `MemoryClusterTLM` 两键（`capacity_gb` / `channels`）裁决 + 落地（⚠️ 与 `MemoryCluster` 是两个类） ⇒ **失效闭环**：同 T2.4（类型已归档，T7.3）
+- [x] T2.10 `SharedMemoryTLM` 两键（`banks` / `size_kb`）裁决 + 落地 ⇒ **失效闭环**：同 T2.4（类型已归档，T7.2）
 - [x] T2.11 `SocInternalNoc` 两键（`data_flow` / `vc_counts_enabled`）裁决 + 落地（**态②**：该类已 archived,NoC 语义由 `GpuInternalFabric` 承担;`dgpu_soc_minimal_v1.json` 已清理）
 - [ ] T2.12 ~~`TCCTLM` 两键（`coalescing` / `size`）裁决 + 落地~~ ⇒ **转 R-5**（同 T2.3：仓内零类定义）
-- [~] T2.13 `CoherentXBarTLM` 三键（`domain_protocol` / `snoop_filter` / `ports`）—— **`ports` 已落地**（态②，继承 `CrossbarTLM` 的拒绝）;`domain_protocol` / `snoop_filter` **待后续批次**
+- [x] T2.13 `CoherentXBarTLM` 三键（`domain_protocol` / `snoop_filter` / `ports`）—— **`ports` 已落地**（态②，继承 `CrossbarTLM` 的拒绝）;`domain_protocol` / `snoop_filter` **待后续批次** ⇒ **三键全部落地**（2026-11-18）：`ports`（继承 `CrossbarTLM`）+ `domain_protocol`（无协议状态机 —— `snoop_broadcast()` 是无条件 write-through 透传，per ADR-CEP-15 的协议语义边界冻结）+ `snoop_filter`（无 filter 概念;ArchForge 契约 `snoop_filter.md` 标「🟡 规划中」）⇒ 全部态② 显式拒绝。⚠️ 覆写**必须调基类**（否则继承的 `ports` 拒绝失效）—— 已加判别测试。`configs/apu_soc_full.json` + 生成器 `generate_apu_soc.py` 的 2 键已清。
 - [ ] T2.14 `GpuMeshNoC` 两键（`dim` / `hops_latency`）裁决 + 落地（该类只有 `set_dim` / `set_hops_latency` setter，无生产调用方传配置值）
 - [x] T2.15 `VramControllerTLM.operating_frequency_hz` 裁决 + 落地（**态②**：频率是编译期锚点 `kOperatingFrequencyHz`，与 timing 契约双向绑定;运行时可配需「GB/s 带宽输入」这个尚不存在的面 ⇒ 独立 feature;`dgpu_soc_minimal_v1.json` 已清理）
 - [x] T2.16 `MemoryCluster.memory_type` 裁决 + 落地（**态②**：无内存类型模型 ⇒ 显式拒绝 + 成员已删;2 个测试数据里的该键已清理）
