@@ -25856,3 +25856,88 @@ D-1 表删三行（C1 `design.md`）· R-5 `tasks.md` T1.3/T1.4 补生成器漂�
 **下一步**：进入**阶段 B（R-5 `cpptlm-config-type-registration-align`）** —— B0 重测基线改 AC-07 → B1 基线 → B2 T1 对齐 4 处 → B3 T2 预扫描机制 → B4 T3 判据 → B5 收口。
 
 **关联**：册子 `obj-cep-platform-remaining.md` §1.5.2 · Entry #484（阶段 A 实施）· `.rddf/reviews/cpptlm-module-param-effect-landing-verify.md`
+
+### Entry #486 — 2026-11-18 [builder](**R-5 阶段 B 实施完成** —— 类型面 fail-fast + 零豁免差集闸 + 4 处漂移闭合;待独立验收)
+
+**范围**：change `cpptlm-config-type-registration-align`（R-5）的 T0~T4 + T5.4，按册子 `obj-cep-platform-remaining.md` §1.5.2 的阶段 B 序列执行。
+
+### 基线实测（T0.1~T0.3）—— 立项期数字已过期，全部重测
+
+| 指标 | 立项期 | **2026-11-18 实测** | 说明 |
+|---|---:|---:|---|
+| 运行时注册表类型数 | 67 | **63** | T7.1~T7.3 的**设计类型归档 −4**（`GPUTLM`/`SharedMemoryTLM`/`MemoryClusterTLM`/`GpuSocTLM`） |
+| 未注册类型 | 4 | **4** | `ArbiterTLM` · `ComputeUnitTLM` · `TCCTLM` · `TmuDispatchProcessorTLM` |
+| 受影响配置 | 3 | **3** | ⚠️ `TCCTLM` 实测 **1 处**（tasks 原写「×2」是笔误，已订正） |
+| `cpptlm_tests` | 883336/2393 | **883279/2379** | 立项 → T7 归档（−26 case）→ C1 阶段 A（+36/+8） |
+
+**三个前提证据**（T0.1 要求）：
+- `DPRINTF` 仅 Debug 生效 —— `include/core/sim_core.hh:8-16`（`#ifdef DEBUG_PRINT`）+ `CMakeLists.txt:70-72`（仅 Debug 加 `-DDEBUG_PRINT`）
+- 3 份配置 `cpptlm_sim --cycles 10` **全部 exit 0**，且 `grep 'unknown|not registered|ComputeUnit|TCCTLM'` **零命中** ⇒ 静默丢弃的实证
+- **无第 5 个未注册类型** —— 64 份配置 / 48 个 type 全扫（含 `templates/` 与嵌套 `modules[]`）
+
+### T1 对齐层 —— 4 处漂移全闭合，**差集归零**
+
+| # | 处置 | 关键点 |
+|:--:|---|---|
+| 1 | `dgpu_board_v1.json` 删 `tmu` 条目 + 3 条悬空连接 | ⚠️ **R-1**：`CP→TMU→SQ` 派发链**今日本就是断的**（该模块从未被实例化）⇒ 删条目只是让配置**承认**事实，⛔ 不推断为能力退化 |
+| 2 | `ArbiterTLM` → `ArbiterTLM4` | 生成器按 `channels` emit `ArbiterTLM2`/`ArbiterTLM4`，其它值 **`ValueError`**（⛔ 不静默兜底）;`n_ports` **停发**（已由 C1 态② 拒绝 ⇒ R-2 无需新增登记） |
+| 3 | `ComputeUnitTLM`×4 移除 | + 生成器;⛔「实现」路径排除（无规格来源 + SM 已取代） |
+| 4 | `TCCTLM`×**1** 移除 | + 生成器;含 `coherence_domains.members` 的 `tcc` 与 description 的「not yet registered」表述 |
+
+**连带修掉生成器漂移**（AC-05 的可达前提）：原 emit `mem_type`（`MemoryTLM` 已态②）与 `memory_type`（`MemoryCluster` 无消费面）⇒ 生成物**装配必失败**。
+
+**测试订正（未删 case）**：`test_apu_soc_from_config.cc` 的 phase7f case 从「aspirational」→ **「可装配」**，标签 `[aspirational]`→`[loadable]`，断言 `11/10` + **反向断言** `ComputeUnitTLM==0`/`TCCTLM==0` + 新增 `REQUIRE(instantiateAll)`。
+
+### T2 机制层 —— Step 0.3 预扫描
+
+- 位置：插件加载块之后 / 实例创建段之前。两个约束由**位置**保证：插件类型已在表内（不误伤）· 失败时**零实例残留**（不产生半构造对象）
+- 未注册 ⇒ `return false` + `stderr` 报「类型名 + 实例名 + 来源文件」，**一次报全部**违规
+- ⛔ 不走 `DPRINTF`（Release 无输出 = 没报）· ⛔ 无 `--strict` 开关（嵌套路径丢弃返回值，开关救不了）· ⛔ 零类型名硬编码
+- 只扫**顶层** `modules[]` —— 嵌套传播归 C2 的 T0.2
+
+### T3 判据层 —— 零豁免差集闸
+
+- `scripts/test/config_type_registration_check.sh`：判据集合**只从 `--list-types --json` 派生**（⛔ 无源码解析、⛔ 无类型硬编码 —— 否则会漏掉「有类但无基类」的 `TmuDispatchProcessorTLM` 与「模板基类」的 `ArbiterTLM`）
+- 扫描 64 份配置（含嵌套 + `extends`/`include`/`${var}` 展开）；**零豁免**；⚠️ 展开失败记 `ERROR` 且**不判通过**（漏扫比误扫危险）
+- **反向自测双向**：fixture 注入假 type ⇒ 识别 + 已注册类型不误报;真实配置变异（注入 `ZzInjectedBogusType`）⇒ rc=1 并报「type + 文件」，恢复 ⇒ rc=0
+- `test/test_config_type_registration.cc`（4 case / 146 assertions）：AC-01/02/03/04
+- ctest 注册 2 条，闸用 `--bin $<TARGET_FILE:cpptlm_sim>` ⇒ 读的**一定是本次构建**的注册表
+
+### ⛔ AC-08（嵌套失败传播）**交付为空** —— blocked-by
+
+`proposal.md` 新增「遗留与 blocked-by」表：**AC-08 blocked-by C2 的 T0.2**（其 tasks 该条未勾）。
+实测确认：`simulate_instantiate` 调 `internal_factory->instantiateAll(config)` ⇒ 嵌套路径**也会**被 Step 0.3 拦下并打 stderr，但**返回值被丢弃**（`:97-99` 只 DPRINTF 一行然后继续递归）⇒ **检测到了但不传播**。
+⇒ ⛔ 不得把本 change 读成「嵌套路径已受保护」。
+
+### T6.6 残留清点（含一处必要修正）
+
+| 检查项 | 结果 |
+|---|---|
+| TODO / FIXME / 临时诊断日志 | **零命中** |
+| 被 skip 的测试 | **零命中** |
+| **`DPRINTF` 作为报错路径** | ⚠️ **发现 1 处并已修**：实例创建循环的 `else` 分支原为 `DPRINTF(...)` + **静默继续** ⇒ Step 0.3 之后该分支**不可达**，但「万一被绕过就静默丢模块」与本次核心约定直接冲突 ⇒ 改为 `stderr` + `return false`（防御性，零行为变化） |
+| `simulate_instantiate` 的 DPRINTF | **保留** —— 属 C2 范围（返回值传播是 AC-08 的 blocked-by 项），⛔ 不在本 change 修 |
+
+### 验证
+
+| 面 | 实测 |
+|---|---|
+| `cpptlm_tests` | **883422 / 2383**（基线 883279/2379 ⇒ +143/+4） |
+| `pytest` | **232 passed** |
+| `ctest` | **184 / 184**（+2：`config_type_registration_check` · `config_type_registration`） |
+| 标签 | `[param]` 61 · `[config][schema]` 14 · `[cep]` 540 · `[e2e]` 150 全绿 |
+| 五闸 | `agents_md_lint` · `docs_sync_check --strict` · `cep_docs_sync_check` · `cep_doc_ref_check` · `rddf_stage_gate` 全绿 |
+| 差集 | 64 份配置 / 44 个 type / **未注册 0** |
+
+### 顺带修门禁 P-2a 的判据缺陷（实测暴露）
+
+原判据「下一阶段**实现面文件**出现在变更集」⇒ 误伤 `src/core/module_factory.cc` —— 它同时是 C2（删默认值注入段）与 R-5（加预扫描段）的落点，design D-4 明写「不同位置 ⇒ 可并行」。
+⇒ 改为可判定语义：**下一阶段 tasks 的 `[x]` 数**（= 有没有声称做完下一阶段的活）。变异验证：勾一个 C2 的 task ⇒ 立即红;恢复 ⇒ 绿。
+
+### 剩余（T6.2 / T6.3 / T6.5）
+
+- **T6.5 独立验收**（切 verifier;AC-01~AC-09 + G-1/G-2）← **下一步**
+- **T6.3** spec delta 合并 + 新 main spec 的 Purpose 手写
+- **T6.2** KPI 回填（7 处，`3/3 → 2/3`）· **T6.4** 冻结面裁定（非 `cep-` 前缀 ⇒ 默认不入，同 C1 的裁定）
+
+**关联**：册子 §1.5.2 · Entry #480（立项）· #485（C1 归档）· `docs/implementation/module-param-baseline.md` §2bis

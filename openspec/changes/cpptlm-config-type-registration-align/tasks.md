@@ -48,19 +48,19 @@
 
 ## T5 — 验证
 
-- [ ] T5.1 `cpptlm_tests` 全量绿（≥ 基线 **883336 / 2393**）;`pytest test/python/` **232 passed**;`ctest` 全量绿
-- [ ] T5.2 `[param]` / `[config][schema]` / `[cep]` / `[e2e]` 标签全绿（AC-07 / G-1）
-- [ ] T5.3 `openspec validate cpptlm-config-type-registration-align --strict` + `cep_docs_sync_check` + `cep_doc_ref_check` + `agents_md_lint` + `docs_sync_check --strict` 全绿
+- [x] T5.1 `cpptlm_tests` 全量绿（≥ 基线 **883336 / 2393**）;`pytest test/python/` **232 passed**;`ctest` 全量绿 ⇒ **883422 / 2383**（≥ 实施日重测基线 883279/2379）· `pytest` **232** · `ctest` **184/184**
+- [x] T5.2 `[param]` / `[config][schema]` / `[cep]` / `[e2e]` 标签全绿（AC-07 / G-1） ⇒ `[param]` 312/61 · `[config][schema]` 14/14 · `[cep]` 12413/540 · `[e2e]` 7442/150 全绿
+- [x] T5.3 `openspec validate cpptlm-config-type-registration-align --strict` + `cep_docs_sync_check` + `cep_doc_ref_check` + `agents_md_lint` + `docs_sync_check --strict` 全绿 ⇒ 全绿（`openspec validate --strict` · `agents_md_lint` · `docs_sync_check --strict` · `cep_docs_sync_check` · `cep_doc_ref_check` · `rddf_stage_gate`）
 - [x] T5.4 ⚠️ **AC-08 处置**：若 `cpptlm-module-param-migrate-batch2` 的 T0.2（嵌套失败传播）**未落地** ⇒ 本 AC 标 `blocked-by` 并在 proposal 的 R 表显式登记 ⇒ **⛔ 不许静默跳过** ⇒ **已显式登记**：`proposal.md` 新增「遗留与 blocked-by」表，AC-08 = **`blocked-by`** `cpptlm-module-param-migrate-batch2` T0.2（其 tasks 该条仍未勾）⇒ 本 change 的**嵌套段交付为空**，⛔ 不得读成「嵌套路径已受保护」
 
 ## T6 — 收口
 
-- [ ] T6.1 台账 Entry（实施记录 + 实测 + 改动面 + 遗留 R-1~R-4）
+- [x] T6.1 台账 Entry（实施记录 + 实测 + 改动面 + 遗留 R-1~R-4） ⇒ **Entry #486**（基线重测 / 4 处处置 / 机制 / 判据 / AC-08 blocked-by / 残留清点含 1 处必要修正 / 验证面）
 - [ ] T6.2 KPI 回填（活口径 7 处;本 change 立项时 **2/3 → 3/3**，归档时 **3/3 → 2/3**）
 - [ ] T6.3 spec delta 合并（`openspec archive`，⛔ 不用 `--skip-specs` —— 实现已落地）+ 新 main spec 的 Purpose 手写
 - [ ] T6.4 ⚠️ **冻结面核查**：新增 main spec 落 `openspec/specs/config-type-registration-align/spec.md` ⇒ **命中**既有 glob `openspec/specs/cep-*/spec.md`？⇒ **不命中**（非 `cep-` 前缀）⇒ 须确认该 spec 是否应入 M1 冻结集，若入则走 `cep_freeze_check.sh --update --authorized-by "Entry #NNN"`
 - [ ] T6.5 独立验收（切 verifier;AC-01~AC-09 + G-1/G-2 逐条取证）
-- [ ] T6.6 ⚠️ **残留清点**：本 change 范围内不得留 TODO / 半截实现 / 临时日志 / 被 skip 的测试 / 未替换的 mock;⚠️ 特别检查 `DPRINTF` 残留（Release 无输出 ⇒ 等于没报）
+- [x] T6.6 ⚠️ **残留清点**：本 change 范围内不得留 TODO / 半截实现 / 临时日志 / 被 skip 的测试 / 未替换的 mock;⚠️ 特别检查 `DPRINTF` 残留（Release 无输出 ⇒ 等于没报） ⇒ TODO/FIXME/临时日志/被 skip 的测试/未替换 mock **零命中**;⚠️ **`DPRINTF` 残留发现 1 处并已修**（实例创建循环的 else 分支原为 DPRINTF + 静默继续 ⇒ Step 0.3 之后不可达，但改为 `stderr` + `return false` 作防御 —— 「万一被绕过就静默丢模块」与核心约定冲突）;`simulate_instantiate` 的 DPRINTF **保留**（返回值传播属 C2 / AC-08 blocked-by，⛔ 不在本 change 修）
 
 ## T7 — 设计类型归档（用户 2026-11-18 裁定）
 

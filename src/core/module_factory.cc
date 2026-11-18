@@ -437,7 +437,16 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 object_instances[name] =
                     std::unique_ptr<SimObject>(object_it->second(name, event_queue));
             } else {
-                DPRINTF(MODULE, "[ERROR] Unknown or unregistered type: %s\n", type.c_str());
+                // ⚠️ **防御性**（change cpptlm-config-type-registration-align T6.6 残留清点）：
+                //    Step 0.3 的预扫描已保证「顶层未注册类型」到不了这里 ⇒ 本行**不可达**。
+                //    但**不得**退回原来的 `DPRINTF(...)` + 静默继续 —— `DPRINTF` 仅 Debug
+                //    生效（`include/core/sim_core.hh:8-16`）⇒ Release 下等于没报，
+                //    正是本 change 要消灭的「静默丢模块」形态。
+                //    ⇒ 万一将来预扫描被绕过（新增入口 / 提前 return 的改动），此处必须**响亮地失败**。
+                std::cerr << "[ModuleFactory] ERROR: unregistered type \"" << type
+                          << "\" (instance \"" << name << "\") reached instance creation"
+                          << " — Step 0.3 pre-scan should have rejected it. Refusing.\n";
+                return false;
             }
         }
 
