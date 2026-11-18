@@ -192,6 +192,29 @@ python3 scripts/test/param_effect_inventory.py --check    # 与本表统计对�
 | `CacheTLM` | `size` · `line_size` · `associativity` · `assoc` · `level` | ① | ✅ **已解冻并落地** —— 该类原为 CEP 冻结面（`ADR-CEP-15` IC1），经**用户裁定解冻**（`ADR-CEP-15` Status Update 2026-11-18 决策 2 改判 + 台账 Entry #478）⇒ 容量模型：`size` ⇒ 槽数 = `size / line_size`，组数 = `max(1, 槽数 / associativity)`，组满 ⇒ 组内 LRU 逐出;`level` ⇒ 命中延迟（1 → 5 / 2 → 10 / ≥3 → 20 cycle）;`associativity` 与 `assoc` 是**同义别名**（同现且值不同 ⇒ 失败） | AC-03 cache（size / associativity / line_size / level） |
 | `CacheTLM` | `protocol` | ② | `reject_unsupported_key("protocol")` ⇒ 装配期失败含键名 —— **协议语义不入本类**（`ADR-CEP-15` 决策 5 + IC3）⇒ 判据载体 = `test/test_cep_module_factory_seam.cc` 的 IC1 **行为**判据 | AC-04 cache |
 
+### D-1.6.5 B2 批次（第一批：6 个类型 / 9 个键）—— 全部 **态②**（显式拒绝）
+
+| 类型 | 键 | 态 | 为什么是态②（不可实现） | 落地位置 |
+|---|:--:|:--:|---|---|
+| `CrossbarTLM` | `port_count` · `ports` | ② | 端口数是**编译期常量** `NUM_PORTS`（`crossbar_tlm.hh` 的 `static constexpr`） | `CrossbarTLM::on_config_loaded` |
+| `CoherentXBarTLM` | `ports` | ② | 继承 `CrossbarTLM`（同上游端口数常量） | 同上（继承） |
+| `ArbiterTLM` | `n_ports` · `ports` | ② | 端口数由**模板参数** `N_PORTS` 决定（注册名 `ArbiterTLM2/4` 即其规格） | `ArbiterTLM::on_config_loaded` |
+| `SocInternalNoc` | `data_flow` · `vc_counts_enabled` | ② | 该类已随 `cpptlm-dgpu-soc-internal-noc-e1` **archived**;NoC 语义由 `GpuInternalFabric` 承担 | `SocInternalNoc::on_config_loaded` |
+| `VramControllerTLM` | `operating_frequency_hz` | ② | 频率是**编译期锚点** `kOperatingFrequencyHz`（与 `dgpu-realip-pin-contract` D.4 + `timing-mode.md §2.4` 双向绑定）;运行时可配需「GB/s 带宽输入」这个**尚不存在**的配置面来闭合语义链 ⇒ 实现它 = 新功能（D3 seam 正式落地） | `VramControllerTLM::on_config_loaded` |
+| `MemoryCluster` | `memory_type` | ② | 本仓**无内存类型模型**（无 DRAM/HBM 行为差异） | `MemoryCluster::set_config` + 删除 `memory_type_` 成员 |
+
+**连带处置**（⛔ 不只是加拒绝逻辑）：
+
+| # | 处置 | 理由 |
+|:--:|---|---|
+| 1 | **LINT007 告警段退役**（`src/core/module_factory_validate.cc` 的 `kMaxPortsByType` + 越界告警） | 它只对 `{CrossbarTLM, CoherentXBarTLM, ArbiterTLM, ArbiterTLM2, ArbiterTLM4}` 的 `params.ports` 做**告警**;所有这 5 个类型现在都**拒绝**该键 ⇒ 告警路径永不触发 ⇒ 留着就是死代码 |
+| 2 | **`test/test_lint007_ports_validation.cc` 判据改判**（5 个 case：`ports` 越界 / 不足 / 恰好相等 ⇒ 全部断言**装配失败**;无 `ports` ⇒ 成功） | ⛔ 不得删测试换绿灯;`params.ports == max_ports` 也**必须失败**（态② 是「键存在即无效」，与值无关） |
+| 3 | **`src/tlm/cluster/memory_cluster.cc` 不再生成 `ports`** | 它给 `ArbiterTLM2/4` 子模块生成 `{"ports": channel_count_}` ⇒ 现在会让**内部装配失败**（实测：内部实例数 0） |
+| 4 | **存量配置清理 5 处**：`dgpu_soc_minimal_v1.json`（`data_flow` + `vc_counts_enabled` + `operating_frequency_hz`）· `apu_soc_v1.json`（`ports`）· `example_emitter_soc.json`（`port_count`）· `library_memory_demo.json`（`n_ports` + `memory_type`） | 态② 会让「写了该键」的配置**装不上** ⇒ 必须同步清理 |
+| 5 | **2 个测试数据里的 `memory_type` 清理**（`test_p2_residual.cc` / `test_simmodule_infra_clusters.cc`） | 它们传的是「从未透传成功」的键 ⇒ 现在会抛 |
+
+> **剩余 B2（未做）**：`CoherentXBarTLM.domain_protocol` / `snoop_filter` · `GPUTLM`(4) · `PcieControllerIP`(3) · `PcieMemoryDevice`(1) · `StreamingMultiprocessorTLM`(2) · `MemoryClusterTLM`(2) · `SharedMemoryTLM`(2) · `GpuMeshNoC`(2) · `CPUTLM`(3)。
+
 > **解冻连带面**（`ADR-CEP-15` Status Update 2026-11-18 §⑤ 逐条）：守门闸（0 diff 断言 → `protocol` 拒绝的**行为**判据）· `ADR-CEP-07` 决策 6 表行指针 · `openspec/specs/cep-core-contracts/spec.md` 的 IC1 场景改判（**场景名沿用历史命名** —— openspec 的 `MODIFIED` 按场景名精确匹配且 archive 拒绝丢弃既有场景名）· `docs/architecture/cep/fabric-transport.md` 冻结面声明限定 · `docs/architecture/cep/parity-baseline.md` 的容量口径限定 · 对拍常量抽取器 `scripts/cep/parity/cpptlm_params.py` 形态同步（旧字面量 `hit ? 5 : 50` → 成员初值）。
 
 **机制新增**：`load_param_opt(key, target[, lo, hi])`（`include/core/sim_object.hh`）——

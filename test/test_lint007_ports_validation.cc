@@ -1,22 +1,30 @@
 /**
  * @file test_lint007_ports_validation.cc
- * @brief LINT007 rule tests — `params.ports` vs class max_ports validation
+ * @brief `params.ports` 的处置判据 —— **态② 显式拒绝**（原 LINT007「告警不失败」已退役）
  *
- * 验证 docs/superpowers/plans/2026-06-20-future-work-roadmap.md F7:
- * - `params.ports` 与类实际 `n_ports` 不一致时 emit warning (LINT007)
- * - warning 是非阻塞的 (validateConfig 仍返回 true, instantiateAll 仍成功)
- * - 已知 forward-looking 场景: configs/apu_soc_v1.json 中 CoherentXBarTLM
- *   指定 ports=8 (Phase 7.C 8-port upgrade 前的占位), 应允许 + 警告
+ * ## 背景（2026-11-18 改判，per change `cpptlm-module-param-effect-landing` 的 B2 批次）
+ *
+ * 原判据（docs/superpowers/plans/2026-06-20-future-work-roadmap.md F7 / LINT007）：
+ * `params.ports` 与类实际端口数不一致时 **emit warning 但非阻塞**（`validateConfig` 返 true、
+ * 装配成功）。
+ *
+ * ⛔ **该判据已过时**：「告警但不失败」正是 `ADR-X.17` 要消灭的形态（静默容忍 ⇒ 用户以为
+ * 配置生效、实际被忽略）。且端口数是**编译期常量**（`CrossbarTLM::NUM_PORTS` /
+ * `ArbiterTLM<N_PORTS>`）⇒ 该键**不可能产生任何效果** ⇒ 按 `ADR-X.17` D-2 落**态②**：
+ * **配置写了即装配失败并报出键名**。
+ *
+ * ⇒ 本文件由「告警不阻塞」改为「**显式拒绝**」判据；`module_factory_validate.cc` 的
+ * LINT007 告警段已随之退役（否则是死代码）。
  *
  * ## Test Cases
- * 1. LINT007a: `params.ports > max_ports` → validateConfig=true + instantiateAll 成功
- * 2. LINT007b: `params.ports < max_ports` → validateConfig=true + instantiateAll 成功
- * 3. LINT007c: `params.ports == max_ports` → validateConfig=true, 无误报
- * 4. LINT007d: 无 `params.ports` → validateConfig=true (无端口配置的类)
- * 5. LINT007e: configs/apu_soc_v1.json 加载成功 (forward-looking 场景真实 fixture)
+ * 1. LINT007a: `params.ports > max_ports` ⇒ **装配失败**
+ * 2. LINT007b: `params.ports < max_ports` ⇒ **装配失败**
+ * 3. LINT007c: `params.ports == max_ports` ⇒ **仍失败**（**键存在即无效**，与值无关）
+ * 4. LINT007d: 无 `params.ports` ⇒ 装配成功（正向对照,防误伤）
+ * 5. LINT007e: `configs/apu_soc_v1.json` 加载成功（该配置的 `ports` 已按态②清理）
  *
- * @see src/core/module_factory_validate.cc:validateConfig()
- * @see docs/superpowers/plans/2026-06-20-future-work-roadmap.md F7
+ * @see docs/adr/ADR-X.17-module-param-read-declares.md（D-2 态② / D-6 行为判别义务）
+ * @see openspec/changes/cpptlm-module-param-effect-landing/design.md（D-1.6 逐键裁决）
  */
 
 #include "chstream_register.hh"
@@ -38,12 +46,13 @@ using json = nlohmann::json;
 #define CPPTLM_SOURCE_DIR "."
 #endif
 
-TEST_CASE("LINT007a: params.ports > max_ports warns but does not fail", "[config-lint][lint007]") {
+TEST_CASE("LINT007a: params.ports > max_ports ⇒ 装配失败（态② 显式拒绝）",
+          "[config-lint][lint007]") {
     EventQueue eq;
     REGISTER_CHSTREAM;
     ModuleFactory factory(&eq);
 
-    // CoherentXBarTLM NUM_PORTS=4, 用户配置 ports=8 (forward-looking Phase 7.C)
+    // CoherentXBarTLM NUM_PORTS=4, 用户配置 ports=8（原 forward-looking 占位）
     json config = R"({
         "modules": [
             {
@@ -55,23 +64,17 @@ TEST_CASE("LINT007a: params.ports > max_ports warns but does not fail", "[config
         "connections": []
     })"_json;
 
-    // 警告但不阻塞: validateConfig 返回 true, instantiateAll 成功
-    bool result = factory.instantiateAll(config);
-    CHECK(result == true);
-    CHECK(factory.getInstance("xbar_forward") != nullptr);
-
-    // 模块实际 num_ports 应为 class max (4), 用户配置 8 被 silently ignored
-    auto* xbar = dynamic_cast<CoherentXBarTLM*>(factory.getInstance("xbar_forward"));
-    REQUIRE(xbar != nullptr);
-    CHECK(xbar->num_ports() == 4); // 实际可用端口 = NUM_PORTS (类硬编码 4)
+    // 态②：键存在 ⇒ 装配失败（⛔ 不再是「告警 + 成功」）
+    CHECK_FALSE(factory.instantiateAll(config));
+    CHECK(factory.getInstance("xbar_forward") == nullptr);
 }
 
-TEST_CASE("LINT007b: params.ports < max_ports warns but does not fail", "[config-lint][lint007]") {
+TEST_CASE("LINT007b: params.ports < max_ports ⇒ 装配失败（态② 显式拒绝）",
+          "[config-lint][lint007]") {
     EventQueue eq;
     REGISTER_CHSTREAM;
     ModuleFactory factory(&eq);
 
-    // 用户配置 ports=2 但类 NUM_PORTS=4 — 模块会使用全 4 端口
     json config = R"({
         "modules": [
             {
@@ -83,20 +86,18 @@ TEST_CASE("LINT007b: params.ports < max_ports warns but does not fail", "[config
         "connections": []
     })"_json;
 
-    bool result = factory.instantiateAll(config);
-    CHECK(result == true);
-    CHECK(factory.getInstance("xbar_under") != nullptr);
-
-    auto* xbar = dynamic_cast<CrossbarTLM*>(factory.getInstance("xbar_under"));
-    REQUIRE(xbar != nullptr);
-    CHECK(xbar->num_ports() == 4); // 模块使用全 4 端口
+    CHECK_FALSE(factory.instantiateAll(config));
+    CHECK(factory.getInstance("xbar_under") == nullptr);
 }
 
-TEST_CASE("LINT007c: params.ports == max_ports passes silently", "[config-lint][lint007]") {
+TEST_CASE("LINT007c: params.ports == max_ports ⇒ 仍失败（键存在即无效，与值无关）",
+          "[config-lint][lint007]") {
     EventQueue eq;
     REGISTER_CHSTREAM;
     ModuleFactory factory(&eq);
 
+    // ⚠️ 值等于类的实际端口数也**不放过** —— 态② 判据是「键存在即失败」，
+    //    否则「配了个恰好等于默认值的无效键」仍会静默通过（正是要消灭的形态）。
     json config = R"({
         "modules": [
             {
@@ -108,17 +109,15 @@ TEST_CASE("LINT007c: params.ports == max_ports passes silently", "[config-lint][
         "connections": []
     })"_json;
 
-    bool result = factory.instantiateAll(config);
-    CHECK(result == true);
-    CHECK(factory.getInstance("xbar_exact") != nullptr);
+    CHECK_FALSE(factory.instantiateAll(config));
+    CHECK(factory.getInstance("xbar_exact") == nullptr);
 }
 
-TEST_CASE("LINT007d: no params.ports passes lint", "[config-lint][lint007]") {
+TEST_CASE("LINT007d: 无 params.ports ⇒ 装配成功（正向对照,防误伤）", "[config-lint][lint007]") {
     EventQueue eq;
     REGISTER_CHSTREAM;
     ModuleFactory factory(&eq);
 
-    // 不指定 ports — 无端口校验
     json config = R"({
         "modules": [
             {
@@ -130,14 +129,11 @@ TEST_CASE("LINT007d: no params.ports passes lint", "[config-lint][lint007]") {
         "connections": []
     })"_json;
 
-    bool result = factory.instantiateAll(config);
-    CHECK(result == true);
+    CHECK(factory.instantiateAll(config));
     CHECK(factory.getInstance("mem_no_ports") != nullptr);
 }
 
-TEST_CASE("LINT007e: apu_soc_v1.json loads with forward-looking ports=8 warning",
-          "[config-lint][lint007]") {
-    // 验证真实 fixture 仍可加载 (warning-only 模式)
+TEST_CASE("LINT007e: apu_soc_v1.json 可装配（其 ports 键已按态②清理）", "[config-lint][lint007]") {
     EventQueue eq;
     REGISTER_CHSTREAM;
     ModuleFactory factory(&eq);
@@ -149,10 +145,8 @@ TEST_CASE("LINT007e: apu_soc_v1.json loads with forward-looking ports=8 warning"
     ifs >> config;
     ifs.close();
 
-    // 即使 CoherentXBarTLM 指定 ports=8 (forward-looking), instantiateAll 仍应成功
-    // (warning-only 模式 — 不会 break existing config)
-    // 注: xbar 是 ApuSoC 嵌套子模块, 非顶层实例; 故只验证顶层 instantiateAll 成功
-    bool result = factory.instantiateAll(config);
-    CHECK(result == true);
+    // ⚠️ 该配置原先的 `CoherentXBarTLM.params.ports = 8` 已按态②删除
+    //    （否则本 case 会因「键存在」而失败）⇒ 这里也顺带守住「配置不回漂」。
+    CHECK(factory.instantiateAll(config));
     CHECK(factory.getInstance("apu_top") != nullptr);
 }

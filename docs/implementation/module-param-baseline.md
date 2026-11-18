@@ -51,10 +51,13 @@
 | B-4 | `max_ip_ports` | `LwcBusHub` | 改动前该类零配置读取面,上限恒为编译期 `kMaxIpPorts = 32` | **已消费**（`lwc_bus_hub.hh` 的 `max_ip_ports_`,作用于 `register_cr_target` / `register_doorbell_target` 上限判断） |
 | B-5 | `size` / `type` / `read_latency` / `write_latency` / `mem_type` | `MemoryTLM` | 改动前只读 `capacity_gb`；`size`/`type` 由 `memory_cluster.cc:28` 生成 | **`size` / `read_latency` / `write_latency` 已消费**（带单位解析 + hit/miss 同值语义数量化）;**`type` / `mem_type` 已停止产出**（态②：`reject_unsupported_key` ⇒ 配置写了即装配失败;`memory_cluster.cc` 不再生成 `type`） |
 | **B-6** | **`routing`** | **`RouterTLM`** | **本 change 的未知键检出机制暴露**：由 `GpuNoC::simulate_instantiate`（`src/tlm/cluster/gpu_noc_cluster.cc:26-31`）为每个内部 router 生成，但 `RouterTLM` 只有 `XYRouting` 一种算法 ⇒ 该键从未被消费（取值恒 `"XY"`） | **本 change 以 `ignore_param("routing")` 显式登记**（`src/tlm/router_tlm.cc` 的 `on_config_loaded`）；把 `routing` 接入算法选择属独立 change |
-| B-7 | `domain_protocol` / `snoop_filter` / `ports` | `CoherentXBarTLM` | 该类无配置读取面;`ports` 仅被 `src/core/module_factory_validate.cc:271` 读去做**越界告警**（值从不生效）⇒ 伪参数候选 | 待修（`cpptlm-module-param-effect-landing` B2 批次） |
-| B-8 | `dim` / `hops_latency` | `GpuMeshNoC` | 该类无配置读取面（只有 `set_dim` / `set_hops_latency` setter,无生产调用方传配置值） | 待修（B2 批次） |
-| B-9 | `operating_frequency_hz` | `VramControllerTLM` | 全仓 `grep -rn operating_frequency_hz include/ src/` = 0 命中（其余 7 键由板级直读消费,见上表 A 的前瞻段） | 待修（B2 批次） |
-| B-10 | `memory_type` | `MemoryCluster` | `src/tlm/cluster/memory_cluster.cc:14` 读入 `memory_type_`,但该成员**从不被读**;本 change 前它唯一的下游是生成 `MemoryTLM.type`（同样零效果）⇒ B1 停止生成后彻底悬空 | 待修（B2 批次） |
+| B-7 | `domain_protocol` / `snoop_filter` / `ports` | `CoherentXBarTLM` | 该类无配置读取面;`ports` 此前只被 `module_factory_validate.cc` 的 LINT007 读去做**越界告警**（值从不生效） | **`ports` 已显式拒绝**（2026-11-18 态②：端口数是编译期常量 `NUM_PORTS`）;`domain_protocol` / `snoop_filter` **仍待修**（B2 批次后续） |
+| B-8 | `dim` / `hops_latency` | `GpuMeshNoC` | 该类无配置读取面（只有 `set_dim` / `set_hops_latency` setter,无生产调用方传配置值） | 待修（B2 批次后续） |
+| B-9 | `operating_frequency_hz` | `VramControllerTLM` | 全仓零命中（其余 7 键由板级直读消费,见上表 A 的前瞻段） | **已显式拒绝**（2026-11-18 态②：频率是编译期锚点 `kOperatingFrequencyHz`，与 timing 契约双向绑定;做成运行时可配需「GB/s 带宽输入」这个尚不存在的面） |
+| B-10 | `memory_type` | `MemoryCluster` | 读入成员但**从不被读**;原唯一下游是生成 `MemoryTLM.type`（同样零效果）⇒ B1 停止生成后彻底悬空 | **已显式拒绝 + 成员已删**（2026-11-18 态②：无内存类型模型） |
+| B-11 | `data_flow` / `vc_counts_enabled` | `SocInternalNoc` | 该类已随 `cpptlm-dgpu-soc-internal-noc-e1` **archived**;实际 NoC 语义由 `GpuInternalFabric` 承担 ⇒ 两键无消费面 | **已显式拒绝**（2026-11-18 态②）;`configs/dgpu_soc_minimal_v1.json` 的 2 键已清理 |
+| B-12 | `n_ports` / `ports` | `ArbiterTLM` | 端口数由**模板参数 `N_PORTS`** 决定（编译期）⇒ 两键均无消费面 | **已显式拒绝**（2026-11-18 态②）;`configs/library_memory_demo.json` 的 `n_ports` 已清理 |
+| B-13 | `port_count` / `ports` | `CrossbarTLM` | 端口数是编译期常量 `NUM_PORTS`;`ports` 此前只被 LINT007 读去做**告警** | **已显式拒绝**（2026-11-18 态②）;LINT007 告警段已**退役**（否则是死代码）;`configs/apu_soc_v1.json` / `example_emitter_soc.json` 的键已清理 |
 
 ### B-6 的处置说明（为什么是显式登记而不是修复）
 

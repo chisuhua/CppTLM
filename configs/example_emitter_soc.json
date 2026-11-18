@@ -99,9 +99,7 @@
     {
       "name": "xbar",
       "type": "CrossbarTLM",
-      "params": {
-        "port_count": 4
-      }
+      "params": {}
     }
   ],
   "connections": [

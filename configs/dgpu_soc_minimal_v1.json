@@ -16,7 +16,6 @@
           "name": "vram_ctrl",
           "type": "VramControllerTLM",
           "params": {
-            "operating_frequency_hz": 1000000000,
             "bandwidth_gbps": 32
           }
         },
@@ -71,10 +70,7 @@
         {
           "name": "soc_noc",
           "type": "SocInternalNoc",
-          "params": {
-            "vc_counts_enabled": true,
-            "data_flow": true
-          }
+          "params": {}
         }
       ],
       "connections": [

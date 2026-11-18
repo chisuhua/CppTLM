@@ -22,9 +22,6 @@ public:
 private:
     int channel_count_ = 2;
     std::string channel_size_ = "1GB";
-    /// ⚠️ 读入但**不生效**（无任何读取点）—— 台账 `docs/implementation/module-param-baseline.md`
-    /// B-10 已登记，修复归 `cpptlm-module-param-effect-landing` 的 B2 批次
-    std::string memory_type_ = "HBM";
 };
 
 }  // namespace cpptlm::tlm

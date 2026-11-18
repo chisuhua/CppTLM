@@ -28,11 +28,17 @@
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "core/param_errors.hh"
+#include "tlm/arbiter_tlm.hh"
 #include "tlm/cache_tlm.hh"
+#include "tlm/cluster/memory_cluster.hh"
+#include "tlm/cluster/soc_internal_noc.hh"
+#include "tlm/coherent_xbar_tlm.hh"
+#include "tlm/crossbar_tlm.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/lwc/lwc_bus_hub.hh"
 #include "tlm/memory_tlm.hh"
 #include "tlm/traffic_gen_tlm.hh"
+#include "tlm/vram_controller_tlm.hh"
 
 using json = nlohmann::json;
 
@@ -551,36 +557,36 @@ TEST_CASE("AC-03: 配置里的 size 经 ModuleFactory 生效（容量随之改�
 // ============================================================================
 namespace {
 
-/// 向 cache 注入一次访问（写 / 读）并 tick;返回响应
-bundles::CacheRespBundle drive_cache(CacheTLM& cache, uint64_t tid, uint64_t addr, bool is_write,
-                                     uint64_t data = 0) {
-    bundles::CacheReqBundle req;
-    req.transaction_id.write(tid);
-    req.address.write(addr);
-    req.is_write.write(is_write ? 1 : 0);
-    req.data.write(data);
-    req.size.write(8);
-    cache.req_in().consume();
-    std::memcpy(&cache.req_in().data(), &req, sizeof(req));
-    cache.req_in().set_valid(true);
-    cache.tick();
-    auto resp = cache.resp_out().data();
-    cache.resp_out().clear_valid();
-    return resp;
-}
+    /// 向 cache 注入一次访问（写 / 读）并 tick;返回响应
+    bundles::CacheRespBundle drive_cache(CacheTLM& cache, uint64_t tid, uint64_t addr,
+                                         bool is_write, uint64_t data = 0) {
+        bundles::CacheReqBundle req;
+        req.transaction_id.write(tid);
+        req.address.write(addr);
+        req.is_write.write(is_write ? 1 : 0);
+        req.data.write(data);
+        req.size.write(8);
+        cache.req_in().consume();
+        std::memcpy(&cache.req_in().data(), &req, sizeof(req));
+        cache.req_in().set_valid(true);
+        cache.tick();
+        auto resp = cache.resp_out().data();
+        cache.resp_out().clear_valid();
+        return resp;
+    }
 
-/// 命中 / 未命中计数（`stats` 内建面）
-std::pair<uint64_t, uint64_t> hit_miss(CacheTLM& cache) {
-    auto* hits = static_cast<tlm_stats::Scalar*>(cache.stats().findStat("hits"));
-    auto* misses = static_cast<tlm_stats::Scalar*>(cache.stats().findStat("misses"));
-    return {hits ? hits->value() : 0, misses ? misses->value() : 0};
-}
+    /// 命中 / 未命中计数（`stats` 内建面）
+    std::pair<uint64_t, uint64_t> hit_miss(CacheTLM& cache) {
+        auto* hits = static_cast<tlm_stats::Scalar*>(cache.stats().findStat("hits"));
+        auto* misses = static_cast<tlm_stats::Scalar*>(cache.stats().findStat("misses"));
+        return {hits ? hits->value() : 0, misses ? misses->value() : 0};
+    }
 
-/// 延迟分布的最小值（命中延迟是分布里的最小样本 —— 未命中固定 50）
-uint64_t min_latency(CacheTLM& cache) {
-    auto* lat = static_cast<tlm_stats::Distribution*>(cache.stats().findStat("latency"));
-    return lat ? lat->min() : 0;
-}
+    /// 延迟分布的最小值（命中延迟是分布里的最小样本 —— 未命中固定 50）
+    uint64_t min_latency(CacheTLM& cache) {
+        auto* lat = static_cast<tlm_stats::Distribution*>(cache.stats().findStat("latency"));
+        return lat ? lat->min() : 0;
+    }
 
 } // namespace
 
@@ -665,8 +671,8 @@ TEST_CASE("AC-03: CacheTLM 的 level 生效（命中延迟随层级变）", "[pa
     // level 未指定 ⇒ 命中延迟 5（沿用原值,零回归）
     CacheTLM d("d", &eq);
     d.set_config(json::object());
-    drive_cache(d, 1, 0x1000, true, 0xAA);       // 未命中 ⇒ 50
-    drive_cache(d, 2, 0x1000, false);            // 命中   ⇒ 5
+    drive_cache(d, 1, 0x1000, true, 0xAA); // 未命中 ⇒ 50
+    drive_cache(d, 2, 0x1000, false);      // 命中   ⇒ 5
     CHECK(min_latency(d) == 5u);
 
     CacheTLM l1("l1", &eq);
@@ -729,8 +735,8 @@ TEST_CASE("AC-04: CacheTLM 的几何键缺 size ⇒ 显式失败（不得静默�
     }
     SECTION("line_size 非 2 的幂") {
         CacheTLM c("c6", &eq);
-        expect_param_error(
-            [&] { c.set_config(json{{"size", "1KB"}, {"line_size", 48}}); }, "line_size");
+        expect_param_error([&] { c.set_config(json{{"size", "1KB"}, {"line_size", 48}}); },
+                           "line_size");
     }
     SECTION("size 非法文本") {
         CacheTLM c("c7", &eq);
@@ -740,4 +746,78 @@ TEST_CASE("AC-04: CacheTLM 的几何键缺 size ⇒ 显式失败（不得静默�
         CacheTLM c("c8", &eq);
         CHECK_NOTHROW(c.set_config(json::object()));
     }
+}
+
+// ============================================================================
+// AC-04 —— B2 批次（零读取面家族）：态② 显式拒绝的逐键判据
+//
+// 这些键的共性是「**该类不可能产生该语义**」：
+//   · 端口数是**编译期常量**（`CrossbarTLM::NUM_PORTS` / `ArbiterTLM<N_PORTS>`）
+//   · `SocInternalNoc` 已 archived（NoC 语义由 `GpuInternalFabric` 承担）
+//   · `MemoryCluster` / `VramControllerTLM` 无对应模型（内存类型 / 运行期频率）
+// ⇒ 按 ADR-X.17 D-2 落**态②**：配置写了即装配失败并报出键名（⛔ 不静默丢弃）。
+// ============================================================================
+TEST_CASE("AC-04: 端口数类键 ⇒ 显式失败（端口数是编译期常量）", "[param][effect][port-count]") {
+    EventQueue eq;
+
+    SECTION("CrossbarTLM.port_count") {
+        CrossbarTLM c("c1", &eq);
+        expect_param_error([&] { c.set_config(json{{"port_count", 4}}); }, "port_count");
+    }
+    SECTION("CrossbarTLM.ports") {
+        CrossbarTLM c("c2", &eq);
+        expect_param_error([&] { c.set_config(json{{"ports", 4}}); }, "ports");
+    }
+    SECTION("CoherentXBarTLM.ports（继承同行为）") {
+        cpptlm::tlm::CoherentXBarTLM c("c3", &eq);
+        expect_param_error([&] { c.set_config(json{{"ports", 8}}); }, "ports");
+    }
+    SECTION("ArbiterTLM4.n_ports") {
+        ArbiterTLM<4> a("a1", &eq);
+        expect_param_error([&] { a.set_config(json{{"n_ports", 4}}); }, "n_ports");
+    }
+    SECTION("ArbiterTLM4.ports（同族：端口数同样是编译期常量）") {
+        ArbiterTLM<4> a("a2", &eq);
+        expect_param_error([&] { a.set_config(json{{"ports", 4}}); }, "ports");
+    }
+    SECTION("空配置 ⇒ 不失败（正向对照）") {
+        CrossbarTLM c("c4", &eq);
+        CHECK_NOTHROW(c.set_config(json::object()));
+    }
+}
+
+TEST_CASE("AC-04: SocInternalNoc 的两个键 ⇒ 显式失败（该类已 archived）", "[param][effect][noc]") {
+    EventQueue eq;
+    SECTION("data_flow") {
+        tlm::cluster::SocInternalNoc n("n1", &eq);
+        expect_param_error([&] { n.set_config(json{{"data_flow", true}}); }, "data_flow");
+    }
+    SECTION("vc_counts_enabled") {
+        tlm::cluster::SocInternalNoc n("n2", &eq);
+        expect_param_error([&] { n.set_config(json{{"vc_counts_enabled", true}}); },
+                           "vc_counts_enabled");
+    }
+}
+
+TEST_CASE("AC-04: MemoryCluster.memory_type ⇒ 显式失败（无内存类型模型）",
+          "[param][effect][memory]") {
+    EventQueue eq;
+    cpptlm::tlm::MemoryCluster mc("mc", &eq);
+    expect_param_error([&] { mc.set_config(json{{"memory_type", "DDR4"}}); }, "memory_type");
+
+    // 正向对照：只给被消费的键 ⇒ 不失败
+    cpptlm::tlm::MemoryCluster mc2("mc2", &eq);
+    CHECK_NOTHROW(mc2.set_config(json{{"channel_count", 4}, {"channel_size", "2GB"}}));
+}
+
+TEST_CASE("AC-04: VramControllerTLM.operating_frequency_hz ⇒ 显式失败（编译期锚点）",
+          "[param][effect][vram]") {
+    EventQueue eq;
+    VramControllerTLM v("v", &eq);
+    expect_param_error([&] { v.set_config(json{{"operating_frequency_hz", 1000000000}}); },
+                       "operating_frequency_hz");
+
+    // 正向对照：板级 timing 键（由 `dgpu_board_shell.cc` 直读消费）不应被拒
+    VramControllerTLM v2("v2", &eq);
+    CHECK_NOTHROW(v2.set_config(json{{"bandwidth_gbps", 32}}));
 }

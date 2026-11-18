@@ -5,8 +5,7 @@
       "type": "MemoryCluster",
       "params": {
         "channel_count": 4,
-        "channel_size": "2GB",
-        "memory_type": "DDR4"
+        "channel_size": "2GB"
       }
     },
     {
@@ -40,9 +39,7 @@
     {
       "name": "mem_arbiter",
       "type": "ArbiterTLM",
-      "params": {
-        "n_ports": 4
-      }
+      "params": {}
     }
   ],
   "connections": [],

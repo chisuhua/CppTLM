@@ -10,7 +10,7 @@
     },
     "modules": [
       { "name": "xbar", "type": "CoherentXBarTLM",
-        "params": { "ports": 8 } }
+        "params": {} }
     ],
     "connections": []
   }],

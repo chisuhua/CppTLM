@@ -150,6 +150,18 @@ public:
         if (cfg.contains("vram_size_bytes") && cfg["vram_size_bytes"].is_number()) {
             set_size_bytes(cfg["vram_size_bytes"].get<uint64_t>());
         }
+        // ⚠️ `operating_frequency_hz` ⇒ **态② 显式拒绝**（`ADR-X.17` D-2）:
+        //    本类的操作频率是**编译期锚点** `kOperatingFrequencyHz`（1 GHz,与
+        //    `dgpu-realip-pin-contract` D.4 + `timing-mode.md §2.4` 双向绑定）;
+        //    把它做成运行时可配需要「GB/s 带宽输入」这个**尚不存在**的配置面来闭合语义链
+        //    （`bandwidth_gbps_` 的语义是 bytes/cycle,不是 GB/s）⇒ 实现它 = 新功能
+        //    （D3 seam 的正式落地）,不是「让现有键有确定效果」。
+        //    ⇒ 现在**显式拒绝**（写了即装配失败并报出键名）,⛔ 不静默丢弃。
+        reject_unsupported_param(
+            "operating_frequency_hz",
+            "the operating frequency is a compile-time anchor (1 GHz) bound to the timing "
+            "contract; making it runtime-configurable needs a GB/s bandwidth input that does "
+            "not exist yet, so this key cannot take effect");
         MemoryTLM::on_config_loaded();
     }
 

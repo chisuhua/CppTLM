@@ -92,6 +92,22 @@ public:
 
     unsigned num_ports() const override { return N_PORTS; }
 
+    /// 配置加载（`ADR-X.17` D-1「读取即声明」）
+    ///
+    /// ⚠️ 端口数由**模板参数 `N_PORTS`** 决定（**编译期**常量;注册名 `ArbiterTLM2/4`
+    ///    即其规格）⇒ 配置键 `n_ports` **不可能产生任何效果** ⇒ 态②：**显式拒绝**
+    ///    （配置写了即装配失败并报出键名）⛔ 不静默忽略。
+    void on_config_loaded() override {
+        reject_unsupported_param("n_ports",
+                                 "the port count is fixed by the template parameter N_PORTS "
+                                 "(compile-time); this key has no effect");
+        // 同族键：`ports` 在此类同样无消费面（端口数由 `N_PORTS` 决定）——
+        // 原先它只被 `module_factory_validate.cc` 的 LINT007 读去做**告警**（该段已退役）。
+        reject_unsupported_param("ports",
+                                 "the port count is fixed by the template parameter N_PORTS "
+                                 "(compile-time); this key has no effect");
+    }
+
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
         single_adapter_ = adapter;
     }

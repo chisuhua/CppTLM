@@ -34,21 +34,21 @@
 > **删**的 2 类是 `ComputeUnitTLM` / `TCCTLM` —— **仓内无类定义**（配置引用了不存在的类型 ⇒ 整份配置不可装配）⇒ **不是零效果键**，转 **R-5**（独立 change）;**增**的 4 类是盘点漏检（`CoherentXBarTLM` / `GpuMeshNoC` / `VramControllerTLM` / `MemoryCluster`）⇒ 已补入 T2.13~T2.16。
 
 - [ ] T2.1 `CPUTLM` 三键（`pattern` / `request_interval` / `start_addr`）裁决 + 落地（**95 个配置实例** ⇒ 影响面最大）
-- [ ] T2.2 `CrossbarTLM.port_count` 裁决 + 落地
+- [x] T2.2 `CrossbarTLM.port_count` / `ports` 裁决 + 落地（**态②**：端口数是编译期常量 `NUM_PORTS` ⇒ 显式拒绝;LINT007 告警段已退役;`apu_soc_v1.json` / `example_emitter_soc.json` 已清理）
 - [ ] T2.3 ~~`ComputeUnitTLM`（`kernel_id` / `workgroup_size`）裁决 + 落地~~ ⇒ **转 R-5**（该类型在 `include/` + `src/` **零类定义**;`configs/apu_soc_full.json:3` 自述「not yet registered」⇒ 处置是「实现类型 / 从配置移除」，**不是**「让键有效果」）
 - [ ] T2.4 `GPUTLM` 四键（`kernel_id` / `workgroup_size` / `start_addr` / `end_addr`）裁决 + 落地
 - [ ] T2.5 `PcieControllerIP` 三键（`bar_bases` / `bar_sizes` / `link_speed_gts`）裁决 + 落地;⚠️ `bar_sizes` 另有**板级消费方**（`dgpu_board_shell.cc:78-79`）⇒ 按 `ADR-X.17` D-3 三态条款分开处置
 - [ ] T2.6 `PcieMemoryDevice.capacity_gb` 裁决 + 落地（⚠️ backing 归 `DGpuBoard` —— per `ADR-DGPU-05`;该键与注入的 backing 语义重叠 ⇒ 评估态②）
 - [ ] T2.7 `StreamingMultiprocessorTLM` 两键（`execution_latency` / `warp_size`）裁决 + 落地
-- [ ] T2.8 `ArbiterTLM.n_ports` 裁决 + 落地
+- [x] T2.8 `ArbiterTLM.n_ports` / `ports` 裁决 + 落地（**态②**：端口数由模板参数 `N_PORTS` 决定;`library_memory_demo.json` 已清理;`memory_cluster.cc` 不再生成 `ports`）
 - [ ] T2.9 `MemoryClusterTLM` 两键（`capacity_gb` / `channels`）裁决 + 落地（⚠️ 与 `MemoryCluster` 是两个类）
 - [ ] T2.10 `SharedMemoryTLM` 两键（`banks` / `size_kb`）裁决 + 落地
-- [ ] T2.11 `SocInternalNoc` 两键（`data_flow` / `vc_counts_enabled`）裁决 + 落地（该类已 archived ⇒ 态② 首选）
+- [x] T2.11 `SocInternalNoc` 两键（`data_flow` / `vc_counts_enabled`）裁决 + 落地（**态②**：该类已 archived,NoC 语义由 `GpuInternalFabric` 承担;`dgpu_soc_minimal_v1.json` 已清理）
 - [ ] T2.12 ~~`TCCTLM` 两键（`coalescing` / `size`）裁决 + 落地~~ ⇒ **转 R-5**（同 T2.3：仓内零类定义）
-- [ ] T2.13 `CoherentXBarTLM` 三键（`domain_protocol` / `snoop_filter` / `ports`）裁决 + 落地（⚠️ `ports` 仅被 `module_factory_validate.cc:271` 读去做**越界告警**，值从不生效 ⇒ **伪参数候选** ⇒ 态③ 或 态②）
+- [~] T2.13 `CoherentXBarTLM` 三键（`domain_protocol` / `snoop_filter` / `ports`）—— **`ports` 已落地**（态②，继承 `CrossbarTLM` 的拒绝）;`domain_protocol` / `snoop_filter` **待后续批次**
 - [ ] T2.14 `GpuMeshNoC` 两键（`dim` / `hops_latency`）裁决 + 落地（该类只有 `set_dim` / `set_hops_latency` setter，无生产调用方传配置值）
-- [ ] T2.15 `VramControllerTLM.operating_frequency_hz` 裁决 + 落地（⚠️ 该类其余 7 键由**板级直读**消费 ⇒ 见台账表 A;本键全仓零命中 ⇒ 唯一真正零效果的键）
-- [ ] T2.16 `MemoryCluster.memory_type` 裁决 + 落地（读入 `memory_type_` 但成员**从不被读**;B1 停止生成 `MemoryTLM.type` 后彻底悬空 ⇒ 台账 B-10）
+- [x] T2.15 `VramControllerTLM.operating_frequency_hz` 裁决 + 落地（**态②**：频率是编译期锚点 `kOperatingFrequencyHz`，与 timing 契约双向绑定;运行时可配需「GB/s 带宽输入」这个尚不存在的面 ⇒ 独立 feature;`dgpu_soc_minimal_v1.json` 已清理）
+- [x] T2.16 `MemoryCluster.memory_type` 裁决 + 落地（**态②**：无内存类型模型 ⇒ 显式拒绝 + 成员已删;2 个测试数据里的该键已清理）
 - [ ] T2.17 B2 回归：全量套件绿 + `configs/` 存量写法逐处登记（态② 键的命中清单）
 
 ## T3 — B3 批次（`RouterTLM.routing`）

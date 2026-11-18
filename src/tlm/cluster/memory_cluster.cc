@@ -10,8 +10,15 @@ namespace cpptlm::tlm {
             channel_count_ = params["channel_count"].get<int>();
         if (params.contains("channel_size"))
             channel_size_ = params["channel_size"].get<std::string>();
-        if (params.contains("memory_type"))
-            memory_type_ = params["memory_type"].get<std::string>();
+        // ⚠️ `memory_type` **不再读取**（`ADR-X.17` D-2 态②）—— 内存**类型**在本仓
+        //    无任何模型（无 DRAM/HBM 行为差异）⇒ 该键**零效果** ⇒ 显式拒绝而非静默丢弃。
+        //    台账 `docs/implementation/module-param-baseline.md` B-10 已登记该缺陷。
+        if (params.contains("memory_type")) {
+            throw cpptlm::ParamValidationError(
+                name, "memory_type",
+                "memory_type: MemoryTLM has no memory-type model (no DRAM/HBM behaviour "
+                "difference) ⇒ this key has no effect (remove it from the configuration)");
+        }
     }
 
     void MemoryCluster::simulate_instantiate(const nlohmann::json& cfg) {
@@ -32,7 +39,10 @@ namespace cpptlm::tlm {
         }
         const std::string arb_type = (channel_count_ == 2) ? "ArbiterTLM2" : "ArbiterTLM4";
         full_config["modules"].push_back(
-            {{"name", "arbiter"}, {"type", arb_type}, {"params", {{"ports", channel_count_}}}});
+            // ⚠️ 不再生成 `ports` —— 端口数由注册名（`ArbiterTLM2` / `ArbiterTLM4`）决定,
+            //    该键已于 2026-11-18 落**态②**（`ADR-X.17` D-2：端口数是编译期常量 ⇒
+            //    配置写了即装配失败）⇒ 继续生成会让内部装配失败。
+            {{"name", "arbiter"}, {"type", arb_type}, {"params", {}}});
         full_config["connections"] = nlohmann::json::array();
         for (int i = 0; i < channel_count_; ++i) {
             full_config["connections"].push_back({{"src", "channel_" + std::to_string(i)},

@@ -49,6 +49,21 @@ namespace tlm::cluster {
 // SoC 内部 NoC: E.1 v1.1 DataNoC only (per design §1.1)
 class SocInternalNoc : public ::SimModule {
 public:
+    /// 配置加载（`ADR-X.17` D-1「读取即声明」）
+    ///
+    /// ⚠️ 本类**已随** `cpptlm-dgpu-soc-internal-noc-e1` **archived**
+    ///    （`openspec/changes/archive/2026-10-09-cpptlm-dgpu-soc-internal-noc-e1/`）
+    ///    ⇒ 实际 NoC 语义由 `GpuInternalFabric` 承担 ⇒ `data_flow` / `vc_counts_enabled`
+    ///    两个键在本类**无任何消费面** ⇒ 态②：**显式拒绝**（配置写了即装配失败并报出键名）。
+    void on_config_loaded() override {
+        reject_unsupported_param("data_flow",
+                                 "this module is archived; the NoC path is served by "
+                                 "GpuInternalFabric, so this key has no effect");
+        reject_unsupported_param("vc_counts_enabled",
+                                 "this module is archived; VC accounting lives in "
+                                 "GpuInternalFabric, so this key has no effect");
+    }
+
     explicit SocInternalNoc(const std::string& name, EventQueue* eq)
         : ::SimModule(name, eq) {}
 

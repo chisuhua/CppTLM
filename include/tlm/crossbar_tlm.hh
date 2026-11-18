@@ -163,6 +163,21 @@ public:
         return NUM_PORTS;
     }
 
+    /// 配置加载（`ADR-X.17` D-1「读取即声明」）
+    ///
+    /// ⚠️ 端口数是**编译期常量 `NUM_PORTS`** ⇒ `port_count` / `ports` 两个键
+    ///    **不可能产生任何效果**（`ports` 此前只被 `module_factory_validate.cc` 读去做
+    ///    **越界告警** —— 值从不生效）⇒ 态②：**显式拒绝**（配置写了即装配失败并报出键名）。
+    ///    ⛔ 不静默忽略 —— 静默丢弃比失败更坏（`ADR-X.17` D-2）。
+    void on_config_loaded() override {
+        reject_unsupported_param("port_count",
+                                 "the port count is a compile-time constant (NUM_PORTS); this key "
+                                 "has no effect");
+        reject_unsupported_param("ports",
+                                 "the port count is a compile-time constant (NUM_PORTS); this key "
+                                 "has no effect");
+    }
+
     // 统计访问器
     tlm_stats::StatGroup& stats() {
         return stats_;

@@ -107,7 +107,9 @@ TEST_CASE("P2.4: MemoryCluster channel_size parameter propagates",
     EventQueue eq;
     auto* mc = new MemoryCluster("mc0", &eq);
 
-    json params = {{"channel_count", 4}, {"channel_size", "2GB"}, {"memory_type", "DDR4"}};
+    // ⚠️ `memory_type` 已于 2026-11-18 落**态②**（`ADR-X.17` D-2）—— 该类无内存类型模型
+    //    ⇒ 配置写了即装配失败 ⇒ 测试数据不再传该键（本 case 测的是 channel_size 透传）。
+    json params = {{"channel_count", 4}, {"channel_size", "2GB"}};
     mc->set_config(params);
     REQUIRE(mc->get_module_type() == "MemoryCluster");
     mc->simulate_instantiate({});

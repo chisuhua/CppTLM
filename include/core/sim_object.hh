@@ -454,6 +454,21 @@ protected:
                                            std::optional<T>(hi));
     }
 
+    /// 拒绝「本类无对应语义」的键（态② ⇒ 装配期失败，报出键名与原因）
+    ///
+    /// 供各模块在 `on_config_loaded()` 内调用 —— 用于**确实无法产生任何效果**的键
+    /// （历史遗留 / 语义已废弃 / 该能力在别处实现）。
+    ///
+    /// ⛔ **不得**用它代替「读取即声明」:能被实现的键必须**真的消费**
+    ///   （`ADR-X.17` D-1）;本助手只用于「拒绝」这一态（D-2 态②）。
+    void reject_unsupported_param(const char* key, const char* why) const {
+        if (get_config().contains(key)) {
+            throw cpptlm::ParamValidationError(
+                name, key,
+                std::string(key) + ": " + why + " (remove this key from the configuration)");
+        }
+    }
+
     /// 存储原始 JSON 配置（选项A基础实现）
     json config_;
 

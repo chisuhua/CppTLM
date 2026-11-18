@@ -259,44 +259,13 @@ bool ModuleFactory::validateConfig(const json& config) {
             return false;
         }
 
-        // LINT007 (F7): params.ports vs class max_ports 校验 (warning-only)。
-        // 已知 forward-looking 场景: apu_soc_v1.json 中 CoherentXBarTLM 指定 ports=8
-        // (Phase 7.C 8-port upgrade 前的占位), 当前 NUM_PORTS=4, 应警告而非阻塞。
-        // 参考 docs/superpowers/plans/2026-06-20-future-work-roadmap.md F7。
-        static const std::unordered_map<std::string, unsigned> kMaxPortsByType = {
-            {"CrossbarTLM", 4}, {"CoherentXBarTLM", 4}, {"ArbiterTLM", 4},
-            {"ArbiterTLM2", 2}, {"ArbiterTLM4", 4},
-        };
-        if (mod.contains("params") && mod["params"].is_object() &&
-            mod["params"].contains("ports")) {
-            const auto& ports_param = mod["params"]["ports"];
-            if (ports_param.is_number_integer()) {
-                unsigned requested_ports = ports_param.get<unsigned>();
-                auto it = kMaxPortsByType.find(type);
-                if (it != kMaxPortsByType.end()) {
-                    unsigned max_ports = it->second;
-                    if (requested_ports > max_ports) {
-                        DPRINTF(MODULE,
-                                "[CONFIG WARN] module '%s' (type %s): params.ports=%u "
-                                "exceeds class max_ports=%u; will be ignored until "
-                                "port count upgrade (see roadmap F4/F9)\n",
-                                name.c_str(), type.c_str(), requested_ports, max_ports);
-                    } else if (requested_ports < max_ports) {
-                        DPRINTF(MODULE,
-                                "[CONFIG WARN] module '%s' (type %s): params.ports=%u "
-                                "is less than class max_ports=%u; "
-                                "module will use full max_ports=%u\n",
-                                name.c_str(), type.c_str(), requested_ports, max_ports);
-                    }
-                }
-            } else if (!ports_param.is_array()) {
-                DPRINTF(MODULE,
-                        "[CONFIG WARN] module '%s' (type %s): params.ports "
-                        "should be integer (not array or other type); "
-                        "validation skipped\n",
-                        name.c_str(), type.c_str());
-            }
-        }
+        // LINT007（`params.ports` vs 类端口数的**告警**）已于 2026-11-18 **退役**。
+        //   理由：端口数是**编译期常量**（`CrossbarTLM::NUM_PORTS` / `ArbiterTLM<N_PORTS>`）
+        //   ⇒ 该键不可能产生任何效果 ⇒ 按 `ADR-X.17` D-2 落**态②**（模块内
+        //   `on_config_loaded` **显式拒绝**，配置写了即装配失败并报出键名）。
+        //   ⛔ 告警不失败 = 静默容忍（用户以为配置生效、实际被忽略）⇒ 留下就是死代码。
+        //   per change `cpptlm-module-param-effect-landing` 的 B2 批次;
+        //   判据载体 = `test/test_lint007_ports_validation.cc`（已改为断言装配失败）。
 
         // RouterTLM 的必填/类型检查已由模块内 load_param 承接（ADR-X.17 D-3 的 CFG-08 退役）
         // ⇒ 本处只保留 NICTLM 的 per-type 硬编码分支（它是 node_id 必填的唯一强制点，

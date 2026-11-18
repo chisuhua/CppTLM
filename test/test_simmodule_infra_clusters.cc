@@ -42,7 +42,8 @@ TEST_CASE("CacheCluster auto-generates L1xN + L2", "[simmodule][infra]") {
 TEST_CASE("MemoryCluster multi-channel", "[simmodule][infra]") {
     EventQueue eq;
     auto* mc = new MemoryCluster("mc0", &eq);
-    json params = {{"channel_count", 4}, {"channel_size", "1GB"}, {"memory_type", "HBM"}};
+    // ⚠️ `memory_type` 已于 2026-11-18 落**态②**（无内存类型模型 ⇒ 写了即失败）⇒ 不再传
+    json params = {{"channel_count", 4}, {"channel_size", "1GB"}};
     mc->set_config(params);
     REQUIRE(mc->get_module_type() == "MemoryCluster");
     mc->simulate_instantiate({});

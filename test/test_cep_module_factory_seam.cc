@@ -10,8 +10,8 @@
 // 注:Stage 0 只断言**契约层 + 冻结面**(真实注册发生在 Stage 1)。
 #include "catch_amalgamated.hpp"
 
-#include "cep_adr_parser.hh"
 #include "chstream_register.hh"
+#include "cep_adr_parser.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 
@@ -151,10 +151,9 @@ TEST_CASE("[cep][module-factory-seam] CacheTLM 拒绝 protocol 键(协议语义�
           "[cep][module-factory-seam]") {
     EventQueue eq;
     ModuleFactory factory(&eq);
-    const json cfg = {{"modules",
-                       json::array({json{{"name", "c0"},
-                                         {"type", "CacheTLM"},
-                                         {"params", {{"protocol", "MOESI"}}}}})},
+    const json cfg = {{"modules", json::array({json{{"name", "c0"},
+                                                    {"type", "CacheTLM"},
+                                                    {"params", {{"protocol", "MOESI"}}}}})},
                       {"connections", json::array()}};
     // ⚠️ 装配失败面 = `instantiateAll` 返回 false(`ModuleFactory` 捕获参数异常并返回 false)
     CHECK_FALSE(factory.instantiateAll(cfg));
