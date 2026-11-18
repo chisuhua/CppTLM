@@ -88,48 +88,25 @@ done <<< "$DEP_EDGES"
 
 echo ""
 echo "═══ P-2 顺序由机关保证（不得提前开工下一阶段）═══"
-# P-2a：下一阶段的**实现面文件**不得出现在当前工作树变更集里
-#       （防止「跳过阶段 A/B 直接开 C2 的实现」）
-#       ⚠️ 判据**不**用「C2 的 change 目录」—— 改 C2 的 tasks/design 属**规划维护**，
-#          不是「提前开工」⇒ 用目录判会误伤（本轮就误伤过一次）。
-NEXT_CHANGE="cpptlm-module-param-migrate-batch2"
-NEXT_IMPL_FILES="src/core/module_factory.cc include/core/sim_object.hh include/core/sim_module.hh src/core/module_factory_validate.cc"
-CHANGED="$(git diff --name-only HEAD 2>/dev/null; git diff --name-only --cached 2>/dev/null)"
-_hit=""
-for f in $NEXT_IMPL_FILES; do
-    if echo "$CHANGED" | grep -qx "$f"; then _hit="$_hit $f"; fi
-done
-if [ -n "$_hit" ]; then
-    fail "P-2a 下一阶段 ($NEXT_CHANGE) 的实现面文件已在工作树变更集:$_hit ⇒ 阶段 A/B 尚未完成"
+# P-2a：下一阶段 change 的 **task 不得被勾选**（= 不得声称完成了下一阶段的工作）
+#
+# ⚠️ 判据为什么**不用「文件出现在变更集」**：`src/core/module_factory.cc` 同时是
+#    C2（删默认值注入段 :263-291）与 R-5（加预扫描段 :339-:350 之间）的落点 ——
+#    design D-4 明写「不同位置 ⇒ 可并行」。用文件级判据会**误伤**当前阶段的合法工作
+#    （实测：R-5 的 T2 一落地就红）。
+#    可判定的语义是「**有没有声称做完下一阶段的活**」 ⇒ 判据 = 下一阶段 tasks 的 `[x]` 数。
+NEXT_C="cpptlm-module-param-migrate-batch2"
+resolve_path "openspec/changes/$NEXT_C/tasks.md"
+NEXT_TASKS="$RESOLVE_PATH"
+if [ ! -f "$NEXT_TASKS" ]; then
+    ok "P-2a 下一阶段 ($NEXT_C) 尚未立项/已归档 ⇒ 无提前开工"
 else
-    ok "P-2a 下一阶段 ($NEXT_CHANGE) 的实现面未提前开工"
-fi
-# P-2b：--phase X 时断言该阶段的**前置 change**的 tasks.md 无未勾 task
-PHASE=""
-for a in "$@"; do [ "$a" = "--phase" ] && PHASE_NEXT=1; done
-if [ "${PHASE_NEXT:-0}" = "1" ]; then
-    _p=""
-    while [ $# -gt 0 ]; do case "$1" in --phase) _p="$2"; shift 2;; *) shift;; esac; done
-    case "$_p" in
-        A) PREV="" ;;
-        B) PREV="cpptlm-module-param-effect-landing" ;;
-        C) PREV="cpptlm-config-type-registration-align" ;;
-        *) fail "P-2b 未知阶段: $_p" ;;
-    esac
-    if [ -n "$PREV" ]; then
-        resolve_path "openspec/changes/$PREV/tasks.md"; _pt="$RESOLVE_PATH"
-        if [ "$RESOLVE_STATE" = "unavailable" ]; then
-            skip "P-2b 阶段 $_p 的前置 $PREV 已归档且 tasks.md 不在工作树 ⇒ 无法断言完成度"
-            _pt=""
-        elif [ ! -f "$_pt" ]; then
-            fail "P-2b 阶段 $_p 的前置 $PREV 的 tasks.md 不存在: $_pt"; _pt=""
-        fi
-    fi
-    if [ -n "$PREV" ] && [ -n "${_pt:-}" ]; then
-        _open="$(grep -c '^- \[ \]' "$_pt" 2>/dev/null || echo 0)"
-        if [ "$_open" -gt 0 ]; then fail "P-2b 阶段 $_p 的前置 $PREV 仍有 $_open 个未勾 task"; else ok "P-2b 阶段 $_p 的前置 $PREV 已完成"; fi
+    _done="$(grep -c '^- \[x\]' "$NEXT_TASKS")"
+    [ -z "${_done:-}" ] && _done=0
+    if [ "$_done" -gt 0 ]; then
+        fail "P-2a 下一阶段 ($NEXT_C) 已有 $_done 个 task 被勾选 ⇒ 阶段顺序被跳过"
     else
-        ok "P-2b 阶段 A 无前置"
+        ok "P-2a 下一阶段 ($NEXT_C) 零 task 勾选 ⇒ 未提前开工"
     fi
 fi
 

@@ -44,7 +44,10 @@
 #include <cstring>
 #include <format>
 #include <fstream>
+#include <iostream>
 #include <set>
+#include <string>
+#include <vector>
 #include "bundles/cache_bundles_tlm.hh"
 #include "bundles/noc_bundles_tlm.hh"
 #include "core/chstream_module.hh"
@@ -334,6 +337,56 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 DPRINTF(MODULE, "[ERROR] Failed to load plugin: %s\n",
                         plugin_path.get<std::string>().c_str());
             }
+        }
+    }
+
+    // ========================
+    // 0.3 未注册类型预扫描（change cpptlm-config-type-registration-align T2）
+    // ========================
+    // 位置约束（⛔ 不得移动）：
+    //   · **在插件加载之后**（:329-338）—— 动态注册的类型此刻已进表 ⇒ 不误伤插件路径;
+    //   · **在实例创建之前** —— 失败时**零实例残留**（不产生半构造对象、不污染 ModuleGroup
+    //     的静态表裸指针）⇒ AC-02「零残留」与 AC-03「可重入」由**位置**保证，而非事后清理。
+    //
+    // 为什么必须 fail 而不能只告警：实例创建循环对未注册类型只打 `DPRINTF` 然后**继续**
+    //   （见 `:387` 的 else 分支）⇒ 装配"成功"但该模块被**静默丢弃** ⇒ 拓扑缺模块 ⇒
+    //   仿真结果静默失真。而 `DPRINTF` 仅 Debug 构建生效（`include/core/sim_core.hh:8-16`
+    //   + `CMakeLists.txt:70-72`）⇒ Release / CI 默认构建下连日志都没有。这正是
+    //   `ADR-X.17`「读取即声明」在**类型面**的缺口。
+    //
+    // ⛔ 不提供 `--strict` 开关：嵌套路径会丢弃本函数的返回值（`SimModule::simulate_instantiate`）
+    //   ⇒ 开关救不了;而给了开关就留下「非严格模式即可」的叙事出口（同 `kCompositeOnly` 的
+    //   做法：直接 return false，无开关）。
+    // ⚠️ 只扫**顶层** `modules[]` —— 嵌套传播归 `cpptlm-module-param-migrate-batch2`
+    //   （本 change 的 AC-08 `blocked-by`）⇒ ⛔ 不碰 `simulate_instantiate` 签名。
+    // ⚠️ 零类型名硬编码 —— 判据只查运行时注册表（⛔ 不引入第二份类型白名单）。
+    if (final_config.contains("modules") && final_config["modules"].is_array()) {
+        auto& obj_registry = ModuleFactory::getObjectRegistry();
+        auto& mod_registry = ModuleFactory::getModuleRegistry();
+        std::vector<std::string> unregistered;
+        for (const auto& mod : final_config["modules"]) {
+            if (!mod.is_object() || !mod.contains("type"))
+                continue;
+            const std::string type = mod["type"].get<std::string>();
+            if (obj_registry.count(type) != 0 || mod_registry.count(type) != 0)
+                continue;
+            const std::string inst =
+                mod.contains("name") ? mod["name"].get<std::string>() : std::string("<unnamed>");
+            unregistered.push_back("  type=\"" + type + "\"  instance=\"" + inst + "\"");
+        }
+        if (!unregistered.empty()) {
+            // ⚠️ 走 `stderr`（⛔ 不走 DPRINTF —— Release 下无输出等于没报）
+            std::cerr << "[ModuleFactory] ERROR: " << unregistered.size()
+                      << " module(s) reference a type that is NOT in the runtime registry"
+                      << " (source: "
+                      << (config_source_.empty() ? std::string("<unspecified>") : config_source_)
+                      << "):\n";
+            for (const auto& u : unregistered)
+                std::cerr << u << "\n";
+            std::cerr << "[ModuleFactory] Refusing to instantiate: an unregistered type would be "
+                         "SILENTLY DROPPED, producing a topology with missing modules.\n";
+            // 一次报**全部**违规（⛔ 不逐个 return —— 那会变成「修一个再跑一次」的长循环）
+            return false;
         }
     }
 

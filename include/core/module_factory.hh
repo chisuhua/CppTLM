@@ -56,6 +56,9 @@ private:
     std::vector<std::unique_ptr<cpptlm::ProtocolBridgeEr>> protocol_bridges_;
     // 装配期已消费的桥名(per CC-05 ②「注册与消费成对」的证据)
     std::unordered_set<std::string> consumed_bridges_;
+    // 配置来源路径（**仅诊断用**）—— 未注册类型 fail-fast 的报错要指出「来源文件」。
+    // 空表示调用方未声明（报错里退化为 "(source: <unspecified>)"）。
+    std::string config_source_;
 
     // 性能指标管理
     bool _metrics_enabled = false;
@@ -221,6 +224,10 @@ public:
 
     bool instantiateAll(const json& config);
     void startAllTicks();
+
+    /// 声明配置来源（路径）—— 仅供 `instantiateAll` 的未注册类型报错使用。
+    /// ⚠️ 不影响任何装配行为（⛔ 不得据此做分支）。
+    void set_config_source(const std::string& path) { config_source_ = path; }
 
     SimObject* getInstance(const std::string& name) const {
         auto it = instances.find(name);

@@ -121,8 +121,12 @@
 | 面 | 状态 | 证据 |
 |---|:--:|---|
 | **对齐层（T1）** | ✅ 已闭合 | 4 处漂移全部处置（见上表的「处置」列）;**差集归零**（实测：64 份配置 / 44 个 type / **未注册 0**） |
-| **机制层（T2）** | ⏳ 待落地 | `instantiateAll` 的 Step 0.3 预扫描 —— 落地后此格改 ✅ |
-| **判据层（T3）** | ⏳ 待落地 | `config_type_registration_check.sh` + ctest 注册 —— 落地后此格改 ✅ |
+| **机制层（T2）** | ✅ 已闭合 | `ModuleFactory::instantiateAll` 的 **Step 0.3 预扫描**（插件加载后 / 实例创建前）⇒ 未注册类型 ⇒ `return false` + `stderr` 一次报**全部**违规（类型名 + 实例名 + 来源文件）;⛔ 不走 `DPRINTF`（Release 无输出 = 没报）;⛔ 无 `--strict` 开关 |
+| **判据层（T3）** | ✅ 已闭合 | `scripts/test/config_type_registration_check.sh`（ctest `config_type_registration_check`）—— 判据**只从运行时导出派生**（`cpptlm_sim --list-types --json`）、**零豁免**、**自带反向自测**（注入假 type ⇒ 必红） |
+
+> ⚠️ **嵌套段仍未受保护**（AC-08 `blocked-by` change `cpptlm-module-param-migrate-batch2` T0.2）：
+> Step 0.3 只扫**顶层** `modules[]`;`SimModule::simulate_instantiate` 丢弃内部装配返回值
+> ⇒ **外层内联 `modules` 里的未注册类型仍会被静默丢弃**。⛔ 不得把本表的 ✅ 读成「所有路径已覆盖」。
 
 > ⚠️ **判定依「机制 + 判据」而非「配置改干净」**：T1 只是把现存漂移扫掉;若无 T2（fail-fast）与 T3（闸），
 > 下一个写进配置的未注册类型仍会被**静默丢弃**。⇒ 只有 T2 + T3 落地后，本段才可标「已闭合」。

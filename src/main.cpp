@@ -130,6 +130,8 @@ int main(int argc, char* argv[]) {
 
     // 构建系统
     ModuleFactory factory(&eq);
+    // 声明配置来源 —— 未注册类型 fail-fast 的报错要指出「来源文件」（仅诊断用，不参与任何判定）
+    factory.set_config_source(config_path);
     if (debug_config) {
         ModuleFactory::set_debug_config(true);
         std::cout << "[DEBUG] Config debug mode enabled\n";

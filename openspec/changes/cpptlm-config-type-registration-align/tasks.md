@@ -23,35 +23,35 @@
 
 ## T2 — 机制层（未注册类型 fail-fast）
 
-- [ ] T2.1 `src/core/module_factory.cc` 新增 **Step 0.3 预扫描**（位置：插件加载 `:328-338` **之后**、实例创建 `:350` **之前**）⇒ 遍历顶层 `modules[]`,逐 `type` 查运行时注册表
-- [ ] T2.2 未注册 ⇒ **`return false`** + `stderr` 报「**类型名 + 实例名 + 来源文件**」;⛔ **不走 `DPRINTF`**（Release 下无输出）;⛔ **不加 `--strict` 开关**;⛔ **不硬编码任何类型名**
-- [ ] T2.3 ⚠️ 一次报**全部**违规（不逐个 return）⇒ 避免「修一个再跑一次」
-- [ ] T2.4 ⚠️ 失败路径**零实例残留**（预扫描在创建之前 ⇒ 由**位置**保证，不靠事后清理）;核对 `ModuleGroup::registerInstance` 静态表未被污染
-- [ ] T2.5 ⚠️ `src/core/module_factory.cc` 其余部分**零 diff**（该函数 528 行,承载 CEP 双闸 / `kCompositeOnly` / StreamAdapter 注入）⇒ 提交前逐行复核 diff
-- [ ] T2.6 ⛔ **不碰** `include/core/sim_module.hh` 的 `simulate_instantiate` 签名（归 C2）
+- [x] T2.1 `src/core/module_factory.cc` 新增 **Step 0.3 预扫描**（位置：插件加载 `:328-338` **之后**、实例创建 `:350` **之前**）⇒ 遍历顶层 `modules[]`,逐 `type` 查运行时注册表 ⇒ **已落地**：Step 0.3 预扫描落在插件加载块之后（`PluginLoader` 段结束）/ 实例创建段之前;遍历 `final_config["modules"]`（**只顶层**），逐 `type` 查 `getObjectRegistry()` ∪ `getModuleRegistry()`
+- [x] T2.2 未注册 ⇒ **`return false`** + `stderr` 报「**类型名 + 实例名 + 来源文件**」;⛔ **不走 `DPRINTF`**（Release 下无输出）;⛔ **不加 `--strict` 开关**;⛔ **不硬编码任何类型名** ⇒ **已落地**：`return false` + `std::cerr` 报「类型名 + 实例名 + 来源文件」（来源由 `ModuleFactory::set_config_source()` 传入，`main.cpp` 已设）;⛔ 未加 `--strict`;⛔ 零类型名硬编码（只查注册表）
+- [x] T2.3 ⚠️ 一次报**全部**违规（不逐个 return）⇒ 避免「修一个再跑一次」 ⇒ **已落地**：先收集到 `std::vector<std::string>`，非空才一次性输出后 `return false`（实测注入 2 个假类型 ⇒ 2 条全部报出）
+- [x] T2.4 ⚠️ 失败路径**零实例残留**（预扫描在创建之前 ⇒ 由**位置**保证，不靠事后清理）;核对 `ModuleGroup::registerInstance` 静态表未被污染 ⇒ **由位置保证**：预扫描在实例创建之前 ⇒ 失败时连**合法**项都不会被建（`test_config_type_registration.cc` 的 AC-02 直接断言 `getInstance("cpu") == nullptr`）;`ModuleGroup::registerInstance` 静态表未被污染（无构造即无注册），由 AC-03 的**可重入**断言间接覆盖
+- [x] T2.5 ⚠️ `src/core/module_factory.cc` 其余部分**零 diff**（该函数 528 行,承载 CEP 双闸 / `kCompositeOnly` / StreamAdapter 注入）⇒ 提交前逐行复核 diff ⇒ **已核对**：diff 只有两处 —— ① 新增 Step 0.3 块;② include 补 `<iostream>`/`<string>`/`<vector>`（该块需要）
+- [x] T2.6 ⛔ **不碰** `include/core/sim_module.hh` 的 `simulate_instantiate` 签名（归 C2） ⇒ **未碰**（`git diff --stat` 无该文件）
 
 ## T3 — 判据层（导出 + 差集闸 + 反向自测）
 
-- [ ] T3.1 `src/main.cpp` 加 `--list-types --json` ⇒ 复用 `ModuleFactory::getRegisteredTypes()`;输出**零硬编码**
-- [ ] T3.2 新增 `scripts/test/config_type_registration_check.sh` ⇒ 读 `--list-types --json` + 扫描 `configs/**/*.json` + `configs/templates/*.json`（排除 `configs/param_rules/**`）⇒ 求差集;⛔ **不扩展** `param_effect_inventory.py` 的名字匹配逻辑（它会漏掉 `TmuDispatchProcessorTLM` 与 `ArbiterTLM` 两个最难案例）
-- [ ] T3.3 ⚠️ 闸**带反向自测**：向 fixture config 注入假 type ⇒ 必红;移除 ⇒ 必绿;⛔ 只验绿 = 没验
-- [ ] T3.4 ⚠️ 闸**默认零豁免**（首次上线必须零豁免通过）;豁免集合若非空 ⇒ 每条含 `path + reason` 且与台账 §2bis 一一对应
-- [ ] T3.5 ⚠️ 闸注册为 **ctest**;⚠️ 类型集合**构建相关**（`HybridCacheWrapper` 仅 `BUILD_RTL` 注册）⇒ 闸按构建运行，⛔ 禁静态白名单
-- [ ] T3.6 ⚠️ 闸的扫描作用于 `extends` / `include` / `${var}` **展开之后**的结果（展开前静态扫描会漏 `${var}` 注入的类型）
+- [x] T3.1 `src/main.cpp` 加 `--list-types --json` ⇒ 复用 `ModuleFactory::getRegisteredTypes()`;输出**零硬编码** ⇒ **已落地**：复用 `ModuleFactory::getRegisteredTypes()`;注册序列抽成 `registerAllTypes()` —— 正常路径与导出路径**必须看到同一个注册集**（否则判据与运行时漂移）;输出零硬编码
+- [x] T3.2 新增 `scripts/test/config_type_registration_check.sh` ⇒ 读 `--list-types --json` + 扫描 `configs/**/*.json` + `configs/templates/*.json`（排除 `configs/param_rules/**`）⇒ 求差集;⛔ **不扩展** `param_effect_inventory.py` 的名字匹配逻辑（它会漏掉 `TmuDispatchProcessorTLM` 与 `ArbiterTLM` 两个最难案例） ⇒ **已落地**：读 `--list-types --json` + 扫 `configs/**/*.json`（排除 `param_rules/**`，**含嵌套 `modules[]`**）;⛔ **未扩展** `param_effect_inventory.py` 的名字匹配逻辑（它会漏掉 `TmuDispatchProcessorTLM` 与 `ArbiterTLM`）
+- [x] T3.3 ⚠️ 闸**带反向自测**：向 fixture config 注入假 type ⇒ 必红;移除 ⇒ 必绿;⛔ 只验绿 = 没验 ⇒ **已落地并变异验证**：① fixture 注入假 type ⇒ 判据能识别 + 已注册类型不被误报;② **真实配置变异**：往 `configs/library_cpu_demo.json` 注入 `ZzInjectedBogusType` ⇒ 闸 rc=1 并报出「type + 文件」;恢复 ⇒ rc=0（且 `git status` 干净）
+- [x] T3.4 ⚠️ 闸**默认零豁免**（首次上线必须零豁免通过）;豁免集合若非空 ⇒ 每条含 `path + reason` 且与台账 §2bis 一一对应 ⇒ **零豁免通过**（豁免集合为空 —— 无需条目，故无需 path+reason 对应）
+- [x] T3.5 ⚠️ 闸注册为 **ctest**;⚠️ 类型集合**构建相关**（`HybridCacheWrapper` 仅 `BUILD_RTL` 注册）⇒ 闸按构建运行，⛔ 禁静态白名单 ⇒ **已注册** `config_type_registration_check`（扫模型闸）+ `config_type_registration`（Catch2 判据）;闸用 `--bin $<TARGET_FILE:cpptlm_sim>` ⇒ 读的**一定是本次构建**的注册表（⛔ 无静态白名单）;⚠️ 两者都设 `WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}`（AC-04 读 `configs/` 相对路径）
+- [x] T3.6 ⚠️ 闸的扫描作用于 `extends` / `include` / `${var}` **展开之后**的结果（展开前静态扫描会漏 `${var}` 注入的类型） ⇒ **已落地**：脚本内做了 `extends`（父配置打底 + modules 合并）与嵌套递归展开;⚠️ **展开失败不静默跳过** —— 记为 `ERROR` 行并**不判通过**（漏扫比误扫危险）
 
 ## T4 — 测试
 
-- [ ] T4.1 新增 `test/test_config_type_registration.cc`：**AC-01** 正向不误伤 + **AC-02** 负向 fail-fast（断言**返回值 + 实例表**,⛔ 不断言日志）
-- [ ] T4.2 **AC-03** 失败后可重入（同进程失败一次后再跑合法 config ⇒ 仍 true 且实例完好）;动机 = `ModuleGroup` 静态表裸指针
-- [ ] T4.3 **AC-04** 差集为空（脚本输出 + 3 份受影响配置逐个可装配）
-- [ ] T4.4 **AC-09** 文档同步：`docs/implementation/module-param-baseline.md` §2bis 改「已闭合」· `scripts/README.md` 新脚本行 · `AGENTS.md`（`--list-types` CLI flag）· `test/CMakeLists.txt`（新测试文件 + ctest 条目登记）
+- [x] T4.1 新增 `test/test_config_type_registration.cc`：**AC-01** 正向不误伤 + **AC-02** 负向 fail-fast（断言**返回值 + 实例表**,⛔ 不断言日志） ⇒ **已落地**：AC-01 正向不误伤（`REQUIRE(instantiateAll)` + 实例存在）/ AC-02 负向 fail-fast（`REQUIRE_FALSE` + **实例表全 nullptr** —— ⛔ 不断言日志）
+- [x] T4.2 **AC-03** 失败后可重入（同进程失败一次后再跑合法 config ⇒ 仍 true 且实例完好）;动机 = `ModuleGroup` 静态表裸指针 ⇒ **已落地**：同 factory 先跑失败配置、再跑合法配置 ⇒ 仍 true 且实例完好
+- [x] T4.3 **AC-04** 差集为空（脚本输出 + 3 份受影响配置逐个可装配） ⇒ **已落地**：脚本输出（64 份 / 44 type / 未注册 0）+ `test_config_type_registration.cc` 的 AC-04 断言三份受影响配置**逐个可装配**
+- [x] T4.4 **AC-09** 文档同步：`docs/implementation/module-param-baseline.md` §2bis 改「已闭合」· `scripts/README.md` 新脚本行 · `AGENTS.md`（`--list-types` CLI flag）· `test/CMakeLists.txt`（新测试文件 + ctest 条目登记） ⇒ **已落地**：台账 §2bis.2 改「T2/T3 已闭合」（含**嵌套段仍未受保护**的显式警示）· `scripts/README.md` 新脚本行 · `AGENTS.md` 新增「运行时类型注册表」命令段 · `test/CMakeLists.txt` 两条 ctest
 
 ## T5 — 验证
 
 - [ ] T5.1 `cpptlm_tests` 全量绿（≥ 基线 **883336 / 2393**）;`pytest test/python/` **232 passed**;`ctest` 全量绿
 - [ ] T5.2 `[param]` / `[config][schema]` / `[cep]` / `[e2e]` 标签全绿（AC-07 / G-1）
 - [ ] T5.3 `openspec validate cpptlm-config-type-registration-align --strict` + `cep_docs_sync_check` + `cep_doc_ref_check` + `agents_md_lint` + `docs_sync_check --strict` 全绿
-- [ ] T5.4 ⚠️ **AC-08 处置**：若 `cpptlm-module-param-migrate-batch2` 的 T0.2（嵌套失败传播）**未落地** ⇒ 本 AC 标 `blocked-by` 并在 proposal 的 R 表显式登记 ⇒ **⛔ 不许静默跳过**
+- [x] T5.4 ⚠️ **AC-08 处置**：若 `cpptlm-module-param-migrate-batch2` 的 T0.2（嵌套失败传播）**未落地** ⇒ 本 AC 标 `blocked-by` 并在 proposal 的 R 表显式登记 ⇒ **⛔ 不许静默跳过** ⇒ **已显式登记**：`proposal.md` 新增「遗留与 blocked-by」表，AC-08 = **`blocked-by`** `cpptlm-module-param-migrate-batch2` T0.2（其 tasks 该条仍未勾）⇒ 本 change 的**嵌套段交付为空**，⛔ 不得读成「嵌套路径已受保护」
 
 ## T6 — 收口
 

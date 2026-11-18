@@ -119,6 +119,17 @@
 | S5 未知类型不得被静默丢弃 | AC-02, AC-07 | ⛔ 判据禁断言日志 |
 | S6 本 change 不得改变未涉及的行为面 | AC-07 | 零回归 |
 
+## 遗留与 blocked-by（⛔ 不许静默跳过）
+
+| # | 项 | 状态 | 处置 |
+|:--:|---|:--:|---|
+| **AC-08** | **嵌套失败传播**（外层 `SimModule` 内联 `modules` 含未知类型 ⇒ 外层装配失败） | ⛔ **blocked-by** | `blocked-by` change `cpptlm-module-param-migrate-batch2` 的 **T0.2**（`SimModule::simulate_instantiate` 丢弃返回值）⇒ 本 change 的**嵌套段交付为空**，⛔ 不得据此认为「嵌套路径已受保护」 |
+| **R-1** | `CP → TMU → SQ` 派发链是**断的** | ✅ 已登记 | `docs/implementation/module-param-baseline.md` §2bis.1（该模块从未实例化 ⇒ 删条目只是让配置承认事实） |
+| **R-2** | `ArbiterTLM.n_ports` 的零效果 | ✅ 已闭合 | 实测 `ArbiterTLM<N>::on_config_loaded` 已态② 拒绝（per C1）⇒ 生成器**停发**即可，无需新增登记 |
+| **R-3** | 「愿景配置」的机器可读标记机制（保留条目 + 标「不可装配」） | ⏳ backlog | 本 change 采用「移除条目」（D-5 选项 A）;若将来需要保留「声明的目标拓扑」，须**新造标记机制**（⛔ 不得用万能豁免代替） |
+| **R-4** | 与 C2 的 `module_factory.cc` 行号冲突 | ⏳ 观察 | 两者**位置不同**（C2 删 `:263-291` 默认值注入 / 本 change 加 `:339`-`:350` 之间）⇒ C2 先合并则本 change rebase 行号 |
+| **R-5'** | ArchForge 侧的状态登记（`gpu-gputlm.md` / `gpu-shared-memory.md` / `gpu-memory-cluster.md` 改「⏸ 已归档」） | ⏳ 跨仓 backlog | 跨仓动作**不在本 change**（design D-8） |
+
 ## 关联
 
 - **来源**：change `cpptlm-module-param-effect-landing` 的 **R-5**（其键盘点盘点的副产品）;台账 Entry #480（立项）

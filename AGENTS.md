@@ -389,6 +389,17 @@ cmake -S . -B build-on -DCMAKE_BUILD_TYPE=Release -DCPPTLM_WITH_PTX_EMU=ON
 cmake --build build-on -j$(nproc)
 ```
 
+### 运行时类型注册表
+
+```bash
+# 导出运行时注册表（唯一真源 —— 配置类型闸与其他判据都读它）
+./build/bin/cpptlm_sim --list-types          # 每行一个类型名
+./build/bin/cpptlm_sim --list-types --json   # {"count":N,"types":[...]}
+
+# 配置类型注册闸（配置里的每个 type 必须在此表内）
+bash scripts/test/config_type_registration_check.sh
+```
+
 ### SoC 端到端 demo
 
 ```bash

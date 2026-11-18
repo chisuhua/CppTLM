@@ -286,6 +286,24 @@ add_test(NAME cep_docs_sync_check
 add_test(NAME rddf_stage_gate
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/rddf_stage_gate.sh)
 
+# 配置类型注册闸(per change cpptlm-config-type-registration-align T3.5 · ADR-X.17 类型面)
+# —— 判据 = 「配置里的每个模块 type 都在**运行时注册表**里」。
+#    违反后果是**静默丢模块**(装配成功但拓扑缺模块),不是报错 ⇒ 必须独立闸。
+# ⚠️ 类型集合**构建相关**(HybridCacheWrapper 仅 BUILD_RTL 注册)⇒ 按构建运行,
+#    ⛔ 禁静态白名单;闸自带**反向自测**(注入假 type ⇒ 必红)。
+# ⚠️ 用构建产物 `$<TARGET_FILE:cpptlm_sim>` —— 保证闸读的是**本次构建**的注册表。
+add_test(NAME config_type_registration_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/config_type_registration_check.sh
+                 --bin $<TARGET_FILE:cpptlm_sim>)
+
+# 类型注册判据的 Catch2 case(AC-01/02/03/04)
+# ⚠️ 与 CEP 契约无关 ⇒ 独立注册(否则 `cep_all` 覆盖不到)。
+add_test(NAME config_type_registration
+         COMMAND cpptlm_tests "[type-registry]" -r compact)
+# AC-04 读 `configs/...` 相对路径 ⇒ 工作目录必须是仓根(ctest 默认 cwd=build/)
+set_tests_properties(config_type_registration config_type_registration_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # ADR **结构闸**(per oracle 2026-11-09 裁决 C-1 / 台账 Entry #307 §③ T1)
 # —— 把「ADR 正文缺顶层 Verification 章」从暗变可见,并**锁住**例外登记:
 #    ① 分区完整性(新 ADR 必须显式归类)② 未登记即红 ③ 豁免锚点存活(反后门)
