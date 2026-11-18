@@ -26530,3 +26530,59 @@ AC-06 原文要求 `git diff <base> -- configs/` **为空**。实测发现 3 份
 **下一步**：T8（验证与收口）。
 
 **关联**：册子 §1.5.4 · Entry #493（T5）· `ADR-X.10` §F · `ADR-X.17` D-6
+
+### Entry #495 — 2026-11-19 [builder](**C2 的 T8.1~T8.6 + T8.10 落地** —— 全量验证 + 残留清点;T8.7~T8.9 交 verifier/归档)
+
+**范围**：change `cpptlm-module-param-migrate-batch2`（C2）的 **T8.1~T8.6 / T8.10**。
+
+### 验证实测（2026-11-19）
+
+| 面 | 结果 |
+|---|---|
+| `cpptlm_tests` | **883715 assertions / 2406 test cases**（≥ 重测基线 883242 / 2372） |
+| `pytest test/python/` | **232 passed**, 1 warning, 14 subtests |
+| `ctest -R cep` | **100 / 100** |
+| `ctest`（全量） | **184 / 184** |
+| `cep_docs_sync_check` | ✅ |
+| `cep_doc_ref_check` | ✅（含 T5 新增的 `VIRTUAL_PATHS` 条目） |
+| `agents_md_lint` | ✅（63527 B / 上限 65536 B） |
+| `docs_sync_check --strict` | ✅ |
+| `config_type_registration_check` | ✅ |
+| `openspec validate --changes --strict` | ✅（1 passed / 0 failed） |
+| `rddf_stage_gate --phase C` | ✅ 全绿 / 0 跳过 |
+| 冻结面 `cep_freeze_check` | ✅ 89 个产物 hash 一致 |
+
+### AC-06 的实测口径（按 T5 的例外改写）
+
+`git diff 32848d0e -- configs/` = 3 份配置 × **3 行**（`]` → `],` + `"connections": []`）
+⇒ **零参数键增删**（逐行核对过每一处 `+`）。这三份是「缺顶层 `connections`」的**结构性缺陷**，
+此前因相关类型未准入而被判据跳过。
+
+### 残留清点（T8.10，`git diff 32848d0e` 全范围）
+
+| 项 | 结果 |
+|---|---|
+| `TODO` / `FIXME` / `HACK` | 零命中 |
+| 被 skip / `!mayfail` / `!shouldfail` 的测试 | 零新增（既有 `skipped` 字样都在 CEP gate 的**语义**里，不是 Catch2 skip） |
+| 临时调试日志 | 零残留（T2 定位用的 `TRACE-*` / `DBG-*` 已全部移除，`grep -rn "TRACE-\|DBG-" src/ include/` 零命中） |
+| 注释掉的代码块 | 零新增 |
+| 未替换的 mock | 零新增 |
+| `std::fprintf(stderr, ...)` / `DPRINTF(...)` 新增 | **全部是失败路径的错误上报**（T0.2 的失败传播语义要求「可诊断」），⛔ 不是调试日志 |
+
+### 存量缺陷（**不在本 change 范围**，登记不修）
+
+1. `configs/base.json` 单独运行 **段错误**（历史 include/extends 片段，全仓零引用、零测试覆盖）。
+2. `test_stress_framework.cc:448` 对**残留结果目录**不健壮（`cannot remove: Directory not empty`）。
+3. `test_simmodule_nested.cc` 的 8 层嵌套 walk 用例在**随机顺序**下偶发 **SIGSEGV**
+   （单跑 `[simmodule][depth]` 与两次全量复跑均通过）。
+
+### 收口状态
+
+- **T8.7（KPI 回填）** 与 **T8.9（归档）**：必须在**同一个 commit** 内完成（`rddf_stage_gate` 的 P-5 判据
+  = 「活口径全同步 + `ls openspec/changes | grep -v archive | wc -l` == 目标值」）⇒ 归归档动作。
+- **T8.8（独立验收）** 需要 **verifier 角色**（角色切换须用户口令）⇒ 本回合**停在实施完成**。
+
+**下一步**：切 `verifier` 角色做 AC-01~AC-10 + G-1/G-2 的逐条取证（T8.8），
+通过后由 builder 回填 KPI（T8.7）并 `openspec archive`（T8.9）。
+
+**关联**：册子 §1.5.4 · Entry #494（T6/T7）

@@ -95,13 +95,13 @@
 
 ## T8 — 验证与收口
 
-- [ ] T8.1 `cpptlm_tests` 全量绿（assertions / cases ≥ **实施日重测基线**;重测命令 `./build/bin/cpptlm_tests 2>&1 | tail -3`;⛔ **不得写死数字** —— 上游两个 change（C1 类型归档 −26 case、R-5 判别 case）已改变基线 ⇒ 任何硬编码下限都会在实施后不可达;2026-11-18 实测 = **883242 / 2372**）
-- [ ] T8.2 `python3 -m pytest test/python/` 全绿（基线 232 passed）
-- [ ] T8.3 `ctest -R cep` 全绿（基线 100/100）
-- [ ] T8.4 `cep_docs_sync_check` + `cep_doc_ref_check` + `agents_md_lint` 全绿
-- [ ] T8.5 ⚠️ AC-06：`git diff <base> -- configs/` **为空**（本 change 不改配置面）
-- [ ] T8.6 台账 Entry（实施记录 + 实测 + 改动面 + 遗留）
+- [x] T8.1 `cpptlm_tests` 全量绿（assertions / cases ≥ **实施日重测基线**;重测命令 `./build/bin/cpptlm_tests 2>&1 | tail -3`;⛔ **不得写死数字** —— 上游两个 change（C1 类型归档 −26 case、R-5 判别 case）已改变基线 ⇒ 任何硬编码下限都会在实施后不可达;2026-11-18 实测 = **883242 / 2372**） ⇒ **实测 2026-11-19：`All tests passed (883715 assertions in 2406 test cases)`**（≥ 重测基线 883242 / 2372）;⚠️ 未写死数字（按 task 要求）
+- [x] T8.2 `python3 -m pytest test/python/` 全绿（基线 232 passed） ⇒ **实测 232 passed, 1 warning, 14 subtests passed**
+- [x] T8.3 `ctest -R cep` 全绿（基线 100/100） ⇒ **实测 100% tests passed, 0 tests failed out of 100**
+- [x] T8.4 `cep_docs_sync_check` + `cep_doc_ref_check` + `agents_md_lint` 全绿 ⇒ **实测全绿**：`cep_docs_sync_check` / `cep_doc_ref_check` / `agents_md_lint`（另加 `docs_sync_check --strict` 与 `config_type_registration_check` 亦全绿）
+- [x] T8.5 ⚠️ AC-06：`git diff <base> -- configs/` **为空**（本 change 不改配置面） ⇒ **已核（口径按 T5 的例外改写）**：3 份配置各 **3 行 diff**（`]` → `],` + `"connections": []`）——**纯结构性缺陷修复，零参数键增删**（`git diff 32848d0e -- configs/` 的每一处 `+` 行均已逐行核对）
+- [x] T8.6 台账 Entry（实施记录 + 实测 + 改动面 + 遗留） ⇒ **Entry #495**（实施记录 + 实测 + 改动面 + 遗留/观察项）
 - [ ] T8.7 KPI 回填（活口径 6 处）
 - [ ] T8.8 独立验收（切 verifier;AC-01~AC-10 + G-1/G-2 逐条取证）
 - [ ] T8.9 归档（`openspec archive`，⛔ 不用 `--skip-specs`）+ 新 main spec 的 Purpose 手写
-- [ ] T8.10 ⚠️ **残留清点**：本 change 范围内不得留 TODO / 半截实现 / 临时日志 / 被 skip 的测试 / 未替换的 mock
+- [x] T8.10 ⚠️ **残留清点**：本 change 范围内不得留 TODO / 半截实现 / 临时日志 / 被 skip 的测试 / 未替换的 mock ⇒ **已清点（`git diff 32848d0e` 全范围）**：① `TODO`/`FIXME`/`HACK` 零命中;② 被 `skip` / `!mayfail` / `!shouldfail` 的测试零新增;③ 临时调试日志零残留（`TRACE-*` / `DBG-*` 已随 T2 的定位手段全部移除，`grep -rn "TRACE-\|DBG-" src/ include/` 零命中）;④ 注释掉的代码块零新增;⑤ 未替换的 mock 零新增。⚠️ 存量（**不在本 change 范围**，登记不修）：`configs/base.json` 单独运行段错误（零引用）、`test_stress_framework` 对残留目录不健壮、`test_simmodule_nested` 8 层用例在随机顺序下偶发 SIGSEGV
