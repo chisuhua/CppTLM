@@ -27,11 +27,15 @@
 - [x] T1.6 B1 回归：`[router]` / `[memory]` / `[gmmu]` / `[trafficgen]` / `[lwc]` 全绿
   - 实测：`cpptlm_tests` 全量 **883307 assertions / 2386 cases** 全绿（基线 883191 / 2371 ⇒ +116 / +15 全部来自新判别测试）;`pytest` 232 passed;`ctest -R cep` 100/100
 
-## T2 — B2 批次（零配置读取面家族 · 14 类）
+## T2 — B2 批次（零配置读取面家族）
+
+> ⚠️ **清单口径修正（2026-11-18）** —— 立项期的「14 类」是**人工读配置**得出的，实测盘点脚本
+> （`scripts/test/param_effect_inventory.py`）复核后**增 4 类 / 删 2 类**（差异逐条见 `design.md` D-1.6.3）:
+> **删**的 2 类是 `ComputeUnitTLM` / `TCCTLM` —— **仓内无类定义**（配置引用了不存在的类型 ⇒ 整份配置不可装配）⇒ **不是零效果键**，转 **R-5**（独立 change）;**增**的 4 类是盘点漏检（`CoherentXBarTLM` / `GpuMeshNoC` / `VramControllerTLM` / `MemoryCluster`）⇒ 已补入 T2.13~T2.16。
 
 - [ ] T2.1 `CPUTLM` 三键（`pattern` / `request_interval` / `start_addr`）裁决 + 落地（**95 个配置实例** ⇒ 影响面最大）
 - [ ] T2.2 `CrossbarTLM.port_count` 裁决 + 落地
-- [ ] T2.3 `ComputeUnitTLM`（`kernel_id` / `workgroup_size`）裁决 + 落地
+- [ ] T2.3 ~~`ComputeUnitTLM`（`kernel_id` / `workgroup_size`）裁决 + 落地~~ ⇒ **转 R-5**（该类型在 `include/` + `src/` **零类定义**;`configs/apu_soc_full.json:3` 自述「not yet registered」⇒ 处置是「实现类型 / 从配置移除」，**不是**「让键有效果」）
 - [ ] T2.4 `GPUTLM` 四键（`kernel_id` / `workgroup_size` / `start_addr` / `end_addr`）裁决 + 落地
 - [ ] T2.5 `PcieControllerIP` 三键（`bar_bases` / `bar_sizes` / `link_speed_gts`）裁决 + 落地;⚠️ `bar_sizes` 另有**板级消费方**（`dgpu_board_shell.cc:78-79`）⇒ 按 `ADR-X.17` D-3 三态条款分开处置
 - [ ] T2.6 `PcieMemoryDevice.capacity_gb` 裁决 + 落地（⚠️ backing 归 `DGpuBoard` —— per `ADR-DGPU-05`;该键与注入的 backing 语义重叠 ⇒ 评估态②）
@@ -40,8 +44,12 @@
 - [ ] T2.9 `MemoryClusterTLM` 两键（`capacity_gb` / `channels`）裁决 + 落地（⚠️ 与 `MemoryCluster` 是两个类）
 - [ ] T2.10 `SharedMemoryTLM` 两键（`banks` / `size_kb`）裁决 + 落地
 - [ ] T2.11 `SocInternalNoc` 两键（`data_flow` / `vc_counts_enabled`）裁决 + 落地（该类已 archived ⇒ 态② 首选）
-- [ ] T2.12 `TCCTLM` 两键（`coalescing` / `size`）裁决 + 落地
-- [ ] T2.13 B2 回归：全量套件绿 + `configs/` 存量写法逐处登记（态② 键的命中清单）
+- [ ] T2.12 ~~`TCCTLM` 两键（`coalescing` / `size`）裁决 + 落地~~ ⇒ **转 R-5**（同 T2.3：仓内零类定义）
+- [ ] T2.13 `CoherentXBarTLM` 三键（`domain_protocol` / `snoop_filter` / `ports`）裁决 + 落地（⚠️ `ports` 仅被 `module_factory_validate.cc:271` 读去做**越界告警**，值从不生效 ⇒ **伪参数候选** ⇒ 态③ 或 态②）
+- [ ] T2.14 `GpuMeshNoC` 两键（`dim` / `hops_latency`）裁决 + 落地（该类只有 `set_dim` / `set_hops_latency` setter，无生产调用方传配置值）
+- [ ] T2.15 `VramControllerTLM.operating_frequency_hz` 裁决 + 落地（⚠️ 该类其余 7 键由**板级直读**消费 ⇒ 见台账表 A;本键全仓零命中 ⇒ 唯一真正零效果的键）
+- [ ] T2.16 `MemoryCluster.memory_type` 裁决 + 落地（读入 `memory_type_` 但成员**从不被读**;B1 停止生成 `MemoryTLM.type` 后彻底悬空 ⇒ 台账 B-10）
+- [ ] T2.17 B2 回归：全量套件绿 + `configs/` 存量写法逐处登记（态② 键的命中清单）
 
 ## T3 — B3 批次（`RouterTLM.routing`）
 
@@ -58,7 +66,7 @@
 
 ## T5 — 台账
 
-- [ ] T5.1（**B1 部分已完成**：B-2/B-3/B-4 改「已消费」;B-5 拆分「已消费 + 已停止产出」;B-1 改「阻塞（R-4）」;新增 B-7~B-10 + §2bis + 表 A 6 键）`docs/implementation/module-param-baseline.md` **表 B 逐条更新**（`待修` ⇒ `已消费` / `已停止产出` / `已显式拒绝`），逐条附实现位置
+- [ ] T5.1（**B1 部分已完成**：B-2/B-3/B-4 改「已消费」;B-5 拆分「已消费 + 已停止产出」;**B-1 改「已落地」（CacheTLM 解冻，见 T1.1）**;新增 B-7~B-10 + §2bis + 表 A 6 键）`docs/implementation/module-param-baseline.md` **表 B 逐条更新**（`待修` ⇒ `已消费` / `已停止产出` / `已显式拒绝`），逐条附实现位置
 - [x] T5.2 ⚠️ AC-07：`grep -rn 'ignore_param(' src/ include/` 的非注释调用点与表 B 条目**一一对应**（承接 `cpptlm-module-param-read-declares` 的 AC-14）
 
 ## T6 — 验证
