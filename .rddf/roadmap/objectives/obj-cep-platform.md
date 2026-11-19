@@ -27226,6 +27226,6 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 #### 未做（明确排除）
 
 - **P2 级加固**（授权可重放 / `authorization_history[]` / 授权与改动内容绑定）: 属机制增强,不在本轮。
-- **`test/cep_freeze_scope_registry.json`**（Entry #324 退役的枚举式登记表）: 全仓零引用,但其自述为**留档**（记录「2026-11-09~11-10 期间 27 份契约面曾处于无冻结保护状态」这一历史事实 + `retired_by`/`superseded_by` provenance 链）⇒ 删除与否待用户裁决。
+- **`test/cep_freeze_scope_registry.json`**（Entry #324 退役的枚举式登记表）: 全仓零引用,但其自述为**留档**（记录「2026-11-09~11-10 期间 27 份契约面曾处于无冻结保护状态」这一历史事实 + `retired_by`/`superseded_by` provenance 链）⇒ **已裁决保留**(2026-11-19,用户裁决:它是**刻意留档**的溯源记录,非意外残留;且本轮 D-1a 恰好把它指向的 `exclusions[]` 做成真机制 ⇒ 退役链完整)。
 
 **关联**：Entry #508（三处同口径 + 反向验证闸竞态）· Entry #507 · Entry #506 · Entry #324（C-2′ 裁决:glob 全量 + 显式排除表）
