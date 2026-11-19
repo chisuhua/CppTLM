@@ -180,7 +180,7 @@ group-scoped completion     → Fabric Collective Plane
 
 ## 3. canonical 10 条 Coherence Interface 流
 
-> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/coherence-interface.md`](../cep/coherence-interface.md)。
+> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/coherence-interface.md`](./cep/coherence-interface.md)。
 > ⚠️ **本节的 3.1 实体在 `coherence-interface.md`;3.2 / 3.3 实体在 `stub-cache-core.md`。**
 
 ### 3.1 清单(per `ADR-CEP-02 §2`,首次定义)
@@ -253,7 +253,7 @@ group-scoped completion     → Fabric Collective Plane
 
 ## 5. Bundle 与协议适配
 
-> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/protocol-engine.md`](../cep/protocol-engine.md)。
+> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/protocol-engine.md`](./cep/protocol-engine.md)。
 > ⚠️ **按层分流**:5.1 → `protocol-engine.md` · 5.2 → `directory-ordering.md` · 5.3 → `collective-plane.md` · 5.4 → `coherence-interface.md`。
 
 ### 5.1 协议族 → 协议实例 → adapter 映射
@@ -276,7 +276,7 @@ group-scoped completion     → Fabric Collective Plane
 
 ## 6. 仿真语义与集成 seam
 
-> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/simulation-and-experiment.md`](../cep/simulation-and-experiment.md)。
+> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/simulation-and-experiment.md`](./cep/simulation-and-experiment.md)。
 > ⚠️ **按层分流**:6.1 / 6.2 / 6.4 → `simulation-and-experiment.md` · **6.3 / 6.3.1(传输层装配 seam)→ `fabric-transport.md`**。
 
 ### 6.1 simulation_mode 单一维度(per `ADR-CEP-07 §2 Decision 1`)
@@ -291,7 +291,7 @@ group-scoped completion     → Fabric Collective Plane
 
 ## 7. 实验输出协议
 
-> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/simulation-and-experiment.md`](../cep/simulation-and-experiment.md)。
+> ⚠️ **本节为指针,非定义处** —— 实体见 [`docs/architecture/cep/simulation-and-experiment.md`](./cep/simulation-and-experiment.md)。
 > ⚠️ **本节全部实体**在 `simulation-and-experiment.md`。
 
 ### 7.1 4 件套(per `ADR-CEP-06 §2`)
@@ -455,12 +455,12 @@ group-scoped completion     → Fabric Collective Plane
 > 能力清单本身仍在 **§2 / §3 / §5.1** 定义,本节不重复。
 ## §附录 · Status Update 2026-10-28(第八则 · per 台账 Entry #88 —— JSON 装配连通性落地 + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记)
 
-> ⛔ **决策正文见 [`ADR-CEP-19`**](../adr/ADR-CEP-19-*.md)的对应 Status Update**(egress 通道语义 / JSON 装配连通性 / 钩子死→活)。
+> ⛔ **决策正文见 [`ADR-CEP-19`**](../adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md)的对应 Status Update**(egress 通道语义 / JSON 装配连通性 / 钩子死→活)。
 > 本节原为实施状态登记,per 台账 Entry #333 架构文档治理已移除;**状态见 `objective-cep-platform §4.0` / `§4.0-a` / `§11`**。
 
 ## 附录 · Status Update 2026-10-29(第十二则 · per 台账 Entry #96 —— 队列 #9 的 R-1 裁决落地)
 
-> ⛔ **决策正文见 [`ADR-CEP-04`**](../adr/ADR-CEP-04-*.md)的对应 Status Update**(`HierarchicalDirectory` 第 6 种 SharerTracker 实现 / R-1 裁决)。
+> ⛔ **决策正文见 [`ADR-CEP-04`**](../adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md)的对应 Status Update**(`HierarchicalDirectory` 第 6 种 SharerTracker 实现 / R-1 裁决)。
 > 本节原为实施状态登记,per 台账 Entry #333 架构文档治理已移除;**状态见 `objective-cep-platform §4.0` / `§4.0-a` / `§11`**。
 
 ## 附录 · Status Update 2026-10-30(第十六则 · per 台账 Entry #106 —— **S1-3 触发后的真实义务**结论)
@@ -528,7 +528,7 @@ group-scoped completion     → Fabric Collective Plane
 
 ## Status Update(2026-11-07 · 八,per 台账 Entry #282)—— **G1~G3 的 4 条待裁决点裁定**(architect)+ G1 形态修正为「组合式 wrapper」
 
-> ⛔ **决策正文见 [`ADR-CEP-19`**](../adr/ADR-CEP-19-*.md)的对应 Status Update**(G1~G3 的 4 条待裁决点裁定 / 组合式 wrapper 形态修正)。
+> ⛔ **决策正文见 [`ADR-CEP-19`**](../adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md)的对应 Status Update**(G1~G3 的 4 条待裁决点裁定 / 组合式 wrapper 形态修正)。
 > 本节原为实施状态登记,per 台账 Entry #333 架构文档治理已移除;**状态见 `objective-cep-platform §4.0` / `§4.0-a` / `§11`**。
 
 ## Status Update(2026-11-08 · 十一,per 台账 Entry #288)—— **「Core·TrafficGen 主干」的架构决策登记**(10 条统一)+ 实施前**不得宣称已落地**
@@ -550,12 +550,12 @@ group-scoped completion     → Fabric Collective Plane
 
 ## Status Update(2026-11-08 · 十三,per 台账 Entry #293)—— **声明面落点裁定回填**(= **甲**)+ **D-9 元数据字段增补**(F-12)
 
-> ⛔ **决策正文见 [`ADR-CEP-06`**](../adr/ADR-CEP-06-*.md)的对应 Status Update**(声明面落点裁定(= 甲)+ D-9 元数据字段增补)。
+> ⛔ **决策正文见 [`ADR-CEP-06`**](../adr/ADR-CEP-06-experiment-protocol.md)的对应 Status Update**(声明面落点裁定(= 甲)+ D-9 元数据字段增补)。
 > 本节原为实施状态登记,per 台账 Entry #333 架构文档治理已移除;**状态见 `objective-cep-platform §4.0` / `§4.0-a` / `§11`**。
 
 ## Status Update(2026-11-08 · 十四,per 台账 Entry #295)—— **F-08 残余裁定**(索引**移到文末** + 新纪律 + 具名闸)+ **retention 裁定 = 丙**(指针)
 
-> ⛔ **决策正文见 [`ADR-CEP-06`**](../adr/ADR-CEP-06-*.md)的对应 Status Update**(F-08 残余裁定(索引移到文末 + 新纪律 + 具名闸)/ retention = 丙)。
+> ⛔ **决策正文见 [`ADR-CEP-06`**](../adr/ADR-CEP-06-experiment-protocol.md)的对应 Status Update**(F-08 残余裁定(索引移到文末 + 新纪律 + 具名闸)/ retention = 丙)。
 > 本节原为实施状态登记,per 台账 Entry #333 架构文档治理已移除;**状态见 `objective-cep-platform §4.0` / `§4.0-a` / `§11`**。
 
 ## 12. CEP 使用手册(Stage 4+ 维护态交接)

@@ -75,7 +75,7 @@ experimental/<run_id>/
 - `bounded_random` / `sampled` 的结果**不得**表述为「已证明无死锁 / 无违例」—— `deadlock_violations == 0` 只代表「在声明的 `verification_scope` 内未观测到」
 - 平台**不承诺**「任意配置都能穷尽验证」—— 这是规模事实,不是实现缺陷
 
-> 完整契约见 [`ADR-CEP-06 §3`](../adr/ADR-CEP-06-experiment-protocol.md)(含一手规模上限依据:极端配置需 1TB RAM + 数小时)。**本节不复制具体数字,避免第二真源。**
+> 完整契约见 [`ADR-CEP-06 §3`](../../adr/ADR-CEP-06-experiment-protocol.md)(含一手规模上限依据:极端配置需 1TB RAM + 数小时)。**本节不复制具体数字,避免第二真源。**
 
 
 ### 7.2.2 「全绿」的两级判定(run-validity / hypothesis-verdict)

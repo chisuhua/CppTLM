@@ -13,7 +13,7 @@
 ✅ **本层的架构决策已落 ADR**(per 批 4,台账 Entry #338)⇒ 本文件**不再是骨架**;下列边界现由 ADR 承载。
 
 **决策载体**:
-- **ASM-1 / 3 / 4 / 7 / 8 / 9**(六项装配决策)→ [`ADR-CEP-19`](../adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md) 的 `Status Update 2026-11-11`;
+- **ASM-1 / 3 / 4 / 7 / 8 / 9**(六项装配决策)→ [`ADR-CEP-19`](../../adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md) 的 `Status Update 2026-11-11`;
 - **D-0 / D-2 / D-5 / D-6 / D-10**(另 5 条)→ `ADR-CEP-19` 的既有 Status Update;
 - **「经网络」的定义 + J-9 拓扑分档判据** → [`fabric-transport.md`](fabric-transport.md) §6.3.1。
 

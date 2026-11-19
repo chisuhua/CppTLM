@@ -493,3 +493,22 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 - `ADR-CEP-03` —— 承载 fabric collective plane 内部件的「一决策一文档化」残余登记
 
 **关联**:台账 **Entry #363**(C3 实施开工授权 + `--authorized-by` 依据)· **#364**(C3a:R-d 闸 + 快照 + helper)· **#361**(D-6 ~ D-9 + 切片)· **#359**(D-1 ~ D-5)· **#338**(R-c 授权 + SU 2026-11-11)· **#169**(拆分登记 + 计数口径)· change `cpptlm-cep-invariant-gate-teeth`(design D-1 ~ D-11 + 契约 delta `specs/cep-invariant-gate/spec.md`)· `scripts/test/cep_decision_block_check.{sh,py}` · `test/cep_decision_block_snapshot.json` · `scripts/test/cep_test_shadow.sh`
+## Status Update 2026-11-19(per 台账 Entry #431 的 W2 已授权更新)—— **R-d 快照当前值声明**(⛔ 不改上方 `### ③` 表的原引用行)
+
+⚠️ **本段只声明当前值,⛔ 不改**上方 `### ③` 机器判据表 R-d 行的「22 份 ADR · 22 键 + `total`=125」—— 那是 **2026-11-12** 时的历史值,按本 ADR 的 append-only 纪律原样保留。
+
+**R-d 快照的当前权威值** = `test/cep_decision_block_snapshot.json` 实测:
+
+| 项 | 历史值(本 SU 上方 R-d 行) | **当前值** | 变更授权 |
+|---|---|---|---|
+| 参与判据的 ADR 份数 | 22 | **23** | 台账 **Entry #431** · W2 |
+| 快照 `count` | 22 | **23** | 同上 |
+| 快照 `total` | 125 | **131** | 同上 |
+| 快照 `files` 键集合 | 22 键 | **23 键**(新增 `ADR-CEP-20-topology-ic3-evidence-strength.md: 6`) | 同上 |
+| 快照 `authorized_by` | — | **`Entry #431`** | 同上 |
+
+⇒ **增量为 `ADR-CEP-20` 的 6 个 §2 决策块**(期望值 6 用闸自己的 `analyze_section2` 实测 = `(6, [])`,⛔ 禁用外部 `grep` —— per Entry #431 W2 备注)。
+
+⛔ **本段不构成新判据**:R-d 的判据形态(逐份比对 + 两条显式红 + 围栏危险标记 + 闸外快照)自 2026-11-12 起不变;本段只把**期望值**对齐到已授权的快照当前值。
+
+**关联**:台账 **Entry #431**(W2 快照更新授权 · W3 delta spec 同步)· **Entry #502**(本次文档同步授权)· `test/cep_decision_block_snapshot.json` · `scripts/test/cep_decision_block_check.{sh,py}`
