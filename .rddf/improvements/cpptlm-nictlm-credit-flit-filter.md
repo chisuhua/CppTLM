@@ -4,7 +4,7 @@ priority: P1
 phase: phase-10
 category: bugfix
 type: bug
-状态: ✅ **已完成并归档**（2026-11-17 立项 #466 → 实施 #468 → 归档 **#479**;✅ **已完成归档语义** · delta 已合并进 `openspec/specs/cep-nictlm-credit-filter/`;归档件 `openspec/changes/archive/2026-11-18-cpptlm-nictlm-credit-flit-filter/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #479 + 验收报告 `.rddf/reviews/cpptlm-nictlm-credit-flit-filter-verify.md` 为准;登记来源 = architect 在 ADR-X.15「缺陷已修复」订正时登记（per `ADR-X.16` 的 `## 关联` 章「相邻独立缺陷」第 2 条）;与 `cpptlm-router-credit-flit-leak-to-consumer`（已归档 #457）**同族但不同消费者**）
+状态: "✅ **已完成并归档**（2026-11-17 立项 #466 → 实施 #468 → 归档 **#479**;✅ **已完成归档语义** · delta 已合并进 `openspec/specs/cep-nictlm-credit-filter/`;归档件 `openspec/changes/archive/2026-11-18-cpptlm-nictlm-credit-flit-filter/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #479 + 验收报告 `.rddf/reviews/cpptlm-nictlm-credit-flit-filter-verify.md` 为准;登记来源 = architect 在 ADR-X.15「缺陷已修复」订正时登记（per `ADR-X.16` 的 `## 关联` 章「相邻独立缺陷」第 2 条）;与 `cpptlm-router-credit-flit-leak-to-consumer`（已归档 #457）**同族但不同消费者**）"
 created: 2026-11-17
 ---
 

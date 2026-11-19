@@ -3,9 +3,9 @@ name: cpptlm-docs-index-generalization
 priority: P2
 phase: phase-1
 依赖:
-  - cpptlm-docs-index-mechanical-generation（已实施 2026-11-19，per 台账 Entry #504）
+  - "cpptlm-docs-index-mechanical-generation（已实施 2026-11-19，per 台账 Entry #504）"
   - docs/README.md §5「索引不复制状态」
-状态: ✅ **已实施**（2026-11-19 · per 台账 Entry #505 · commit `1662c452`；G1~G5 全部完成，**不占 OpenSpec slot**）
+状态: "✅ **已实施**（2026-11-19 · per 台账 Entry #505 · commit `1662c452`；G1~G5 全部完成，**不占 OpenSpec slot**）"
 created: 2026-11-19
 ---
 

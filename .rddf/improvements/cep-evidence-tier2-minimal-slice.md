@@ -9,7 +9,7 @@ phase: phase-10
   - ADR-CEP-12
   - ADR-CEP-04
   - ADR-CEP-19
-状态: ✅ **已归档**(2026-11-14 · per 台账 Entry #412)
+状态: "✅ **已归档**(2026-11-14 · per 台账 Entry #412)"
 created: 2026-11-13
 ---
 

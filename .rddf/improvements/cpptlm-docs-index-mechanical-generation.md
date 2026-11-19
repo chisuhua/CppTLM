@@ -4,9 +4,9 @@ priority: P2
 phase: phase-1
 依赖:
   - docs/adr/README.md §7（抽取契约，architect 已落盘）
-  - scripts/cep/generate_doc_index.py（同类机制先例，Entry #342）
+  - "scripts/cep/generate_doc_index.py（同类机制先例，Entry #342）"
   - scripts/test/cep_gate_harness.py（fixture 拷贝根机制）
-状态: ✅ **已实施**（2026-11-19；W1~W5 全部完成，per 台账 Entry #504；**不占 OpenSpec slot** —— 与 `cep-b4-evidence-device` 先例同型：无 change 但过机械闸 + 变异验证）
+状态: "✅ **已实施**（2026-11-19；W1~W5 全部完成，per 台账 Entry #504；**不占 OpenSpec slot** —— 与 `cep-b4-evidence-device` 先例同型：无 change 但过机械闸 + 变异验证）"
 created: 2026-11-19
 ---
 

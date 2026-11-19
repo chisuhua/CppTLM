@@ -4,7 +4,7 @@ priority: P2
 phase: phase-10
 category: bugfix
 type: bug
-状态: 🔴 **未立项(backlog)· 结论不变(2026-11-19 复核)** —— ⚠️ **复核补充**:本条的 **C++ 声明面已彻底归零** —— `cpptlm-module-param-read-declares` 迁出后,C++ 侧无残留;而 `ParamRules` 机制本身已由 change `cpptlm-module-param-migrate-batch2` 的 **T4** **整体删除**(`get_param_rules()` 的载体 `include/core/param_rules.hh` 不再存在)⇒ 「只登记不修」的结论**更强**:`vc_count` 现在连声明都不存在,只有 **json 侧**条目(`configs/param_rules/router_tlm.json`)未决(归 `ADR-X.10` §F,per 台账 Entry #476)。
+状态: "🔴 **未立项(backlog)· 结论不变(2026-11-19 复核)** —— ⚠️ **复核补充**:本条的 **C++ 声明面已彻底归零** —— `cpptlm-module-param-read-declares` 迁出后,C++ 侧无残留;而 `ParamRules` 机制本身已由 change `cpptlm-module-param-migrate-batch2` 的 **T4** **整体删除**(`get_param_rules()` 的载体 `include/core/param_rules.hh` 不再存在)⇒ 「只登记不修」的结论**更强**:`vc_count` 现在连声明都不存在,只有 **json 侧**条目(`configs/param_rules/router_tlm.json`)未决(归 `ADR-X.10` §F,per 台账 Entry #476)。"
 created: 2026-11-17
 ---
 

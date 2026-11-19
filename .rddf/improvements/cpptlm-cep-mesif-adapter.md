@@ -10,7 +10,7 @@ phase: phase-10
   - ADR-CEP-13
   - ADR-CEP-16
   - ADR-CEP-07A
-状态: ✅ **已归档**(2026-10-30,Entry #105 / #106 —— 「**已完成归档**」语义:2 份 delta spec 已合并进 `openspec/specs/`(`cep-mesif-adapter` + `cep-hierarchical-directory`);实现层 6 项交付全落地;`implemented` 实例 **2 → 3**;KPI 并发 **1/3 → 0/3**;⚠️ 活跃路径 `openspec/changes/cpptlm-cep-mesif-adapter/` 已于归档时失效 ⇒ 现为 `openspec/changes/archive/2026-10-30-cpptlm-cep-mesif-adapter/`(**不入库**,per `.gitignore`))
+状态: "✅ **已归档**(2026-10-30,Entry #105 / #106 —— 「**已完成归档**」语义:2 份 delta spec 已合并进 `openspec/specs/`(`cep-mesif-adapter` + `cep-hierarchical-directory`);实现层 6 项交付全落地;`implemented` 实例 **2 → 3**;KPI 并发 **1/3 → 0/3**;⚠️ 活跃路径 `openspec/changes/cpptlm-cep-mesif-adapter/` 已于归档时失效 ⇒ 现为 `openspec/changes/archive/2026-10-30-cpptlm-cep-mesif-adapter/`(**不入库**,per `.gitignore`))"
 created: 2026-10-30
 ---
 

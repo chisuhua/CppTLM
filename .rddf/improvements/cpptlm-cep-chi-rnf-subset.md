@@ -9,7 +9,7 @@ phase: phase-10
   - ADR-CEP-12
   - ADR-CEP-11
   - ADR-CEP-07A
-状态: ✅ **已归档**(2026-10-28,Entry #95 —— 「**已完成归档**」语义:2 份 delta spec 已合并进 `openspec/specs/cep-chi-rnf-subset/` + `openspec/specs/cep-instance-authority-partition/`;Phase 1 ~ 6 全完成;KPI 并发 **0/3 → 1/3 → 0/3**;⚠️ 转正时的活跃路径 `openspec/changes/cpptlm-cep-chi-rnf-subset/` 已于归档时失效 ⇒ 现为 `openspec/changes/archive/2026-10-28-cpptlm-cep-chi-rnf-subset/`(**不入库**,per `.gitignore`))
+状态: "✅ **已归档**(2026-10-28,Entry #95 —— 「**已完成归档**」语义:2 份 delta spec 已合并进 `openspec/specs/cep-chi-rnf-subset/` + `openspec/specs/cep-instance-authority-partition/`;Phase 1 ~ 6 全完成;KPI 并发 **0/3 → 1/3 → 0/3**;⚠️ 转正时的活跃路径 `openspec/changes/cpptlm-cep-chi-rnf-subset/` 已于归档时失效 ⇒ 现为 `openspec/changes/archive/2026-10-28-cpptlm-cep-chi-rnf-subset/`(**不入库**,per `.gitignore`))"
 created: 2026-10-28
 ---
 

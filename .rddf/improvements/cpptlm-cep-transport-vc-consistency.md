@@ -6,7 +6,7 @@ phase: phase-10
 依赖:
   - ADR-CEP-01
   - ADR-CEP-12
-状态: ✅ **已归档**（2026-11-12 起草 → 实施 → 归档;per 台账 **Entry #355** 归档终态 —— ✅ 已完成归档语义 · delta 已合并进 main spec;验收回执 **Entry #351**(A4 并排取证 + verifier 验收);原立项依据:台账 **Entry #344** 的 W0 方案 + 用户「选 A」认可;metis gap 分析 1 轮已过（P0 6 / P1 5 / P2 3 **全部落盘**）;K-1 / K-2 两个阻塞前置**已由 architect 裁定、用户认可**（per `.rddf/reviews/cep-c2-vc-consistency-decision.md` §9 / §10））
+状态: "✅ **已归档**（2026-11-12 起草 → 实施 → 归档;per 台账 **Entry #355** 归档终态 —— ✅ 已完成归档语义 · delta 已合并进 main spec;验收回执 **Entry #351**(A4 并排取证 + verifier 验收);原立项依据:台账 **Entry #344** 的 W0 方案 + 用户「选 A」认可;metis gap 分析 1 轮已过（P0 6 / P1 5 / P2 3 **全部落盘**）;K-1 / K-2 两个阻塞前置**已由 architect 裁定、用户认可**（per `.rddf/reviews/cep-c2-vc-consistency-decision.md` §9 / §10））"
 created: 2026-11-12
 ---
 

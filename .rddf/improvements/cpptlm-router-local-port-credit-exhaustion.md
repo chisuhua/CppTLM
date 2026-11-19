@@ -4,7 +4,7 @@ priority: P1
 phase: phase-10
 category: bugfix
 type: bug
-状态: ✅ **已完成并归档**（2026-11-16 起草 / 2026-11-17 立项 #459 → 实施 #463 → 归档 **#464** → 独立验收 #465;✅ **已完成归档语义** · delta 已合并进 `openspec/specs/router-local-port-flow-control/` + `openspec/specs/cep-cohif-network-adapter/`;归档件 `openspec/changes/archive/2026-11-17-cpptlm-router-local-port-credit-exhaustion/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #464 + 验收报告为准;决策源 = `docs/adr/ADR-X.16-router-local-port-terminal-credit.md`（Accepted，方案 A））
+状态: "✅ **已完成并归档**（2026-11-16 起草 / 2026-11-17 立项 #459 → 实施 #463 → 归档 **#464** → 独立验收 #465;✅ **已完成归档语义** · delta 已合并进 `openspec/specs/router-local-port-flow-control/` + `openspec/specs/cep-cohif-network-adapter/`;归档件 `openspec/changes/archive/2026-11-17-cpptlm-router-local-port-credit-exhaustion/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #464 + 验收报告为准;决策源 = `docs/adr/ADR-X.16-router-local-port-terminal-credit.md`（Accepted，方案 A））"
 created: 2026-11-16
 ---
 

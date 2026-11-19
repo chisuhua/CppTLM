@@ -4,10 +4,10 @@ priority: P0
 phase: phase-10
 category: core-impl
 type: fix
-状态: ✅ 已归档(2026-11-09,per 台账 Entry #318 —— ✅ 已完成归档语义:**零 delta spec**(`skip_specs: true`,不改任何 main spec 的契约面);归档件 = `openspec/changes/archive/2026-11-09-cpptlm-cep-bidirectional-multiport-inbound/`;tasks **33/33**;两条决定性变异均按正确原因变红)
+状态: "✅ 已归档(2026-11-09,per 台账 Entry #318 —— ✅ 已完成归档语义:**零 delta spec**(`skip_specs: true`,不改任何 main spec 的契约面);归档件 = `openspec/changes/archive/2026-11-09-cpptlm-cep-bidirectional-multiport-inbound/`;tasks **33/33**;两条决定性变异均按正确原因变红)"
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 依赖: ADR-CEP-19
-来源: 台账 Entry #307(4 项 oracle 裁决)· #310(R-5 / R-6 残余登记 + `07 号` SU · 十六)· **#317**(全量盘点 + 实施路径 + metis 缺口分析)
+来源: "台账 Entry #307(4 项 oracle 裁决)· #310(R-5 / R-6 残余登记 + `07 号` SU · 十六)· **#317**(全量盘点 + 实施路径 + metis 缺口分析)"
 生成时间: 2026-11-09
 ---
 

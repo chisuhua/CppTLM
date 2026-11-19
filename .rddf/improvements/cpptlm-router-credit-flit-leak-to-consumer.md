@@ -4,7 +4,7 @@ priority: P1
 phase: phase-10
 category: bugfix
 type: bug
-状态: ✅ **已完成并归档**（2026-11-16 立项 #454 → 实施 #456 → 归档 **#457**;✅ **已完成归档语义** · delta 已合并进 `openspec/specs/cep-cohif-network-adapter/`;归档件 `openspec/changes/archive/2026-11-16-cpptlm-router-credit-flit-leak-to-consumer/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #457 为准;经 metis 审查修订:根因订正 + scope 收敛为消费者侧过滤）
+状态: "✅ **已完成并归档**（2026-11-16 立项 #454 → 实施 #456 → 归档 **#457**;✅ **已完成归档语义** · delta 已合并进 `openspec/specs/cep-cohif-network-adapter/`;归档件 `openspec/changes/archive/2026-11-16-cpptlm-router-credit-flit-leak-to-consumer/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #457 为准;经 metis 审查修订:根因订正 + scope 收敛为消费者侧过滤）"
 created: 2026-11-16
 revision_count: 1
 last_feedback_id: feedback-20261116-001

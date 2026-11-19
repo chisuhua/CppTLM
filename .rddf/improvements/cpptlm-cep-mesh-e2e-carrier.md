@@ -4,7 +4,7 @@ priority: P0
 phase: phase-10
 category: core-impl
 type: feature
-状态: 🟡 **已立项**(2026-11-16 · builder 起草并实施 · 台账 Entry #448 · KPI **0/3 → 1/3**)
+状态: "🟡 **已立项**(2026-11-16 · builder 起草并实施 · 台账 Entry #448 · KPI **0/3 → 1/3**)"
 created: 2026-11-16
 ---
 

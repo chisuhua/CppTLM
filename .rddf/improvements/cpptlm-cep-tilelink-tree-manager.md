@@ -10,7 +10,7 @@ phase: phase-10
   - ADR-CEP-17
   - ADR-CEP-02
   - ADR-CEP-05
-状态: ✅ **已完成并归档**(2026-11-02,队列 #11 —— 状态回填 2026-11-06,per Entry #250;两段式均已归档:`openspec/changes/archive/2026-11-02-cpptlm-cep-tilelink-tree-manager/` + 规约层 `2026-11-02-cpptlm-cep-tilelink-state-spec/`)
+状态: "✅ **已完成并归档**(2026-11-02,队列 #11 —— 状态回填 2026-11-06,per Entry #250;两段式均已归档:`openspec/changes/archive/2026-11-02-cpptlm-cep-tilelink-tree-manager/` + 规约层 `2026-11-02-cpptlm-cep-tilelink-state-spec/`)"
 created: 2026-11-01
 ---
 

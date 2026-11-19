@@ -4,7 +4,7 @@ priority: P1
 phase: phase-10
 category: bugfix
 type: bug
-状态: ✅ **已完成并归档**（2026-11-18 起草 → 立项 (`cpptlm-module-param-effect-landing` 的 R-5 转派) → 实施 → 归档;per 台账 **Entry #487** 归档回执 —— ✅ **已完成归档语义** · delta 已合并进 `openspec/specs/config-type-registration-align/`;归档件 `openspec/changes/archive/2026-11-18-cpptlm-config-type-registration-align/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #487 为准）
+状态: "✅ **已完成并归档**（2026-11-18 起草 → 立项 (`cpptlm-module-param-effect-landing` 的 R-5 转派) → 实施 → 归档;per 台账 **Entry #487** 归档回执 —— ✅ **已完成归档语义** · delta 已合并进 `openspec/specs/config-type-registration-align/`;归档件 `openspec/changes/archive/2026-11-18-cpptlm-config-type-registration-align/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #487 为准）"
 created: 2026-11-18
 ---
 

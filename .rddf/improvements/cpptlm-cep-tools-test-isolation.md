@@ -6,7 +6,7 @@ phase: phase-10
 依赖:
   - ADR-CEP-06
   - ADR-CEP-14
-状态: ✅ **已完成**(2026-10-23,`2032e358` —— 状态回填 2026-11-06,per Entry #250;进程级隔离 `proc_token()` 在位;**不占 OpenSpec slot**)
+状态: "✅ **已完成**(2026-10-23,`2032e358` —— 状态回填 2026-11-06,per Entry #250;进程级隔离 `proc_token()` 在位;**不占 OpenSpec slot**)"
 created: 2026-10-23
 ---
 

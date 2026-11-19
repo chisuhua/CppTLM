@@ -4,10 +4,10 @@ priority: P0
 phase: phase-10
 category: core-impl
 type: fix
-状态: ✅ 已归档(2026-11-09,per 台账 Entry #311 —— ✅ 已完成归档语义:**零 delta spec**(`.openspec.yaml` 的 `skip_specs: true`,本 change **不改任何 main spec 的契约面**)⇒ 归档时**不合并**任何 delta;归档件 = `openspec/changes/archive/2026-11-09-cpptlm-cep-dual-port-inbound-dispatch/`;tasks **30/30**)
+状态: "✅ 已归档(2026-11-09,per 台账 Entry #311 —— ✅ 已完成归档语义:**零 delta spec**(`.openspec.yaml` 的 `skip_specs: true`,本 change **不改任何 main spec 的契约面**)⇒ 归档时**不合并**任何 delta;归档件 = `openspec/changes/archive/2026-11-09-cpptlm-cep-dual-port-inbound-dispatch/`;tasks **30/30**)"
 主题: Coherence Exploration Platform(CEP)—— 双端口适配器入向按**端口组**路由 ⇒ 拓扑级回程腿闭合
 依赖: ADR-CEP-06, ADR-CEP-19
-来源: 台账 Entry #305 ③ R-2(残余登记)+ Entry #307(4 项 oracle 裁决 + 实施顺序)+ Entry #308(实施回执)+ Entry #309(T1 + E1)+ Entry #310(SU · 十六 冻结面授权)
+来源: "台账 Entry #305 ③ R-2(残余登记)+ Entry #307(4 项 oracle 裁决 + 实施顺序)+ Entry #308(实施回执)+ Entry #309(T1 + E1)+ Entry #310(SU · 十六 冻结面授权)"
 生成时间: 2026-11-09
 ---
 

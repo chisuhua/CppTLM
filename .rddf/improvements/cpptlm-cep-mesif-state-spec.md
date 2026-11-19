@@ -2,17 +2,13 @@
 name: cpptlm-cep-mesif-state-spec
 priority: P1
 phase: phase-10
-主题: MESIF 状态机规约 + 5→4 perm 投影表 —— 补齐 ArchForge 侧两处「全仓 0 命中」缺口(队列 #9 `cpptlm-cep-mesif-adapter` 的规约层前置)
+主题: "MESIF 状态机规约 + 5→4 perm 投影表 —— 补齐 ArchForge 侧两处「全仓 0 命中」缺口(队列 #9 `cpptlm-cep-mesif-adapter` 的规约层前置)"
 依赖:
   - ADR-CEP-05
   - ADR-CEP-12
   - ADR-CEP-04
   - ADR-CEP-02
-状态: ✅ **已归档**(2026-10-29,Entry #101 —— 「**已完成归档**」语义:2 份 delta spec 已合并进
-  `openspec/specs/cep-mesif-state-spec/`(ADDED:MS-01 ~ MS-06)+ `openspec/specs/cep-chi-rnf-subset/`
-  (MODIFIED:CR-06 ③ 措辞修正);Phase 0 ~ 5 全完成;KPI 并发 **1/3 → 0/3**;⚠️ 转正时的活跃路径
-  `openspec/changes/cpptlm-cep-mesif-state-spec/` 已于归档时失效 ⇒ 现为
-  `openspec/changes/archive/2026-10-29-cpptlm-cep-mesif-state-spec/`(**不入库**,per `.gitignore`))
+状态: "✅ **已归档**(2026-10-29,Entry #101 —— 「**已完成归档**」语义:2 份 delta spec 已合并进 `openspec/specs/cep-mesif-state-spec/`(ADDED:MS-01 ~ MS-06)+ `openspec/specs/cep-chi-rnf-subset/` (MODIFIED:CR-06 ③ 措辞修正);Phase 0 ~ 5 全完成;KPI 并发 **1/3 → 0/3**;⚠️ 转正时的活跃路径 `openspec/changes/cpptlm-cep-mesif-state-spec/` 已于归档时失效 ⇒ 现为 `openspec/changes/archive/2026-10-29-cpptlm-cep-mesif-state-spec/`(**不入库**,per `.gitignore`))"
 created: 2026-10-29
 ---
 

@@ -4,7 +4,7 @@ priority: P1
 phase: phase-10
 category: bugfix
 type: bug
-状态: 🟢 **C++ 侧已闭合(2026-11-19)** —— change `cpptlm-module-param-migrate-batch2` 的 **T4.4/T4.5** 已删 `validate_module_params`(死代码) + `ParamParser::validate`;同批 **T4.1~T4.3** 更进一步把 `ParamRules` 机制**整体退役**(`include/core/param_rules.hh` / `registerParamRules` / `getParamRulesRegistry` / 工厂侧默认值注入循环)⇒ 本 improvement 的 W2 路径落地且超出预期:参数声明面统一到 `load_param` / `load_param_opt`(判据 `test/test_param_migrate_batch2.cc` + 台账 Entry #492)。⛔ **Python 生成期诉求仍未闭合**(`cpptlm_config/validator.py` 的 PARAM-01/02 依赖 `configs/param_rules/*.json`;该目录按 T4.7 **未触碰**)⇒ 转 `ADR-X.10` **§F** 独立裁决(architect 域)。以下原状态行保留作沿革。
+状态: "🟢 **C++ 侧已闭合(2026-11-19)** —— change `cpptlm-module-param-migrate-batch2` 的 **T4.4/T4.5** 已删 `validate_module_params`(死代码) + `ParamParser::validate`;同批 **T4.1~T4.3** 更进一步把 `ParamRules` 机制**整体退役**(`include/core/param_rules.hh` / `registerParamRules` / `getParamRulesRegistry` / 工厂侧默认值注入循环)⇒ 本 improvement 的 W2 路径落地且超出预期:参数声明面统一到 `load_param` / `load_param_opt`(判据 `test/test_param_migrate_batch2.cc` + 台账 Entry #492)。⛔ **Python 生成期诉求仍未闭合**(`cpptlm_config/validator.py` 的 PARAM-01/02 依赖 `configs/param_rules/*.json`;该目录按 T4.7 **未触碰**)⇒ 转 `ADR-X.10` **§F** 独立裁决(architect 域)。以下原状态行保留作沿革。"
 created: 2026-11-17
 ---
 
