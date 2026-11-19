@@ -46,7 +46,7 @@
 | ↳ [`cep/core-traffic-gen.md`](./cep/core-traffic-gen.md) | ✅ 子文档 | Core / TrafficGen 主干(决策载体 = `ADR-CEP-19` SU 2026-11-11 的 ASM-1/3/4/7/8/9 + 既有 SU 的另 5 条;「经网络」定义 = `fabric-transport.md` §6.3.1) |
 | ↳ [`cep/parity-baseline.md`](./cep/parity-baseline.md) | ✅ 子文档 | **H7 对拍基准规格**(R7 / H7 / M3):三选项对比 + 裁决(**gem5 Ruby 主基准**)+ 对拍手段(P-1 ~ P-5 判据 + 4 类失配归因)+ 已知结构性差异;**指定 ≠ 实测** ⇒ H7 仍未验证 · 2026-11-11 由顶层 `14-…` 归位(per 台账 Entry #341) |
 | [08-metrics-collection-framework-v2.2.md](./08-metrics-collection-framework-v2.2.md) | ✅ v2.2.0 已实施 | 性能指标收集框架 (histogram + stats + streaming_reporter, 2026-10-19 状态对齐) |
-| [09-topology-visualization-pipeline.md](./09-topology-visualization-pipeline.md) | ✅ v2.0 已批准 | 配置生成 + 可视化架构 (Python `cpptlm/visualization/` + dashboard, 2026-10-19 状态对齐) |
+| [09-topology-visualization-pipeline.md](./09-topology-visualization-pipeline.md) | 🟡 v2.0 草案 | 配置生成 + 可视化架构 (Python `cpptlm/visualization/` + dashboard, 2026-10-19 状态复核**回退**, per critic 评审 B4: 关联 ADR-X.12 仍未签发) |
 | [10-topology-generation-management-system.md](./10-topology-generation-management-system.md) | ✅ v3.0 已批准 | 拓扑生成管理系统 (mesh_cluster / ring_cluster + JSON Schema) |
 | [11-coherence-domain-readiness.md](./11-coherence-domain-readiness.md) | 🟡 早期 readiness 评估 | 一致性域准备状态 (ARCH-011, 与 06-bis v0.3 实施蓝图范围正交, 2026-10-19 加 cross-ref) |
 | [12-topology-gap-analysis.md](./12-topology-gap-analysis.md) | ✅ v1.1 已批准 | 拓扑差距分析 (审查修正版) |

@@ -40,6 +40,9 @@
 > - timing-mode (并列视图, v0.2 终稿): [./timing-mode.md](./timing-mode.md)
 > - Driver 视角 (15 ABI + 4 BAR): [../dgpu-driver/architecture.md](../dgpu-driver/architecture.md)
 > - Board 视角 (DGpuBoard v2.0.2): [../dgpu-board/architecture.md](../dgpu-board/architecture.md)
+> - PCIe TLP 线格式 (v1.0, 2026-10-18 自 `docs/architecture/` 迁入): [./14-pcie-tlp-wire-format.md](./14-pcie-tlp-wire-format.md)
+> - 模块间通信网络全栈蓝图 (v1.0): [./communication-network.md](./communication-network.md)
+> - GPGPU 多层 SimModule 拓扑 (CPU→CU→TPC→GPC→GPU, 2026-10-18 迁入): [./multi-level-hybrid-simulation.md](./multi-level-hybrid-simulation.md)
 
 ## 范围
 

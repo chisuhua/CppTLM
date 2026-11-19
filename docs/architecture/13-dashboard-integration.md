@@ -1,7 +1,7 @@
 # CppTLM Dashboard 集成架构
 
 > **CppTLM Unified Visualization Platform — 架构文档**
-> 版本：v2.0 | 日期：2026-05-13 | 状态：已批准
+> 版本：v2.0 | 日期：2026-05-13 | 状态：✅ 已批准
 >
 > Oracle 评审后更新：增加架构原则、技术债务规则、FastAPI 迁移路径
 

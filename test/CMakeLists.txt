@@ -919,3 +919,15 @@ set_tests_properties(docs_adr_index_check PROPERTIES WORKING_DIRECTORY ${CMAKE_S
 add_test(NAME docs_adr_index_check_selftest
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/docs_adr_index_check.sh --selftest)
 set_tests_properties(docs_adr_index_check_selftest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# ── 2026-11-19(change cpptlm-docs-index-generalization / 台账 Entry #504):**子目录索引一致性闸** ──
+# 判据面 = `docs/README.md` §7(子目录索引登记契约)。三判据:① 覆盖(目录顶层 .md ⊆ README 登记,
+# ⛔ 不递归)② docs/ 内部相对链接可达 ③ 状态**符号**一致(仅 docs/architecture;豁免表 1 项)。
+# 配 5 条决定性变异(删登记 / 加未登记 .md / 改本体系号 / 断同目录链接 / **清空豁免表必红**),
+# 全部跑在拷贝根 —— `07 号` 与 `cep/*` 在 M1 冻结面内,直接改真文件会让 cep_freeze_check 整组 rc=1。
+add_test(NAME docs_index_consistency_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/docs_index_consistency_check.sh)
+set_tests_properties(docs_index_consistency_check PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME docs_index_consistency_check_selftest
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/docs_index_consistency_check.sh --selftest)
+set_tests_properties(docs_index_consistency_check_selftest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
