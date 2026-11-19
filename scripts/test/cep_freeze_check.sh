@@ -130,7 +130,10 @@ if [ "${1:-}" = "--update" ]; then
   fi
   # 精确匹配:台账里必须存在 **entry id 完全等于** $AUTH 的 entry
   #   (entry id = '### ' 之后、' — ' 之前的部分;标题的日期/类型后缀不算)
-  ENTRY_IDS="$(grep "^### " "$LEDGER" | sed 's/^### //; s/ *—.*$//')"
+  # ⚠️ 只认 **`### Entry #N`** 形态 —— 旧写法 `grep "^### "` 会把 Entry 正文里的
+  #    `###` 级子标题（如「授权明细」「验收」）也放进可选 id 集合 ⇒ 可用子标题冒充
+  #    授权条目（2026-11-19 修正，见台账 Entry #506 的「顺带发现」）。
+  ENTRY_IDS="$(grep "^### Entry #" "$LEDGER" | sed 's/^### //; s/ *—.*$//')"
   if ! printf '%s\n' "$ENTRY_IDS" | grep -qxF "$AUTH"; then
     echo "  ✗ 授权校验失败:台账 $LEDGER 中没有 id 为 '$AUTH' 的 entry"
     echo "    · 现有 entry id:"
