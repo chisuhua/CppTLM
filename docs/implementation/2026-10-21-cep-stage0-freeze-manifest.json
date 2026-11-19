@@ -91,10 +91,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #502",
+  "authorized_by": "Entry #509",
   "exclusions": [],
   "frozen_at": "2026-11-19",
-  "frozen_at_commit": "b9fde4e5f0a7546926a689609122dab40ab169e6",
+  "frozen_at_commit": "796b35fee019af882431cd50ee532da1626f2d57",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
@@ -121,5 +121,5 @@
     "openspec/specs/cep-stub-cache-chstream-surface/spec.md"
   ],
   "mechanism": "M1 产物冻结先于解读(per obj-cep-platform §9.2)",
-  "note": "Stage 0 冻结的是**规范性契约产物**(ADR + 07 号 + schema + tools + spec);两个 checker 脚本自身不冻结(checker 必须可修,且不承载契约语义)。**fabric 载体按「契约面 / 数据面」拆分**:`fabric.schema.json`(**类型描述** = 契约,故冻结 —— 否则 `vc_count.maximum` 可被静默放宽);`fabric.json`(**实例数据** = 派生副本,权威在 ArchForge,故**不冻结**,Stage 1 首个 implemented 实例跑过后再纳)。冻结后若需修改,须走 §11 台账 scope-change / adr-amendment entry;`--update` 需带 `--authorized-by <台账 entry id>` 才有授权记录。"
+  "note": "冻结面 = 本清单的 `globs`(范围)× `artifacts`(逐件 sha256);**成员级结论一律以本清单为准**,此处不复述(复述即漂移源)。两个 checker 脚本自身不冻结(checker 必须可修,且不承载契约语义)。冻结后若需修改,须走 §11 台账 scope-change / adr-amendment entry;`--update` 需带 `--authorized-by <台账 entry id>` 才有授权记录。"
 }
