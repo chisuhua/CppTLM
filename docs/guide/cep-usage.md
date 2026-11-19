@@ -95,17 +95,19 @@
 
 ## 12.5 闸清单
 
-**35 个 `scripts/test/cep_*.sh`**,按职责 7 类:
+**44 个可执行 `scripts/test/cep_*.sh`**（另有 1 个被 `source` 的共享 helper `cep_test_shadow.sh` ⇒ 磁盘共 **45 个 `cep_*.sh` 文件**）,按职责 7 类:
 
 | 类 | 数量 | 代表 |
 |----|:----:|------|
-| 冻结面校验 | 1(其反向脚本**已计入**下方 17) | `cep_freeze_check.sh` · `cep_freeze_reverse_verify.sh` |
+| 冻结面校验 | 1(其反向脚本**已计入**下方 19) | `cep_freeze_check.sh` · `cep_freeze_reverse_verify.sh` |
 | 文档同步 / ADR 结构 | 3 | `cep_docs_sync_check.sh` · `cep_doc_ref_check.sh` · `cep_adr_structural_check.sh` |
-| 漂移 / 声明对齐 | 5 | `cep_decl_alignment_check.sh` · `cep_archforge_alignment_check.sh` · `cep_prereg_drift_check.sh` · `cep_e2e_reconcile_check.sh` · `cep_index_position_check.sh` |
-| 实验运行器 | 3 | `cep_experiment_run.sh` · `cep_h8_ab_runs.sh` · `cep_b4_observation_keys_check.sh` |
-| 登记 / 状态核查 | 5 | `cep_b3b2_deferral_check.sh` · `cep_b3b2_d4_probe_check.sh` · `cep_b3b2_d4_quarterly_review.sh` · `cep_ic3_report_states_check.sh` · `cep_b4_coupling_probe.sh` |
-| **变异证据(reverse verify / fail-closed)** | **17** | 15 个 `*_reverse_verify.sh` + `cep_source_effect_check.sh` + `cep_tilelink_engine_failclosed.sh` |
+| 漂移 / 声明对齐 | 10 | `cep_decl_alignment_check.sh` · `cep_archforge_alignment_check.sh` · `cep_prereg_drift_check.sh` · `cep_e2e_reconcile_check.sh` · `cep_index_position_check.sh` · `cep_validate_topology_reconcile_check.sh` · `cep_iag_gate_reconcile_check.sh` · `cep_decision_block_check.sh` · `cep_spec_strict_check.sh` · `cep_dod_reading_check.sh` |
+| 实验运行器 | 4 | `cep_experiment_run.sh` · `cep_h8_ab_runs.sh` · `cep_b4_observation_keys_check.sh` · `cep_full_green_run_check.sh` |
+| 登记 / 状态核查 | 6 | `cep_b3b2_deferral_check.sh` · `cep_b3b2_d4_probe_check.sh` · `cep_b3b2_d4_quarterly_review.sh` · `cep_b3b2_archive_form_check.sh` · `cep_ic3_report_states_check.sh` · `cep_b4_coupling_probe.sh` |
+| **变异证据(reverse verify / fail-closed)** | **19** | 17 个 `*_reverse_verify.sh` + `cep_source_effect_check.sh` + `cep_tilelink_engine_failclosed.sh` |
 | 闸自检 | 1 | `cep_gate_selftest.sh`(对**闸自身**跑回归 fixture) |
+
+> ⚠️ **本表「代表」列是人工策展**(分类属语义判断)⇒ ⛔ **不机器派生**;但**「数量」列须与磁盘实测一致**(2026-11-19 实测:44 = 1+3+10+4+6+19+1)。
 
 **读闸纪律**:
 
@@ -113,15 +115,15 @@
 - ⛔ **cadence 闸会自然超期**:`cep_b3b2_d4_quarterly_review.sh` 内含「≤100 天未执行即红」断言(最近真实执行 2026-11-09)⇒ **该闸转红与代码无关**(该脚本**刻意不注册 ctest**,以免无关 PR 批量变红)⇒ ⛔ 不作回归信号
 - ⛔ **部分闸会真跑实验并写盘**:`cep_experiment_run.sh` / `cep_h8_ab_runs.sh` ⇒ **只读巡检请排除这两个**
 - ⛔ **无退出码语义的 `echo PASS` 不算闸** —— 每个闸的 PASS 必须带计数
-- ✅ **近半数闸自带反向 fixture**(17 / 35)⇒ 「破坏输入必红」是默认强度要求,⛔ **新增闸须附决定性变异**
+- ✅ **近半数闸自带反向 fixture**(19 / 44)⇒ 「破坏输入必红」是默认强度要求,⛔ **新增闸须附决定性变异**
 
-> ⚠️ **名单的权威来源 = `ls scripts/test/cep_*.sh`**(35)⇒ ⛔ **不得**以文档里的数字为准。**登记处现状(2026-11-12 起,per 台账 Entry #342)**:`scripts/README.md` §CEP 契约守门脚本 **31 行 + 季度复审 2 + 实验运行器 2 = 35**(已补登 `cep_index_position_check.sh` / `cep_e2e_reconcile_check.sh`)· `AGENTS.md` **4 处已订正为 35**(⛔ 原写「25 个」)· `docs/ONBOARDING.md §5.5` **只列部分**(导航性质,⛔ 不作计数源)。
+> ⚠️ **名单的权威来源 = `ls scripts/test/cep_*.sh`**(45 个文件 = **44 个可执行闸** + 1 个被 `source` 的共享 helper `cep_test_shadow.sh`)⇒ ⛔ **不得**以文档里的数字为准。**登记处现状(2026-11-19 实测)**:`scripts/README.md` §CEP 契约守门脚本 **44 行**(= 44 个可执行闸;共享 helper 单列)· `AGENTS.md` **各处以「数量以 `ls scripts/test/cep_*.sh` 为准」表述**(⛔ 不固化数字)· `docs/ONBOARDING.md §5.5` **只列部分**(导航性质,⛔ 不作计数源)。
 >
-> ⚠️ **另有 5 个 CEP `.py` 闸**(`cep_adr_structural_check.py` / `cep_b3b2_d4_probe_validate.py` / `cep_b4_observation_keys_check.py` / `cep_invariant_map_check.py` / `cep_gate_harness.py`)—— 由 `.sh` 闸**调用**,⛔ **不单独计入 35**。
+> ⚠️ **另有 10 个 CEP `.py`**(`cep_adr_structural_check.py` / `cep_b3b2_d4_probe_validate.py` / `cep_b4_observation_keys_check.py` / `cep_decision_block_check.py` / `cep_dod_reading_check.py` / `cep_gate_harness.py` **6 个被 `.sh` 闸调用** + `cep_invariant_map_check.py` / `cep_spec_purpose_batch1_check.py` / `cep_spec_purpose_batch3_check.py` / `cep_spec_purpose_batch3_gen.py` **4 个独立**)⇒ ⛔ **不单独计入 44**。
 
 ## 12.6 冻结面五步授权链
 
-**M1 冻结集**:**69 个产物**,清单载体 = `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(含 `globs` 22 条 + `exclusions` **0** 条)。
+**M1 冻结集**:**89 个产物**,清单载体 = `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(显式 89 条 sha256 与 `globs` **23** 条展开的 89 个文件**完全重合** + `exclusions` **0** 条)。
 
 > **范围口径(per 台账 Entry #324 C-2′)**:冻结面 = **glob 全量 + 显式排除表(当前为空)** ⇒ **新文件自动入集** ⇒ ⛔ **不需要**逐条登记「未冻结」(原枚举式登记表 `test/cep_freeze_scope_registry.json` **已于 2026-11-10 退役**)。
 
