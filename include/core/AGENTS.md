@@ -11,10 +11,7 @@ SimObject (基类 — 所有仿真模块)
 │   ├── CacheTLM      (include/tlm/)
 │   ├── CrossbarTLM   (include/tlm/)
 │   └── MemoryTLM     (include/tlm/)
-├── CPUSim            (include/modules/legacy/)
-├── CacheSim          (include/modules/legacy/)
-├── MemorySim         (include/modules/legacy/)
-└── ...
+└── SimModule (多层容器基类 — 见 include/tlm/cluster/)
 ```
 
 ## 关键文件
@@ -66,14 +63,11 @@ SimObject (基类 — 所有仿真模块)
 
 ## 架构层次说明
 
-### core/ext/ 子目录（TLM 扩展桥接层）
+### core/ext/ 子目录
 
-`include/core/ext/` 是 `core/` 层的特殊子目录，**允许直接依赖 `tlm/` 层**。这是有意设计：
+`include/core/ext/` 现**仅** `packet_pool.hh`。曾在此的 `cmd_exts.hh`（TLM 扩展宏 `GEMSC_TLM_EXTENSION_DEF`）已于 **2026-06-10 删除**（随之 `packet_to_payload.hh` / `payload_to_packet.hh` 也已移除）。
 
-- **原因**：`core/ext/cmd_exts.hh` 定义了 TLM 扩展宏（`GEMSC_TLM_EXTENSION_DEF`），必须继承 `tlm::tlm_extension<T>`（C++ 模板继承需要完整类型定义）
-- **替代方案**：将 `cmd_exts.hh` 移至 `ext/` 目录，但因其被 `core/ext/*` 使用，会增加循环依赖
-- **判断标准**：仅当文件直接包含 `tlm/tlm_stub.hh` 或 `tlm.h` 时，才允许放在 `core/ext/` 下
-- **Phase 1c 后状态**：`packet_to_payload.hh` 和 `payload_to_packet.hh` 已移除（零 .cc 用户，archived 到 `docs-archived/dead-code-headers-2026-q2/`）；`cmd_exts.hh` 简化为宏库（删除重复的 `ReadCmdExt`/`WriteCmdExt` 等类定义，仅 `ReqIDExt` 唯一保留）
+⚠️ 因此「`core/ext/` 允许直接依赖 `tlm/` 层」这条旧规则**已失效** —— 该目录现已无任何跨层依赖；TLM 扩展宏统一走 `include/ext/`（见下）。
 
 ### ext/ 层依赖
 
@@ -81,7 +75,7 @@ SimObject (基类 — 所有仿真模块)
 
 ### core/packet.hh 的依赖链
 
-`include/core/packet.hh` 不再直接包含 `tlm/tlm_stub.hh` 或 `tlm.h`，依赖通过下列传递性 include 解决：
+`include/core/packet.hh` 不再直接包含 `tlm/tlm_stub.hh` 或 SystemC 的 `tlm.h`，依赖通过下列传递性 include 解决：
 
 ```
 core/packet.hh

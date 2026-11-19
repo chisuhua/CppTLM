@@ -27076,3 +27076,43 @@ AC-1(`--check` rc=0 + 幂等)/ AC-2(**判据①** 逐系列:实际 == 表行数 
 `DOC HYGIENE` 的模型段拆分（真源分级 / 4 层文档模型改为指针，~8 KB）与 `COMMANDS` 与 `scripts/README.md` 合并（~4 KB）—— 需先确认 `docs/README.md` 完整覆盖后再动；`agents_md_lint` 的 64 KiB 阈值**不动**（放宽阈值 = 判据退化）。
 
 **关联**：`AGENTS.md` · `docs/REPO-MAP.md` · `docs/archive/process/PHASE-LOG.md` · `docs/README.md §3.6` · 用户裁决「方案 B」
+
+### Entry #507 — 2026-11-19 [builder](**子目录 AGENTS.md 治理** — 闸有牙化 + 6 处失效修复 + 3 份主线补齐 + 冻结面授权校验收紧)
+
+**范围**：doc + 测试工具（`scripts/test/`）。doc-only change `cpptlm-subdir-agents-governance`（`skip_specs: true`）已归档为 `2026-11-19-cpptlm-subdir-agents-governance`，**不占 Proposed KPI slot**（0/3）。
+
+#### 起因（实测三类问题）
+
+| # | 问题 | 证据 |
+|:--:|---|---|
+| W-1 | **闸从来没牙** | `docs_sync_check.sh` 调 `agents_md_lint.py` **未传 `--strict`** ⇒ 有问题仍 rc=0 ⇒ 根 AGENTS.md 漂到 98.3% 体量无人拦 |
+| W-2 | **子文件与根矛盾 / 失效引用 6 处** | `include/core/AGENTS.md` 类树仍画 `CPUSim/CacheSim/MemorySim (include/modules/legacy/)`（该目录**不存在**，根文件已声明 v2.2 删除）；`core/ext/cmd_exts.hh`（2026-06-10 删除）；`configs` 三份拓扑实为 `*_tlm.json`；`configs`/`cpptlm`/`cpptlm_config` 把 2026-06-17 **已归档** change 当活指针；`src/core`「packet.cc / noc/*.cc 暂不编译」（两者不存在）；`test`「文档待清理」 |
+| W-3 | **主线目录零指引** | `include/tlm/{cep(45 .hh), pcie(26), gpu(28+21)}` 无 AGENTS.md，而 `include/bundles`（8 文件）有 |
+
+#### 交付（G1~G7）
+
+G1 `agents_md_lint.py` 增 `--all`（**18 份**：体量 ≤10 KiB / 单行 ≤1000 / **未标注**失效引用 / 根登记清单对账）+ `--root` + `--selftest`（6 变异）+ 6 段模板自述 · G2 调用点改 `--all --strict` · G3 修 6 处 · G4 补 `include/tlm/{cep,pcie,gpu}/AGENTS.md`（3.4/3.3/3.9 KiB）· G5 根文件登记 15→18 + 分工纪律 5 条 + `external/PTX-EMU` 不属本仓治理 · G6 `cep_freeze_check.sh` 授权 id 提取收紧 · G7 ctest 注册 #180/#181。
+
+#### 冻结面授权校验缺陷（**本次修掉**）
+
+`cep_freeze_check.sh` 原用 `grep "^### "` 提取合法 entry id ⇒ 台账 Entry 正文的 `###` 级子标题（「授权明细」「验收」…）也进入可选集合 ⇒ **可用子标题冒充冻结面授权**。实测：可用 id **682 条 → 505 条**（剔除 **177 条伪造入口**）。改后 `--update --authorized-by "验收(AC-1 ~ AC-7,全部机器可判)"` **被拒且不写盘**；合法授权不受影响（89 件 hash 一致）。
+
+#### 关键设计（为什么闸不会误杀）
+
+- **标注 = 合法出口**：行内或**所属小节**含 `已归档/已迁/跨仓/ArchForge/历史/命名/SystemC/如 ` 等标记时，该路径不校验存在性 —— `docs/research/AGENTS.md` 的「跨仓指针」表因此合法（它是**好样板**，不是漂移）
+- **反向变异证明出口不放水**：变异 4 = 同一条失效路径**加标注后应为绿**，否则说明标注被当成万能消音器
+- **裸文件名按全仓解析**、**目录 token 按祖先解析**（子文件惯用相对写法）
+
+#### 验证
+
+`agents_md_lint --all --strict` rc=0（18 份）· `--selftest` **7/7**（基线 + 6 变异）· `docs_sync_check --strict` rc=0 · `cep_freeze_check` rc=0（89 件一致）· `rddf_stage_gate` rc=0 · **`ctest` 190/190**。
+
+#### 实施期发现
+
+`agents_md_lint.py` 的 STRUCTURE 树检查原按 **cwd** 解析相对路径 ⇒ 从 `build/` 或拷贝根运行会整片误报；已在 `main()` 固定 `os.chdir(ROOT)`（`--root` 因此可用，selftest 才有意义）。
+
+#### 未做（明确排除）
+
+`examples/` 与 `src/tlm/*` 不补 AGENTS.md（信息收益率低，补了要维护且无独立判据）· `external/PTX-EMU/` 15 份不属本仓 · 上一轮遗留的 `DOC HYGIENE` 模型段拆分与 `COMMANDS` 合并仍未做。
+
+**关联**：Entry #506（AGENTS.md 瘦身，其「顺带发现」即本次 G6）· `openspec/changes/archive/2026-11-19-cpptlm-subdir-agents-governance/`

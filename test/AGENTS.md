@@ -17,15 +17,9 @@
 
 ## 已知跳过测试
 
-> 历史遗留：以下 `.cc.disabled` 文件已从磁盘删除，文档待清理。
+本仓**无** `.cc.disabled` 文件（2026-06-12 起已全部删除/归档；新代码**禁止**新建，per 根 `AGENTS.md` 的 ANTI-PATTERNS）。历史 4 个（`test_config_loader` / `test_end_to_end_delay` / `test_latency_injection` / `test_layout_styles`）已归档至 `docs-archived/`。
 
-历史记录（已移除）：
-- `test_config_loader.cc.disabled` — JSON 配置加载（待修复）
-- `test_end_to_end_delay.cc.disabled` — 端对端延迟验证（待修复）
-- `test_latency_injection.cc.disabled` — 延迟注入（待修复）
-- `test_layout_styles.cc.disabled` — 布局样式（已归档）
-
-> P0-remediation 后（2026-06-12）已无已知失败。原"12 个 Pool/Wildcard/Connection 失败"为历史残留描述，已实际验证为 0 失败。
+> P0-remediation 后（2026-06-12）已知失败为 **0**。原「12 个 Pool/Wildcard/Connection 失败」为历史残留描述。
 
 ## 基础设施
 

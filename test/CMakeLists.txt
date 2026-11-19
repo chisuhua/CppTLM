@@ -931,3 +931,14 @@ set_tests_properties(docs_index_consistency_check PROPERTIES WORKING_DIRECTORY $
 add_test(NAME docs_index_consistency_check_selftest
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/docs_index_consistency_check.sh --selftest)
 set_tests_properties(docs_index_consistency_check_selftest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# ── 2026-11-19(change cpptlm-subdir-agents-governance):**子目录 AGENTS.md 治理闸** ──
+# `agents_md_lint.py --all`：15 份子目录 AGENTS.md 的 体量(≤10 KiB) / 单行(≤1000) /
+# **未标注失效引用** / 根文件登记清单对账。配 6 条决定性变异(未登记文件 · 幽灵登记 ·
+# 未标注失效路径 · **标注后放行** · 体量超限 · 单行超长),跑在拷贝根。
+add_test(NAME agents_md_lint_all
+         COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/test/agents_md_lint.py --all --strict)
+set_tests_properties(agents_md_lint_all PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME agents_md_lint_selftest
+         COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/test/agents_md_lint.py --selftest)
+set_tests_properties(agents_md_lint_selftest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

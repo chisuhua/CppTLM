@@ -366,7 +366,10 @@ echo ""
 echo -e "${BLUE}额外检查：AGENTS.md 结构 / 体量 / 行长${NC}"
 AGENTS_LINT="scripts/test/agents_md_lint.py"
 if [ -f "$AGENTS_LINT" ]; then
-    if ! python3 "$AGENTS_LINT"; then
+    # ⚠️ 必须传 --strict —— 否则 lint 发现问题仍返回 0，本闸形同虚设
+    #    (2026-11-19 修正: 此前未传 --strict, AGENTS.md 漂到 98.3% 体量仍"绿")
+    # --all: 同时校验 15 份子目录 AGENTS.md(体量/行长/失效引用/登记对账)
+    if ! python3 "$AGENTS_LINT" --all --strict; then
         if [ "$STRICT" == "true" ]; then
             echo ""
             echo -e "${RED}❌ AGENTS.md 守门检查未通过${NC}"

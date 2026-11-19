@@ -34,7 +34,7 @@ Step 8: startAllTicks()           → 启动所有模块 tick() 循环
 ## 约定
 
 - **显式源文件**: CMakeLists.txt 使用 `set(CORE_SOURCES ...)` 显式列举
-- **历史遗留**: `packet.cc` 和 `noc/*.cc` 暂不编译（与当前头文件不兼容）
+- **已删除**: 早年的 `packet.cc` / `noc/` 已移除（`src/core/` 现只含上列 `.cc`；勿按旧文档找它们）
 - **JSON Schema 验证**: `validateConfig()` 检查 modules/connections 必需字段
 
 ## 注意事项

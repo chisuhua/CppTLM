@@ -6,7 +6,7 @@
 
 ## 状态更新 (2026-06-17)
 
-本包保留仅为向后兼容, 每次 `import cpptlm_config` 触发 `DeprecationWarning`. 合并迁移在下一期 (见 `openspec/changes/unified-config-emitter/`).
+本包保留仅为向后兼容, 每次 `import cpptlm_config` 触发 `DeprecationWarning`. 合并迁移在下一期 (见 change `unified-config-emitter`（**已归档**）).
 
 **已废弃字段**:
 - `module_groups` 数组 (C++ 端不识别, 见 `src/core/module_factory.cc:297-305`). 已迁移到 `groups` 字典形式.
@@ -44,7 +44,7 @@ Python 配置包，提供拓扑验证和配置生成功能。主要组件：
 
 ```bash
 # 验证配置
-python3 scripts/topology_validator.py configs/mesh_2x2.json -v
+python3 scripts/topology/topology_validator.py configs/mesh_2x2_tlm.json -v
 
 # Python API
 from cpptlm_config.validator import TopologyValidator

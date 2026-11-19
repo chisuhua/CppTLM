@@ -49,7 +49,7 @@
 **常见错误 (历史)**: 把"具体类(如 `SocInternalNoc`)未声明 ChStream 端口字段"误推广为"SimModule 类型不能走 ChStream"。实际是**类实现选择**,基类能力完整。
 **修正证据** (2026-10-12 dual-agent review):
 - `configs/dgpu_board_v1.json:80-94` — `soc` (SimModule 派生 DGpuSoc) 内部 `connections[]` 走 ChStream wire
-- `configs/example_simmodule_nested_2level.json` / `3level_static.json` — 多层 SimModule 嵌套 + outputs/inputs 暴露
+- `configs/example_simmodule_nested_2level.json` / `configs/example_simmodule_nested_3level_static.json` — 多层 SimModule 嵌套 + outputs/inputs 暴露
 - `test/test_simmodule_nested.cc:5-12` — case 5b "CpuCluster outputs 暴露端口 E2E - 验证外部连接能解析 cluster.cpu0_to_bus"
 
 ### 端口连接 vs 装配桥接决策表 (新增 2026-10-12)

@@ -20,13 +20,13 @@
 }
 ```
 
-> **模块字段语义边界** (2026-06-17, see `openspec/changes/field-name-unification`):
+> **模块字段语义边界** (2026-06-17 · change `field-name-unification` **已归档**):
 > - `params`: optional object, **模块参数 dict** (主路径, 通过 `ModuleFactory::validateConfig` 校验, 注入到 `SimObject::set_config()`)
 > - `config`: optional string, **外部配置文件路径** (SimModule 路径专用, 例如 `CpuCluster` 加载独立 JSON). **不要**把参数 dict 错放在此字段, C++ 端会**静默忽略** (LINT005 报错).
 > - 详见 `cpptlm/AGENTS.md` "推荐用法" 段.
 
 > **注意**: `module_groups` (数组形式, 老 schema) 已废弃 (2026-06-17, 见
-> `openspec/changes/unified-config-emitter/`)。请用 `groups` (dict 形式)。
+> change `unified-config-emitter`（**已归档**）)。请用 `groups` (dict 形式)。
 > C++ 端不识别 `module_groups` 字段 (`src/core/module_factory.cc:297-305` 只读
 > `groups` 字典)。新生成的 JSON 不再包含 `module_groups`。
 
@@ -34,10 +34,10 @@
 
 | 文件 | 拓扑类型 | 规模 |
 |------|----------|------|
-| `mesh_2x2.json` | 2×2 mesh | 4 节点 |
+| `mesh_2x2_tlm.json` | 2×2 mesh | 4 节点 |
 | `mesh_4x4.json` | 4×4 mesh | 16 节点 |
-| `hierarchical_2x2.json` | 分层 2×2 | 分组结构 |
-| `ring_8.json` | 8 节点 ring | 环状 |
+| `hierarchical_2x2_tlm.json` | 分层 2×2 | 分组结构 |
+| `ring_8_tlm.json` | 8 节点 ring | 环状 |
 | `crossbar_test.json` | 单 crossbar | 测试用 |
 | `cache_chstream_test.json` | Cache→Xbar→Memory | ChStream 测试 |
 | `apu_soc_v1.json` | APU 顶层 (CPU + GPU + `xbar`=**CoherentXBarTLM**) | ApuSoC 端到端 v1 |

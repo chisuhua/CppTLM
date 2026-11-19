@@ -41,7 +41,7 @@ cpptlm/
 
 ## 弃用/历史（保留向后兼容）
 
-- `cpptlm_config.*` (旧 Pydantic 库) — 已被 `cpptlm.topo` + `cpptlm.library` 替代. 每次 import 触发 `DeprecationWarning`. 合并迁移在下一期 (见 `openspec/changes/unified-config-emitter/`).
+- `cpptlm_config.*` (旧 Pydantic 库) — 已被 `cpptlm.topo` + `cpptlm.library` 替代. 每次 import 触发 `DeprecationWarning`. 合并迁移在下一期 (见 change `unified-config-emitter`（**已归档**）).
 - `cpptlm.config.topologies` (MeshTopology 等) — 依赖已不存在的 `scripts.topology_generator` backend. 保留仅为向后兼容. 新代码用 `cpptlm.library.mesh_cluster` 等.
 
 ## 推荐用法 (Phase 7+)
@@ -60,7 +60,7 @@ soc.save("configs/my_soc.json")
 
 输出的 JSON 字段与 C++ `ModuleFactory` 完整兼容, 不含 `module_groups`/`sublayers` 等死字段.
 
-> **模块字段语义边界** (2026-06-17, see `openspec/changes/field-name-unification`):
+> **模块字段语义边界** (2026-06-17 · change `field-name-unification` **已归档**):
 > - **use `params` for module config; `config` is reserved for external file path**.
 > - `params` 字段是模块参数 dict 的规范位置 (`ModuleSpec.params` → emitted JSON `"params": {...}`).
 > - `config` 字段**仅**用于外部配置文件路径 (string), 适用于 `CpuCluster` 等 SimModule 加载独立 JSON 的场景.

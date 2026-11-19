@@ -447,11 +447,14 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 ## ARCHIVES & HISTORY
 
-子目录级 AGENTS.md 索引（15 份）:
+子目录级 AGENTS.md 索引（18 份；⛔ 新增/删除须同步本清单 —— `agents_md_lint.py --all` 会与磁盘对账）:
 - `include/AGENTS.md` — 头文件总览 + 注册宏体系表（`REGISTER_OBJECT` / `REGISTER_MODULE` / `REGISTER_CHSTREAM` / `REGISTER_ALL`）
 - `include/core/AGENTS.md` — 核心框架
 - `include/tlm/AGENTS.md` — TLM 2.0 模块（V2.1+ 新增）
 - `include/tlm/cluster/AGENTS.md` — SimModule 集群容器
+- `include/tlm/cep/AGENTS.md` — CEP 实现层（header-only · 协议中立 · 冻结面纪律）
+- `include/tlm/pcie/AGENTS.md` — PCIe EP 7 阶段（唯一顶层 vs composite vs facade）
+- `include/tlm/gpu/AGENTS.md` — SM 12 子模块 + dGPU 板级组件（跨仓契约 · 单一 VRAM 真源）
 - `include/bundles/AGENTS.md` — Bundle 类型定义
 - `include/framework/AGENTS.md` — 流适配器层
 - `include/utils/AGENTS.md` — 工具类
@@ -463,6 +466,14 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - `cpptlm/AGENTS.md` — Python library for CppTLM
 - `cpptlm_config/AGENTS.md` — Python 配置验证与生成工具
 - `docs/research/AGENTS.md` — 框架级调研（CEP 一致性 / gem5 协议族 / cpptlm 融合）
+
+**分工纪律（子目录文件只写本目录特有）**：
+
+- ⛔ 不复制根文件的通用规则（约定 / 命令 / 反模式），只写**本目录特有**的铁律、坑与文件索引
+- ⛔ 不写过程日志（Entry # / commit / 评审轮次）；版本与计数一律用**命令取**
+- 时效断言（"暂不编译" / "待清理" / "已废弃"）要么改成事实、要么删 —— 闸会校验**未标注**的失效路径
+- 单份 ≤ 10 KiB、单行 ≤ 1000 字符；新增/删除须同步上面的清单（闸与磁盘对账）
+- ⚠️ `external/PTX-EMU/` 下的 15 份 AGENTS.md 属 **submodule 自有**，不属本仓治理（闸已排除）
 
 docs-archived/: 已归档旧文档（Phase 1-3 早期决策、`samples-orphaned/`、`dead-code-headers-2026-q2/`、`v2-architecture/`、`v2-plans/`、`completed-plans-2026-q2/`、`superpowers/`/`plans/` 已清理文件）。各子目录 `README.md` 含恢复方法。
 
