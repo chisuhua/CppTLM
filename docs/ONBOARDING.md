@@ -307,7 +307,7 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 | 测试 | `scripts/test/run_all_tests.sh` | 兼容包装入口 |
 | 文档守门 | `scripts/test/docs_sync_check.sh` | 4 个核心文档的反引号路径存在性检查（含 `.md`，仅仓库根起算路径）；`--strict` 用于 pre-commit |
 | 文档守门 | `scripts/test/agents_md_lint.py` | AGENTS.md 自身守门：STRUCTURE 目录树逐条路径存在性 + 体量 ≤ 64 KiB + 单行 ≤ 1000 字符 |
-| CEP 守门 | `scripts/test/cep_docs_sync_check.sh` | CEP 契约面同步检查（22 份 ADR 锚点 + invariant 计数单一真源 + P 编号口径 + `CATEGORY_*` 分层纪律，10 组） |
+| CEP 守门 | `scripts/test/cep_docs_sync_check.sh` | CEP 契约面同步检查（24 份 ADR 锚点 + invariant 计数单一真源 + P 编号口径 + `CATEGORY_*` 分层纪律，10 组） |
 | CEP 守门 | `scripts/test/cep_doc_ref_check.sh` | 对外文档节号引用可达性 + 语义断言 + 负向断言 |
 | CEP 守门 | `scripts/test/cep_freeze_check.sh` | M1 冻结面授权闸(成员数以清单为准) |
 | CEP 守门 | `scripts/test/cep_archforge_alignment_check.sh` | 跨仓（ArchForge）对齐锚点守门（33 锚点） |

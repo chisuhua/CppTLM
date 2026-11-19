@@ -13,33 +13,34 @@
     "/workspace/project/CppTLM|architect": {
       "work_root": "/workspace/project/CppTLM",
       "role": "architect",
-      "session_id": "ses_e0e4ae5c4ffeX6jlBW9lT5JlZY",
+      "session_id": "ses_e0d606c1cffeJ3Tubz7ImUIsnO",
       "kind": "main",
-      "claim_gen": 2,
+      "claim_gen": 3,
       "state": "released",
-      "acquired_at": "2026-11-19T03:06:21.567Z",
-      "heartbeat_at": "2026-11-19T03:06:21.567Z",
-      "released_at": "2026-11-19T03:34:32.612Z"
+      "acquired_at": "2026-11-19T07:54:08.252Z",
+      "heartbeat_at": "2026-11-19T07:54:08.252Z",
+      "released_at": "2026-11-19T08:19:41.570Z"
     },
     "/workspace/project/CppTLM|builder": {
       "work_root": "/workspace/project/CppTLM",
       "role": "builder",
       "session_id": "ses_e0d606c1cffeJ3Tubz7ImUIsnO",
       "kind": "main",
-      "claim_gen": 9,
+      "claim_gen": 10,
       "state": "active",
-      "acquired_at": "2026-11-19T07:16:19.483Z",
-      "heartbeat_at": "2026-11-19T07:16:19.483Z"
+      "acquired_at": "2026-11-19T08:22:43.910Z",
+      "heartbeat_at": "2026-11-19T08:22:43.910Z"
     },
     "/workspace/project/CppTLM|planner": {
       "work_root": "/workspace/project/CppTLM",
       "role": "planner",
-      "session_id": "ses_e0e4ae5c4ffeX6jlBW9lT5JlZY",
+      "session_id": "ses_e0d606c1cffeJ3Tubz7ImUIsnO",
       "kind": "main",
-      "claim_gen": 4,
-      "state": "active",
-      "acquired_at": "2026-11-19T06:54:35.917Z",
-      "heartbeat_at": "2026-11-19T06:54:35.917Z"
+      "claim_gen": 5,
+      "state": "released",
+      "acquired_at": "2026-11-19T08:19:41.555Z",
+      "heartbeat_at": "2026-11-19T08:19:41.555Z",
+      "released_at": "2026-11-19T08:22:43.923Z"
     },
     "/workspace/project/CppTLM|verifier": {
       "work_root": "/workspace/project/CppTLM",
@@ -72,7 +73,7 @@
     "ses_e0d606c1cffeJ3Tubz7ImUIsnO": {
       "work_root": "/workspace/project/CppTLM",
       "role": "builder",
-      "claim_gen": 9
+      "claim_gen": 10
     }
   }
 }
