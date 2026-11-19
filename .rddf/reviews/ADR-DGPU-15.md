@@ -1,10 +1,10 @@
 # 审稿报告 — ADR-DGPU-15（PcieEndpointIP 的 CppTLM / ArchForge 职责边界）
 
-- **对象**：`docs/adr/ADR-DGPU-15-pcie-endpoint-ip-cpptlm-archforge-boundary.md`（新增，Draft；205 行）
+- **对象**：`docs/adr/ADR-DGPU-15-pcie-endpoint-ip-cpptlm-archforge-boundary.md`（新增；最终 212 行；**状态 = ✅ Proposed**）
 - **日期**：2026-11-19
-- **审查序**：oracle（2 轮）→ critic（2 轮）
-- **预算**：oracle 每 ADR 1 轮 + 允许 1 次复审 ✅ 用尽;critic 每 change 2 轮 ✅ 用尽
-- **⚠️ 预算状态**：critic 第 2 轮（复审）判 REJECT（**1 项新 BLOCKER** + 2 SHOULD_FIX + 2 NITS）⇒ 已按其**可套用措辞**闭合 + 自查，但**未获第 3 轮确认**（预算用尽）⇒ **ADR 状态保持 `Draft`**（未签发），待第 3 轮 critic 确认或由 planner / verifier 在实施 change 立项时复核（**先例**：`ADR-X.17` 的审稿报告同样以「状态保持 Proposed + 未获第 3 轮确认」收口）。
+- **审查序**：oracle（2 轮）→ critic（4 轮，第 3/4 轮经用户明确批准追加）
+- **预算**：oracle 1 轮 + 1 次复审 ✅ 用尽;critic 基础预算 2 轮 ✅ 用尽，第 3 / 4 轮经用户批准追加
+- **✅ 最终状态**：critic 第 4 轮（确认性复审）= **APPROVE_WITH_CONDITIONS**，`mergeable: yes`、**无 BLOCKER** ⇒ 第 3 轮 2 项 BLOCKER 逐项闭合确认 ⇒ **ADR 转 `Proposed` 签发**（2026-11-19）。
 
 ---
 
@@ -64,11 +64,31 @@
 
 ---
 
+## 第 3 轮（确认性复审）与第 4 轮闭合记录
+
+| 轮 | 审查者 | 判定 | 结果 |
+|:--:|---|---|---|
+| 3 | critic（arch，确认性复审） | **REJECT** | 第 2 轮 BLOCKER 部分闭合，但暴露 2 项：**B-1 伪引证未完全闭合**（改挂到「C2 change design D-2」后仍不实 —— `design.md` 全文零命中「显式拒绝 / reject_unsupported」，且其「态②」语义**相反** = `ignore_param` 登记）+ **B-2 文档内互斥**（§6 返工项要求改登记，而 V-6 要求「3 键的拒绝不被回滚」） |
+| 4 | critic（arch，确认性复审，用户批准） | **APPROVE_WITH_CONDITIONS**（`mergeable: yes`） | 第 3 轮 2 项 BLOCKER **逐项闭合**（`sim_object.hh:498` / C2 `proposal.md:49` / `tasks.md:23,103` / 台账 B-22 全部实测命中;V-6 ↔ 实现 ↔ 台账 ↔ 判据 case 四者一致）;**无新 BLOCKER**;2 SHOULD_FIX + 2 NITS |
+
+### 第 4 轮 SHOULD_FIX / NITS 的处置
+
+| # | 内容 | 处置 |
+|:--:|---|---|
+| SF-1 | 台账 `B-21` 行仍写「已显式拒绝」，与 `:46` 摘要行、实现（`ignore_param`）、V-6② 互斥 | ✅ **已改**为「已登记 + 待修（态③）」，写明曾误落拒绝及改正经过 |
+| SF-2 | ADR 态④ 行出处混挂 B-21（其内容正是被推翻的处置） | ✅ **已改**为只挂 **B-22**;态③ 行补挂 **B-21** |
+| NIT-1 | §2.2 末「⇒ 态②拒绝成立」在术语消歧段之后又用旧号 | ✅ **已改**为「⇒ **态④** 拒绝成立」;另清掉 §2.2/§4.1 其余 2 处旧号（「3 键态②拒绝」一并按现状改为「2 键拒绝 + 1 键登记」） |
+| NIT-2 | `include/core/sim_object.hh:491,497` 注释也用「态②」指拒绝 | 📌 **不本次修**（注释级、无行为影响;该头触达约 330 TU，为注释触发全量重编译不成比例）⇒ 已在 ADR 术语消歧段登记「后续触碰该头时一并改」，并记入 C2 归档后的 backlog 说明 |
+
+---
+
 ## 未闭合 / 移交
 
 | 项 | 归属 | 状态 |
 |---|---|---|
-| critic 第 2 轮 BLOCKER 的**确认性复审**（第 3 轮） | critic | ⚠️ **预算用尽** ⇒ 需用户批准方可追加;否则维持 `Draft` 并由 planner / verifier 在实施 change 立项时复核（先例 `ADR-X.17`） |
-| `resizable_bars` 处置返工（reject → `ignore_param` + 表 B「待修」）+ 台账 B-21 状态 + 验收报告 F1 描述 | **builder**（C2 尾项） | **待返工** |
-| `param_admission.hh` 注释计数（2 → 3） | **builder**（C2 尾项） | **待返工** |
+| critic 第 3 / 4 轮（确认性复审） | critic | ✅ **已完成**（用户批准追加）⇒ 第 4 轮 APPROVE_WITH_CONDITIONS 无 BLOCKER，ADR 转 `Proposed` |
+| `resizable_bars` 处置返工（reject → `ignore_param` + 表 B「待修」） | **builder**（C2 尾项） | ✅ **已完成**（实现 + 判据 case + 台账 B-21） |
+| `param_admission.hh` 注释计数与三键处置描述 | **builder**（C2 尾项） | ✅ **已完成** |
+| 验收报告 `.rddf/reviews/cpptlm-module-param-migrate-batch2-verify.md` 的 F1 描述（「拒绝」→「登记」） | **verifier**（复验轮） | **待更新**（report 归属 verifier，builder 不改） |
+| `sim_object.hh` 注释的「态②」措辞 | builder（后续触碰该头时） | 📌 **已登记，本次不做** |
 | ArchForge 键面契约（`ArchForge:docs/microarchitecture/pcie-endpoint.md`）+ 19 号文档 §9.3 新旧分列 + `ADR-SOC-11` 状态推进 + 跨仓对账闸 | **跨仓**（backlog `cpptlm-ep-key-surface-reconciliation`） | **待 planner 立项**（本 ADR 不创建 OpenSpec change） |

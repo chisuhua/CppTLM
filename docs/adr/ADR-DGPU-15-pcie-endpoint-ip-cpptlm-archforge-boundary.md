@@ -1,6 +1,6 @@
 # ADR-DGPU-15: PcieEndpointIP 的 CppTLM / ArchForge 职责边界 —— 键面契约升格 + 已消费/零消费二分
 
-> **状态**: 📋 **Draft**（2026-11-19，architect 起草）
+> **状态**: ✅ **Proposed**（2026-11-19 签发；oracle 2 轮 + critic 4 轮，末轮 APPROVE_WITH_CONDITIONS 无 BLOCKER）
 > **日期**: 2026-11-19
 > **作者**: architect（build agent 代为落盘）
 > **Parent**: [ADR-DGPU-08](ADR-DGPU-08-abi-freeze-policy.md)（23 ABI 冻结，**沿用不变**）· [ADR-DGPU-07](ADR-DGPU-07-minimal-soc-evolution-seam.md)（D3 演进 seam，沿用）· ArchForge `docs/adr/ADR-SOC-07-dgpu-board-soc-layering.md`（board/SOC 两层分离）· ArchForge `docs/adr/ADR-SOC-11-pcie-endpoint-ip.md`（`PcieEndpointIP` 决策，**状态仍为 Proposed**）
@@ -69,15 +69,16 @@ ArchForge README 已确立关系：「本仓是 CppTLM 的**设计伴侣仓**，
 |:--:|---|---|---|
 | ① | 有消费方，且消费方**在本模块** | `load_param` 声明 | `ADR-X.17` D-1 |
 | ② | 有消费方，但消费方**不在本模块**（板级直读 / 非标量解析） | `ignore_param` 登记（登记后**不**失败;登记 ≠ 豁免） | `ADR-X.17` **D-3 板级路径条款**（`:134`）+ **D-2 消费方扩展**（`:112-114`）/ **F-15**（`:50`）;C2 design D-6 |
-| ③ | **当前**无消费方，但**对应已定义的实现契约 / 规格语义**（将来可能有消费方） | `ignore_param` 登记 + **基线台账表 B 登记「待修」**（写了**不**失败） | `ADR-X.17` **D-3b**（明文：「配置里有键、实现零效果」的**已知缺陷** SHALL 以 `ignore_param` 显式登记并落表 B） |
-| ④ | **永不可能**有消费方（规格上**不属于**本类型 / 冻结面使实现不可能） | **显式拒绝**（`reject_unsupported_param` ⇒ 写了即装配失败并报出键名）—— 本 ADR 称「**态④**」 | `include/core/sim_object.hh` 的 `reject_unsupported_param`（实现）+ **C2 `proposal.md` AC-06 例外段 2** + **C2 `tasks.md` T1.7 与 F1** + **台账表 B**（`docs/implementation/module-param-baseline.md` 的 B-21 / B-22 行） |
+| ③ | **当前**无消费方，但**对应已定义的实现契约 / 规格语义**（将来可能有消费方） | `ignore_param` 登记 + **基线台账表 B 登记「待修」**（写了**不**失败） | `ADR-X.17` **D-3b**（明文：「配置里有键、实现零效果」的**已知缺陷** SHALL 以 `ignore_param` 显式登记并落表 B）+ **台账表 B 的 B-21 行** |
+| ④ | **永不可能**有消费方（规格上**不属于**本类型 / 冻结面使实现不可能） | **显式拒绝**（`reject_unsupported_param` ⇒ 写了即装配失败并报出键名）—— 本 ADR 称「**态④**」 | `include/core/sim_object.hh` 的 `reject_unsupported_param`（实现）+ **C2 `proposal.md` AC-06 例外段 2** + **C2 `tasks.md` T1.7 与 F1** + **台账表 B 的 B-22 行**（`docs/implementation/module-param-baseline.md`） |
 
 ⇒ **唯一判据 = 一条二分**：「该键是否**永不可能**有消费方」⇒ 是 ⇒ ④;否 ⇒ ②③（登记 + 落表 B）。
 
 ⚠️ **术语消歧（同名不同义，实施方勿混用）**：**C2 `design.md` D-2 的「态②」= 「已消费但不经 `load_param`」⇒ `ignore_param` 登记**（`design.md:30,31,35,45,47,49`）;而**台账表 B 的「态②」= 「显式拒绝」**。两者**同号不同义** ⇒ 本 ADR 一律用「**态④**」指「显式拒绝」，用「态②/③」指「登记 + 落表 B」两态。
 ⚠️ `ADR-X.17` **全文无「态② / 显式拒绝」概念**（该措辞出自 C2 `proposal.md` / `tasks.md` 与台账表 B）⇒ 本 ADR 不向 `ADR-X.17` 挂不存在的锚点。
-⚠️ **本裁定改变了 C2 的一处实施**：`resizable_bars` 属 **③**（规格侧有该语义：19 号文档把 `resizable_bars_` 列为 EP 值成员，且运行期 API `enable_resizable_bar()` 已存在;缺的只是 JSON 绑定）⇒ 处置应为 **`ignore_param` 登记 + 表 B「待修」**，⛔ **不是** C2 落地的态②拒绝 ⇒ 登记为**待 builder 返工项**（见 §6）;配置侧已删除该块**可保留**（键可被登记而配置不写它）。
-⚠️ 反之，`num_msix_vectors` / `msix_num_vectors`（顶层）属 **④**：它们是**旧类**的合法键，规格上**不属于新类**（新类的 MSI-X vector 数由 `sr_iov.vf_msix_vectors` / `transaction_layer.msix_num_vectors` 承载，且 PF 表 resize 入口 `sync_msix_cap_table_size` 是冻结头里的 no-op）⇒ 态②拒绝成立。
+⚠️ `include/core/sim_object.hh:491,497` 的**注释**同样用「态②」指拒绝（注释级、无行为影响）⇒ 与台账同款同号不同义;后续触碰该头时一并改为「显式拒绝」，本 ADR 不为注释单独触发全量重编译（该类头触达约 330 个编译单元）。
+⚠️ **本裁定改变了 C2 的一处实施**：`resizable_bars` 属 **③**（规格侧有该语义：19 号文档把 `resizable_bars_` 列为 EP 值成员，且运行期 API `enable_resizable_bar()` 已存在;缺的只是 JSON 绑定）⇒ 处置应为 **`ignore_param` 登记 + 表 B「待修」**，⛔ **不是** C2 当初落地的显式拒绝（当时误称「态②」）⇒ 已返工（见 §6）;配置侧已删除该块**可保留**（键可被登记而配置不写它）。
+⚠️ 反之，`num_msix_vectors` / `msix_num_vectors`（顶层）属 **④**：它们是**旧类**的合法键，规格上**不属于新类**（新类的 MSI-X vector 数由 `sr_iov.vf_msix_vectors` / `transaction_layer.msix_num_vectors` 承载，且 PF 表 resize 入口 `sync_msix_cap_table_size` 是冻结头里的 no-op）⇒ **态④** 拒绝成立。
 
 ### 2.3 D3 —— 「键面契约」升格为 ArchForge 的规格对象（**P-1/P-2/P-3 的治本动作**）
 
@@ -147,7 +148,7 @@ ArchForge README 已确立关系：「本仓是 CppTLM 的**设计伴侣仓**，
 
 - **键名集合级**配置面漂移有**机制**检出（P-1/P-2 的复发被挡），语义漂移由**契约评审 + hash 登记**兜住（D3/D6）⇒ 不再完全依赖逐键人工审计（⚠️ 仅键名集合级，见 §4.2）。
 - CppTLM 侧**不维护语义分类器**（D2 的 v2 修正）⇒ 无自反例、无分类器腐化。
-- C2 的 F1 处置**保留**（D5）⇒ 已落地的 3 键态②拒绝 + 配置清理**不作废**。
+- C2 的 F1 处置**保留**（D5）⇒ 已落地的处置（`num_msix_vectors` / `msix_num_vectors` = 态④ 显式拒绝;`resizable_bars` = 态③ 登记 + 表 B「待修」）+ 配置清理**不作废**。
 - ArchForge 侧补上 EP 微架构契约（P-3）⇒ 与其它 54 篇 IP 微架构**齐平**。
 - 「哪些键能改、谁说了算」**可判定**：消费面由 CppTLM 判（C-1），语义由 ArchForge 判（C-2）⇒ 减少「两仓各自改一半」。
 
@@ -206,6 +207,6 @@ ArchForge README 已确立关系：「本仓是 CppTLM 的**设计伴侣仓**，
 | 跨仓键面对账闸 + CTest 注册（含六条变异 / 四方向） | **CppTLM** | 同上（本 ADR 的 D6 预留了判据形态） |
 | 键面契约的**形态裁定**（顶层平铺 vs 子命名空间） | **ArchForge**（D3.4 / 方案 E） | 同上 |
 | C2 的 AC-01 / AC-08 判据与台账（B-21 ~ B-23） | CppTLM | **已落地**（Entry #496 / #489） |
-| ⚠️ **`resizable_bars` 的处置返工**：由态②拒绝改为 `ignore_param` 登记 + 表 B「待修」（本 ADR §2.2 态③ 裁定）;连带更新台账 B-21 状态与验收报告的 F1 描述 | **CppTLM**（builder 域） | **待返工**（随 C2 归档前的尾项一并处理） |
+| ⚠️ **`resizable_bars` 的处置返工**：由显式拒绝改为 `ignore_param` 登记 + 表 B「待修」（本 ADR §2.2 态③ 裁定）;连带更新台账 B-21 状态与验收报告的 F1 描述 | **CppTLM**（builder 域） | **已返工**（实现 + 判据 case + 台账 B-21）;验收报告的 F1 描述待 verifier 复验轮更新 |
 
 ⚠️ 本 ADR **不创建** OpenSpec change（per architect 域边界）⇒ 上述 backlog 的立项与 AC 编号由 planner 阶段补。
