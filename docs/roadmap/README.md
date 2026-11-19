@@ -1,29 +1,18 @@
-# docs/roadmap/ 已归档
+# docs/roadmap/ — 已归档（重定向存根）
 
-> **本目录已归档 (2026-10-19)**. 历史快照文档已迁移至 `docs/archive/roadmap/`.
+> **本目录已归档 (2026-10-19)**。历史快照文档已迁移至 [`../archive/roadmap/`](../archive/roadmap/)。
 >
 > **当前权威实施路线图**: [`.rddf/roadmap.md`](../../.rddf/roadmap.md) (per rdd-workflow 主文档)
 >
-> **真源原则 (per AGENTS.md §DOC HYGIENE line 432)**:
-> - 真源 1 (通用基础架构): [`docs/architecture/`](../../.rddf/roadmap.md#phase-1)
-> - 真源 2 (dGPU 应用架构): [`docs/designs/`](../../docs/designs/)
-> - 真源 3 (不可变决策): [`docs/adr/`](../../docs/adr/)
-> - **协调真源 (项目级路线图)**: [`.rddf/roadmap.md`](../../.rddf/roadmap.md)
-> - 本目录原内容 = 历史快照, 已 **archived**, 不再独立维护
+> ⚠️ **本文件仅为重定向存根** —— 保留此目录与本文件，使不可变 ADR（`docs/adr/ADR-NV-01-gpu-soc-architecture-target.md` §关联文档）中的 `docs/roadmap/` 目录链接保持有效。**不再在此目录新增任何内容。**
 
-## 归档清单 (2026-10-19 docs/roadmap/ 整体归档)
+## 历史快照清单 (2026-10-19 docs/roadmap/ 整体归档)
 
 | 原路径 | 归档路径 |
 |--------|---------|
-| `README.md` (v1.0) | [`archive/roadmap/2026-10-19-roadmap-readme-archived.md`](../archive/roadmap/2026-10-19-roadmap-readme-archived.md) |
-| `current_status.md` (v2.0-historical) | [`archive/roadmap/2026-10-19-current-status-archived.md`](../archive/roadmap/2026-10-19-current-status-archived.md) |
-| `pcie-ep-cpptlm-collaboration-roadmap.md` (Draft v0.1) | [`archive/roadmap/2026-10-19-pcie-ep-cpptlm-collaboration-roadmap-archived.md`](../archive/roadmap/2026-10-19-pcie-ep-cpptlm-collaboration-roadmap-archived.md) |
-
-## 归档原因
-
-1. **真源原则 (per AGENTS.md §DOC HYGIENE)**: 路线图治理**协调真源**在 `.rddf/roadmap.md`, `docs/roadmap/` 历史上的 3 文件都是 2026-07-03 旧视角 (顶部已标 FAIL by Oracle 2027-02-09), 7 个月未更新, 与项目实际状态脱节
-2. **rdd-doctor 严重失真**: 12 CRITICAL (roadmap-md-integrity.index-sync × 5 + roadmap-phases.index-drift × 4 + main-doc-missing × 1 + table-schema × 1) + 4 WARNING (index-segment × 3 + table-schema × 1) 全部已通过 `.rddf/roadmap.md` 9 phase 重写修复 (commit `84846cbb`)
-3. **维护规则变更**: per `docs/archive/roadmap/2026-10-19-roadmap-readme-archived.md` line 27 既有声明: "维护规则变更: docs/roadmap/ 不再独立维护; 新增 OpenSpec change 时由 `openspec/changes/<name>/` 承担项目级协调"
+| `README.md` (v1.0) | [`../archive/roadmap/2026-10-19-roadmap-readme-archived.md`](../archive/roadmap/2026-10-19-roadmap-readme-archived.md) |
+| `current_status.md` (v2.0-historical) | [`../archive/roadmap/2026-10-19-current-status-archived.md`](../archive/roadmap/2026-10-19-current-status-archived.md) |
+| `pcie-ep-cpptlm-collaboration-roadmap.md` (Draft v0.1) | [`../archive/roadmap/2026-10-19-pcie-ep-cpptlm-collaboration-roadmap-archived.md`](../archive/roadmap/2026-10-19-pcie-ep-cpptlm-collaboration-roadmap-archived.md) |
 
 ## 当前活跃治理路径
 

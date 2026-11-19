@@ -4,7 +4,7 @@
 > **调研时间**: 2026-10
 > **作者**: CppTLM build agent
 > **状态**: 📋 Research Reference (不进入 ABI 契约)
-> **关联方案**: [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md)（已存在）
+> **关联方案**: [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md)（已存在）
 > **关联 ADR**: [`ADR-DGPU-13-pnn-protocol-neutral-network.md`](../adr/ADR-DGPU-13-pnn-protocol-neutral-network.md)（已存在）
 
 ---
@@ -774,7 +774,7 @@ class ProtocolBridge {
 
 ## 11. 关联文档
 
-- **架构方案**: [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md)（已存在）
+- **架构方案**: [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md)（已存在）
 - **通信网络现状**: `docs/designs/dgpu-soc/communication-network.md`（v1.0 已落地）
 - **ADR 决策**: [`ADR-DGPU-13-pnn-protocol-neutral-network.md`](../adr/ADR-DGPU-13-pnn-protocol-neutral-network.md)（已存在）
 - **相关 ADR**: [`ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md`](../adr/ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md)（已存在，PNN Bridge 实现 seam）

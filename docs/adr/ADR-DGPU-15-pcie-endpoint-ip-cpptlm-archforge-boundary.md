@@ -4,7 +4,7 @@
 > **日期**: 2026-11-19
 > **作者**: architect（build agent 代为落盘）
 > **Parent**: [ADR-DGPU-08](ADR-DGPU-08-abi-freeze-policy.md)（23 ABI 冻结，**沿用不变**）· [ADR-DGPU-07](ADR-DGPU-07-minimal-soc-evolution-seam.md)（D3 演进 seam，沿用）· ArchForge `docs/adr/ADR-SOC-07-dgpu-board-soc-layering.md`（board/SOC 两层分离）· ArchForge `docs/adr/ADR-SOC-11-pcie-endpoint-ip.md`（`PcieEndpointIP` 决策，**状态仍为 Proposed**）
-> **关联 change**: [cpptlm-module-param-migrate-batch2](../../openspec/changes/cpptlm-module-param-migrate-batch2/)（本 ADR 的**直接影响面** = 其 AC-01 准入表全量化 / AC-08 板级直读键三态）
+> **关联 change**: [cpptlm-module-param-migrate-batch2](../../openspec/changes/archive/2026-11-19-cpptlm-module-param-migrate-batch2/)（本 ADR 的**直接影响面** = 其 AC-01 准入表全量化 / AC-08 板级直读键三态）
 > **backlog**: `cpptlm-ep-key-surface-reconciliation`（ArchForge 侧 EP 键面契约 + 跨仓对账闸，**待 planner 立项**）
 > **AC 映射**: V-1 ~ V-4 对应 C2 的 AC-01 / AC-08 / AC-10;V-5 / V-6 属 backlog change（AC 编号待 planner 补）
 > **审稿报告**: [../../.rddf/reviews/ADR-DGPU-15.md](../../.rddf/reviews/ADR-DGPU-15.md)

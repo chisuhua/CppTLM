@@ -8,10 +8,10 @@ phase_refs: []
 
 ## phase-7: D-AXI Driver-Visible Minimal SoC v1.4
 
-> **真源**: [`docs/pcie/driver-visible-minimal-soc.md`](../../docs/pcie/driver-visible-minimal-soc.md) (v1.8 实施笔记)
-> **三视角架构**: [`docs/designs/dgpu-board/architecture.md`](../../docs/designs/dgpu-board/architecture.md) + [`docs/designs/dgpu-soc/architecture.md`](../../docs/designs/dgpu-soc/architecture.md) + [`docs/designs/dgpu-driver/architecture.md`](../../docs/designs/dgpu-driver/architecture.md)
-> **5 业务 ADR**: [`docs/adr/ADR-DGPU-05~09-*.md`](../../docs/adr/)
-> **OpenSpec 已交付**: [driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.8 tasks.md T0-T5)
+> **真源**: [`docs/pcie/driver-visible-minimal-soc.md`](../../../docs/pcie/driver-visible-minimal-soc.md) (v1.8 实施笔记)
+> **三视角架构**: [`docs/designs/dgpu-board/architecture.md`](../../../docs/designs/dgpu-board/architecture.md) + [`docs/designs/dgpu-soc/architecture.md`](../../../docs/designs/dgpu-soc/architecture.md) + [`docs/designs/dgpu-driver/architecture.md`](../../../docs/designs/dgpu-driver/architecture.md)
+> **5 业务 ADR**: [`docs/adr/ADR-DGPU-05~09-*.md`](../../../docs/adr/)
+> **OpenSpec 已交付**: [driver-visible-minimal-soc](../../../openspec/specs/driver-visible-minimal-soc/) (v1.8 tasks.md T0-T5)
 
 ### v1.0 → v1.4 演进 (关键根因)
 
@@ -55,8 +55,8 @@ phase_refs: []
 
 ### 5 业务 ADR (per `docs/adr/` 真源 3)
 
-- [`ADR-DGPU-05-vram-storage-ownership.md`](../../docs/adr/ADR-DGPU-05-vram-storage-ownership.md) — D-AXI B7 单一 VRAM 所有权 (P0 根因)
-- [`ADR-DGPU-06-axi-mem-bundle-boundary.md`](../../docs/adr/ADR-DGPU-06-axi-mem-bundle-boundary.md) — D-AXI B2 chip-internal vs board-level 边界 (P0)
-- [`ADR-DGPU-07-minimal-soc-evolution-seam.md`](../../docs/adr/ADR-DGPU-07-minimal-soc-evolution-seam.md) — D-AXI §X D3-D5 演进 seam (接口零变更)
-- [`ADR-DGPU-08-abi-freeze-policy.md`](../../docs/adr/ADR-DGPU-08-abi-freeze-policy.md) — D-AXI 23 ABI 冻结 + 0 新增 (P0)
-- [`ADR-DGPU-09-driver-visible-minimal-soc-scope.md`](../../docs/adr/ADR-DGPU-09-driver-visible-minimal-soc-scope.md) — D-AXI 范围定义 (4 BAR + 15 ABI + 0 新增)
+- [`ADR-DGPU-05-vram-storage-ownership.md`](../../../docs/adr/ADR-DGPU-05-vram-storage-ownership.md) — D-AXI B7 单一 VRAM 所有权 (P0 根因)
+- [`ADR-DGPU-06-axi-mem-bundle-boundary.md`](../../../docs/adr/ADR-DGPU-06-axi-mem-bundle-boundary.md) — D-AXI B2 chip-internal vs board-level 边界 (P0)
+- [`ADR-DGPU-07-minimal-soc-evolution-seam.md`](../../../docs/adr/ADR-DGPU-07-minimal-soc-evolution-seam.md) — D-AXI §X D3-D5 演进 seam (接口零变更)
+- [`ADR-DGPU-08-abi-freeze-policy.md`](../../../docs/adr/ADR-DGPU-08-abi-freeze-policy.md) — D-AXI 23 ABI 冻结 + 0 新增 (P0)
+- [`ADR-DGPU-09-driver-visible-minimal-soc-scope.md`](../../../docs/adr/ADR-DGPU-09-driver-visible-minimal-soc-scope.md) — D-AXI 范围定义 (4 BAR + 15 ABI + 0 新增)

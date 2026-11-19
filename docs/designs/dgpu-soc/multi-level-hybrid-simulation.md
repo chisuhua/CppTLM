@@ -1,4 +1,4 @@
-> **📦 [2026-10-18 迁出]**: 本文档原位于 `docs/architecture/多层次混合仿真.md`, 因主题是 GPGPU 多层 SimModule 容器 (CPU→CU→TPC→GPC→GPU Cluster, per `include/tlm/cluster/`) (dGPU 应用架构), 不在通用基础架构 (per [`docs/architecture/README.md`](../README.md) 2026-09-26 v1.1 分工: 通用基础架构 vs dGPU 应用架构), 迁至 `docs/designs/dgpu-soc/` 目录.
+> **📦 [2026-10-18 迁出]**: 本文档原位于 `docs/architecture/多层次混合仿真.md`, 因主题是 GPGPU 多层 SimModule 容器 (CPU→CU→TPC→GPC→GPU Cluster, per `include/tlm/cluster/`) (dGPU 应用架构), 不在通用基础架构 (per [`docs/architecture/README.md`](../../architecture/README.md) 2026-09-26 v1.1 分工: 通用基础架构 vs dGPU 应用架构), 迁至 `docs/designs/dgpu-soc/` 目录.
 > 
 > **原 README 引用**: 本文档原在 docs/architecture/ 目录但 README.md v1.1 未列入"核心架构"清单 (2026-09-26 重构时漏列, 现一并修正).
 

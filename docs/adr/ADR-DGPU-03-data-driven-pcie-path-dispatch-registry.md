@@ -3,7 +3,7 @@
 > **状态**: 📋 提案
 > **日期**: 2027-02-09
 > **影响**: `include/tlm/gpu/dgpu_board_shell.{hh,cc}` (新增 `DispatchRegistry` 内部组件), 0 ABI 变更
-> **关联架构文档**: [docs/architecture/14-dgpu-board-ideal-arch.md §3.3](../architecture/14-dgpu-board-ideal-arch.md)
+> **关联架构文档**: [docs/architecture/14-dgpu-board-ideal-arch.md §3.3](../designs/dgpu-board/architecture.md)
 > **配套**: ADR-DGPU-01 (CallbackWorker), ADR-DGPU-02 (LifecycleProtocol)
 
 > **评审修订 (评审报告 R-R1 + R-R2 + R-C1-b, 2027-02-09)**:
@@ -597,7 +597,7 @@ TEST_CASE("DGpuBoard mmio_write routes via DispatchRegistry") {
 
 ## 8. 参考
 
-- **架构文档**: [14-dgpu-board-ideal-arch.md §3.3](../architecture/14-dgpu-board-ideal-arch.md)
+- **架构文档**: [14-dgpu-board-ideal-arch.md §3.3](../designs/dgpu-board/architecture.md)
 - **ADR-DGPU-01**: CallbackWorker (不涉及)
 - **ADR-DGPU-02**: LifecycleProtocol (init() 集成)
 - **v1.0 实现**: `src/tlm/gpu/dgpu_board_shell.cc:775-800` (dispatch_mmio_to_pcie)

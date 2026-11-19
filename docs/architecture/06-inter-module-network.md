@@ -1417,8 +1417,8 @@ soc.connect("group:gpu", "noc_cdc_bridge.dst", latency=2)
 
 ### 17.3 被 superseded 的早期草案(保持引用, 正文不动)
 
-- [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md) v0.1
-- [`docs/architecture/05-packet-semantic-network.md`](05-packet-semantic-network.md) v0.1
+- [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md) v0.1
+- [`docs/architecture/05-packet-semantic-network.md`](../archive/architecture/05-packet-semantic-network-archived-2026-10.md) v0.1
 - **`docs/adr/ADR-DGPU-13-pnn-protocol-neutral-network.md`** — v0.3 顶部加 `## Status Update 2026-10: superseded by 06 v0.3` 段
 - **`docs/adr/ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md`** — 同上
 

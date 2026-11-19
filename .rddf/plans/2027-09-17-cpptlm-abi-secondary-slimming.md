@@ -2,9 +2,9 @@
 
 > **配套**: [`openspec/changes/cpptlm-abi-secondary-slimming/`](../openspec/changes/cpptlm-abi-secondary-slimming/) (待创建)
 > **Change name**: `cpptlm-abi-secondary-slimming` (slug, **不带日期前缀** per openspec 1.4.1 CLI 命名规则)
-> **关联阶段**: [`docs/soc_arch/roadmap/phase9-p5-secondary-slimming.md`](../docs/soc_arch/roadmap/phase9-p5-secondary-slimming.md)
-> **主 ADR**: [`docs/soc_arch/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md`](../docs/soc_arch/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md) — **修订版 (保留 open/close)**
-> **父 ADR**: [`docs/soc_arch/adr/ADR-SOC-18-cpptlm-abi-slimming.md`](../docs/soc_arch/adr/ADR-SOC-18-cpptlm-abi-slimming.md) — 第一轮精简 22→18 (✅ Accepted)
+> **关联阶段**: [`docs/soc_arch/roadmap/phase9-p5-secondary-slimming.md`](../../docs/soc_arch/roadmap/phase9-p5-secondary-slimming.md)
+> **主 ADR**: [`docs/soc_arch/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md`](../../docs/soc_arch/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md) — **修订版 (保留 open/close)**
+> **父 ADR**: [`docs/soc_arch/adr/ADR-SOC-18-cpptlm-abi-slimming.md`](../../docs/soc_arch/adr/ADR-SOC-18-cpptlm-abi-slimming.md) — 第一轮精简 22→18 (✅ Accepted)
 > **关联 HSK**: `docs/cross_repo/HSK-12-cpptlm-abi-secondary-slimming.md` (待创建, 取代 HSK-11 §已删除函数清单)
 > **生成时间**: 2027-09-17 · **生成方式**: 修订自初版 (per 用户反馈保留 open/close)
 > **Worktree**: 待创建 `.rddf/wt/cpptlm-abi-secondary-slimming/`
@@ -103,7 +103,7 @@
    mkdir -p openspec/changes/2027-09-17-cpptlm-abi-secondary-slimming/specs/cpptlm-emulator-abi
    ```
    写入 4 个文件:
-   - `proposal.md` (per [`openspec/changes/archive/2026-09-16-cpptlm-abi-slimming/proposal.md`](../openspec/changes/archive/2026-09-16-cpptlm-abi-slimming/proposal.md) 模板)
+   - `proposal.md` (per [`openspec/changes/archive/2026-09-16-cpptlm-abi-slimming/proposal.md`](../../openspec/changes/archive/2026-09-16-cpptlm-abi-slimming/proposal.md) 模板)
    - `design.md` (per ADR-SOC-20 §3 Implementation 章节扩写)
    - `specs/cpptlm-emulator-abi/spec.md` (**REMOVED Requirements 2**: `cpptlm_emulator_create_by_id` + `cpptlm_emulator_get_adapter_info`; **ADDED Requirement 1**: `CPPTLM_EMULATOR_VERSION_STRING` 宏)
    - `tasks.md` (8 步对应 P5-1..P5-8)
@@ -423,11 +423,11 @@
 
 ## 关联文档 (修订版)
 
-- 主 ADR: [`docs/soc_arch/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md`](../docs/soc_arch/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md) — **修订版** (保留 open/close)
-- 父 ADR: [`docs/soc_arch/adr/ADR-SOC-18-cpptlm-abi-slimming.md`](../docs/soc_arch/adr/ADR-SOC-18-cpptlm-abi-slimming.md) — Status Update 段已追加 (修订版)
-- 路线图: [`docs/soc_arch/roadmap/phase9-p5-secondary-slimming.md`](../docs/soc_arch/roadmap/phase9-p5-secondary-slimming.md) — 修订版
-- 总览: [`docs/soc_arch/roadmap/phase9-post-phase8-roadmap.md`](../docs/soc_arch/roadmap/phase9-post-phase8-roadmap.md) — P5 行已更新 (修订版)
-- 模块文档: [`docs/soc_arch/modules/dgpu-soc-pcie-slice.md`](../docs/soc_arch/modules/dgpu-soc-pcie-slice.md) §9.3 — 修订版
+- 主 ADR: [`docs/soc_arch/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md`](../../docs/soc_arch/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md) — **修订版** (保留 open/close)
+- 父 ADR: [`docs/soc_arch/adr/ADR-SOC-18-cpptlm-abi-slimming.md`](../../docs/soc_arch/adr/ADR-SOC-18-cpptlm-abi-slimming.md) — Status Update 段已追加 (修订版)
+- 路线图: [`docs/soc_arch/roadmap/phase9-p5-secondary-slimming.md`](../../docs/soc_arch/roadmap/phase9-p5-secondary-slimming.md) — 修订版
+- 总览: [`docs/soc_arch/roadmap/phase9-post-phase8-roadmap.md`](../../docs/soc_arch/roadmap/phase9-post-phase8-roadmap.md) — P5 行已更新 (修订版)
+- 模块文档: [`docs/soc_arch/modules/dgpu-soc-pcie-slice.md`](../../docs/soc_arch/modules/dgpu-soc-pcie-slice.md) §9.3 — 修订版
 - 父 change (1 级精简): `openspec/changes/archive/2026-09-16-cpptlm-abi-slimming/` — 22→18 (✅ Accepted)
 - 父父 change (Phase 9+ TLP): `openspec/changes/archive/2026-09-16-2026-09-16-cpptlm-pcie-tlp-wire-datapath/` — 13 commits (✅ Accepted)
 

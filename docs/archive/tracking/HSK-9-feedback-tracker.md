@@ -77,6 +77,6 @@
 
 - 源 spec: `docs/superpowers/specs/2027-02-09-hsk-9-icompute-api-v1-sm-rewrite.md` (CppTLM 端, Active)
 - 镜像 spec: `external/PTX-EMU/docs/superpowers/specs/2027-02-09-hsk-9-icompute-api-v1-sm-rewrite.md` (PTX-EMU 端, Task 0.3.2)
-- 计划: `docs/superpowers/plans/2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md` Task 0.3 (line 215-275)
+- 计划: `docs/archive/tracking/2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md` Task 0.3 (line 215-275)
 - 决策流程: 同 plan line 90-99
 - Oracle 复审 session: `ses_f89127beeffeJeSPbzpCrCx6xD`

@@ -794,15 +794,15 @@ R7 v0.3 修订: "CoherenceBridge 8 端口 + Step 7a 装配不可行已落地" �
 
 ### §11.2 跨仓 ArchForge(权威设计, 06-bis 0 改, 仅引用)
 
-- [`main/ArchForge/docs/architecture/09-coherence-protocol.md`](../../../main/ArchForge/docs/architecture/09-coherence-protocol.md) — v1.0-draft L7 Coherence 子系统架构
-- [`main/ArchForge/docs/microarchitecture/coherence-protocol.md`](../../../main/ArchForge/docs/microarchitecture/coherence-protocol.md) — CoherenceProtocol C++ 接口 + MoesiAmdProtocol/MesiGpuProtocol 实现草案
-- [`main/ArchForge/docs/microarchitecture/coherence-bridge.md`](../../../main/ArchForge/docs/microarchitecture/coherence-bridge.md) — CoherenceBridge ChStream 8 端口接口
-- [`main/ArchForge/docs/microarchitecture/coherence-domain.md`](../../../main/ArchForge/docs/microarchitecture/coherence-domain.md) — CoherenceDomain per-cache 状态机 + snoop callback
-- [`main/ArchForge/docs/microarchitecture/coherent_xbar.md`](../../../main/ArchForge/docs/microarchitecture/coherent_xbar.md) — CoherentXBar 实现
-- [`main/ArchForge/docs/microarchitecture/snoop_filter.md`](../../../main/ArchForge/docs/microarchitecture/snoop_filter.md) — SnoopFilter directory-based
-- [`main/ArchForge/docs/microarchitecture/cache-protocol.md`](../../../main/ArchForge/docs/microarchitecture/cache-protocol.md) — Cache 6×6 单 cache 行
-- [`main/ArchForge/adr/ADR-SOC-01-coherence-protocol-strategy.md`](../../../main/ArchForge/docs/adr/ADR-SOC-01-coherence-protocol-strategy.md) — 分步走策略
-- [`main/ArchForge/adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../../main/ArchForge/docs/adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) — v1.0 双 vendor 跨域 coherence
+- [`main/ArchForge/docs/architecture/09-coherence-protocol.md`](../../../../main/ArchForge/docs/architecture/09-coherence-protocol.md) — v1.0-draft L7 Coherence 子系统架构
+- [`main/ArchForge/docs/microarchitecture/coherence-protocol.md`](../../../../main/ArchForge/docs/microarchitecture/coherence-protocol.md) — CoherenceProtocol C++ 接口 + MoesiAmdProtocol/MesiGpuProtocol 实现草案
+- [`main/ArchForge/docs/microarchitecture/coherence-bridge.md`](../../../../main/ArchForge/docs/microarchitecture/coherence-bridge.md) — CoherenceBridge ChStream 8 端口接口
+- [`main/ArchForge/docs/microarchitecture/coherence-domain.md`](../../../../main/ArchForge/docs/microarchitecture/coherence-domain.md) — CoherenceDomain per-cache 状态机 + snoop callback
+- [`main/ArchForge/docs/microarchitecture/coherent_xbar.md`](../../../../main/ArchForge/docs/microarchitecture/coherent_xbar.md) — CoherentXBar 实现
+- [`main/ArchForge/docs/microarchitecture/snoop_filter.md`](../../../../main/ArchForge/docs/microarchitecture/snoop_filter.md) — SnoopFilter directory-based
+- [`main/ArchForge/docs/microarchitecture/cache-protocol.md`](../../../../main/ArchForge/docs/microarchitecture/cache-protocol.md) — Cache 6×6 单 cache 行
+- [`main/ArchForge/adr/ADR-SOC-01-coherence-protocol-strategy.md`](../../../../main/ArchForge/docs/adr/ADR-SOC-01-coherence-protocol-strategy.md) — 分步走策略
+- [`main/ArchForge/adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../../../main/ArchForge/docs/adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) — v1.0 双 vendor 跨域 coherence
 
 ### §11.3 相关 CppTLM 文档
 

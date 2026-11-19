@@ -1,6 +1,6 @@
 > **⚠️ [已归档 2026-10-18]**
 > 
-> **归档原因**: 本文档提议改 Packet 字段 (增量修改 2 字段 + 新增 3 字段 + reset() 重置) + 引入 L4.5 `ProtocolAdapter` 抽象层. 立场与 [`docs/architecture/01-hybrid-architecture-v2.1.md`](01-hybrid-architecture-v2.1.md) §1.1 (v2.1.10 "通信框架层 vs 总线层" 锁定 L3+L4 已达 Gem5 MessageBuffer 水准, **不需新增抽象层**) + [`docs/architecture/06-inter-module-network.md`](06-inter-module-network.md) v0.4 (§2.5 + §4.2 显式 0 改 Packet) **根本对立**.
+> **归档原因**: 本文档提议改 Packet 字段 (增量修改 2 字段 + 新增 3 字段 + reset() 重置) + 引入 L4.5 `ProtocolAdapter` 抽象层. 立场与 [`docs/architecture/01-hybrid-architecture-v2.1.md`](../../architecture/01-hybrid-architecture-v2.1.md) §1.1 (v2.1.10 "通信框架层 vs 总线层" 锁定 L3+L4 已达 Gem5 MessageBuffer 水准, **不需新增抽象层**) + [`docs/architecture/06-inter-module-network.md`](../../architecture/06-inter-module-network.md) v0.4 (§2.5 + §4.2 显式 0 改 Packet) **根本对立**.
 > 
 > **调研价值保留**:
 > - §2.5 Packet 字段分类调研 (7 个死字段) 被 06 §2.5 继承
@@ -21,8 +21,8 @@
 > **作者**: CppTLM build agent
 > **关联 OpenSpec**: 待起草(`cpptlm-packet-semantic-network`)
 > **关联 ADR**: 修订既有 `ADR-DGPU-13-pnn-protocol-neutral-network.md` + `ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md`(PNN 蓝图已起草,本方案作为其代码驱动版本,不新起编号,见 §14.2)
-> **前置调研**: [`docs/research/gem5-ruby-protocol-bridge-survey.md`](../research/gem5-ruby-protocol-bridge-survey.md)
-> **前置架构**: [`docs/architecture/01-hybrid-architecture-v2.1.md`](01-hybrid-architecture-v2.1.md) v2.1.10 + [`docs/designs/dgpu-soc/communication-network.md`](../designs/dgpu-soc/communication-network.md) v1.0 + [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md) v0.1 (后者已于 2026-10-18 同步归档)
+> **前置调研**: [`docs/research/gem5-ruby-protocol-bridge-survey.md`](../../research/gem5-ruby-protocol-bridge-survey.md)
+> **前置架构**: [`docs/architecture/01-hybrid-architecture-v2.1.md`](../../architecture/01-hybrid-architecture-v2.1.md) v2.1.10 + [`docs/designs/dgpu-soc/communication-network.md`](../../designs/dgpu-soc/communication-network.md) v1.0 + [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md) v0.1 (后者已于 2026-10-18 同步归档)
 > **目标存档**: `docs/archive/architecture/05-packet-semantic-network-archived-2026-10.md` (原 `docs/architecture/05-packet-semantic-network.md`)
 
 ---
@@ -1324,10 +1324,10 @@ void InputStreamAdapter<BundleT>::process(Packet* pkt) {
 
 ### 14.1 现有
 
-- [`docs/architecture/01-hybrid-architecture-v2.1.md`](01-hybrid-architecture-v2.1.md) — v2.1.10 已落地(6 层架构 + Gem5 类比)
-- [`docs/designs/dgpu-soc/communication-network.md`](../designs/dgpu-soc/communication-network.md) — v1.0 已落地(实地代码画像 + 5-hop 数据流)
-- [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md) — v0.1 待评审(自顶向下 PNN 蓝图)
-- [`docs/research/gem5-ruby-protocol-bridge-survey.md`](../research/gem5-ruby-protocol-bridge-survey.md) — Gem5 Ruby 完整调研(v0.1)
+- [`docs/architecture/01-hybrid-architecture-v2.1.md`](../../architecture/01-hybrid-architecture-v2.1.md) — v2.1.10 已落地(6 层架构 + Gem5 类比)
+- [`docs/designs/dgpu-soc/communication-network.md`](../../designs/dgpu-soc/communication-network.md) — v1.0 已落地(实地代码画像 + 5-hop 数据流)
+- [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md) — v0.1 待评审(自顶向下 PNN 蓝图)
+- [`docs/research/gem5-ruby-protocol-bridge-survey.md`](../../research/gem5-ruby-protocol-bridge-survey.md) — Gem5 Ruby 完整调研(v0.1)
 
 ### 14.2 待起草
 

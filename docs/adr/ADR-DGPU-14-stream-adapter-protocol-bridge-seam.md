@@ -10,7 +10,7 @@
 **不动 ADR-DGPU-14 正文** (per AGENTS.md "ADR 不可变 + Status Update" 先例), 正文保留作为调研历史.
 
 **关联归档文档**:
-- [`../designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md) (评审对象, 已于 2026-10-18 归档至 [`../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md))
+- [`../designs/dgpu-soc/pnn-protocol-neutral-network.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md) (评审对象, 已于 2026-10-18 归档至 [`../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md))
 - [`../archive/architecture/05-packet-semantic-network-archived-2026-10.md`](../archive/architecture/05-packet-semantic-network-archived-2026-10.md) (立场对立, 早期方案已归档)
 
 ---
@@ -19,7 +19,7 @@
 
 > **状态**: 🟡 **起草中** (v0.1 草案, 待 Oracle/Metis 复审, 预计 1-2 轮 Revise 后签发)
 > **日期**: 2026-10-12 起草
-> **关联架构文档**: [`../designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md) (v0.1, 评审对象)
+> **关联架构文档**: [`../designs/dgpu-soc/pnn-protocol-neutral-network.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md) (v0.1, 评审对象)
 > **关联调研**: [`../../research/gem5-ruby-protocol-bridge-survey.md`](../../docs/research/gem5-ruby-protocol-bridge-survey.md) (v0.1, 评审对象)
 > **配套 ADR**: [ADR-DGPU-13](ADR-DGPU-13-pnn-protocol-neutral-network.md) (PNN 范围定义, 同 cycle 起草)
 > **关联现有 ADR**: [ADR-DGPU-12](ADR-DGPU-12-soc-internal-tlm-wiring-principle.md) (R-WIRE-* 原则, 沿用) / [ADR-DGPU-08](ADR-DGPU-08-abi-freeze-policy.md) (23 ABI 冻结, 沿用)
@@ -424,7 +424,7 @@ private:
 
 ### 7.1 关联 (起草对象)
 
-- [`../designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md) — PNN 架构蓝图 v0.1
+- [`../designs/dgpu-soc/pnn-protocol-neutral-network.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md) — PNN 架构蓝图 v0.1
 - [`../../research/gem5-ruby-protocol-bridge-survey.md`](../../docs/research/gem5-ruby-protocol-bridge-survey.md) — Gem5 Ruby 调研 v0.1
 - [ADR-DGPU-13](ADR-DGPU-13-pnn-protocol-neutral-network.md) — PNN 范围定义 (同 cycle 起草)
 

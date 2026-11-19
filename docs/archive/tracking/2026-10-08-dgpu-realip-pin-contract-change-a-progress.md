@@ -61,7 +61,7 @@ Change A (Port-Contract 代码化) 全部 8 phase / 12 task 完成, 12 项 AC ga
 
 Change A 完成, Change B (Facade 真正接管数据路径) 现在可以无锁启动:
 
-### Change B 任务 outline (per `docs/superpowers/plans/2026-10-08-dgpu-realip-pin-contract-resplit.md` §Out-of-Scope / Change B)
+### Change B 任务 outline (per `docs/archive/tracking/2026-10-08-dgpu-realip-pin-contract-resplit.md` §Out-of-Scope / Change B)
 
 - **B.1**: RED test — `DGpuBoard::init` 装配后 `controller_ip_ != nullptr` (新增 `[realip][facade-wiring]` Integration test)
 - **B.2**: 在 `DGpuBoard::init` 中调 `pcie_ep->set_endpoint_attachment(this)` + `set_pcie_controller_ip(pcie_ctrl)` (复用 `init_timing_mode` cast helper)

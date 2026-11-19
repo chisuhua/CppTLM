@@ -1117,7 +1117,7 @@ openspec validate dgpu-realip-pin-contract --strict
 
 - [ ] **Step 9: 最终 commit (如需要) + 写 progress.md**
 
-写 `docs/superpowers/plans/2026-10-08-dgpu-realip-pin-contract-change-a-progress.md`:
+写 `docs/archive/tracking/2026-10-08-dgpu-realip-pin-contract-change-a-progress.md`:
 
 ```markdown
 # dGPU Real-IP Pin-Contract Change A — Progress Report
@@ -1333,7 +1333,7 @@ Step 6 全回归基线的 6 个 tag 命令已具体列出 (realip[p3] / fabric /
 
 ## Execution Handoff
 
-**Plan complete and saved to `docs/superpowers/plans/2026-10-08-dgpu-realip-pin-contract-resplit.md`.**
+**Plan complete and saved to `docs/archive/tracking/2026-10-08-dgpu-realip-pin-contract-resplit.md`.**
 
 **Resplit 决策摘要**:
 - 原 monolith change 拆为 4 Change (A/B/C/D),本计划仅含 Change A 可执行 tasks

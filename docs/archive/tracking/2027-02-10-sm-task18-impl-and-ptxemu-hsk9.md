@@ -13,7 +13,7 @@
 - HSK-9 公告 (重新发布): `docs/superpowers/specs/2027-02-09-hsk-9-icompute-api-v1-sm-rewrite.md`
 - ADR-SOC-16: `docs/soc_arch/adr/ADR-SOC-16-sm-microarchitecture.md` (14 Gate items, 本计划修订后与 ADR 一致)
 - OpenSpec spec: `openspec/specs/sm-microarchitecture/spec.md` (12 ADDED Requirements)
-- 上一阶段计划: `docs/superpowers/plans/2027-02-09-sm-microarchitecture-rewrite.md` (Tasks 1-17/19-20 完成)
+- 上一阶段计划: `docs/archive/tracking/2027-02-09-sm-microarchitecture-rewrite.md` (Tasks 1-17/19-20 完成)
 - Oracle 评审 session `ses_f8c579906ffeoKlnK0jEEDwrdS` (技术 P0-5 / P1-7)
 - Metis 评审 session `ses_f8c500f05ffeenqBRZg15sv8hy` (process / scope / clarity)
 
@@ -215,7 +215,7 @@ grep -A1 "HSK-9" external/PTX-EMU/AGENTS.md | head -3
 ### Task 0.3: HSK-9 反馈窗口跟踪 + G12 重做准备 (v2 修订)
 
 **Files:**
-- Create: `docs/superpowers/specs/HSK-9-feedback-tracker.md`
+- Create: `docs/archive/tracking/HSK-9-feedback-tracker.md`
 - Modify: `external/PTX-EMU/AGENTS.md` (HSK-9 状态更新 Active) + `external/PTX-EMU/docs/superpowers/specs/2027-02-09-hsk-9-icompute-api-v1-sm-rewrite.md` (镜像)
 
 > **重要**: per Metis §2.2 发现 — HSK-9 spec 实际**未发送到 PTX-EMU 仓**, 14 天窗口从未启动. 本 Task 重做发布流程.
@@ -256,7 +256,7 @@ git push origin feat/hsk-9-impl
 
 ```bash
 cd /workspace/project/CppTLM/.worktrees/sm-mp-impl
-cat > docs/superpowers/specs/HSK-9-feedback-tracker.md << 'EOF'
+cat > docs/archive/tracking/HSK-9-feedback-tracker.md << 'EOF'
 # HSK-9 14 天反馈窗口跟踪
 
 | 日期 | 事件 | 负责人 | 状态 |
@@ -269,7 +269,7 @@ cat > docs/superpowers/specs/HSK-9-feedback-tracker.md << 'EOF'
 | # | 日期 | 来源 | 类型 | 状态 | 修复 commit |
 |---|------|------|------|------|-------------|
 EOF
-git add docs/superpowers/specs/HSK-9-feedback-tracker.md
+git add docs/archive/tracking/HSK-9-feedback-tracker.md
 GIT_MASTER=1 git commit -m "chore(hsk): 14d feedback window tracker (TBD 锚定)"
 ```
 
@@ -1999,7 +1999,7 @@ gh pr create --repo CppTLM --base main --head feat/sm-mp-impl \
 # 1. 读必读文档 (~4 小时, 含 PTX-EMU 端)
 cd /workspace/project/CppTLM/.worktrees/sm-mp-impl
 cat docs/soc_arch/architecture/15-sm-microarchitecture-design.md | head -800
-cat docs/superpowers/plans/2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md  # 本计划 v2
+cat docs/archive/tracking/2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md  # 本计划 v2
 cat external/PTX-EMU/AGENTS.md
 
 # 2. 进入 PTX-EMU worktree (单独 shell)

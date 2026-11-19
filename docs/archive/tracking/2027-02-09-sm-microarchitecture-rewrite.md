@@ -9,9 +9,9 @@
 **Tech Stack:** C++17 + SystemC stub + ChStreamModuleBase + bundles + ModuleFactory + Catch2 v3.7.0 + git-master 多原子 commit + OpenSpec change `cpptlm-dgpu-d1-cdna-isa-sm-rewrite` (supersedes `cpptlm-dgpu-d1-cdna-isa-phase-a`)
 
 **关联文档**:
-- 设计: [`docs/soc_arch/architecture/15-sm-microarchitecture-design.md`](../soc_arch/architecture/15-sm-microarchitecture-design.md) (v5.0, commit `650e9e9`, 971 行)
-- HSK-9 草稿: [`docs/soc_arch/adr/hsk9-announcement-draft.md`](../soc_arch/adr/hsk9-announcement-draft.md) (179 行, supersede commit `4105602`)
-- ADR: [`docs/soc_arch/adr/ADR-SOC-15-cdna-real-isa-roadmap.md`](../soc_arch/adr/ADR-SOC-15-cdna-real-isa-roadmap.md) §3 D2 (需 Status Update 标记 superseded-by sm-rewrite)
+- 设计: [`docs/soc_arch/architecture/15-sm-microarchitecture-design.md`](../../../docs/soc_arch/architecture/15-sm-microarchitecture-design.md) (v5.0, commit `650e9e9`, 971 行)
+- HSK-9 草稿: [`docs/soc_arch/adr/hsk9-announcement-draft.md`](../../../docs/soc_arch/adr/hsk9-announcement-draft.md) (179 行, supersede commit `4105602`)
+- ADR: [`docs/soc_arch/adr/ADR-SOC-15-cdna-real-isa-roadmap.md`](../../../docs/soc_arch/adr/ADR-SOC-15-cdna-real-isa-roadmap.md) §3 D2 (需 Status Update 标记 superseded-by sm-rewrite)
 - 反转 ADR: `ADR-SOC-02-cu-granularity.md` (黑盒优先→完整 SM) + 新建 `ADR-SOC-16-sm-microarchitecture.md`
 - Stage A supersede: `openspec/changes/cpptlm-dgpu-d1-cdna-isa-phase-a/`
 

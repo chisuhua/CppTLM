@@ -62,8 +62,8 @@ git add docs/soc_arch/architecture/28-cxl-3-fabric.md
 git add docs/soc_arch/architecture/29-nsa-evolution-roadmap.md
 git add docs/soc_arch/architecture/30-nsa-comprehensive-supplement.md
 git add docs/soc_arch/architecture/31-nsa-fault-injection-plan.md
-git add docs/validation/2026-09-19-cpptlm-nsa-scale-up-oracle-pass.md
-git add docs/implementation/14-boundary-hardening-stage0.md
+git add docs/archive/validation/2026-09-19-cpptlm-nsa-scale-up-oracle-pass.md
+git add docs/archive/implementation/14-boundary-hardening-stage0.md
 git add docs/implementation/README.md
 
 # 活跃 openspec changes（在途）
@@ -172,7 +172,7 @@ fi
 # ArchForge — dGPU SoC Architecture & Design Repository
 
 > **本仓是 CppTLM 的设计伴侣仓**，存有全部 dGPU SoC 架构设计文档。
-> **源代码实现** → [CppTLM](../CppTLM/)（`include/tlm/`, `src/tlm/`）
+> **源代码实现** → [CppTLM](../../..)（`include/tlm/`, `src/tlm/`）
 
 ## 范围
 

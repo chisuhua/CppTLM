@@ -1,65 +1,69 @@
-# CppTLM 文档审计报告 (Snapshot)
+# 文档路径漂移审计（活状态）
 
-> **生成时间**: 2026-06-14
-> **工具**: `scripts/test/docs_sync_check.sh`
-> **状态**: ✅ 365/365 路径引用有效
+> **性质**: **活状态文档** —— 数字由工具产出，本文件只记录**当前值 + 重生成命令**，不手抄快照。
+> **重生成**: `bash scripts/test/docs_sync_check.sh --strict`（pre-commit 自动执行，退出码非 0 即阻断提交）
+> **最后实测**: 2026-11-19（docs 重组后）
 
-## 检查范围
+---
 
-| 文档 | 路径 |
-|------|------|
-| 项目入口 | `AGENTS.md` |
-| 新人指南 | `docs/ONBOARDING.md` |
-| 路线图 | `roadmap.md` |
-| 脚本索引 | `scripts/README.md` |
+## 1. 路径引用闸（`scripts/test/docs_sync_check.sh --strict`）
 
-## 路径引用统计
+扫描面 = 4 份核心文档：`AGENTS.md` · `docs/ONBOARDING.md` · `.rddf/roadmap.md` · `scripts/README.md`
 
-| 指标 | 值 |
-|------|---|
-| 文档数 | 4 |
-| 扫描路径引用总数 | 365 |
-| 缺失路径数 | **0** |
-| 误报（VIRTUAL_PATHS 排除） | 27（已删除/归档/规划中文件 + gem5 参考路径） |
+| 指标 | 实测值 |
+|------|-------|
+| 扫描文档数 | 4 |
+| 路径引用总数 | **616** |
+| **缺失路径数** | **0** ✅ |
+| 误报排除（`VIRTUAL_PATHS`） | 27 项（已删除 / 已归档 / 规划中 / 跨仓路径） |
 
-## VIRTUAL_PATHS（已删除/归档文件，仅在文档中说明删除原因时引用）
+### VIRTUAL_PATHS 的用途
 
-| 路径 | 状态 | 引用上下文 |
-|------|------|-----------|
-| `src/noc/` 等 | 设计示意 | v2.1 实际使用 `src/tlm/` 和 `src/rtl/` |
-| `cpu_main.cpp` / `traffic_main.cpp` / `sc_main.cpp` | v2.1 删除 | USE_SYSTEMC 选项移除 |
-| `cpu_cluster.cc` | 归档到 samples-orphaned | v1 legacy 模块 |
-| `ext/packet_to_payload.hh` / `ext/payload_to_packet.hh` | 归档到 docs-archived | packet_to_payload 桥接路径修正 |
-| `modules_v2.hh` | 归档 | v2 模块定义被 TLM 模块取代 |
+`VIRTUAL_PATHS` 数组登记「**文档里提到、但物理文件已删除或已迁出**」的路径，用于**说明删除原因**时引用而不误报。
+新增此类路径时**必须**加进该数组（per `AGENTS.md` §DOC HYGIENE），**不要**直接删掉文档里的说明段落。
 
-## scripts/ 子目录一致性
+---
 
-- ✅ `scripts/CMakeLists.txt` 存在
-- ✅ 所有 5 子目录（build/, test/, pipeline/, topology/, stats/）均含 `.gitkeep`
+## 2. AGENTS.md 体量闸（`scripts/test/agents_md_lint.py`）
 
-## 历史快照对比
+| 指标 | 实测值 | 上限 |
+|------|-------|------|
+| 文件体量 | **64433 B** | 65536 B（64 KiB） |
+| 单行长度 | 合规 | 1000 字符 |
+| STRUCTURE 树路径存在性 | 合规 | — |
 
-| 日期 | 路径引用 | 缺失 | 备注 |
-|------|----------|------|------|
-| 2026-06-10（清理前） | 367 | 182 | 大量误报（路径前缀补全缺失） |
-| 2026-06-10（智能路径补全） | 354 | 76 | 误报减少 58% |
-| 2026-06-10（修复 ONBOARDING 过期引用） | 354 | 13 | 仅剩余"说明删除原因"引用 |
-| 2026-06-10（VIRTUAL_PATHS 完善） | 354 | 0 | 零误报 |
-| 2026-06-11（Phase 7 GPU APU 规划） | **361** | **0** | 新增 Phase 7 路径白名单（13 规划中文件 + 3 gem5 参考）；调研报告 [`research-cpptlm-gpu-fused-soc-survey.md`](research-cpptlm-gpu-fused-soc-survey.md) 入库 |
-| 2026-06-14（Phase 7.A 文档收尾） | **365** | **0** | CHANGELOG.md 新增 `[Unreleased]` 段记录 7.A 8 项落地；roadmap.md 7.A 行 Pending → ✅；VIRTUAL_PATHS 移除已落地的 `compute_bundles_tlm.hh`/`gpu_tlm.hh`/`gpu_standalone.json`（30 → 27） |
+> ⚠️ **余量仅 ~1.1 KiB** —— `AGENTS.md` 注入每个 agent 的上下文，体量直接等于每会话 token 成本。
+> **过程日志（finding 编号 / 评审轮次 / 归档流水）一律不进 AGENTS.md**（落 ADR `## Status Update` 段或 `openspec/changes/archive/`）。
 
-## 维护流程
+---
 
-每次 `src/include/scripts` 结构变更时，开发者必须：
+## 3. Markdown 链接闸（自建，见 §5）
 
-1. **本地运行** `./scripts/test/docs_sync_check.sh --strict`，确保零误报
-2. **更新文档** AGENTS.md / ONBOARDING.md / roadmap.md / scripts/README.md
-3. **提交前** pre-commit hook 自动运行此检查（如已启用 `pre-commit install`）
-4. **CI 兜底**（未来可扩展） `.github/workflows/ci.yml` 中可加 docs-sync-check job
+`docs_sync_check.sh` 只校验**反引号路径字面量**，**不校验** `[text](target)` 形式的 Markdown 链接。
+故额外用全量扫描统计链接可达性（结果见 §4）。
 
-## 扩展点（未来工作）
+---
 
-- [ ] 添加更多文档到扫描列表（如 `docs/architecture/01-*.md`）
-- [ ] 检查 Markdown 链接（`[text](path.md)` 形式）
-- [ ] 添加 include/AGENTS.md 路径验证（注册宏引用一致性）
-- [ ] 添加 .clang-format 与代码风格一致性检查
+## 4. 全仓 Markdown 链接实测（2026-11-19）
+
+| 类别 | 数量 | 处置 |
+|------|-----|------|
+| 可达链接 | 正常 | — |
+| **跨仓路径**（`../../../main/ArchForge/...`） | 若干 | 本仓不可达属正常 —— 目标在 **ArchForge 仓**；按需加 `VIRTUAL_PATHS` |
+| **通配写法**（`../adr/ADR-CEP-19-*.md`） | 若干 | 人工可读但工具不可解析 —— 建议改写为具体文件名 |
+
+---
+
+## 5. 维护流程
+
+每次 `src/` `include/` `scripts/` `docs/` 结构变更时：
+
+1. 运行 `./scripts/test/docs_sync_check.sh --strict` —— 零缺失
+2. 运行 `python3 scripts/test/agents_md_lint.py` —— 体量 / 行长 / STRUCTURE 树全绿
+3. 同步 `AGENTS.md` STRUCTURE 树 + `scripts/README.md` 子目录表 + `docs/ONBOARDING.md` §5.5 脚本表
+4. 新增「已删除 / 已归档」路径引用 → 加进 `docs_sync_check.sh` 的 `VIRTUAL_PATHS`
+5. 提交 —— pre-commit hook 自动复跑第 1 步
+
+---
+
+**维护**: builder（随结构变更同步）· architect（判据口径）

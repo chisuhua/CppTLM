@@ -59,7 +59,7 @@
 | 子模块 A (ChStream 化) → 子模块 B (ChStream 化) | ✅ | ❌ | `dgpu_board_v1.json:80-94` 实证 |
 | 跨 SimModule 边界,通过 outputs/inputs 暴露 | ✅ | ❌ | `findInternalPath` 跨层下钻 + case 5b 实证 |
 | **SimModule (callback 化,如 `SocInternalNoc`) ↔ ChStream 模块** | ❌ (类型不兼容或无端口) | ✅ (`set_*_target` programmatic bridge) | `dgpu_board_shell.cc:840-852` 4 target 桥接 |
-| **Bundle 类型不兼容 (PcieTlpBundle ↔ NoCFlitBundle)** | ❌ (StreamAdapter 层拒绝) | ✅ (需加 wire-format 转换 adapter) | `docs/implementation/2026-10-09-gmmu-pte-bus-correction.md` §6 Deviation 1 |
+| **Bundle 类型不兼容 (PcieTlpBundle ↔ NoCFlitBundle)** | ❌ (StreamAdapter 层拒绝) | ✅ (需加 wire-format 转换 adapter) | `docs/archive/implementation/2026-10-09-gmmu-pte-bus-correction.md` §6 Deviation 1 |
 | LWC 逻辑名注册 (GMMU / SDMA) | ❌ (无 JSON schema) | ✅ (`lwc_hub->register_cr_target("gmmu", ...)`) | `dgpu_board_shell.cc:857-867` |
 
 ## StreamAdapter 流程

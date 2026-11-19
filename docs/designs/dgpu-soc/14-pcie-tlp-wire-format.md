@@ -1,4 +1,4 @@
-> **📦 [2026-10-18 迁出]**: 本文档原位于 `docs/architecture/14-pcie-tlp-wire-format.md`, 因主题是 PCIe Controller 板级接口 (dGPU 应用架构, scope: PcieTlpWireBundle ↔ PCIe wire bytes), 不在通用基础架构 (per [`docs/architecture/README.md`](../README.md) 2026-09-26 v1.1 分工: 通用基础架构 vs dGPU 应用架构), 迁至 `docs/designs/dgpu-soc/` 目录.
+> **📦 [2026-10-18 迁出]**: 本文档原位于 `docs/architecture/14-pcie-tlp-wire-format.md`, 因主题是 PCIe Controller 板级接口 (dGPU 应用架构, scope: PcieTlpWireBundle ↔ PCIe wire bytes), 不在通用基础架构 (per [`docs/architecture/README.md`](../../architecture/README.md) 2026-09-26 v1.1 分工: 通用基础架构 vs dGPU 应用架构), 迁至 `docs/designs/dgpu-soc/` 目录.
 
 ---
 

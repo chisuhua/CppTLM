@@ -1,6 +1,6 @@
 > **⚠️ [已归档 2026-10-18]**
 > 
-> **归档原因**: 本文档 (SPEC-010 v3.0) 是早期 TGMS 规格详细附件, 与 [`docs/architecture/10-topology-generation-management-system.md`](10-topology-generation-management-system.md) (ARCH-010 v3.0) 范围重叠, 后者是统一真源. ARCH-010 §6 JSON Schema + §7 端口索引 + §8 ModuleFactory + §9 Python 工具链已完整吸收 SPEC-010 §1-§8 核心内容.
+> **归档原因**: 本文档 (SPEC-010 v3.0) 是早期 TGMS 规格详细附件, 与 [`docs/architecture/10-topology-generation-management-system.md`](../../architecture/10-topology-generation-management-system.md) (ARCH-010 v3.0) 范围重叠, 后者是统一真源. ARCH-010 §6 JSON Schema + §7 端口索引 + §8 ModuleFactory + §9 Python 工具链已完整吸收 SPEC-010 §1-§8 核心内容.
 > 
 > **依赖修正**: ARCH-010 v3.0 §8.2 原引用 "详见 SPEC-010 §6.1 ModuleFactory Instantiation Flow", 归档后该引用更新为指向本归档文件 (跨目录引用).
 > 

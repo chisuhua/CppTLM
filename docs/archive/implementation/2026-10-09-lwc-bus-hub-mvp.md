@@ -34,7 +34,7 @@ $ ./build/bin/cpptlm_tests "[driver_visible]"   → All tests passed (40 asserti
 $ ./build/bin/cpptlm_tests "[realip]"           → All tests passed (366 assertions in 51 test cases)
 ```
 
-**dirty baseline** (out of scope, 不动): `CMakeLists.txt` / `configs/dgpu_board_v1.json` / `configs/dgpu_soc_timing_v1.json` / `docs/designs/dgpu-soc/soc-internal-noc-design.md` / `docs/pcie/driver-visible-minimal-soc.md` 修改; `configs/dgpu_soc_v1.json.in` + `openspec/changes/dgpu-realip-pin-contract/*` 删除; `cpptlm-{gmmu-pte,pcie-tlp}` 4件套 untracked.
+**dirty baseline** (out of scope, 不动): `CMakeLists.txt` / `configs/dgpu_board_v1.json` / `configs/dgpu_soc_timing_v1.json` / `docs/archive/designs/dgpu-soc/soc-internal-noc-design.md` / `docs/pcie/driver-visible-minimal-soc.md` 修改; `configs/dgpu_soc_v1.json.in` + `openspec/changes/dgpu-realip-pin-contract/*` 删除; `cpptlm-{gmmu-pte,pcie-tlp}` 4件套 untracked.
 
 **设计决策锁定** (v1.0.1 B-H1/H2 修订 + 本实施落点):
 - `LwcBusHub` **header-only** (dirty `CMakeLists.txt` 禁改 → 不能加 .cc 源文件); `tick()` no-op + host 线程同步 handler

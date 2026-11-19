@@ -125,10 +125,10 @@ Baseline 锁定: 44498 assertions / 1232 cases, OFF=ON 双模式, 子波 1-4 断
 
 ## 10. 关联文档
 
-- 计划: `docs/superpowers/plans/2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md` (v3.1, 2040 行)
+- 计划: `docs/archive/tracking/2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md` (v3.1, 2040 行)
 - baseline tracker: `docs/superpowers/specs/HSK-9-baseline-tracker.md` (commit 1e1e96d)
-- HSK-9 feedback tracker: `docs/superpowers/specs/HSK-9-feedback-tracker.md` (commit a766474)
-- HSK-9 reading-log: `docs/superpowers/specs/HSK-9-reading-log.md` (commit 75ee2b2)
+- HSK-9 feedback tracker: `docs/archive/tracking/HSK-9-feedback-tracker.md` (commit a766474)
+- HSK-9 reading-log: `docs/archive/tracking/HSK-9-reading-log.md` (commit 75ee2b2)
 - CppTLM worktree: `/workspace/project/CppTLM/.worktrees/sm-mp-impl` [feat/sm-mp-impl, 1e1e96d]
 - PTX-EMU worktree: `/workspace/project/CppTLM/external/PTX-EMU/.worktrees/hsk-9-impl` [feat/hsk-9-impl, e7aa69d6]
 - PR #21: https://github.com/chisuhua/PTX-EMU/pull/21 (MERGED d5a58cf5)

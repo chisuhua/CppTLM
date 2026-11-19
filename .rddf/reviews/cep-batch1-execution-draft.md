@@ -182,7 +182,7 @@
 ## 12. CEP 使用手册(Stage 4+ 维护态交接)
 
 > **本节已迁出**(per 台账 Entry #XXX 架构文档治理):
-> 全文见 [`docs/guide/cep-usage.md`](../../guide/cep-usage.md) —— 10 分钟上手 / 载体地图 / 新增协议族标准流程 / 实验 4 件套跑法 / 闸清单 / 冻结面五步授权链 / DoD 读法 / 未结义务清单。
+> 全文见 [`docs/guide/cep-usage.md`](../../docs/guide/cep-usage.md) —— 10 分钟上手 / 载体地图 / 新增协议族标准流程 / 实验 4 件套跑法 / 闸清单 / 冻结面五步授权链 / DoD 读法 / 未结义务清单。
 >
 > **本节在架构文档中只保留入口指针** —— 操作步骤不属架构蓝图(per `AGENTS.md §DOC HYGIENE` 真源原则)。
 ```
@@ -194,7 +194,7 @@
 ```markdown
 ## Status Update(2026-10-28 · 第九则,per 台账 Entry #88)—— JSON 装配连通性 + `INV-CEP-07-IC4` 闭合
 
-> ⛔ **决策正文见 [`ADR-CEP-19`](../adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md) 的对应 Status Update**(egress 通道语义 / JSON 装配 / 钩子死→活)。
+> ⛔ **决策正文见 [`ADR-CEP-19`](../../docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md) 的对应 Status Update**(egress 通道语义 / JSON 装配 / 钩子死→活)。
 > 本节原为实施状态登记,per 台账 Entry #XXX 架构文档治理已移除;状态见 `.rddf/roadmap/`。
 ```
 

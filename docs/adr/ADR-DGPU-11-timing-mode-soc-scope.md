@@ -230,7 +230,7 @@ openspec validate cpptlm-dgpu-soc-timing-mvp --strict   # PASS (v0.2 终稿)
 
 ### 8.3 第 3 层 (OpenSpec change)
 
-- [`openspec/specs/dgpu-soc-timing/`](../../openspec/specs/dgpu-soc-timing/) — v0.2 终稿, 18 ADDED Requirements + 52 scenarios, 八轮 PASS
+- [`openspec/specs/dgpu-soc-timing/`](../../openspec/specs/dgpu-soc-timing) — v0.2 终稿, 18 ADDED Requirements + 52 scenarios, 八轮 PASS
   - `proposal.md` — Why + What Changes + 5 关键架构决策
   - `design.md` — 实施指导 (11 节, 含 §4.2 包装层 + §6.2 互斥逻辑)
   - `specs/dgpu-soc-timing/spec.md` — 18 ADDED Requirements (SHALL/MUST 规范化)

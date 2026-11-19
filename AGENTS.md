@@ -170,7 +170,7 @@ docs/
     dgpu-soc/architecture.md            #   SoC 业务架构 (6 模块拓扑 + GMMU + SDMA + 存储子系统)
     dgpu-soc/timing-mode.md             #   timing-mode SoC 业务设计
     dgpu-driver/architecture.md         #   Driver 接口架构 (15 ABI + 4 BAR + driver 闭环)
-  adr/                   # 真源 3: 不可变 ADR (59 份: ADR-CEP-* 24 文件(23 ADR + NUMBER-MAP) + ADR-DGPU-* 14 + 其他 21)
+  adr/                   # 真源 3: 不可变 ADR (63 份: ADR-CEP-* 24 + ADR-DGPU-* 15 + ADR-X* 18 + 其他 6)
     ADR-CEP-00-platform-charter-and-governance.md   # ★ CEP 治理宪章 (跨仓归口 + 准入门槛)
     ADR-CEP-00A-real-source-anchor-map.md           # ★ CEP 真源章节映射表 (ADR 引用锚点)
     # 其余 ADR-CEP-01 ~ ADR-CEP-19 / 07A 与 ADR-DGPU-01 ~ 09 见 ls docs/adr/
@@ -182,21 +182,20 @@ docs/
   soc_arch/              # ⚠️ dGPU SoC 子项目文档已迁至独立仓（占位 + VIRTUAL_PATHS）
                         #   详见 ../ArchForge/ (新仓)；当前目录仅保留 README.md 占位说明
   cross_repo/            # 跨仓镜像文档 (HSK-9 SM 重构 / HSK-12 ABI 精简 等)
-  implementation/        # 实现笔记 (CEP ArchForge 接口对齐清单 等)
-  guide/                 # GETTING_STARTED / DEVELOPER / PYTOOLING / TOPOLOGY_USER
+  pcie/                  # PCIe 设备实施笔记 (D1 Display / D-AXI)
+  implementation/        # 实施笔记 + CEP 契约载体（完结件已归档至 docs/archive/implementation/）
+  guide/                 # GETTING_STARTED / DEVELOPER / PYTOOLING / TOPOLOGY_USER / CEP
   development/           # CONTRIBUTING (pre-commit + clang-format + 测试规范)
-  roadmap/               # ★ 实施路线图 + 实时状态看板 (README.md)
-  superpowers/plans/     # 实施计划 + 进度跟踪归档层（与 openspec/tasks.md 互补）
+  roadmap/               # ⚠️ 已归档的重定向存根（当前路线图真源 = .rddf/roadmap.md）
+  superpowers/           # 第 4 层实施跟踪（plans/ 计划 + specs/ 规格；完结件归档至 docs/archive/tracking/）
   requirements/          # 需求规格 (PRD)
   research/              # 框架级调研 (CEP 一致性 + gem5 协议族 + cpptlm 融合)
-  skills/                # 技能文档
-  validation/            # 验证报告
-  user-guide/            # 用户手册
-  archive/               # 已归档文档
-  legacy/                # 旧版文档
+  validation/            # 验证报告 (CEP 实验 + 拓扑 oracle-pass + raw/)
+  user-guide/            # 用户手册 (Python E2E 建模模板 / 层次化 SoC 配置)
+  archive/               # 已归档文档（architecture/ designs/ implementation/ validation/ tracking/ process/ roadmap/ skills/）
   ONBOARDING.md          # 新人上手 (图谱生成)
-  README.md              # docs/ 索引
-  docs_audit_report.md   # 路径漂移审计报告
+  README.md              # docs/ 总索引（按真源分级组织；计数以实测为准）
+  docs_audit_report.md   # 路径漂移审计状态（活状态 + 重生成命令）
 
 examples/                # C++ example_*.cc + Python demo_*.py
   example_basic_transaction.cc / example_error_handling.cc
@@ -517,7 +516,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | **真源 3 (不可变决策)** | `docs/adr/ADR-{X,CEP,DGPU}-*.md` | 不可变决策真源 (签发后不改, 只追加 Status Update) | 仅追加 Status Update |
 | **附属 1 (调研)** | `docs/research/` | 框架级调研附属 (CEP 一致性 + gem5 协议族 + cpptlm 融合). 引用真源, 不重发明. 硬件微架构调研已于 2026-10-27 迁 ArchForge | 不进架构评审; 仅作 reference |
 | **附属 2 (业务实施笔记)** | `docs/pcie/` + `docs/superpowers/` + `docs/implementation/` | 实施笔记 + 计划跟踪 (跨边界混合). 引用真源 + OpenSpec, 不重发明架构决策 | 实施期短期, archive 后归档 |
-| **附属 3 (早期方案)** | `docs/archive/` + `docs/legacy/` + ADR 顶部 `## Status Update` 段 | 历史保留 (调研价值 + superseded 标注). 不重写, 仅追加归档说明或 Status Update | 仅 admin |
+| **附属 3 (早期方案)** | `docs/archive/` + ADR 顶部 `## Status Update` 段 | 历史保留 (调研价值 + superseded 标注). 不重写, 仅追加归档说明或 Status Update | 仅 admin |
 
 **冲突解决规则**:
 1. **真源 vs 附属冲突** → 改附属, 保持真源 (例如: `docs/designs/dgpu-soc/architecture.md` 引用 `docs/architecture/06-inter-module-network.md`, 不在 `docs/designs/` 重述)
@@ -534,7 +533,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | 层 | 职责 | 路径 | 数量控制 | 修改门槛 |
 |----|------|------|---------|---------|
 | **第 1 层 长期维护架构文档** | 设计意图 + 现状真相 | `docs/architecture/` (真源 1) + `docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/` (真源 2) | **每主题 = 1 主纲 + N 子文档**（子文档**仅从主纲进入**;须服务**同一主纲的同一设计意图**;**子文档不计入篇数**。真源 1 的「唯一真源」是**目录级**约束,拆子文档不违反;先例 = `docs/designs/dgpu-soc/` 与 `docs/architecture/cep/`） | Oracle 评审 or ADR 触发 |
-| **第 2 层 架构决策记录** | 不可变决策 + Status Update | `docs/adr/ADR-*.md` (真源 3, 59 份) | 每个不可逆决策 1 篇 | 签发后不改，只追加 Status Update |
+| **第 2 层 架构决策记录** | 不可变决策 + Status Update | `docs/adr/ADR-*.md` (真源 3, 63 份) | 每个不可逆决策 1 篇 | 签发后不改，只追加 Status Update |
 | **第 3 层 OpenSpec change** | 实施变更提案 | `openspec/changes/<name>/{proposal,design,spec,tasks}.md` | 每个独立变更 1 个 | 标准 OpenSpec 工作流 |
 | **第 4 层 实施跟踪** | TDD 5 步 + 进度报告 | `docs/superpowers/plans/<name>.md` + `archive/` | 每个大 Phase 1 个 | 实施期短期，archive 后归档 |
 

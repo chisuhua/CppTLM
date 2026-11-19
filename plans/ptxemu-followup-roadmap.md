@@ -313,7 +313,7 @@ Week 7: v0.5.0-MVP tag
 ### 文档
 
 - `docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md` (v0.5 MVP 切片设计)
-- `docs/superpowers/specs/2026-08-21-hsk-8-ptxemu-public-api.md` (HSK-8 协议)
+- `docs/archive/tracking/2026-08-21-hsk-8-ptxemu-public-api.md` (HSK-8 协议)
 - `docs/architecture/01-hybrid-architecture-v2.1.md` (v2.1 架构)
 
 ---

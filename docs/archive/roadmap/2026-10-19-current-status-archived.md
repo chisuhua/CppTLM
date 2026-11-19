@@ -4,9 +4,9 @@
 > **原始最后更新**: 2026-07-03 · **原始基线**: ✅ 764/764 (15547 assertions)
 >
 > ⚠️ **本文档于 2027-02-09 由 Oracle 评审判定 FAIL 并标记为历史快照**。原内容描述 2026-07-03 时点项目状态,7 个月未更新。当前权威实施状态请参阅:
-> - [`docs/soc_arch/architecture/00-overview.md`](../soc_arch/architecture/00-overview.md) — v1.0 总架构蓝图
-> - [`docs/roadmap/README.md`](./README.md) — 本目录历史快照(已标注失效)
-> - [`openspec/changes/`](../../../openspec/changes/) — 11 个活跃 changes + archive
+> - [`docs/soc_arch/architecture/00-overview.md`](../../soc_arch/architecture/00-overview.md) — v1.0 总架构蓝图
+> - [`docs/roadmap/README.md`](../../roadmap/README.md) — 本目录历史快照(已标注失效)
+> - [`openspec/changes/`](../../../openspec/changes) — 11 个活跃 changes + archive
 > - **当前实测基线**: 1241 cases / 47634 assertions / 2 known fail (Phase 8 e2e `_config` + `_bar` Minor, per AGENTS.md)
 
 ---

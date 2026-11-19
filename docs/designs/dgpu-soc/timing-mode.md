@@ -1037,7 +1037,7 @@ TEST_CASE("dgpu-soc-timing: H2D throughput regression", "[dgpu_soc_timing]") {
 - **functional-mode SoC**: [`./architecture.md`](./architecture.md) (v1.0, 本目录主页,**不变**)
 - **Driver 视角**: [`../dgpu-driver/architecture.md`](../dgpu-driver/architecture.md)
 - **ADR-DGPU-05~10**: 单一 VRAM 所有权 + AxiMemBundle 边界 + 演进 seam + 命名约定
-- **[ADR-DGPU-11-timing-mode-soc-scope.md](../adr/ADR-DGPU-11-timing-mode-soc-scope.md) (✅ 已签发 2027-02-09, Oracle 八轮复评 PASS)**: timing-mode SoC 范围与 functional-mode 共存边界
+- **[ADR-DGPU-11-timing-mode-soc-scope.md](../../adr/ADR-DGPU-11-timing-mode-soc-scope.md) (✅ 已签发 2027-02-09, Oracle 八轮复评 PASS)**: timing-mode SoC 范围与 functional-mode 共存边界
 - **Phase 6 AXI4Mapper**: `include/framework/axi4_mapper.{hh,cc}` (pattern 借鉴,v0.2 已删除 outstanding, per H3)
 - **Phase 5 PcieAxiAdapter**: `include/tlm/pcie/pcie_axi_adapter_tlm.{hh,cc}` (PCIe TLP 时序已建模)
 - **D-AXI v1.4**: `openspec/specs/driver-visible-minimal-soc/` (functional-mode 实施真相)

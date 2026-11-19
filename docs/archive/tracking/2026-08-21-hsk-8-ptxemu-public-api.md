@@ -167,7 +167,7 @@ PTX-EMU 仓 MUST 在 `include/ptxemu/ir/statement.h` 提供 `ptxemu::Statement`�
 - **HSK-4 vendored 接口头** (CppTLM 端): `include/cudart/{scoreboard,pipeline,tensor_core}_interface.h`
 - **PTX-EMU HSK-4 端**: `https://github.com/chisuhua/PTX-EMU/blob/main/include/ptxsim/scoreboard_interface.h` (`8acfd2d1`) / `pipeline_interface.h` (`9e7361b9`) / `tensor_core_interface.h` (`463038e0`)
 - **PTX-EMU 远端 cleanup commits** (Phase 1-4): `a9a14e1d` / `292022a3` / `e4d7e369` / `09786635`
-- **ADR**: [`docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md`](../../../docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md) (D2/D3)
+- **ADR**: [`docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md`](../../soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md) (D2/D3)
 - **Oracle 4 轮咨询**: session `ses_fdb70164bffe2vBN71uiaV90aY`
 
 ---
@@ -176,8 +176,8 @@ PTX-EMU 仓 MUST 在 `include/ptxemu/ir/statement.h` 提供 `ptxemu::Statement`�
 
 | 角色 | 路径 |
 |------|------|
-| PTX-EMU 团队查找本 spec | CppTLM 仓 `docs/superpowers/specs/2026-08-21-hsk-8-ptxemu-public-api.md`（GitHub: `https://github.com/chisuhua/CppTLM/blob/main/docs/superpowers/specs/2026-08-21-hsk-8-ptxemu-public-api.md`）|
-| PTX-EMU 团队回传 ack | PTX-EMU 仓 `docs/superpowers/specs/2026-08-21-hsk-8-cpptlm-response.md`（mirror）或 PTX-EMU PR 评论 |
+| PTX-EMU 团队查找本 spec | CppTLM 仓 `docs/archive/tracking/2026-08-21-hsk-8-ptxemu-public-api.md`（GitHub: `https://github.com/chisuhua/CppTLM/blob/main/docs/archive/tracking/2026-08-21-hsk-8-ptxemu-public-api.md`）|
+| PTX-EMU 团队回传 ack | PTX-EMU 仓 `docs/archive/tracking/2026-08-21-hsk-8-cpptlm-response.md`（mirror）或 PTX-EMU PR 评论 |
 | CppTLM 团队跟进 | 本 spec + 关联 `openspec/changes/cpptlm-ptxemu-public-device-api/` (proposal.md §跨仓协调) |
 
 ---

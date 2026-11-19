@@ -9,7 +9,7 @@ phase_refs: []
 ## phase-3: PCIe EP 链路层 + 编码 + PHY (Phase 1-3 微架构)
 
 > **真源**: [`docs/architecture/19-pcie-ip-microarchitecture.md`](../../docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md) (**已迁 ArchForge** 独立仓, per AGENTS.md §PHASE STATE)
-> **OpenSpec 已交付**: [Phase 1-3 sub-specs](../../openspec/specs/) (link-layer-and-fc + 130b-encoding + phy-digital-ctrl)
+> **OpenSpec 已交付**: [Phase 1-3 sub-specs](../../../openspec/specs/) (link-layer-and-fc + 130b-encoding + phy-digital-ctrl)
 
 ### Phase 1: PCIe Link Layer + FC Token Bucket
 

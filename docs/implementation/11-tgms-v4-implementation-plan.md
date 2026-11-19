@@ -10,7 +10,7 @@
 TGMS v3.0 (Phase 1-3) has been completed. This document defines the implementation plan for TGMS v4.0 - hierarchical heterogeneous SoC with coherence domains.
 
 **Architecture reference**: [10-topology-generation-management-system.md](../architecture/10-topology-generation-management-system.md)
-**Specifications**: [10-tgms-specifications.md](../architecture/10-tgms-specifications.md)
+**Specifications**: [10-tgms-specifications.md](../archive/architecture/10-tgms-specifications-archived-2026-10.md)
 
 ---
 

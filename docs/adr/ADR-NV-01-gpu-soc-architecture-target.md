@@ -232,7 +232,7 @@ docs/adr/ADR-NV-01-...       # 本文档
   - Phase 8.B Task 10-14 (5 核心模块) 并行 — 4d
   - F4 (Phase 7.C 6×6 state table) brainstorming 启动 — 2d
   - F12b-LD (PTX-EMU 集成) 仍待外部团队对齐
-- **关联文档**: [`docs/roadmap/`](../../roadmap/) (实时看板), [`docs-archived/superpowers/plans/2026-06-20-future-work-roadmap.md`](../../docs-archived/superpowers/plans/2026-06-20-future-work-roadmap.md) (single source of truth)
+- **关联文档**: [`docs/roadmap/`](../roadmap) (实时看板), [`docs-archived/superpowers/plans/2026-06-20-future-work-roadmap.md`](../../docs-archived/superpowers/plans/2026-06-20-future-work-roadmap.md) (single source of truth)
 
 **维护**: CppTLM 开发团队
 **下次 review**: Phase 8.B Task 9-14 完成后 (预计 2026-07-10)

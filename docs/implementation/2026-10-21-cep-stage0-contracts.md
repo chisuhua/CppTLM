@@ -4,8 +4,8 @@
 > **日期**: 2026-10-21
 > **作者**: CppTLM Team(builder mode)
 > **关联**:
-> - OpenSpec change:[`openspec/changes/cpptlm-cep-umbrella/`](../../openspec/changes/cpptlm-cep-umbrella/)(proposal / design / specs / tasks)
-> - 真源 1:[`docs/architecture/07-coherence-exploration-platform.md`](../../docs/architecture/07-coherence-exploration-platform.md) v0.1
+> - OpenSpec change:[`openspec/changes/cpptlm-cep-umbrella/`](../../openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/)(proposal / design / specs / tasks)
+> - 真源 1:[`docs/architecture/07-coherence-exploration-platform.md`](../architecture/07-coherence-exploration-platform.md) v0.1
 > - 真源 3:`docs/adr/ADR-CEP-*.md` **共 21 份**
 > - 路线图:[`phase-10`](../../.rddf/roadmap/phases/phase-10.md) · [`objective-cep-platform`](../../.rddf/roadmap/objectives/obj-cep-platform.md)
 

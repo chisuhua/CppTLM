@@ -24,8 +24,8 @@ phase_refs:
 
 ### 当前活跃 (Active)— Stage 0 Umbrella(队列 #1)
 
-> **排期真源指针**:本 phase 的**实施路径**(14 个 change 的顺序 / 季度 / 状态 / 准入前置归属)真源 = [`obj-cep-platform §4.0 排队总表`](../roadmap/objectives/obj-cep-platform.md);**治理口径**(change 总数 / 串行 / 并发 ≤ 1)真源 = `ADR-CEP-00 §2 Decision 3`。
-> **载体分工 / 状态怎么更新** = [`obj-cep-platform §4.7`](../roadmap/objectives/obj-cep-platform.md)(**本节只是 Stage 0 子任务展开**,不承载整条队列的状态)。
+> **排期真源指针**:本 phase 的**实施路径**(14 个 change 的顺序 / 季度 / 状态 / 准入前置归属)真源 = [`obj-cep-platform §4.0 排队总表`](../../roadmap/objectives/obj-cep-platform.md);**治理口径**(change 总数 / 串行 / 并发 ≤ 1)真源 = `ADR-CEP-00 §2 Decision 3`。
+> **载体分工 / 状态怎么更新** = [`obj-cep-platform §4.7`](../../roadmap/objectives/obj-cep-platform.md)(**本节只是 Stage 0 子任务展开**,不承载整条队列的状态)。
 
 | 子任务 | 状态 | 范围 | 估时 | 关联 ADR | KPI slot |
 |--------|------|------|------|----------|----------|

@@ -152,7 +152,7 @@ per Oracle 复审 Task 1.1 (session `ses_f88ce48aeffeQwofrS4Z42ajxw` §9 P1 watc
 
 ### Task 1.3 plan/code 设计冲突 (P0 blocker)
 
-**plan Task 1.3 假设** (docs/superpowers/plans/2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md line 460+):
+**plan Task 1.3 假设** (docs/archive/tracking/2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md line 460+):
 - File: Create `include/tlm/gpu/sm/scalar_alu.hh` (独立头文件)
 - File: Create `src/tlm/gpu/sm/scalar_alu.cc` (独立实现)
 - ScalarALU 类签名: `cpptlm::gpu::ScalarALU(StreamingMultiprocessorTLM* parent)`, 方法 `execute(InstrDescriptor&)`

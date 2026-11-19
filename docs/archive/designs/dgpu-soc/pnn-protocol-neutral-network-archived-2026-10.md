@@ -1,6 +1,6 @@
 > **⚠️ [已归档 2026-10-19]**
 > 
-> **归档原因**: 本文档 (PNN v0.1 草稿) 是 06 v0.4 之前的早期 PNN 蓝图. 2026-10-19 经 [`docs/architecture/06-inter-module-network.md`](../architecture/06-inter-module-network.md) v0.4 §4.4 + §15.3 演进 seam 详化后, 蓝图核心内容 (P3+ 模板 `ProtocolBridge<InB, OutB, Ordered>`) 已被完全收纳. §5 提议的 `network.mode` JSON 字段被 06 §5.2 + §8.2 显式拒绝 (运行时协议切换比 gem5 更激进, 引入 N×M 测试矩阵爆炸).
+> **归档原因**: 本文档 (PNN v0.1 草稿) 是 06 v0.4 之前的早期 PNN 蓝图. 2026-10-19 经 [`docs/architecture/06-inter-module-network.md`](../../../architecture/06-inter-module-network.md) v0.4 §4.4 + §15.3 演进 seam 详化后, 蓝图核心内容 (P3+ 模板 `ProtocolBridge<InB, OutB, Ordered>`) 已被完全收纳. §5 提议的 `network.mode` JSON 字段被 06 §5.2 + §8.2 显式拒绝 (运行时协议切换比 gem5 更激进, 引入 N×M 测试矩阵爆炸).
 > 
 > **调研价值保留**:
 > - §2.2 `ProtocolBridge<InB, OutB, Ordered>` 命名沿用到 06 §4.4 (P3+ 实施模板)
@@ -10,9 +10,9 @@
 > **不动 PNN v0.1 正文** (per doc-only 豁免先例 + 调研文档独立性, `docs/research/gem5-ruby-protocol-bridge-survey §0`).
 > 
 > **关联文档**:
-> - [`../architecture/06-inter-module-network.md`](../architecture/06-inter-module-network.md) v0.4 §15 (coherence/topology 参数化/5-stage pipeline/per-packet tlm_extension 演进 seam 完整引用)
-> - [`../architecture/06-bis-coherence-as-network-extension.md`](../architecture/06-bis-coherence-as-network-extension.md) v0.3 (coherence 演进 seam 详化)
-> - [`../architecture/05-packet-semantic-network-archived-2026-10.md`](../architecture/05-packet-semantic-network-archived-2026-10.md) (立场对立的早期方案, 已归档)
+> - [`../architecture/06-inter-module-network.md`](../../../architecture/06-inter-module-network.md) v0.4 §15 (coherence/topology 参数化/5-stage pipeline/per-packet tlm_extension 演进 seam 完整引用)
+> - [`../architecture/06-bis-coherence-as-network-extension.md`](../../../architecture/06-bis-coherence-as-network-extension.md) v0.3 (coherence 演进 seam 详化)
+> - [`../architecture/05-packet-semantic-network-archived-2026-10.md`](../../architecture/05-packet-semantic-network-archived-2026-10.md) (立场对立的早期方案, 已归档)
 > 
 > **归档执行**: 2026-10-19, per docs/architecture/ 重新规划 (architect 视角, 单一真源原则).
 
@@ -24,8 +24,8 @@
 > **日期**: 2026-10
 > **状态**: 🟡 **设计阶段，待评审**（v0.1 由 build agent 起草，预期 1-2 轮 Oracle/Metis 复审）
 > **作者**: CppTLM build agent
-> **前置调研**: [`docs/research/gem5-ruby-protocol-bridge-survey.md`](../../research/gem5-ruby-protocol-bridge-survey.md)
-> **前置架构**: [`docs/designs/dgpu-soc/communication-network.md`](communication-network.md)（v1.0 已落地，L1-L6 分层 + Gem5 类比）
+> **前置调研**: [`docs/research/gem5-ruby-protocol-bridge-survey.md`](../../../research/gem5-ruby-protocol-bridge-survey.md)
+> **前置架构**: [`docs/designs/dgpu-soc/communication-network.md`](../../../designs/dgpu-soc/communication-network.md)（v1.0 已落地，L1-L6 分层 + Gem5 类比）
 > **配套 ADR（待起草）**: ADR-DGPU-13（PNN 范围定义）+ ADR-DGPU-14（StreamAdapter↔ProtocolBridge seam 决策）
 > **目标存档**: `docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`
 

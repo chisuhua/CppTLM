@@ -3,7 +3,7 @@
 > **状态**: 📋 提案
 > **日期**: 2027-02-09
 > **影响**: `include/tlm/gpu/dgpu_board_shell.{hh,cc}` (新增 `LifecycleProtocol` 内部组件 + 析构协议), 0 ABI 变更
-> **关联架构文档**: [docs/architecture/14-dgpu-board-ideal-arch.md §3.1](../architecture/14-dgpu-board-ideal-arch.md)
+> **关联架构文档**: [docs/architecture/14-dgpu-board-ideal-arch.md §3.1](../designs/dgpu-board/architecture.md)
 > **配套**: ADR-DGPU-01 (CallbackWorker), ADR-DGPU-03 (DispatchRegistry)
 
 > **评审修订 (评审报告 R-R3, 2027-02-09)**:
@@ -522,7 +522,7 @@ TEST_CASE("DGpuBoard ABI guard rejects post-shutdown calls") {
 
 ## 8. 参考
 
-- **架构文档**: [14-dgpu-board-ideal-arch.md §3.1](../architecture/14-dgpu-board-ideal-arch.md)
+- **架构文档**: [14-dgpu-board-ideal-arch.md §3.1](../designs/dgpu-board/architecture.md)
 - **ADR-DGPU-01**: CallbackWorker (worker shutdown 协议)
 - **ADR-DGPU-03**: DispatchRegistry (不涉及)
 - **v1.0 实现**: `src/tlm/gpu/dgpu_board_shell.cc:585-616` (destroy)

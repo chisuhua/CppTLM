@@ -1,6 +1,6 @@
 > **⚠️ [已归档 2026-10-18]**
 > 
-> **归档原因**: 本文档为统一可视化平台早期设计 (v1.0 待评审, 2026-05-12). 发布**次日** (2026-05-13) 被 [`docs/architecture/13-dashboard-integration.md`](13-dashboard-integration.md) v2.0 (已批准) **完整覆盖**. 后者是统一真源.
+> **归档原因**: 本文档为统一可视化平台早期设计 (v1.0 待评审, 2026-05-12). 发布**次日** (2026-05-13) 被 [`docs/architecture/13-dashboard-integration.md`](../../architecture/13-dashboard-integration.md) v2.0 (已批准) **完整覆盖**. 后者是统一真源.
 > 
 > **不损失**:
 > - §1 背景与目标 4 个痛点 → 13 §一 架构原则保留扩充

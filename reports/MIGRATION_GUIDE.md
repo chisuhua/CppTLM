@@ -364,7 +364,7 @@ auto errors = DebugTracker::instance().get_errors_by_category(ErrorCategory::COH
 | 资源 | 位置 |
 |------|------|
 | 开发者指南 | `docs/guide/DEVELOPER_GUIDE.md` |
-| 技能清单 | `docs/skills/SKILLS_SUMMARY.md` |
+| 技能清单 | `docs/archive/skills/SKILLS_SUMMARY.md` |
 | 架构文档 | `docs/architecture/` |
 | 示例代码 | `examples/` |
 

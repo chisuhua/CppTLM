@@ -1,0 +1,78 @@
+{
+  "schema_version": "role-claims-v1",
+  "claims": {
+    "/workspace/project/CppTLM|general": {
+      "work_root": "/workspace/project/CppTLM",
+      "role": "general",
+      "session_id": "ses_e1c08b804ffeTvedqeIqbxQoyp",
+      "claim_gen": 1,
+      "state": "active",
+      "acquired_at": "2026-11-18T03:12:54.583Z",
+      "heartbeat_at": "2026-11-18T03:12:54.583Z"
+    },
+    "/workspace/project/CppTLM|architect": {
+      "work_root": "/workspace/project/CppTLM",
+      "role": "architect",
+      "session_id": "ses_e0e4ae5c4ffeX6jlBW9lT5JlZY",
+      "kind": "main",
+      "claim_gen": 2,
+      "state": "released",
+      "acquired_at": "2026-11-19T03:06:21.567Z",
+      "heartbeat_at": "2026-11-19T03:06:21.567Z",
+      "released_at": "2026-11-19T03:34:32.612Z"
+    },
+    "/workspace/project/CppTLM|builder": {
+      "work_root": "/workspace/project/CppTLM",
+      "role": "builder",
+      "session_id": "ses_e0d606c1cffeJ3Tubz7ImUIsnO",
+      "kind": "main",
+      "claim_gen": 9,
+      "state": "active",
+      "acquired_at": "2026-11-19T07:16:19.483Z",
+      "heartbeat_at": "2026-11-19T07:16:19.483Z"
+    },
+    "/workspace/project/CppTLM|planner": {
+      "work_root": "/workspace/project/CppTLM",
+      "role": "planner",
+      "session_id": "ses_e0e4ae5c4ffeX6jlBW9lT5JlZY",
+      "kind": "main",
+      "claim_gen": 4,
+      "state": "active",
+      "acquired_at": "2026-11-19T06:54:35.917Z",
+      "heartbeat_at": "2026-11-19T06:54:35.917Z"
+    },
+    "/workspace/project/CppTLM|verifier": {
+      "work_root": "/workspace/project/CppTLM",
+      "role": "verifier",
+      "session_id": "ses_e0e4ae5c4ffeX6jlBW9lT5JlZY",
+      "kind": "main",
+      "claim_gen": 5,
+      "state": "released",
+      "acquired_at": "2026-11-19T06:34:53.002Z",
+      "heartbeat_at": "2026-11-19T06:34:53.002Z",
+      "released_at": "2026-11-19T06:45:20.299Z"
+    }
+  },
+  "holders": {
+    "ses_e1c08b804ffeTvedqeIqbxQoyp": {
+      "work_root": "/workspace/project/CppTLM",
+      "role": "general",
+      "claim_gen": 1
+    },
+    "ses_e12ab77b0ffeCo1J1LJkifL2SP": {
+      "work_root": "/workspace/project/CppTLM",
+      "role": "builder",
+      "claim_gen": 6
+    },
+    "ses_e0e4ae5c4ffeX6jlBW9lT5JlZY": {
+      "work_root": "/workspace/project/CppTLM",
+      "role": "planner",
+      "claim_gen": 4
+    },
+    "ses_e0d606c1cffeJ3Tubz7ImUIsnO": {
+      "work_root": "/workspace/project/CppTLM",
+      "role": "builder",
+      "claim_gen": 9
+    }
+  }
+}

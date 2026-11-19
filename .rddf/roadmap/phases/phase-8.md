@@ -8,10 +8,10 @@ phase_refs: []
 
 ## phase-8: timing-mode SoC v0.5 (per ADR-DGPU-11)
 
-> **真源**: [`docs/designs/dgpu-soc/timing-mode.md`](../../docs/designs/dgpu-soc/timing-mode.md) (v0.2 终稿, Oracle 八轮复评 PASS, 21/21 硬伤落盘)
-> **关键 ADR**: [`docs/adr/ADR-DGPU-11-timing-mode-soc-scope.md`](../../docs/adr/ADR-DGPU-11-timing-mode-soc-scope.md) (T0 已签发)
-> **OpenSpec 已交付**: [dgpu-soc-timing](../../openspec/specs/dgpu-soc-timing/) (18 ADDED Requirements + 52 scenarios)
-> **实施笔记**: [`docs/superpowers/plans/2026-09-27-cpptlm-driver-visible-minimal-soc-t1.md`](../../docs/superpowers/plans/2026-09-27-cpptlm-driver-visible-minimal-soc-t1.md)
+> **真源**: [`docs/designs/dgpu-soc/timing-mode.md`](../../../docs/designs/dgpu-soc/timing-mode.md) (v0.2 终稿, Oracle 八轮复评 PASS, 21/21 硬伤落盘)
+> **关键 ADR**: [`docs/adr/ADR-DGPU-11-timing-mode-soc-scope.md`](../../../docs/adr/ADR-DGPU-11-timing-mode-soc-scope.md) (T0 已签发)
+> **OpenSpec 已交付**: [dgpu-soc-timing](../../../openspec/specs/dgpu-soc-timing/) (18 ADDED Requirements + 52 scenarios)
+> **实施笔记**: [`docs/superpowers/plans/2026-09-27-cpptlm-driver-visible-minimal-soc-t1.md`](../../../docs/superpowers/plans/2026-09-27-cpptlm-driver-visible-minimal-soc-t1.md)
 
 ### v0.5 timing-mode SoC MVP 实施完成
 

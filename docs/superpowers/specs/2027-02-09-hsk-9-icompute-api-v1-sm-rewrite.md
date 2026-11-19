@@ -13,11 +13,11 @@
 > - **跨仓契约变更**：`IPtxEmuDevice` 12 方法签名**冻结不变**（`attach_timing` 保留为 deprecated stub）；新增 CppTLM 端 `IComputeDevice` 接口 **15 方法**（11 preserved 签名同构 + 1 HSK-9 同步通道 + 2 Round 4 user decision 读路径 + 1 reset）
 > - **版本号**：`PTXEMU_API_VERSION=1` 冻结（保持）+ `ICOMPUTE_API_VERSION=1` 保持（语义质变已显式标注为 breaking change，HSK 纪律要求所有方法签名变更必须 bump 版本号，本变更恰好不触发——`IPtxEmuDevice` 12 方法签名未变，`IComputeDevice` 是 CppTLM 端新接口而非 PTX-EMU 公共头修改）
 > **关联文档**:
-> - [`docs/soc_arch/adr/ADR-SOC-15-cdna-real-isa-roadmap.md`](../../../../docs/soc_arch/adr/ADR-SOC-15-cdna-real-isa-roadmap.md) §3 D3 R3（HSK 协调纪律）
-> - [`docs/soc_arch/architecture/15-sm-microarchitecture-design.md`](../../../../docs/soc_arch/architecture/15-sm-microarchitecture-design.md) §15.6.3 HSK-9 必要性（用户 2027-02-09 决策）
-> - [`openspec/changes/cpptlm-dgpu-d1-cdna-isa-sm-rewrite/`](../../../../openspec/changes/cpptlm-dgpu-d1-cdna-isa-sm-rewrite/)（新 SM rewrite change）
-> - [`openspec/changes/cpptlm-dgpu-d1-cdna-isa-phase-a/`](../../../../openspec/changes/cpptlm-dgpu-d1-cdna-isa-phase-a/)（**superseded** by sm-rewrite）
-> - [`external/PTX-EMU/docs/superpowers/specs/2026-08-18-hsk-6-cpptlm-bridge-deprecation.md`](../../../../external/PTX-EMU/docs/superpowers/specs/2026-08-18-hsk-6-cpptlm-bridge-deprecation.md)（HSK-6 桥接关系废止）
+> - [`docs/soc_arch/adr/ADR-SOC-15-cdna-real-isa-roadmap.md`](../../../docs/soc_arch/adr/ADR-SOC-15-cdna-real-isa-roadmap.md) §3 D3 R3（HSK 协调纪律）
+> - [`docs/soc_arch/architecture/15-sm-microarchitecture-design.md`](../../../docs/soc_arch/architecture/15-sm-microarchitecture-design.md) §15.6.3 HSK-9 必要性（用户 2027-02-09 决策）
+> - [`openspec/changes/cpptlm-dgpu-d1-cdna-isa-sm-rewrite/`](../../../openspec/changes/archive/2026-09-05-cpptlm-dgpu-d1-cdna-isa-sm-rewrite/)（新 SM rewrite change）
+> - [`openspec/changes/cpptlm-dgpu-d1-cdna-isa-phase-a/`](../../../openspec/changes/archive/2026-09-06-cpptlm-dgpu-d1-cdna-isa-phase-a/)（**superseded** by sm-rewrite）
+> - [`external/PTX-EMU/docs/superpowers/specs/2026-08-18-hsk-6-cpptlm-bridge-deprecation.md`](../../../external/PTX-EMU/docs/superpowers/specs/2026-08-18-hsk-6-cpptlm-bridge-deprecation.md)（HSK-6 桥接关系废止）
 > **关联 HSK 链**:
 > - HSK-1..8 ACCEPTED（已交付）
 > - **HSK-9（本公告）**: `ICOMPUTE_API_VERSION=1` SM 重构版

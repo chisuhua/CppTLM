@@ -3,7 +3,7 @@
 > **状态**: 📋 提案
 > **日期**: 2027-02-09
 > **影响**: `include/tlm/gpu/dgpu_board_shell.{hh,cc}` (新增 `CallbackWorker` 内部组件), 0 ABI 变更
-> **关联架构文档**: [docs/architecture/14-dgpu-board-ideal-arch.md §3.2](../architecture/14-dgpu-board-ideal-arch.md)
+> **关联架构文档**: [docs/architecture/14-dgpu-board-ideal-arch.md §3.2](../designs/dgpu-board/architecture.md)
 > **配套**: ADR-DGPU-02 (LifecycleProtocol 析构顺序)
 
 > **评审修订 (评审报告 R-E2, 2027-02-09)**: §1.1 detached 线程位置 `748-753` 改为 `741-755` (`trigger_dma_translate_async` 函数起始行应为 741,detach 在 753)。Codegrep 验证 (2027-02-09): `grep -n "std::thread.*detach()\\|}).detach()" src/tlm/gpu/dgpu_board_shell.cc` 命中 737、753、769 行,分别对应 trigger_irq_async / trigger_dma_translate_async / trigger_error_async 三个函数。
@@ -606,7 +606,7 @@ REQUIRE(paddr == mock_paddr_for(0x1000, 4096));
 
 ## 9. 参考
 
-- **架构文档**: [14-dgpu-board-ideal-arch.md §3.2](../architecture/14-dgpu-board-ideal-arch.md)
+- **架构文档**: [14-dgpu-board-ideal-arch.md §3.2](../designs/dgpu-board/architecture.md)
 - **ADR-DGPU-02**: LifecycleProtocol 状态机 + 析构顺序
 - **v1.0 实现**: `src/tlm/gpu/dgpu_board_shell.cc:723-771`
 - **同类模式参考**: `coalesce_timer_` (DGpuBoard 内部 C3 MSI-X 合并器)

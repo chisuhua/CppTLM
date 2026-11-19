@@ -8,8 +8,8 @@ phase_refs: []
 
 ## phase-6: PCIe EP Host Bypass + RC + 整合交付 (Phase 7-8 微架构)
 
-> **真源**: [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`](../../docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md) (**已迁 ArchForge**)
-> **OpenSpec 已交付**: [host-bypass-and-rc](../../openspec/specs/host-bypass-and-rc/)
+> **真源**: [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`](../../../docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md) (**已迁 ArchForge**)
+> **OpenSpec 已交付**: [host-bypass-and-rc](../../../openspec/specs/host-bypass-and-rc/)
 
 ### Phase 7: Host Bypass + 自研 RC
 

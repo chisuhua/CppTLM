@@ -256,8 +256,8 @@
 
 | 文档 | 位置 |
 |------|------|
-| PRD 议题草稿 | `PRD-DRAFT-issues.md` |
-| 多层次混合仿真提案 | `../architecture/多层次混合仿真.md` |
+| PRD 议题草稿（2026-04-14 已归档） | `docs-archived/PRD-DRAFT-issues.md` |
+| 多层次混合仿真提案 | `../designs/dgpu-soc/multi-level-hybrid-simulation.md` |
 | ADR 索引 | `../adr/README.md` |
 
 ---

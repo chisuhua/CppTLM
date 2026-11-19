@@ -115,9 +115,9 @@
 
 ## 6. 相关文档
 
-- 本仓真源 1：[`docs/architecture/`](../architecture/)（含 [README](../architecture/README.md) 索引）
-- 本仓真源 2：[`docs/designs/`](../designs/)
-- 本仓真源 3（ADR）：[`docs/adr/`](../adr/)
+- 本仓真源 1：[`docs/architecture/`](../architecture)（含 [README](../architecture/README.md) 索引）
+- 本仓真源 2：[`docs/designs/`](../designs)
+- 本仓真源 3（ADR）：[`docs/adr/`](../adr)
 - ArchForge 仓（设计真源，SoC 架构建模）：`/workspace/main/ArchForge` → 其 `docs/research/AGENTS.md`（调研索引）· `docs/architecture/INDEX.md`（架构索引）· `docs/adr/README.md`（ADR 索引）
 
 ---

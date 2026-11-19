@@ -9,7 +9,7 @@
 This document provides the detailed implementation plan for TGMS (Topology Generation, Maintenance and Management System). It covers code changes, test strategies, and phased rollout.
 
 **Architecture reference**: [10-topology-generation-management-system.md](../architecture/10-topology-generation-management-system.md)  
-**Specifications**: [10-tgms-specifications.md](../architecture/10-tgms-specifications.md)
+**Specifications**: [10-tgms-specifications.md](architecture/10-tgms-specifications-archived-2026-10.md)
 
 ### 1.1 Version Scope
 

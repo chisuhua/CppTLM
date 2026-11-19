@@ -3,7 +3,7 @@
 > **适用对象**: CppTLM v2.1.x → v2.2.0 升级用户
 > **变更类型**: **BREAKING** — 涉及模块类型退场、include 路径变更、CMake 选项移除
 > **发布日期**: 2026-06-18
-> **关联 OpenSpec change**: [`json-nested-simmodule`](../../openspec/changes/json-nested-simmodule/proposal.md)
+> **关联 OpenSpec change**: [`json-nested-simmodule`](../openspec/changes/archive/2026-06-18-json-nested-simmodule/proposal.md)
 
 ---
 
@@ -285,7 +285,7 @@ v2.2 移除 legacy 模块与 `BUILD_LEGACY_MODULES` 后,以下文档仍含过时
 | `docs/soc_arch/modules/cpu-cpusim_legacy.md` | 整个文件 | 整个文件以 `cpu_sim.hh` 为核心 | 在文件顶部加 DEPRECATED 横幅, 引导至 `CPUTLM` 文档 |
 | `test/README.md` | 多个位置 | 提及 `CPUSim` 或 `BUILD_LEGACY_MODULES` | 后续 change 清理（test/ 不在 Stage 7 修改范围） |
 
-**Stage 7 不修复原因**: Stage 7 范围限定为 `include/AGENTS.md`、`include/tlm/AGENTS.md`、`configs/AGENTS.md`、`CHANGELOG.md` 与新建 `docs/migration-v2.2.md`。其他文档（`docs/architecture/*`、`docs/ONBOARDING.md`、`AGENTS.md` 根、`test/README.md`、`docs/soc_arch/*`）的清理属于后续 change, 见 [`openspec/changes/json-nested-simmodule/`](../../openspec/changes/json-nested-simmodule/) 的"待归档后开新 change"段。
+**Stage 7 不修复原因**: Stage 7 范围限定为 `include/AGENTS.md`、`include/tlm/AGENTS.md`、`configs/AGENTS.md`、`CHANGELOG.md` 与新建 `docs/migration-v2.2.md`。其他文档（`docs/architecture/*`、`docs/ONBOARDING.md`、`AGENTS.md` 根、`test/README.md`、`docs/soc_arch/*`）的清理属于后续 change, 见 [`openspec/changes/json-nested-simmodule/`](../openspec/changes/archive/2026-06-18-json-nested-simmodule/) 的"待归档后开新 change"段。
 
 ---
 
@@ -319,9 +319,9 @@ A: 无。`SimModule::simulate_instantiate` 的 `static thread_local` 计数器�
 
 ## 7. 相关链接 (References)
 
-- **OpenSpec change**: [`openspec/changes/json-nested-simmodule/proposal.md`](../../openspec/changes/json-nested-simmodule/proposal.md)
-- **设计文档**: [`openspec/changes/json-nested-simmodule/design.md`](../../openspec/changes/json-nested-simmodule/design.md)
-- **CHANGELOG**: [`CHANGELOG.md`](../../CHANGELOG.md) v2.2 条目
+- **OpenSpec change**: [`openspec/changes/json-nested-simmodule/proposal.md`](../openspec/changes/archive/2026-06-18-json-nested-simmodule/proposal.md)
+- **设计文档**: [`openspec/changes/json-nested-simmodule/design.md`](../openspec/changes/archive/2026-06-18-json-nested-simmodule/design.md)
+- **CHANGELOG**: [`CHANGELOG.md`](../CHANGELOG.md) v2.2 条目
 - **示例配置**:
   - `configs/example_simmodule_nested_2level.json`
   - `configs/example_simmodule_nested_3level_static.json`

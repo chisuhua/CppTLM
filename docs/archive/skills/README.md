@@ -9,7 +9,7 @@
 
 | 文档 | 说明 |
 |------|------|
-| [SKILLS_SUMMARY.md](./SKILLS_SUMMARY.md) | 完整技能清单、进阶路径 |
+| [SKILLS_SUMMARY.md](SKILLS_SUMMARY.md) | 完整技能清单、进阶路径 |
 
 ---
 
@@ -38,7 +38,7 @@
 初级 → 中级 → 高级 → 架构师
 ```
 
-详见 [SKILLS_SUMMARY.md](./SKILLS_SUMMARY.md)
+详见 [SKILLS_SUMMARY.md](SKILLS_SUMMARY.md)
 
 ---
 

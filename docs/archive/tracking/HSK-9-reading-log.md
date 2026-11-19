@@ -41,7 +41,7 @@
 | CppTLM `i_compute_device.hh` | per Oracle F-1: 15 纯虚方法, perl 多行正则实测 = 15 (含跨行 get_register_value) |
 | PTX-EMU `device_api.h` | HSK-8 spec §"公共头路径" #1; PTXEMU_API_VERSION=1 冻结 |
 | PTX-EMU `sm_context_cpptlm_inject.h` | ADR-0020 cpptlm injection extraction; PTX-3 子波 3 改造重点 |
-| HSK-9 feedback tracker | `docs/superpowers/specs/HSK-9-feedback-tracker.md` (Task 0.3 创建, PR #21 已 MERGED d5a58cf5) |
+| HSK-9 feedback tracker | `docs/archive/tracking/HSK-9-feedback-tracker.md` (Task 0.3 创建, PR #21 已 MERGED d5a58cf5) |
 
 ## 阅读顺序建议 (per Oracle §8 + plan line 1976-1990)
 
@@ -80,9 +80,9 @@
 
 ## 关联文档
 
-- 计划: `docs/superpowers/plans/2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md` Task 0.4 (line 276-303)
+- 计划: `docs/archive/tracking/2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md` Task 0.4 (line 276-303)
 - Oracle 复审 Task 0.3 §8: `ses_f8909c150ffeVZ7aQA0VgEaynB`
-- HSK-9 feedback tracker: `docs/superpowers/specs/HSK-9-feedback-tracker.md`
+- HSK-9 feedback tracker: `docs/archive/tracking/HSK-9-feedback-tracker.md`
 - HSK-9 baseline tracker: `docs/superpowers/specs/HSK-9-baseline-tracker.md`
 - 必读文档清单 (plan line 1976-1990): 完整 P0/P1/P2 列表
 
@@ -187,4 +187,4 @@
 
 - 计划 Task 0.4 (line 276-303): P0/P1/P2 文档清单 + 时间估算
 - Oracle final verdict (session `ses_f88ec48cdffeqIHpez0aJ7d2ed`) §9 选项 B 推荐
-- 会话准备总结: `docs/superpowers/specs/HSK-9-session-prep-summary.md` (commit `9766800`)
+- 会话准备总结: `docs/archive/tracking/HSK-9-session-prep-summary.md` (commit `9766800`)

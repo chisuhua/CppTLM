@@ -4,7 +4,7 @@
 > **调研时间**: 2026-10-16
 > **作者**: CppTLM build agent
 > **状态**: 📋 Research Reference (不进入 ABI 契约)
-> **关联方案**: [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md)（已存在）
+> **关联方案**: [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md)（已存在）
 > **关联调研**: `gem5-ruby-protocol-bridge-survey.md`（主文档） + `gem5-coherence-protocols-survey.md` + `gem5-messagebuffer-network-interface.md`
 > **2026-10-16 critic 校正**：原"待起草"是过期——该方案已落地。
 
@@ -297,7 +297,7 @@
 - **NI / vnet 流转细节**: [`gem5-messagebuffer-network-interface.md`](gem5-messagebuffer-network-interface.md)（新, 2026-10）
 
 **架构方案**（已存在，**第三轮 critic 校正**：原"待起草"是过期）:
-- [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md)
+- [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md)
 - [`docs/adr/ADR-DGPU-13-pnn-protocol-neutral-network.md`](../adr/ADR-DGPU-13-pnn-protocol-neutral-network.md)
 
 ---

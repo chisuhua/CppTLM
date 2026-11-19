@@ -2,9 +2,9 @@
 
 > **评审日期**: 2026-09-19
 > **评审对象**: V3.1-Rev2.0 拓扑修正提案
-> **SSOT**: [`docs/soc_arch/architecture/21-soc-topology-mvp.md`](../architecture/21-soc-topology-mvp.md)
-> **OpenSpec**: [`openspec/changes/2026-09-19-cpptlm-mas-soc-topology-mvp/proposal.md`](../../openspec/changes/2026-09-19-cpptlm-mas-soc-topology-mvp/proposal.md)
-> **ADR**: [`docs/soc_arch/adr/ADR-SOC-21-v31-rev2-topology-correction.md`](../adr/ADR-SOC-21-v31-rev2-topology-correction.md)
+> **SSOT**: [`docs/soc_arch/architecture/21-soc-topology-mvp.md`](../../../docs/soc_arch/architecture/21-soc-topology-mvp.md)
+> **OpenSpec**: [`openspec/changes/2026-09-19-cpptlm-mas-soc-topology-mvp/proposal.md`](../../../openspec/changes/archive/2026-09-30-2026-09-19-cpptlm-mas-soc-topology-mvp-deprecated/proposal.md)
+> **ADR**: [`docs/soc_arch/adr/ADR-SOC-21-v31-rev2-topology-correction.md`](../../../docs/soc_arch/adr/ADR-SOC-21-v31-rev2-topology-correction.md)
 > **评审目标**: 预期 ≥9.0/10 PASS
 
 ---
@@ -880,7 +880,7 @@ V3.1-Rev2.0 拓扑修正提案**通过 Oracle 评审**，评分 9.62/10，达到
 
 ## §12 评审后归档
 
-- **PASS 报告**: `docs/validation/2026-09-19-cpptlm-mas-soc-topology-mvp-oracle-pass.md` (T5.3 归档)
+- **PASS 报告**: `docs/archive/validation/2026-09-19-cpptlm-mas-soc-topology-mvp-oracle-pass.md` (T5.3 归档)
 - **OpenSpec 状态变更**: 📋 Proposed → ✅ Approved
 - **下一阶段**: T3 (SoC 顶层 C++ 基础设施) + T4 (端到端 demo 测试)
 

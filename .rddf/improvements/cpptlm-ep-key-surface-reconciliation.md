@@ -14,7 +14,7 @@ created: 2026-11-19
 
 **主题**：`PcieEndpointIP` 的 **JSON 键面契约**在 ArchForge 侧的可查性 + 跨仓对账闸（把键面漂移从「逐键人工审计」变成「机制性检出」）
 
-> **决策源**：[`ADR-DGPU-15`](../docs/adr/ADR-DGPU-15-pcie-endpoint-ip-cpptlm-archforge-boundary.md)（**Proposed** 2026-11-19；oracle 2 轮 + critic 4 轮，末轮 APPROVE_WITH_CONDITIONS 无 BLOCKER）
+> **决策源**：[`ADR-DGPU-15`](../../docs/adr/ADR-DGPU-15-pcie-endpoint-ip-cpptlm-archforge-boundary.md)（**Proposed** 2026-11-19；oracle 2 轮 + critic 4 轮，末轮 APPROVE_WITH_CONDITIONS 无 BLOCKER）
 > **触发**：change `cpptlm-module-param-migrate-batch2`（C2）验收 finding F1 —— 3 个顶层键零消费（`resizable_bars` / `num_msix_vectors` / `msix_num_vectors`），其中 `num_msix_vectors` 是**旧类** `PcieEndpointTLM` 的遗留键名被原样带进新类配置（4 份真实配置 + 12 个测试内联副本）。
 > **估时**：**1.5 ~ 2d**（ArchForge 侧文档 ~0.5d + CppTLM 侧对账闸 ~1d + 评审 ~0.5d）
 

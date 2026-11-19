@@ -8,8 +8,8 @@ phase_refs: []
 
 ## phase-2: GPGPU 多层 SimModule + ApuSoC 顶层容器
 
-> **真源**: [`docs/designs/dgpu-soc/multi-level-hybrid-simulation.md`](../../docs/designs/dgpu-soc/multi-level-hybrid-simulation.md) (2026-10-19 迁出至 docs/designs/dgpu-soc/, per docs/architecture 真源原则)
-> **关键文档**: [`docs/architecture/多层次混合仿真.md`](../../docs/architecture/) 已迁出, 现位于 docs/designs/dgpu-soc/
+> **真源**: [`docs/designs/dgpu-soc/multi-level-hybrid-simulation.md`](../../../docs/designs/dgpu-soc/multi-level-hybrid-simulation.md) (2026-10-19 迁出至 docs/designs/dgpu-soc/, per docs/architecture 真源原则)
+> **关键文档**: [`docs/architecture/多层次混合仿真.md`](../../../docs/architecture/) 已迁出, 现位于 docs/designs/dgpu-soc/
 
 ### 9 类 SimModule 派生类 (P2-P5, per `include/tlm/cluster/`)
 

@@ -4,7 +4,7 @@
 > **调研时间**: 2026-10-16
 > **作者**: CppTLM build agent
 > **状态**: 📋 Research Reference (不进入 ABI 契约)
-> **关联方案**: [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md)（已存在）
+> **关联方案**: [`docs/designs/dgpu-soc/pnn-protocol-neutral-network.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md)（已存在）
 > **关联调研**: [`gem5-ruby-protocol-bridge-survey.md`](gem5-ruby-protocol-bridge-survey.md)（主文档）
 > **关联 ADR**: [`ADR-DGPU-13-pnn-protocol-neutral-network.md`](../adr/ADR-DGPU-13-pnn-protocol-neutral-network.md) + [`ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md`](../adr/ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md)
 >

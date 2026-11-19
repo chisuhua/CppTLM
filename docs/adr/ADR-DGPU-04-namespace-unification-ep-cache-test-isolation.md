@@ -3,7 +3,7 @@
 > **状态**: 📋 提案
 > **日期**: 2027-02-09
 > **影响**: `include/tlm/gpu/dgpu_soc.{hh,cc}` (命名空间迁移), `dgpu_board_shell.{hh,cc}` (EpCache + friend class), 0 ABI 变更
-> **关联架构文档**: [docs/architecture/14-dgpu-board-ideal-arch.md §3.4](../architecture/14-dgpu-board-ideal-arch.md)
+> **关联架构文档**: [docs/architecture/14-dgpu-board-ideal-arch.md §3.4](../designs/dgpu-board/architecture.md)
 > **配套**: ADR-DGPU-01 (CallbackWorker), ADR-DGPU-02 (LifecycleProtocol), ADR-DGPU-03 (DispatchRegistry)
 
 > **评审修订 (评审报告 R-E1, 2027-02-09)**: §1.2 dynamic_cast 调用点 11 处 → 12 处 (新增 pcie_config_write 第 398 行), §4.2 B4 工作量同步更新。Codegrep 验证 (2027-02-09): `grep -n "dynamic_cast.*PcieEndpointIP" src/tlm/gpu/dgpu_board_shell.cc` 共 12 行命中。
@@ -500,7 +500,7 @@ TEST_CASE("bar_store_value is private (compile-fail test)") {
 
 ## 8. 参考
 
-- **架构文档**: [14-dgpu-board-ideal-arch.md §3.4](../architecture/14-dgpu-board-ideal-arch.md)
+- **架构文档**: [14-dgpu-board-ideal-arch.md §3.4](../designs/dgpu-board/architecture.md)
 - **ADR-DGPU-01**: CallbackWorker
 - **ADR-DGPU-02**: LifecycleProtocol
 - **ADR-DGPU-03**: DispatchRegistry

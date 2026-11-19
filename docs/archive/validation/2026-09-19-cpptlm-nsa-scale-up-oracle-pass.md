@@ -5,8 +5,8 @@
 > **对比基准**: 首次评审 v1.0 (9.35/10, 2026-09-19)
 > **改进重点**: Fault Injection 测试计划 + Capability Acquire/Release 语义 + 4 张补充 mermaid 图 + NSA 命名备注
 > **评审方法**: 8 维度 / 56 题 (基于已知架构文档, 模拟 Oracle 评分视角)
-> **SSOT**: [`docs/soc_arch/architecture/29-nsa-evolution-roadmap.md`](../architecture/29-nsa-evolution-roadmap.md) (5 阶段演进主路线)
-> **OpenSpec**: [`openspec/changes/2026-09-19-cpptlm-nsa-scale-up-umbrella/proposal.md`](../../../openspec/changes/2026-09-19-cpptlm-nsa-scale-up-umbrella/proposal.md) (umbrella 提案)
+> **SSOT**: [`docs/soc_arch/architecture/29-nsa-evolution-roadmap.md`](../../../docs/soc_arch/architecture/29-nsa-evolution-roadmap.md) (5 阶段演进主路线)
+> **OpenSpec**: [`openspec/changes/2026-09-19-cpptlm-nsa-scale-up-umbrella/proposal.md`](../../../openspec/changes/archive/2026-09-30-2026-09-19-cpptlm-nsa-scale-up-umbrella-deprecated/proposal.md) (umbrella 提案)
 > **评审目标**: ≥9.5/10 PASS (per ADR-SOC-21 V3.1-Rev2.0 评审基准, 较首次评审 +0.15)
 
 ---
@@ -497,7 +497,7 @@ Oracle 评审认可:
 
 ### 6.1 报告归档
 
-- **PASS 报告**: `docs/validation/2026-09-19-cpptlm-nsa-scale-up-oracle-pass.md` (本文件 v1.1)
+- **PASS 报告**: `docs/archive/validation/2026-09-19-cpptlm-nsa-scale-up-oracle-pass.md` (本文件 v1.1)
 - **版本**: v1.1 (P1 改进后, 替代首次评审 v1.0)
 - **状态**: ✅ Oracle PASS (9.50/10, 较首次评审 +0.15)
 

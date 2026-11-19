@@ -2,7 +2,7 @@
 
 > **镜像来源**: `docs/superpowers/specs/2027-02-09-hsk-9-icompute-api-v1-sm-rewrite.md` (权威 Spec)
 > **镜像状态**: 同步发布于 HSK-9 Phase 1-2 完成后 (2027-02-09)
-> **OpenSpec change**: [`hsk9-icompute-api-v1-consumer-pinning`](../changes/hsk9-icompute-api-v1-consumer-pinning/proposal.md)
+> **OpenSpec change**: [`hsk9-icompute-api-v1-consumer-pinning`](../../openspec/changes/archive/2026-09-08-hsk9-icompute-api-v1-consumer-pinning/proposal.md)
 
 ## 关联权威 Spec
 

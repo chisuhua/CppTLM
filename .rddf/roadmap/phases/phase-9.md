@@ -11,7 +11,7 @@ phase_refs: []
 > **真源 1 (基础)**: [`docs/architecture/06-inter-module-network.md`](../../../docs/architecture/06-inter-module-network.md) v0.4 (主文档)
 > **真源 1 (基础)**: [`docs/architecture/06-bis-coherence-as-network-extension.md`](../../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3
 > **真源 2 (dGPU 应用)**: [`docs/designs/dgpu-soc/architecture.md`](../../../docs/designs/dgpu-soc/architecture.md) §0.1 原则 3 (SoC 内部模块接口贴近真实物理 IP 边界)
-> **关键 ADR**: [`docs/adr/ADR-DGPU-10~14-*.md`](../../docs/adr/)
+> **关键 ADR**: [`docs/adr/ADR-DGPU-10~14-*.md`](../../../docs/adr/)
 > **OpenSpec KPI**: per AGENTS.md §DOC HYGIENE line 420, **2026-10-19 baseline 3/3 合规** (per archive A+B 后, 控制 hub + physical-ip-port-boundary 已 archived with sync)
 
 ### 当前活跃 (Active) — 3 open changes (per 2026-10-19 KPI 释放)
@@ -43,8 +43,8 @@ phase_refs: []
 
 | Archive 路径 | 状态 | 释放 slot |
 |--------------|------|----------|
-| [`openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/`](../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/) | ✅ archived with sync (5 ADDED 主 spec 创建 `openspec/specs/dgpu-soc-control-hub/spec.md`) | 5/3 → 4/3 |
-| [`openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-physical-ip-port-boundary/`](../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-physical-ip-port-boundary/) | ✅ archived with sync (5 ADDED 主 spec 创建 `openspec/specs/dgpu-soc-physical-ip-port-boundary/spec.md`) | 4/3 → 3/3 ✅ 合规 |
+| [`openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/`](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub) | ✅ archived with sync (5 ADDED 主 spec 创建 `openspec/specs/dgpu-soc-control-hub/spec.md`) | 5/3 → 4/3 |
+| [`openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-physical-ip-port-boundary/`](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-physical-ip-port-boundary) | ✅ archived with sync (5 ADDED 主 spec 创建 `openspec/specs/dgpu-soc-physical-ip-port-boundary/spec.md`) | 4/3 → 3/3 ✅ 合规 |
 
 ### 历史归档 (Archived) — 关键 5 个 change (Tranche 0/1 实施完成)
 

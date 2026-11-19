@@ -67,7 +67,7 @@
 
 ### 新增文件 (2)
 
-1. `docs/implementation/2026-10-10-arch-truth-cleanup.md` — 本实施笔记 (T17.1)
+1. `docs/archive/implementation/2026-10-10-arch-truth-cleanup.md` — 本实施笔记 (T17.1)
 2. `openspec/changes/cpptlm-dgpu-soc-arch-truth-cleanup/README.md` — change 入口
 
 ---

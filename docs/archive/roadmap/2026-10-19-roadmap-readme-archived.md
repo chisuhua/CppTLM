@@ -12,12 +12,12 @@
 > - 维护空窗: 2026-07-03 → 2027-02-09 (≈7 个月) 未更新
 >
 > **🚀 当前权威实施路线图请参阅**：
-> - [`docs/soc_arch/architecture/00-overview.md`](../soc_arch/architecture/00-overview.md) — dGPU SoC v1.0 总架构蓝图 (v3.1-PASS)
-> - [`docs/soc_arch/architecture/`](../soc_arch/architecture/) — 10 份子系统架构 (01-10)
-> - [`docs/soc_arch/adr/ADR-SOC-09..14`](../soc_arch/adr/) — v1.0 战略新增 6 份 ADR
-> - [`docs/soc_arch/adr/revision-plan-v1.0.md`](../soc_arch/adr/revision-plan-v1.0.md) — ADR 修订规划权威源
-> - [`docs/soc_arch/roadmap/roadmap-mvp-to-v05.md`](../soc_arch/roadmap/roadmap-mvp-to-v05.md) — v0.5 MVP 实施路线 (s1/s2/s3 已归档 + `v0.5.0-MVP` tag 已打)
-> - [`openspec/changes/`](../../openspec/changes/) — 11 个活跃 changes + archive 历史
+> - [`docs/soc_arch/architecture/00-overview.md`](../../soc_arch/architecture/00-overview.md) — dGPU SoC v1.0 总架构蓝图 (v3.1-PASS)
+> - [`docs/soc_arch/architecture/`](../../soc_arch/architecture) — 10 份子系统架构 (01-10)
+> - [`docs/soc_arch/adr/ADR-SOC-09..14`](../../soc_arch/adr/ADR-SOC-09..14) — v1.0 战略新增 6 份 ADR
+> - [`docs/soc_arch/adr/revision-plan-v1.0.md`](../../soc_arch/adr/revision-plan-v1.0.md) — ADR 修订规划权威源
+> - [`docs/soc_arch/roadmap/roadmap-mvp-to-v05.md`](../../soc_arch/roadmap/roadmap-mvp-to-v05.md) — v0.5 MVP 实施路线 (s1/s2/s3 已归档 + `v0.5.0-MVP` tag 已打)
+> - [`openspec/changes/`](../../../openspec/changes) — 11 个活跃 changes + archive 历史
 >
 > **维护规则变更**：docs/roadmap/ 不再独立维护；新增 OpenSpec change 时由 `openspec/changes/<name>/` 承担项目级协调。
 

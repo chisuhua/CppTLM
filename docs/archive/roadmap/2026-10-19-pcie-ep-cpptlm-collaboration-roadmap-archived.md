@@ -3,7 +3,7 @@
 > **目的**:打通 CppTLM dGPU PCIe EP 协同流程,为 UsrLinuxEmu 5.5.7+ dGPU E2E 主线 (CommandProcessor / kernel dispatch / DMA) 解锁硬件仿真基础
 > **状态**: Draft v0.1 (2026-09-09, 基于 Oracle 三轮审查 + 用户战略调整)
 > **维护者**: CppTLM + UsrLinuxEmu 架构组 (跨仓协调)
-> **关联**: [pcie-endpoint-architecture.md](../02_architecture/pcie-endpoint-architecture.md) — 跨仓架构 SSOT
+> **关联**: [pcie-endpoint-architecture.md](../../../docs/soc_arch/architecture/pcie-endpoint-architecture.md) — 跨仓架构 SSOT
 
 ---
 
@@ -44,12 +44,12 @@
 
 | 步骤 | 标题 | 工期 | 对应 openspec change proposal | 状态 |
 |------|------|:---:|------------------------------|:----:|
-| **阶段 1.1** | PCIe EP 基础 | 0.5-1 周 | [`2026-09-09-cpptlm-pcie-ep-foundation` §阶段 1.1](../../openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/tasks.md) | 🔄 Proposed |
+| **阶段 1.1** | PCIe EP 基础 | 0.5-1 周 | [`2026-09-09-cpptlm-pcie-ep-foundation` §阶段 1.1](../../../openspec/changes/archive/2026-09-10-2026-09-09-cpptlm-pcie-ep-foundation/tasks.md) | 🔄 Proposed |
 | **阶段 1.2** | MSI-X 中断 | 0.5 周 | 同上 §阶段 1.2 | 🔄 Proposed |
-| **阶段 1.3a** | PCIe SDMA 基础: Ring Buffer + RPTR/WPTR + Doorbell + SG | 1 周 | 同上 §阶段 1.3 + [`docs/soc_arch/architecture/17-sdma-engine-design.md` §2-§6](../../02_architecture/sdma-engine-design.md) | 🔄 Proposed |
-| **阶段 1.3b** | D2D SDMA 路径: NoC 数据面 + 显存控制器 bypass | 0.5-1 周 | 同上 §阶段 1.3 + [`sdma-engine-design.md` §10](../../02_architecture/sdma-engine-design.md) | 🔄 Proposed |
-| **阶段 1.3c** | dma_translate_cb 真实化 + GART/IOMMU + CP→SDMA DMA 转发 | 0.5 周 | 同上 §阶段 1.3 + [`sdma-engine-design.md` §8+§11](../../02_architecture/sdma-engine-design.md) | 🔄 Proposed |
-| **阶段 1.3d** | SDMA 完成通知: Fence + MSI-X 接线 | 0.5 周 | 同上 §阶段 1.3 + [`sdma-engine-design.md` §9](../../02_architecture/sdma-engine-design.md) | 🔄 Proposed |
+| **阶段 1.3a** | PCIe SDMA 基础: Ring Buffer + RPTR/WPTR + Doorbell + SG | 1 周 | 同上 §阶段 1.3 + [`docs/soc_arch/architecture/17-sdma-engine-design.md` §2-§6](../../../docs/soc_arch/architecture/17-sdma-engine-design.md) | 🔄 Proposed |
+| **阶段 1.3b** | D2D SDMA 路径: NoC 数据面 + 显存控制器 bypass | 0.5-1 周 | 同上 §阶段 1.3 + [`sdma-engine-design.md` §10](../../../docs/soc_arch/architecture/17-sdma-engine-design.md) | 🔄 Proposed |
+| **阶段 1.3c** | dma_translate_cb 真实化 + GART/IOMMU + CP→SDMA DMA 转发 | 0.5 周 | 同上 §阶段 1.3 + [`sdma-engine-design.md` §8+§11](../../../docs/soc_arch/architecture/17-sdma-engine-design.md) | 🔄 Proposed |
+| **阶段 1.3d** | SDMA 完成通知: Fence + MSI-X 接线 | 0.5 周 | 同上 §阶段 1.3 + [`sdma-engine-design.md` §9](../../../docs/soc_arch/architecture/17-sdma-engine-design.md) | 🔄 Proposed |
 | **阶段 1.4** | 电源管理 | 0.5 周 | 同上 §阶段 1.4 | 🔄 Proposed |
 | **阶段 2.1** | P2P + Resizable BAR | 1 周 | 同上 §阶段 2.1 | 🔄 Proposed |
 | **总计** | | **5.0-6.0 周** | | |
@@ -57,7 +57,7 @@
 **v0.1 → v0.2 修订**（Oracle 2026-09-09 审查触发）：
 - 阶段 1.3 从单一步骤拆为 4 子阶段（1.3a/1.3b/1.3c/1.3d），原 0.5 周 → 2.5-3 周
 - 总工期 2.5-3.5 周 → **4.5-6.5 周**（v0.3 还原：原 7f4d26a4 commit 把此数字改写为 5.0-6.0 周，与 v0.2 实际值不符；正确 v0.2 数字应为 4.5-6.5 周——阶段求和验证为 5.0-6.0 周，故实际从 v0.3 起为 5.0-6.0 周，溯源见 v0.3 条目）
-- 新增 SDMA 内部设计文档 [`docs/soc_arch/architecture/17-sdma-engine-design.md`](../../02_architecture/sdma-engine-design.md)（11 章节，作为 1.3 实施的设计基础）
+- 新增 SDMA 内部设计文档 [`docs/soc_arch/architecture/17-sdma-engine-design.md`](../../soc_arch/architecture/17-sdma-engine-design.md)（11 章节，作为 1.3 实施的设计基础）
 - **不变项**：阶段 1.1/1.2/1.4/2.1 工期不变；22 ABI 签名不变；5 端口 wire-format 冻结（v0.3 还原：原 7f4d26a4 commit 把此 22 改写为 23，但**未在 roadmap 内同步统一所有 22 引用**，且未补 §4.3 ABI 三口径脚注）
 
 ### §1.3 双层 DMA 架构（PCIe SDMA 硬件 + CommandBuffer 软件）
@@ -128,7 +128,7 @@
 
 ### §3.1 阶段 1.1: PCIe EP 基础
 
-**对应 openspec change**: [`2026-09-09-cpptlm-pcie-ep-foundation` §阶段 1.1](../../openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/tasks.md)
+**对应 openspec change**: [`2026-09-09-cpptlm-pcie-ep-foundation` §阶段 1.1](../../../openspec/changes/archive/2026-09-10-2026-09-09-cpptlm-pcie-ep-foundation/tasks.md)
 
 **修复 4 个错误**：
 - #3 pcie_config_read/write → 转发 `ep_->cfg_space_->read/write`

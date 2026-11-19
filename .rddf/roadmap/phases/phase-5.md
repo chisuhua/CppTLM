@@ -8,8 +8,8 @@ phase_refs: []
 
 ## phase-5: PCIe EP AXI Stream Adapter + AXI4Mapper (Phase 5-6 微架构)
 
-> **真源**: [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`](../../docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md) (**已迁 ArchForge**)
-> **OpenSpec 已交付**: [axi-stream-adapter](../../openspec/specs/axi-stream-adapter/) + [axi4-mapper](../../openspec/specs/axi4-mapper/)
+> **真源**: [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`](../../../docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md) (**已迁 ArchForge**)
+> **OpenSpec 已交付**: [axi-stream-adapter](../../../openspec/specs/axi-stream-adapter/) + [axi4-mapper](../../../openspec/specs/axi4-mapper/)
 
 ### Phase 5: AXI Stream Adapter
 

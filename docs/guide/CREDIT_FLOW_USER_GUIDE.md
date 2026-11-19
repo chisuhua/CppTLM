@@ -227,7 +227,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug -DDEBUG_PRINT=ON ..
 
 ## 8. 相关文档
 
-- [TGMS Specification](../architecture/10-tgms-specifications.md)
+- [TGMS Specification](../archive/architecture/10-tgms-specifications-archived-2026-10.md)
 - [Metrics Framework](../architecture/08-metrics-collection-framework-v2.2.md)
 - [RouterTLM Implementation](../../include/tlm/router_tlm.hh)
 - [BidirectionalPortAdapter](../../include/framework/bidirectional_port_adapter.hh)

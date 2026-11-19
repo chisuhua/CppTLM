@@ -51,14 +51,14 @@
 | `AGENTS.md` | C.0 | baseline 实测修正 (实测数字,不是估的 79401/1694); 删 "memory_routing_enabled_ 路由开关 (D2 v1.1 修订)" + "framebuffer 自动分配" KEY INVARIANTS 条目 (flag 删后过时) |
 | `docs/designs/dgpu-soc/architecture.md` §2.4.2 | C.2 | 同 commit 同步重写 — gate 删除状态 + 分发迁移文档 + null-controller fallback 描述 |
 | `openspec/changes/dgpu-realip-pin-contract/specs/dgpu-4ip-port-contract/spec.md` | C.2 | **同 commit 同步重写** (不是 C.3!) — 修复 spec.md:62-68 `grep == 2` 与 G-C6 `== 0` 矛盾 + spec.md:89-105 "Strangler gate 保留 std::abort 保护" 场景过时; 加 Change B facade wiring 终态描述 |
-| `docs/superpowers/plans/2026-10-08-dgpu-realip-pin-contract-resplit.md` | — | §Change C 节替换 (done 2026-10-08) |
+| `docs/archive/tracking/2026-10-08-dgpu-realip-pin-contract-resplit.md` | — | §Change C 节替换 (done 2026-10-08) |
 
 ### 新文件
 
 | 文件 | Phase | 职责 |
 |------|:-----:|------|
 | `test/try_compile_legacy_flags_removed.cc` | C.5 | 已存在 (scripts/test/ 或 test/), 接入 CTest WILL_FAIL — 验证引用 4 routing_enabled + PciePath + attach_profile 的 TU 编译失败 |
-| `docs/superpowers/plans/2026-10-08-dgpu-realip-pin-contract-change-c-legacy-flag-retirement.md` | — | 本 plan 文件 (新建) |
+| `docs/archive/tracking/2026-10-08-dgpu-realip-pin-contract-change-c-legacy-flag-retirement.md` | — | 本 plan 文件 (新建) |
 
 ### Frozen surface (0 修改, Change C scope)
 
@@ -72,7 +72,7 @@
 | 文件 | Phase | 职责 |
 |------|:-----:|------|
 | `test/try_compile_legacy_flags_removed.cc` | C.5 | 已存在 (scripts/test/ 或 test/), 接入 CTest WILL_FAIL — 验证引用 `display_routing_enabled_` 的 TU 编译失败 |
-| `docs/superpowers/plans/2026-10-08-dgpu-realip-pin-contract-change-c-legacy-flag-retirement.md` | — | 本 plan 文件 (新建) |
+| `docs/archive/tracking/2026-10-08-dgpu-realip-pin-contract-change-c-legacy-flag-retirement.md` | — | 本 plan 文件 (新建) |
 
 ### Frozen surface (0 修改, Change C scope)
 
@@ -854,7 +854,7 @@ grep -rln "mmio_regs_\|PciePath::Legacy" test/ | head -10
 > 2. 4+ 测试文件依赖
 > 3. Change C 标题"legacy flag retirement"≠ legacy path 完整退役
 
-- [ ] **Step 4: 写入 docs/superpowers/plans/2026-10-08-dgpu-realip-pin-contract-resplit.md §Change D**
+- [ ] **Step 4: 写入 docs/archive/tracking/2026-10-08-dgpu-realip-pin-contract-resplit.md §Change D**
 
 ```bash
 # 不在本 commit, 在 resplit plan §Change D 段加:

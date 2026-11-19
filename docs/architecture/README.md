@@ -30,6 +30,7 @@
 |------|------|------|
 | [01-hybrid-architecture-v2.1.md](./01-hybrid-architecture-v2.1.md) | ✅ v2.1.10 已批准 | 混合仿真架构 v2.1 (L1-L6 6 层框架真源, per [06 §2.1](./06-inter-module-network.md) 严格对齐) |
 | [02-transaction-architecture.md](./02-transaction-architecture.md) | ✅ v2.1 已批准 | 交易处理架构 |
+| [02-complex-topology-architecture.md](./02-complex-topology-architecture.md) | ✅ 已批准 | 复杂拓扑实现架构 (RT 桥接, per [06 §0.3](./06-inter-module-network.md) 边界标注) |
 | [03-error-debug-architecture.md](./03-error-debug-architecture.md) | ✅ v1.0 已实施 | 错误与调试架构 (ErrorCategory + ErrorContextExt + DebugTracker, 2026-10-19 状态对齐) |
 | [04-reset-checkpoint-architecture.md](./04-reset-checkpoint-architecture.md) | ✅ v1.0 已实施 | 复位与快照架构 (ResetConfig + save_snapshot, 2026-10-19 状态对齐) |
 | [06-inter-module-network.md](./06-inter-module-network.md) | 🟡 **v0.4 修订中** (2026-10-19) | 模块互联网络协议中立基线 + Bundle 二分类 + Python 拓扑契约 (详化 01 §1.1 6 层 + §1.2 Bundle 命名 + §4.7 simulation_mode, 双向 cross-ref) |
@@ -51,7 +52,17 @@
 | [12-topology-gap-analysis.md](./12-topology-gap-analysis.md) | ✅ v1.1 已批准 | 拓扑差距分析 (审查修正版) |
 | [13-dashboard-integration.md](./13-dashboard-integration.md) | ✅ v2.0 已批准 | Dashboard 集成 (FastAPI + RunContext + Monaco Editor) |
 | ~~14-sm-operand-supply-design-target.md~~ | ➡️ **已迁 ArchForge** | **SM 操作数供给下一代架构设计目标（OSF：MCOS / ERW / WABR / SOP）** — 2026-10-27 迁至【ArchForge 仓】`docs/architecture/33-sm-operand-supply-design-target.md`（🟡 设计目标声明，非现状真相，**未经 Oracle/ADR 评审**）；配套证据【ArchForge 仓】`docs/research/SM/CudaCore/`（SYNTHESIS + 8 篇解析）。**本仓不再保留副本**（silicon 侧真源在 ArchForge；真源 1 只描述 CppTLM 现状） |
-| [02-complex-topology-architecture.md](./02-complex-topology-architecture.md) | ✅ 已批准 | 复杂拓扑实现架构 (RT 桥接, per [06 §0.3](./06-inter-module-network.md) 边界标注) |
+
+### 编号说明（`02` / `06` 双占）
+
+本目录存在**两组编号重名**，均为**历史沿革**所致，**文件名不再变更**（已被已签发 ADR 按路径引用，改名会破坏不可变决策的自足性）：
+
+| 编号 | 文件 A | 文件 B | 消歧口径 |
+|------|--------|--------|---------|
+| **02** | `02-transaction-architecture.md`（交易处理） | `02-complex-topology-architecture.md`（复杂拓扑实现） | 引用时**写全文件名**，不写「02 号」 |
+| **06** | `06-inter-module-network.md`（模块互联网络 · **现行基线**） | `06-bis-coherence-as-network-extension.md`（Coherence 演进 seam · **已被 07 号 supersede**） | 引用时**写全文件名**；现行基线指 `06-inter-module-network.md` |
+
+> ⚠️ 引用 `06` 时若只写「06 号」，读者无法区分二者 —— **一律写全文件名**。
 
 ### 决策汇总
 
@@ -60,7 +71,6 @@
 | [P0_P1_P2_DECISIONS.md](./P0_P1_P2_DECISIONS.md) | P0/P1/P2 核心决策汇总 (✅ 已全部确认) |
 | [FRAGMENT_MAPPER_DECISIONS.md](./FRAGMENT_MAPPER_DECISIONS.md) | FragmentMapper 决议 (✅ 已确认) |
 | [topology-editor-framework-decision.md](./topology-editor-framework-decision.md) | 拓扑编辑器前端框架决策 (✅ 已决策, Svelte 推荐, TD-004) |
-| [rdd-workflow-integration-gap-gap-analysis.md](./rdd-workflow-integration-gap-gap-analysis.md) | 🟡 草案 (rdd-workflow 集成差距, 关联 ADR 待起草, 2026-10-19 加状态头) |
 
 ### 示例代码
 

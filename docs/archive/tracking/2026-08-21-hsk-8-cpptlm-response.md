@@ -3,11 +3,11 @@
 > **日期**: 2026-XX-XX (PTX-EMU 端 ack 时填写)
 > **发送方**: PTX-EMU Architecture Team (@ptx_emu_owner)
 > **接收方**: CppTLM Team (Sisyphus)
-> **回传目标**: CppTLM 仓 issue/PR 评论 + CppTLM `docs/superpowers/specs/2026-08-21-hsk-8-cpptlm-response.md` (mirror)
+> **回传目标**: CppTLM 仓 issue/PR 评论 + CppTLM `docs/archive/tracking/2026-08-21-hsk-8-cpptlm-response.md` (mirror)
 > **形式**: 结构化确认 + commit hash 引用 + 验收 checklist
 > **关联**:
-> - CppTLM HSK-8 spec: [`docs/superpowers/specs/2026-08-21-hsk-8-ptxemu-public-api.md`](https://github.com/chisuhua/CppTLM/blob/main/docs/superpowers/specs/2026-08-21-hsk-8-ptxemu-public-api.md) (commit `3d7898b`)
-> - HSK-6 历史: [`docs-archived/superpowers/specs/2026-08-18-hsk-6-response.md`](../docs-archived/superpowers/specs/2026-08-18-hsk-6-response.md) (CppTLM ack commit `369cf71`)
+> - CppTLM HSK-8 spec: [`docs/archive/tracking/2026-08-21-hsk-8-ptxemu-public-api.md`](https://github.com/chisuhua/CppTLM/blob/main/docs/archive/tracking/2026-08-21-hsk-8-ptxemu-public-api.md) (commit `3d7898b`)
+> - HSK-6 历史: [`docs-archived/superpowers/specs/2026-08-18-hsk-6-response.md`](../../../docs-archived/superpowers/specs/2026-08-18-hsk-6-response.md) (CppTLM ack commit `369cf71`)
 > - CppTLM openspec change: `openspec/changes/cpptlm-ptxemu-public-device-api/`
 > - Oracle session `ses_fdb70164bffe2vBN71uiaV90aY` (4 轮咨询)
 > - HSK 历史: HSK-1 (`8dc000ec`) · HSK-2 (ANTLR4 4.13.2) · HSK-3 (ExternalProject_Add, ⚠️ 已被 HSK-6 废止方向) · HSK-4 (`8acfd2d1`/`9e7361b9`/`463038e0`) · HSK-5 (`advance()`, 🟥 CANCELLED by HSK-6) · HSK-6 (PTX-EMU `25e36f60` / CppTLM ack `369cf71` / 实施 `585e4ff`·`5d9473a`·`fa2b3ec`) · HSK-7 (🔵 预留 — 仅 ABI 解冻触发) · **HSK-8 (本 ack)**
@@ -96,7 +96,7 @@
 **Cc**: @ptx_emu_owner · @ptx_emu_architecture_team · @usr_linux_emu_architecture_team · @cpp_tlm_owner
 
 **Refs**:
-- CppTLM HSK-8 spec: `3d7898b` (https://github.com/chisuhua/CppTLM/blob/openspec/2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/docs/superpowers/specs/2026-08-21-hsk-8-ptxemu-public-api.md)
+- CppTLM HSK-8 spec: `3d7898b` (https://github.com/chisuhua/CppTLM/blob/openspec/2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/docs/archive/tracking/2026-08-21-hsk-8-ptxemu-public-api.md)
 - CppTLM HSK-8 proposal: `openspec/changes/cpptlm-ptxemu-public-device-api/proposal.md`
 - HSK-6 CppTLM ack: `369cf71`
 - HSK-6 PTX-EMU 公告: `25e36f60`
