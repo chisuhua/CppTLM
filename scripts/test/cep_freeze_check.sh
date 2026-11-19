@@ -109,6 +109,64 @@ FROZEN_GLOBS=(
   "openspec/specs/cep-stub-cache-chstream-surface/spec.md"
 )
 
+# ── 台账 entry id 的唯一口径(2026-11-19 收紧)────────────────────────────
+#   ⚠️ 原口径 `grep "^### "` 把台账 Entry **正文里的 `###` 级子标题**也当成合法授权条目
+#      (实测台账 681 个 `###` 标题中仅 504 个是 `### Entry #`,另 177 个混入可选集合),
+#      例如 `### 验收（AC-1 ~ AC-8）` / `### 授权明细(逐处枚举,超出即越权)` ——
+#      标题本身就带「授权 / 验收」字样 ⇒ `--authorized-by "验收（AC-1 ~ AC-8）"`
+#      可直接冒充授权条目 ⇒ 授权闸形同虚设(per 台账 Entry #506「顺带发现」)。
+#   ⇒ 只认 `### Entry #<数字>` 这一种形态。**shell / embedded python / ADR 结构闸三处同口径**。
+LEDGER=".rddf/roadmap/objectives/obj-cep-platform.md"
+
+entry_ids_of() {  # $1 = 台账路径
+  grep -E "^### Entry #[0-9]+ " "$1" | sed 's/^### //; s/ *—.*$//'
+}
+
+is_authorized_entry() {  # $1 = 台账路径, $2 = 候选 id
+  entry_ids_of "$1" | grep -qxF "$2"
+}
+
+# 反向自测(只验绿 = 没验):闸必须拒绝「正文子标题冒充 entry id」
+if [ "${1:-}" = "--self-test" ]; then
+  _st_base="${TMPDIR:-/tmp/opencode}"; mkdir -p "$_st_base" 2>/dev/null || true
+  _st_dir="$(mktemp -d "$_st_base/cep_freeze_selftest.XXXXXX")" || exit 2
+  trap 'rm -rf "$_st_dir"' EXIT
+  cat > "$_st_dir/ledger.md" <<'STEOF'
+## 台账
+### Entry #1 — 真 entry(授权记录)
+正文
+### 验收（AC-1 ~ AC-8）
+正文
+### 授权明细(逐处枚举,超出即越权)
+正文
+STEOF
+  _st_rc=0
+  if is_authorized_entry "$_st_dir/ledger.md" "Entry #1"; then
+    echo "  ✓ 自测:真 entry id 'Entry #1' 被接受"
+  else
+    echo "  ✗ 自测失败:真 entry id 'Entry #1' 未被接受(闸误伤)"; _st_rc=1
+  fi
+  for _fake in "验收（AC-1 ~ AC-8）" "授权明细(逐处枚举,超出即越权)"; do
+    if is_authorized_entry "$_st_dir/ledger.md" "$_fake"; then
+      echo "  ✗ 自测失败:正文子标题 '$_fake' 被当成合法授权条目(闸无牙)"; _st_rc=1
+    else
+      echo "  ✓ 自测:正文子标题 '$_fake' 被拒绝"
+    fi
+  done
+  if [ -f "$LEDGER" ]; then
+    _st_real="$(entry_ids_of "$LEDGER")"
+    if [ -z "$_st_real" ]; then
+      echo "  ✗ 自测失败:真实台账解析不到任何 Entry id"; _st_rc=1
+    elif printf '%s\n' "$_st_real" | grep -qvE '^Entry #[0-9]+$'; then
+      echo "  ✗ 自测失败:真实台账解析出非 'Entry #<数字>' 形态的 id"; _st_rc=1
+    else
+      echo "  ✓ 自测:真实台账 $(printf '%s\n' "$_st_real" | wc -l) 个 id 全部为 'Entry #<数字>' 形态"
+    fi
+  fi
+  [ "$_st_rc" -eq 0 ] && echo "  ✓ 授权闸反向自测通过" || echo "  ✗ 授权闸反向自测失败"
+  exit "$_st_rc"
+fi
+
 if [ "${1:-}" = "--update" ]; then
   # ⚠️ **授权闸门**(2026-10-22 代码复审 B5):`--update` 无条件重算全部 hash 并写回,
   #    等于「一次命令即可把任何未授权的冻结产物修改吸收为已冻结」。
@@ -117,7 +175,6 @@ if [ "${1:-}" = "--update" ]; then
   #    初版「缺省只警告 + grep 子串匹配」可被 `--authorized-by "a"` 伪造 → 闸门形同虚设。
   AUTH=""
   if [ "${2:-}" = "--authorized-by" ]; then AUTH="${3:-}"; fi
-  LEDGER=".rddf/roadmap/objectives/obj-cep-platform.md"
   if [ -z "$AUTH" ]; then
     echo "  ✗ 缺少 --authorized-by <台账 entry 标题> —— **拒绝写盘**"
     echo "    · 改冻结产物必须先在台账 §11 追加 entry(授权记录),再 --update"
@@ -129,15 +186,11 @@ if [ "${1:-}" = "--update" ]; then
     exit 1
   fi
   # 精确匹配:台账里必须存在 **entry id 完全等于** $AUTH 的 entry
-  #   (entry id = '### ' 之后、' — ' 之前的部分;标题的日期/类型后缀不算)
-  # ⚠️ 只认 **`### Entry #N`** 形态 —— 旧写法 `grep "^### "` 会把 Entry 正文里的
-  #    `###` 级子标题（如「授权明细」「验收」）也放进可选 id 集合 ⇒ 可用子标题冒充
-  #    授权条目（2026-11-19 修正，见台账 Entry #506 的「顺带发现」）。
-  ENTRY_IDS="$(grep "^### Entry #" "$LEDGER" | sed 's/^### //; s/ *—.*$//')"
-  if ! printf '%s\n' "$ENTRY_IDS" | grep -qxF "$AUTH"; then
+  #   (entry id = '### Entry #' + 数字;Entry 正文里的 `###` 级子标题**不**是合法 id)
+  if ! is_authorized_entry "$LEDGER" "$AUTH"; then
     echo "  ✗ 授权校验失败:台账 $LEDGER 中没有 id 为 '$AUTH' 的 entry"
     echo "    · 现有 entry id:"
-    printf '%s\n' "$ENTRY_IDS" | sed 's/^/      /'
+    entry_ids_of "$LEDGER" | sed 's/^/      /'
     exit 1
   fi
   echo "  ✓ 授权校验通过:台账 entry '$AUTH'"
@@ -275,9 +328,14 @@ _LEDGER_REL = ".rddf/roadmap/objectives/obj-cep-platform.md"
 _LEDGER_ABS = os.path.join(root, _LEDGER_REL)
 LEDGER_IDS = set()
 if os.path.exists(_LEDGER_ABS):
+    # 与 shell 侧 `entry_ids_of` **同口径**:只认 `### Entry #<数字>` ——
+    #   Entry 正文里的 `###` 级子标题(「授权明细」「验收」等)**不**是合法 entry id
+    #   (per 台账 Entry #506「顺带发现」:旧写法 `startswith("### ")` 让 177 个子标题
+    #    混入可选集合 ⇒ 可被 `--authorized-by` 直接冒充)。
     for _ln in open(_LEDGER_ABS, encoding="utf-8"):
-        if _ln.startswith("### "):
-            LEDGER_IDS.add(_re.sub(r" *—.*$", "", _ln[4:]).strip())
+        _m = _re.match(r"^### (Entry #[0-9]+)\b", _ln)
+        if _m:
+            LEDGER_IDS.add(_m.group(1))
 EXCL = man.get("exclusions", []) if isinstance(man, dict) else []
 _excl_errors = []
 _spec_paths = sorted(_glob.glob(os.path.join(root, "openspec/specs/cep-*/spec.md")))

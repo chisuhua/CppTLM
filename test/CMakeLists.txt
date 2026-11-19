@@ -852,8 +852,28 @@ add_test(NAME cep_cxl_dcoh_adapter_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_cxl_dcoh_adapter_reverse_verify.sh)
 add_test(NAME cep_freeze_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_freeze_reverse_verify.sh)
+# ⚠️ **RUN_SERIAL 理由**(与 `cep_decl_reverse_verify` 同类竞态,2026-11-19 补):
+#    本脚本**临时改写**仓内 `include/tlm/cep/fabric.json` 再还原 ⇒ 在 `ctest -j4` 下与
+#    **读**该文件的测试并行时,读者会读到**中间态** ⇒ 假红。
+#    实测受害者 = `cep_freeze_check`(对 89 个冻结产物逐个 sha256,含 fabric.json)。
+#    ⇒ 修法同兄弟 `cep_decl_reverse_verify`:`RUN_SERIAL` 让改写者独占运行 ⇒
+#      读者天然安全,且**未来新增读者无需同步**(RESOURCE_LOCK 需枚举全部读者,脆弱)。
+#    ⚠️ 该脚本文件头原写「刻意不注册进 ctest」,与事实相反(早已注册),已在脚本内订正。
+set_tests_properties(cep_freeze_reverse_verify
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                                RUN_SERIAL TRUE)
 add_test(NAME cep_tilelink_engine_failclosed
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_tilelink_engine_failclosed.sh)
+
+# 冻结面**授权闸的反向自测**(2026-11-19,per 台账 Entry #506「顺带发现」):
+#   `--authorized-by` 的合法 id 集合曾由 `grep "^### "` 提取 ⇒ 台账 Entry **正文里的
+#   `###` 级子标题**(如「授权明细」「验收」)也进入可选集合 ⇒ **可用子标题冒充授权记录**
+#   (实测台账 681 个 `###` 标题中 177 个是这种伪造入口)。
+#   ⇒ 闸已收紧为只认 `### Entry #<数字>`;本测试**证明收紧后仍有牙**
+#     (真 entry 被接受 · 子标题被拒 · 真实台账 id 形态合规)。
+add_test(NAME cep_freeze_auth_selftest
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_freeze_check.sh --self-test)
+set_tests_properties(cep_freeze_auth_selftest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 # ── 2026-11-09(per 台账 Entry #303):**CEP E2E 双向闸**(台账 ↔ 仓内 run 产物)──
 # retention **丙**(Entry #295):首批 run 只入库 `metrics.json` + `simulation_config.json`

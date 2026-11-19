@@ -27116,3 +27116,43 @@ G1 `agents_md_lint.py` 增 `--all`（**18 份**：体量 ≤10 KiB / 单行 ≤1
 `examples/` 与 `src/tlm/*` 不补 AGENTS.md（信息收益率低，补了要维护且无独立判据）· `external/PTX-EMU/` 15 份不属本仓 · 上一轮遗留的 `DOC HYGIENE` 模型段拆分与 `COMMANDS` 合并仍未做。
 
 **关联**：Entry #506（AGENTS.md 瘦身，其「顺带发现」即本次 G6）· `openspec/changes/archive/2026-11-19-cpptlm-subdir-agents-governance/`
+
+### Entry #508 — 2026-11-19 [builder](**冻结面授权闸收尾 + 反向验证闸竞态修复** — 补 Entry #507 的 G6/G7 遗漏面)
+
+**范围**：`scripts/test/`（3 脚本）+ `test/CMakeLists.txt`。**零冻结产物改动**（89 件 hash 全部一致）· 零 ADR / 零 spec 改动 · 不占 OpenSpec slot（KPI 保持 **0/3**）。
+
+#### 起因（实测：同一份台账 id 解析在仓内另有 2 处独立实现，仍是松口径）
+
+Entry #507 的 G6 只收了 `cep_freeze_check.sh` 的 **shell 侧**提取口径（`grep "^### Entry #"`）。但台账 entry id 的解析在仓内**另有 2 处**独立实现，均未同步收紧：
+
+| 位置 | 旧口径 | 残留缺陷 |
+|------|--------|---------|
+| `cep_freeze_check.sh` embedded python（`LEDGER_IDS`，用于校验 `exclusions[].ledger_entry`） | `_ln.startswith("### ")` | **同一个洞**：Entry 正文里的 177 个 `###` 级子标题仍可冒充 entry id |
+| `cep_adr_structural_check.py`（校验 `review_ledger_entry`，在用 5 条） | `("### %s" % led) in ledger_text` | 子串匹配 ⇒ `Entry #402` 会被 `### Entry #4021` 满足；且子标题可冒充 |
+
+⇒ 「收紧一处 = 真的收紧」不成立：**三处必须同口径**。
+
+#### 交付
+
+| # | 内容 | 落点 |
+|---|------|------|
+| A-1 | **三处同口径**：只认 `### Entry #<数字>` —— shell `entry_ids_of()` / embedded python `_re.match(r"^### (Entry #[0-9]+)\b")` / ADR 结构闸 `ledger_entry_ids()`（后两处此前无任何口径约束） | `cep_freeze_check.sh` · `cep_adr_structural_check.py` |
+| A-2 | **授权闸反向自测**（`--self-test`）：真 entry 被接受 · 2 类子标题被拒 · 真实台账 id 形态全合规 ⇒ **证明收紧后仍有牙**（只验绿 = 没验） | `cep_freeze_check.sh --self-test` |
+| A-3 | ctest 注册 `cep_freeze_auth_selftest` | `test/CMakeLists.txt` |
+| B-1 | `cep_freeze_reverse_verify` 加 **`RUN_SERIAL TRUE`**：本脚本**临时改写** `include/tlm/cep/fabric.json` 再还原 ⇒ `ctest -j4` 下与**读**该文件的 `cep_freeze_check`（逐产物 sha256）并行会读到**中间态** ⇒ 假红。修法同兄弟 `cep_decl_reverse_verify`（改写者独占运行 ⇒ 读者天然安全，**无需枚举读者**） | `test/CMakeLists.txt` |
+| B-2 | 该脚本文件头原写「**刻意不注册进 ctest**」与事实相反（早已注册）⇒ 订正；**还原后自证**（hash 不符即响亮报错）+ **开工前工作区洁净检查**（脏 ⇒ 拒绝运行并给还原命令）⇒ 覆盖「被 SIGKILL（ctest timeout）打断 ⇒ trap 不执行 ⇒ 仓里留下被改过的冻结产物 ⇒ 后续 CEP 闸全红」这条路径 | `cep_freeze_reverse_verify.sh` |
+
+#### 验证
+
+- `cep_freeze_check.sh --self-test` rc=0（3 项断言 + 真实台账 506 个 id 形态全合规）
+- **负向**：`--update --authorized-by "验收(AC-01 ~ AC-06,全部机器可判)"` ⇒ **被拒且 manifest 无改动**（`git status` 干净）
+- `cep_freeze_check.sh`（无参）rc=0（89 件 hash 一致）· `cep_adr_structural_check.py` rc=0（全部通过）· `cep_docs_sync_check` rc=0
+- `cep_freeze_reverse_verify` rc=0（基线绿 → 破坏红且点名 `fabric.json` → 还原绿）；`fabric.json` **字节级还原实测一致**，工作区干净
+- **`ctest` 191/191**（较 Entry #507 的 190 多 1 = 本次新增的 `cep_freeze_auth_selftest`）
+- `RUN_SERIAL TRUE` 已写入 `build/test/CTestTestfile.cmake`（grep 命中）
+
+#### 未做（明确排除）
+
+C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs 外置 / manifest `note` 与事实矛盾）**本次不做** —— 它们**改闸的行为契约**（M1 机制挂 objective §9.2），须先过 critic 再动。
+
+**关联**：Entry #507（G6 首次收紧，仅覆盖 shell 侧）· Entry #506（「顺带发现」的原始出处）

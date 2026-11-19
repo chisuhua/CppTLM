@@ -12,8 +12,12 @@
 # 闭环(与 decl_reverse_verify 同构):
 #   破坏 → freeze check 必须报红 → 还原 → freeze check 必须报绿
 #
-# ⚠️ **刻意不注册进 ctest**:本脚本会**临时改写**本仓 `include/tlm/cep/fabric.json`,
-#    在 `ctest -j4` 并行下会与其它测试读到中间态 → 必须**串行手动跑**。
+# ⚠️ **已注册进 ctest,但必须 `RUN_SERIAL`**(2026-11-19 订正):
+#    本脚本会**临时改写**本仓 `include/tlm/cep/fabric.json` 再还原 ⇒ 在 `ctest -j4`
+#    并行下,任何**读**该文件的测试(首当其冲 = `cep_freeze_check` 的逐产物 sha256)
+#    会读到**中间态** ⇒ 假红。⇒ `test/CMakeLists.txt` 已为该 test 设 `RUN_SERIAL TRUE`
+#    (与兄弟 `cep_decl_reverse_verify` 同修法:改写者独占运行 ⇒ 读者天然安全)。
+#    ⚠️ 本段原写「刻意不注册进 ctest」,与事实相反(该 test 早已注册)—— 2026-11-19 订正。
 #
 # 用法:
 #   bash scripts/test/cep_freeze_reverse_verify.sh
@@ -42,12 +46,28 @@ cleanup() {
     if [ -f "$BACKUP" ]; then
         cp "$BACKUP" "$FABRIC"
         rm -f "$BACKUP"
+        # ⚠️ 还原后**自证**(2026-11-19):被 SIGKILL(ctest timeout)打断时 trap 不执行
+        #    ⇒ 仓里会留下被改过的冻结件 ⇒ 后续所有 CEP 闸全红。故还原后立即比对 hash,
+        #    不一致即响亮报错(而不是静默留下污染)。
+        if [ -n "${ORIG_SHA:-}" ] && [ "$(sha256sum "$FABRIC" | cut -d' ' -f1)" != "$ORIG_SHA" ]; then
+            echo -e "${RED}✗ 还原失败:$FABRIC 与基线 hash 不一致 —— 须手动 git checkout -- $FABRIC${NC}"
+            exit 1
+        fi
     fi
 }
 trap cleanup EXIT
 
 if [ ! -f "$FABRIC" ]; then
     echo -e "${RED}✗ 找不到 $FABRIC —— 无法验证${NC}"
+    exit 1
+fi
+
+# ⚠️ **工作区必须干净**(2026-11-19):若上次运行被 SIGKILL 打断(ctest timeout),
+#    仓里会留下被改过的 fabric.json ⇒ 此时「基线」不是真基线,验证结论无意义。
+#    ⇒ 发现脏文件即拒绝运行,并给出还原命令。
+if ! git diff --quiet -- "$FABRIC" 2>/dev/null; then
+    echo -e "${RED}✗ $FABRIC 有未提交改动 —— 基线不可信(上次运行可能被 SIGKILL 打断)${NC}"
+    echo "    · 先还原:git checkout -- $FABRIC"
     exit 1
 fi
 

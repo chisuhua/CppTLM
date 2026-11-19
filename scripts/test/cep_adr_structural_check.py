@@ -293,6 +293,15 @@ def main():
     if os.path.isfile(ledger_path):
         ledger_text = open(ledger_path, encoding="utf-8").read()
 
+    def ledger_entry_ids():
+        """台账合法 entry id 集合 —— **只认 `### Entry #<数字>`**。
+
+        ⚠️ 与 `cep_freeze_check.sh` 的 `entry_ids_of` **同口径**:Entry 正文里的
+        `###` 级子标题(如 `### 验收（AC-1 ~ AC-8）`)**不**是合法 entry id ——
+        旧写法按子串匹配,子标题可冒充授权记录(per 台账 Entry #506「顺带发现」)。
+        """
+        return set(re.findall(r"^### (Entry #[0-9]+)\b", ledger_text, re.M))
+
     DISPOSITIONS = {
         "carrier_present_id_absent": ("carrier_anchor", "expected_symbol"),
         "carrier_buildable_id_blocked": ("blocked_by",),
@@ -359,11 +368,14 @@ def main():
                 errors += fail("[4b-b] blocked_by 不在冻结集(谎称被冻结挡): %s (%s)" % (bp, tags))
         elif dp == "doc_layer_manual_review":
             led = str(e.get("review_ledger_entry", ""))
-            if ledger_text and ("### %s" % led) not in ledger_text:
+            # ⚠️ 必须命中**台账的合法 entry id 集合**(只含 `### Entry #<数字>`)——
+            #   子串匹配会让 `### Entry #402` 被 `### Entry #4021` 满足,
+            #   也会让 Entry 正文里的 `###` 级子标题冒充授权记录。
+            if ledger_text and led not in ledger_entry_ids():
                 errors += fail("[4b-b] review_ledger_entry 在台账解析不到: %s (%s)" % (led, tags))
             elif ledger_text:
                 # 该 Entry 正文须含本条 chapter 号(防「复制粘贴台账 Entry 批量盖章」)
-                m = re.search(r"### " + re.escape(led) + r".*?(?=\n### |\Z)", ledger_text, re.S)
+                m = re.search(r"^### " + re.escape(led) + r"\b.*?(?=\n### |\Z)", ledger_text, re.S | re.M)
                 body = m.group(0) if m else ""
                 chs = [c.strip() for c in str(e.get("chapter", "")).split("/") if c.strip()]
                 if chs and not any(c in body for c in chs):
