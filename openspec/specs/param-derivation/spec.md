@@ -5,40 +5,31 @@ TBD - created by archiving change tgms-phase-3-plus. Update Purpose after archiv
 
 ## Requirements
 
-### Requirement: ParamRule structure
-
-The system SHALL define a ParamRule structure containing type, required flag, default value, max value, and optional derivation expression.
-
-#### Scenario: ParamRule stores all fields
-- **WHEN** ParamRule is created with type INTEGER, required=true, default=64, max=256, derive_expr="(mesh_x * mesh_y > 16) ? 128 : 64"
-- **THEN** all fields SHALL be accessible via getter methods
-
 ### Requirement: Module param rules declaration
 
-**已准入**的模块类型（`cpptlm::is_param_admitted(type) == true`）SHALL 以模块内的**一次读取调用即一次声明**的方式加载参数（`load_param(key, target[, lo, hi][, def])`）—— 该调用同时完成类型校验、范围校验、默认值填充与赋值，并登记该键为「已消费」。
+模块参数 SHALL 以模块内的**一次读取调用即一次声明**的方式加载（`load_param(key, target[, lo, hi][, def])`）—— 该调用同时完成类型校验、范围校验、默认值填充与赋值，并登记该键为「已消费」。
 
-**未准入**的模块类型 MAY 继续保留静态 `get_param_rules()` 声明面（逐类型退役）。
-
-⚠️ 两者 **SHALL NOT** 在同一类型上并存（同一键两个真值 ⇒ 覆盖顺序决定行为）。
+⚠️ C++ 侧**不再存在**「与读取分离的独立声明面」（`get_param_rules()` / `registerParamRules` / 注册表 / `configs/param_rules/*.json` 的 C++ 侧消费均已退役）⇒ 同一参数 SHALL NOT 在两处各写一遍。
 
 #### Scenario: RouterTLM declares coordinate params as required
 
 - **WHEN** 某已准入类型（如 `RouterTLM`）的实例被加载
 - **THEN** 其 `node_x` / `node_y` / `mesh_x` / `mesh_y` SHALL 由 `load_param` 以「无默认值 = 必填」的形式声明
-- **AND** 该类型 SHALL **NOT** 出现在 `getParamRulesRegistry()` 中（`registerParamRules` 注册已随迁移删除）
+- **AND** 该类型 SHALL **NOT** 出现在任何规则注册表中（注册表机制已退役）
 
 #### Scenario: RouterTLM declares flit_width with derivation
 
 - **WHEN** 配置为 `RouterTLM` 提供 `flit_width`
 - **THEN** 该键 SHALL 被判为**未知键**并使装配失败
-- **AND** 原因：`RouterTLM` 的 `flit_width` 声明已随 `get_param_rules()` 退役删除，且实现**从未消费**它 ⇒ 它既无配置命中、也无实现效果
-- **AND** ⚠️ 本 Scenario 原断言「未显式提供时按 `derive_expr` 派生」在当前实现下从未成立（派生求值未实现）⇒ 本 change 反转其结论
+- **AND** 原因：`RouterTLM` 的 `flit_width` 声明已随旧声明面退役删除，且实现**从未消费**它 ⇒ 它既无配置命中、也无实现效果
+- **AND** ⚠️ 本 Scenario 原断言「未显式提供时按 `derive_expr` 派生」在实现下从未成立（派生求值未实现）⇒ 该结论保持反转
 
 #### Scenario: 未准入类型维持既有声明面
 
-- **WHEN** 某类型尚未准入（仍有 `get_param_rules()` 或其 CFG-08 分支仍在）
+- **WHEN** 某类型尚未迁入准入表
 - **THEN** 其参数声明与行为 SHALL 与改动前逐项一致
 - **AND** 未知键检查 SHALL NOT 作用于该类型
+- **AND** 本 change 之后该集合 SHALL 仅含测试夹具
 
 ### Requirement: Dynamic derivation evaluation
 

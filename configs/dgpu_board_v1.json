@@ -22,7 +22,7 @@
           "type": "PcieEndpointIP",
           "params": {
             "config_size": 4096,
-                        "bar_sizes": [65536, 268435456],
+            "bar_sizes": [65536, 268435456],
             "bar0_registers": [
               {
                 "offset": 0,
