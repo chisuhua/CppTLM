@@ -253,6 +253,8 @@ VIRTUAL_PATHS=(
   "openspec/changes/cpptlm-cep-adr-verification-carriers"  # change **已归档**(2026-11-15,✅ 已完成归档语义 · delta 合并进 `openspec/specs/cep-sharer-tracker-base/spec.md` + `openspec/specs/cep-invariant-gate/spec.md`;归档名 `2026-11-15-cpptlm-cep-adr-verification-carriers`)⇒ 台账历史 Entry **#431**(立项面 ⑤ 验收判据行 + ⑧ 关联)引用的是**归档前活路径**;⛔ 台账 append-only 不可回改 ⇒ 闸侧豁免
   "openspec/changes/cpptlm-cep-spec-strict-compliance"  # change **已归档**(2026-11-15,✅ 已完成归档语义 · delta 合并进 5 份 main spec;归档名 `2026-11-15-cpptlm-cep-spec-strict-compliance`)⇒ 台账 Entry **#434**(⑨ 关联)引用的是**归档前活路径**;⛔ 台账 append-only 不可回改 ⇒ 闸侧豁免
   "openspec/changes/cpptlm-nictlm-credit-flit-filter"  # change **已归档**(2026-11-18,✅ 已完成归档语义 · delta 合并进 `openspec/specs/cep-nictlm-credit-filter/spec.md`;归档名 `2026-11-18-cpptlm-nictlm-credit-flit-filter`)⇒ 台账历史 Entry **#461**(立项面「change 目录」行 + ⑦ 关联)/ **#466**(立项回执 + ⑦ 关联)/ **#468**(实施回执的「工作树改动」行)引用的是**归档前活路径**;⛔ 台账 append-only 不可回改 ⇒ 闸侧豁免
+  "docs/cep/"  # **不存在目录 · 审计反例**(2026-11-19,per 台账 Entry #502):Entry #502 记录「`docs/architecture/07-*.md` 的 `../cep/X.md` 相对深度写错 ⇒ 解析到**不存在的** `docs/cep/`」⇒ 该目录**本就不存在**(正解是 `./cep/X.md`);⛔ 不可被读作待建目录;该相对链接已在本 Entry 授权的产物 commit 中修正,本条豁免只覆盖**台账里的反例描述**
+  "docs/architecture/adr/"  # **不存在目录 · 审计反例**(2026-11-19,per 台账 Entry #502):Entry #502 记录「`docs/architecture/cep/*.md` 的 `../adr/X.md` 相对深度写错 ⇒ 解析到**不存在的** `docs/architecture/adr/`」⇒ 该目录**本就不存在**(正解是 `../../adr/X.md`);同上,反例描述豁免
 )
 
 is_virtual_path() {
