@@ -27229,3 +27229,27 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 - **`test/cep_freeze_scope_registry.json`**（Entry #324 退役的枚举式登记表）: 全仓零引用,但其自述为**留档**（记录「2026-11-09~11-10 期间 27 份契约面曾处于无冻结保护状态」这一历史事实 + `retired_by`/`superseded_by` provenance 链）⇒ **已裁决保留**(2026-11-19,用户裁决:它是**刻意留档**的溯源记录,非意外残留;且本轮 D-1a 恰好把它指向的 `exclusions[]` 做成真机制 ⇒ 退役链完整)。
 
 **关联**：Entry #508（三处同口径 + 反向验证闸竞态）· Entry #507 · Entry #506 · Entry #324（C-2′ 裁决:glob 全量 + 显式排除表）
+
+### Entry #510 — 2026-11-20 [planner](**improvement 状态回填** —— 6 项已归档 change 的 `状态:` 行由「已立项/待立项/未立项」改为「✅ 已完成并归档」)
+
+**起因**：核对 C2 收口后的状态时实测 —— `.rddf/improvements/` 有 **10 份**文件的 front-matter `状态:` 与归档事实相反
+（`openspec list --json` = **0 active**，而这些文件写着「已立项 / 待立项 / 未立项」）⇒ 下一个会话会误判「还有 N 个 active change」。
+
+**本次范围**（用户指定 6 项；按归档回执逐条回填，含 delta 合并落点）：
+
+| improvement | 旧状态 | 归档 Entry | delta 合并落点 |
+|---|---|---|---|
+| `cpptlm-config-type-registration-align` | 🟡 待立项 | **#487** | `openspec/specs/config-type-registration-align/` |
+| `cpptlm-nictlm-credit-flit-filter` | 🔴 未立项(backlog) | **#479**（立项 #466 / 实施 #468） | `openspec/specs/cep-nictlm-credit-filter/` |
+| `cpptlm-router-buffer-size-param` | 🟡 已立项 | **#471**（立项 #467 / 实施 #469） | `openspec/specs/router-buffer-size-param/`（已入冻结面） |
+| `cpptlm-router-credit-flit-leak-to-consumer` | 🟡 已立项 | **#457**（立项 #454 / 实施 #456） | `openspec/specs/cep-cohif-network-adapter/` |
+| `cpptlm-router-local-port-credit-exhaustion` | 🟡 已立项 | **#464**（立项 #459 / 实施 #463 / 验收 #465） | `openspec/specs/router-local-port-flow-control/` + `cep-cohif-network-adapter/` |
+| `cpptlm-spec-purpose-batch1` | 🟡 已立项 | **#442**（立项 #441） | **主 spec 直改（无 delta）** —— `skip_specs: true` ⇔ ⛔ **非** ⏸ 暂存归档语义 |
+
+**口径**：状态行统一写「归档 Entry + delta 合并落点 + 归档件路径」，并注明**归档件目录被 `.gitignore` 忽略** ⇒ 持久记录 = 台账 Entry + 验收报告（与 Entry #471 / #479 的既有说明一致）。
+
+**顺带订正**：`cpptlm-nictlm-credit-flit-filter.md` 正文「同源另一面（**已立项**）」→「（**已归档 #464**）」—— 该 change 已由 Entry #464 归档。
+
+**未纳入（同类陈旧，待用户裁决）**：`cpptlm-cep-mesh-e2e-carrier`（#448）· `cpptlm-module-param-read-declares` · `cpptlm-spec-purpose-batch3`（#444）· `cpptlm-spec-scenario-level-fix`（#438）。
+
+**验证**：6 份 front-matter 全部通过 `yaml.safe_load` 解析（防「状态行折行破坏 YAML」）· `git diff --stat` = **6 文件 7+/8-** · 零代码 / 零 spec / 零台账上游改动。

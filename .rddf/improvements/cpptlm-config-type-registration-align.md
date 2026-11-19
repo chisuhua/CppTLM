@@ -4,7 +4,7 @@ priority: P1
 phase: phase-10
 category: bugfix
 type: bug
-状态: 🟡 **待立项**(2026-11-18 起草)—— 由 change `cpptlm-module-param-effect-landing` 的 **R-5** 转派而来(该 change 的「配置里有键、实现零效果」盘点顺带暴露的**孪生兄弟**问题);metis gap 分析已执行(6 节:隐藏意图 / 歧义 / AI slop 风险 / 缺失的验收标准 / 边界情况 / 建议修改),P0 项已全部落进 proposal 与 design
+状态: ✅ **已完成并归档**（2026-11-18 起草 → 立项 (`cpptlm-module-param-effect-landing` 的 R-5 转派) → 实施 → 归档;per 台账 **Entry #487** 归档回执 —— ✅ **已完成归档语义** · delta 已合并进 `openspec/specs/config-type-registration-align/`;归档件 `openspec/changes/archive/2026-11-18-cpptlm-config-type-registration-align/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #487 为准）
 created: 2026-11-18
 ---
 

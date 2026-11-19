@@ -4,7 +4,7 @@ priority: P1
 phase: phase-10
 category: core-impl
 type: feature
-状态: 🟡 **已立项**(2026-11-17 · planner 起草并建 change 目录 · 台账 Entry **#467** · KPI **0/3 → 1/3** · 决策源 = 本 improvement 的「默认值裁决」(取 8,让声明反映实际))
+状态: ✅ **已完成并归档**（2026-11-17 立项 #467 → 实施 #469 → 归档 **#471**;✅ **已完成归档语义** · delta 已合并进 `openspec/specs/router-buffer-size-param/`（该 main spec 已入冻结面）;归档件 `openspec/changes/archive/2026-11-17-cpptlm-router-buffer-size-param/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #471 为准;决策源 = 本 improvement 的「默认值裁决」(取 8,让声明反映实际)）
 created: 2026-11-17
 ---
 

@@ -4,7 +4,7 @@ priority: P1
 phase: phase-10
 category: bugfix
 type: bug
-状态: 🔴 **未立项(backlog)** —— 由 architect 在 ADR-X.15「缺陷已修复」订正时登记(per `ADR-X.16` 的 `## 关联` 章「相邻独立缺陷」第 2 条 + `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md` 的 `## Status Update` 2026-11-17 追加段第 5 条);与已归档的 `cpptlm-router-credit-flit-leak-to-consumer` **同族但不同消费者**
+状态: ✅ **已完成并归档**（2026-11-17 立项 #466 → 实施 #468 → 归档 **#479**;✅ **已完成归档语义** · delta 已合并进 `openspec/specs/cep-nictlm-credit-filter/`;归档件 `openspec/changes/archive/2026-11-18-cpptlm-nictlm-credit-flit-filter/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #479 + 验收报告 `.rddf/reviews/cpptlm-nictlm-credit-flit-filter-verify.md` 为准;登记来源 = architect 在 ADR-X.15「缺陷已修复」订正时登记（per `ADR-X.16` 的 `## 关联` 章「相邻独立缺陷」第 2 条）;与 `cpptlm-router-credit-flit-leak-to-consumer`（已归档 #457）**同族但不同消费者**）
 created: 2026-11-17
 ---
 
@@ -112,5 +112,5 @@ bool NICTLM::handle_net_resp() {
 - `docs/adr/ADR-X.15-simmodule-exposed-port-data-path.md` 的 `## Status Update` **2026-11-17（追加）**段第 5 条（消费者侧同族缺口登记）
 - 已归档 change `openspec/changes/archive/2026-11-16-cpptlm-router-credit-flit-leak-to-consumer/`（**同根因**，`CohIfNICTLM` 侧的修复；可直接复用其修复手法与判据形态）
 - 已归档 improvement `.rddf/improvements/cpptlm-router-credit-flit-leak-to-consumer.md`
-- 同源另一面（已立项）：`cpptlm-router-local-port-credit-exhaustion`（`ADR-X.16` 方案 A · 台账 Entry #459）
+- 同源另一面（已归档 #464）：`cpptlm-router-local-port-credit-exhaustion`（`ADR-X.16` 方案 A · 台账 Entry #459）
 - 缺陷代码：`src/tlm/nic_tlm.cc:80-95`（`handle_net_resp`）· `:182`（`reassemble` 写 `pe_resp_out_`）

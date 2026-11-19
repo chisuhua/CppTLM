@@ -5,7 +5,7 @@ phase: phase-10
 主题: CppTLM 规范面 —— 非 CEP 主 spec 的 Purpose 占位修复（批 1：16 份）
 依赖:
   - ADR-CEP-00
-状态: 🟡 **已立项**(2026-11-15 · planner 起草 · metis 预审 7 MUST + 8 SHOULD + 5 NIT **全处置** · 台账 Entry #441 · KPI **0/3 → 1/3**)
+状态: ✅ **已完成并归档**（2026-11-15 立项 #441 → 实施 → 归档 **#442**（产物 commit `400aa618`）→ 独立验收;✅ **已完成归档语义 = 主 spec 直改（无 delta）** —— `.openspec.yaml` 的 `skip_specs: true` ⇔ **不做 delta 合并**，⛔ **不是** AGENTS.md 的 ⏸ 暂存归档语义（能力已落地）;归档件 `openspec/changes/archive/2026-11-15-cpptlm-spec-purpose-batch1/`，⚠️ 该目录被 `.gitignore` 忽略 ⇒ 持久记录以台账 Entry #442 + 其 `archive_semantics` 归因字段为准）
 created: 2026-11-15
 ---
 
