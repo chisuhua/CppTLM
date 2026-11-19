@@ -7,54 +7,56 @@
 
 ---
 
+<!-- BEGIN ADR INDEX (generated) -->
+
 ## 1. 全量统计
 
 | 分组 | 份数 | 状态分布 |
 |------|------|---------|
-| **CEP 系列**（Coherence Exploration Platform） | 24 | ✅ 已签发 20 · 🟡 起草中 3 · 🟢 Proposed 1 |
-| **DGPU 系列**（dGPU 应用架构） | 15 | ✅ 已签发 2 · 📋 提案 10 · 🟡 起草中 2 · 🟢 Proposed 1 |
-| **X 系列**（框架基础：事务 / 错误 / 复位 / 参数 / 端口） | 18 | 🟡 汇总（多阶段）1 · ✅ Accepted 3 · ✅ 已实施 8 · ✅ 已确认 2 · 📋 待确认 1 · 📋 提案 1 · 🟡 部分实施 1 · 🟢 Proposed 1 |
+| **CEP 系列**（Coherence Exploration Platform） | 24 | ✅ 已签发 20 · 🟢 Proposed 1 · 🟡 起草中 3 |
+| **DGPU 系列**（dGPU 应用架构） | 15 | ✅ 已签发 2 · 🟢 Proposed 1 · 🟡 起草中 2 · 📋 提案 10 |
+| **X 系列**（框架基础：事务 / 错误 / 复位 / 参数 / 端口） | 18 | ✅ 已实施 8 · ✅ 已确认 2 · ✅ Accepted 3 · 🟢 Proposed 1 · 🟡 部分实施 1 · 📋 提案 1 · 📋 待确认 1 · 🟡 汇总（多阶段） 1 |
 | **其他**（INC / LIB / METRIC / NV / TEMPLATE） | 6 | ✅ 已实施 3 · ✅ 已确认 3 |
 | **合计** | **63** | — |
 
 > **口径说明**：`ADR-CEP-NUMBER-MAP.md` 是**编号预分配表**（非决策），计入 CEP 份数；
 > `ADR-P1-TEMPLATE.md` 是**模板**（非决策），计入其他份数。
-> 较上层 `AGENTS.md` 的「59 份」为旧口径 —— 以本表 **63 份** 为准。
+> 本表由 `scripts/docs/gen_adr_index.py` **机械生成**（判据面 = 本文件 §7）；`AGENTS.md` 的「23 份 ADR（= 24 个 `ADR-CEP-*` 文件 − `NUMBER-MAP`）」是**不同口径**，两者均正确。
 
 ---
 
 ## 2. CEP 系列（Coherence Exploration Platform）
 
-> 治理宪章 = [`ADR-CEP-00-platform-charter-and-governance.md`](./ADR-CEP-00-platform-charter-and-governance.md)（跨仓归口 + 准入门槛）；
+> 治理宪章 = [`ADR-CEP-00-platform-charter-and-governance.md`](./ADR-CEP-00-platform-charter-and-governance.md)；
 > **真源章节锚点表** = [`ADR-CEP-00A-real-source-anchor-map.md`](./ADR-CEP-00A-real-source-anchor-map.md)
 > （**引用任何 CEP 章节前必查该表**，禁凭记忆写节号）。
 
 | ADR | 议题 | 状态 |
 |-----|------|------|
-| [ADR-CEP-00-platform-charter-and-governance.md](./ADR-CEP-00-platform-charter-and-governance.md) | ADR-CEP-00: Coherence Exploration Platform 跨仓治理与归口 | 🟡 起草中 |
-| [ADR-CEP-00A-real-source-anchor-map.md](./ADR-CEP-00A-real-source-anchor-map.md) | ADR-CEP-00A: Coherence Exploration Platform 真源章节映射表 | 🟡 起草中 |
-| [ADR-CEP-01-fabric-collective-plane.md](./ADR-CEP-01-fabric-collective-plane.md) | ADR-CEP-01: Fabric Collective Plane 作为旁路平面 | ✅ 已签发 |
-| [ADR-CEP-02-coherence-barrier-semantics-clarification.md](./ADR-CEP-02-coherence-barrier-semantics-clarification.md) | ADR-CEP-02: Coherence Interface 10 条抽象事务流清单 + barrier 流语义澄清 | ✅ 已签发 |
-| [ADR-CEP-03-fabric-collective-plane-internals.md](./ADR-CEP-03-fabric-collective-plane-internals.md) | ADR-CEP-03: Fabric Collective Plane 内部接口与跨平面契约 | ✅ 已签发 |
-| [ADR-CEP-04-sharer-tracker-abstraction-redesign.md](./ADR-CEP-04-sharer-tracker-abstraction-redesign.md) | ADR-CEP-04: Sharer Tracker 抽象重构(D-5 重构 + caps descriptor) | ✅ 已签发 |
-| [ADR-CEP-05-stub-cache-core-interface.md](./ADR-CEP-05-stub-cache-core-interface.md) | ADR-CEP-05: Stub Cache Core 接口(RN 侧投影 + 折叠映射表) | ✅ 已签发 |
-| [ADR-CEP-06-experiment-protocol.md](./ADR-CEP-06-experiment-protocol.md) | ADR-CEP-06: Coherence Exploration Platform 实验输出协议 | ✅ 已签发 |
-| [ADR-CEP-07-simulation-and-integration-semantics.md](./ADR-CEP-07-simulation-and-integration-semantics.md) | ADR-CEP-07: Coherence Exploration Platform 仿真语义与集成 Seam | ✅ 已签发 |
-| [ADR-CEP-07A-06bis-artifact-disposition.md](./ADR-CEP-07A-06bis-artifact-disposition.md) | ADR-CEP-07A: 06-bis 既有产物处置 | ✅ 已签发 |
-| [ADR-CEP-08-ordering-point-portability.md](./ADR-CEP-08-ordering-point-portability.md) | ADR-CEP-08: Ordering Point 可迁移性规则 | ✅ 已签发 |
-| [ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md](./ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md) | ADR-CEP-09: 多 VC 路由器仲裁与 VC 分配的死锁自由性论证 | ✅ 已签发 |
-| [ADR-CEP-11-protocol-version-locking.md](./ADR-CEP-11-protocol-version-locking.md) | ADR-CEP-11: 协议版本锁定与演进策略 | ✅ 已签发 |
-| [ADR-CEP-12-protocol-engine-capability-map.md](./ADR-CEP-12-protocol-engine-capability-map.md) | ADR-CEP-12: ProtocolEngine 插件能力映射表 Schema | ✅ 已签发 |
-| [ADR-CEP-13-coherence-domain-ownership.md](./ADR-CEP-13-coherence-domain-ownership.md) | ADR-CEP-13: 一致性域归属与跨域组合判据 | ✅ 已签发 |
-| [ADR-CEP-14-stub-contract-tests.md](./ADR-CEP-14-stub-contract-tests.md) | ADR-CEP-14: Stub 可验证性合同测试 | ✅ 已签发 |
-| [ADR-CEP-15-cachetlm-alignment.md](./ADR-CEP-15-cachetlm-alignment.md) | ADR-CEP-15: CppTLM CacheTLM 与 CEP Stub Cache 的对齐边界 | ✅ 已签发 |
-| [ADR-CEP-16-06-evolution-route-mapping.md](./ADR-CEP-16-06-evolution-route-mapping.md) | ADR-CEP-16: 06 §15.4 Coherence 演进路线 → CEP Stage 映射 | ✅ 已签发 |
-| [ADR-CEP-17-ruby-slicc-protocol-family.md](./ADR-CEP-17-ruby-slicc-protocol-family.md) | ADR-CEP-17: Ruby-SLICC 协议族接入与协议族抽象语义 | ✅ 已签发 |
-| [ADR-CEP-18-protocol-generation-scope.md](./ADR-CEP-18-protocol-generation-scope.md) | ADR-CEP-18: 协议生成路线范围(SSP 描述 → 插件生成 vs 纯手写插件) | ✅ 已签发 |
-| [ADR-CEP-19-cohif-carrier-and-protocol-bridge.md](./ADR-CEP-19-cohif-carrier-and-protocol-bridge.md) | ADR-CEP-19: CohIf 载体(业务 Bundle + ChStream 端口面 + ProtocolBridge 特化) | ✅ 已签发 |
-| [ADR-CEP-20-topology-ic3-evidence-strength.md](./ADR-CEP-20-topology-ic3-evidence-strength.md) | ADR-CEP-20: 拓扑级 IC3 证据的强度边界与能力阶梯 | ✅ 已签发 |
-| [ADR-CEP-21-sharer-bitmap-expansion.md](./ADR-CEP-21-sharer-bitmap-expansion.md) | ADR-CEP-21: Sharer 位宽 —— responder bit 映射的**扩容机制**与触发判据 | 🟢 Proposed |
-| [ADR-CEP-NUMBER-MAP.md](./ADR-CEP-NUMBER-MAP.md) | ADR-CEP-NUMBER-MAP: Coherence Exploration Platform 编号预分配 | 🟡 起草中 |
+| [ADR-CEP-00-platform-charter-and-governance.md](./ADR-CEP-00-platform-charter-and-governance.md) | Coherence Exploration Platform 跨仓治理与归口 | 🟡 起草中 |
+| [ADR-CEP-00A-real-source-anchor-map.md](./ADR-CEP-00A-real-source-anchor-map.md) | Coherence Exploration Platform 真源章节映射表 | 🟡 起草中 |
+| [ADR-CEP-01-fabric-collective-plane.md](./ADR-CEP-01-fabric-collective-plane.md) | Fabric Collective Plane 作为旁路平面 | ✅ 已签发 |
+| [ADR-CEP-02-coherence-barrier-semantics-clarification.md](./ADR-CEP-02-coherence-barrier-semantics-clarification.md) | Coherence Interface 10 条抽象事务流清单 + barrier 流语义澄清 | ✅ 已签发 |
+| [ADR-CEP-03-fabric-collective-plane-internals.md](./ADR-CEP-03-fabric-collective-plane-internals.md) | Fabric Collective Plane 内部接口与跨平面契约 | ✅ 已签发 |
+| [ADR-CEP-04-sharer-tracker-abstraction-redesign.md](./ADR-CEP-04-sharer-tracker-abstraction-redesign.md) | Sharer Tracker 抽象重构(D-5 重构 + caps descriptor) | ✅ 已签发 |
+| [ADR-CEP-05-stub-cache-core-interface.md](./ADR-CEP-05-stub-cache-core-interface.md) | Stub Cache Core 接口(RN 侧投影 + 折叠映射表) | ✅ 已签发 |
+| [ADR-CEP-06-experiment-protocol.md](./ADR-CEP-06-experiment-protocol.md) | Coherence Exploration Platform 实验输出协议 | ✅ 已签发 |
+| [ADR-CEP-07-simulation-and-integration-semantics.md](./ADR-CEP-07-simulation-and-integration-semantics.md) | Coherence Exploration Platform 仿真语义与集成 Seam | ✅ 已签发 |
+| [ADR-CEP-07A-06bis-artifact-disposition.md](./ADR-CEP-07A-06bis-artifact-disposition.md) | 06-bis 既有产物处置 | ✅ 已签发 |
+| [ADR-CEP-08-ordering-point-portability.md](./ADR-CEP-08-ordering-point-portability.md) | Ordering Point 可迁移性规则 | ✅ 已签发 |
+| [ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md](./ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md) | 多 VC 路由器仲裁与 VC 分配的死锁自由性论证 | ✅ 已签发 |
+| [ADR-CEP-11-protocol-version-locking.md](./ADR-CEP-11-protocol-version-locking.md) | 协议版本锁定与演进策略 | ✅ 已签发 |
+| [ADR-CEP-12-protocol-engine-capability-map.md](./ADR-CEP-12-protocol-engine-capability-map.md) | ProtocolEngine 插件能力映射表 Schema | ✅ 已签发 |
+| [ADR-CEP-13-coherence-domain-ownership.md](./ADR-CEP-13-coherence-domain-ownership.md) | 一致性域归属与跨域组合判据 | ✅ 已签发 |
+| [ADR-CEP-14-stub-contract-tests.md](./ADR-CEP-14-stub-contract-tests.md) | Stub 可验证性合同测试 | ✅ 已签发 |
+| [ADR-CEP-15-cachetlm-alignment.md](./ADR-CEP-15-cachetlm-alignment.md) | CppTLM CacheTLM 与 CEP Stub Cache 的对齐边界 | ✅ 已签发 |
+| [ADR-CEP-16-06-evolution-route-mapping.md](./ADR-CEP-16-06-evolution-route-mapping.md) | 06 §15.4 Coherence 演进路线 → CEP Stage 映射 | ✅ 已签发 |
+| [ADR-CEP-17-ruby-slicc-protocol-family.md](./ADR-CEP-17-ruby-slicc-protocol-family.md) | Ruby-SLICC 协议族接入与协议族抽象语义 | ✅ 已签发 |
+| [ADR-CEP-18-protocol-generation-scope.md](./ADR-CEP-18-protocol-generation-scope.md) | 协议生成路线范围(SSP 描述 → 插件生成 vs 纯手写插件) | ✅ 已签发 |
+| [ADR-CEP-19-cohif-carrier-and-protocol-bridge.md](./ADR-CEP-19-cohif-carrier-and-protocol-bridge.md) | CohIf 载体(业务 Bundle + ChStream 端口面 + ProtocolBridge 特化) | ✅ 已签发 |
+| [ADR-CEP-20-topology-ic3-evidence-strength.md](./ADR-CEP-20-topology-ic3-evidence-strength.md) | 拓扑级 IC3 证据的强度边界与能力阶梯 | ✅ 已签发 |
+| [ADR-CEP-21-sharer-bitmap-expansion.md](./ADR-CEP-21-sharer-bitmap-expansion.md) | Sharer 位宽 —— responder bit 映射的**扩容机制**与触发判据 | 🟢 Proposed |
+| [ADR-CEP-NUMBER-MAP.md](./ADR-CEP-NUMBER-MAP.md) | Coherence Exploration Platform 编号预分配 | 🟡 起草中 |
 
 ---
 
@@ -64,21 +66,21 @@
 
 | ADR | 议题 | 状态 |
 |-----|------|------|
-| [ADR-DGPU-01-callback-worker-replaces-detached-threads.md](./ADR-DGPU-01-callback-worker-replaces-detached-threads.md) | ADR-DGPU-01: CallbackWorker 替代 detached 线程 | 📋 提案 |
-| [ADR-DGPU-02-lifecycle-protocol-uniform-destruction.md](./ADR-DGPU-02-lifecycle-protocol-uniform-destruction.md) | ADR-DGPU-02: LifecycleProtocol 状态机 + 统一析构顺序 + callback nullification 协议 | 📋 提案 |
-| [ADR-DGPU-03-data-driven-pcie-path-dispatch-registry.md](./ADR-DGPU-03-data-driven-pcie-path-dispatch-registry.md) | ADR-DGPU-03: DispatchRegistry data-driven 替代 4 态 switch | 📋 提案 |
-| [ADR-DGPU-04-namespace-unification-ep-cache-test-isolation.md](./ADR-DGPU-04-namespace-unification-ep-cache-test-isolation.md) | ADR-DGPU-04: DGpuSoc 命名空间统一 + EpCache lazy cache + 测试可访问性隔离 | 📋 提案 |
-| [ADR-DGPU-05-vram-storage-ownership.md](./ADR-DGPU-05-vram-storage-ownership.md) | ADR-DGPU-05: VRAM backing 单一所有权归 DGpuBoard (vram_storage_) | 📋 提案 |
-| [ADR-DGPU-06-axi-mem-bundle-boundary.md](./ADR-DGPU-06-axi-mem-bundle-boundary.md) | ADR-DGPU-06: AxiMemBundle vs PcieTlpBundle 边界严格分离 | 📋 提案 |
-| [ADR-DGPU-07-minimal-soc-evolution-seam.md](./ADR-DGPU-07-minimal-soc-evolution-seam.md) | ADR-DGPU-07: Minimal SoC → 完整 GPU 演进 Seam 设计 (D3-D5 接口零变更) | 📋 提案 |
-| [ADR-DGPU-08-abi-freeze-policy.md](./ADR-DGPU-08-abi-freeze-policy.md) | ADR-DGPU-08: ABI 冻结策略 (23 ABI 签名级 + 二进制级 0 diff + 0 新增约束) | 📋 提案 |
-| [ADR-DGPU-09-driver-visible-minimal-soc-scope.md](./ADR-DGPU-09-driver-visible-minimal-soc-scope.md) | ADR-DGPU-09: Driver-Visible Minimal SoC 范围定义 (In Scope / Out of Scope) | 📋 提案 |
-| [ADR-DGPU-10-backing-naming-convention.md](./ADR-DGPU-10-backing-naming-convention.md) | ADR-DGPU-10: Backing Storage 命名约定 (owner / injected 两级) | 📋 提案 |
-| [ADR-DGPU-11-timing-mode-soc-scope.md](./ADR-DGPU-11-timing-mode-soc-scope.md) | ADR-DGPU-11: Timing-Mode (AT, cycle-approximate) SoC 与 functional-mode minimal_v1 并列共存 | ✅ 已签发 |
-| [ADR-DGPU-12-soc-internal-tlm-wiring-principle.md](./ADR-DGPU-12-soc-internal-tlm-wiring-principle.md) | ADR-DGPU-12: SoC 内部 wiring 原则 (SoC 内部 = TLM, SoC ↔ Board = 方法注入) | ✅ 已签发 |
-| [ADR-DGPU-13-pnn-protocol-neutral-network.md](./ADR-DGPU-13-pnn-protocol-neutral-network.md) | ADR-DGPU-13: PNN 协议中立通信网络范围定义 | 🟡 起草中 |
-| [ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md](./ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md) | ADR-DGPU-14: StreamAdapter ↔ ProtocolBridge Seam 决策 | 🟡 起草中 |
-| [ADR-DGPU-15-pcie-endpoint-ip-cpptlm-archforge-boundary.md](./ADR-DGPU-15-pcie-endpoint-ip-cpptlm-archforge-boundary.md) | ADR-DGPU-15: PcieEndpointIP 的 CppTLM / ArchForge 职责边界 —— 键面契约升格 + 已消费/零消费二分 | 🟢 Proposed |
+| [ADR-DGPU-01-callback-worker-replaces-detached-threads.md](./ADR-DGPU-01-callback-worker-replaces-detached-threads.md) | CallbackWorker 替代 detached 线程 | 📋 提案 |
+| [ADR-DGPU-02-lifecycle-protocol-uniform-destruction.md](./ADR-DGPU-02-lifecycle-protocol-uniform-destruction.md) | LifecycleProtocol 状态机 + 统一析构顺序 + callback nullification 协议 | 📋 提案 |
+| [ADR-DGPU-03-data-driven-pcie-path-dispatch-registry.md](./ADR-DGPU-03-data-driven-pcie-path-dispatch-registry.md) | DispatchRegistry data-driven 替代 4 态 switch | 📋 提案 |
+| [ADR-DGPU-04-namespace-unification-ep-cache-test-isolation.md](./ADR-DGPU-04-namespace-unification-ep-cache-test-isolation.md) | DGpuSoc 命名空间统一 + EpCache lazy cache + 测试可访问性隔离 | 📋 提案 |
+| [ADR-DGPU-05-vram-storage-ownership.md](./ADR-DGPU-05-vram-storage-ownership.md) | VRAM backing 单一所有权归 DGpuBoard (vram_storage_) | 📋 提案 |
+| [ADR-DGPU-06-axi-mem-bundle-boundary.md](./ADR-DGPU-06-axi-mem-bundle-boundary.md) | AxiMemBundle vs PcieTlpBundle 边界严格分离 | 📋 提案 |
+| [ADR-DGPU-07-minimal-soc-evolution-seam.md](./ADR-DGPU-07-minimal-soc-evolution-seam.md) | Minimal SoC → 完整 GPU 演进 Seam 设计 (D3-D5 接口零变更) | 📋 提案 |
+| [ADR-DGPU-08-abi-freeze-policy.md](./ADR-DGPU-08-abi-freeze-policy.md) | ABI 冻结策略 (23 ABI 签名级 + 二进制级 0 diff + 0 新增约束) | 📋 提案 |
+| [ADR-DGPU-09-driver-visible-minimal-soc-scope.md](./ADR-DGPU-09-driver-visible-minimal-soc-scope.md) | Driver-Visible Minimal SoC 范围定义 (In Scope / Out of Scope) | 📋 提案 |
+| [ADR-DGPU-10-backing-naming-convention.md](./ADR-DGPU-10-backing-naming-convention.md) | Backing Storage 命名约定 (owner / injected 两级) | 📋 提案 |
+| [ADR-DGPU-11-timing-mode-soc-scope.md](./ADR-DGPU-11-timing-mode-soc-scope.md) | Timing-Mode (AT, cycle-approximate) SoC 与 functional-mode minimal_v1 并列共存 | ✅ 已签发 |
+| [ADR-DGPU-12-soc-internal-tlm-wiring-principle.md](./ADR-DGPU-12-soc-internal-tlm-wiring-principle.md) | SoC 内部 wiring 原则 (SoC 内部 = TLM, SoC ↔ Board = 方法注入) | ✅ 已签发 |
+| [ADR-DGPU-13-pnn-protocol-neutral-network.md](./ADR-DGPU-13-pnn-protocol-neutral-network.md) | PNN 协议中立通信网络范围定义 | 🟡 起草中 |
+| [ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md](./ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md) | StreamAdapter ↔ ProtocolBridge Seam 决策 | 🟡 起草中 |
+| [ADR-DGPU-15-pcie-endpoint-ip-cpptlm-archforge-boundary.md](./ADR-DGPU-15-pcie-endpoint-ip-cpptlm-archforge-boundary.md) | PcieEndpointIP 的 CppTLM / ArchForge 职责边界 —— 键面契约升格 + 已消费/零消费二分 | 🟢 Proposed |
 
 ---
 
@@ -111,12 +113,14 @@
 
 | ADR | 议题 | 状态 |
 |-----|------|------|
-| [ADR-INC-01-incorporate-parent-late-binding.md](./ADR-INC-01-incorporate-parent-late-binding.md) | ADR-INC-01: ApuSoC::incorporate_parent 真实 Late-Binding 语义 | ✅ 已实施 |
-| [ADR-LIB-01-cpptlm-library-python-higher-cluster-factories.md](./ADR-LIB-01-cpptlm-library-python-higher-cluster-factories.md) | ADR-LIB-01: cpptlm.library Python 高级复合 Cluster 工厂 API | ✅ 已实施 |
-| [ADR-METRIC-01-cputlm-cache-memory-telemetry.md](./ADR-METRIC-01-cputlm-cache-memory-telemetry.md) | ADR-METRIC-01: CPUTLM/CacheTLM/MemoryTLM Telemetry 统计收集框架 | ✅ 已实施 |
-| [ADR-NV-01-gpu-soc-architecture-target.md](./ADR-NV-01-gpu-soc-architecture-target.md) | ADR-NV-01: gpu_soc 独立 SoC 仿真目标 | ✅ 已确认 |
-| [ADR-NV-02-phase8b-d1-strategy.md](./ADR-NV-02-phase8b-d1-strategy.md) | ADR-NV-02: Phase 8.B D1-Lite 渐进策略——基于 PTX-EMU 真实接口 | ✅ 已确认 |
+| [ADR-INC-01-incorporate-parent-late-binding.md](./ADR-INC-01-incorporate-parent-late-binding.md) | ApuSoC::incorporate_parent 真实 Late-Binding 语义 | ✅ 已实施 |
+| [ADR-LIB-01-cpptlm-library-python-higher-cluster-factories.md](./ADR-LIB-01-cpptlm-library-python-higher-cluster-factories.md) | cpptlm.library Python 高级复合 Cluster 工厂 API | ✅ 已实施 |
+| [ADR-METRIC-01-cputlm-cache-memory-telemetry.md](./ADR-METRIC-01-cputlm-cache-memory-telemetry.md) | CPUTLM/CacheTLM/MemoryTLM Telemetry 统计收集框架 | ✅ 已实施 |
+| [ADR-NV-01-gpu-soc-architecture-target.md](./ADR-NV-01-gpu-soc-architecture-target.md) | gpu_soc 独立 SoC 仿真目标 | ✅ 已确认 |
+| [ADR-NV-02-phase8b-d1-strategy.md](./ADR-NV-02-phase8b-d1-strategy.md) | Phase 8.B D1-Lite 渐进策略——基于 PTX-EMU 真实接口 | ✅ 已确认 |
 | [ADR-P1-TEMPLATE.md](./ADR-P1-TEMPLATE.md) | 混合仿真架构 P1 级决策 | ✅ 已确认 |
+
+<!-- END ADR INDEX (generated) -->
 
 ---
 
@@ -149,9 +153,12 @@
 
 ⛔ **两者皆无 ⇒ fail loud**（rc ≠ 0，指名文件 + 原行）；⛔ **不得静默跳过**（跳过 ⇒ 索引少行 ⇒ 恰是判据①要抓的漂移）。
 
-### 7.2 词表（封闭集，9 项）
+### 7.2 词表（封闭集，9 项 + 1 同义词）
 
-`已签发` · `已实施` · `已确认` · `Accepted` · `Proposed` · `起草中` · `部分实施` · `提案` · `待确认`
+`已签发` · `已实施` · `已确认` · `Accepted` · `Proposed` · `起草中` · `部分实施` · `提案`（≡ **`提议`**）· `待确认`
+
+> ⚠️ **完备性依据（2026-11-19 全量实测）**：对 63 份 ADR 的状态源行逐个扫描 ⇒ **61 份直接命中** + **1 份同义词命中**（`ADR-DGPU-10` 的「📋 **提议**」≡ `提案`）+ **1 份豁免**（`ADR-X-SUMMARY`）。⇒ 词表对当前语料**闭合且满射**，无未覆盖状态。
+> 同义词入表**不是新增状态类** —— `提议` 与 `提案` 共用同一规范标签 `📋 提案`（⛔ 不引入第二个判据）。
 
 - **取词规则**：在源行内扫描词表命中项 ⇒ 取**最后一个**命中（时间顺序语义：后写者为准）。
   ⇒ 覆盖 `ADR-CEP-20`（`🟡 **Proposed**✅ **已签发**(...)` ⇒ `已签发`）。
