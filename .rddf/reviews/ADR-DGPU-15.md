@@ -71,4 +71,4 @@
 | critic 第 2 轮 BLOCKER 的**确认性复审**（第 3 轮） | critic | ⚠️ **预算用尽** ⇒ 需用户批准方可追加;否则维持 `Draft` 并由 planner / verifier 在实施 change 立项时复核（先例 `ADR-X.17`） |
 | `resizable_bars` 处置返工（reject → `ignore_param` + 表 B「待修」）+ 台账 B-21 状态 + 验收报告 F1 描述 | **builder**（C2 尾项） | **待返工** |
 | `param_admission.hh` 注释计数（2 → 3） | **builder**（C2 尾项） | **待返工** |
-| ArchForge 键面契约（`docs/microarchitecture/pcie-endpoint.md`）+ 19 号文档 §9.3 新旧分列 + `ADR-SOC-11` 状态推进 + 跨仓对账闸 | **跨仓**（backlog `cpptlm-ep-key-surface-reconciliation`） | **待 planner 立项**（本 ADR 不创建 OpenSpec change） |
+| ArchForge 键面契约（`ArchForge:docs/microarchitecture/pcie-endpoint.md`）+ 19 号文档 §9.3 新旧分列 + `ADR-SOC-11` 状态推进 + 跨仓对账闸 | **跨仓**（backlog `cpptlm-ep-key-surface-reconciliation`） | **待 planner 立项**（本 ADR 不创建 OpenSpec change） |

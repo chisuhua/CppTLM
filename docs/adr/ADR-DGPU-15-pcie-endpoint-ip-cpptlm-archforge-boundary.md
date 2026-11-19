@@ -7,7 +7,7 @@
 > **关联 change**: [cpptlm-module-param-migrate-batch2](../../openspec/changes/cpptlm-module-param-migrate-batch2/)（本 ADR 的**直接影响面** = 其 AC-01 准入表全量化 / AC-08 板级直读键三态）
 > **backlog**: `cpptlm-ep-key-surface-reconciliation`（ArchForge 侧 EP 键面契约 + 跨仓对账闸，**待 planner 立项**）
 > **AC 映射**: V-1 ~ V-4 对应 C2 的 AC-01 / AC-08 / AC-10;V-5 / V-6 属 backlog change（AC 编号待 planner 补）
-> **审稿报告**: [../../.rddf/reviews/ADR-DGPU-15.md](../../.rddf/reviews/ADR-DGPU-15.md)（oracle 2 轮 + critic 2 轮;critic 预算用尽 ⇒ 状态保持 `Draft`，未签发）
+> **审稿报告**: [../../.rddf/reviews/ADR-DGPU-15.md](../../.rddf/reviews/ADR-DGPU-15.md)
 
 ---
 
@@ -68,18 +68,20 @@ ArchForge README 已确立关系：「本仓是 CppTLM 的**设计伴侣仓**，
 | 态 | 键的形态 | 处置 | 出处 |
 |:--:|---|---|---|
 | ① | 有消费方，且消费方**在本模块** | `load_param` 声明 | `ADR-X.17` D-1 |
-| ② | 有消费方，但消费方**不在本模块**（板级直读 / 非标量解析） | `ignore_param` 登记（登记后**不**失败;登记 ≠ 豁免） | `ADR-X.17` D-3b 同族（板级路径条款）+ C2 design D-6 |
+| ② | 有消费方，但消费方**不在本模块**（板级直读 / 非标量解析） | `ignore_param` 登记（登记后**不**失败;登记 ≠ 豁免） | `ADR-X.17` **D-3 板级路径条款**（`:134`）+ **D-2 消费方扩展**（`:112-114`）/ **F-15**（`:50`）;C2 design D-6 |
 | ③ | **当前**无消费方，但**对应已定义的实现契约 / 规格语义**（将来可能有消费方） | `ignore_param` 登记 + **基线台账表 B 登记「待修」**（写了**不**失败） | `ADR-X.17` **D-3b**（明文：「配置里有键、实现零效果」的**已知缺陷** SHALL 以 `ignore_param` 显式登记并落表 B） |
-| ④ | **永不可能**有消费方（规格上**不属于**本类型 / 冻结面使实现不可能） | **态② 显式拒绝**（`reject_unsupported_param` ⇒ 写了即装配失败并报出键名） | **C2 change design D-2**（change 级）+ `include/core/sim_object.hh` 的 `reject_unsupported_param` + 台账表 B 状态列 |
+| ④ | **永不可能**有消费方（规格上**不属于**本类型 / 冻结面使实现不可能） | **显式拒绝**（`reject_unsupported_param` ⇒ 写了即装配失败并报出键名）—— 本 ADR 称「**态④**」 | `include/core/sim_object.hh` 的 `reject_unsupported_param`（实现）+ **C2 `proposal.md` AC-06 例外段 2** + **C2 `tasks.md` T1.7 与 F1** + **台账表 B**（`docs/implementation/module-param-baseline.md` 的 B-21 / B-22 行） |
 
 ⇒ **唯一判据 = 一条二分**：「该键是否**永不可能**有消费方」⇒ 是 ⇒ ④;否 ⇒ ②③（登记 + 落表 B）。
-⚠️ `ADR-X.17` **全文无「态② / 显式拒绝」概念**（该措辞出自 **C2 change design D-2** 与台账表 B）⇒ 本 ADR 不向 `ADR-X.17` 挂不存在的锚点。
+
+⚠️ **术语消歧（同名不同义，实施方勿混用）**：**C2 `design.md` D-2 的「态②」= 「已消费但不经 `load_param`」⇒ `ignore_param` 登记**（`design.md:30,31,35,45,47,49`）;而**台账表 B 的「态②」= 「显式拒绝」**。两者**同号不同义** ⇒ 本 ADR 一律用「**态④**」指「显式拒绝」，用「态②/③」指「登记 + 落表 B」两态。
+⚠️ `ADR-X.17` **全文无「态② / 显式拒绝」概念**（该措辞出自 C2 `proposal.md` / `tasks.md` 与台账表 B）⇒ 本 ADR 不向 `ADR-X.17` 挂不存在的锚点。
 ⚠️ **本裁定改变了 C2 的一处实施**：`resizable_bars` 属 **③**（规格侧有该语义：19 号文档把 `resizable_bars_` 列为 EP 值成员，且运行期 API `enable_resizable_bar()` 已存在;缺的只是 JSON 绑定）⇒ 处置应为 **`ignore_param` 登记 + 表 B「待修」**，⛔ **不是** C2 落地的态②拒绝 ⇒ 登记为**待 builder 返工项**（见 §6）;配置侧已删除该块**可保留**（键可被登记而配置不写它）。
 ⚠️ 反之，`num_msix_vectors` / `msix_num_vectors`（顶层）属 **④**：它们是**旧类**的合法键，规格上**不属于新类**（新类的 MSI-X vector 数由 `sr_iov.vf_msix_vectors` / `transaction_layer.msix_num_vectors` 承载，且 PF 表 resize 入口 `sync_msix_cap_table_size` 是冻结头里的 no-op）⇒ 态②拒绝成立。
 
 ### 2.3 D3 —— 「键面契约」升格为 ArchForge 的规格对象（**P-1/P-2/P-3 的治本动作**）
 
-1. ArchForge 新增 `docs/microarchitecture/pcie-endpoint.md`：**EP 的键面契约** —— 每个顶层键 → 消费点（子组件 / 成员）→ 语义 → 归属（框架验证 / 硬件建模 / 已出栈）→ **新旧两类迁移关系**（旧键 → 新键，或「出栈」）。
+1. ArchForge 新增 `ArchForge:docs/microarchitecture/pcie-endpoint.md`：**EP 的键面契约** —— 每个顶层键 → 消费点（子组件 / 成员）→ 语义 → 归属（框架验证 / 硬件建模 / 已出栈）→ **新旧两类迁移关系**（旧键 → 新键，或「出栈」）。
 2. ArchForge 19 号文档 §9.3：**旧类**（`PcieEndpointTLM`）与**新类**（`PcieEndpointIP`）的 JSON 键面**分列**（当前只有旧类一列 ⇒ P-1）。
 3. `ADR-SOC-11`（Proposed）按 D2 的二分复核后推进状态；其「17 端口 / SR-IOV / 23 ABI 边界」的结论**不变**。
 4. ⚠️ 契约的**键面形态**（顶层平铺 vs `experimental.*` 子命名空间）由 ArchForge 侧在契约中裁定（见 §3 方案 E）。
@@ -99,7 +101,7 @@ ArchForge README 已确立关系：「本仓是 CppTLM 的**设计伴侣仓**，
 
 ### 2.6 D6 —— 对账闸（**P-4 的治本动作**）：键名集合级漂移必红
 
-以 ArchForge `docs/microarchitecture/pcie-endpoint.md`（**规格侧唯一真源**，路径**写死**）为基准。
+以 ArchForge `ArchForge:docs/microarchitecture/pcie-endpoint.md`（**规格侧唯一真源**，路径**写死**）为基准。
 
 **三个集合（唯一取数口径）**：
 
@@ -175,7 +177,7 @@ ArchForge README 已确立关系：「本仓是 CppTLM 的**设计伴侣仓**，
 - [ ] **V-1**（D2/C-1 · **机器可判**）**顶层键集合**满足：`{配置与测试内联副本中出现的顶层键}` ⊆ `{实现消费点登记 ∪ 显式拒绝名单}`。
       **嵌套键表示法**：一级嵌套块的键按 `block.key` 记（如 `transaction_layer.msix_num_vectors`），不展开更深层。
       **比较对象**：CppTLM 侧 = `configs/**/*.json` + `examples/*.json` + `test/**/*.cc` 内联副本中 `PcieEndpointIP` 条目的**顶层键**集合。
-- [ ] **V-2**（D3 · **机器可判段**）ArchForge `docs/microarchitecture/pcie-endpoint.md` 存在，且含键面契约表（表头含「键 / 消费点 / 语义 / 归属 / 新旧迁移」五列）。
+- [ ] **V-2**（D3 · **机器可判段**）ArchForge `ArchForge:docs/microarchitecture/pcie-endpoint.md` 存在，且含键面契约表（表头含「键 / 消费点 / 语义 / 归属 / 新旧迁移」五列）。
       **人工登记段**：契约表内容经 ArchForge 侧评审 —— 登记**评审人 + 日期**。
 - [ ] **V-3**（D3 · **机器可判段**）19 号文档 §9.3 出现**旧类 / 新类两列**的 JSON 键面分列。
       **人工登记段**：`ADR-SOC-11` 状态推进的结论与理由（登记**评审人 + 日期**）。
@@ -187,7 +189,10 @@ ArchForge README 已确立关系：「本仓是 CppTLM 的**设计伴侣仓**，
       ⑤ 契约侧**加**键 K 而本仓配置与登记均不含 K ⇒ `S_contract \ (S_cfg ∪ S_impl)` ≠ ∅ ⇒ **黄**（方向②: 待实现 / 待出栈）;
       ⑥ 方向①与方向③对同一键共燃 ⇒ **红**（红覆盖黄，优先规则见 D6）。
 - [ ] **V-5**（D5 · **机器可判**）C2 的 AC-01 判据：准入表条目集合 == design D-2 期望集（**当前 20 == 20**，由 `[batch2][admission]` 承载）。
-- [ ] **V-6**（D2/C-1 · **机器可判**）3 个零消费键的态②拒绝 + 4 份配置与 12 个测试内联副本的清理**不被回滚**（`cpptlm_tests` 与 `ctest` 全绿;`[batch2][pcie-ep]` 3 case 绿）。
+- [ ] **V-6**（D2/C-1 · **机器可判**）键面处置**与四态表一致**：
+      ① 顶层 `num_msix_vectors` / `msix_num_vectors` = **态④ 显式拒绝**，4 份配置与 12 个测试内联副本的清理**不被回滚**;
+      ② `resizable_bars` = **态③ 登记**（`ignore_param` + 台账表 B「待修」）⇒ `[batch2][pcie-ep]` 中该键的 case 由「拒绝」**改写为「登记 + 不失败」**;
+      ③ 全部由 `cpptlm_tests` 与 `ctest` 全绿承载。
 - [ ] **V-7**（D5 · **机器可判**）若 D4 的收窄 ADR 将来落地，其**键级 diff**与本 ADR 的键面契约一致（逐键：保留 / 出栈 / 语义变更）—— **未发生收窄时本条不适用**（记 N/A）。
 
 ---
@@ -196,7 +201,7 @@ ArchForge README 已确立关系：「本仓是 CppTLM 的**设计伴侣仓**，
 
 | 后续动作 | 归属 | 状态 |
 |---|---|---|
-| ArchForge `docs/microarchitecture/pcie-endpoint.md`（键面契约） | **ArchForge**（跨仓） | backlog `cpptlm-ep-key-surface-reconciliation`（**待 planner 立项**） |
+| ArchForge `ArchForge:docs/microarchitecture/pcie-endpoint.md`（键面契约） | **ArchForge**（跨仓） | backlog `cpptlm-ep-key-surface-reconciliation`（**待 planner 立项**） |
 | 19 号文档 §9.3 新旧键面分列 + `ADR-SOC-11` 状态推进 | **ArchForge**（跨仓） | 同上 |
 | 跨仓键面对账闸 + CTest 注册（含六条变异 / 四方向） | **CppTLM** | 同上（本 ADR 的 D6 预留了判据形态） |
 | 键面契约的**形态裁定**（顶层平铺 vs 子命名空间） | **ArchForge**（D3.4 / 方案 E） | 同上 |

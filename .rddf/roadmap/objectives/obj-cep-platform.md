@@ -26664,7 +26664,7 @@ AC-06 原文要求 `git diff <base> -- configs/` **为空**。实测发现 3 份
 
 - **D1** 跨仓关系**不变**（规格在 ArchForge / 实现在 CppTLM）—— 19 号文档 §1 的「完整 CppTLM 模型」即规格意图 ⇒ **「移入 ArchForge」的唯一有效含义 = 把键面契约升格为 ArchForge 的规格对象**。
 - **D2** 键面**二分**（v1 的 L1/L2/L3 语义分层**撤销**）：**C-1 消费面**（CppTLM 侧机械可判:有消费点⇒登记 / 无消费点⇒显式拒绝）+ **C-2 语义面**（ArchForge 契约侧人工评审）⇒ **CppTLM 不再维护语义分类器**（消除自反例与分类器腐化）。
-- **D3** ArchForge 侧新增 `docs/microarchitecture/pcie-endpoint.md`（键面契约）+ 19 号文档 §9.3 新旧键面分列 + `ADR-SOC-11` 状态推进。
+- **D3** ArchForge 侧新增 `ArchForge:docs/microarchitecture/pcie-endpoint.md`（键面契约）+ 19 号文档 §9.3 新旧键面分列 + `ADR-SOC-11` 状态推进。
 - **D4** 实现面**不收窄**（Phase 1-8 已交付 + 23 ABI 冻结 + CEP 冻结面 + 现行配置实测使用 6 个硬件建模键）。
 - **D5** C2 的参数声明面期望集**维持**（不回退路径 A）;未来若收窄 ⇒ 该类型退出参数声明面 + 未来 ADR 须含**键级 diff**。
 - **D6** 跨仓对账闸（三集合口径 `S_cfg`/`S_contract`/`S_impl` + 四方向，红覆盖黄 + 契约 hash 登记）。
@@ -26694,3 +26694,49 @@ AC-06 原文要求 `git diff <base> -- configs/` **为空**。实测发现 3 份
 | ArchForge 键面契约 + §9.3 分列 + `ADR-SOC-11` 推进 + 对账闸 | **跨仓**（backlog `cpptlm-ep-key-surface-reconciliation`） | **待 planner 立项** |
 
 **关联**：验收报告 `.rddf/reviews/cpptlm-module-param-migrate-batch2-verify.md` · 审稿报告 `.rddf/reviews/ADR-DGPU-15.md` · Entry #496（C2 返工）· `ADR-X.17` D-3b · ArchForge `ADR-SOC-11`
+
+### Entry #498 — 2026-11-19 [builder](**C2 尾项返工** —— `resizable_bars` 改态③ 登记 + ADR-DGPU-15 审稿闭合 + 跨仓待建产物豁免)
+
+**范围**：`ADR-DGPU-15` 审稿（critic 第 3 轮）暴露的**实施缺口** + critic 第 3 轮 2 项 BLOCKER 的文档侧闭合。
+
+### `resizable_bars` 的处置返工（态④ 拒绝 ⇒ 态③ 登记 + 待修）
+
+**根因**：`ADR-DGPU-15` §2.2 四态表把该键判为 **③**（**当前**零消费，但**对应已定义的实现契约** —— ArchForge 19 号文档把 `resizable_bars_` 列为 EP 值成员 + 运行期 API `enable_resizable_bar()` / `resizable_bar()` 已存在 ⇒ 缺的只是 JSON 绑定）⇒ 按已签批 `ADR-X.17` **D-3b**（零效果键 SHALL `ignore_param` 登记 + 落台账表 B，**不得**使装配失败）⇒ C2 落地的「态②显式拒绝」**与 D-3b 冲突**。
+
+⇒ 返工：`src/tlm/pcie/pcie_endpoint_ip.cc` 的 `reject_unsupported_param("resizable_bars", …)` **删除** ⇒ 改 `ignore_param("resizable_bars")` 登记（并加入 `warn_unconsumed` 的已知名单 ⇒ 不再报 `no consumer`）;判据 `[batch2][pcie-ep]` 的该 case 由「拒绝」改写为「**写了不失败**（态③）」;台账 B-21 状态改「已登记 + 待修」;§1.1 的 `PcieEndpointIP` 行改「11 登记 + 2 拒绝」。
+⚠️ **顶层 `num_msix_vectors` / `msix_num_vectors` 仍为态④ 显式拒绝**（消费面在**旧** EP 模型 `PcieEndpointTLM`，本类**永不可能**消费 —— PF 表 resize 入口 `sync_msix_cap_table_size` 是**冻结头里的 no-op**）。
+
+### ⚠️ 术语碰撞（本轮发现，已在 ADR + 台账消歧）
+
+**「态②」在两处含义相反**：C2 `design.md` D-2 的「态②」= **已消费但不经 `load_param` ⇒ `ignore_param` 登记**;而**台账表 B 的「态②」= 已显式拒绝** ⇒ 同号不同义 ⇒ `ADR-DGPU-15` §2.2 一律用「**态④**」指显式拒绝，并在两处（ADR + 台账）加了消歧提示。
+
+### critic 第 3 轮的 2 项 BLOCKER（文档侧闭合）
+
+| BLOCKER | 闭合 |
+|---|---|
+| **伪引证未完全闭合** —— `C2 change design D-2` 全文**零命中**「显式拒绝 / reject_unsupported」，且其 D-2 的「态②」语义**相反** | 改挂**真实出处**：`include/core/sim_object.hh` 的 `reject_unsupported_param`（实现）+ **C2 `proposal.md` AC-06 例外段 2** + **C2 `tasks.md` T1.7 与 F1** + **台账表 B**（B-21/B-22 行）;并加「术语消歧」段 |
+| **文档内自相矛盾** —— §6 返工项（改登记）vs V-6（要求「3 个零消费键的态②拒绝…不被回滚」） | V-6 改写为与四态表一致：① 2 个 MSI-X 键 = **态④ 拒绝**不回滚;② `resizable_bars` = **态③ 登记**（对应 case 由「拒绝」改写为「登记 + 不失败」）;③ 全量绿承载 |
+
+另闭合 critic 的 SHOULD_FIX（元数据头去掉审稿过程括注，只留报告链接）与 NIT（态② 行的锚点改挂 `ADR-X.17` **D-3 板级路径条款** `:134` + **D-2 消费方扩展** `:112-114` / **F-15** `:50`，非 D-3b）。
+
+### 闸配套：跨仓「待建产物」豁免机制
+
+`cep_doc_ref_check.sh` 的跨仓分支（`ArchForge:` 前缀）此前**无豁免处** ⇒ 引用 ArchForge 侧**尚未创建**的交付物（`ArchForge:docs/microarchitecture/pcie-endpoint.md` = ADR-DGPU-15 §D3 的键面契约）必判红 ⇒ 新增 `CROSSREPO_VIRTUAL_PATHS`（与 `VIRTUAL_PATHS` 同构，须写明理由;契约落地后应删除该豁免）。
+
+### 验证
+
+| 面 | 实测 |
+|---|---|
+| `cpptlm_tests` | **883859 / 2416**（返工后仍全绿;`[batch2][pcie-ep]` 3 case 绿，含改写后的「态③ 登记」case） |
+| `pytest` | **232 passed** |
+| `ctest` | **184 / 184** |
+| `rddf_stage_gate --phase C` | 全绿 / 0 跳过 |
+| 五闸 | `cep_docs_sync_check` / `cep_doc_ref_check` / `agents_md_lint` / `docs_sync_check --strict` / `config_type_registration_check` 全绿;冻结面 **89 个 hash 一致**（⇒ 冻结头零 diff） |
+| `openspec validate --changes --strict` | ✅ |
+
+### 状态与下一步
+
+- **ADR-DGPU-15 仍为 `Draft`**（critic 预算已用尽 3/3 ⇒ 需用户再批一轮确认性复审，或按 `ADR-X.17` 先例由 planner / verifier 在实施 change 立项时复核）。
+- **C2 的 T8.7（KPI 回填）/ T8.9（归档）**：待 **verifier 复验轮**（第 2 轮 / 3）确认本轮返工后执行 —— 复验时由 verifier 更新验收报告的 F1 描述（`resizable_bars` 由「拒绝」改为「登记」）。
+
+**关联**：`ADR-DGPU-15` · 审稿报告 `.rddf/reviews/ADR-DGPU-15.md` · 验收报告 `.rddf/reviews/cpptlm-module-param-migrate-batch2-verify.md` · Entry #497（ADR 起草）· Entry #496（C2 F1 返工）· `ADR-X.17` D-3b

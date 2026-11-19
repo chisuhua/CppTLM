@@ -798,8 +798,9 @@ TEST_CASE("AC-08: 板级直读键（台账表 A）不被判为未知键", "[para
 // T8 返工 — verifier 验收 finding F1（`PcieEndpointIP` 未准入）
 // ============================================================================
 
-// F1-1: 两个零消费键 ⇒ 态② 显式拒绝（错误含键名）
-TEST_CASE("F1: PcieEndpointIP 的 resizable_bars / num_msix_vectors ⇒ 显式拒绝",
+// F1-1: 两个「永不可能有消费方」的键 ⇒ 显式拒绝（错误含键名）；
+//        `resizable_bars` 走态③ 登记（见下方 SECTION）。
+TEST_CASE("F1: PcieEndpointIP 的 num_msix_vectors / msix_num_vectors ⇒ 显式拒绝",
           "[param][migrate][batch2][pcie-ep]") {
     register_all_types();
     EventQueue eq;
@@ -814,15 +815,16 @@ TEST_CASE("F1: PcieEndpointIP 的 resizable_bars / num_msix_vectors ⇒ 显式�
         }
     };
 
-    SECTION("resizable_bars（嵌套块，本类无消费面）") {
+    // ⚠️ `resizable_bars` **不属显式拒绝**（`ADR-DGPU-15` §2.2 四态表的**态③**）——
+    //    它「当前零消费、但对应已定义的实现契约」（ArchForge 19 号文档把 `resizable_bars_`
+    //    列为 EP 值成员 + 运行期 API `enable_resizable_bar()` 已存在）⇒ 按 `ADR-X.17` **D-3b**
+    //    走 `ignore_param` 登记 + 台账表 B「待修」⇒ **写了不失败**（⛔ 不得使装配失败）。
+    SECTION("resizable_bars（态③ 登记：写了不失败，且不被判未知键）") {
         tlm::pcie::PcieEndpointIP ep("ep_rb", &eq);
         ep.init();
-        expect_rejected(
-            [&] {
-                ep.set_config(json{{"config_size", 4096},
-                                    {"resizable_bars", json{{"supported_bar_indices", json::array({2})}}}});
-            },
-            "resizable_bars");
+        REQUIRE_NOTHROW(ep.set_config(
+            json{{"config_size", 4096},
+                 {"resizable_bars", json{{"supported_bar_indices", json::array({2})}}}}));
     }
     SECTION("num_msix_vectors（旧 EP 模型遗留名）") {
         tlm::pcie::PcieEndpointIP ep("ep_nv", &eq);

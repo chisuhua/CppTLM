@@ -177,23 +177,22 @@ namespace tlm::pcie {
     }
 
     void PcieEndpointIP::on_config_loaded() {
-        // ── 态② 显式拒绝（`ADR-X.17` D-2）──────────────────────────────────
-        // ⚠️ **两个键在本类无任何消费面**，且**不可能**有：
+        // ── 显式拒绝（`ADR-DGPU-15` §2.2 四态表的**态④**）──────────────────
+        // ⚠️ **两个键在本类无任何消费面**，且**永不可能**有：
         //
-        // ① `resizable_bars` —— 嵌套块，但 `attach_composition` **不读它**
-        //    （`warn_unconsumed` 早已报 `no consumer; deferred or out-of-scope`）。
-        // ② `num_msix_vectors` / `msix_num_vectors` —— **旧 EP 模型的遗留名 / 顶层误用**；本类的 MSI-X 表由
-        //    **复合子模块**（`sr_iov.vf_msix_vectors` / `transaction_layer.msix_num_vectors`）
-        //    承载，而 PF 表的 resize 入口 `sync_msix_cap_table_size(uint16_t)` 是
-        //    **冻结头里的 no-op**（参数名未命名，`include/tlm/pcie/pcie_endpoint_ip.hh:156`
-        //    属 `INV-CEP-07-IC5` 的 frozen headers ⇒ **零修改**）⇒ 本类**不可能**消费它。
+        // ① `num_msix_vectors` / `msix_num_vectors` —— **旧 EP 模型的遗留名 / 顶层误用**；
+        //    本类的 MSI-X 表由**复合子模块**（`sr_iov.vf_msix_vectors` /
+        //    `transaction_layer.msix_num_vectors`）承载，而 PF 表的 resize 入口
+        //    `sync_msix_cap_table_size(uint16_t)` 是**冻结头里的 no-op**（参数名未命名，
+        //    `include/tlm/pcie/pcie_endpoint_ip.hh:156` 属 `INV-CEP-07-IC5` 的 frozen headers
+        //    ⇒ **零修改**）⇒ 本类**不可能**消费它。
         //
-        // ⇒ 写了即装配失败（⛔ 不静默丢弃）—— 这正是「零效果键」的唯一正确处置。
-        //    声明侧（D-2 态①/态②）见台账 `docs/implementation/module-param-baseline.md`。
-        reject_unsupported_param(
-            "resizable_bars",
-            "the resizable-BAR block has no consumer in PcieEndpointIP (the BAR table is "
-            "installed by the composite sub-module; this block was never read)");
+        // ⇒ 写了即装配失败（⛔ 不静默丢弃）。
+        //    ⚠️ **术语**：`resizable_bars` **不属**本段 —— 它是「当前零效果、但对应已定义的
+        //    实现契约（将来可能有消费方）」⇒ 按 `ADR-X.17` **D-3b** 走 `ignore_param` 登记
+        //    + 台账表 B「待修」（登记点见下方 `attach_composition` 末尾的名单），
+        //    ⛔ **不得**使装配失败（per `ADR-DGPU-15` §2.2 四态表的**态③**）。
+        //    声明侧见台账 `docs/implementation/module-param-baseline.md` 表 B（B-21 / B-22）。
         reject_unsupported_param(
             "num_msix_vectors",
             "legacy name from the old EP model: PcieEndpointIP takes its MSI-X vector count "
@@ -390,7 +389,8 @@ namespace tlm::pcie {
 
         warn_unconsumed(params, {"axi_adapter", "link_layer", "phy_digital", "sr_iov",
                                  "transaction_layer", "bypass_mode", "pm_cap_control",
-                                 "bar0_registers", "bar_sizes", "config_size"});
+                                 "bar0_registers", "bar_sizes", "config_size",
+                                 "resizable_bars"});
 
         // ── 已消费键的**统一登记**（change `cpptlm-module-param-migrate-batch2` T1.7）
         //
@@ -409,11 +409,18 @@ namespace tlm::pcie {
         //    `ignore_param` 让**已登记**的键不进未知键检查，`warn_unconsumed` 对
         //    **未登记**的键给出具名告警。
         //
-        // ⚠️ **`resizable_bars` / `num_msix_vectors` 不在本名单** —— 它们**没有消费者**
-        //    （见 `on_config_loaded` 的态② 拒绝）⇒ 「登记」会撒谎 ⇒ 改为**显式拒绝**。
+        // ⚠️ **`num_msix_vectors` / `msix_num_vectors` 不在本名单** —— 它们**永不可能**
+        //    有消费者（见 `on_config_loaded` 的显式拒绝）⇒ 「登记」会撒谎 ⇒ 显式拒绝。
+        //
+        // ⚠️ **`resizable_bars` 在本名单（态③ 登记）** —— 它**当前**无消费者，但**对应
+        //    已定义的实现契约**（ArchForge 19 号文档把 `resizable_bars_` 列为 EP 值成员;
+        //    运行期 API `enable_resizable_bar()` / `resizable_bar()` 已存在）⇒ 缺的只是
+        //    JSON 绑定 ⇒ 属 `ADR-X.17` **D-3b** 的「已知零效果键」⇒ SHALL 登记 + 落表 B，
+        //    ⛔ **不得**使装配失败（per `ADR-DGPU-15` §2.2 四态表的态③）。
         for (const char* k : {"axi_adapter", "link_layer", "phy_digital", "sr_iov",
                               "transaction_layer", "bypass_mode", "pm_cap_control",
-                              "bar0_registers", "bar_sizes", "config_size"}) {
+                              "bar0_registers", "bar_sizes", "config_size",
+                              "resizable_bars"}) {
             ignore_param(k);
         }
     }

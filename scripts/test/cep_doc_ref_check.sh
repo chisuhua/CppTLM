@@ -98,6 +98,7 @@ done
 #   · 花括号展开 / 多路径合写 / 目录列表 —— 无法作为单一路径判存在
 # ⚠️ 新增条目必须写清理由 —— 这个白名单是「有意例外」的登记处，不是消音器。
 VIRTUAL_PATHS=(
+  "ArchForge:docs/microarchitecture/pcie-endpoint.md"  # **跨仓 · 待建产物**(2026-11-19,per 台账 Entry #497 · ADR-DGPU-15 §D3):该文件是 ArchForge 侧「EP 键面契约」的**交付物**,由 backlog `cpptlm-ep-key-surface-reconciliation` 产出(待 planner 立项)⇒ 现阶段**本就不存在**;⚠️ 引用带 `ArchForge:` 前缀 ⇒ 走跨仓路径校验分支(对方仓在位时仍会判「文件不存在」⇒ 本条豁免)—— 契约落地后应**删除本条豁免**
   "include/core/param_rules.hh"  # **已删除**(2026-11-19,per 台账 Entry #492 —— change `cpptlm-module-param-migrate-batch2` 的 T4 退役 ParamRules 机制)⇒ 台账该 Entry 记录的是「删了什么」,引用的必然是已不存在的路径;⛔ 台账 append-only 不可回改 ⇒ 闸侧豁免（`ParamType` 已迁入 `include/core/param_parser.hh`）
   "docs/roadmap/cep-interface-alignment"            # 跨仓:ArchForge 侧文档
   "docs/architecture/32-cep-based-coherence"        # 跨仓:ArchForge 侧文档
@@ -505,6 +506,12 @@ else
 fi
 
 echo ""
+# ── 跨仓「待建产物」豁免（per VIRTUAL_PATHS 同构；2026-11-19）──
+#   对方仓**尚未创建**的目标产物（被引用为交付物）⇒ 引用必然「不存在」⇒ 需登记处。
+CROSSREPO_VIRTUAL_PATHS=(
+  "docs/microarchitecture/pcie-endpoint.md"  # **待建产物**(2026-11-19,per 台账 Entry #497 · ADR-DGPU-15 §D3):ArchForge 侧「EP 键面契约」的交付物,由 backlog `cpptlm-ep-key-surface-reconciliation` 产出(待 planner 立项)⇒ 契约落地后应删除本条豁免
+)
+
 echo -e "${BLUE}[附] 跨仓 path 引用（ArchForge:）—— 对方仓缺席则 SKIP,不判红${NC}"
 if [ -d "$ARCHFORGE" ]; then
   BAD_X=0; EMPTY_X=0
@@ -518,6 +525,18 @@ if [ -d "$ARCHFORGE" ]; then
       # 空前缀（如 `` `ArchForge:` 同上 **§6.0.1** ``）= 承接上文,非可判引用 → 只提示
       if [ -z "$f" ]; then EMPTY_X=$((EMPTY_X + 1)); continue; fi
       if [ ! -e "$ARCHFORGE/$f" ]; then
+        # ── 跨仓「待建产物」豁免（2026-11-19，per 台账 Entry #497 · ADR-DGPU-15 §D3）──
+        #   ArchForge 侧**尚未创建**的目标产物（例: EP 键面契约文档）⇒ 引用它必然「不存在」
+        #   ⇒ 需与 VIRTUAL_PATHS 同构的登记处，否则「待建」永远判红。
+        #   ⚠️ 新增条目必须写清理由；产物落地后应删除本条豁免。
+        _cx_skip=0
+        for _cvp in "${CROSSREPO_VIRTUAL_PATHS[@]}"; do
+          [ "$_cvp" = "$f" ] && { _cx_skip=1; break; }
+        done
+        if [ "$_cx_skip" -eq 1 ]; then
+          warn "$(basename "$d"): ArchForge 侧待建产物（已登记豁免）$f"
+          continue
+        fi
         fail "$(basename "$d"): ArchForge 侧文件不存在 $f"; BAD_X=$((BAD_X + 1)); continue
       fi
       if [ -n "$ln" ]; then

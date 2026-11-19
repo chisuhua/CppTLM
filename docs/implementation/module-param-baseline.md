@@ -43,8 +43,10 @@
 
 | 处置 | 键 | 说明 |
 |---|---|---|
-| **态② 登记**（`ignore_param`，共 **10** 键） | `axi_adapter` / `link_layer` / `phy_digital` / `sr_iov` / `transaction_layer` / `bypass_mode` / `pm_cap_control` / `bar0_registers` / `bar_sizes` / `config_size` | 登记点 = `pcie_endpoint_ip.cc` 的 `attach_composition` 末尾（该处由 `on_config_loaded → simulate_instantiate → attach_composition` 触达 ⇒ **早于** `end_param_load()` 的未知键 enforce ⇒ 登记来得及） |
-| **态② 显式拒绝**（`reject_unsupported_param`，共 **3** 键） | `resizable_bars` / `num_msix_vectors` / `msix_num_vectors` | 三者在本类**无消费面**（见 §2 表 B 的 B-21 / B-22）⇒ **写了即装配失败**并报出键名 |
+| **态② 登记**（`ignore_param`，共 **11** 键） | `axi_adapter` / `link_layer` / `phy_digital` / `sr_iov` / `transaction_layer` / `bypass_mode` / `pm_cap_control` / `bar0_registers` / `bar_sizes` / `config_size` / **`resizable_bars`（待修）** | 登记点 = `pcie_endpoint_ip.cc` 的 `attach_composition` 末尾（该处由 `on_config_loaded → simulate_instantiate → attach_composition` 触达 ⇒ **早于** `end_param_load()` 的未知键 enforce ⇒ 登记来得及） |
+| **态④ 显式拒绝**（`reject_unsupported_param`，共 **2** 键） | `num_msix_vectors` / `msix_num_vectors` | 二者在本类**永不可能**有消费面（见 §2 表 B 的 B-22）⇒ **写了即装配失败**并报出键名 |
+
+⚠️ **术语消歧**：台账表 B 的「态②」= **已显式拒绝**;而 **C2 `design.md` D-2 的「态②」= 「已消费但不经 `load_param`」⇒ `ignore_param` 登记** ⇒ **同号不同义**，勿混用（`ADR-DGPU-15` §2.2 用「态④」指显式拒绝）。
 
 ⇒ 键面全覆盖 ⇒ 该类型自 **2026-11-19** 起**已准入**（此前未准入 ⇒ 拼错键只告警不失败）。
 ⚠️ 本类独立的 `warn_unconsumed` 具名告警**保留** —— 它现在只覆盖**嵌套子键**
