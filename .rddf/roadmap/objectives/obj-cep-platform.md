@@ -26829,3 +26829,39 @@ critic 第 4 轮（确认性复审）= **APPROVE_WITH_CONDITIONS**，`mergeable:
 - **存量债（范围外）**：45 份 main spec 的 `## Purpose` 为 TBD。
 
 **关联**：`.rddf/reviews/cpptlm-module-param-migrate-batch2-verify.md` · `ADR-DGPU-15` · Entry #499（ADR 签发 + 示例收窄）· Entry #498（尾项返工）· Entry #497（ADR 起草）
+
+### Entry #501 — 2026-11-19 [planner](**backlog 立项** — `cpptlm-ep-key-surface-reconciliation`：EP 键面契约 + 跨仓对账闸)
+
+**范围**：新建 `.rddf/improvements/cpptlm-ep-key-surface-reconciliation.md`（5 段草稿，P2 / phase-10，**未创建 OpenSpec change**）。决策源 = `ADR-DGPU-15`（Proposed，`D3` 键面契约升格 + `D6` 跨仓对账闸）。
+
+### 立案理由（P-1 ~ P-4，均为实测）
+
+| # | 缺口 | 证据 |
+|:--:|---|---|
+| P-1 | 新旧两类 JSON 键面在规格侧未分列 | ArchForge `19-pcie-ip-microarchitecture.md:809` 的 JSON params 子集属**旧类**;新类键面只散落示例 `:855-885` |
+| P-2 | 旧键名迁移未收敛（无机制防复发） | `num_msix_vectors` 从旧类原样带进新类配置（C2 已清 4 配置 + 12 测试副本） |
+| P-3 | 键面无规格对象 | ArchForge `ArchForge:docs/microarchitecture/` **54** 篇，含 `endpoint` 者 **0** |
+| P-4 | 无对账机制 | 漂移只能靠逐键人工审计;C2 的 F1 即实例 |
+
+### 内容（三段）
+
+- **A. ArchForge 侧（跨仓）**：A-1 新建 `ArchForge:docs/microarchitecture/pcie-endpoint.md`（键 → 消费点 → 语义 → 归属 → 新旧迁移，五列）;A-2 19 号文档 §9.3 新旧两类键面**分列**;A-3 `ADR-SOC-11` 状态推进。
+- **B. CppTLM 侧**：B-1 跨仓对账闸（CTest 注册）;B-2 三集合取数 `S_cfg` / `S_contract` / `S_impl`（一级嵌套按 `block.key`）;B-3 四方向 verdict + **红覆盖黄**;B-4 契约 **hash 登记**（不一致 ⇒ 黄）;B-5 台账 §1.1 / 表 B 的「待修」与契约同源。
+- **C. Non-Goals**：不改实现面（ADR D4）;不做语义自动比对（ArchForge 无代码仓 ⇒ 闸绿 ≠ 语义未漂移）;不新建代码仓;不在本改善内修订已签批 ADR 决策。
+
+### 验收（AC-1 ~ AC-8）
+
+机器可判：AC-1（契约五列表头）/ AC-3（§9.3 两列）/ AC-5（**6 条决定性变异**：配置加契约外键⇒红 · 契约删键而配置仍含⇒红 · 配置已删登记仍在⇒黄 · 契约加键未用未登记⇒黄 · 契约缺失/hash 不一致⇒黄 · ①③共燃⇒红）/ AC-6（取数与 ADR §2.6 逐字一致、无双口径）/ AC-7（实现面零改动 + 冻结面 89 hash 一致）/ AC-8（台账待修条目 ↔ 契约「归属=硬件建模未实现」列差集 ∅）。
+人工登记：AC-2（契约内容评审人 + 日期）/ AC-4（`ADR-SOC-11` 推进结论 + 评审人 + 日期）—— ArchForge 无 CI，只能人工登记。
+
+### 状态与后续
+
+| 项 | 状态 |
+|---|---|
+| improvement 草稿 | ✅ 已落 `.rddf/improvements/cpptlm-ep-key-surface-reconciliation.md` |
+| OpenSpec change | ⏳ **未立项**（待排期;立项时占 1 个 Proposed slot，当前 baseline **0/3**） |
+| ArchForge 侧 A-1 ~ A-3 | ⏳ 需在 ArchForge 仓单独提 PR（本仓 change 只引用，不代写） |
+| `ADR-DGPU-15` §6 的 backlog 指针（从「待 planner 立项」改为「已立项」） | ⏳ 待 architect / builder 触碰该 ADR 时回填（planner 不改 ADR） |
+| 估时 | 1.5 ~ 2d（ArchForge 文档 ~0.5d + 对账闸 ~1d + 评审 ~0.5d） |
+
+**关联**：`ADR-DGPU-15`（Proposed）· Entry #500（C2 归档）· Entry #499（ADR 签发 + 示例收窄）· `.rddf/improvements/cpptlm-ep-key-surface-reconciliation.md`
