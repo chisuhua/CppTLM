@@ -83,6 +83,14 @@ inline std::set<std::string, std::less<>>& param_admission_table() {
         "ApuSoC",
         // CepMeshInterconnect: `template`（路径字符串）。
         "CepMeshInterconnect",
+        // ── T1.7 / F1 返工 ──
+        // `PcieEndpointIP`：11 个键中 **10 个已消费**（嵌套对象 / 非标量数组 ⇒ D-2 态②登记）
+        // + 2 个**零消费键**（`resizable_bars` / `num_msix_vectors`）**态②显式拒绝**
+        // （`reject_unsupported_param`，见 `src/tlm/pcie/pcie_endpoint_ip.cc` 的
+        // `on_config_loaded`）⇒ 键面全覆盖 ⇒ **可准入**。
+        // ⚠️ `num_msix_vectors` 的消费面在**旧** EP 模型（`PcieEndpointTLM`），本类不可能
+        //   消费（PF 表 resize 入口 `sync_msix_cap_table_size` 是**冻结头**里的 no-op）。
+        "PcieEndpointIP",
         // ⚠️ `GpuNoC` 的准入在 **T3.2** 落地（`routing` 的裁决由 C1 的 B3 完成 ——
         //    `RouterTLM` 落态③「合法值唯一 `XY`」，本类只是把它透传给内部 router）。
         //    T2 批次**未**准入（当时的窗口期约束），T3 承载该动作。

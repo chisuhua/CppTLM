@@ -63,8 +63,7 @@ namespace {
                 "name": "soc", "type": "DGpuSoc",
                 "modules": [
                     {"name": "pcie_ep", "type": "PcieEndpointIP",
-                     "params": {"config_size": 4096, "num_msix_vectors": 16,
-                                "bar_sizes": [4096, 16777216],
+                     "params": {"config_size": 4096, "bar_sizes": [4096, 16777216],
                                 "bar0_registers": [
                                     {"offset": 0,  "name": "GMMU_PT_BASE_LO", "access": "rw"},
                                     {"offset": 4,  "name": "GMMU_PT_BASE_HI", "access": "rw"},

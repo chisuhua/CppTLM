@@ -36,8 +36,7 @@ namespace {
             "modules": [{
                 "name": "pcie_ep", "type": "PcieEndpointIP",
                 "params": {
-                    "config_size": 4096, "num_msix_vectors": 16,
-                    "bar_sizes": [65536, 268435456]
+                    "config_size": 4096, "bar_sizes": [65536, 268435456]
                 }
             }],
             "connections": []

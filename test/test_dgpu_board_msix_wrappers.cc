@@ -59,8 +59,7 @@ static json d15_mini_board_cfg() {
             "modules": [{
                 "name": "pcie_ep", "type": "PcieEndpointIP",
                 "params": {
-                    "config_size": 4096, "num_msix_vectors": 16,
-                    "bar_sizes": [65536, 268435456],
+                    "config_size": 4096, "bar_sizes": [65536, 268435456],
                     "bar0_registers": [
                         {"offset": 0, "name": "GPU_REG_GPFIFO_PUT", "access": "rw"},
                         {"offset": 20, "name": "GPU_REG_DOORBELL", "access": "wo", "side_effect": "doorbell"}

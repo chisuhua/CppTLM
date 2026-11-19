@@ -177,6 +177,34 @@ namespace tlm::pcie {
     }
 
     void PcieEndpointIP::on_config_loaded() {
+        // ── 态② 显式拒绝（`ADR-X.17` D-2）──────────────────────────────────
+        // ⚠️ **两个键在本类无任何消费面**，且**不可能**有：
+        //
+        // ① `resizable_bars` —— 嵌套块，但 `attach_composition` **不读它**
+        //    （`warn_unconsumed` 早已报 `no consumer; deferred or out-of-scope`）。
+        // ② `num_msix_vectors` / `msix_num_vectors` —— **旧 EP 模型的遗留名 / 顶层误用**；本类的 MSI-X 表由
+        //    **复合子模块**（`sr_iov.vf_msix_vectors` / `transaction_layer.msix_num_vectors`）
+        //    承载，而 PF 表的 resize 入口 `sync_msix_cap_table_size(uint16_t)` 是
+        //    **冻结头里的 no-op**（参数名未命名，`include/tlm/pcie/pcie_endpoint_ip.hh:156`
+        //    属 `INV-CEP-07-IC5` 的 frozen headers ⇒ **零修改**）⇒ 本类**不可能**消费它。
+        //
+        // ⇒ 写了即装配失败（⛔ 不静默丢弃）—— 这正是「零效果键」的唯一正确处置。
+        //    声明侧（D-2 态①/态②）见台账 `docs/implementation/module-param-baseline.md`。
+        reject_unsupported_param(
+            "resizable_bars",
+            "the resizable-BAR block has no consumer in PcieEndpointIP (the BAR table is "
+            "installed by the composite sub-module; this block was never read)");
+        reject_unsupported_param(
+            "num_msix_vectors",
+            "legacy name from the old EP model: PcieEndpointIP takes its MSI-X vector count "
+            "from sr_iov.vf_msix_vectors / transaction_layer.msix_num_vectors (the PF table "
+            "resize entry point is a no-op in this frozen class), so this key has no effect");
+        reject_unsupported_param(
+            "msix_num_vectors",
+            "the MSI-X vector count belongs to the nested transaction_layer.msix_num_vectors / "
+            "sr_iov.vf_msix_vectors blocks; as a top-level key it has no consumer in "
+            "PcieEndpointIP (the PF table resize entry point is a no-op in this frozen class)");
+
         // 决策 2: 直接构造路径 (tests / demo ep.set_config(cfg)) 归一到 simulate_instantiate
         simulate_instantiate(get_config()); // SimObject::get_config()
     }
@@ -362,15 +390,15 @@ namespace tlm::pcie {
 
         warn_unconsumed(params, {"axi_adapter", "link_layer", "phy_digital", "sr_iov",
                                  "transaction_layer", "bypass_mode", "pm_cap_control",
-                                 "bar0_registers", "bar_sizes", "config_size", "num_msix_vectors"});
+                                 "bar0_registers", "bar_sizes", "config_size"});
 
         // ── 已消费键的**统一登记**（change `cpptlm-module-param-migrate-batch2` T1.7）
         //
         // ⚠️ 本类的配置面与其它模块**不同类**：键要么是**嵌套对象**（`link_layer` /
         //    `phy_digital` / `transaction_layer` / `sr_iov` / `axi_adapter`），要么是
         //    **非标量**（`bar0_registers` / `bar_sizes` 数组）⇒ `ADR-X.17` D-2 的非标量类，
-        //    **不由 `load_param` 承载**；`pm_cap_control`/`config_size`/`num_msix_vectors`
-        //    是标量但由 `attach_composition` 的多层分支消费（同为「已消费」）。
+        //    **不由 `load_param` 承载**；`pm_cap_control`/`config_size` 是标量但由
+        //    `attach_composition` 的多层分支消费（同为「已消费」）。
         //
         // ⇒ 处置：**不迁 `load_param`**（那会把嵌套对象拆成几十个标量键，与本类的
         //    「整块 attach」语义冲突，且 `simulate_instantiate` 的二次调用要求幂等），
@@ -380,9 +408,12 @@ namespace tlm::pcie {
         //    「未知键失败」更细的诊断（列出**具体哪个键**没消费者）。两者不冲突：
         //    `ignore_param` 让**已登记**的键不进未知键检查，`warn_unconsumed` 对
         //    **未登记**的键给出具名告警。
+        //
+        // ⚠️ **`resizable_bars` / `num_msix_vectors` 不在本名单** —— 它们**没有消费者**
+        //    （见 `on_config_loaded` 的态② 拒绝）⇒ 「登记」会撒谎 ⇒ 改为**显式拒绝**。
         for (const char* k : {"axi_adapter", "link_layer", "phy_digital", "sr_iov",
                               "transaction_layer", "bypass_mode", "pm_cap_control",
-                              "bar0_registers", "bar_sizes", "config_size", "num_msix_vectors"}) {
+                              "bar0_registers", "bar_sizes", "config_size"}) {
             ignore_param(k);
         }
     }

@@ -26586,3 +26586,70 @@ AC-06 原文要求 `git diff <base> -- configs/` **为空**。实测发现 3 份
 通过后由 builder 回填 KPI（T8.7）并 `openspec archive`（T8.9）。
 
 **关联**：册子 §1.5.4 · Entry #494（T6/T7）
+
+### Entry #496 — 2026-11-19 [builder](**C2 的验收返工** —— verifier 判决 FAIL 的 5 项 finding 闭合)
+
+**范围**：verifier 独立验收（`.rddf/reviews/cpptlm-module-param-migrate-batch2-verify.md`，判决 **FAIL**）的
+**F1 ~ F5** 返工（用户裁定 F1 走**路径 A**）。
+
+### F1 —— `PcieEndpointIP` 真正准入（AC-01 失败 + 台账「已准入」在撒谎）
+
+**根因**：准入表里**根本没有** `PcieEndpointIP`（期望 20 / 实际 19）⇒ 该类型的拼错键只告警不失败
+（实测 `cpptlm_sim` exit=0）;而 `tasks` T1.7 与 Entry #489 都写着「已准入」⇒ **台账在撒谎**。
+
+**为何当时没加**：该类型还有 3 个**零消费键**（`resizable_bars` / `num_msix_vectors` /
+`msix_num_vectors`）⇒ 直接准入会让真实配置装配失败（违反 AC-06）。
+
+**闭合（路径 A）**：
+
+| 处置 | 键 | 依据 |
+|---|---|---|
+| **态② 显式拒绝**（`reject_unsupported_param`） | `resizable_bars` | 嵌套块，但 `attach_composition` **不读它**（`warn_unconsumed` 早已报 `no consumer`） |
+| | `num_msix_vectors` | **旧 EP 模型遗留名** —— 本类 MSI-X vector 数由**嵌套键**承载，而 PF 表 resize 入口 `sync_msix_cap_table_size(uint16_t)` 是**冻结头里的 no-op**（`include/tlm/pcie/pcie_endpoint_ip.hh:156` 属 `INV-CEP-07-IC5` ⇒ **零修改**）⇒ 本类**不可能**消费 |
+| | `msix_num_vectors` | 同上（顶层误用;真键是 `transaction_layer.msix_num_vectors`） |
+| **态② 登记**（`ignore_param`，10 键） | `axi_adapter` / `link_layer` / `phy_digital` / `sr_iov` / `transaction_layer` / `bypass_mode` / `pm_cap_control` / `bar0_registers` / `bar_sizes` / `config_size` | 登记点仍在 `attach_composition` 末尾 —— ⚠️ **时序已核实**：`on_config_loaded → simulate_instantiate → attach_composition` **早于** `end_param_load()` 的未知键 enforce ⇒ 登记来得及 |
+
+⇒ 键面全覆盖 ⇒ 正式加入准入表（准入表 19 → **20**，与 design D-2 的期望集**逐项相等**）。
+
+**配置侧清理**（AC-06 的例外段 2，已登记）：4 份真实配置 + **12 个测试内联副本**删除上述键
+（`configs/dgpu_board_v1` / `dgpu_soc_minimal_v1` / `dgpu_soc_timing_v1` / `dgpu_soc_v2_realip_p2`
++ 12 个 `test_*.cc`）;`dgpu_soc_v2_realip_p2.json` 另删 `resizable_bars` 整块。
+⚠️ **保留**：`PcieEndpointTLM`（**已弃用**的旧类）仍消费 `num_msix_vectors` / `msix_num_vectors`
+⇒ 其测试副本（`test_pcie_endpoint_from_config.cc` / `test_pcie_endpoint_tick_e2e.cc`）**未动**。
+
+**连带语义变更**（2 个既有测试改写）：`PcieEndpointIP` 准入后**顶层**未知键不再「只告警」而是**装配失败**
+⇒ `test_pcie_endpoint_ip_json_config.cc`（unknown top-level key）与 `test_pm_cap_control_json.cc`
+（unknown unrelated keys still warn）改写为「装配失败且错误含键名」;告警面（`warn_unconsumed`）**收窄为嵌套子键**。
+⚠️ 报错只带**其中一个**未知键（`unknown.front()`，集合序不保证）⇒ 断言写「是这两个之一」而非固定某一个
+（Catch2 的 `||` 需加括号，否则触发其「chained comparisons」静态断言）。
+
+### F2 —— `SdmaEngineTLM.translate_latency` 接真实消费
+
+**根因**：成员 `translate_latency_` **只有写、没有读** ⇒ 零效果（T1.6 / Entry #489 的「真实消费」表述与事实相反）。
+**闭合**：接入 timing 路径的完成周期计算 ——
+`last_descriptor_complete_cycle_ = current + tlb_latency + translate_latency + 4`。
+⚠️ **timing-mode 键**（仅 `cycle_accounting_enabled` 时参与;functional 模式无周期概念 ⇒ 无可观测差异）——
+已在头文件文档化。台账新增 **B-23**。
+
+### F3 / F4 / F5 —— AC-02 的判别覆盖缺口
+
+| finding | 闭合 |
+|---|---|
+| **F3** `ApuSoC.coherent_xbar_name`（**零断言**）/ `gpu_topology`（无断言） | 补双值判别;`gpu_topology` / `cpu_topology` 另加**消费证据**（内层 `gpu` / `cpu` 容器存在 ⇒ 蓝图被真实加载） |
+| **F4** 8 个键只断言单一合法值 | `l1_size` / `l2_size` / `channel_size` / `cpu_topology` / `template` / `CohIfNICTLM.mesh_x`·`mesh_y` 全部补**两个合法值**;`cu_template`（4 个类型）因**仓内只有 1 个合法 CU 蓝图** ⇒ 「两个不同合法值」**不可达** ⇒ 以「值落成员 + **子实例被真实创建**（`cu0` / `compute_grp` / `tpc0` / `gpc0`）」为判别力（**显式论证豁免**，已登记） |
+| **F5** `RouterTLM.credit_timeout` 无双值判别 | 补双值判别（0 / 5 / 50） |
+
+### 验证（返工后）
+
+| 面 | 实测 |
+|---|---|
+| `cpptlm_tests` | **883859 / 2416**（vs 验收时 883715 / 2406 ⇒ **+10 case / +144 assertions**） |
+| `pytest` | **232 passed** |
+| `ctest` | **184 / 184** |
+| `rddf_stage_gate --phase C` | 全绿 / 0 跳过 |
+| 五闸 + 冻结面 | 全绿（`cep_docs_sync_check` / `cep_doc_ref_check` / `agents_md_lint` / `docs_sync_check --strict` / `config_type_registration_check` + **冻结面 89 个 hash 全一致** ⇒ 冻结头零 diff） |
+| `openspec validate --changes --strict` | ✅ |
+
+**下一步**：切 **verifier** 复验（第 2 轮 / 3）;通过后才执行 T8.7（KPI 回填）+ T8.9（归档）。
+
+**关联**：验收报告 `.rddf/reviews/cpptlm-module-param-migrate-batch2-verify.md` · Entry #495（T8 验证）· 台账 B-21 / B-22 / B-23

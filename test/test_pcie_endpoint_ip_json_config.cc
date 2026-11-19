@@ -20,6 +20,7 @@
 
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
+#include "core/param_errors.hh"
 #include "core/sim_object.hh"
 
 #include <nlohmann/json.hpp>
@@ -215,13 +216,24 @@ TEST_CASE("PcieEndpointIP JSON config: unconsumed keys warn via getter + stderr"
           "[pcie][pcie-json][warn]") {
     JsonConfigFixture f;
 
-    SECTION("unknown top-level key") {
+    SECTION("unknown top-level key ⇒ 装配失败（准入后不再只告警）") {
+        // ⚠️ **语义变更**（change `cpptlm-module-param-migrate-batch2`，verifier 验收
+        //    finding F1 返工）: `PcieEndpointIP` 自本次起**已准入** ⇒ 未知**顶层**键
+        //    不再「只告警」，而是**装配失败**并报出键名
+        //    （`ADR-X.17` D-3：⛔ 告警不失败 = 静默容忍）。
+        //    告警面（`warn_unconsumed`）仍覆盖**嵌套子键**（见下一 SECTION）。
         json cfg;
         cfg["foo_bar"] = 42;
         cfg["baz_qux"] = "hello";
-        f.apply(cfg);
-        REQUIRE(f.warns_about("foo_bar"));
-        REQUIRE(f.warns_about("baz_qux"));
+        try {
+            f.apply(cfg);
+            FAIL("expected cpptlm::ParamValidationError for key 'foo_bar'");
+        } catch (const cpptlm::ParamValidationError& e) {
+            // ⚠️ 报错只带**其中一个**未知键（`unknown.front()`，集合遍历序不保证）⇒
+            //    断言「是这两个之一」而非固定某一个。
+            CHECK((e.param_name == "foo_bar" || e.param_name == "baz_qux"));
+            CHECK(std::string(e.what()).find("unknown parameter") != std::string::npos);
+        }
     }
 
     SECTION("unknown subkey in phy_digital") {

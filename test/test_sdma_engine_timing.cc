@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <cstring>
 #include <vector>
+#include <nlohmann/json.hpp>
 #include "core/event_queue.hh"
 #include "tlm/gpu/dma_descriptor_mvp.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
@@ -214,4 +215,57 @@ TEST_CASE("sdma_timing: set_cycle_accounting_enabled(false) → functional 兼�
     // cycle accounting 禁用 → 无 diff 记录 (保持 submit 值)
     REQUIRE(sdma.last_descriptor_complete_cycle() == submit_cycle);
     REQUIRE(sdma.last_tlb_latency() == 0); // lat 丢弃
+}
+
+// ============================================================================
+// C2 返工 — verifier 验收 finding F2：`translate_latency` 必须**有效果**
+//
+// 此前 `translate_latency_` 成员**只有写、没有读** ⇒ 该配置键零效果
+// （tasks T1.6 / 台账 Entry #489 曾宣称它「真实消费」= 与事实相反）。
+// 本判据证明：两个不同合法值 ⇒ **可观测的完成周期差**。
+// ============================================================================
+TEST_CASE("F2: SdmaEngineTLM.translate_latency 生效（两个合法值 ⇒ 完成周期不同）",
+          "[param][migrate][batch2][sdma][timing]") {
+    // 同一夹具跑两次，仅 `translate_latency` 不同 ⇒ 差值应恰为该键
+    auto diff_with_latency = [](uint32_t translate_latency) {
+        EventQueue eq;
+        SdmaEngineTLM sdma("sdma", &eq);
+        sdma.init();
+
+        std::vector<uint8_t> host_buf(8192, 0xAA);
+        std::vector<uint8_t> vram_buf(8192, 0);
+        sdma.set_host_backdoor(host_buf.data(), host_buf.size());
+        sdma.set_vram_backdoor(vram_buf.data(), vram_buf.size());
+
+        // 键走**声明式**路径（load_param_opt）—— 与生产装配同一条
+        sdma.set_config(nlohmann::json{{"translate_latency", translate_latency}});
+        REQUIRE(sdma.translate_latency() == translate_latency);
+
+        auto gmmu = make_gmmu(&eq);
+        sdma.set_cycle_accounting_enabled(true);
+        sdma.set_translate_timing_cb(
+            [&](uint64_t iova, uint32_t size, uint64_t& phys, uint64_t& lat) {
+                return gmmu->translate_timing(iova, size, phys, lat);
+            });
+
+        // 预热 TLB ⇒ 后续命中（lat=0）⇒ 差值只由 translate_latency + 4 决定
+        uint64_t pa = 0, lat = 0;
+        REQUIRE(gmmu->translate_timing(0x1000, kPageSize, pa, lat) == 0);
+
+        const uint64_t submit_cycle = eq.getCurrentCycle();
+        submit_h2d(&sdma, 0x1000, kPageSize, 1);
+        REQUIRE(sdma.completed_count() == 1);
+        REQUIRE(sdma.error_count() == 0);
+        return sdma.last_descriptor_complete_cycle() - submit_cycle;
+    };
+
+    const uint64_t a = diff_with_latency(0);   // 0 + 4（descriptor pipeline）
+    const uint64_t b = diff_with_latency(10);  // 10 + 4
+    const uint64_t c = diff_with_latency(25);  // 25 + 4
+
+    CHECK(a == 4);
+    CHECK(b == 14);
+    CHECK(c == 29);
+    CHECK(b - a == 10);   // ★ 判别力：差值恰等于该键
+    CHECK(c - b == 15);
 }

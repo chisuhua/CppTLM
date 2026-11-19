@@ -38,13 +38,17 @@
 | `device_id` / `quantum_cycles` / `ptx_emu_root` | **板级自身**（非模块） | 板级直读 | ⛔ 不在模块参数面（`DGpuBoard` 自己的配置，不经任何 `SimObject::set_config`） |
 | `bar_sizes` / `visible_vram_size` / `invisible_vram_size` / `va_region_size` / `gpu_id` / `gfx_version` / `bdf` | `PcieEndpointIP` **外观** | 板级直读（板级读的是 **`pcie_ep` 节点**的 `params`） | ⚠️ 见下 |
 
-**`PcieEndpointIP` 的例外**（T1.7）：本类的 11 个键（`axi_adapter` / `link_layer` /
-`phy_digital` / `sr_iov` / `transaction_layer` / `bypass_mode` / `pm_cap_control` /
-`bar0_registers` / `bar_sizes` / `config_size` / `num_msix_vectors`）要么是**嵌套对象**、
+**`PcieEndpointIP` 的例外**（T1.7 + **验收返工 F1**，2026-11-19）：本类的键要么是**嵌套对象**、
 要么是**非标量数组** ⇒ `ADR-X.17` D-2 的非标量类，**不由 `load_param` 承载**。
-处置 = `ignore_param` 逐个登记（`pcie_endpoint_ip.cc` 的 `attach_composition` 末尾），
-且**保留**本类独立的 `warn_unconsumed` 具名告警（它比「未知键失败」更细：
-对**未登记**的键给出「哪个键没消费者」）。
+
+| 处置 | 键 | 说明 |
+|---|---|---|
+| **态② 登记**（`ignore_param`，共 **10** 键） | `axi_adapter` / `link_layer` / `phy_digital` / `sr_iov` / `transaction_layer` / `bypass_mode` / `pm_cap_control` / `bar0_registers` / `bar_sizes` / `config_size` | 登记点 = `pcie_endpoint_ip.cc` 的 `attach_composition` 末尾（该处由 `on_config_loaded → simulate_instantiate → attach_composition` 触达 ⇒ **早于** `end_param_load()` 的未知键 enforce ⇒ 登记来得及） |
+| **态② 显式拒绝**（`reject_unsupported_param`，共 **3** 键） | `resizable_bars` / `num_msix_vectors` / `msix_num_vectors` | 三者在本类**无消费面**（见 §2 表 B 的 B-21 / B-22）⇒ **写了即装配失败**并报出键名 |
+
+⇒ 键面全覆盖 ⇒ 该类型自 **2026-11-19** 起**已准入**（此前未准入 ⇒ 拼错键只告警不失败）。
+⚠️ 本类独立的 `warn_unconsumed` 具名告警**保留** —— 它现在只覆盖**嵌套子键**
+（顶层未知键已由准入后的「未知键失败」拦下 ⇒ 告警面收窄为嵌套层）。
 
 ### 1.2 其它「已消费但不经 `load_param`」的键（非板级路径）
 
@@ -108,6 +112,10 @@ SimModule 家族的参数在 **`set_config()` 覆写里自读**（`set_config_wi
 | B-17 | `domain_protocol` / `snoop_filter` | `CoherentXBarTLM` | 无协议状态机（`snoop_broadcast()` 无条件 write-through）;无 filter 概念（ArchForge `snoop_filter.md` 标「🟡 规划中」） | **已显式拒绝**（2026-11-18 态②）;`apu_soc_full.json` + 生成器已清 |
 | B-18 | `dim` / `hops_latency` | `GpuMeshNoC` | 两成员**真被**运行期读（`route_latency()` + `d2d_forward_payload()` 的延迟模型）⇒ 不是零效果，只是**无配置读取面** | **已接真实消费**（2026-11-18 态①）;判别测试用既有 `last_transfer_latency_cycles()` |
 | B-19 | `pattern` / `start_addr` / `request_interval` | `CPUTLM` | 该类原**无** `on_config_loaded`;`start_addr_` / `request_interval_` 两成员**真被**运行期读（`:87` 窗口边界 · `:90` timer 取模）;`pattern` 无对应概念（只有线性扫描） | `start_addr`/`request_interval` **已接真实消费**（态①）;`pattern` **已显式拒绝**（态③：合法值唯一 `SEQUENTIAL`）—— 2026-11-18 |
+
+| **B-21** | `resizable_bars` | `PcieEndpointIP` | 嵌套块，但 `attach_composition` **不读它**（`warn_unconsumed` 早已报 `no consumer; deferred or out-of-scope`）⇒ 零效果 | **已显式拒绝**（2026-11-19 验收返工 F1 · 态②：`reject_unsupported_param`）;配置侧已清理（`configs/dgpu_soc_v2_realip_p2.json`）⇒ 写了即装配失败并报出键名 |
+| **B-22** | `num_msix_vectors` / `msix_num_vectors` | `PcieEndpointIP` | **旧 EP 模型的遗留名 / 顶层误用** —— 本类的 MSI-X vector 数由**嵌套键**（`sr_iov.vf_msix_vectors` / `transaction_layer.msix_num_vectors`）承载，而 PF 表的 resize 入口 `sync_msix_cap_table_size(uint16_t)` 是**冻结头里的 no-op**（`include/tlm/pcie/pcie_endpoint_ip.hh:156` 属 `INV-CEP-07-IC5` ⇒ 零修改）⇒ **本类不可能消费它** | **已显式拒绝**（2026-11-19 验收返工 F1 · 态②）;配置侧已清理（4 份配置）+ 12 个测试内联副本已同步。⚠️ `PcieEndpointTLM`（**已弃用**的旧类）仍消费该键 ⇒ 两类语义不同，勿混 |
+| **B-23** | `translate_latency` | `SdmaEngineTLM` | 成员 `translate_latency_` 此前**只有写、没有读** ⇒ 零效果（2026-11-19 验收 finding F2 实测：`grep -rn "translate_latency_\b" src/ include/` 除赋值/声明外仅 2 处命中，且其中一处是本批新增的观测 getter） | **已接真实消费**（2026-11-19 验收返工 F2）—— 接入 timing 路径的完成周期计算（`last_descriptor_complete_cycle_ = current + tlb_latency + translate_latency + 4`）;⚠️ **timing-mode 键**（仅 `cycle_accounting_enabled` 时生效;functional 模式无周期概念 ⇒ 无可观测差异）;判别测试 `[batch2][sdma][timing]`（两个合法值 ⇒ 完成周期差恰为该键） |
 
 ### B-6 的处置说明（为什么是显式登记而不是修复）
 

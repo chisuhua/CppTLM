@@ -17,10 +17,19 @@
 using namespace tlm::gpu;
 using json = nlohmann::json;
 
-// C2: 内联 SOC + PcieEndpointTLM 配置, 无 cwd 依赖。key 选择 MSI-X vector 数配置键名:
-//   - "msix_num_vectors" (新名, 优先)
-//   - "num_msix_vectors" (旧名, 回退; pre-fix 被忽略 → 默认 16 vectors → RED 路径)
+// C2: 内联 SOC + PcieEndpointTLM 配置, 无 cwd 依赖。
+//
+// ⚠️ **键名语义已变更**（change `cpptlm-module-param-migrate-batch2`，verifier 验收 finding F1 返工）:
+//   `PcieEndpointIP` 的**顶层** `num_msix_vectors`（旧名）与 `msix_num_vectors`（新名）
+//   **在本类都没有消费面**（MSI-X vector 数由 `sr_iov.vf_msix_vectors` /
+//   `transaction_layer.msix_num_vectors` 这类**嵌套键**承载）⇒ 二者自本次起
+//   **态② 显式拒绝**（写了即装配失败），⛔ 不再「静默忽略」。
+//   ⇒ `key` 传空串 = **不带**该键（合法形态）。
 static json msix_cap_board_cfg(const std::string& key) {
+    json ep_params = {{"config_size", 4096}, {"bar_sizes", json::array({65536, 268435456})}};
+    if (!key.empty()) {
+        ep_params[key] = 8;
+    }
     return json{
         {"name", "msix_cap_board"},
         {"params",
@@ -33,10 +42,7 @@ static json msix_cap_board_cfg(const std::string& key) {
                {"type", "DGpuSoc"},
                {"modules", json::array({{{"name", "pcie_ep"},
                                          {"type", "PcieEndpointIP"},
-                                         {"params",
-                                          {{"config_size", 4096},
-                                           {key, 8},
-                                           {"bar_sizes", json::array({65536, 268435456})}}}}})},
+                                         {"params", ep_params}}})},
                {"connections", json::array()}}})},
         {"connections", json::array()}};
 }
@@ -51,7 +57,7 @@ static json msix_cap_board_cfg(const std::string& key) {
 TEST_CASE("test_msix_cap_table_size_field_reflects_init_n", "[dgpu][msix][cap]") {
     DGpuBoard board("msix_cap_board");
     board.init();
-    REQUIRE(board.load_soc_config(msix_cap_board_cfg("msix_num_vectors")));
+    REQUIRE(board.load_soc_config(msix_cap_board_cfg("")));
     REQUIRE(board.msix_init(8, 0) == 0);
 
     auto* ep = board.pcie_ep();
@@ -83,8 +89,9 @@ TEST_CASE("test_msix_cap_table_size_field_reflects_init_n", "[dgpu][msix][cap]")
 TEST_CASE("test_msix_init_resizes_table_enforces_4_to_8", "[dgpu][msix][cap]") {
     DGpuBoard board("msix_cap_board");
     board.init();
-    // 旧 JSON 名 num_msix_vectors: pre-fix 忽略 → 默认 16 vectors (描述 RED 场景)
-    REQUIRE(board.load_soc_config(msix_cap_board_cfg("num_msix_vectors")));
+    // ⚠️ 旧名 `num_msix_vectors` 的语义已变（见文件头注释）: 自本次起它是**态② 显式拒绝**
+    //    （顶层键在本类无消费面）⇒ 主流程改用**合法形态**（不带该键）。
+    REQUIRE(board.load_soc_config(msix_cap_board_cfg("")));
 
     // 扩到 8: update_pending(7) 有效, update_pending(8) 越界 → -22
     REQUIRE(board.msix_init(8, 0) == 0);
@@ -110,7 +117,7 @@ TEST_CASE("test_msix_init_resizes_table_enforces_4_to_8", "[dgpu][msix][cap]") {
 TEST_CASE("test_msix_cap_host_visible_after_resize", "[dgpu][msix][cap][host-visible]") {
     DGpuBoard board("msix_cap_board");
     board.init();
-    REQUIRE(board.load_soc_config(msix_cap_board_cfg("msix_num_vectors")));
+    REQUIRE(board.load_soc_config(msix_cap_board_cfg("")));
 
     REQUIRE(board.msix_init(8, 0) == 0);
     auto* ep = board.pcie_ep();

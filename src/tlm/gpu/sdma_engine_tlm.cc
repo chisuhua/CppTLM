@@ -282,8 +282,13 @@ namespace tlm::gpu {
         //   board 可经 sdma_fence_complete 覆盖 (= board.current_cycle_, T5 注入)
         if (cycle_accounting_enabled_) {
             constexpr uint64_t kDescriptorBaseCycles = 4;
-            last_descriptor_complete_cycle_ =
-                getCurrentCycle() + last_tlb_latency_ + kDescriptorBaseCycles;
+            // ⚠️ `translate_latency_` = **SDMA 自身的固定翻译开销**（cycles），
+            //    叠加在 GMMU 的 TLB 延迟之上（两者独立：前者是 SDMA 侧常量开销，
+            //    后者由 callback 按 TLB 命中/未命中给出）。
+            //    ⛔ 此前该成员**只有写、没有读** ⇒ 该配置键零效果
+            //    （verifier 验收 finding F2）⇒ 本行是它的**唯一消费点**。
+            last_descriptor_complete_cycle_ = getCurrentCycle() + last_tlb_latency_ +
+                                              translate_latency_ + kDescriptorBaseCycles;
             last_tlb_latency_ = 0; // 单次消费 (避免重复累加)
         }
 

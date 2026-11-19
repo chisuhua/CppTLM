@@ -107,6 +107,10 @@ public:
 
     std::uint32_t node_id() const { return node_id_; }
 
+    // ── 参数观测面（`ADR-X.17` D-6 行为判别要求：两个合法值 ⇒ 可观测读数不同）
+    std::uint32_t mesh_x() const { return mesh_x_; }
+    std::uint32_t mesh_y() const { return mesh_y_; }
+
     // ── 周期推进 ────────────────────────────────────────────────────────
     void tick() override;
 

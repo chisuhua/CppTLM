@@ -105,7 +105,10 @@ namespace tlm::gpu {
      * JSON 参数（per design.md §5 + spec.md Scenario "JSON instantiation"）：
      *   {
      *     "max_inflight": 4,            // 同时在飞的描述符数上限，默认 4
-     *     "translate_latency": 0,       // translate callback 同步延迟（cycles），默认 0
+     *     "translate_latency": 0,       // SDMA 自身的固定翻译开销（cycles），默认 0
+     *                                  // ⚠️ **timing-mode 键**：仅在 cycle accounting 开启
+     *                                  //    （`set_cycle_accounting_enabled(true)`）时参与
+     *                                  //    完成周期计算（functional 模式无周期概念 ⇒ 无可观测差异）
      *     "vram_size_bytes": 268435456  // SOC VRAM 大小（用于越界检查），默认 256MB
      *   }
      *

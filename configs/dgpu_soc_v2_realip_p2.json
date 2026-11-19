@@ -30,20 +30,13 @@
           "name": "pcie_ep",
           "params": {
             "config_size": 4096,
-            "num_msix_vectors": 16,
-            "bar_sizes": [4096, 16777216, 8589934592],
+                        "bar_sizes": [4096, 16777216, 8589934592],
             "bar0_registers": [
               { "offset": 0,  "name": "GMMU_PT_BASE_LO", "access": "rw" },
               { "offset": 4,  "name": "GMMU_PT_BASE_HI", "access": "rw" },
               { "offset": 8,  "name": "GMMU_CTRL",      "access": "rw" },
               { "offset": 16, "name": "SDMA_STATUS",    "access": "ro" }
-            ],
-            "resizable_bars": {
-              "_note": "v1.1 修订: 复用既有 ResizableBar 数据结构 (per pcie_endpoint_ip.hh:321 resizable_bars_[6] array). new_size_bytes_ 字段类型 uint32→uint64 (per CRITICAL C3: 4GB 溢出). 启用 runtime resize 协议 (per flr-rebar v1.1 ResizableBarRuntime::commit()).",
-              "supported_bar_indices": [2],
-              "supported_sizes_bytes": [1073741824, 2147483648, 4294967296, 8589934592],
-              "_spec_4gb_64bit_encoding": "low_dword=0, high_dword=1 (per PCIe Base Spec §7.8.6)"
-            }
+            ]
           }
         },
         {

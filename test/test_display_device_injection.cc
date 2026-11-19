@@ -116,8 +116,7 @@ TEST_CASE("D3a-2: DGpuBoard::bind_display_backings 注入完整路径", "[pcie][
             "type": "DGpuSoc",
             "modules": [
                 { "name": "pcie_ep", "type": "PcieEndpointIP",
-                  "params": { "config_size": 4096, "num_msix_vectors": 16,
-                              "bar_sizes": [4096, 16777216, 8589934592] } },
+                  "params": { "config_size": 4096, "bar_sizes": [4096, 16777216, 8589934592] } },
                 { "name": "pcie_memory", "type": "PcieMemoryDevice" },
                 { "name": "sdma", "type": "SdmaEngineTLM", "params": { "max_inflight": 4 } },
                 { "name": "gmmu", "type": "GmmuTLM", "params": { "page_size_bytes": 4096 } }
@@ -292,8 +291,7 @@ TEST_CASE("D3a-2: DGpuBoard set_display_fb_size override 优先级", "[pcie][pci
             "type": "DGpuSoc",
             "modules": [
                 { "name": "pcie_ep", "type": "PcieEndpointIP",
-                  "params": { "config_size": 4096, "num_msix_vectors": 16,
-                              "bar_sizes": [4096, 16777216, 8589934592] } },
+                  "params": { "config_size": 4096, "bar_sizes": [4096, 16777216, 8589934592] } },
                 { "name": "pcie_memory", "type": "PcieMemoryDevice" },
                 { "name": "sdma", "type": "SdmaEngineTLM", "params": { "max_inflight": 4 } },
                 { "name": "gmmu", "type": "GmmuTLM", "params": { "page_size_bytes": 4096 } }

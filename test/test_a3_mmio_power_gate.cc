@@ -23,7 +23,7 @@ static json dgpu_mini_cfg() {
             "modules": [{
                 "name": "pcie_ep", "type": "PcieEndpointIP",
                 "params": {
-                    "config_size": 4096, "msix_num_vectors": 8,
+                    "config_size": 4096,
                     "bar_sizes": [65536, 268435456]
                 }
             }],

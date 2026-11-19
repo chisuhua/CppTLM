@@ -19,8 +19,8 @@
 - [x] T1.3 `VramControllerTLM`：全部板级直读键 ⇒ 态②登记 + 准入表加项;⚠️ 核实其与基类 `MemoryTLM::on_config_loaded` 的调用链 ⇒ **已落地**：`vram_size_bytes` 改 `load_param_opt`（原先手写 `cfg.contains` + `is_number` 分支）;`operating_frequency_hz` 态② 拒绝（编译期锚点，C1 已落）;继承 `MemoryTLM::on_config_loaded()`⇒ 板级直读键登记自动继承;已准入;判别测试 `[batch2][vram]` 1 case（含态② 反向）
 - [x] T1.4 `GmmuTLM`：`tlb_*` 态②登记;⚠️ `page_size_bytes` 依赖 effect-landing ⇒ 暂缓准入 ⇒ **已落地**：`page_size_bytes` 态①（2 的幂且 ≥ 4096，C1 已落）;`tlb_size` / `tlb_miss_latency_cycles` 板级直读键 `ignore_param` 登记（C1 已落）;已准入;判别测试 `[batch2][gmmu]` 1 case（含非 2 的幂 ⇒ 失败）
 - [x] T1.5 `TrafficGenTLM`：`seed` 声明化 + 准入表加项;⚠️ 其余 7 键依赖 effect-landing ⇒ **已落地**（C1 已完成全部 8 键的裁决）：`pattern`/`num_requests`/`seed`/`stride` 态①;`start_addr`/`end_addr` 走 `parse_addr_json`（**非** `load_param` —— `VarResolver` 会把 `0x` 转 float）;`hotspot_addrs`/`hotspot_weights` 非标量登记;已准入;⚠️ 本批把 `read_addr_value` 的本地实现**提升为共享** `cpptlm::parse_addr_json`（`param_loader.hh`）供 `CPUTLM` 共用 —— 消除两份实现（CPUTLM 那份曾漏 `is_number_float` 分支 ⇒ `"0x1000"` 装配失败）
-- [x] T1.6 `SdmaEngineTLM`：`max_inflight` / `translate_latency` / `vram_size_bytes` 声明化 + 判别测试 + 准入 ⇒ **已落地**：3 键（`max_inflight`/`translate_latency`/`vram_size_bytes`）改 `load_param_opt`（原为 `cfg.contains` + `cfg.value` 手写分支）;新增 3 个观测 getter 供 AC-02 判别;已准入;判别测试 `[batch2][sdma]` 1 case
-- [x] T1.7 `PcieEndpointIP`：声明化 + 判别测试 + 准入;⚠️ **二次 `on_config_loaded` 的幂等性**必须保持（F-11）;⚠️ `bar_sizes` 与板级同名 ⇒ 按 D-3 裁决单一消费方 ⇒ **已落地**（**处置与清单描述不同 —— 有据**）：design D-2 列的是 5 个标量键，实测本类配置面是 **11 个键**，其中 4 个是**嵌套对象**（`link_layer`/`phy_digital`/`transaction_layer`/`sr_iov`）、2 个是**非标量数组**（`bar0_registers`/`bar_sizes`）⇒ 属 D-2 的非标量类，**不由 `load_param` 承载**;处置 = `ignore_param` 逐个登记（`attach_composition` 末尾）+ **保留**本类独立的 `warn_unconsumed` 具名告警（比未知键失败更细）;已准入;⚠️ **二次 `on_config_loaded` 的幂等性**（F-11）**未受影响** —— `simulate_instantiate` 保持 void 签名（T0.2 的成员通道），`attach_composition` 的重入清空逻辑不变
+- [x] T1.6 `SdmaEngineTLM`：`max_inflight` / `translate_latency` / `vram_size_bytes` 声明化 + 判别测试 + 准入 ⇒ **已落地**：3 键（`max_inflight`/`translate_latency`/`vram_size_bytes`）改 `load_param_opt`（原为 `cfg.contains` + `cfg.value` 手写分支）;新增 3 个观测 getter 供 AC-02 判别;已准入;判别测试 `[batch2][sdma]` 1 case;⚠️ **2026-11-19 验收 finding F2 订正**：原表述「`translate_latency` ⇒ 地址翻译的周期数（真实消费）」**与事实相反** —— 该成员当时**只有写、没有读** ⇒ 零效果;现已在**验收返工**中接入 timing 路径（完成周期计算）⇒ 真正生效，判别测试 `[batch2][sdma][timing]`（两个合法值 ⇒ 完成周期差恰为该键）;台账新增 B-23
+- [x] T1.7 `PcieEndpointIP`：声明化 + 判别测试 + 准入;⚠️ **二次 `on_config_loaded` 的幂等性**必须保持（F-11）;⚠️ `bar_sizes` 与板级同名 ⇒ 按 D-3 裁决单一消费方 ⇒ **已落地**（**处置与清单描述不同 —— 有据**）：design D-2 列的是 5 个标量键，实测本类配置面是 **11 个键**，其中 4 个是**嵌套对象**（`link_layer`/`phy_digital`/`transaction_layer`/`sr_iov`）、2 个是**非标量数组**（`bar0_registers`/`bar_sizes`）⇒ 属 D-2 的非标量类，**不由 `load_param` 承载**;处置 = `ignore_param` 逐个登记（`attach_composition` 末尾）+ **保留**本类独立的 `warn_unconsumed` 具名告警（比未知键失败更细）;⚠️ **2026-11-19 验收 finding F1 订正**：原表述「已准入」**与事实相反** —— 当时**并未**加入准入表（`param_admission.hh` 里查无此类型）⇒ 该类型的拼错键只告警不失败;现已在**验收返工**中真正准入（前置：其 3 个零消费键 `resizable_bars` / `num_msix_vectors` / `msix_num_vectors` 先落态②显式拒绝 + 配置与测试内联副本同步清理）⇒ 键面全覆盖 ⇒ 拼错键失败且错误含键名;⚠️ **二次 `on_config_loaded` 的幂等性**（F-11）**未受影响** —— `simulate_instantiate` 保持 void 签名（T0.2 的成员通道），`attach_composition` 的重入清空逻辑不变
 - [x] T1.8 `CohIfNICTLM`：`node_id` / `mesh_x` / `mesh_y` 声明化 + `address_regions`（非标量）态②登记 + 准入 ⇒ **已落地**：`node_id`/`mesh_x`/`mesh_y` 改 `load_param_opt`（原 `cfg["x"].get<uint32_t>()` ——类型不符抛的是 nlohmann 的 `type_error`，错误信息不含「参数名+期望类型」）;`address_regions`（对象数组）`ignore_param` 登记;已准入;判别测试 `[batch2][cohif-nic]` 1 case（⚠️ `lookup_node` 是 private ⇒ 断言「配置可装配」+ 拼错键必失败，解析行为由 `test_cep_mesh_e2e` 覆盖）
 - [x] T1.9 `CohIfResponderTLM`：`emit_completions` / `completion_latency_cycles` / `emit_snoops` / `snoop_interval_cycles` 声明化 + 判别测试 + 准入 ⇒ **已落地**：4 键改 `load_param_opt`（原 `config_.contains(...) && is_boolean()/is_number_unsigned()` ——**类型不符即静默忽略** ⇒ 配置写了等于没写）;已准入;判别测试 `[batch2][cohif-resp]` 1 case（含类型不符 ⇒ 装配失败，⛔ 旧实现不会失败）
 - [x] T1.10 `PcieEndpointTLM`：**显式排除**（`[[deprecated]]` + 23 ABI 冻结面 ⇒ 零修改）⇒ 在准入表与台账中登记「不迁」及理由 ⇒ **已显式登记「不迁」+ 理由**（`docs/implementation/module-param-baseline.md` §1.3）：① 已 `[[deprecated]]`;② 属 **23 ABI 冻结面**（`ADR-DGPU-08` §2.3 / `ADR-088` §D5，该头零修改）;③ 迁 `load_param` 必须改冻结头 ⇒ 与 ABI 冻结直接冲突。⛔ 不因「清单上有它」而强行迁移
@@ -92,6 +92,24 @@
 - [x] T7.3 `specs/param-validation/spec.md`：`## MODIFIED Requirements`（`Parameter range validation` + `Required parameter enforcement`;⛔ 既有 Scenario 名全部保留） ⇒ **已就位**：`## MODIFIED Requirements`（`Parameter range validation` + `Required parameter enforcement`;既有 Scenario 名全部保留，含 2 处「本 change 反转其结论」的原断言）
 - [x] T7.4 ⚠️ AC-10：`param-validation` 的「mesh 范围 1-16」条款订正或标注为「未实施」（事实：`configs/mesh_4x4.json` 存在 `node_x: 0`） ⇒ **已核对：该条款在当前 main spec 中已不存在**（`grep -rn "1-16\|\[1, *16\]" openspec/specs/` 零命中）—— 它在更早的 change 里已删除;`RouterTLM::on_config_loaded` 对 `node_x`/`node_y` **无范围约束**（只 `load_param` 必填），与 `configs/mesh_4x4.json` 的 `node_x: 0` 事实一致 ⇒ **无残留矛盾，无需订正**。判断依据落此（AC-10 的「或标注为未实施」条件因此不触发）
 - [x] T7.5 `openspec validate cpptlm-module-param-migrate-batch2 --strict` 通过 ⇒ **通过**（`openspec validate --changes --strict` ⇒ `✓ change/cpptlm-module-param-migrate-batch2`，1 passed / 0 failed）
+
+## T8 返工 — verifier 验收 finding 的闭合（2026-11-19）
+
+> verifier 独立验收（`.rddf/reviews/cpptlm-module-param-migrate-batch2-verify.md`）判决 **FAIL**（5 项 finding）。
+> 本段记录返工范围与闭合证据;**T8.7 / T8.9（KPI 回填 / 归档）在复验通过前不得执行**。
+
+| finding | 分类 | 闭合方式 | 判据 |
+|:--:|---|---|---|
+| **F1** `PcieEndpointIP` 未准入（期望 20 / 实际 19）⇒ AC-01 失败 + 台账「已准入」在撒谎 | implementation_gap（**路径 A**，用户 2026-11-19 裁定） | ① 3 个零消费键（`resizable_bars` / `num_msix_vectors` / `msix_num_vectors`）落**态②显式拒绝**（`reject_unsupported_param`）;② 4 份配置 + 12 个测试内联副本删除这些键;③ 正式加入准入表 | `[batch2][pcie-ep]` 3 case（拒绝含键名 / 拼错键失败 / 合法键集可装配） |
+| **F2** `SdmaEngineTLM.translate_latency`「声明了却无效果」 | implementation_gap | 接入 timing 路径的完成周期计算（`current + tlb_latency + translate_latency + 4`）⇒ 真正生效 | `[batch2][sdma][timing]`（0/10/25 ⇒ 4/14/29 cyc，差值恰为该键） |
+| **F3** `ApuSoC.coherent_xbar_name`（零断言）/ `gpu_topology`（无断言） | implementation_gap | 补双值判别（`coherent_xbar_name` 两个合法值;`gpu_topology` 两个合法蓝图 + **内层 `gpu` 实例存在**作消费证据） | `[batch2][apusoc][f3]` |
+| **F4** 8 个键只断言单一合法值 | implementation_gap | 补双值判别（`l1_size` / `l2_size` / `channel_size` / `cpu_topology` / `template` / `CohIfNICTLM.mesh_x`·`mesh_y`）;`cu_template`（4 个类型）因**仓内只有 1 个合法 CU 蓝图** ⇒ 「两个不同合法值」不可达 ⇒ 以「值落成员 + **子实例被真实创建**（`cu0` / `compute_grp` / `tpc0` / `gpc0`）」为判别力（**显式论证豁免**，已登记） | `[batch2][f4]` ×4 case |
+| **F5** `RouterTLM.credit_timeout` 无双值判别 | implementation_gap | 补双值判别（0 / 5 / 50） | `[batch2][f5][router]` |
+
+⚠️ **连带语义变更（已同步既有测试）**：`PcieEndpointIP` 准入后，**顶层**未知键不再「只告警」而是**装配失败**
+⇒ `test/test_pcie_endpoint_ip_json_config.cc` 的「unknown top-level key」与
+`test/test_pm_cap_control_json.cc` 的「unknown unrelated keys still warn」两个 case 改写为
+「**装配失败且错误含键名**」;告警面（`warn_unconsumed`）**收窄为嵌套子键**（`phy_digital` / `sr_iov` 等）。
 
 ## T8 — 验证与收口
 

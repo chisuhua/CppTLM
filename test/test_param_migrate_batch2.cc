@@ -27,6 +27,7 @@
 #include "core/module_factory.hh"
 #include "core/param_admission.hh"
 #include "tlm/cep/cep_mesh_interconnect.hh"
+#include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/cep/cohif_nic.hh"
 #include "tlm/cep/cohif_responder.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
@@ -791,4 +792,284 @@ TEST_CASE("AC-08: 板级直读键（台账表 A）不被判为未知键", "[para
                  {"address_regions",
                   json::array({json{{"base", 0x1000}, {"size", 0x1000}, {"target_node", 0}}})}}));
     }
+}
+
+// ============================================================================
+// T8 返工 — verifier 验收 finding F1（`PcieEndpointIP` 未准入）
+// ============================================================================
+
+// F1-1: 两个零消费键 ⇒ 态② 显式拒绝（错误含键名）
+TEST_CASE("F1: PcieEndpointIP 的 resizable_bars / num_msix_vectors ⇒ 显式拒绝",
+          "[param][migrate][batch2][pcie-ep]") {
+    register_all_types();
+    EventQueue eq;
+
+    auto expect_rejected = [](auto&& fn, const char* key) {
+        try {
+            fn();
+            FAIL("expected cpptlm::ParamValidationError for key '" << key << "'");
+        } catch (const cpptlm::ParamValidationError& e) {
+            CHECK(e.param_name == key);
+            CHECK(std::string(e.what()).find(key) != std::string::npos);
+        }
+    };
+
+    SECTION("resizable_bars（嵌套块，本类无消费面）") {
+        tlm::pcie::PcieEndpointIP ep("ep_rb", &eq);
+        ep.init();
+        expect_rejected(
+            [&] {
+                ep.set_config(json{{"config_size", 4096},
+                                    {"resizable_bars", json{{"supported_bar_indices", json::array({2})}}}});
+            },
+            "resizable_bars");
+    }
+    SECTION("num_msix_vectors（旧 EP 模型遗留名）") {
+        tlm::pcie::PcieEndpointIP ep("ep_nv", &eq);
+        ep.init();
+        expect_rejected([&] { ep.set_config(json{{"config_size", 4096}, {"num_msix_vectors", 16}}); },
+                        "num_msix_vectors");
+    }
+}
+
+// F1-2: 准入生效 ⇒ 拼错键必须失败（此前该类型完全不受未知键检查覆盖）
+TEST_CASE("F1: PcieEndpointIP 已准入 ⇒ 拼错键装配失败且错误含键名",
+          "[param][migrate][batch2][pcie-ep]") {
+    register_all_types();
+
+    CHECK(cpptlm::is_param_admitted("PcieEndpointIP"));
+
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE_FALSE(factory.instantiateAll(one_module(
+        "ep_typo", "PcieEndpointIP", json{{"config_size", 4096}, {"totally_bogus_key", 1}})));
+}
+
+// F1-3: 合法键集仍可装配（回归护栏）
+TEST_CASE("F1: PcieEndpointIP 的合法键集仍可装配", "[param][migrate][batch2][pcie-ep]") {
+    register_all_types();
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE(factory.instantiateAll(one_module(
+        "ep_ok", "PcieEndpointIP",
+        json{{"config_size", 4096}, {"bar_sizes", json::array({4096, 16777216})}})));
+}
+
+// ============================================================================
+// T8 返工 — verifier 验收 finding F3 / F4 / F5（AC-02 的判别覆盖缺口）
+// ============================================================================
+
+// F3: ApuSoC.coherent_xbar_name / gpu_topology（此前**零断言** / 单一值）
+TEST_CASE("F3: ApuSoC.coherent_xbar_name / gpu_topology 生效",
+          "[param][migrate][batch2][apusoc][f3]") {
+    register_all_types();
+
+    // F3-a: `coherent_xbar_name` —— 两个合法值 ⇒ 观测面不同
+    auto xbar_name_of = [](const std::string& v) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "apu", "ApuSoC",
+            json{{"cpu_topology", "configs/templates/cpu_cluster_2level.json"},
+                 {"coherent_xbar_name", v}})));
+        auto* c = get_as<cpptlm::tlm::ApuSoC>(factory, "apu");
+        REQUIRE(c != nullptr);
+        return c->coherent_xbar_name();
+    };
+    CHECK(xbar_name_of("xbar") == "xbar");
+    CHECK(xbar_name_of("xbar_alt") == "xbar_alt");
+    CHECK(xbar_name_of("xbar") != xbar_name_of("xbar_alt"));
+
+    // F3-b: `gpu_topology` —— 两个合法蓝图 ⇒ 观测面不同 + **蓝图被真实加载**
+    //       （内层 `gpu` 实例存在 ⇒ 不只是「值落成员」）
+    auto gpu_topo_of = [](const std::string& path) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "apu", "ApuSoC",
+            json{{"cpu_topology", "configs/templates/cpu_cluster_2level.json"},
+                 {"gpu_topology", path}})));
+        auto* c = get_as<cpptlm::tlm::ApuSoC>(factory, "apu");
+        REQUIRE(c != nullptr);
+        // ★ 消费证据：蓝图被加载 ⇒ 内层 `gpu` 容器存在
+        REQUIRE(c->getInternalInstance("gpu") != nullptr);
+        return c->gpu_topology();
+    };
+    CHECK(gpu_topo_of("configs/templates/gpu_2gpc_2tpc_2cu.json") ==
+          "configs/templates/gpu_2gpc_2tpc_2cu.json");
+    CHECK(gpu_topo_of("configs/gpu_2gpc_2tpc_2cu.json") == "configs/gpu_2gpc_2tpc_2cu.json");
+    CHECK(gpu_topo_of("configs/templates/gpu_2gpc_2tpc_2cu.json") !=
+          gpu_topo_of("configs/gpu_2gpc_2tpc_2cu.json"));
+
+    // F3-c: `cpu_topology` —— 两个合法蓝图（此前只有单一值）
+    auto cpu_topo_of = [](const std::string& path) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(
+            one_module("apu", "ApuSoC", json{{"cpu_topology", path}})));
+        auto* c = get_as<cpptlm::tlm::ApuSoC>(factory, "apu");
+        REQUIRE(c != nullptr);
+        REQUIRE(c->getInternalInstance("cpu") != nullptr);
+        return c->cpu_topology();
+    };
+    CHECK(cpu_topo_of("configs/templates/cpu_cluster_2level.json") ==
+          "configs/templates/cpu_cluster_2level.json");
+    CHECK(cpu_topo_of("configs/library_cpu_demo.json") == "configs/library_cpu_demo.json");
+    CHECK(cpu_topo_of("configs/templates/cpu_cluster_2level.json") !=
+          cpu_topo_of("configs/library_cpu_demo.json"));
+}
+
+// F4: 尺寸类键 —— 两个不同合法值 ⇒ 观测面不同（此前只有单一值）
+TEST_CASE("F4: CacheCluster.l1_size/l2_size 与 MemoryCluster.channel_size 生效",
+          "[param][migrate][batch2][f4]") {
+    register_all_types();
+
+    // CacheCluster 的两个尺寸键
+    auto cache_sizes = [](const std::string& l1, const std::string& l2) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "cache", "CacheCluster", json{{"l1_count", 1}, {"l1_size", l1}, {"l2_size", l2}})));
+        auto* c = get_as<cpptlm::tlm::CacheCluster>(factory, "cache");
+        REQUIRE(c != nullptr);
+        return std::make_pair(c->l1_size(), c->l2_size());
+    };
+    const auto a = cache_sizes("16KB", "256KB");
+    const auto b = cache_sizes("32KB", "1MB");
+    CHECK(a == std::make_pair(std::string("16KB"), std::string("256KB")));
+    CHECK(b == std::make_pair(std::string("32KB"), std::string("1MB")));
+    CHECK(a != b);
+
+    // MemoryCluster 的通道尺寸键
+    auto channel_size_of = [](const std::string& sz) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "mem", "MemoryCluster", json{{"channel_count", 2}, {"channel_size", sz}})));
+        auto* c = get_as<cpptlm::tlm::MemoryCluster>(factory, "mem");
+        REQUIRE(c != nullptr);
+        return c->channel_size();
+    };
+    CHECK(channel_size_of("1GB") == "1GB");
+    CHECK(channel_size_of("4GB") == "4GB");
+    CHECK(channel_size_of("1GB") != channel_size_of("4GB"));
+}
+
+// F4: `cu_template` —— ⚠️ 仓内**只有 1 个**合法 CU 蓝图 ⇒ 「两个不同合法值」不可达
+//     ⇒ 以「值落成员 + 蓝图被真实加载（子实例存在）」为判别力（显式论证豁免）。
+TEST_CASE("F4: ComputeCluster/TpcCluster/GpcCluster/GpuCluster.cu_template 被真实消费",
+          "[param][migrate][batch2][f4][cu-template]") {
+    register_all_types();
+    const std::string kCuTemplate = "configs/templates/compute_unit_v1.json";
+
+    SECTION("ComputeCluster ⇒ 子实例 cu0 存在") {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "cu", "ComputeCluster", json{{"cu_count", 2}, {"cu_template", kCuTemplate}})));
+        auto* c = get_as<cpptlm::tlm::ComputeCluster>(factory, "cu");
+        REQUIRE(c != nullptr);
+        CHECK(c->cu_template() == kCuTemplate);
+        REQUIRE(c->getInternalInstance("cu0") != nullptr);
+        REQUIRE(c->getInternalInstance("cu1") != nullptr);
+    }
+    SECTION("TpcCluster ⇒ 子实例 compute_grp 存在（cu_template 已转发）") {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "tpc", "TpcCluster",
+            json{{"tpc_id", 0}, {"cu_per_tpc", 1}, {"cu_template", kCuTemplate}})));
+        auto* c = get_as<cpptlm::tlm::TpcCluster>(factory, "tpc");
+        REQUIRE(c != nullptr);
+        CHECK(c->cu_template() == kCuTemplate);
+        REQUIRE(c->getInternalInstance("compute_grp") != nullptr);
+    }
+    SECTION("GpcCluster ⇒ 子实例 tpc0 存在") {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "gpc", "GpcCluster",
+            json{{"gpc_id", 0}, {"tpc_per_gpc", 1}, {"cu_per_tpc", 1},
+                 {"cu_template", kCuTemplate}})));
+        auto* c = get_as<cpptlm::tlm::GpcCluster>(factory, "gpc");
+        REQUIRE(c != nullptr);
+        CHECK(c->cu_template() == kCuTemplate);
+        REQUIRE(c->getInternalInstance("tpc0") != nullptr);
+    }
+    SECTION("GpuCluster ⇒ 子实例 gpc0 存在") {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "gpu", "GpuCluster",
+            json{{"gpc_count", 1}, {"tpc_per_gpc", 1}, {"cu_per_tpc", 1},
+                 {"cu_template", kCuTemplate}})));
+        auto* c = get_as<cpptlm::tlm::GpuCluster>(factory, "gpu");
+        REQUIRE(c != nullptr);
+        CHECK(c->cu_template() == kCuTemplate);
+        REQUIRE(c->getInternalInstance("gpc0") != nullptr);
+    }
+}
+
+// F4: CepMeshInterconnect.template —— 两个合法蓝图（此前只有单一值）
+TEST_CASE("F4: CepMeshInterconnect.template 两个合法蓝图 ⇒ 观测不同",
+          "[param][migrate][batch2][f4]") {
+    register_all_types();
+
+    auto template_of = [](const std::string& path) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(
+            one_module("fabric", "CepMeshInterconnect", json{{"template", path}})));
+        auto* c = get_as<tlm::cep::CepMeshInterconnect>(factory, "fabric");
+        REQUIRE(c != nullptr);
+        // 消费证据：蓝图被加载 ⇒ 内层 router 存在（契约命名 r00..）
+        REQUIRE(c->getInternalInstance("r00") != nullptr);
+        return c->template_path();
+    };
+    CHECK(template_of("configs/interconnect/cep_mesh_1x2.json") ==
+          "configs/interconnect/cep_mesh_1x2.json");
+    CHECK(template_of("configs/interconnect/cep_mesh_2x2.json") ==
+          "configs/interconnect/cep_mesh_2x2.json");
+    CHECK(template_of("configs/interconnect/cep_mesh_1x2.json") !=
+          template_of("configs/interconnect/cep_mesh_2x2.json"));
+}
+
+// F4: CohIfNICTLM.mesh_x / mesh_y —— 两个不同合法值（此前固定 4,4）
+TEST_CASE("F4: CohIfNICTLM.mesh_x / mesh_y 生效", "[param][migrate][batch2][f4]") {
+    register_all_types();
+
+    auto mesh_of = [](std::uint32_t mx, std::uint32_t my) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "cnic", "CohIfNICTLM", json{{"node_id", 0}, {"mesh_x", mx}, {"mesh_y", my}})));
+        auto* c = get_as<tlm::cep::CohIfNICTLM>(factory, "cnic");
+        REQUIRE(c != nullptr);
+        return std::make_pair(c->mesh_x(), c->mesh_y());
+    };
+    CHECK(mesh_of(2, 2) == std::make_pair(2u, 2u));
+    CHECK(mesh_of(8, 4) == std::make_pair(8u, 4u));
+    CHECK(mesh_of(2, 2) != mesh_of(8, 4));
+}
+
+// F5: RouterTLM.credit_timeout —— 两个不同合法值 ⇒ 观测面不同（此前只有负值拒绝用例）
+TEST_CASE("F5: RouterTLM.credit_timeout 生效（两个合法值 ⇒ getter 不同）",
+          "[param][migrate][batch2][f5][router]") {
+    register_all_types();
+
+    auto timeout_of = [](std::uint64_t v) {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        REQUIRE(factory.instantiateAll(one_module(
+            "rt", "RouterTLM",
+            json{{"node_x", 0}, {"node_y", 0}, {"mesh_x", 2}, {"mesh_y", 2},
+                 {"credit_timeout", v}})));
+        auto* r = dynamic_cast<tlm::RouterTLM*>(factory.getInstance("rt"));
+        REQUIRE(r != nullptr);
+        return r->credit_timeout();
+    };
+    CHECK(timeout_of(0) == 0);
+    CHECK(timeout_of(5) == 5);
+    CHECK(timeout_of(50) == 50);
+    CHECK(timeout_of(5) != timeout_of(50));
 }

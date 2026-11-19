@@ -208,8 +208,7 @@ TEST_CASE("ABI: minimal_soc edge case: framebuffer_size_bytes > 64GB rejected",
             "name": "soc", "type": "DGpuSoc", "connections": [],
             "modules": [
                 {"name": "pcie_ep", "type": "PcieEndpointIP",
-                 "params": {"bar_sizes": [4096, 16777216], "config_size": 4096,
-                           "num_msix_vectors": 4}},
+                 "params": {"bar_sizes": [4096, 16777216], "config_size": 4096}},
                 {"name": "memory", "type": "MemoryTLM", "params": {"capacity_gb": 1}}
             ]
         }]
@@ -241,8 +240,7 @@ TEST_CASE("ABI: minimal_soc edge case: override differs from bar_sizes[1]",
             "name": "soc", "type": "DGpuSoc", "connections": [],
             "modules": [
                 {"name": "pcie_ep", "type": "PcieEndpointIP",
-                 "params": {"bar_sizes": [4096, 16777216], "config_size": 4096,
-                           "num_msix_vectors": 4}},
+                 "params": {"bar_sizes": [4096, 16777216], "config_size": 4096}},
                 {"name": "memory", "type": "MemoryTLM", "params": {"capacity_gb": 1}}
             ]
         }]
