@@ -27000,3 +27000,42 @@ AC-1(`--check` rc=0 + 幂等)/ AC-2(**判据①** 逐系列:实际 == 表行数 
 **AC**：AC-1 闸 rc=0 且未登记 0 · AC-2 P-1 闭合 · AC-3 P-2 闭合 · AC-4 **4 变异全红**（删登记 / 加未登记 `.md` / 改本体系号 / 断同目录链接）+ 还原绿 · AC-5 **删豁免必红**（证豁免必要）· AC-6 零回归（13 闸 + ctest + 冻结面 89 件）· AC-7 判据面与实现口径一致。
 
 **关联**：一期 improvement `.rddf/improvements/cpptlm-docs-index-mechanical-generation.md` · 二期 `.rddf/improvements/cpptlm-docs-index-generalization.md` · `docs/adr/README.md §7` · `docs/README.md §5`（索引不复制状态的既有约定）· Entry #342（同型先例）· Entry #502（冻结面授权）
+
+### Entry #505 — 2026-11-19 [builder](**二期实施回执** — `cpptlm-docs-index-generalization` ✅ 已实施，commit `1662c452`)
+
+**范围**：G1~G5 + 3 处附加（状态符号补齐）。**不占 OpenSpec slot**（KPI 保持 **0/3**）。
+
+#### 交付
+
+| # | 内容 | 落点 |
+|:--:|---|---|
+| G1 | 判据面 §7（7 小节：适用范围 / 登记形态 / 计量单位 / 状态符号 / 链接可达 / 闸与变异 / 明确不做） | `docs/README.md` |
+| G2 | 闸 + `--selftest` **5 变异** + ctest **#178/#179** | `scripts/test/docs_index_consistency_check.sh` · `test/CMakeLists.txt` |
+| G3 | 补登记 3 份（`14-pcie-tlp-wire-format` / `communication-network` / `multi-level-hybrid-simulation`） | `docs/designs/dgpu-soc/README.md` |
+| G4 | `09` 索引状态 `✅ v2.0 已批准` → `🟡 v2.0 草案`（**以本体为准**；本体给出 critic B4 回退依据） | `docs/architecture/README.md` |
+| G5 | 登记 | `scripts/README.md` |
+| 附加 | `10` / `12` / `13` 本体状态行补 `✅`（原只有文字无符号 ⇒ 判据③ 永远不可判） | `docs/architecture/{10,12,13}-*.md` |
+
+#### 实现期发现（已写入判据面 §7.4 / §7.5 / §7.6）
+
+| # | 发现 | 处置 |
+|:--:|---|---|
+| G-4 | 符号集含**变体选择符** ⇒ `⚠️` 的 U+FE0F 被误当状态符号（`07 号` 一度判成「索引符号 = ️」） | 符号集只用**基码点**（`➡` 而非 `➡️`） |
+| G-5 | 索引侧**取最后一个单元格**会被说明列里的 `⚠️`/`⛔` 污染 | 改为**按表头定位「状态」列** |
+| G-6 | 判据② 若覆盖跨出 `docs/` 的目标 ⇒ **拷贝根**不存在 ⇒ 基线假红（selftest 首次运行暴露 15 条） | 判据面收敛为「`docs/` 内部相对链接」（§7.5） |
+| G-7 | 豁免表可能退化为消音器 | 变异 5 = **清空豁免表必红** ⇒ 豁免必要性机械证明（§7.6） |
+
+#### 验证
+
+闸 rc=0（**12 目录**覆盖 0 未登记 · `docs/` 内相对链接全可达 · **16 份**符号比对 + 1 豁免）·
+`--selftest` **5/5** 变异全红 · `ctest` **188/188** · 13 个文档闸全绿 · `cep_freeze_check` rc=0（未触碰冻结面）。
+
+#### 未做（明确排除，理由见判据面 §7.7）
+
+状态列的**机械生成** —— 实测 `docs/architecture/*.md` 状态源行 **5 种形态** + 取值词表开放，且 `07 号` + 9 篇 `cep/*` 在 M1 冻结面内**不可改元数据** ⇒ ADR 式「全量重生成」不可移植。
+
+#### 顺带发现（**未修**，交用户裁决）
+
+`scripts/test/cep_freeze_check.sh` 的 `--authorized-by` 校验用 `grep "^### "` 提取 entry id ⇒ 台账 Entry 正文里的 `### ` 级子标题（如 Entry #502 的「授权明细」、#503 的「验收」）也会进入可选 id 集合作精确匹配。⇒ **可用子标题冒充授权条目**（闸的授权校验强度弱于设计意图）。建议修法：把提取正则收紧为 `^### Entry #`。⛔ 本次未改（不属本 change 的判据面，且改冻结面闸需单独评审）。
+
+**关联**：台账 **Entry #504**（立项）· `.rddf/improvements/cpptlm-docs-index-generalization.md` · 一期 Entry #503 / `.rddf/improvements/cpptlm-docs-index-mechanical-generation.md` · commit `1662c452`

@@ -5,7 +5,7 @@ phase: phase-1
 依赖:
   - cpptlm-docs-index-mechanical-generation（已实施 2026-11-19，per 台账 Entry #504）
   - docs/README.md §5「索引不复制状态」
-状态: 🟡 **已立项**（2026-11-19 · 台账 Entry #504 · KPI **保持 0/3** —— 与一期同型走「不占 OpenSpec slot」路径，按 `cep-b4-evidence-device` 先例）
+状态: ✅ **已实施**（2026-11-19 · per 台账 Entry #505 · commit `1662c452`；G1~G5 全部完成，**不占 OpenSpec slot**）
 created: 2026-11-19
 ---
 
@@ -108,6 +108,26 @@ created: 2026-11-19
 
 ---
 
-## 关联
+## 实施结果（2026-11-19，commit `1662c452`；per 台账 Entry #505）
 
-台账 **Entry #504**（回填 + 本 improvement 立项）· 一期 `.rddf/improvements/cpptlm-docs-index-mechanical-generation.md` · `docs/adr/README.md §7`（一期判据面）· `scripts/test/docs_adr_index_check.sh`（一期闸，本闸的模板）· `docs/README.md §5`（索引不复制状态的既有约定）
+| # | 内容 | 落点 | 判据 |
+|:--:|---|---|---|
+| **G1** | 判据面 §7（7 个小节：适用范围 / 登记形态 / 计量单位 / 状态符号 / 链接可达 / 闸与变异 / 明确不做） | `docs/README.md` | 与闸实现逐条对照一致 |
+| **G2** | 闸 + `--selftest` 5 变异 + ctest #178/#179 | `scripts/test/docs_index_consistency_check.sh` · `test/CMakeLists.txt` | 闸 rc=0；5/5 变异全红 |
+| **G3** | 修 W-1：补登记 3 份（`14-pcie-tlp-wire-format` / `communication-network` / `multi-level-hybrid-simulation`） | `docs/designs/dgpu-soc/README.md` | 判据① 对该目录绿（8/8） |
+| **G4** | 修 W-2：`09` 状态 `✅ v2.0 已批准` → `🟡 v2.0 草案`（**以本体为准**，本体给出 critic B4 回退理由） | `docs/architecture/README.md` | 判据③ 对该文件绿 |
+| **G5** | 登记 | `scripts/README.md` | `docs_sync_check --strict` rc=0 |
+| 附加 | 补 3 份文档的状态符号（`10` / `12` / `13`，本体只有文字无符号 ⇒ 判据③ 永远不可判） | `docs/architecture/{10,12,13}-*.md` | 判据③ 覆盖率 16/17（余 1 为豁免） |
+
+**实现期发现（记入判据面，防复发）**：
+
+| # | 发现 | 处置 |
+|:--:|---|---|
+| G-4 | **符号集含变体选择符会误匹配**：把 `➡️` 写进字符类 ⇒ `⚠️` 的 U+FE0F 也成了「状态符号」，`07 号` 一度被判成「索引符号 = ️」 | 符号集只用**基码点**（`➡` 而非 `➡️`），并在 §7.4 写明理由 |
+| G-5 | **索引侧不能取「最后一个单元格」**：说明列里的 `⚠️`/`⛔` 会污染判定 | 改为**按表头定位「状态」列**（§7.4），表头 = 表格行且下一行为分隔行 |
+| G-6 | **判据② 必须限定在 `docs/` 内部**：跨出 `docs/` 的目标（`scripts/` · `AGENTS.md` · `openspec/` · `docs-archived/`）在**拷贝根**不存在 ⇒ 基线假红（selftest 首次运行即暴露 15 条） | 判据面收敛为「`docs/` 内部相对链接」，并在 §7.5 写明（否则闸无法在拷贝根运行） |
+| G-7 | **豁免必要性可验证**：`06-bis` 的豁免若不再必要会变成消音器 | 变异 5 = **清空豁免表必红** ⇒ 豁免必要性被机械证明（§7.6） |
+
+**零回归**：13 个文档闸全绿 · `ctest` **188/188** · `cep_freeze_check` rc=0（未触碰 M1 冻结面）。
+
+**关联**：台账 **Entry #504**（立项）· **Entry #505**（实施回执）· 一期 `.rddf/improvements/cpptlm-docs-index-mechanical-generation.md` · `docs/adr/README.md §7`（一期判据面）· `scripts/test/docs_adr_index_check.sh`（本闸模板）
