@@ -15,6 +15,8 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -1074,4 +1076,36 @@ TEST_CASE("F5: RouterTLM.credit_timeout 生效（两个合法值 ⇒ getter 不�
     CHECK(timeout_of(5) == 5);
     CHECK(timeout_of(50) == 50);
     CHECK(timeout_of(5) != timeout_of(50));
+}
+
+// F1-3: EP 最小框架验证示例的键面守卫（per ADR-DGPU-15 §2.2 的 C-2 语义面）
+//   示例 `examples/dgpu_soc_pcie_ep_framework_min.json` 只承载**框架面**输入
+//   （`axi_adapter` 端口声明 + `bar_sizes` BAR 尺寸）；硬件建模面键一旦混入即红 ——
+//   否则「缩小设计面」会在下一次改示例时静默回退。
+TEST_CASE("F1: EP 最小框架验证示例只含框架面键", "[param][migrate][batch2][pcie-ep][example]") {
+    const auto path = std::filesystem::path(CPPTLM_SOURCE_DIR) / "examples" /
+                      "dgpu_soc_pcie_ep_framework_min.json";
+    std::ifstream in(path);
+    REQUIRE(in.good());
+    json cfg;
+    in >> cfg;
+
+    const auto& modules = cfg.at("modules");
+    const auto ep = std::find_if(modules.begin(), modules.end(), [](const json& m) {
+        return m.value("type", std::string{}) == "PcieEndpointIP";
+    });
+    REQUIRE(ep != modules.end());
+    const auto& params = ep->at("params");
+
+    // 框架面键必须在场（否则示例已不再演示它声称的框架能力）
+    CHECK(params.contains("axi_adapter"));
+    CHECK(params.contains("bar_sizes"));
+
+    // 硬件建模面键必须缺席（语义归 ArchForge 规格，不在最小示例里承载）
+    for (const char* k : {"link_layer", "phy_digital", "sr_iov", "transaction_layer",
+                          "bypass_mode", "pm_cap_control", "bar0_registers", "config_size",
+                          "resizable_bars", "num_msix_vectors", "msix_num_vectors"}) {
+        INFO("unexpected hardware-modeling key: " << k);
+        CHECK_FALSE(params.contains(k));
+    }
 }

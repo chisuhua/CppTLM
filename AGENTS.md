@@ -203,7 +203,8 @@ examples/                # C++ example_*.cc + Python demo_*.py
   example_simmodule_nested.cc          # SimModule 多层嵌套示例 (P2-P5)
   demo_pcie_full_e2e.{cc,py}           # ★ Phase 8 E2E demo (dGPU SoC + Host)
   demo_e2e_soc.py / demo_e2e_hierarchical_soc.py  # Python SoC demo
-  dgpu_soc_with_pcie_ip.json            # ★ Phase 8 完整配置 (configs/ 下无此文件)
+  dgpu_soc_with_pcie_ip.json            # ★ Phase 8 完整配置 —— 硬件建模面示例 (规格归 ArchForge)
+  dgpu_soc_pcie_ep_framework_min.json   # EP 最小框架验证示例 (只含 axi_adapter + bar_sizes)
   demo_configs/                          # Python demo 配置
 
 cpptlm/                  # Python 库 (pyproject.toml): cli/topo/config/simulation/analysis
@@ -650,7 +651,8 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 **Phase 8 整合交付 (W24 末)**:
 - `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`（从 umbrella design.md 迁移, **已迁 ArchForge**）
-- `examples/dgpu_soc_with_pcie_ip.json` 完整 dGPU SoC + PCIe EP 配置
+- `examples/dgpu_soc_with_pcie_ip.json` 完整 dGPU SoC + PCIe EP 配置（**硬件建模面示例**，语义以 ArchForge 规格为准）
+- `examples/dgpu_soc_pcie_ep_framework_min.json` EP **最小框架验证示例**（只有 `axi_adapter` + `bar_sizes` ⇒ 拓扑装配 / StreamAdapter 挂接 / BAR 可见面；`cpptlm_sim` 可跑）
 - `test/test_pcie_endpoint_ip_full_e2e.cc` 全链路 E2E (3 TEST_CASE, solve Phase 7 M1)
 - `PcieEndpointTLM` 加 `[[deprecated]]` 标注（迁移提示, ABI 不动）
 - 桥接修复 (429327d): HostBypassTLM/RC::tick() 自动转发 4 方向 AXI 通道, 让 EP 真实消费请求

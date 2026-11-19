@@ -1,0 +1,34 @@
+{
+  "name": "dgpu_soc_pcie_ep_framework_min",
+  "description": "PcieEndpointIP 的最小**框架验证**示例：只验证 CppTLM 自身的框架目标 —— 类型注册 / 模块装配 / AXI StreamAdapter 挂接 / BAR 尺寸驱动的 23 ABI driver 可见面。⚠️ 硬件建模面（FC / LTSSM / VF 池 / ARI / MSI-X 表 / PM 控制字 / bypass mux）的**规格**归 ArchForge（`ArchForge:docs/architecture/19-pcie-ip-microarchitecture.md`），其可运行示例见同目录 `dgpu_soc_with_pcie_ip.json`（硬件建模面示例）。",
+  "_framework_surface_comment": "EP 参数只留两处: ① `axi_adapter` —— 结构性端口声明（决定 AXI StreamAdapter 是否挂接，属接口框架面）; ② `bar_sizes` —— 顶层 BAR 尺寸（EP 据此写 config space 的 BAR 寄存器，DGpuBoard 亦经 `pcie_ep.params.bar_sizes` 取 BAR1 窗口，属 23 ABI driver 可见面）。⛔ 刻意不含 `link_layer` / `phy_digital` / `sr_iov` / `transaction_layer` / `bypass_mode` —— 那是硬件建模面输入，语义由 ArchForge 规格定义（per ADR-DGPU-15 §2.2 的 C-2 语义面）。",
+  "_scope_comment": "本示例**刻意**不挂 HostBypassTLM / PcieRootComplexTLM / PcieControllerIP: 前两者不是运行时注册类型（`cpptlm_sim --list-types` 无），后者需 `attach_endpoint()` 注入才能独立实例化 ⇒ 放进 JSON 会让装配失败。host 侧闭环验证由 `test/test_pcie_endpoint_ip_full_e2e.cc` 在 C++ 侧驱动。",
+  "modules": [
+    {
+      "name": "pcie_ep",
+      "type": "PcieEndpointIP",
+      "params": {
+        "axi_adapter": {
+          "data_width": 512,
+          "address_width": 64,
+          "ports": {
+            "axi_master_out": { "enabled": true, "type": "axi4" },
+            "axi_slave_in": { "enabled": true, "type": "axi4" },
+            "cfg_slave_in": { "enabled": true, "type": "axi4lite" }
+          }
+        },
+        "bar_sizes": [4096, 16777216, 8589934592]
+      }
+    },
+    {
+      "name": "vram0",
+      "type": "MemoryTLM",
+      "params": {
+        "capacity_gb": 1
+      }
+    }
+  ],
+  "connections": [
+    { "src": "pcie_ep.axi_master_out", "dst": "vram0.0", "latency": 1 }
+  ]
+}

@@ -26740,3 +26740,57 @@ AC-06 原文要求 `git diff <base> -- configs/` **为空**。实测发现 3 份
 - **C2 的 T8.7（KPI 回填）/ T8.9（归档）**：待 **verifier 复验轮**（第 2 轮 / 3）确认本轮返工后执行 —— 复验时由 verifier 更新验收报告的 F1 描述（`resizable_bars` 由「拒绝」改为「登记」）。
 
 **关联**：`ADR-DGPU-15` · 审稿报告 `.rddf/reviews/ADR-DGPU-15.md` · 验收报告 `.rddf/reviews/cpptlm-module-param-migrate-batch2-verify.md` · Entry #497（ADR 起草）· Entry #496（C2 F1 返工）· `ADR-X.17` D-3b
+
+### Entry #499 — 2026-11-19 [builder](**ADR-DGPU-15 签发**（critic 第 4 轮 APPROVE）+ **CppTLM 设计面示例收窄**（新增 EP 最小框架验证示例）)
+
+**范围**：① ADR-DGPU-15 的第 4 轮确认性复审与签发（用户批准追加）;② 用户指令「继续缩小 CppTLM 设计面示例」的落点（用户选定：**新增最小框架验证示例**，不动已交付的完整示例）。
+
+### ① ADR-DGPU-15 签发（Draft → Proposed）
+
+critic 第 4 轮（确认性复审）= **APPROVE_WITH_CONDITIONS**，`mergeable: yes`、**无 BLOCKER** ⇒ 第 3 轮 2 项 BLOCKER 逐项闭合确认（`sim_object.hh:498` / C2 `proposal.md:49` / `tasks.md:23,103` / 台账 B-22 全部实测命中;V-6 ↔ 实现 ↔ 台账 ↔ 判据 case 四者一致）⇒ 状态转 **Proposed**（oracle 2 轮 + critic 4 轮）。
+
+第 4 轮的 SHOULD_FIX / NITS 处置：
+
+| # | 内容 | 处置 |
+|:--:|---|---|
+| SF-1 | 台账 `B-21` 行仍写「已显式拒绝」，与 `:46` 摘要行、实现（`ignore_param`）、V-6② 互斥 —— ⚠️ 上一条 commit（`9821c7d9`）的 message 声称已改，实际只改了 `:46` 摘要行 | **已改**为「已登记 + 待修（态③）」，写明曾误落拒绝及改正经过 |
+| SF-2 | ADR 态④ 行出处混挂 B-21（其内容正是被推翻的处置） | 态④ 只挂 **B-22**;态③ 行补挂 **B-21** |
+| NIT-1 | 术语消歧段之后仍残留 3 处「态②拒绝」旧号 | 全部改为「态④」/「显式拒绝」;§4.1 的「3 键态②拒绝」按现状改写为「2 键拒绝 + 1 键登记」 |
+| NIT-2 | `include/core/sim_object.hh:491,497` 注释同款「态②」指拒绝 | 📌 **本次不做**（注释级、无行为影响;该头触达约 330 TU）⇒ 已在 ADR 术语消歧段登记「后续触碰该头时一并改」 |
+
+### ② CppTLM 设计面示例收窄（新增最小框架验证示例）
+
+**背景**：用户的原始方向是「CppTLM 只保留用于框架验证目标的内容」。`ADR-DGPU-15` D4 裁定**实现面不收窄**（破坏 Phase 1-8 交付 + 23 ABI 冻结 + CEP 冻结面）⇒ 可收窄的是**示例面**：CppTLM 侧保留一个只演示框架能力的 EP 示例，硬件建模面示例标注「语义以 ArchForge 规格为准」。
+
+**新增** `examples/dgpu_soc_pcie_ep_framework_min.json`：
+
+| 项 | 内容 |
+|---|---|
+| EP 参数 | 只留 `axi_adapter`（结构性端口声明 ⇒ StreamAdapter 挂接）+ `bar_sizes`（EP 写 config space BAR 寄存器 + DGpuBoard 取 BAR1 窗口 ⇒ 23 ABI driver 可见面） |
+| ⛔ 刻意不含 | `link_layer` / `phy_digital` / `sr_iov` / `transaction_layer` / `bypass_mode` / `pm_cap_control` / `bar0_registers` / `config_size`（硬件建模面输入，语义归 ArchForge 规格 per ADR-DGPU-15 §2.2 的 C-2 语义面） |
+| 拓扑 | `pcie_ep` + `vram0`（MemoryTLM），连线 `pcie_ep.axi_master_out → vram0.0` |
+| 可运行性 | ✅ `cpptlm_sim examples/dgpu_soc_pcie_ep_framework_min.json --cycles 200` → exit 0 |
+
+⚠️ **刻意不挂** `HostBypassTLM` / `PcieRootComplexTLM` / `PcieControllerIP`：前两者**不是运行时注册类型**（`cpptlm_sim --list-types` 无），后者需 `attach_endpoint()` 注入才能独立实例化 ⇒ 放进 JSON 会让装配失败（实测 `Configuration validation failed`）。host 侧闭环由 `test/test_pcie_endpoint_ip_full_e2e.cc` 在 C++ 侧驱动 —— 文件内 `_scope_comment` 已写明。
+
+**既有示例保留并标注**：`examples/dgpu_soc_with_pcie_ip.json` 加 `_design_surface_comment` ——「硬件建模面示例，语义以 ArchForge 为真源」。`AGENTS.md` 的 STRUCTURE 与 Phase 8 交付段落各补一行（注明两者的分工）。
+
+**新增守卫**（防「缩小设计面」在下次改示例时静默回退）：`test/test_param_migrate_batch2.cc` 增 `[batch2][pcie-ep][example]` case —— 读该示例 JSON，断言 EP 参数**必须含** `axi_adapter` / `bar_sizes`、**必须不含** 11 个硬件建模面键。
+
+### 验证（本轮实测）
+
+| 面 | 实测 |
+|---|---|
+| `cpptlm_tests` | **883874 / 2417**（+1 case = 新守卫;全绿） |
+| `pytest` | 232 passed（前一轮实测，本轮未改动 Python 面） |
+| `ctest` | **184 / 184** |
+| 示例可运行 | `cpptlm_sim examples/dgpu_soc_pcie_ep_framework_min.json --cycles 200` → exit 0 |
+| `docs_sync_check --strict` / `agents_md_lint` | 0 ❌ / ✅ 合规 |
+| `openspec validate --changes --strict` | ✅ |
+
+### 状态与下一步
+
+- **ADR-DGPU-15 = Proposed（已签发）**;剩余跨仓动作（键面契约 + §9.3 新旧分列 + `ADR-SOC-11` 推进 + 对账闸）登记为 backlog `cpptlm-ep-key-surface-reconciliation`，**待 planner 立项**。
+- **C2 的 T8.7（KPI 回填）/ T8.9（归档）**：仍待 **verifier 复验轮**（第 2 轮 / 3）—— 复验时由 verifier 更新验收报告的 F1 描述（`resizable_bars` 由「拒绝」改为「登记」），通过后回 builder 做 KPI + 归档。
+
+**关联**：`ADR-DGPU-15` · `.rddf/reviews/ADR-DGPU-15.md`（4 轮轨迹 + 闭合记录）· Entry #498（尾项返工）· Entry #497（ADR 起草）· 台账 B-21 / B-22
