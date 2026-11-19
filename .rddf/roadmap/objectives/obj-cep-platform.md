@@ -26653,3 +26653,44 @@ AC-06 原文要求 `git diff <base> -- configs/` **为空**。实测发现 3 份
 **下一步**：切 **verifier** 复验（第 2 轮 / 3）;通过后才执行 T8.7（KPI 回填）+ T8.9（归档）。
 
 **关联**：验收报告 `.rddf/reviews/cpptlm-module-param-migrate-batch2-verify.md` · Entry #495（T8 验证）· 台账 B-21 / B-22 / B-23
+
+### Entry #497 — 2026-11-19 [architect](**ADR-DGPU-15 起草 + 双审（Budget-exhausted, Draft）** —— PcieEndpointIP 的 CppTLM / ArchForge 职责边界裁定)
+
+**范围**：`docs/adr/ADR-DGPU-15-pcie-endpoint-ip-cpptlm-archforge-boundary.md`（新增，205 行，**Draft**）+ 审稿报告 `.rddf/reviews/ADR-DGPU-15.md`。
+
+**触发**：用户 2026-11-19 指令「切 architect 做这次边界裁定」（背景 = C2 验收 finding F1 暴露 `PcieEndpointIP` 的键面漂移）。
+
+### 裁定要点
+
+- **D1** 跨仓关系**不变**（规格在 ArchForge / 实现在 CppTLM）—— 19 号文档 §1 的「完整 CppTLM 模型」即规格意图 ⇒ **「移入 ArchForge」的唯一有效含义 = 把键面契约升格为 ArchForge 的规格对象**。
+- **D2** 键面**二分**（v1 的 L1/L2/L3 语义分层**撤销**）：**C-1 消费面**（CppTLM 侧机械可判:有消费点⇒登记 / 无消费点⇒显式拒绝）+ **C-2 语义面**（ArchForge 契约侧人工评审）⇒ **CppTLM 不再维护语义分类器**（消除自反例与分类器腐化）。
+- **D3** ArchForge 侧新增 `docs/microarchitecture/pcie-endpoint.md`（键面契约）+ 19 号文档 §9.3 新旧键面分列 + `ADR-SOC-11` 状态推进。
+- **D4** 实现面**不收窄**（Phase 1-8 已交付 + 23 ABI 冻结 + CEP 冻结面 + 现行配置实测使用 6 个硬件建模键）。
+- **D5** C2 的参数声明面期望集**维持**（不回退路径 A）;未来若收窄 ⇒ 该类型退出参数声明面 + 未来 ADR 须含**键级 diff**。
+- **D6** 跨仓对账闸（三集合口径 `S_cfg`/`S_contract`/`S_impl` + 四方向，红覆盖黄 + 契约 hash 登记）。
+
+### 审稿轨迹（过程日志落治理台账，ADR 正文只留结论）
+
+| 轮 | 审查者 | 判定 | 要点 |
+|:--:|---|---|---|
+| 1 | oracle | BLOCK | 5 项（D2 三层自反例 / V-2·V-3 伪判据 / 漏第三方案 / V-1 措辞 / 事实未复核） |
+| 2 | oracle | **PASS** | 5 项逐项闭合 + 2 条低危 NOTES |
+| 1 | critic（arch） | REJECT | 1 BLOCKER（D6 方向①「红」↔ V-4 变异②「黄」互斥）+ 1 SHOULD_FIX（过程日志）+ 1 NIT |
+| 2（复审） | critic（arch） | REJECT | 第 1 轮项**已闭合** ✅;但**新 BLOCKER**：我为修 NIT 新增的「与 ADR-X.17 D-3b 并存口径」小节 = **伪引证**（`ADR-X.17` 零命中「态②/显式拒绝」;该措辞出自 C2 design D-2）+ **与已签批 D-3b 冲突未裁决** |
+
+⇒ 第 2 轮 BLOCKER 已按可套用措辞闭合（§2.2 四态表 + 改引真实权威 + D6 红覆盖黄 + V-4 六条变异 + 2 NITS），但**critic 预算用尽（2/2）** ⇒ **未获第 3 轮确认** ⇒ **ADR 状态保持 `Draft`（未签发）**（先例：`ADR-X.17` 审稿报告同款收口）。
+
+### ⚠️ 闭合过程中暴露的**实施缺口**（builder 域，已登记待返工）
+
+`resizable_bars` 属四态表的 **③**（规格侧有该语义:19 号文档把 `resizable_bars_` 列为 EP 值成员 + 运行期 API `enable_resizable_bar()` 已存在;缺的只是 JSON 绑定）⇒ 按 `ADR-X.17` **D-3b**（零效果键 SHALL `ignore_param` 登记 + 落表 B，**不得**使装配失败）⇒ **C2 落地的「态②显式拒绝」与 D-3b 冲突** ⇒ 须改为 `ignore_param` 登记 + 表 B「待修」（连带：台账 B-21 状态 + 验收报告 F1 描述）;另 `param_admission.hh` 的注释计数（2 → 3）同批修。
+⇒ 顶层 `num_msix_vectors` / `msix_num_vectors` 仍属 **④**（旧类的键、规格上不属于新类 + PF resize 入口是冻结头里的 no-op）⇒ 态②拒绝**成立**。
+
+### 后续
+
+| 项 | 归属 | 状态 |
+|---|---|---|
+| critic 第 3 轮（确认性复审） | critic | ⚠️ **预算用尽** ⇒ 需用户批准方可追加 |
+| `resizable_bars` 返工 + 注释计数 + 验收报告 F1 描述 | **builder**（C2 尾项，**归档前**） | **待返工** |
+| ArchForge 键面契约 + §9.3 分列 + `ADR-SOC-11` 推进 + 对账闸 | **跨仓**（backlog `cpptlm-ep-key-surface-reconciliation`） | **待 planner 立项** |
+
+**关联**：验收报告 `.rddf/reviews/cpptlm-module-param-migrate-batch2-verify.md` · 审稿报告 `.rddf/reviews/ADR-DGPU-15.md` · Entry #496（C2 返工）· `ADR-X.17` D-3b · ArchForge `ADR-SOC-11`
