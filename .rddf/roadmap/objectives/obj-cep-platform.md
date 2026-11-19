@@ -27204,9 +27204,21 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 | NIT 3 · `errors.append(fail(...))` 与全文 `errors += fail(...)` 形态不一（`errors` 是 int 计数器 ⇒ 该行一旦触发即 `AttributeError`） | 改为 `errors += fail(...)` |
 | NIT 4 · 影子树判据面 | 记录确认,无 finding（globs 是判据面不是被测内容;不可读时 fail-closed） |
 
+#### 实施期发现（实测事故 · 2026-11-19）
+
+跑第一步 `--update --authorized-by "Entry #509"` 时**实测踩到解析误伤**：本 Entry 正文里**讲解语法用的两行示例**
+（`- 冻结面移出 \`<相对路径>\`:<理由>` / `- 冻结面排除 \`<相对路径>\`:<理由>`）被同一个正则当成**真声明** ⇒
+清单被塞进一条假排除项 `path = "<相对路径>"` ⇒ **清单被污染**。
+
+⇒ 修法（声明须**形态合法 + 落在相关集合内**才生效，否则**不授予任何权限** = fail-safe）：
+① 路径形态须合法（`^[A-Za-z0-9._][A-Za-z0-9._/-]*$`，含 `/`、不含尖括号/空格）；
+② **排除**声明的路径须在**当前 glob 展开集内**；③ **移出**声明的路径须在**本次 `removed` 集内**；
+④ 排除表**每次重算**（旧条目中路径已不存在 ⇒ 丢弃）⇒ 无效条目不会永久沉淀。
+⇒ 自测⑪ 锁死该回归（示例行不得产生排除项）。
+
 #### 验证
 
-- `cep_freeze_check.sh --self-test` rc=0 —— **10 条**反向自测全绿（授权 id 口径 / 子标题冒充 / 真实台账形态 / 未授权移出被拒且不写盘 / 排除差分生效 / 范围不一致报红 / 纸面排除报红 / 清单注入排除报红 / 仅提及不授权 / 声明行放行）
+- `cep_freeze_check.sh --self-test` rc=0 —— **11 条**反向自测全绿（授权 id 口径 / 子标题冒充 / 真实台账形态 / 未授权移出被拒且不写盘 / 排除差分生效 / 范围不一致报红 / 纸面排除报红 / 清单注入排除报红 / 仅提及不授权 / 声明行放行 / 语法示例行不生效）
 - `cep_freeze_check.sh`（无参）rc=0（89 件 hash 一致）· `cep_adr_structural_check` rc=0 · `cep_docs_sync_check` rc=0 · `rddf_stage_gate` rc=0 · `docs_sync_check --strict` rc=0
 - `cep_freeze_reverse_verify` rc=0（基线绿 → 破坏红点名 `fabric.json` → 还原绿;字节级还原实测一致）
 - `ctest` 191/191

@@ -362,6 +362,41 @@ STEOF
     tail -4 "$_st_dir/r10.log" | sed 's/^/      /'
   fi
 
+  # ── ⑪ 语法**示例行**不得产生排除项(2026-11-19 实测事故)────────────
+  #   台账 Entry 里常会**讲解**声明语法(示例行长得像真声明)⇒ 解析器若照单全收,
+  #   清单会被塞进 `<相对路径>` 这类假排除项。⇒ 声明须「形态合法 + 落在相关集合内」。
+  _st_led11="$_st_dir/ledger_e.md"
+  cat > "$_st_led11" <<'STEOF'
+## 台账
+### Entry #5 — 仅讲解语法(无真实声明)
+授权面有两种声明行,格式如下(这是**示例**,不是真实声明):
+- 冻结面移出 `<相对路径>`:<理由>     # 该路径离开冻结面
+- 冻结面排除 `<相对路径>`:<理由>     # 该路径不进冻结面
+STEOF
+  _st_man11="$_st_dir/man11.json"
+  python3 - "$_st_man11" <<'STEOF'
+import json, sys
+json.dump({"globs": [], "artifact_count": 0, "exclusions": [], "artifacts": {}},
+          open(sys.argv[1], "w"), indent=2)
+STEOF
+  if CEP_FREEZE_MANIFEST="$_st_man11" CEP_FREEZE_LEDGER="$_st_led11" \
+       bash "$0" --update --authorized-by "Entry #5" > "$_st_dir/r11.log" 2>&1; then
+    if python3 - "$_st_man11" <<'STEOF'
+import json, sys
+m = json.load(open(sys.argv[1]))
+sys.exit(0 if not m.get("exclusions") else 1)
+STEOF
+    then
+      echo "  ✓ 自测⑪:语法示例行**未**产生排除项(声明须形态合法 + 落在相关集合内)"
+    else
+      echo "  ✗ 自测失败⑪:语法示例行被当成真声明 ⇒ 清单被污染"; _st_rc=1
+      tail -4 "$_st_dir/r11.log" | sed 's/^/      /'
+    fi
+  else
+    echo "  ✗ 自测失败⑪:仅含示例行的 --update 报错"; _st_rc=1
+    tail -4 "$_st_dir/r11.log" | sed 's/^/      /'
+  fi
+
   [ "$_st_rc" -eq 0 ] && echo "  ✓ 授权闸反向自测通过" || echo "  ✗ 授权闸反向自测失败"
   exit "$_st_rc"
 fi
@@ -419,8 +454,15 @@ BODY = entry_body(auth)
 #     ⚠️ **不得**用「Entry 正文里出现该路径」当作授权(2026-11-19 critic SHOULD_FIX 2):
 #        台账正文大量引用 ADR / spec 全路径 ⇒ 顺带提及即构成授权 ⇒ 意外放行。
 #        「移出」与「排除」同形态声明 ⇒ 与 entry-id 侧的精确度对等。
+#   ⚠️ **声明必须「形态合法 + 落在相关集合内」才生效**(2026-11-19 实测事故):
+#      Entry 正文里**讲解语法用的示例行**(如 `- 冻结面排除 `<相对路径>`:<理由>`)
+#      会被同一个正则当成真声明 ⇒ 清单被塞进假排除项。
+#      ⇒ ① 路径形态须合法(不含尖括号/空格,须含 `/`);② 排除声明的路径须**在当前
+#         glob 展开集内**;③ 移出声明的路径须**在本次 `removed` 集内**。
+#         不满足 ⇒ **不生效**(声明不授予任何权限 ⇒ fail-safe)。
 DECL_EXCL_RE = re.compile(r"^-\s*冻结面排除\s*`([^`]+)`\s*[:：]\s*(\S.*)$", re.M)
 DECL_OUT_RE = re.compile(r"^-\s*冻结面移出\s*`([^`]+)`\s*[:：]\s*(\S.*)$", re.M)
+PATH_SHAPE = re.compile(r"^[A-Za-z0-9._][A-Za-z0-9._/-]*$")
 DECLARED = {p: reason.strip() for p, reason in DECL_EXCL_RE.findall(BODY)}
 DECLARED_OUT = {p: reason.strip() for p, reason in DECL_OUT_RE.findall(BODY)}
 
@@ -454,15 +496,23 @@ except Exception:
 #   ⚠️ 旧实现:`exclusions` 是**只写字段**(`--update` 恒写 `[]`),从无声明源、
 #      也从不参与产物集计算 ⇒ 文档宣称的「唯一可豁免通道」实际不存在。
 #   ⇒ 声明源 = **授权 Entry 正文的声明行**(台账 = 唯一授权源,零第二真源);
-#      排除表在清单里**累积**(旧条目保留 + 本次声明追加),条目形态沿用
-#      Entry #324 已定的 `{path, reason, ledger_entry}`。
+#      条目形态沿用 Entry #324 已定的 `{path, reason, ledger_entry}`。
+#   ⚠️ **排除表每次重算**(不盲目累积):
+#      · 旧条目中路径**仍在当前 glob 展开集内** ⇒ 保留(此前已获授权的长期豁免);
+#      · 旧条目中路径已不存在 ⇒ **丢弃**(文件已消失 ⇒ 豁免已无意义);
+#      · 本次 Entry 的**有效**排除声明 ⇒ 追加。
+#      ⇒ 避免「一条无效排除项永久沉淀在清单里」(2026-11-19 实测事故的修复面)。
+SCOPE = set(files)
 EXCL = {}
 for e in old_excl:
-    if isinstance(e, dict) and e.get("path"):
+    if isinstance(e, dict) and e.get("path") and e["path"] in SCOPE:
         EXCL[e["path"]] = {"path": e["path"], "reason": e.get("reason", ""),
                            "ledger_entry": e.get("ledger_entry", "")}
 for p, reason in DECLARED.items():
-    EXCL[p] = {"path": p, "reason": reason, "ledger_entry": auth}
+    if p in SCOPE and PATH_SHAPE.match(p):
+        EXCL[p] = {"path": p, "reason": reason, "ledger_entry": auth}
+    else:
+        print(f"  ! 排除声明**未生效**(路径不在当前冻结范围内,或形态非法): {p}")
 
 # 减法:被排除的产物**不进**冻结集
 files = [f for f in files if f not in EXCL]
@@ -475,10 +525,15 @@ changed = sorted(r for r in (set(old_arts) & set(new_arts)) if old_arts[r] != ne
 # ── C-1b:**拒绝静默丢产物** ──────────────────────────────────────────
 #   清单的 `artifacts` 是**快照**:`--update` 重算 ⇒ 移出范围的产物**静默失去冻结**
 #   且无任何判据报红(verify 只遍历 `artifacts`)。
-#   ⇒ 移出必须被**授权 Entry 显式声明**:按「移出声明行」登记该路径。
+#   ⇒ 移出必须被**授权 Entry 显式声明**,二选一:
+#      · 「移出声明行」(`- 冻结面移出 \`<路径>\`:<理由>`)—— 该路径就此离开冻结面;
+#      · 「排除声明行」(`- 冻结面排除 \`<路径>\`:<理由>`)—— 该路径改为长期豁免。
 #      ⚠️ 不得用「正文里出现该路径」当授权(critic SHOULD_FIX 2)—— 台账正文大量引用
 #         ADR / spec 全路径,顺带提及即构成授权。
-unauthorized = [r for r in removed if r not in EXCL and r not in DECLARED_OUT]
+#      ⚠️ 移出声明**只对本次 `removed` 里的路径生效**(形态合法 ∧ 确在移出集内)
+#         ⇒ 讲解语法用的示例行不授予任何权限(2026-11-19 实测事故)。
+DECLARED_OUT_EFF = {p for p in DECLARED_OUT if p in removed and PATH_SHAPE.match(p)}
+unauthorized = [r for r in removed if r not in EXCL and r not in DECLARED_OUT_EFF]
 
 try:
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root,
@@ -497,7 +552,7 @@ print(f"[cep_freeze_check] 清单差集(相对旧清单):新增 {len(added)} · 
 for r in added:
     print(f"    + 新增冻结产物: {r}")
 for r in removed:
-    tag = "已声明排除" if r in EXCL else ("已声明移出" if r in DECLARED_OUT else "⚠️ 未获授权")
+    tag = "已声明排除" if r in EXCL else ("已声明移出" if r in DECLARED_OUT_EFF else "⚠️ 未获授权")
     print(f"    - 移出冻结面: {r}  [{tag}]")
 for r in changed:
     print(f"    ~ hash 变更: {r}")
