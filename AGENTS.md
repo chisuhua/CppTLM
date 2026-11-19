@@ -4,7 +4,7 @@
 
 ## WHAT THIS IS
 
-TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**（由 PCIe Endpoint IP + GPGPU Cluster + Memory Cluster + NoC Interconnect + 多层 SimModule 容器等 IP 构成）。2026-2027 年完成 **7 阶段 PCIe EP 微架构**全链路交付（链路层 → 编码 → PHY 数字控制 → SR-IOV → AXI Stream Adapter → AXI4Mapper → Host Bypass + RC → 整合），**Phase 1-7 全部通过 Oracle 评审放行；Phase 8 整合交付完成**。2026-10 起承载 **CEP 平台**（Coherence Exploration Platform —— 跨协议一致性探索平台：23 份 ADR（= 24 个 `ADR-CEP-*` 文件 − `NUMBER-MAP`）+ 46 份 main spec + 45 个契约闸（闸数**以 `ls scripts/test/cep_*.sh` 为准**;2026-11-15 实测）），同时继承既有 GPGPU 端（GPU CU / TPC / GPC / GPU Cluster 多层 + DMA/Doorbell/CommandProcessor/CompletionRing MVP）与顶层 ApuSoC 容器。
+TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**（由 PCIe Endpoint IP + GPGPU Cluster + Memory Cluster + NoC Interconnect + 多层 SimModule 容器等 IP 构成）。2026-2027 年完成 **7 阶段 PCIe EP 微架构**全链路交付（链路层 → 编码 → PHY 数字控制 → SR-IOV → AXI Stream Adapter → AXI4Mapper → Host Bypass + RC → 整合），**Phase 1-7 全部通过 Oracle 评审放行；Phase 8 整合交付完成**。2026-10 起承载 **CEP 平台**（Coherence Exploration Platform —— 跨协议一致性探索平台：23 份 ADR（= `ADR-CEP-*` 文件数 − `NUMBER-MAP`）+ CEP main spec + 契约闸（**计数一律用命令取**：`ls docs/adr/ADR-CEP-*.md | wc -l` · `ls -d openspec/specs/cep-* | wc -l` · `ls scripts/test/cep_*.sh | wc -l`）），同时继承既有 GPGPU 端（GPU CU / TPC / GPC / GPU Cluster 多层 + DMA/Doorbell/CommandProcessor/CompletionRing MVP）与顶层 ApuSoC 容器。
 
 **First read** for new agents: `docs/ONBOARDING.md` (knowledge-graph-generated ramp-up)。
 Architecture 必读:
@@ -33,253 +33,66 @@ D-AXI (cpptlm-driver-visible-minimal-soc) 实现笔记:
   - **7 条实施铁律**：见 `docs/pcie/driver-visible-minimal-soc.md` §4
   - **3 项遗留议题**：D1 Display FB (冻结面约束, D3 收编) / doorbell 0x10010000 (测试合成偏移) / MemoryTLM capacity_gb=1 (不静默)
 
-## STRUCTURE (verified @ 3f5e99ad, 2026-11-05)
+## STRUCTURE (主线导航 —— 逐文件清单见 [`docs/REPO-MAP.md`](./docs/REPO-MAP.md))
 
-> 本树是**导航图**，非穷举清单；逐文件清单以 `ls` 为准。标注 `★` 的是本仓主线区域。
+> 本树只留 **★ 主线 + 一级目录**（防止 AGENTS.md 无限膨胀）。逐文件清单、`⚠️` 废弃/迁出标注、配置与文档明细**全部**在 [`docs/REPO-MAP.md`](./docs/REPO-MAP.md)。
 
 ```
-include/                 # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
-  core/                  # SimObject/ModuleFactory/Port/ChStream 基类 + ext/ 子目录
-  tlm/                   # TLM 2.0 基础模块
-    cache_tlm.hh / crossbar_tlm.hh / memory_tlm.hh / cpu_tlm.hh / router_tlm.hh
-    nic_tlm.hh / link_tlm.hh / traffic_gen_tlm.hh / arbiter_tlm.hh
-    coherent_xbar_tlm.hh / vram_controller_tlm.hh / vram_noc_adapter.hh / tlm_stub.hh
-    cluster/           # ★ dGPU SoC 多层 SimModule 容器 (9 类 P2-P5,顶层容器 ApuSoC)
-      cpu_cluster.hh        # CPU 侧: 持有 CPUTLM/CacheTLM/MemoryTLM
-      compute_cluster.hh    # 单 CU 蓝图复制 (cu_template + cu_count)
-      tpc_cluster.hh        # GPGPU TPC: 持有 2-8 个 ComputeCluster
-      gpc_cluster.hh        # GPGPU GPC: 持有 N 个 TpcCluster
-      gpu_cluster.hh        # ★ 顶层 GPGPU: 持有 GpcCluster + 共享 L2 + 显存控制器 (4 级 GPU 层次)
-      cache_cluster.hh      # L1×N + L2 聚合
-      memory_cluster.hh     # 多通道 HBM/DDR 控制器
-      gpu_noc_cluster.hh    # GPU 端 mesh interconnect
-      apu_soc.hh            # ★ 顶层 dGPU/APU SoC: CPU侧 + GPU侧 + Crossbar 互联
-      gpu_internal_fabric.hh # 4-IP fabric (走 programmatic bridge, 无 ChStream 端口字段)
-      soc_internal_noc.hh   # SoC 内部 DataNoC (走 programmatic bridge)
-    gpu/               # ★ SM 重构 GPGPU 端 + dGPU 板级组件
-      streaming_multiprocessor_tlm.hh    # ★ SM 顶层容器 (12 子模块 + IComputeDevice 15 方法)
-      i_compute_device.hh / instruction_descriptor.hh    # SM-owns-state 跨仓契约 (HSK-9)
-      sm/                       # ★ 12 个 ChStream SM 子模块 (Fetch/Decode/Issue/ScalarALU/
-                                #   VectorALU/MatrixCore/SIMTLane/LsuGlobal/LsuLDS/RegFileUnit/
-                                #   WritebackUnit/HazardTracker) —— 每模块 2 个头 (X.hh + X_tlm.hh)
-      dma_descriptor_mvp.hh / doorbell_mvp.hh / completion_ring_mvp.hh
-      command_processor_mvp.hh / submit_queue_mvp.hh / pm4_decoder_mvp.hh
-      sdma_engine_tlm.hh / sdma_noc_adapter.hh / msix_table_mvp.hh
-      pcie_config_space_mvp.hh / gmmu_tlm.hh
-      pcie_endpoint_tlm.h        # PcieEndpointTLM 4 端口冻结 (Phase 7.A, [[deprecated]])
-      pcie_display_device.hh / pcie_memory_device.hh / pcie_bar_router_mvp.hh
-      dgpu_board_shell.hh / dgpu_soc.hh / tmu_dispatch_processor_tlm.hh
-    pcie/              # ★ 7 阶段 PCIe EP 微架构 (本项目主体,2026-2027)
-      pcie_link_layer_tlm.hh            # Phase 1: 链路层 + DLLP + FC Token Bucket
-      pcie_link_phy_mux_tlm.hh          # ★ Phase 1/2: LL+PHY+Mux composite (17 端口, EP internal_factory 持有)
-      pcie_encoding_latency_model.hh   # Phase 2: 128b/130b Encoding
-      pcie_phy_digital_ctrl_tlm.hh      # Phase 3: PHY 数字控制 (LTSSM 11 态)
-      pcie_bypass_mux.hh                # Phase 3: 3 态模式切换 (Full/Bypass/Partial)
-      pcie_sriov_vf_pool_tlm.hh         # Phase 4: SR-IOV VF Pool (17 端口 PcieEndpointIP)
-      pcie_endpoint_ip.hh               # Phase 4: 整合模块 (1 PF + 16 VF); Phase 2 基类 SimModule
-                                        #   (REGISTER_MODULE; composite 归 internal_factory)
-      pcie_config_space_per_vf_tlm.hh   # Phase 4: per-VF Config Space
-      pcie_msix_per_vf_tlm.hh           # Phase 4: per-VF MSI-X
-      pcie_completion_tracker_tlm.hh    # Phase 4: NP↔CplD trans_id 关联
-      pcie_ari_router_tlm.hh            # Phase 4: ARI 路由
-      pcie_axi_adapter_tlm.hh           # Phase 5: AXI 事务边界 + PcieAxiAdapter
-      pcie_resizable_bar.hh / pcie_tlp_codec.hh / pcie_acs_extended_cap.hh
-      host_bypass_tlm.hh                # Phase 7: 软件 bring-up 跳过 RC BFM
-      pcie_root_complex_tlm.hh          # Phase 7: 自研 RC 模型 (枚举 PF0-only)
-      pcie_controller_ip.hh              # 4-IP 顶层 facade (4 BAR decode; attach_endpoint() 注入 EP)
-      pcie_axi_bridge_ip.hh             # EP composite (非顶层; REGISTER_MODULE 已移除)
-      host_pcie_test_stub.hh            # in-process 仿真测试桩 (FLR / Resizable BAR)
-    cep/               # ★ CEP 平台 (Coherence Exploration Platform) —— 43 个 .hh + 9 个 JSON/schema 声明源(共 52 文件)
-      protocol_engine_base.hh / protocol_family.hh / collective_plane.hh / collective_plane_contract.hh
-      fabric_collective_plane.hh / sharer_tracker.hh / ordering_point_checker.hh
-      stub_cache_core.hh / address_resolver.hh / channel_dependency_graph.hh
-      *_protocol_engine.hh / *_adapter.hh / *_state_spec.hh   # CHI-RNF / CXL-DCOH / MESIF / MOESI-GPU /
-                                        #   NVLink-Sharp / UALink-Inc / CoHIF / TileLink
-      fabric.json / collective_planes.json / perm_upgrades.json / protocol_instances.json
-      # ↑ 同名 .schema.json —— 协议实例 / 权限升级的机器可读 schema
-    lwc/               # LWC 总线 hub (header-only, 32-port cap)
-      lwc_bus_hub.hh
-  framework/           # StreamAdapter 转换层 (单/多/双端口 + 双向) + AXI4Mapper + protocol_bridge
-  bundles/             # Bundle 定义: cache/noc/compute/pcie/dgpu/sm/coherence/cr/doorbell/msix + cpphdl_types
-  abi/                 # 23 ABI C extern "C" 头冻结 (per ADR-088 §D5)
-  ext/                 # TLM 扩展插件 (credit_stream/error_context/mem/transaction_context)
-  metrics/             # histogram/stats/metrics_reporter/streaming_reporter
-  rtl/                 # RTL 桥接头文件 (fragment_mapper, hybrid_cache_*)
-  utils/               # config_utils/json_includer/var_resolver/wildcard/dynamic_loader/port_contract_asserts
-  chstream_register.hh   # REGISTER_CHSTREAM / REGISTER_ALL 宏入口 (注册 Object + StreamAdapter)
-  modules.hh             # REGISTER_OBJECT (v2.2 起 no-op) / REGISTER_MODULE 宏入口
-  modules_cluster.hh     # REGISTER_MODULE 参数化入口 (9 个 SimModule 派生类集中注册)
+include/                 # 所有 .hh（src/ 只放 .cc，不混用）
+  core/                  # SimObject / ModuleFactory / Port / ChStream 基类
+  tlm/                   # TLM 2.0 模块 + 三层容器
+    cluster/             # ★ 9 类 SimModule 容器（CPU→CU→TPC→GPC→GPU + ApuSoC）
+    gpu/                 # ★ SM 顶层 + 12 ChStream 子模块 + dGPU 板级组件
+    pcie/                # ★ 7 阶段 PCIe EP 微架构（本项目主体）
+    cep/                 # ★ Coherence Exploration Platform
+    lwc/                 # LWC 总线 hub（header-only, 32-port cap）
+  framework/             # StreamAdapter 转换层 + AXI4Mapper + protocol_bridge
+  bundles/ abi/ ext/ metrics/ rtl/ utils/
+  chstream_register.hh   # REGISTER_CHSTREAM / REGISTER_ALL 宏入口
+  modules.hh             # REGISTER_MODULE（REGISTER_OBJECT 自 v2.2 起 no-op）
+  modules_cluster.hh     # 9 个 SimModule 派生类集中注册
 
-src/                    # .cc 实现 + main.cpp
-  core/                  # module_factory / connection_resolver / param_parser / plugin_loader / topology_*
-  tlm/                   # router_tlm / nic_tlm / link_tlm / cache_tlm / crossbar_tlm / coherent_xbar_tlm
-  tlm/cluster/           # SimModule 派生类 .cc 实现 (P2-P5 9 类 + gpu_internal_fabric / soc_internal_noc)
-  tlm/pcie/              # ★ 7 阶段 PCIe EP 实现 (.cc) —— 18 个 .cc (含 Phase 8 M1 接线)
-  tlm/gpu/               # dgpu_board_shell / dgpu_soc / pcie_endpoint_tlm (Phase 7.A 冻结) + SM 子模块 .cc
-  framework/             # axi4_stream_adapter / axi4_mapper / axi4_bundle_to_signal / axi4_signal_to_bundle
-  abi/                   # cpptlm_emulator.cc
-  bundles/               # pcie_tlp_wire_bundle.cc
-  rtl/                   # hybrid_cache_component / hybrid_cache_wrapper (BUILD_RTL=ON)
-  utils/                 # dynamic_loader 实现
-  main.cpp               # 主仿真入口
+src/                     # .cc 实现 + main.cpp
+  core/ tlm/ framework/ abi/ bundles/ rtl/ utils/
+  tlm/cluster/ tlm/pcie/ tlm/gpu/
+  main.cpp
 
-build.sh                # 独立构建入口（OFF/PTX-EMU，薄包装转 scripts/build/build.sh）
-test.sh                 # 统一测试入口（默认只 test；--build 显式 build+test；--verify-fix 一键回归）
+test/                    # Catch2 v3.7.0（规模见 §KEY INVARIANTS；file GLOB 例外）
+  CMakeLists.txt
+  mock_modules.hh
 
-test/                   # Catch2 v3.7.0 测试套件 (370 个 test_*.cc, 全在顶层)
-  catch_amalgamated.hpp  # Catch2 预编译 (非 FetchContent)
-  CMakeLists.txt         # 测试构建配置 (file GLOB test_*.cc — AGENTS.md 例外)
-  test_pcie_endpoint_ip_full_e2e.cc   # ★ Phase 8 全链路 E2E (solve Phase 7 M1)
-  test_pcie_endpoint_*.cc              # Phase 1/4/5/6/7/8 链路测试
-  test_pcie_sriov_*.cc                 # Phase 4 SR-IOV VF Pool 测试
-  test_pcie_link_layer_*.cc test_pcie_phy_digital_*.cc test_pcie_bypass_*.cc  # Phase 1-3
-  test_pcie_axi_adapter_*.cc test_axi4_*.cc test_axi4_mapper_*.cc             # Phase 5-6
-  test_host_bypass_*.cc test_pcie_root_complex_*.cc                          # Phase 7
-  test_cep_*.cc                        # ★ CEP 平台测试 (标签 [cep], 主力测试集)
-  python/                # Python 侧测试 (21 个 test_*.py)
-  mock_modules.hh        # 测试用 Mock 模块
-
-configs/                 # JSON 拓扑配置 (顶层 55 个 json, 递归 66 个)
-  common/ param_rules/ templates/ test/    # 共享 + 规则 + 模板 + 测试配置
-  apu_soc_v1.json         # 顶层 SoC 配置 (CPU + GPU + Crossbar)
-  apu_soc_full.json / apu_soc_phase7b.json  # 阶段性
-  # ⚠️ apu_soc_phase7a.json / gpu_standalone.json / templates/gpu_soc/gpu_soc_gb203_v1.json
-  #    已于 2026-11-18 删除（设计类型归档 per change cpptlm-config-type-registration-align T7）
-  dgpu_board_v1.json     # dGPU 板级 (23 ABI driver-visible 入口)
-  dgpu_soc_minimal_v1.json  # Minimal dGPU SoC v1.8 (D-AXI 终态, functional)
-  dgpu_soc_timing_v1.json  # Timing-mode dGPU SoC v0.5 (timing)
-  dgpu_soc_v2_realip_p2.json  # 4-IP nested topology (Phase C 终态, pin-contract archived)
-  dgpu_soc_v1.json.in.disabled  # ⚠️ Deprecated 2026-10-09 (PcieEndpointTLM deprecated)
-  # ★ Phase 8 完整 dGPU SoC + PCIe EP 配置在 examples/dgpu_soc_with_pcie_ip.json (不在 configs/)
-
-docs/
-  architecture/          # 真源 1: 通用基础架构 (事务/错误/复位/拓扑/可视化/协议中立基线)
-    01-hybrid-architecture-v2.1.md      # ★ 整体 NoC 架构
-    06-inter-module-network.md          # 协议中立基线(通用真源 1;CEP 的**引用源**映射见 ADR-CEP-00A §3.1)
-    06-bis-coherence-as-network-extension.md  # CEP 一致性扩展真源
-    07-coherence-exploration-platform.md # CEP 平台总纲(唯一入口;§4 invariant 定义处)
-    cep/                                # ★ CEP 子文档 9 篇(实体;节号以 07 号 为准)
-      parity-baseline.md                #   H7 对拍基准规格(独立验证手段面;**不在 §N 体系内**)
-      stub-cache-core.md / coherence-interface.md / protocol-engine.md
-      directory-ordering.md / collective-plane.md / fabric-transport.md
-      simulation-and-experiment.md / core-traffic-gen.md
-    02-04 / 08-13 ...                   # 其他架构决策（事务/错误/复位/指标/拓扑/相干/仪表板）
-  designs/               # 真源 2: dGPU 应用架构 (Board 内部 + SoC 业务 + Driver 接口 三视角)
-    README.md                           #   总入口（与 docs/architecture/ 分工说明）
-    dgpu-board/architecture.md          #   Board 内部架构 (5 层 + 5 组件 + 析构协议)
-    dgpu-soc/architecture.md            #   SoC 业务架构 (6 模块拓扑 + GMMU + SDMA + 存储子系统)
-    dgpu-soc/timing-mode.md             #   timing-mode SoC 业务设计
-    dgpu-driver/architecture.md         #   Driver 接口架构 (15 ABI + 4 BAR + driver 闭环)
-  adr/                   # 真源 3: 不可变 ADR (63 份: ADR-CEP-* 24 + ADR-DGPU-* 15 + ADR-X* 18 + 其他 6)
-    ADR-CEP-00-platform-charter-and-governance.md   # ★ CEP 治理宪章 (跨仓归口 + 准入门槛)
-    ADR-CEP-00A-real-source-anchor-map.md           # ★ CEP 真源章节映射表 (ADR 引用锚点)
-    # 其余 ADR-CEP-01 ~ ADR-CEP-19 / 07A 与 ADR-DGPU-01 ~ 09 见 ls docs/adr/
-    ADR-DGPU-05-vram-storage-ownership.md            # D-AXI B7 单一 VRAM 所有权（P0 根因）
-    ADR-DGPU-06-axi-mem-bundle-boundary.md           # D-AXI B2 chip-internal vs board-level 边界（P0）
-    ADR-DGPU-07-minimal-soc-evolution-seam.md        # D-AXI §X D3-D5 演进 seam（接口零变更）
-    ADR-DGPU-08-abi-freeze-policy.md                 # D-AXI 23 ABI 冻结 + 0 新增（P0）
-    ADR-DGPU-09-driver-visible-minimal-soc-scope.md  # D-AXI 范围定义（4 BAR + 15 ABI + 0 新增）
-  soc_arch/              # ⚠️ dGPU SoC 子项目文档已迁至独立仓（占位 + VIRTUAL_PATHS）
-                        #   详见 ../ArchForge/ (新仓)；当前目录仅保留 README.md 占位说明
-  cross_repo/            # 跨仓镜像文档 (HSK-9 SM 重构 / HSK-12 ABI 精简 等)
-  pcie/                  # PCIe 设备实施笔记 (D1 Display / D-AXI)
-  implementation/        # 实施笔记 + CEP 契约载体（完结件已归档至 docs/archive/implementation/）
-  guide/                 # GETTING_STARTED / DEVELOPER / PYTOOLING / TOPOLOGY_USER / CEP
-  development/           # CONTRIBUTING (pre-commit + clang-format + 测试规范)
-  roadmap/               # ⚠️ 已归档的重定向存根（当前路线图真源 = .rddf/roadmap.md）
-  superpowers/           # 第 4 层实施跟踪（plans/ 计划 + specs/ 规格；完结件归档至 docs/archive/tracking/）
-  requirements/          # 需求规格 (PRD)
-  research/              # 框架级调研 (CEP 一致性 + gem5 协议族 + cpptlm 融合)
-  validation/            # 验证报告 (CEP 实验 + 拓扑 oracle-pass + raw/)
-  user-guide/            # 用户手册 (Python E2E 建模模板 / 层次化 SoC 配置)
-  archive/               # 已归档文档（architecture/ designs/ implementation/ validation/ tracking/ process/ roadmap/ skills/）
-  ONBOARDING.md          # 新人上手 (图谱生成)
-  README.md              # docs/ 总索引（按真源分级组织；计数以实测为准）
-  docs_audit_report.md   # 路径漂移审计状态（活状态 + 重生成命令）
-
-examples/                # C++ example_*.cc + Python demo_*.py
-  example_basic_transaction.cc / example_error_handling.cc
-  example_simmodule_nested.cc          # SimModule 多层嵌套示例 (P2-P5)
-  demo_pcie_full_e2e.{cc,py}           # ★ Phase 8 E2E demo (dGPU SoC + Host)
-  demo_e2e_soc.py / demo_e2e_hierarchical_soc.py  # Python SoC demo
-  dgpu_soc_with_pcie_ip.json            # ★ Phase 8 完整配置 —— 硬件建模面示例 (规格归 ArchForge)
-  dgpu_soc_pcie_ep_framework_min.json   # EP 最小框架验证示例 (只含 axi_adapter + bar_sizes)
-  demo_configs/                          # Python demo 配置
-
-cpptlm/                  # Python 库 (pyproject.toml): cli/topo/config/simulation/analysis
-
-openspec/                # 变更提案工作流 (changes/<name>/{proposal.md,specs/,tasks.md})
-  changes/              # 实际 proposals (当前 0 active; 162 份已归档于 changes/archive/ —— 2026-11-19 实测 `ls -d openspec/changes/archive/*/ | wc -l`)
-  specs/                # main specs (137 份: cep-* 46 + 其他 91 —— 2026-11-18 实测)
-
-scripts/                 # 工具脚本 (详见 scripts/README.md)
-  build/                # 构建 + 格式化 (build.sh / build_ptx_emu.sh / format.sh)
-  test/                 # 测试 + 守门脚本 (docs_sync_check.sh + agents_md_lint.py
-                        #   + cep_*.sh 契约闸（数量以 `ls scripts/test/cep_*.sh` 为准）+ 17 个 cep_* probe .cc)
-  topology/ pipeline/ stats/ cep/    # 拓扑 / 流水线 / 统计 / CEP 辅助
-
-external/                # git submodule (CppHDL, json, PTX-EMU 等)
+configs/                 # JSON 拓扑配置（共享/规则/模板/测试子目录见 REPO-MAP）
+examples/                # C++ example + Python demo + dgpu_soc_with_pcie_ip.json
+cpptlm/                  # Python 库（cli / topo / config / simulation / analysis）
+openspec/                # changes/（活提案）+ specs/（main spec）
+scripts/                 # build/ test/ topology/ pipeline/ stats/ cep/ docs/
+docs/                    # 文档入口 = docs/README.md（分层见该文件 §2）
+external/                # git submodule（CppHDL / json / PTX-EMU）
+build.sh                 # 薄包装 → scripts/build/build.sh
+test.sh                  # 统一测试入口
 ```
 
 ## WHERE TO LOOK
 
-### ★ CEP 平台 (Coherence Exploration Platform —— 2026-10 起的当前主线)
+> 完整目录索引 = [`docs/README.md`](./docs/README.md) §3 · ADR 全量 = [`docs/adr/README.md`](./docs/adr/README.md) · 三视角架构 = [`docs/designs/README.md`](./docs/designs/README.md) · 脚本清单 = [`scripts/README.md`](./scripts/README.md)。本表只列**高频入口**。
 
-| 任务 | 位置 |
+| 我要… | 去哪 |
 |------|------|
-| **CEP 治理宪章 + 真源锚点** | `docs/adr/ADR-CEP-00-platform-charter-and-governance.md`（跨仓归口 + 准入门槛）+ `docs/adr/ADR-CEP-00A-real-source-anchor-map.md`（**引用任何 CEP 章节前必查该表**，禁凭记忆写节号） |
-| **CEP 实现层** | `include/tlm/cep/`（43 个 header-only 文件：protocol engine / adapter / state spec / JSON schema） |
-| **CEP 契约守门脚本** | `scripts/test/cep_*.sh`（shell 闸，数量以 `ls scripts/test/cep_*.sh` 为准：冻结面校验 / 实验运行器 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture；另有 17 个 `cep_*_probe.cc` 编译探针） |
-| **CEP 契约一致性** | `scripts/test/cep_docs_sync_check.sh`（24 份 ADR 的 invariant 归属完备性 + owner ADR 实际定义条数一致）+ `scripts/test/cep_doc_ref_check.sh`（对外文档引用节号校验） |
-| **阶段顺序门禁** | `scripts/test/rddf_stage_gate.sh`（per 册子 `.rddf/roadmap/objectives/obj-cep-platform-remaining.md` §1.5.6）—— 把「实施顺序」与「AC 可寻址」变成**机关**：P-1 依赖边锚点命中 · P-2 下一阶段未提前开工 · P-3 每个 AC 至少一条载体命中（载体表 `scripts/test/rddf_ac_carrier.tsv`）· P-4 判别 case 未被静默删除 · P-5 KPI 活口径全同步 · P-6 硬编码下限无残留。⚠️ **归档感知**：载体路径自动回退到 `openspec/changes/archive/<date>-<name>/`（仍在校验）;归档内容不在工作树（该目录被 `.gitignore` 排除）⇒ **skip + 告警** |
-| **CEP 实验 4 件套** | `scripts/test/cep_experiment_run.sh`（H2/H3/H4/H6 产出与契约校验）+ `scripts/test/cep_freeze_check.sh`（产物冻结先于解读） |
-| **CEP 真实 IP 对齐** | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`（ArchForge 接口对齐清单，§6 C-4 / §7 漂移检测） |
-| **CEP 开放规格** | `openspec/specs/cep-*/`（46 份 main spec）+ `openspec/changes/archive/`（162 份已归档 change）—— 2026-11-19 实测 |
-| **CEP 测试** | `test/test_cep_*.cc`（标签 `[cep]`，规模最大的测试集） |
-
-### ★ PCIe EP 微架构 (2026-2027 主体)
-
-| 任务 | 位置 |
-|------|------|
-| **修改 PCIe EP 数据路径** | `include/tlm/pcie/pcie_endpoint_ip.hh` + `src/tlm/pcie/pcie_endpoint_ip.cc`（Phase 8 M1 接线） |
-| AXI Stream 适配 | `include/framework/axi4_stream_adapter.hh` + `src/framework/axi4_stream_adapter.cc`（Phase 5 产物） |
-| AXI4Mapper OOO | `include/framework/axi4_mapper.hh` + `src/framework/axi4_mapper.cc`（Phase 6 产物, outstanding + rid 关联） |
-| AXI↔PCIe TLP 边界 | `include/tlm/pcie/pcie_axi_adapter_tlm.hh` + `src/tlm/pcie/pcie_axi_adapter_tlm.cc`（Phase 5） |
-| 链路层 + FC | `include/tlm/pcie/pcie_link_layer_tlm.hh` + `src/tlm/pcie/pcie_link_layer_tlm.cc`（Phase 1） |
-| PHY 数字控制 | `include/tlm/pcie/pcie_phy_digital_ctrl_tlm.hh` + `src/tlm/pcie/pcie_phy_digital_ctrl_tlm.cc`（Phase 3） |
-| SR-IOV VF Pool | `include/tlm/pcie/pcie_sriov_vf_pool_tlm.hh` + `src/tlm/pcie/pcie_sriov_vf_pool_tlm.cc`（Phase 4） |
-| **`PcieControllerIP` 4-IP 顶层 facade** | `include/tlm/pcie/pcie_controller_ip.hh` + `src/tlm/pcie/pcie_controller_ip.cc`（PR-A facade + PR-B B1 组合 refactor; 4 BAR decode: Bar0Mmio / Bar1FbFastPath / Bar2VramAperture / Unknown; `attach_endpoint()` 注入 EP） |
-| **`PcieAxiBridgeIP` EP composite (非顶层)** | `include/tlm/pcie/pcie_axi_bridge_ip.hh` + `src/tlm/pcie/pcie_axi_bridge_ip.cc`（类保留 + `REGISTER_MODULE` REMOVED per Oracle `bg_c60653e0 §4`; JSON 顶层不可实例化） |
-| **`GpuInternalFabric` 4-IP fabric** | `include/tlm/cluster/gpu_internal_fabric.hh` + `src/tlm/cluster/gpu_internal_fabric.cc`（P3 T22 scaffold; T22b pin-contract test `[fabric]` 已就位） |
-| **`VramControllerTLM` 4-IP VRAM 控制器** | `include/tlm/vram_controller_tlm.hh` + `src/tlm/vram_controller_tlm.cc`（Phase 4 T4 timing-mvp 已实现; P3 promote via JSON top-level per spec §6.4; backing 注入走 `DGpuBoard::bind_memory_backings()`） |
-| **D-AXI (Driver-Visible Minimal SoC)** | 实施笔记 `docs/pcie/driver-visible-minimal-soc.md`（v1.8）；三视角架构 `docs/designs/dgpu-{board,soc,driver}/architecture.md`；5 个业务 ADR `docs/adr/ADR-DGPU-05~09-*.md`；OpenSpec `openspec/specs/driver-visible-minimal-soc/`（v1.8 tasks.md T0-T5）；E2E `[minimal_dgpu_soc][driver_visible]` |
-| **dGPU 文档分层（4 层模型）** | `docs/designs/README.md` 总入口 + 三视角索引；详见 §DOC HYGIENE "4 层文档模型" 小节 |
-| **4-IP 边界表** | `docs/designs/dgpu-soc/architecture.md §2.4`（P3 4-IP 边界映射, RTL team 对照实现） |
+| 改 PCIe EP 数据路径 | `include/tlm/pcie/pcie_endpoint_ip.hh` + `src/tlm/pcie/pcie_endpoint_ip.cc`；逐阶段对照见 [`docs/REPO-MAP.md`](./docs/REPO-MAP.md) |
+| 改 CEP 平台 | `include/tlm/cep/`（header-only）+ 契约闸 `scripts/test/cep_*.sh` + 总纲 `docs/architecture/07-coherence-exploration-platform.md` |
+| **查 CEP 章节锚点** | `docs/adr/ADR-CEP-00A-real-source-anchor-map.md` —— **引用任何 CEP 章节前必查**，禁凭记忆写节号 |
+| 改多层容器 / SM | `include/tlm/cluster/`（9 类 SimModule）· `include/tlm/gpu/streaming_multiprocessor_tlm.hh` · `include/tlm/gpu/sm/` |
+| 加 TLM 模块 / 注册宏 | `include/tlm/<name>_tlm.hh` + `include/chstream_register.hh`；宏体系表见 `include/AGENTS.md` |
+| 改模块工厂 / JSON 配置 | `src/core/module_factory.cc` · `configs/` · `include/utils/config_utils.hh` |
+| 跑构建 / 测试 | `./build.sh` · `./test.sh`（用法见 §COMMANDS；脚本索引见 `scripts/README.md`） |
+| 加 / 改契约闸 | `scripts/test/`（现役清单与三表划分见 `scripts/README.md` §CEP 契约守门脚本） |
+| 写 / 改 ADR | `docs/adr/`（索引 + 抽取契约 = `docs/adr/README.md` §7；⛔ 签发后正文不改，只追加 `## Status Update`） |
+| 写架构文档 | 真源 1 `docs/architecture/` · 真源 2 `docs/designs/`（分层与路径决策见 `docs/README.md` §2/§3） |
+| D-AXI / 4-IP 边界 | 实施笔记 `docs/pcie/driver-visible-minimal-soc.md` · 边界表 `docs/designs/dgpu-soc/architecture.md` §2.4 |
 | E2E 全链路 | `test/test_pcie_endpoint_ip_full_e2e.cc` + `examples/demo_pcie_full_e2e.{cc,py}` |
-
-### ★ GPGPU / SoC 多层
-
-| 任务 | 位置 |
-|------|------|
-| GPGPU 多层容器 (CPU→CU→TPC→GPC→GPU) | `include/tlm/cluster/`（cpu/compute/tpc/gpc/gpu_cluster） |
-| 顶层 SoC 容器 (CPU侧 + GPU侧 + Crossbar) | `include/tlm/cluster/apu_soc.hh`（顶层,带 incorporate_parent 钩子） |
-| SM 顶层容器 (12 子模块) | `include/tlm/gpu/streaming_multiprocessor_tlm.hh` + `include/tlm/gpu/sm/` |
-| DMA / Doorbell / Command Processor | `include/tlm/gpu/`（dma_descriptor_mvp / doorbell_mvp / command_processor_mvp / submit_queue_mvp） |
-| dGPU 板级整合 | `src/tlm/gpu/dgpu_board_shell.cc` |
-
-### 框架基础
-
-| 任务 | 位置 |
-|------|------|
-| 添加新 TLM 模块 | `include/tlm/<name>_tlm.hh` + `include/chstream_register.hh`（REGISTER_CHSTREAM） |
-| 写注册宏 | `include/AGENTS.md`（宏体系表）—— `REGISTER_OBJECT` 自 v2.2 起为 no-op（CPUSim 已退场） |
-| 修改模块工厂 | `src/core/module_factory.cc`（instantiateAll + Step 7 StreamAdapter 注入） |
-| 修改 JSON 配置格式 | `configs/` + `include/utils/config_utils.hh`（group/connection/port_index） |
-| 添加 StreamAdapter | `include/framework/{stream,multi_port_stream,dual_port_stream,bidirectional_port}_adapter.hh` |
-| 7 阶段 roadmap | `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`（已迁 ArchForge）+ `openspec/changes/archive/2026-09-03-2026-09-01-cpptlm-dgpu-pcie-ip-microarch/` |
-| OpenSpec 提案 | `openspec/changes/<name>/`（proposal → design → specs → tasks） |
+| 提 OpenSpec 提案 | `openspec/changes/<name>/`（proposal → design → tasks） |
 | 调试 test fail | `.opencode/skills/cpptlm-debug/SKILL.md`（auto-loads） |
-| 贡献代码/PR | `docs/development/CONTRIBUTING.md`（pre-commit + clang-format + 测试规范） |
+| 贡献代码 / PR | `docs/development/CONTRIBUTING.md`（pre-commit + clang-format + 测试规范） |
 
 ## CONVENTIONS
 
@@ -620,81 +433,17 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 ## PHASE STATE
 
-> 本节只记**当前态**。历史评审过程 / finding 编号 / 归档流水见 OpenSpec `openspec/changes/archive/` 与 ADR `## Status Update` 段。
+> 本节只记**当前态**。交付流水（commit 区间 / Oracle 轮次 / 归档 Entry #）、已知问题、既有交付明细全部在 [`docs/archive/process/PHASE-LOG.md`](./docs/archive/process/PHASE-LOG.md)。
 
-### ★ CEP 平台 (Coherence Exploration Platform) —— 当前主线
+| 线 | 当前态 | 入口 |
+|---|---|---|
+| **CEP 平台**（当前主线） | 队列 #3~#14 全部归档；当前 active 数见 `openspec list` | `docs/architecture/07-coherence-exploration-platform.md` · `docs/adr/ADR-CEP-00{,A}-*.md` · `include/tlm/cep/` |
+| **PCIe EP 微架构** | Phase 1-8 全部交付 | `include/tlm/pcie/` · `test/test_pcie_endpoint_ip_full_e2e.cc` |
+| **D-AXI 最小 SoC** | v1.4 与 timing-mode v0.5 均实施完成 | `docs/pcie/driver-visible-minimal-soc.md` · `docs/designs/dgpu-{board,soc,driver}/` |
+| **GPGPU / SoC 多层** | 9 类 SimModule + SM 重构 + DMA/Doorbell/CP/CompletionRing 完成 | `include/tlm/cluster/` · `include/tlm/gpu/` |
+| **框架基础** | 事务 / 错误 / 复位 / 拓扑 / metrics 已实施 | `docs/architecture/`（01~13） |
 
-| 项 | 内容 |
-|----|------|
-| **治理** | `ADR-CEP-00`（跨仓归口 + 准入门槛）+ `ADR-CEP-00A`（真源章节锚点表） |
-| **ADR** | 23 份 `ADR-CEP-*`（fabric / coherence / protocol / experiment / ownership 各域;⚠️ 文件数 24 = 23 + `NUMBER-MAP`） |
-| **实现** | `include/tlm/cep/` 43 个 header-only 文件 + `test/test_cep_*.cc` |
-| **OpenSpec** | 46 份 `cep-*` main spec；**0 active** change；162 份已归档 change（2026-11-19 实测） |
-| **守门** | `scripts/test/cep_*.sh` 契约闸（数量以 `ls scripts/test/cep_*.sh` 为准）+ 17 个 `.cc` 编译探针（冻结面 / 实验 4 件套 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture） |
-| **测试** | `[cep]` —— 规模最大的测试集 |
-| **状态** | 队列 #3~#14 已全部归档（2026-10-26 ~ 2026-11-04）; 当前 0 个 active change（`cpptlm-module-param-migrate-batch2` 于 2026-11-19 归档,per 台账 Entry #500;`cpptlm-config-type-registration-align` 于 2026-11-18 归档,per 台账 Entry #487;`cpptlm-module-param-effect-landing` 于 2026-11-18 归档,per 台账 Entry #485;`cpptlm-config-type-registration-align` 于 2026-11-18 立项,per 台账 Entry #480;`cpptlm-nictlm-credit-flit-filter` 于 2026-11-18 归档,per 台账 Entry #479;档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 归档,per 台账 Entry #412） |
-
-### ★ PCIe EP 微架构 (2026-2027, 7 阶段全部交付)
-
-| Phase | 内容 | commits | Oracle | 状态 |
-|------|------|---------|--------|------|
-| Umbrella | `openspec/changes/archive/2026-09-03-2026-09-01-cpptlm-dgpu-pcie-ip-microarch/` | — | — | ✅ 引导 |
-| Phase 1 | PCIe Link Layer + FC | `e9b1b..` 等 | ✅ PASS | ✅ 完成 |
-| Phase 2 | 128b/130b Encoding Latency | `8d1f1d5` `b21d290` | ✅ PASS | ✅ 完成 |
-| Phase 3 | PHY Digital Ctrl + Bypass Mux | `05be913`..`bac9267` | ✅ 9/10 复评 PASS | ✅ 完成 |
-| Phase 4 | SR-IOV VF Pool + PcieEndpointIP | `4e9564e` + `478cdd9` `a442b65` `536dbfc` `6ebbd7d` | ✅ PASS | ✅ 完成 |
-| Phase 5 | AXI Stream Adapter | `710c734`..`dd8c44a` | ✅ M1/M2/M3 修复 + 复评 PASS | ✅ 完成 |
-| Phase 6 | AXI4Mapper | `8b92bfb`..`fe4d745` | ✅ PASS | ✅ 完成 |
-| Phase 7 | Host Bypass + RC | `ce50b05`..`45763fa` | ✅ 有条件 PASS (M1/M2) | ✅ 完成 |
-| **Phase 8** | **整合交付** | **`e29defd`..`429327d`** | **—** | **✅完成** |
-
-**Phase 8 整合交付 (W24 末)**:
-- `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`（从 umbrella design.md 迁移, **已迁 ArchForge**）
-- `examples/dgpu_soc_with_pcie_ip.json` 完整 dGPU SoC + PCIe EP 配置（**硬件建模面示例**，语义以 ArchForge 规格为准）
-- `examples/dgpu_soc_pcie_ep_framework_min.json` EP **最小框架验证示例**（只有 `axi_adapter` + `bar_sizes` ⇒ 拓扑装配 / StreamAdapter 挂接 / BAR 可见面；`cpptlm_sim` 可跑）
-- `test/test_pcie_endpoint_ip_full_e2e.cc` 全链路 E2E (3 TEST_CASE, solve Phase 7 M1)
-- `PcieEndpointTLM` 加 `[[deprecated]]` 标注（迁移提示, ABI 不动）
-- 桥接修复 (429327d): HostBypassTLM/RC::tick() 自动转发 4 方向 AXI 通道, 让 EP 真实消费请求
-
-**已知问题 (Minor, 不阻断)**:
-- `ch_uint<512>` 既有 `.read()/.write()` 调用仍走低 64-bit 截断(向后兼容 shim,per P0 fix 2026-10-06);P1/P2 迁移到 `slice<>/set_slice<>` 后可移除 shim
-
-### ★ D-AXI Driver-Visible Minimal SoC（跨 Phase 8 与 D-AXI change）
-
-| Phase | 内容 | Oracle | 状态 |
-|------|------|--------|------|
-| v1.0 | 初版提案（5 澄清 + R1-R7 + M1-M5） | — | ✅ 引导 |
-| v1.1 | P0 修订（5 澄清落点 + R1-R7 + M1-M5） | — | ✅ 完成 |
-| v1.2 | Oracle 二次审查 8 must-fix (N1-N12 全部落地) | ✅ PASS | ✅ 完成 |
-| **v1.4** | Metis/Oracle 二轮 + 用户质疑 + 单一 VRAM 所有权上提 (B7-B13 + 7 实施铁律 + 3 遗留议题延期) | ✅ 2 轮 PASS | ✅ **实施完成** |
-| **v0.5 timing-mode (AT) SoC MVP** | Phase 4 T1-T8 完成 (MemoryTLM cycle-approximate + GmmuTLM TLB + SDMA cycle accounting + VramControllerTLM + `DGpuBoard::init_timing_mode` + `dgpu_soc_timing_v1.json` + 37 E2E cases) | ADR-DGPU-11 八轮 PASS | ✅ **实施完成** |
-
-**v1.4 P0 修正 (B7-B13, 架构根因)**: B7 单一 VRAM backing 所有权归 DGpuBoard（8GB `unique_ptr<uint8_t[]>` default-init, Linux lazy commit, stable pointer）/ B8 bound = injected `backing_size_`（非 `kDefaultMemSize` 常量）/ B9 `handle_slave_port` 检查 `memory_read/write` 返回值（失败置 `resp.resp.write(1)` = SLVERR）/ B10 保留 `std::mutex backing_mutex_`（host/sim 并发保护）/ B11 双 size 字段拆分 `bar1_window_size_` vs `vram_size_` / B12 未注入 backing 时返 `-ENODEV` + `kRegMemSizeLo/Hi` 读 injected 值 / B13 24-case `[pcie-memory]` 机械迁移 + `[minimal_dgpu_soc]` 添加 BAR2 + 4 处 lazy alloc 行为删除。详见 `docs/pcie/driver-visible-minimal-soc.md` §4 + ADR-DGPU-05~09。
-
-**7 条实施铁律**与**3 项遗留议题**（D1 Display FB / doorbell 0x10010000 / MemoryTLM capacity_gb=1）见 `docs/pcie/driver-visible-minimal-soc.md`。
-
-**D3 演进 seam (v1.4 已就位, Phase 4 T4 实施完成)**：`handle_slave_port ↔ backing_ptr_` 之间已插入 VramControllerTLM (继承 MemoryTLM + 行缓冲 + bandwidth 上限)。
-
-### ★ 已归档的 dGPU SoC 提案（不再 active）
-
-| Change | 归档 | 状态 |
-|--------|------|------|
-| `cpptlm-dgpu-soc-internal-noc-e1` v1.1 | 2026-10-09 | ✅ 已归档（DataNoC only 范围缩减；详见 `openspec/changes/archive/2026-10-09-cpptlm-dgpu-soc-internal-noc-e1/`） |
-| `cpptlm-pcie-host-test-flr-rebar` v1.1 | 2026-10-09 | ✅ 已归档（复用既有 `flr_pf()`/`flr_vf()` + Resizable BAR；详见 `openspec/changes/archive/2026-10-09-cpptlm-pcie-host-test-flr-rebar/`） |
-| `cpptlm-dgpu-soc-arch-truth-cleanup` v1.3 | 2026-10-10 | ✅ 已归档（doc-only，19 项 finding 修复；不计入 Proposed KPI 上限） |
-
-### ★ GPGPU / SoC 既有交付（2026 之前）
-
-| 组件 | 内容 | 状态 |
-|------|------|------|
-| 9 类 SimModule (P2-P5) | CpuCluster / ComputeCluster / TpcCluster / GpcCluster / GpuCluster / CacheCluster / MemoryCluster / GpuNoC / ApuSoC | ✅ 完成 + Oracle 评审 |
-| GPGPU 端 MVP | GPU CU / Warp / Vector RegFile / KernelLaunch / MeshNoC / SharedMemory / MemoryCluster | ✅ 完成 |
-| SM 重构 (Task 1-14) | 12 ChStream 子模块 + 8 Bundle + IComputeDevice 15 方法; supersedes KernelLaunch/CudaCoreAdapter/PtxEmuSubmodule | ✅ 完成 |
-| DMA / Doorbell / CommandProcessor / CompletionRing MVP | 端到端 SoC 集成路径 | ✅ 完成 |
-| 顶层 ApuSoC | CPU侧 + GPGPU侧 + Crossbar 互联, `incorporate_parent` 钩子(借鉴 gem5 late-binding) | ✅ 完成 |
-| dGPU Board Shell | `src/tlm/gpu/dgpu_board_shell.cc` 端到端板级集成 | ✅ 完成 |
-| 配置文件 | `apu_soc_v1.json` / `apu_soc_full.json` / `dgpu_board_v1.json` / `dgpu_soc_minimal_v1.json` / `dgpu_soc_timing_v1.json` / `dgpu_soc_v2_realip_p2.json` | ✅ 完成 |
-| 退役配置 | `configs/dgpu_soc_v1.json.in.disabled` (per 2026-10-09 季度复审, PcieEndpointTLM deprecated) | ⚠️ Deprecated |
+**实时计数（⛔ 不固化具体值）**：`ls test/test_*.cc | wc -l` · `ls -d openspec/changes/archive/*/ | wc -l` · `openspec list --json` · `ls scripts/test/cep_*.sh | wc -l` · `ls docs/adr/ADR-*.md | wc -l`。
 
 ## ARCHIVES & HISTORY
 
@@ -717,16 +466,8 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 docs-archived/: 已归档旧文档（Phase 1-3 早期决策、`samples-orphaned/`、`dead-code-headers-2026-q2/`、`v2-architecture/`、`v2-plans/`、`completed-plans-2026-q2/`、`superpowers/`/`plans/` 已清理文件）。各子目录 `README.md` 含恢复方法。
 
-## MCP TOOLS (code-review-graph)
+## MCP TOOLS
 
-`.mcp.json` 已配置 `code-review-graph` server。**优先于** Grep/Glob/Read（图谱更快、更便宜，给出调用链/测试覆盖等结构上下文）。
-
-| 场景 | 工具 |
-|------|------|
-| 探索代码 | `semantic_search_nodes` / `query_graph` |
-| 影响分析 | `get_impact_radius` / `get_affected_flows` |
-| 代码审查 | `detect_changes` + `get_review_context` |
-| 架构视图 | `get_architecture_overview` + `list_communities` |
-| 重构 | `refactor_tool`（rename / dead_code / suggest） |
-
-Graph 通过 hooks auto-update。Fallback to Grep only when graph doesn't cover。
+> 工具名 / 用法 / 权限 / 新鲜度**以全局 `AGENTS.md` 的「代码图谱工具」节为准**（当前 server = `codebase-memory-mcp`；⛔ 旧 server 名与其工具名**一律已废止**，清单见全局文件，⛔ 不要凭记忆调用）。
+>
+> **何时用**（条件句，⛔ 不存在无条件「优先于 Grep/Glob/Read」）：任务是**本地代码**的结构性问题（定义在哪 / 谁调用 / 影响面 / 整体结构）**且** `list_projects` 能看到本仓 ⇒ 用图谱；外部库调研 · 治理面配置 · 项目未索引 ⇒ **直接用 Grep/Glob/Read**。图谱 `head_sha` 落后 HEAD ⇒ 以 Grep 为准并如实说明图谱偏旧。

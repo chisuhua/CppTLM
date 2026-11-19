@@ -87,6 +87,7 @@
 | [`ONBOARDING.md`](./ONBOARDING.md) | 新人上手（知识图谱生成） |
 | [`README.md`](./README.md) | 本文件 —— 总索引 |
 | [`docs_audit_report.md`](./docs_audit_report.md) | 路径漂移审计状态（活状态 + 重生成命令） |
+| [`REPO-MAP.md`](./REPO-MAP.md) | **逐文件结构清单（详版）** —— `AGENTS.md` §STRUCTURE 的简版只留 ★ 主线；结构调整时两处同步 |
 | [`migration-v2.2.md`](./migration-v2.2.md) | v2.1 → v2.2 迁移指南（BREAKING；被 `openspec/specs/legacy-modules-removal/spec.md` 引用） |
 
 ---

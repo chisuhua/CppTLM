@@ -27039,3 +27039,40 @@ AC-1(`--check` rc=0 + 幂等)/ AC-2(**判据①** 逐系列:实际 == 表行数 
 `scripts/test/cep_freeze_check.sh` 的 `--authorized-by` 校验用 `grep "^### "` 提取 entry id ⇒ 台账 Entry 正文里的 `### ` 级子标题（如 Entry #502 的「授权明细」、#503 的「验收」）也会进入可选 id 集合作精确匹配。⇒ **可用子标题冒充授权条目**（闸的授权校验强度弱于设计意图）。建议修法：把提取正则收紧为 `^### Entry #`。⛔ 本次未改（不属本 change 的判据面，且改冻结面闸需单独评审）。
 
 **关联**：台账 **Entry #504**（立项）· `.rddf/improvements/cpptlm-docs-index-generalization.md` · 一期 Entry #503 / `.rddf/improvements/cpptlm-docs-index-mechanical-generation.md` · commit `1662c452`
+
+### Entry #506 — 2026-11-19 [builder](**doc-only change 归档** — `cpptlm-agents-md-slimming`：AGENTS.md 瘦身 35.9%)
+
+**范围**：`AGENTS.md` 64,448 B → **41,333 B**（−23,115 B / −35.9%），余量从 1,088 B 回到 **24,203 B**。**doc-only**：零代码 / 零构建 / 零冻结面改动；`openspec validate` 需 `skip_specs: true`（已在 `.openspec.yaml` 声明）⇒ 归档名 `2026-11-19-cpptlm-agents-md-slimming`。**不占 Proposed KPI slot**（KPI 保持 0/3）。
+
+#### 五件（对应 proposal W1~W6）
+
+| # | 动作 | 落点 |
+|:--:|---|---|
+| W1/W2 | STRUCTURE 188 行 → **34 行**（只留 ★ 主线 + 一级目录），逐文件清单**原样外移** | `docs/REPO-MAP.md`（新, 15 KB） |
+| W3 | PHASE STATE 78 行 → **12 行**终态表；交付流水（commit 区间 / Oracle 轮次 / 归档 Entry）外移 | `docs/archive/process/PHASE-LOG.md`（新） |
+| W4 | WHERE TO LOOK 60 行 → **20 行**高频入口；全量索引改指针（`docs/README.md §3` / `docs/adr/README.md` / `docs/designs/README.md`） | `AGENTS.md` |
+| W5 | MCP 段 → 指针 + **条件句**（工具名以全局 `AGENTS.md` 为准；⛔ 不再无条件「优先于 Grep/Glob/Read」；废止工具名零残留） | `AGENTS.md` |
+| W6 | 易腐计数 → 取值命令（`46 份 main spec` / `45 个契约闸` / `370 个 test_*.cc` 全部去除）；`docs/README.md §3.6` 登记 `REPO-MAP.md` | `AGENTS.md` · `docs/README.md` |
+
+#### 信息不丢（机械校验）
+
+| 项 | 结果 |
+|---|---|
+| 原 STRUCTURE 树路径 token | **201 条 → REPO-MAP 命中 201 / 缺失 0** |
+| 原 PHASE STATE 表格行 | **42 行全部**在 PHASE-LOG |
+| `docs_sync_check --strict` | rc=0（新增两文件被覆盖，路径全存在） |
+| `agents_md_lint --strict` | rc=0（树路径 / 体量 / 单行长度） |
+
+#### 实施期发现（重要）
+
+新建本 change 会让 `openspec list` 的 active 从 **0→1** ⇒ `cep_docs_sync_check` 的 KPI baseline 断言与 `rddf_stage_gate` 的 **P-5** 同时转红（要求所有活文档写 `1/3`）。这是**活口径同步机制的正确行为**（非缺陷），处置 = 完成后立即 `--skip-specs` 归档恢复 0/3。⚠️ 另发现 `.rddf/state/.env-cache.json` 的 `active_changes` 有 **3600s TTL** ⇒ 新增 change 后立即跑闸会读到**旧值**（本次单跑绿、ctest 红即由此而来）—— 排查此类红灯时应先看该缓存。
+
+#### 验证
+
+13 个文档闸 rc=0 · **`ctest` 188/188** · `cep_freeze_check` rc=0（未触碰 M1 冻结面）。
+
+#### 未做（明确排除，留后续）
+
+`DOC HYGIENE` 的模型段拆分（真源分级 / 4 层文档模型改为指针，~8 KB）与 `COMMANDS` 与 `scripts/README.md` 合并（~4 KB）—— 需先确认 `docs/README.md` 完整覆盖后再动；`agents_md_lint` 的 64 KiB 阈值**不动**（放宽阈值 = 判据退化）。
+
+**关联**：`AGENTS.md` · `docs/REPO-MAP.md` · `docs/archive/process/PHASE-LOG.md` · `docs/README.md §3.6` · 用户裁决「方案 B」
