@@ -26961,3 +26961,42 @@ AC-1(`--check` rc=0 + 幂等)/ AC-2(**判据①** 逐系列:实际 == 表行数 
 | 估时 | 1 ~ 1.5d |
 
 **关联**:台账 **Entry #431**(W2 快照更新授权 —— P-4 的根因)· **Entry #342**(07 号索引生成器先例)· **Entry #502**(冻结面文档同步授权)· `docs/adr/README.md §7` · `scripts/cep/generate_doc_index.py` · `scripts/test/cep_gate_harness.py`
+
+### Entry #504 — 2026-11-19 [planner](**一期回填 + 二期立项** — `cpptlm-docs-index-mechanical-generation` 已实施 / `cpptlm-docs-index-generalization` 已立项)
+
+**范围**：两件事，均**不占 OpenSpec slot**（KPI 保持 **0/3**）—— 与 `cep-b4-evidence-device` 先例同型（无 change 但过机械闸 + 变异验证）。
+
+#### 一、一期回填（`cpptlm-docs-index-mechanical-generation` → ✅ 已实施）
+
+| W | 交付 | commit |
+|:--:|---|---|
+| W1 生成器 `scripts/docs/gen_adr_index.py` | `--write` / `--check` / `--json` + 外来内容护栏 + 幂等 | `adb43981` |
+| W2 判据面 `docs/adr/README.md §7` | architect 落盘 | `0024a338` |
+| W3 闸 `scripts/test/docs_adr_index_check.sh` + 4 变异 + ctest #176/#177 | 三合一判据 | `fd7ae0fe` |
+| W4 首次 `--write`（63 份）`docs/adr/README.md` | 一次性消除人工归一化层 | `5eed6eeb` |
+| W5 `scripts/README.md` 登记 + 子目录 5→6 | DOC HYGIENE | `adb43981` / `fd7ae0fe` |
+
+**回归**：13 个文档闸全绿 · `ctest` **186/186** · M1 冻结面 89 件 hash 一致。
+**实现期发现**：G-1 判据面词表漏「提议」同义词（生成器 fail loud 抓到，全量审计后补）· G-2 变异前置插入假绿（改行尾追加）· G-3 新契约打红 `cep_doc_ref_check`（`VIRTUAL_PATHS` 登记 2 条审计反例，⛔ 未回改台账）。详见 improvement 的「实施结果」段。
+
+#### 二、二期立项（`cpptlm-docs-index-generalization`：索引机制推广到 `docs/**/README.md`）
+
+**立案理由（P-1 ~ P-5，均为推广前实测）**：
+
+| # | 缺口 | 证据 |
+|:--:|---|---|
+| P-1 | **3 份文档未登记** | `docs/designs/dgpu-soc/` 磁盘 8 份 / README 登记 5 份 ⇒ `14-pcie-tlp-wire-format.md` · `communication-network.md` · `multi-level-hybrid-simulation.md` 未登记 |
+| P-2 | **索引状态与本体重矛盾**（真缺陷） | `docs/architecture/README.md:49` 写「✅ v2.0 已批准」，而 `09-topology-visualization-pipeline.md` 本体写「🟡 草案（2026-10-19 状态复核**回退**，per critic B4：ADR-X.12 仍未签发）」 |
+| P-3 | **索引携带本体没有的生命周期状态**（非缺陷，需豁免） | `06-bis` 本体「🟡 v0.3 Revision」，索引「⛔ 已被 07 号 supersede」 |
+| P-4 | **同型缺陷已复发两次** | 一期 Entry #342（`07 号` 5 个 `## ` 未列入仍绿、行号 10/23 错）+ 一期 G-1（`ADR-DGPU-10`「提议」不在词表） |
+| P-5 | **非 ADR 目录零闸** | 一期闸只覆盖 `docs/adr/README.md`；其余 14 个目录的「新增文档忘登记」**完全静默**（P-1 即实例） |
+
+**内容（G1 ~ G5）**：G1 判据面落 `docs/README.md §7`（登记形态 / 计量单位 = **同目录顶层 `.md`、⛔ 不递归** / 符号比对 / 豁免表 1 项）· G2 闸 `scripts/test/docs_index_consistency_check.sh`（覆盖 + 链接可达 + 状态**符号**一致 + 5 变异，**跑在拷贝根**）+ ctest 2 项 · G3 修 P-1（`dgpu-soc/README.md` 补 3 份）· G4 修 P-2（`09` 状态以**本体为准**改 🟡）· G5 `scripts/README.md` 登记。
+
+**⛔ 明确不做「状态列机械生成」**（实测依据）：`docs/architecture/*.md` 的**状态源行有 5 种形态** + 取值词表**开放**（「✅ Phase 6 完成，端到端验证通过」/「🟡 v0.4 Revision」/「已决策」…）；要机械生成就得先规整 17 份元数据，其中 `07 号` + 9 篇 `cep/*` 在 **M1 冻结面内不可改** ⇒ 一期那套「全量重生成」**不可移植**。二期改做可移植的两条：**覆盖对账** + **状态符号一致性**（17 份实测：15 一致 / 1 真缺陷 P-2 / 1 需豁免 P-3）。
+
+**明确排除**：`docs/` 根 README 递归覆盖（总入口 vs 子目录自管）· `docs/archive/**`（摘要非穷举）· `docs/architecture/examples/**` 内部 `.md`（按目录链接登记）。
+
+**AC**：AC-1 闸 rc=0 且未登记 0 · AC-2 P-1 闭合 · AC-3 P-2 闭合 · AC-4 **4 变异全红**（删登记 / 加未登记 `.md` / 改本体系号 / 断同目录链接）+ 还原绿 · AC-5 **删豁免必红**（证豁免必要）· AC-6 零回归（13 闸 + ctest + 冻结面 89 件）· AC-7 判据面与实现口径一致。
+
+**关联**：一期 improvement `.rddf/improvements/cpptlm-docs-index-mechanical-generation.md` · 二期 `.rddf/improvements/cpptlm-docs-index-generalization.md` · `docs/adr/README.md §7` · `docs/README.md §5`（索引不复制状态的既有约定）· Entry #342（同型先例）· Entry #502（冻结面授权）

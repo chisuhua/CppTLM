@@ -6,7 +6,7 @@ phase: phase-1
   - docs/adr/README.md §7（抽取契约，architect 已落盘）
   - scripts/cep/generate_doc_index.py（同类机制先例，Entry #342）
   - scripts/test/cep_gate_harness.py（fixture 拷贝根机制）
-状态: 📋 **Draft**（2026-11-19 立项；未创建 OpenSpec change，待排期后由 planner 立项 / rdd-builder P0 生成 proposal）
+状态: ✅ **已实施**（2026-11-19；W1~W5 全部完成，per 台账 Entry #504；**不占 OpenSpec slot** —— 与 `cep-b4-evidence-device` 先例同型：无 change 但过机械闸 + 变异验证）
 created: 2026-11-19
 ---
 
@@ -103,14 +103,26 @@ created: 2026-11-19
 
 ---
 
-## 后续步骤（planner 阶段）
+## 实施结果（2026-11-19，builder 回执；per 台账 Entry #504）
 
-| 项 | 状态 |
-|---|---|
-| improvement 草稿 | ✅ 本文件 |
-| 抽取契约（判据面） | ✅ 已落 `docs/adr/README.md §7`（architect，commit `0024a338`） |
-| OpenSpec change | ⏳ **未立项**（按 Entry #501 先例；待排期后由 planner 立项 / `rdd-builder` P0 生成 `proposal.md`） |
-| KPI | 立项时占 1 个 Proposed slot，当前 baseline **0/3** |
-| 估时 | 1 ~ 1.5d |
+| # | 内容 | 落点 | commit | 判据 |
+|:--:|---|---|---|---|
+| **W1** | 生成器（`--write` / `--check` / `--json` + 外来内容护栏 + 幂等） | `scripts/docs/gen_adr_index.py` | `adb43981` | `--check` rc=0，连跑逐字相同 |
+| **W2** | 判据面 = `docs/adr/README.md §7`（architect 落盘） | `docs/adr/README.md` | `0024a338` | — |
+| **W3** | 闸（三合一）+ **4 变异 fixture** + ctest 注册 2 项 | `scripts/test/docs_adr_index_check.sh` · `test/CMakeLists.txt`（#176/#177） | `fd7ae0fe` | 闸 rc=0；`--selftest` 4/4 变异全红 |
+| **W4** | 首次 `--write`（63 份，一次性消除人工归一化层） | `docs/adr/README.md` | `5eed6eeb` | 与生成器输出逐字相同 |
+| **W5** | `scripts/README.md` 登记 + 子目录表 5→6 | `scripts/README.md` · `scripts/CMakeLists.txt` · `scripts/test/docs_sync_check.sh` | `adb43981` / `fd7ae0fe` | `docs_sync_check --strict` rc=0 |
 
-**关联**：台账 **Entry #431**（W2 快照更新授权 —— 本 improvement 的 W-4 特例的根因）· 台账 **Entry #342**（07 号索引生成器先例）· 台账 **Entry #502**（冻结面文档同步授权）· [`docs/adr/README.md §7`](../../docs/adr/README.md) · `scripts/cep/generate_doc_index.py` · `scripts/test/cep_gate_harness.py` · `docs/guide/cep-usage.md` §12.5
+**零回归**：13 个文档闸全绿 · `ctest` **186/186** · M1 冻结面 89 件 hash 一致（未触碰）。
+
+**实现期发现的两条（已写进 commit，供后续追责）**：
+
+| # | 发现 | 处置 |
+|:--:|---|---|
+| G-1 | **判据面词表不完备**：§7.2 封闭词表只有「提案」，而 `ADR-DGPU-10` 本体写「📋 **提议**」⇒ 生成器 fail loud 抓到 | 全量审计 63 份（61 直接命中 + 1 同义词 + 1 豁免）确认**只差这一个同义词** ⇒ 补 `提议 ≡ 提案`（**同义词入表，非新增状态类**，共用 `📋 提案`）。⚠️ 根因 = architect 钉契约时只验证了**形态**（59 行内 + 4 章首），未验证**词表覆盖** |
+| G-2 | **变异设计差点假绿**：初版变异 1 是**前置插入**「起草中」，但契约「取**最后一个**命中」⇒ 行内后出现的「已签发」覆盖它 ⇒ 抽取不变 ⇒ 变异无效却显示绿 | 改为**行尾追加**后必红。**教训**：对「取最后一个」型契约做变异，必须让变异成为**最后一个 token** |
+| G-3 | **新契约打红另一个闸**：Entry #502 的审计文字含**反例路径**（`docs/cep/` / `docs/architecture/adr/`），被 `cep_doc_ref_check` 当真实引用 | 用闸既有 `VIRTUAL_PATHS` 登记 2 条并写明理由（先例 `docs/definitely-not-exists-xyz.md`）；⛔ **未回改台账**（append-only） |
+
+**遗留（二期，另立 improvement）：C-4 推广** —— 本 improvement 按 oracle 建议**先单点跑通**（仅 `docs/adr/README.md`）。二期实测数据与设计见 `.rddf/improvements/cpptlm-docs-index-generalization.md`。
+
+**关联**：台账 **Entry #431**（W2 快照更新授权 —— 本 improvement 的 W-4 特例的根因）· 台账 **Entry #342**（07 号索引生成器先例）· 台账 **Entry #502**（冻结面文档同步授权）· 台账 **Entry #504**（本次回填）· [`docs/adr/README.md §7`](../../docs/adr/README.md) · `scripts/cep/generate_doc_index.py` · `scripts/test/cep_gate_harness.py` · `docs/guide/cep-usage.md` §12.5
