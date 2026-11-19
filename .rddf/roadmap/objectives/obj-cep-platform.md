@@ -26865,3 +26865,59 @@ critic 第 4 轮（确认性复审）= **APPROVE_WITH_CONDITIONS**，`mergeable:
 | 估时 | 1.5 ~ 2d（ArchForge 文档 ~0.5d + 对账闸 ~1d + 评审 ~0.5d） |
 
 **关联**：`ADR-DGPU-15`（Proposed）· Entry #500（C2 归档）· Entry #499（ADR 签发 + 示例收窄）· `.rddf/improvements/cpptlm-ep-key-surface-reconciliation.md`
+
+### Entry #502 — 2026-11-19 [planner](**CEP 冻结面文档同步授权** —— ADR-CEP-00 的 R-d 快照当前值声明(22→23 / 125→131,授权源 Entry #431) + 11 条链接形态修正)
+
+**范围**：M1 冻结面内 **4 个文件 / 12 处**的**声明同步 + 链接形态修正**。**⛔ 不触碰任何决策内容**。授权包 = `.rddf/reviews/cep-frozen-surface-doc-sync-authorization.md`(architect 产出,oracle 1 轮 APPROVE + 4 条件,条件已全部采纳)。
+
+**本 Entry 兼作五步链的 `--authorized-by` 依据** ⇒ **必须先于**产物 commit 落盘(闸会校验本 Entry **真实存在**)。
+
+### 授权明细(逐处枚举,超出即越权)
+
+| # | 文件 | 处 | 变更 | 性质 |
+|:--:|------|---|------|------|
+| 1 | `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` | 文末追加 1 个 `## Status Update` | 声明 R-d 快照当前值(`count` **23** / `total` **131** / 快照 `files` **23 键**(新增 `ADR-CEP-20-topology-ic3-evidence-strength.md: 6`)),授权源 **Entry #431** | **纯声明同步**(决策未变) |
+| 2 | `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` | `:473` R-d 行 | ⛔ **不改**(append-only:该行保留为 2026-11-12 的历史值) | — |
+| 3 | `docs/architecture/07-coherence-exploration-platform.md` | L183 / L256 / L279 / L294 | `](../cep/X.md)` → `](./cep/X.md)` | 相对深度修正 |
+| 4 | `docs/architecture/07-coherence-exploration-platform.md` | L458 / L463 / L531 / L553 / L558 | `](../adr/ADR-CEP-NN-*.md)` → 具名文件(去 `*` 通配) | 伪链接修正 |
+| 5 | `docs/architecture/cep/core-traffic-gen.md` | L16 | `](../adr/…)` → `](../../adr/…)` | 相对深度修正 |
+| 6 | `docs/architecture/cep/simulation-and-experiment.md` | L78 | `](../adr/…)` → `](../../adr/…)` | 相对深度修正 |
+
+⚠️ **第 4 项是对 architect 授权包 §七「另立 Entry」的偏离**,偏离理由(**planner 裁决,已记**):① 与第 3 项**同一冻结文件** ⇒ 清单 diff 的**文件数不变(仍 4)**;② 二次五步链(planner Entry + 产物 commit + `--update` + 清单 commit)对 5 条机械改写的开销**高于**缺陷类纯度收益;③ 授权范围**逐处枚举**(上表)⇒ 评审面无歧义。**若后续判定需拆分**,则第 4 项另行立 Entry 且**从本 Entry 的产物 commit 中剔除**。
+
+⚠️ **07 号的 `../adr/*` 链接是对的**(`docs/architecture/` 与 `docs/adr/` 同级)⇒ **不在授权范围**,⛔ 勿误改。
+
+### 根因(已闭环,非新决策)
+
+| 项 | 结论 |
+|---|---|
+| 快照为何变成 23/131 | 台账 **Entry #431** 的 **W2** 已授权:`files` 加 `ADR-CEP-20…: 6`;`count` 22→23;`total` 125→131;`authorized_by` → `Entry #431`;同批 **W3** 同步改了 delta spec(`cep-invariant-gate` 的「实测 125 / 22」→「131 / 23」) |
+| 缺什么 | **唯独 `ADR-CEP-00` 的 SU 声明未同步** ⇒ 纯**声明漂移** ⇒ 处置 = **追加 SU**,⛔ 不改原引用行(沿用该 ADR 自身 17 个追加式 SU 的 append-only 先例) |
+| 链接为何错 | 相对深度写错(`../cep/*` 解析到不存在的 `docs/cep/`;`../adr/*` 解析到不存在的 `docs/architecture/adr/`)与含 `*` 的伪链接 ⇒ **与决策无关**,纯形态错 |
+
+### 验收(AC-01 ~ AC-06,全部机器可判)
+
+| # | 判据 | 手段 |
+|:--:|------|------|
+| AC-01 | 11 条链接全部可达 | 全仓 Markdown 链接扫描:这 11 条从「broken」消失 |
+| AC-02 | R-d 当前值声明存在 | `grep` 该 SU 段命中 `23` / `131` / `Entry #431` |
+| AC-03 | ADR 原引用行**未被改** | `git diff` 显示 `:473` 行**无改动**(只新增文末段) |
+| AC-04 | 清单 diff **恰 4 个文件** hash 变更 | `--update` 后 `git diff --stat` **恰 4 行**;多一个少一个 ⇒ **停下重报** |
+| AC-05 | 冻结面复验绿 | 无参 `bash scripts/test/cep_freeze_check.sh` rc=0 且 provenance 一致 |
+| AC-06 | 关联闸不回归 | `cep_docs_sync_check.sh` / `cep_decision_block_check.sh` / `cep_doc_ref_check.sh` rc=0 |
+
+### 五步链(⛔ 不得合并提交;owner 明确)
+
+| 步 | 动作 | owner | 判据 |
+|:--:|------|-------|------|
+| 1 | 落本 Entry | **planner** | ✅ 本 Entry(= `--authorized-by` 依据) |
+| 2 | 提交产物 = 上表 4 文件 diff | **builder** | ⛔ 台账与产物**不得**同一 commit |
+| 3 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #502"` | builder | 清单 diff **恰 4 个文件** hash 变更 |
+| 4 | 清单**单独** commit | **builder** | ⛔ 不得与产物合并提交 |
+| 5 | 无参复验 `bash scripts/test/cep_freeze_check.sh` | builder | rc=0 且 provenance 一致 |
+
+⚠️ 步骤 3 **必须在步骤 2 之后** ⇒ 否则 `frozen_at_commit` 指向错误 commit,闸 rc=1 阻断。
+⚠️ 步骤 2 执行后到步骤 3 之间,`cep_freeze_check` / `cep_docs_sync_check` 会红 ⇒ 这是**预期中间态**,⛔ 不得跳过步骤 3。
+⚠️ 步骤 4 之后 `frozen_at_commit` 落后 HEAD 一个 commit 是**常态且不阻断**(闸仅告警)⇒ ⛔ **不要**为消除该告警重复 `--update`。
+
+**关联**：授权包 `.rddf/reviews/cep-frozen-surface-doc-sync-authorization.md` · 台账 **Entry #431**(W2 快照更新授权 · W3 delta spec 同步) · `test/cep_decision_block_snapshot.json` · `scripts/test/cep_decision_block_check.{sh,py}` · `scripts/test/cep_freeze_check.sh` · `docs/guide/cep-usage.md` §12.6(冻结面五步授权链)
