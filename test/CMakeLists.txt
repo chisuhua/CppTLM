@@ -907,3 +907,15 @@ add_test(NAME cep_iag_gate_reconcile_check
 # 闸的锚解析未降级 + 重定向表 + 07 号 维护态指针闭合 + 撤回标记成对;配 2 条决定性变异。
 add_test(NAME cep_b3b2_archive_form_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_b3b2_archive_form_check.sh)
+
+# ── 2026-11-19(change cpptlm-docs-index-mechanical-generation / 台账 Entry #503):**ADR 索引不腐化闸** ──
+# 判据面 = `docs/adr/README.md` §7(抽取契约)。三合一:① 逐系列计数(磁盘 == 索引表行 ==
+# 统计表 cell == 合计)② 逐份状态(索引格 == 同一抽取函数的结果)③ 生成器 `--check` rc=0。
+# 配 4 条决定性变异(改 ADR 状态 / 加未登记 ADR / 删索引行 / 改合计 cell),跑在拷贝根。
+# ⚠️ 同型失败先例:`07 号` 索引(台账 Entry #342:5 个 `## ` 未列入仍绿、行号 10/23 错)。
+add_test(NAME docs_adr_index_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/docs_adr_index_check.sh)
+set_tests_properties(docs_adr_index_check PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME docs_adr_index_check_selftest
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/docs_adr_index_check.sh --selftest)
+set_tests_properties(docs_adr_index_check_selftest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
