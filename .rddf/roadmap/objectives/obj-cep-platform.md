@@ -26921,3 +26921,43 @@ critic 第 4 轮（确认性复审）= **APPROVE_WITH_CONDITIONS**，`mergeable:
 ⚠️ 步骤 4 之后 `frozen_at_commit` 落后 HEAD 一个 commit 是**常态且不阻断**(闸仅告警)⇒ ⛔ **不要**为消除该告警重复 `--update`。
 
 **关联**：授权包 `.rddf/reviews/cep-frozen-surface-doc-sync-authorization.md` · 台账 **Entry #431**(W2 快照更新授权 · W3 delta spec 同步) · `test/cep_decision_block_snapshot.json` · `scripts/test/cep_decision_block_check.{sh,py}` · `scripts/test/cep_freeze_check.sh` · `docs/guide/cep-usage.md` §12.6(冻结面五步授权链)
+
+### Entry #503 — 2026-11-19 [planner](**backlog 立项** — `cpptlm-docs-index-mechanical-generation`：ADR 索引机械生成 + 闸强制对账)
+
+**范围**：新建 `.rddf/improvements/cpptlm-docs-index-mechanical-generation.md`（5 段草稿，P2 / phase-1，**未创建 OpenSpec change**）。**无新 ADR** —— 机制设计经 **oracle 1 轮**（APPROVE + 4 条件，条件已全部采纳）；**判据面已钉死**在 `docs/adr/README.md §7`（architect 落盘，commit `0024a338`）。
+
+### 立案理由(P-1 ~ P-4,均为实测)
+
+| # | 缺口 | 证据 |
+|:--:|---|---|
+| P-1 | **人工同步 + 无对账闸** = 索引腐化的机制性根因 | 台账 **Entry #342** 诊断 07 号同型失败：「手工同步」+ 闸只校验「自述数 == 表行数」,**不**校验「表行数 == 实际 `## ` 数」⇒ **5 个 `## ` 未列入仍绿**、索引 A 行号 **10/23 错** |
+| P-2 | **「零手抄」承诺不可兑现** | 2026-11-19 重建的 `docs/adr/README.md` 声称「机械抽取、零手抄」,但生成器停在 `/tmp` **未入库** ⇒ 索引**不可重生成** ⇒ 已如实标注为「未治理项」,未作伪声明 |
+| P-3 | **计数声明已多处漂移** | `docs/guide/cep-usage.md`:闸 **35 → 44**、冻结集 **69 → 89**(实测,本轮已校正);「63 份 ADR」手抄于 `AGENTS.md` + `docs/README.md` + `docs/adr/README.md` **3 处** |
+| P-4 | **同一判据两个数** | `ADR-CEP-00` SU 写「22 / 22 键 / total=125」,`07 号` 写「23 / 23 键 / total=131」,实测快照 **23 / 131** ⇒ 根因 = Entry #431 的 W2 已授权更新快照与 delta spec,**唯 ADR 未同步声明** |
+
+### 内容(五件)
+
+- **W1 生成器**:`scripts/docs/gen_adr_index.py` —— `--write` / `--check`(CLI 照抄 `scripts/cep/generate_doc_index.py` 先例)+ **拒绝重写非生成块形态的行**(防误伤)+ **幂等**
+- **W2 判据面** = `docs/adr/README.md §7`(源行二形态 59+4 / 封闭词表 9 项 / 取最后一个命中 / emoji 由词决定 / 词表外 fail loud + 豁免表 1 项 / 议题正则须允许连字符 / 份数按系列分解 / 三合一判据 / fixture 要求)—— ✅ **已落盘**
+- **W3 闸**:`scripts/test/docs_adr_index_check.sh`(三合一判据 + **4 个变异 fixture**,**跑在拷贝根**)+ `test/CMakeLists.txt` ctest 注册
+- **W4 首次重生成**:`--write` 一次性消除人工归一化层(含 ADR-CEP-20 双状态 / ADR-DGPU-15 emoji 错配 / ADR-X-SUMMARY 截断 三处特例)
+- **W5 登记**:`scripts/README.md`(DOC HYGIENE 规则)
+
+### 验收(AC-1 ~ AC-7,全部机器可判)
+
+AC-1(`--check` rc=0 + 幂等)/ AC-2(**判据①** 逐系列:实际 == 表行数 == 统计表 cell == 合计)/ AC-3(**判据②** 逐份:索引状态 == 按 §7 的确定性抽取,63 份)/ AC-4(**fail loud**:词表外状态 ⇒ rc≠0 且指名文件)/ AC-5(**4 个变异 fixture** 全红 + 还原绿,**跑在拷贝根** ⇒ 零工作树污染)/ AC-6(首次 `--write` 后与生成器输出逐字相同)/ AC-7(**零回归**:既有 11 闸 + ctest 全绿 + **M1 冻结面 89 件 hash 一致**)。
+
+⚠️ **AC-5 的 fixture 必须跑在拷贝根** —— `ADR-CEP-*` 全在 M1 冻结面内,直接改工作树真 ADR 会让 `cep_freeze_check` / `cep_docs_sync_check` 整组 rc=1(中途崩溃即留下 red 工作区)。
+
+### 状态与后续
+
+| 项 | 状态 |
+|---|---|
+| improvement 草稿 | ✅ 已落 `.rddf/improvements/cpptlm-docs-index-mechanical-generation.md` |
+| 抽取契约(判据面) | ✅ 已落 `docs/adr/README.md §7`(architect,commit `0024a338`) |
+| OpenSpec change | ⏳ **未立项**(按 Entry #501 先例;待排期后由 planner 立项 / `rdd-builder` P0 生成 `proposal.md`) |
+| KPI | 立项时占 1 个 Proposed slot,当前 baseline **0/3** |
+| 明确排除 | ① 其他子索引的计数不腐化(⇒ 后续 improvement)② 07 号 5 条伪链接(⇒ 归 Entry #502 冻结面授权)③ §12.5 分类标签机器派生(⇒ 分类属语义判断,⛔ 不做) |
+| 估时 | 1 ~ 1.5d |
+
+**关联**:台账 **Entry #431**(W2 快照更新授权 —— P-4 的根因)· **Entry #342**(07 号索引生成器先例)· **Entry #502**(冻结面文档同步授权)· `docs/adr/README.md §7` · `scripts/cep/generate_doc_index.py` · `scripts/test/cep_gate_harness.py`
