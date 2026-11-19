@@ -27253,3 +27253,38 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **未纳入（同类陈旧，待用户裁决）**：`cpptlm-cep-mesh-e2e-carrier`（#448）· `cpptlm-module-param-read-declares` · `cpptlm-spec-purpose-batch3`（#444）· `cpptlm-spec-scenario-level-fix`（#438）。
 
 **验证**：6 份 front-matter 全部通过 `yaml.safe_load` 解析（防「状态行折行破坏 YAML」）· `git diff --stat` = **6 文件 7+/8-** · 零代码 / 零 spec / 零台账上游改动。
+
+### Entry #511 — 2026-11-20 [planner](**improvement front matter 规范化 + 上游 dashboard 读取修正** —— `rddf dashboard` §7 的 improvement 输出从「11 条全待讨论」变为「3 条真实 pending」)
+
+**起因**：核对 `rddf status` / `rddf dashboard` 对 improvement 的输出是否正确 ⇒ 实测 **11 条 pending 里 8 条是误报**
+（早已「✅ 已实施 / ✅ 已归档」却仍显示「待讨论」）+ 四列元数据恒为 `-` + 名字被静默截到 30 字符。
+
+**根因（三层，缺一不可）**：
+
+| 层 | 位置 | 问题 |
+|---|---|---|
+| 数据层 | 本仓 55 份 `.rddf/improvements/*.md` | front matter 未加引号且内含 ` #`（如 `Entry #101`）⇒ YAML 当注释起始 ⇒ **44 份 `状态` 被静默截断**（`cep-b4-evidence-device` 原文 153 字符 ⇒ 只解析出 49）+ **1 份解析失败**（`cpptlm-cep-mesif-state-spec`）;`来源` 3 处 + `依赖` 列表项 2 处同样截断 |
+| 读取层 | 上游 `rdd-workflow` 的 `_lib/state_reader.py::read_improvement_entries` | 只认 2026 之前的 `**key**: value` 内联格式且只看第 3/4 行 ⇒ 现行的 YAML front matter **一个字段都读不出** |
+| 展示层 | 上游 `_lib/dashboard/__init__.py` + `renderer.py` | `status="待讨论"` **硬编码**（从不读 `状态`）;剔除只认 `openspec/changes/archive/<date>-<name>/` 目录名 ⇒ 无 change 的 doc-only / 机制类项**永远**留在 pending;名字 `[:30]` 静默截断 |
+
+**交付（两个仓，各 1 commit）**：
+
+| 仓 | commit | 内容 |
+|---|---|---|
+| CppTLM（本仓） | `6ac230f0` | 45 份文件 / 51 处字段（`状态`×45 · `来源`×3 · `主题`×1 · `依赖` 列表项×2）规范为合法 YAML（双引号包裹 + 转义;跨行值折叠为单行）;**只改「YAML 解析结果 ≠ 作者意图」的字段** ⇒ 其余零改动;正文逐文件比对**零差异** |
+| rdd-workflow（上游） | `b8f3c649` | 新增 `_lib/dashboard/improvement_status.py`（`classify_improvement_status` 纯函数，按**前导标记**判 terminal）;`read_improvement_entries` 支持 YAML front matter（PyYAML 可选，缺失回落内联解析）;Pending 段改用真实 status 且**剔除已交付项**;NAME 列 30 → 40 + 省略号;新增测试 20 例 |
+
+**实测结果（修后）**：`rddf dashboard --plain` 的 §7 Pending = **3 条**（原 11 条）——
+`cpptlm-ep-key-surface-reconciliation`（Draft · P2 · phase-10）·
+`cpptlm-router-vc-count-param-inert`（未立项 · P2 · phase-10）·
+`cpptlm-validate-params-dead-code`（**部分闭合** · P1 · phase-10）;
+`priority` / `phase` / `category` 均已填充。⇒ 前两条是真实待办，第三条是 C++ 侧已闭合但
+**Python 侧未处置**（`cpptlm_config/validator.py` + `configs/param_rules/*.json` 孤儿）⇒ 需要裁决。
+
+**验证**：55/55 份 front matter `yaml.safe_load` 成功且 `状态` **尾部 12 字符与 HEAD 逐字一致**（无信息丢失）;
+上游新增测试 20 passed · 既有 dashboard/state_reader 相关 125 passed · `pytest tests/unit/` 3452 passed
+（唯一失败 `test_no_hardcoded_workspace_paths` 经 stash 验证为**既有失败**）· `./test.sh --gates` 全绿。
+
+**仍待处置（本轮未做）**：`cpptlm-cep-mesh-e2e-carrier` / `cpptlm-module-param-read-declares` /
+`cpptlm-spec-purpose-batch3` / `cpptlm-spec-scenario-level-fix` 4 份 improvement 的 `状态:` 仍写「已立项」
+但 change 已归档 ⇒ 状态行陈旧（dashboard 侧已被归档目录规则剔除，故不再误显示，但**状态行本身**仍是错的）。
