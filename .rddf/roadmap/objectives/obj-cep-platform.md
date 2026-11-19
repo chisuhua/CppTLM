@@ -27156,3 +27156,64 @@ Entry #507 的 G6 只收了 `cep_freeze_check.sh` 的 **shell 侧**提取口径�
 C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs 外置 / manifest `note` 与事实矛盾）**本次不做** —— 它们**改闸的行为契约**（M1 机制挂 objective §9.2），须先过 critic 再动。
 
 **关联**：Entry #507（G6 首次收紧，仅覆盖 shell 侧）· Entry #506（「顺带发现」的原始出处）
+
+### Entry #509 — 2026-11-19 [builder](**M1 冻结面「可被无声缩小」四类退化路径封堵** — 范围一致性 / 移出授权 / 排除实做 / 判据源去正则)
+
+**范围**：`scripts/test/cep_freeze_check.sh` + `scripts/test/cep_adr_structural_check.py`。**零冻结产物改动**（89 件 hash 全部一致）· 零 ADR / 零 spec 改动 · 不占 OpenSpec slot（KPI 保持 **0/3**）。
+
+#### 起因（四类退化路径，全部实测复现）
+
+| # | 退化路径 | 实测证据 |
+|---|----------|---------|
+| 1 | **`--update` 静默收缩冻结面** | 旧 `--update` 的产物集**只**从脚本 glob 派生、**从不读旧清单** ⇒ 缩小 glob 后跑一次 `--update`,被移出范围的产物就从 `artifacts` 消失;而 verify 只遍历 `artifacts` ⇒ **无任何判据报红**;且 `--update` 只打印一行计数,操作者看不见丢了什么 |
+| 2 | **移出授权 = 正文子串命中** | 授权判据原为「路径出现在 Entry 正文里」⇒ 台账正文大量引用 ADR / spec 全路径 ⇒ **顺带提及即构成授权** |
+| 3 | **`exclusions[]` 是死机制** | 旧实现:字段**只写**（`--update` 恒写 `[]`）、**无声明源**、**从不参与**产物集计算 ⇒ 文档宣称的「唯一可豁免通道」实际不存在（纸面排除） |
+| 4 | **判据源靠正则抽 shell** | ADR 结构闸用 `re.search(r"FROZEN_GLOBS=\((.*?)\)\n")` 抽 glob ⇒ 非贪婪匹配停在数组内**第一行以 `)` 结尾的注释** ⇒ 23 条真实 glob 只抽到 **19** 条,并混入注释里的假 glob「冻结产物」 |
+
+#### 交付
+
+| # | 内容 | 落点 |
+|---|------|------|
+| C-1a | **范围一致性**:verify 比对「脚本当前 `FROZEN_GLOBS`」vs「清单记录的 `globs`」,不一致即红 ⇒ 缩小范围在 `--update` **之前**就显式可见 | `cep_freeze_check.sh` |
+| C-2 | **`--update` 可审计**:读旧清单并回显 `added / removed / changed` 三组 + 各自数量 | `cep_freeze_check.sh` |
+| C-3a | **判据源去正则**:ADR 结构闸改读**清单的 `globs`**（清单本就在写它）;清单路径按**脚本自身位置**解析 ⇒ 影子树（`--root`）下同样可用（影子树只改内容、不改判据面） | `cep_adr_structural_check.py` |
+| C-4 | **manifest `note` 只述结构不述成员**:旧 note 手写「`fabric.json` 不冻结」等成员级结论,而它早已入冻结集 ⇒ 每次 `--update` 都把错话写回清单 | `cep_freeze_check.sh` |
+| C-1b | **拒绝静默丢产物**:`--update` 算出的 `removed` 若未被授权 ⇒ **拒绝写盘**并列出未获授权项 | `cep_freeze_check.sh` |
+| D-1a | **`exclusions[]` 实做**:声明源 = **授权 Entry 正文的声明行**（台账 = 唯一授权源,零第二真源）;`--update` 做减法;verify 断言排除项**真被排除** | `cep_freeze_check.sh` |
+
+#### 授权面（本次确立的两种声明行，写在**授权 Entry 正文**里）
+
+```
+- 冻结面移出 `<相对路径>`:<理由>     # 该路径离开冻结面(文件被删 / 范围收窄)
+- 冻结面排除 `<相对路径>`:<理由>     # 该路径不进冻结面(glob 命中但豁免)
+```
+
+⚠️ **不得**以「Entry 正文里出现该路径」当作授权（台账正文大量引用全路径）。
+
+#### 审稿（critic · 1 轮 · `review_profile: build`）
+
+**结论：APPROVE_WITH_CONDITIONS · mergeable: yes · 0 BLOCKER**。3 条 SHOULD_FIX + 4 条 NITS **全部采纳并当场修掉**：
+
+| finding | 处置 |
+|---------|------|
+| SHOULD_FIX 1 · 清单注入**无声明行**的排除项可绕过（清单本身不在冻结集内） | verify 增判「授权 Entry 正文里确有该路径的**排除声明行**」⇒ 自测⑧ |
+| SHOULD_FIX 2 · 移出授权用正文**子串**判定 ⇒ 意外授权 | 改为「移出声明行」显式登记 ⇒ 自测⑨（仅提及被拒）+ 自测⑩（声明行放行） |
+| SHOULD_FIX 3 · 排除路径域限定 `cep-*` spec,但 `--update` 的减法对全部 glob 生效 ⇒ 「update 放行 + verify 判死」 | 路径域放宽到**当前 globs 展开集**（仍保留防僵尸:路径须真实存在） |
+| NIT 1 · `MANIFEST` 赋值重复两遍 | 去重 |
+| NIT 2 · 自测⑤ 的「产物集少一件」在假清单下是**空真** | 改为**差分**断言（无排除 vs 有排除 ⇒ 恰差 1 件,且差的是被排除路径） |
+| NIT 3 · `errors.append(fail(...))` 与全文 `errors += fail(...)` 形态不一（`errors` 是 int 计数器 ⇒ 该行一旦触发即 `AttributeError`） | 改为 `errors += fail(...)` |
+| NIT 4 · 影子树判据面 | 记录确认,无 finding（globs 是判据面不是被测内容;不可读时 fail-closed） |
+
+#### 验证
+
+- `cep_freeze_check.sh --self-test` rc=0 —— **10 条**反向自测全绿（授权 id 口径 / 子标题冒充 / 真实台账形态 / 未授权移出被拒且不写盘 / 排除差分生效 / 范围不一致报红 / 纸面排除报红 / 清单注入排除报红 / 仅提及不授权 / 声明行放行）
+- `cep_freeze_check.sh`（无参）rc=0（89 件 hash 一致）· `cep_adr_structural_check` rc=0 · `cep_docs_sync_check` rc=0 · `rddf_stage_gate` rc=0 · `docs_sync_check --strict` rc=0
+- `cep_freeze_reverse_verify` rc=0（基线绿 → 破坏红点名 `fabric.json` → 还原绿;字节级还原实测一致）
+- `ctest` 191/191
+
+#### 未做（明确排除）
+
+- **P2 级加固**（授权可重放 / `authorization_history[]` / 授权与改动内容绑定）: 属机制增强,不在本轮。
+- **`test/cep_freeze_scope_registry.json`**（Entry #324 退役的枚举式登记表）: 全仓零引用,但其自述为**留档**（记录「2026-11-09~11-10 期间 27 份契约面曾处于无冻结保护状态」这一历史事实 + `retired_by`/`superseded_by` provenance 链）⇒ 删除与否待用户裁决。
+
+**关联**：Entry #508（三处同口径 + 反向验证闸竞态）· Entry #507 · Entry #506 · Entry #324（C-2′ 裁决:glob 全量 + 显式排除表）

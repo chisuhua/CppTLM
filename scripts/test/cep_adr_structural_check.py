@@ -310,15 +310,24 @@ def main():
     }
 
     def frozen_globs():
-        """从 `cep_freeze_check.sh` 求值 `FROZEN_GLOBS`(用于 blocked_by 真伪校验)"""
-        sh = os.path.join(ROOT, "scripts", "test", "cep_freeze_check.sh")
-        gl = []
-        if os.path.isfile(sh):
-            txt = open(sh, encoding="utf-8").read()
-            m = re.search(r"FROZEN_GLOBS=\((.*?)\)\n", txt, re.S)
-            if m:
-                gl = re.findall(r'"([^"]+)"', m.group(1))
-        return gl
+        """冻结范围 —— **读冻结清单的 `globs` 字段**(清单 = 冻结面的权威记录)。
+
+        ⚠️ 旧实现用正则从 `cep_freeze_check.sh` 抽 `FROZEN_GLOBS`:非贪婪匹配停在数组内
+        第一行**以 `)` 结尾的注释** ⇒ 23 条真实 glob 只抽到 19 条,并把注释里的
+        `"冻结产物"` 当成一条假 glob。⇒ 改读**清单**:清单本就在写 `globs`
+        ⇒ 零文本解析、零漂移。
+        ⚠️ 清单路径按**脚本自身位置**(真实仓)解析 ⇒ 影子树(`--root`)下同样可用
+        (影子树只改内容、不改判据面);清单不可读 ⇒ 判据面缺失 ⇒ 报红(不判绿)。
+        """
+        man_path = os.path.normpath(os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "..",
+            "docs", "implementation", "2026-10-21-cep-stage0-freeze-manifest.json"))
+        try:
+            with open(man_path, encoding="utf-8") as f:
+                return json.load(f).get("globs", []) or []
+        except Exception as e:
+            errors += fail("[4b-0] 冻结清单不可读(判据面缺失 ⇒ 不得判绿): %s" % e)
+            return []
 
     _FG = frozen_globs()
 

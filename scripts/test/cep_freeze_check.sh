@@ -19,14 +19,30 @@
 #   承载语义的是**被它检查的产物**。
 #
 # 用法:
-#   bash scripts/test/cep_freeze_check.sh            # 校验(漂移即非零退出)
-#   bash scripts/test/cep_freeze_check.sh --update   # 重新生成冻结清单
+#   bash scripts/test/cep_freeze_check.sh                      # 校验(漂移即非零退出)
+#   bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #N"
+#   bash scripts/test/cep_freeze_check.sh --self-test          # 授权闸反向自测(10 条)
+#
+# ── 授权面(2026-11-19 收紧)──────────────────────────────────────────
+#   · 合法 entry id **只认** `### Entry #<数字>`(台账 Entry 正文里的 `###` 级子标题
+#     如「授权明细」「验收」**不**是合法 id —— 可被直接冒充)。
+#   · **移出**冻结面(文件被删 / 范围收窄)必须按声明行登记:
+#       `- 冻结面移出 `<相对路径>`:<理由>`
+#     ⚠️ 不得以「Entry 正文里出现该路径」当作授权(台账正文大量引用全路径)。
+#   · **排除**(glob 命中但豁免冻结)同样按声明行登记:
+#       `- 冻结面排除 `<相对路径>`:<理由>`
+#   · 两种声明行都写在**授权 Entry 正文**里 ⇒ 台账 = 唯一授权源,零第二真源。
+#   · 未获授权的移出 ⇒ `--update` **拒绝写盘**(冻结面不可被无声缩小)。
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT" || exit 2
 
-MANIFEST="docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json"
+# ⚠️ **测试用环境变量覆盖**(2026-11-19):默认行为**完全不变**;仅供 `--self-test`
+#    在**临时清单 / 临时台账**上做负向变异(绝不动真实清单)。
+#    · `CEP_FREEZE_MANIFEST` —— 清单路径
+#    · `CEP_FREEZE_LEDGER`   —— 台账路径
+MANIFEST="${CEP_FREEZE_MANIFEST:-docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json}"
 FROZEN_GLOBS=(
   "docs/adr/ADR-CEP-*.md"
   "docs/architecture/07-coherence-exploration-platform.md"
@@ -116,7 +132,7 @@ FROZEN_GLOBS=(
 #      标题本身就带「授权 / 验收」字样 ⇒ `--authorized-by "验收（AC-1 ~ AC-8）"`
 #      可直接冒充授权条目 ⇒ 授权闸形同虚设(per 台账 Entry #506「顺带发现」)。
 #   ⇒ 只认 `### Entry #<数字>` 这一种形态。**shell / embedded python / ADR 结构闸三处同口径**。
-LEDGER=".rddf/roadmap/objectives/obj-cep-platform.md"
+LEDGER="${CEP_FREEZE_LEDGER:-.rddf/roadmap/objectives/obj-cep-platform.md}"
 
 entry_ids_of() {  # $1 = 台账路径
   grep -E "^### Entry #[0-9]+ " "$1" | sed 's/^### //; s/ *—.*$//'
@@ -126,12 +142,13 @@ is_authorized_entry() {  # $1 = 台账路径, $2 = 候选 id
   entry_ids_of "$1" | grep -qxF "$2"
 }
 
-# 反向自测(只验绿 = 没验):闸必须拒绝「正文子标题冒充 entry id」
+# 反向自测(只验绿 = 没验):闸必须拒绝「冒充 / 静默缩小 / 纸面排除」
 if [ "${1:-}" = "--self-test" ]; then
   _st_base="${TMPDIR:-/tmp/opencode}"; mkdir -p "$_st_base" 2>/dev/null || true
   _st_dir="$(mktemp -d "$_st_base/cep_freeze_selftest.XXXXXX")" || exit 2
   trap 'rm -rf "$_st_dir"' EXIT
-  cat > "$_st_dir/ledger.md" <<'STEOF'
+  # ── 假台账 A:真 entry + 2 个正文子标题(冒充用)──────────────────────
+  cat > "$_st_dir/ledger_a.md" <<'STEOF'
 ## 台账
 ### Entry #1 — 真 entry(授权记录)
 正文
@@ -140,29 +157,211 @@ if [ "${1:-}" = "--self-test" ]; then
 ### 授权明细(逐处枚举,超出即越权)
 正文
 STEOF
+  # ── 假台账 B:含**排除声明行**(D-1a 的声明源)────────────────────────
+  cat > "$_st_dir/ledger_b.md" <<'STEOF'
+## 台账
+### Entry #2 — 排除授权(测试用)
+- 冻结面排除 `openspec/specs/cep-core-contracts/spec.md`:反向自测用排除
+STEOF
   _st_rc=0
-  if is_authorized_entry "$_st_dir/ledger.md" "Entry #1"; then
-    echo "  ✓ 自测:真 entry id 'Entry #1' 被接受"
+
+  # ── ① 真 entry id 被接受 ───────────────────────────────────────────
+  if is_authorized_entry "$_st_dir/ledger_a.md" "Entry #1"; then
+    echo "  ✓ 自测①:真 entry id 'Entry #1' 被接受"
   else
-    echo "  ✗ 自测失败:真 entry id 'Entry #1' 未被接受(闸误伤)"; _st_rc=1
+    echo "  ✗ 自测失败①:真 entry id 'Entry #1' 未被接受(闸误伤)"; _st_rc=1
   fi
+  # ── ② 正文子标题**不得**冒充授权条目 ───────────────────────────────
   for _fake in "验收（AC-1 ~ AC-8）" "授权明细(逐处枚举,超出即越权)"; do
-    if is_authorized_entry "$_st_dir/ledger.md" "$_fake"; then
-      echo "  ✗ 自测失败:正文子标题 '$_fake' 被当成合法授权条目(闸无牙)"; _st_rc=1
+    if is_authorized_entry "$_st_dir/ledger_a.md" "$_fake"; then
+      echo "  ✗ 自测失败②:正文子标题 '$_fake' 被当成合法授权条目(闸无牙)"; _st_rc=1
     else
-      echo "  ✓ 自测:正文子标题 '$_fake' 被拒绝"
+      echo "  ✓ 自测②:正文子标题 '$_fake' 被拒绝"
     fi
   done
+  # ── ③ 真实台账的 id 形态合规 ───────────────────────────────────────
   if [ -f "$LEDGER" ]; then
     _st_real="$(entry_ids_of "$LEDGER")"
     if [ -z "$_st_real" ]; then
-      echo "  ✗ 自测失败:真实台账解析不到任何 Entry id"; _st_rc=1
+      echo "  ✗ 自测失败③:真实台账解析不到任何 Entry id"; _st_rc=1
     elif printf '%s\n' "$_st_real" | grep -qvE '^Entry #[0-9]+$'; then
-      echo "  ✗ 自测失败:真实台账解析出非 'Entry #<数字>' 形态的 id"; _st_rc=1
+      echo "  ✗ 自测失败③:真实台账解析出非 'Entry #<数字>' 形态的 id"; _st_rc=1
     else
-      echo "  ✓ 自测:真实台账 $(printf '%s\n' "$_st_real" | wc -l) 个 id 全部为 'Entry #<数字>' 形态"
+      echo "  ✓ 自测③:真实台账 $(printf '%s\n' "$_st_real" | wc -l) 个 id 全部为 'Entry #<数字>' 形态"
     fi
   fi
+
+  # ── ④ C-1b:未获授权的**移出冻结面** ⇒ 拒绝写盘 ─────────────────────
+  _st_man4="$_st_dir/man4.json"
+  python3 - "$_st_man4" <<'STEOF'
+import json, sys
+json.dump({"globs": [], "artifact_count": 1, "exclusions": [],
+           "artifacts": {"docs/adr/ADR-CEP-DOES-NOT-EXIST.md": "0" * 64}},
+          open(sys.argv[1], "w"), indent=2)
+STEOF
+  _st_sha_before="$(sha256sum "$_st_man4" | cut -d' ' -f1)"
+  if CEP_FREEZE_MANIFEST="$_st_man4" CEP_FREEZE_LEDGER="$_st_dir/ledger_a.md" \
+       bash "$0" --update --authorized-by "Entry #1" > "$_st_dir/r4.log" 2>&1; then
+    echo "  ✗ 自测失败④:未获授权的移出被放行(闸无牙)"; _st_rc=1
+  else
+    _st_sha_after="$(sha256sum "$_st_man4" | cut -d' ' -f1)"
+    if grep -q "拒绝写盘" "$_st_dir/r4.log" && [ "$_st_sha_before" = "$_st_sha_after" ]; then
+      echo "  ✓ 自测④:未获授权的移出被拒,且清单未被写盘"
+    else
+      echo "  ✗ 自测失败④:拒绝理由或「不写盘」未成立"; _st_rc=1
+      tail -4 "$_st_dir/r4.log" | sed 's/^/      /'
+    fi
+  fi
+
+  # ── ⑤ D-1a:声明行排除 ⇒ **差分**地少一件 + 排除表落一条 ───────────
+  #   ⚠️ 用**差分**断言(critic NIT 2:原断言在假清单 `globs:[]` 下是空真):
+  #   同一份脚本 globs,跑两次 --update —— 无排除 vs 有排除 ⇒ 产物集恰差 1 件,
+  #   且差的那一件正是被排除的路径。
+  _st_man5a="$_st_dir/man5a.json"; _st_man5b="$_st_dir/man5b.json"
+  for _f in "$_st_man5a" "$_st_man5b"; do
+    python3 - "$_f" <<'STEOF'
+import json, sys
+json.dump({"globs": [], "artifact_count": 0, "exclusions": [], "artifacts": {}},
+          open(sys.argv[1], "w"), indent=2)
+STEOF
+  done
+  CEP_FREEZE_MANIFEST="$_st_man5a" CEP_FREEZE_LEDGER="$_st_dir/ledger_a.md" \
+    bash "$0" --update --authorized-by "Entry #1" > "$_st_dir/r5a.log" 2>&1
+  if CEP_FREEZE_MANIFEST="$_st_man5b" CEP_FREEZE_LEDGER="$_st_dir/ledger_b.md" \
+       bash "$0" --update --authorized-by "Entry #2" > "$_st_dir/r5.log" 2>&1; then
+    if python3 - "$_st_man5a" "$_st_man5b" <<'STEOF'
+import json, sys
+a = json.load(open(sys.argv[1])).get("artifacts", {})
+b = json.load(open(sys.argv[2]))
+ex = b.get("exclusions", [])
+p = "openspec/specs/cep-core-contracts/spec.md"
+only_a = set(a) - set(b.get("artifacts", {}))
+ok = (len(ex) == 1 and ex[0].get("path") == p and ex[0].get("ledger_entry") == "Entry #2"
+      and only_a == {p} and p not in b.get("artifacts", {})
+      and b.get("artifact_count") == len(b.get("artifacts", {}))
+      and b.get("artifact_count") == len(a) - 1)
+sys.exit(0 if ok else 1)
+STEOF
+    then
+      echo "  ✓ 自测⑤:声明行排除生效(排除表落 1 条 · 产物集**差分**恰少该件 · 计数自洽)"
+    else
+      echo "  ✗ 自测失败⑤:声明行排除未按预期生效"; _st_rc=1
+      tail -4 "$_st_dir/r5.log" | sed 's/^/      /'
+    fi
+  else
+    echo "  ✗ 自测失败⑤:带排除声明的 --update 报错"; _st_rc=1
+    tail -4 "$_st_dir/r5.log" | sed 's/^/      /'
+  fi
+
+  # ── ⑥ C-1a:清单的 globs ≠ 脚本的 globs ⇒ 红(缩小范围须显式可见)────
+  if [ -f "$MANIFEST" ]; then
+    _st_man6="$_st_dir/man6.json"
+    python3 - "$MANIFEST" "$_st_man6" <<'STEOF'
+import json, sys
+m = json.load(open(sys.argv[1]))
+m["globs"] = list(m.get("globs", []))[:-1]   # 少一条 ⇒ 与脚本当前数组不一致
+json.dump(m, open(sys.argv[2], "w"), indent=2)
+STEOF
+    if CEP_FREEZE_MANIFEST="$_st_man6" bash "$0" > "$_st_dir/r6.log" 2>&1; then
+      echo "  ✗ 自测失败⑥:清单 globs 与脚本不一致仍放行(缩小范围无牙)"; _st_rc=1
+    elif grep -q "冻结范围与清单不一致" "$_st_dir/r6.log"; then
+      echo "  ✓ 自测⑥:清单 globs 与脚本不一致 ⇒ 报红(缩小范围须显式可见)"
+    else
+      echo "  ✗ 自测失败⑥:报红理由非预期"; _st_rc=1
+      tail -4 "$_st_dir/r6.log" | sed 's/^/      /'
+    fi
+  fi
+
+  # ── ⑦ D-1a:排除项**仍在冻结集里** ⇒ 红(纸面排除不算排除)──────────
+  if [ -f "$MANIFEST" ]; then
+    _st_man7="$_st_dir/man7.json"
+    python3 - "$MANIFEST" "$_st_dir/ledger_a.md" "$_st_man7" <<'STEOF'
+import json, sys
+m = json.load(open(sys.argv[1]))
+p = sorted(m.get("artifacts", {}))[0]
+m["exclusions"] = [{"path": p, "reason": "反向自测用", "ledger_entry": "Entry #1"}]
+json.dump(m, open(sys.argv[3], "w"), indent=2)
+STEOF
+    if CEP_FREEZE_MANIFEST="$_st_man7" CEP_FREEZE_LEDGER="$_st_dir/ledger_a.md" \
+         bash "$0" > "$_st_dir/r7.log" 2>&1; then
+      echo "  ✗ 自测失败⑦:纸面排除(仍在冻结集里)未报红"; _st_rc=1
+    elif grep -q "仍在冻结集里" "$_st_dir/r7.log"; then
+      echo "  ✓ 自测⑦:纸面排除(产物仍在冻结集里)⇒ 报红"
+    else
+      echo "  ✗ 自测失败⑦:报红理由非预期"; _st_rc=1
+      tail -4 "$_st_dir/r7.log" | sed 's/^/      /'
+    fi
+  fi
+
+  # ── ⑧ SHOULD_FIX 1:清单注入**无声明行**的排除项 ⇒ 红 ────────────────
+  #   清单本身不在冻结集内 ⇒ 手工改清单注入排除项可绕过其余判据
+  #   ⇒ 必须验「授权 Entry 正文里确有该路径的排除声明行」。
+  if [ -f "$MANIFEST" ]; then
+    _st_man8="$_st_dir/man8.json"
+    python3 - "$MANIFEST" "$_st_man8" <<'STEOF'
+import json, sys
+m = json.load(open(sys.argv[1]))
+# 挑一份真实存在、且在 glob 范围内的 cep-* spec
+p = sorted(k for k in m.get("artifacts", {}) if k.startswith("openspec/specs/cep-"))[0]
+m["artifacts"].pop(p, None)                      # 移出冻结集(否则触发「仍在冻结集里」而非本条)
+m["artifact_count"] = len(m["artifacts"])
+m["exclusions"] = [{"path": p, "reason": "反向自测:无声明行的注入", "ledger_entry": "Entry #1"}]
+json.dump(m, open(sys.argv[2], "w"), indent=2)
+STEOF
+    if CEP_FREEZE_MANIFEST="$_st_man8" bash "$0" > "$_st_dir/r8.log" 2>&1; then
+      echo "  ✗ 自测失败⑧:清单注入无声明行的排除项未报红"; _st_rc=1
+    elif grep -q "没有对应的排除声明行" "$_st_dir/r8.log"; then
+      echo "  ✓ 自测⑧:清单注入无声明行的排除项 ⇒ 报红(纸面排除堵死)"
+    else
+      echo "  ✗ 自测失败⑧:报红理由非预期"; _st_rc=1
+      tail -4 "$_st_dir/r8.log" | sed 's/^/      /'
+    fi
+  fi
+
+  # ── ⑨ SHOULD_FIX 2:Entry 正文**仅顺带提及**路径 ⇒ 不得授权移出 ──────
+  #   台账正文大量引用 ADR / spec 全路径 ⇒ 子串「点名」= 意外授权。
+  _st_led9="$_st_dir/ledger_c.md"
+  cat > "$_st_led9" <<'STEOF'
+## 台账
+### Entry #3 — 顺带提及(非声明)
+本次处理了 docs/adr/ADR-CEP-DOES-NOT-EXIST.md 这个文件的移除问题,顺带记一笔。
+STEOF
+  _st_man9="$_st_dir/man9.json"
+  python3 - "$_st_man9" <<'STEOF'
+import json, sys
+json.dump({"globs": [], "artifact_count": 1, "exclusions": [],
+           "artifacts": {"docs/adr/ADR-CEP-DOES-NOT-EXIST.md": "0" * 64}},
+          open(sys.argv[1], "w"), indent=2)
+STEOF
+  if CEP_FREEZE_MANIFEST="$_st_man9" CEP_FREEZE_LEDGER="$_st_led9" \
+       bash "$0" --update --authorized-by "Entry #3" > "$_st_dir/r9.log" 2>&1; then
+    echo "  ✗ 自测失败⑨:仅顺带提及路径即被当作移出授权(意外授权)"; _st_rc=1
+  else
+    echo "  ✓ 自测⑨:仅顺带提及路径不构成授权(须按移出声明行)"
+  fi
+
+  # ── ⑩ SHOULD_FIX 2 的正向面:按移出声明行 ⇒ 放行 ────────────────────
+  _st_led10="$_st_dir/ledger_d.md"
+  cat > "$_st_led10" <<'STEOF'
+## 台账
+### Entry #4 — 移出授权
+- 冻结面移出 `docs/adr/ADR-CEP-DOES-NOT-EXIST.md`:该文件已删除
+STEOF
+  _st_man10="$_st_dir/man10.json"
+  python3 - "$_st_man10" <<'STEOF'
+import json, sys
+json.dump({"globs": [], "artifact_count": 1, "exclusions": [],
+           "artifacts": {"docs/adr/ADR-CEP-DOES-NOT-EXIST.md": "0" * 64}},
+          open(sys.argv[1], "w"), indent=2)
+STEOF
+  if CEP_FREEZE_MANIFEST="$_st_man10" CEP_FREEZE_LEDGER="$_st_led10" \
+       bash "$0" --update --authorized-by "Entry #4" > "$_st_dir/r10.log" 2>&1; then
+    echo "  ✓ 自测⑩:按移出声明行的授权 ⇒ 放行(授权通道仍通)"
+  else
+    echo "  ✗ 自测失败⑩:带移出声明行的 --update 被拒(授权通道被堵死)"; _st_rc=1
+    tail -4 "$_st_dir/r10.log" | sed 's/^/      /'
+  fi
+
   [ "$_st_rc" -eq 0 ] && echo "  ✓ 授权闸反向自测通过" || echo "  ✗ 授权闸反向自测失败"
   exit "$_st_rc"
 fi
@@ -194,11 +393,36 @@ if [ "${1:-}" = "--update" ]; then
     exit 1
   fi
   echo "  ✓ 授权校验通过:台账 entry '$AUTH'"
-  python3 - "$MANIFEST" "$ROOT" "$AUTH" "${FROZEN_GLOBS[@]}" << 'PYEOF'
-import glob, hashlib, json, os, subprocess, sys
+  python3 - "$MANIFEST" "$ROOT" "$AUTH" "$LEDGER" "${FROZEN_GLOBS[@]}" << 'PYEOF'
+import glob, hashlib, json, os, re, subprocess, sys
 
-manifest_path, root, auth = sys.argv[1], sys.argv[2], sys.argv[3]
-globs = sys.argv[4:]
+manifest_path, root, auth, ledger_rel = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+globs = sys.argv[5:]
+
+# ── 授权 Entry 的正文(C-1b / D-1a 的判据面)──────────────────────────
+#   台账 entry 即**授权记录**(本闸既有原则)⇒ 授权范围也由它界定:
+#   · 「哪些产物被移出冻结面」必须在该 Entry 正文里**按声明行**登记;
+#   · 「哪些产物被**排除**」必须在该 Entry 正文里**按声明行**登记。
+def entry_body(entry_id):
+    lp = os.path.join(root, ledger_rel)
+    if not os.path.isfile(lp):
+        return ""
+    txt = open(lp, encoding="utf-8").read()
+    m = re.search(r"^### " + re.escape(entry_id) + r"\b.*?(?=^### |\Z)", txt, re.S | re.M)
+    return m.group(0) if m else ""
+
+BODY = entry_body(auth)
+
+# 声明行格式(严格):
+#   · `- 冻结面排除 `<相对路径>`:<理由>` ⇒ 该路径**不进**冻结集(glob 命中但豁免)
+#   · `- 冻结面移出 `<相对路径>`:<理由>` ⇒ 该路径**离开**冻结面(文件被删 / 范围收窄)
+#     ⚠️ **不得**用「Entry 正文里出现该路径」当作授权(2026-11-19 critic SHOULD_FIX 2):
+#        台账正文大量引用 ADR / spec 全路径 ⇒ 顺带提及即构成授权 ⇒ 意外放行。
+#        「移出」与「排除」同形态声明 ⇒ 与 entry-id 侧的精确度对等。
+DECL_EXCL_RE = re.compile(r"^-\s*冻结面排除\s*`([^`]+)`\s*[:：]\s*(\S.*)$", re.M)
+DECL_OUT_RE = re.compile(r"^-\s*冻结面移出\s*`([^`]+)`\s*[:：]\s*(\S.*)$", re.M)
+DECLARED = {p: reason.strip() for p, reason in DECL_EXCL_RE.findall(BODY)}
+DECLARED_OUT = {p: reason.strip() for p, reason in DECL_OUT_RE.findall(BODY)}
 
 files = []
 for g in globs:
@@ -212,6 +436,50 @@ def sha256(rel):
             h.update(chunk)
     return h.hexdigest()
 
+# ── 读旧清单(C-2:让「本次吸收了什么」**可见**)────────────────────────
+#   ⚠️ 旧清单此前**从不读** ⇒ `--update` 的输出只有一行计数 ⇒ 操作者看不到
+#      「刚刚吸收了哪几个文件 / 丢了哪几个文件」。
+old_arts = {}
+old_excl = []
+try:
+    with open(os.path.join(root, manifest_path), encoding="utf-8") as f:
+        _old = json.load(f)
+    old_arts = _old.get("artifacts", {}) or {}
+    old_excl = _old.get("exclusions", []) or []
+except Exception:
+    old_arts = {}
+    old_excl = []
+
+# ── 排除表(D-1a:声明 → 减法 → 真被排除)──────────────────────────────
+#   ⚠️ 旧实现:`exclusions` 是**只写字段**(`--update` 恒写 `[]`),从无声明源、
+#      也从不参与产物集计算 ⇒ 文档宣称的「唯一可豁免通道」实际不存在。
+#   ⇒ 声明源 = **授权 Entry 正文的声明行**(台账 = 唯一授权源,零第二真源);
+#      排除表在清单里**累积**(旧条目保留 + 本次声明追加),条目形态沿用
+#      Entry #324 已定的 `{path, reason, ledger_entry}`。
+EXCL = {}
+for e in old_excl:
+    if isinstance(e, dict) and e.get("path"):
+        EXCL[e["path"]] = {"path": e["path"], "reason": e.get("reason", ""),
+                           "ledger_entry": e.get("ledger_entry", "")}
+for p, reason in DECLARED.items():
+    EXCL[p] = {"path": p, "reason": reason, "ledger_entry": auth}
+
+# 减法:被排除的产物**不进**冻结集
+files = [f for f in files if f not in EXCL]
+
+new_arts = {rel: sha256(rel) for rel in files}
+added = sorted(set(new_arts) - set(old_arts))
+removed = sorted(set(old_arts) - set(new_arts))
+changed = sorted(r for r in (set(old_arts) & set(new_arts)) if old_arts[r] != new_arts[r])
+
+# ── C-1b:**拒绝静默丢产物** ──────────────────────────────────────────
+#   清单的 `artifacts` 是**快照**:`--update` 重算 ⇒ 移出范围的产物**静默失去冻结**
+#   且无任何判据报红(verify 只遍历 `artifacts`)。
+#   ⇒ 移出必须被**授权 Entry 显式声明**:按「移出声明行」登记该路径。
+#      ⚠️ 不得用「正文里出现该路径」当授权(critic SHOULD_FIX 2)—— 台账正文大量引用
+#         ADR / spec 全路径,顺带提及即构成授权。
+unauthorized = [r for r in removed if r not in EXCL and r not in DECLARED_OUT]
+
 try:
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root,
                                     stderr=subprocess.DEVNULL).decode().strip()
@@ -224,31 +492,55 @@ try:
 except Exception:
     frozen_at = ""
 
+# ── 差集回显(C-2)────────────────────────────────────────────────────
+print(f"[cep_freeze_check] 清单差集(相对旧清单):新增 {len(added)} · 移出 {len(removed)} · hash 变更 {len(changed)}")
+for r in added:
+    print(f"    + 新增冻结产物: {r}")
+for r in removed:
+    tag = "已声明排除" if r in EXCL else ("已声明移出" if r in DECLARED_OUT else "⚠️ 未获授权")
+    print(f"    - 移出冻结面: {r}  [{tag}]")
+for r in changed:
+    print(f"    ~ hash 变更: {r}")
+
+if unauthorized:
+    print("  ✗ 拒绝写盘:以下产物将**移出冻结面**,但授权 Entry 未按声明行登记:")
+    for r in unauthorized:
+        print(f"      · {r}")
+    print(f"    · 授权 entry = {auth}")
+    print("    · 修法:在该 Entry 正文里加声明行:")
+    print("             `- 冻结面移出 `<相对路径>`:<理由>`")
+    print("    · 缩小冻结面 = 撤销既有保护 ⇒ 必须留授权痕迹")
+    sys.exit(1)
+
 payload = {
     "frozen_at": frozen_at or "",
     "frozen_at_commit": head,
     "authorized_by": auth or "",
     "mechanism": "M1 产物冻结先于解读(per obj-cep-platform §9.2)",
-    "note": ("Stage 0 冻结的是**规范性契约产物**(ADR + 07 号 + schema + tools + spec);"
+    # ⚠️ **只述结构,不述成员**(2026-11-19 C-4):旧 note 手写了「fabric.json 不冻结」
+    #   等**成员级结论**,而 `fabric.json` 早已入冻结集 ⇒ 每次 `--update` 都把错话
+    #   重新写回清单。成员级事实一律以本清单 `globs`/`artifacts` 为准。
+    "note": ("冻结面 = 本清单的 `globs`(范围)× `artifacts`(逐件 sha256);"
+             "**成员级结论一律以本清单为准**,此处不复述(复述即漂移源)。"
              "两个 checker 脚本自身不冻结(checker 必须可修,且不承载契约语义)。"
-             "**fabric 载体按「契约面 / 数据面」拆分**:`fabric.schema.json`(**类型描述** = 契约,"
-             "故冻结 —— 否则 `vc_count.maximum` 可被静默放宽);`fabric.json`(**实例数据** = 派生副本,"
-             "权威在 ArchForge,故**不冻结**,Stage 1 首个 implemented 实例跑过后再纳)。"
              "冻结后若需修改,须走 §11 台账 scope-change / adr-amendment entry;"
              "`--update` 需带 `--authorized-by <台账 entry id>` 才有授权记录。"),
     "artifact_count": len(files),
     "globs": list(globs),
-    "artifacts": {rel: sha256(rel) for rel in files},
+    "artifacts": new_arts,
     # ══ 2026-11-10(C-2′ / Entry #324):**排除表**(唯一可豁免「glob 全量冻结」的通道)══
     #   语义:冻结面 = `openspec/specs/cep-*/spec.md` **全集**;本数组**当前为空**。
     #   条目形态:`{"path": <相对路径>, "reason": <为何不冻结>, "ledger_entry": <台账 Entry #N>}`
-    #   ⇒ 校验见 `cep_freeze_check.sh` 的 exclusion-integrity 段(**空数组 = 全量冻结**)
-    "exclusions": [],
+    #   ⇒ 声明源 = 授权 Entry 正文的声明行;校验见 `cep_freeze_check.sh` 的
+    #     exclusion-integrity 段(**空数组 = 全量冻结**)
+    "exclusions": [EXCL[p] for p in sorted(EXCL)],
 }
+
 with open(os.path.join(root, manifest_path), "w", encoding="utf-8") as f:
     json.dump(payload, f, ensure_ascii=False, indent=2, sort_keys=True)
     f.write("\n")
-print(f"[cep_freeze_check] 已重新生成冻结清单: {len(files)} 个产物 -> {manifest_path}")
+print(f"[cep_freeze_check] 已重新生成冻结清单: {len(files)} 个产物 -> {manifest_path}"
+      + (f"（排除 {len(EXCL)} 项）" if EXCL else ""))
 PYEOF
   exit $?
 fi
@@ -259,13 +551,33 @@ if [ ! -f "$MANIFEST" ]; then
   exit 1
 fi
 
-python3 - "$MANIFEST" "$ROOT" << 'PYEOF'
+python3 - "$MANIFEST" "$ROOT" "${FROZEN_GLOBS[@]}" << 'PYEOF'
 import hashlib, json, os, sys
 
 manifest_path = sys.argv[1]
 root = sys.argv[2]
+script_globs = sys.argv[3:]
 with open(os.path.join(root, manifest_path), encoding="utf-8") as f:
     man = json.load(f)
+
+# ── 冻结面**范围一致性**(C-1a,2026-11-19)─────────────────────────────
+#   脚本当前的 `FROZEN_GLOBS` 与清单记录的 `globs` 必须逐条相等。
+#   ⚠️ 为何必须有:清单的 `artifacts` 是**快照** —— 若有人改了脚本的 glob 数组
+#      (缩小冻结范围)而**未** `--update`,清单仍按旧范围判定(绿);而一旦 `--update`,
+#      旧 manifest **从不读** ⇒ 新清单按新范围重算 ⇒ 被移出范围的产物**静默失去冻结**,
+#      且**没有任何判据**会报红(verify 只遍历 `artifacts`)。
+#   ⇒ 范围变更必须先在这里**显式变红**:缩小范围 = 须授权 + 须 `--update` 重生成清单。
+man_globs = man.get("globs", [])
+if set(script_globs) != set(man_globs):
+    for g in sorted(set(script_globs) - set(man_globs)):
+        print(f"  \033[0;31m✗\033[0m 脚本**新增**冻结范围(清单未记录): {g}")
+    for g in sorted(set(man_globs) - set(script_globs)):
+        print(f"  \033[0;31m✗\033[0m 脚本**移除**冻结范围(清单仍记录): {g}")
+    print(f"  \033[0;31m✗\033[0m 冻结范围与清单不一致(脚本 {len(script_globs)} 条 vs 清单 {len(man_globs)} 条)")
+    print("    · 范围变更须先在台账登记授权,再重生成清单:")
+    print("      bash scripts/test/cep_freeze_check.sh --update --authorized-by \"Entry #N\"")
+    sys.exit(1)
+print(f"  \033[0;32m✓\033[0m 冻结范围一致性:脚本 {len(script_globs)} 条 glob == 清单记录")
 
 def sha256(rel):
     h = hashlib.sha256()
@@ -275,6 +587,10 @@ def sha256(rel):
     return h.hexdigest()
 
 arts = man.get("artifacts", {})
+# 排除表路径集(D-1a:排除项**必须真被排除** ⇒ drift 判定须豁免它们,
+#   否则「已声明排除」会被 drift 判成「新增未登记的冻结范围内产物」⇒ 自相矛盾)
+_excl_paths = {e.get("path") for e in (man.get("exclusions") or [])
+               if isinstance(e, dict) and e.get("path")}
 drift, missing, changed = [], [], []
 for rel, want in sorted(arts.items()):
     full = os.path.join(root, rel)
@@ -291,7 +607,7 @@ globs = man.get("globs", [])
 for g in globs:
     for p in glob.glob(os.path.join(root, g), recursive=True):
         rel = os.path.relpath(p, root)
-        if rel not in arts:
+        if rel not in arts and rel not in _excl_paths:
             drift.append(rel)
 
 if missing or changed or drift:
@@ -340,6 +656,31 @@ EXCL = man.get("exclusions", []) if isinstance(man, dict) else []
 _excl_errors = []
 _spec_paths = sorted(_glob.glob(os.path.join(root, "openspec/specs/cep-*/spec.md")))
 _spec_rels = {os.path.relpath(p, root) for p in _spec_paths}
+# ── 排除路径域 = **当前 globs 展开集**(不限于 `cep-*` spec)────────────
+#   ⚠️ critic SHOULD_FIX 3:`--update` 的减法对**全部** glob 产物生效,但旧口径把
+#      排除项限定在 `cep-*` spec ⇒ glob 数组注释里点名的场景(如走 ADR glob 的
+#      `ADR-CEP-NUMBER-MAP` 类)一旦真声明,会「update 放行 + verify 判死」= 最差组合。
+#   ⇒ 域放宽到 globs 展开集(仍保留「防僵尸」:路径必须真实存在于冻结范围内)。
+_frozen_scope = set()
+for _g in man.get("globs", []):
+    for _p in _glob.glob(os.path.join(root, _g), recursive=True):
+        _frozen_scope.add(os.path.relpath(_p, root))
+
+# ── 排除表条目的**授权痕迹**(critic SHOULD_FIX 1,2026-11-19)──────────
+#   ⚠️ 清单本身**不在冻结集内**(既有设计)⇒ 手工改清单注入一条
+#      `{path, reason, ledger_entry: "<任一真实 entry id>"}` 可通过其余全部机器判据
+#      ⇒ 一条**从未在任何 Entry 正文声明过**的排除会永久生效
+#      = D-1a 堵掉的「纸面排除」换个入口复活。
+#   ⇒ 必须验:**该 Entry 正文里确有该路径的排除声明行**(与 `--update` 同口径正则)。
+def _entry_body(entry_id):
+    if not os.path.exists(_LEDGER_ABS):
+        return ""
+    _txt = open(_LEDGER_ABS, encoding="utf-8").read()
+    _m = _re.search(r"^### " + _re.escape(entry_id) + r"\b.*?(?=^### |\Z)", _txt, _re.S | _re.M)
+    return _m.group(0) if _m else ""
+
+_DECL_EXCL_RE = _re.compile(r"^-\s*冻结面排除\s*`([^`]+)`\s*[:：]\s*(\S.*)$", _re.M)
+
 for e in EXCL:
     if not isinstance(e, dict):
         _excl_errors.append(f"排除表条目不是对象: {e!r}")
@@ -348,10 +689,16 @@ for e in EXCL:
     if not p or not why or not led:
         _excl_errors.append(f"排除表条目缺 `path`/`reason`/`ledger_entry`: {p or '<no path>'}")
         continue
-    if p not in _spec_rels:
-        _excl_errors.append(f"排除表条目指向**不存在**的 spec: {p}")
+    if p not in _frozen_scope:
+        _excl_errors.append(f"排除表条目指向**不在冻结范围内**的路径: {p}")
     if led not in LEDGER_IDS:
         _excl_errors.append(f"排除表条目的 `ledger_entry` 在台账中解析不到: {led}")
+    elif p not in {m[0] for m in _DECL_EXCL_RE.findall(_entry_body(led))}:
+        _excl_errors.append(f"排除表条目在授权 Entry 正文里**没有对应的排除声明行**: {p} (entry {led})")
+    # ⚠️ D-1a:排除必须**真被排除** —— 旧实现里 `exclusions` 是只写字段(恒 `[]`),
+    #   从不参与产物集计算 ⇒ 「排除」只是纸面声明,产物其实仍被冻结。
+    if p in arts:
+        _excl_errors.append(f"排除表条目指向的产物**仍在冻结集里**(排除未生效): {p}")
 if _excl_errors:
     for m in _excl_errors:
         print(f"  \033[0;31m✗\033[0m {m}")
