@@ -200,7 +200,7 @@ VIRTUAL_PATHS=(
 
 # CMake 添加的 include dir（无前缀写法也能找到文件）
 # 见 CMakeLists.txt: include/, include/core/, external/json/
-# 以及 scripts/ 的 5 子目录结构（build/, test/, pipeline/, topology/, stats/）
+# 以及 scripts/ 的 6 子目录结构（build/, test/, pipeline/, topology/, stats/, docs/）
 # 与 cpptlm/ 的子目录结构（config/, simulation/, topo/, visualization/, analysis/）
 INCLUDE_PATH_PREFIXES=(
     ""
@@ -228,6 +228,7 @@ INCLUDE_PATH_PREFIXES=(
     "scripts/pipeline/"
     "scripts/topology/"
     "scripts/stats/"
+    "scripts/docs/"        # 文档索引生成器(2026-11-19 新增,change cpptlm-docs-index-mechanical-generation)
     "cpptlm/"
     "cpptlm/analysis/"
     "cpptlm/config/"
@@ -267,7 +268,7 @@ path_exists() {
     # 路径已含已知根目录前缀时，避免嵌套重复（scripts/credit_flow.py 不应再补 scripts/topology/）
     # 但仍允许"父目录下其他子目录"的尝试：scripts/credit_flow.py → scripts/topology/credit_flow.py
     if [[ "$path" == scripts/* ]]; then
-        prefix_list=("" "${path%%/*}/" "scripts/build/" "scripts/test/" "scripts/pipeline/" "scripts/topology/" "scripts/stats/")
+        prefix_list=("" "${path%%/*}/" "scripts/build/" "scripts/test/" "scripts/pipeline/" "scripts/topology/" "scripts/stats/" "scripts/docs/")
     elif [[ "$path" == cpptlm/* ]]; then
         prefix_list=("" "cpptlm/analysis/" "cpptlm/config/" "cpptlm/simulation/" "cpptlm/tests/" "cpptlm/topo/" "cpptlm/visualization/")
     elif [[ "$path" == cpptlm_config/* ]]; then
@@ -347,7 +348,7 @@ echo -e "${BLUE}额外检查：scripts/ 子目录一致性${NC}"
 SCRIPTS_CMAKE="scripts/CMakeLists.txt"
 if [ -f "$SCRIPTS_CMAKE" ]; then
     echo "  scripts/CMakeLists.txt 存在"
-    # 检查 5 个子目录是否都有 .gitkeep
+    # 检查 5 个**需 .gitkeep** 的子目录(scripts/docs/ 有实文件 `gen_adr_index.py` ⇒ 不需 .gitkeep)
     for sub in build test pipeline topology stats; do
         if [ -d "scripts/$sub" ] && [ ! -f "scripts/$sub/.gitkeep" ]; then
             echo -e "  ${YELLOW}⚠️  scripts/$sub/ 缺少 .gitkeep${NC}"

@@ -6,6 +6,7 @@
 # - scripts/pipeline/   run_full_pipeline.sh
 # - scripts/topology/   topology_*.py, analyzer.py, path_tracer.py, credit_flow.py
 # - scripts/stats/      stats_*.py, layout_manager.py, derive_expr.py
+# - scripts/docs/       gen_adr_index.py（文档索引机械生成器）
 #
 # 本文件调度 topology/ 下的 topology_validator.py 作为 cmake target。
 
