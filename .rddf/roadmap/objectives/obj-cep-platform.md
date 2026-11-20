@@ -27306,3 +27306,34 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 
 **结果**：`⭕-unmodelled` 由 **5 条降为 2 条**（剩 `INV-CEP-13-IC1` / `INV-CEP-13-IC3` ⇒ 批 2）；
 `66 = 64 有牙载体 + 2 授权⭕`；新增 invariant 数 **0**、编号位仍 **67**（`INV-CEP-04-IC4` 仍跳空）。
+
+### Entry #513 — 2026-11-21 [builder](**CEP litmus 证伪工装落地（登记册队列 2 的 I-6a）** —— `INV-CEP-13-IC1` 的证据来源)
+
+**起因**：`ADR-CEP-13` 决策 5 ② 承诺「**逐组合实验证伪** —— 正确性由**随机 / litmus 实验在声明的 `verification_scope` 内尝试证伪**」，
+而 `INV-CEP-13-IC1` 的登记缺口明写「**运行期待 litmus**」⇒ 仓内**零 litmus 载体**（实测 `find test scripts examples -iname "*litmus*"` → 0 命中）。
+
+**实测缺口（2026-11-21）**：
+
+| # | 缺口 | 实测 |
+|:--:|---|---|
+| W-1 | 复合一致性公理 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 无机器面 | 装配期闸**逐实例建图且边不跨网络** ⇒ 复合图 ≡ 各网络子图之并 ⇒ 「复合」当前**未被真正检查** |
+| W-2 | 边类 `rfe` / `fr` / `ws` **两仓均无定义** | CppTLM 与 ArchForge grep 仅命中公理公式本身 ⇒ **不可**在不发明语义的前提下构造这些边 |
+| W-3 | `verification_scope` 非已声明字段 | 全仓 grep 仅命中散文 ⇒ 决策 5 ② 的「在声明的 `verification_scope` 内」当前无声明载体 |
+| W-4 | 仓内零 litmus 载体 | 见上 |
+
+**交付**：
+
+| 项 | 落点 |
+|---|---|
+| 证伪工装 | `include/tlm/cep/litmus_falsifier.hh`（header-only · 判定在 `test/` 侧）|
+| 语料（**当前空**） | `test/cep_litmus_corpus.json`（`_status` 写明「边类无定义 ⇒ 复合公理**当前不可证伪**」）|
+| 判据 | `test/test_cep_litmus_falsification.cc`（4 例：`[generic]` / `[repo-corpus]` / `[fixture]`×2）|
+| 闸（两臂） | `scripts/test/cep_litmus_falsification_check.sh` · ctest 注册 |
+| 契约面 | 新增 main spec `openspec/specs/cep-litmus-falsification/spec.md`（归档合并）|
+| 归档 change | `openspec/changes/archive/2026-11-21-cpptlm-cep-litmus-falsification-harness/` |
+
+**关键诚实边界**：工装只**尝试证伪** ⇒ 无环 = 「本次语料范围内**未证伪**」，⛔ **不得**表述为「已证明」（per 决策 5 ②「平台不提供无违例保证」）；边类只**记录**不解释；语料**保持为空** ⇒ 判定为「**不可证伪**」这一**真结果**（⛔ 不是「公理已成立」）。
+
+**对 `INV-CEP-13-IC1` 的作用**：本 Entry 提供**证据来源**（litmus 工装 + 归档目录 + case 名），⛔ **该 invariant 本身仍未被移除登记** —— 移除属 **I-6**（schema 13→14 的结构化声明项落地后）。
+
+**冻结面五步链**：新增 main spec `openspec/specs/cep-litmus-falsification/spec.md` 落入 spec 侧**全量 glob**（`openspec/specs/cep-*/spec.md`）⇒ 冻结产物数 **89 → 90** ⇒ 本 Entry 为 `--update --authorized-by` 的**授权依据**（⛔ 冻结的是**已交付能力**的契约面，非占位半成品）。

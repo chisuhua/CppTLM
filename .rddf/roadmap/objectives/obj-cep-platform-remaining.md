@@ -512,7 +512,7 @@ sed '/^#### §6.3.2/,$d' <登记册> | grep -n '甲层 35 份' | grep -vE "$MARK
 | **I-2** | L3 KPI 行堆积清理 | S3-6 | 无 | 4 份文档 KPI 行**单行 ≤ 1000 字符**（与 `scripts/test/agents_md_lint.py` 既有单行阈同阈） |
 | **I-3** | L4 3 处 improvement 状态漂移回填 | S3-7 | 无 | 3 份 `.rddf/improvements/*.md` 状态行含「已归档」 |
 | **I-4** | KPI 活口径同步固定化 | S3-3 | **命令型**：`bash scripts/test/rddf_stage_gate.sh` rc=0 **且** P-5 输出「全部同步」 | 立项 commit 内 6 个 `LIVE_FILES` 的**活口径行**取值 == 实测 `N/3`；⛔ **不以子串存在性为判据**（S3-11） |
-| **I-6a** | **litmus change 落地**（`INV-CEP-13-IC1` 的证据来源）| S1-1 批 2 的前置 | **Q-4 已裁**（判据形态）| 1 个 openspec change 归档（`ls openspec/changes/archive/ \| grep -c <litmus>` ≥ 1）；⇒ **I-6 的前置之一**（⚠️ 初稿把该前置挂在 I-6 上却**无任何单元产出它** ⇒ 永久卡死，per metis B6）|
+| **I-6a** | **litmus change 落地**（`INV-CEP-13-IC1` 的证据来源）· ✅ **已落地 2026-11-21**（归档 `openspec/changes/archive/2026-11-21-cpptlm-cep-litmus-falsification-harness/` · 台账 Entry #513）| S1-1 批 2 的前置 | **Q-4 已裁**（判据形态）| 1 个 openspec change 归档（`ls openspec/changes/archive/ \| grep -c <litmus>` ≥ 1）；⇒ **I-6 的前置之一**（⚠️ 初稿把该前置挂在 I-6 上却**无任何单元产出它** ⇒ 永久卡死，per metis B6）|
 | **I-6** | invariant 建模批 2 | S1-1 批 2 | ① **Q-4 裁决含 schema 13→14 的形态**（字段名 / 取值域 / 联动边界 —— 只裁形态，⛔ 不裁成果）② **litmus change 已归档**（= I-6a）③ **Q-2 已裁** ∧ `obj §0 DoD 7` 的「100% 覆盖」措辞已订正（⚠️ 否则「66/66」会**看起来验证了已知错误的 DoD 行** ⇒ 制造 S0，per metis B5）| 同上（`⭭` 由 2 降为 0）；⚠️ ⛔ **「66/66」只能读作「66 条全部有载体」**，⛔ 不得读作「全部可判」（`INV-CEP-09-IC2` = 超出范围的负断言）；`INV-CEP-04-IC4` 仍跳空；编号位仍 67 |
 | **I-7** | 档 2 扩面到第 2 族（`tilelink_c`） | S1-2 | **I-5 落地**（`CEN-Ib8` 已建模 ⇒ `test/cep_invariant_deferrals.json` 中该 id 不再是 `⭭`） | `test/cep_evidence_tiers.json` 档 2 登记 ≥ 2 族；`scripts/test/cep_e2e_reconcile_check.sh` T4/T5 绿；档 2 仍 ⭔ 无 run / 无 verdict / 无通过态 |
 | **I-8** | `openspec` 版本 pinning | S3-4 | 无 | CI 配置锁版本；`openspec --version` 与锁定值一致 |
