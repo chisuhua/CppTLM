@@ -64,7 +64,7 @@
     "openspec/specs/cep-instance-assembly/spec.md": "6d2b352f6b7ee6f56c2dd7ced2bb167f0852b5455b46245b18ca761842f64770",
     "openspec/specs/cep-instance-authority-partition/spec.md": "8fa4011df2ea90cb70f18a5f46a360f2b33c4b0823de10b55083c35dbcf171d6",
     "openspec/specs/cep-invariant-gate/spec.md": "7d6ae0c3597c8bf23da1c29f16605bb81dbed2d3a091274d881e532be135be97",
-    "openspec/specs/cep-litmus-falsification/spec.md": "a25f3817f1c91290cbff66a48366c0bb508520903d8fbb2a7d06333ff7fe2852",
+    "openspec/specs/cep-litmus-falsification/spec.md": "ee12cace4d8df8b75f8404e37149f9c6c54e82284b3f1600e522a0dab689428e",
     "openspec/specs/cep-mesh-interconnect-submodule/spec.md": "c1ce04d23d4e821ea70a59721351cedcf788b28955af3ea3553ae7a27a4e6222",
     "openspec/specs/cep-mesif-adapter/spec.md": "79643d8760bbde17b95b1818116671b5b023892bc18ad8a63df81a4e530a18d2",
     "openspec/specs/cep-mesif-state-spec/spec.md": "fd02855675ed8dbf9dcfb6ef6cbeb70c4f46586f4e2abbf4c236cebeff63fa3c",
@@ -95,7 +95,7 @@
   "authorized_by": "Entry #513",
   "exclusions": [],
   "frozen_at": "2026-11-21",
-  "frozen_at_commit": "706447907a6d1a5013368035ffc6c334118e66b0",
+  "frozen_at_commit": "ab7b649aa8dfea1a739a449975b7aea29ec966f2",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
