@@ -578,3 +578,32 @@ sed '/^#### §6.3.2/,$d' <登记册> | grep -n '甲层 35 份' | grep -vE "$MARK
 - 立项单元落点（**本轮 10 份**）：`.rddf/improvements/cep-registry-stale-cleanup.md` · `cep-stage-gate-p5-hardening.md` · `cep-invariant-modeling-batch1.md` · `cep-invariant-modeling-batch2.md` · `cep-tier2-second-family-tilelink.md` · `cep-doc-hygiene-kpi-and-impl-state.md` · `cep-openspec-version-pinning.md` · `cep-archforge-ci-failclosed.md` · **`cep-d1-archive-verify-backfill.md`**（= I-10）· **`cep-spec-stale-refs-r14-r15-r20.md`**（= I-11）
 - ⚠️ **`.rddf/improvements/` 下其余 CEP 单元不属于本轮清单**（`cep-b4-evidence-device` / `cep-evidence-tier-declaration` / `cep-evidence-tier2-minimal-slice` / `cep-responder-bitmap-expansion` / `cep-tier2-verification-closure` —— 均对应**已归档** change，**状态行含「已归档」** ⇒ 不持有活义务）；自查命令：`grep -L "已归档" .rddf/improvements/cep-*.md`（输出应恰为上列 10 份）
 - 关键既有载体：`scripts/test/rddf_stage_gate.sh` · `scripts/test/rddf_ac_carrier.tsv` · `scripts/test/cep_freeze_check.sh` · `test/cep_b3b2_deferrals.json` · `test/cep_invariant_deferrals.json` · `test/cep_evidence_tiers.json` · `docs/architecture/07-coherence-exploration-platform.md` · `docs/architecture/cep/*.md` · `docs/guide/cep-usage.md`
+
+### §6.9 实施路径（**2026-11-20 用户裁定：按本文件路径实施**）
+
+> 本节 = 队列 2 的**执行路径**（⛔ 不是新登记面：单元与判据仍以 §6.4 为唯一源，本节只定**先后与门槛**）。
+> **纪律**：每完成一个单元 ⇒ 立刻把 `scripts/test/rddf_ac_carrier.tsv` 的 `state` 置 `done`（否则 `P-2a` 与事实脱节）；⛔ 不跳阶段。
+
+| 阶段 | 单元（= §6.4 队列 2 的行）| 前置 | 本阶段判据 |
+|:--:|---|---|---|
+| **①** | **I-2**（L3 KPI 行堆积清理）· **I-3**（L4 状态漂移回填）· **I-4**（KPI 活口径同步固定化）| 均无外部阻塞 | I-2：4 份文档 KPI 行 ≤ 1000 字符 **且** `P-5` 仍输出「锚定 **7** 处，逐处取值 == 实测」**且** 每份文档的台账 `Entry #` 号集合与压缩前相等（AC-2/AC-3）· I-3：3 份状态行含「已归档」· I-4：`P-5` 判据即其判据（已由 I-0 实现）|
+| **②** | **I-6a**（litmus change 落地）| Q-4 已裁 | 1 个 openspec change 归档（占 1 KPI slot；当前 0/3）|
+| **③（决策门 · ⏳ 待用户裁）** | **I-6**（invariant 建模批 2）| ① litmus change 归档 ② schema 13→14 形态（architect）③ `ADR-CEP-12` 追加式修订 + **user ratify** | ⛔ **未过门不得开工** —— 其 improvement 明写「本轮只作登记,**不排入下一轮开工序列**」<br>**待裁**：(a) 把 I-6 一次性标 `blocked-by-design` 移到队末，让 I-7/I-8/I-10 前移（一次重排，避免走到才卡）(b) 先请 architect 出 schema 形态 + 用户 ratify 打通 I-6 |
+| **④** | **I-7**（档 2 扩面到 `tilelink_c`）→ **I-8**（`openspec` 版本 pinning）| I-7：I-5 已落（`CEN-Ib8` 不再是 ⭕）· I-8：无 | I-7：`test/cep_evidence_tiers.json` 档 2 登记 ≥ 2 族 · I-8：CI 锁版本且 `openspec --version` 一致 |
+| **⑤** | **I-10**（归档验收债补齐 + 机关落地）| 本行自身即载体 | **⛔ 顺序硬约束**：先补 8 份追溯报告（`<change>-verify.md`）⇒ 再上 `scripts/test/archive_verify_check.sh`；**颠倒则 CI 常红** |
+| **⑥** | **I-11**（spec 契约面 stale 引用修正）· **I-12**（doorbell 契约面失真修正 · dGPU 域）| 各自需 openspec 可行性 spike 已过 | 各新建 1 个 openspec change（各占 1 slot；当前 0/3 足够）⇒ 归档后旧串 `grep -c` == 0 |
+
+**本轮的实测依据（供阶段 ① 直接引用，⛔ 重跑前不得当既成事实）**：
+
+```
+5 条超长 KPI 行（全部含 P-5 锚点）：
+  .rddf/roadmap.md:5                            3091 字符  锚 = `当前真实 baseline = `
+  .rddf/roadmap/phases/phase-10.md:209          3116 字符  锚 = `当前真实 baseline = `
+  .rddf/improvements/cpptlm-cep-umbrella.md:306  3015 字符  锚 = `当前真实 baseline = `
+  .rddf/improvements/cpptlm-cep-nvlink-sharp.md:31   2921 字符  锚 = `当前实测 **`
+  .rddf/improvements/cpptlm-cep-nvlink-sharp.md:211  2761 字符  锚 = `当前实测 **`
+I-3 的近零成本依据：3 份状态行写「已完成并归档」，而 AC-4 的字面判据是「已归档」
+  ⇒ `已归档` **不是** `已完成并归档` 的子串（语义已满足，字面未满足）⇒ 只需措辞对齐
+I-4 的近零成本依据：`bash scripts/test/rddf_stage_gate.sh` 的 P-5 实测输出
+  = `✓ P-5 0 处活口径全部同步（锚定 7 处，逐处取值 == 实测）` ⇒ 判据已实现
+```
