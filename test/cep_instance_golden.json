@@ -1,0 +1,162 @@
+{
+  "_note": "13 键的**仓内权威锚**(per Q-5 裁决 §2.5)。⚠️ 本文件是 `protocol_instances.json` 的**派生副本**,⛔ 不是独立真源;闸(`cep_instance_golden_check.py`)做**双向比对** ⇒ 单改一侧即红。",
+  "_derived_from": "include/tlm/cep/protocol_instances.json",
+  "_scope": [
+    "moesi_gpu",
+    "mesif"
+  ],
+  "_scope_rationale": "这两个实例**不在** `repo_owned_instance_ids` 内 ⇒ 按 ADR-CEP-00 其实现与 13 键权威均在本仓 ⇒ 此前**无落盘可对账锚**。其余 6 个实例的权威在 ArchForge ⇒ ⛔ 不纳入(纳入会造出第二真源)。",
+  "instances": {
+    "moesi_gpu": {
+      "id": "moesi_gpu",
+      "family": "industrial",
+      "adapter": "MoesiGpuAdapter",
+      "status": "implemented",
+      "protocol_version": "moesi-gpu-1.0",
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": true,
+        "back_invalidate": true,
+        "address_resolve": true,
+        "barrier": true,
+        "snoop_completion_ack": true
+      },
+      "perm": [
+        "NONE",
+        "READ",
+        "UNIQUE",
+        "WRITEBACK"
+      ],
+      "atomic": {
+        "supported": false
+      },
+      "consistency_labels": {
+        "read": "RC-data",
+        "write": "RC-release"
+      },
+      "ordering_assumption": {
+        "compute_noc": {
+          "0": "unordered",
+          "1": "p2p_ordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        },
+        "ualink_fabric": {
+          "0": "unordered",
+          "1": "unordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        }
+      },
+      "vc_binding": {
+        "compute_noc": {
+          "request": 0,
+          "response": 1,
+          "snoop": 2,
+          "snoop_resp": 3
+        },
+        "ualink_fabric": {
+          "request": 0,
+          "atomic": 1,
+          "query": 2,
+          "response": 3,
+          "snoop_resp": 3
+        }
+      },
+      "sharer_tracker": {
+        "impl": "SparseSnoopFilter",
+        "caps": {
+          "scope": "SYSTEM",
+          "completeness": "CONSERVATIVE",
+          "authority": "GLOBAL",
+          "aggregation_at": "HOME"
+        }
+      },
+      "combination_capabilities": {
+        "concurrent": true,
+        "hierarchical": true,
+        "heterogeneous": true
+      }
+    },
+    "mesif": {
+      "id": "mesif",
+      "family": "industrial",
+      "adapter": "MesifAdapter",
+      "status": "implemented",
+      "protocol_version": "mesif-1.0",
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": true,
+        "back_invalidate": true,
+        "address_resolve": true,
+        "barrier": true,
+        "snoop_completion_ack": true
+      },
+      "perm": [
+        "NONE",
+        "READ",
+        "UNIQUE",
+        "WRITEBACK"
+      ],
+      "atomic": {
+        "supported": true,
+        "intent_field": "consistency_intent"
+      },
+      "consistency_labels": {
+        "read": "RC-acquire",
+        "write": "RC-release"
+      },
+      "ordering_assumption": {
+        "compute_noc": {
+          "0": "unordered",
+          "1": "p2p_ordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        },
+        "ualink_fabric": {
+          "0": "unordered",
+          "1": "unordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        }
+      },
+      "vc_binding": {
+        "compute_noc": {
+          "request": 0,
+          "response": 1,
+          "snoop": 2,
+          "snoop_resp": 3
+        },
+        "ualink_fabric": {
+          "request": 0,
+          "atomic": 1,
+          "query": 2,
+          "response": 3,
+          "snoop_resp": 3
+        }
+      },
+      "sharer_tracker": {
+        "impl": "HierarchicalDirectory",
+        "caps": {
+          "scope": "SYSTEM",
+          "completeness": "EXACT",
+          "authority": "GLOBAL",
+          "aggregation_at": "HIERARCHICAL"
+        }
+      },
+      "combination_capabilities": {
+        "concurrent": true,
+        "hierarchical": true,
+        "heterogeneous": true
+      }
+    }
+  }
+}

@@ -381,3 +381,64 @@ TEST_CASE("CEP OrderingPoint: IC3 —— Ordering Point 不绑定任何物理实
     }
     REQUIRE(scanner_red);
 }
+
+// ══════════════════════════════════════════════
+//  INV-CARRIER: INV-CEP-08-IC1
+//  「恰在一个 Ordering Point 序列化」的**单点非 vacuous 判据**（枚举集合内逐点）
+//
+//  per 判据文件 `.rddf/reviews/cep-gap-plan-adjudication-q1-q11-2026-11-20.md` §2.4（Q-4）
+//  + §9.2 SF-2 / AC-10（偏离落点 = 本注释 + 台账 Entry，⛔ 不进 deferrals、⛔ 不引入第三态）
+//
+//  ⚠️ **诚实边界（偏离登记 · 这里是唯一副本之外的第二落点）**：
+//     J3 的**通用形式**（任意多点布局下「恰在一个 Ordering Point 序列化」）在结构上
+//     **不可静态判定**（`ordering_point_checker.hh:11-12` 明记 HeteroGen §VI-E E1）⇒
+//     本载体**只**覆盖**已枚举**的有限集合（声明里 `p2p_ordered` 的 (net, vc) 点），
+//     **集合外的 Ordering Point 不被覆盖** ⇒ 本条 **不构成「J3 通用形式已覆盖」**。
+// ══════════════════════════════════════════════
+TEST_CASE("CEP OrderingPoint: INV-CEP-08-IC1 单点非 vacuous（已枚举集合内逐点恰一次）",
+          "[cep][ordering-point][invariant-batch1]") {
+    // ── 枚举集合：声明里**已登记**的 Ordering Point = 响应向 `p2p_ordered` 的 (net, vc) ──
+    cep::ChannelDeclaration decl;
+    cep::DeclaredInstance inst = single_point_instance();
+    // 两个无序点 + 一个有序点 ⇒ 集合 = {net_a/1}（⛔ 不是「所有 vc」）
+    inst.ordering["net_a"] = {{0, "unordered"}, {1, "p2p_ordered"}, {2, "unordered"}};
+    decl.instances.push_back(inst);
+
+    const auto report = cep::evaluate_ordering_points(decl);
+
+    std::size_t points = 0;
+    for (const auto& di : decl.instances) {
+        for (const auto& [net, vcs] : di.ordering) {
+            (void)net;
+            for (const auto& [vc, assumption] : vcs) {
+                (void)vc;
+                if (assumption != "p2p_ordered")
+                    continue;
+                ++points;
+                // 集合内逐点断言：该点的 J3 判据**恰出现一次**（序列化恰发生一次）
+                std::size_t j3_for_point = 0;
+                for (const auto& r : report.results) {
+                    if (r.criterion == cep::CriterionId::J3_UniquenessVacuous &&
+                        r.instance == di.id) {
+                        ++j3_for_point;
+                    }
+                }
+                CHECK(j3_for_point == 1u);
+            }
+        }
+    }
+    // 集合非空（否则上面的循环**一次都没执行** ⇒ 判据恒绿 = 恒真占位）
+    REQUIRE(points == 1u);
+
+    // ⚠️ 集合**外**不断言（诚实边界，见文件头）—— 但必须能区分「单点」与「多点」：
+    //   多点布局下 J3 退化为 SKIP（⛔ 不得静默当作已覆盖）
+    cep::DeclaredInstance multi = inst;
+    multi.id = "synthetic_multi_point";
+    multi.ordering["net_b"] = {{0, "unordered"}, {1, "p2p_ordered"}};
+    cep::ChannelDeclaration multi_decl;
+    multi_decl.instances.push_back(multi);
+    const auto multi_report = cep::evaluate_ordering_points(multi_decl);
+    const auto* multi_j3 = find_result(multi_report, cep::CriterionId::J3_UniquenessVacuous);
+    REQUIRE(multi_j3 != nullptr);
+    CHECK(multi_j3->verdict == cep::GateVerdict::SKIP);
+}

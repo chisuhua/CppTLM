@@ -739,6 +739,32 @@ add_test(NAME cep_invariant_map_check
 set_tests_properties(cep_invariant_map_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# `INV-CEP-09-IC2` 的**存在性反断言**载体(per Q-4 裁决 §2.4 + 台账 Entry #512)
+#  —— 断言「本仓不存在该 invariant 所指的仲裁实现」为真值;一旦出现 ⇒ 红 ⇒ 强制重评
+#  ⚠️ 这**不算达成**:该 invariant 的语义仍未达成,本闸只把「不可判」从隐式变可机检。
+#  ⚠️ 本注释**刻意回避** `scripts/test/cep_invariant_ic2_absent_check.sh` 的 grep 模式词
+#     —— 该闸扫 `test/`(含本文件),写了模式词就会自指误红。
+add_test(NAME cep_invariant_ic2_absent_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_invariant_ic2_absent_check.sh)
+set_tests_properties(cep_invariant_ic2_absent_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# 13 键仓内 golden 的**双向比对**闸(per Q-5 裁决 §2.5 · 台账 Entry #512)
+#  —— golden(`test/cep_instance_golden.json`)是 `protocol_instances.json` 的**派生副本**
+#     ⇒ 单改一侧即红;⛔ 不得把 golden 当独立真源。
+add_test(NAME cep_instance_golden_check
+         COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/test/cep_instance_golden_check.py)
+set_tests_properties(cep_instance_golden_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# invariant 批 1 的**台账锚可解析**闸(per 单元 AC-4 · 台账 Entry #512)
+#  —— 为什么要独立:映射表闸的判据 ④ 只校验**仍在 deferrals 里**的条目;本批 3 条已移出
+#     deferrals(判据 ③「载体 ∩ ⏕ = ∅」)⇒ ④ 对它们不再生效 ⇒ 没有本闸,"台账已记录" 就只是自述。
+add_test(NAME cep_invariant_batch1_ledger_check
+         COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/test/cep_invariant_batch1_ledger_check.py)
+set_tests_properties(cep_invariant_batch1_ledger_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # M1 产物冻结校验(per obj-cep-platform §9.2 M1「产物冻结先于解读」)
 # —— 独立于 lint,便于单独定位"冻结产物被改动"
 add_test(NAME cep_freeze_check

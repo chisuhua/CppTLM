@@ -2,27 +2,6 @@
   "_note": "CEP invariant 的 ⏭ 登记物(per objective §6.2 B2 · 台账 Entry #232/#233 + .rddf/reviews/cep-b2-unmodelled-verdict.md §5)。「⏭-unmodelled」= 能力未建模/未落地(永久性,须触发条件);「⏭-pending」= 载体尚未逐条补齐(待办,⛔ **达成宣称时必须为 0**)。",
   "deferrals": [
     {
-      "id": "CEN-Ib8",
-      "disposition": "⏭-unmodelled",
-      "reason": "address_resolve「在 ProtocolEngine 内终结」需 engine 的 egress 可观测面;当前无该面 ⇒ 无可断言对象",
-      "trigger_condition": "engine 侧 egress 可观测面落地(per ADR-CEP-05 §6 折叠表)",
-      "ledger_entry": "Entry #234"
-    },
-    {
-      "id": "INV-CEP-08-IC1",
-      "disposition": "⏭-unmodelled",
-      "reason": "「恰在一个 Ordering Point 序列化」= J3 的通用形式;checker 头明写「通用形式不可静态判定」⇒ 当前仅单点 vacuous 判据",
-      "trigger_condition": "J3 通用形式获得可判定载体(per ADR-CEP-08 决策 3)",
-      "ledger_entry": "Entry #234"
-    },
-    {
-      "id": "INV-CEP-09-IC2",
-      "disposition": "⏭-unmodelled",
-      "reason": "仲裁器未建模(ADR-CEP-09 自记「vc3 内 E 不被 D 饿死」未建模;多 VC 仲裁属 Stage 4+)⇒ 无可断言对象",
-      "trigger_condition": "多 VC 仲裁器落地(Stage 4+,per ADR-CEP-09)",
-      "ledger_entry": "Entry #234"
-    },
-    {
       "id": "INV-CEP-13-IC1",
       "disposition": "⏭-unmodelled",
       "reason": "per ADR-CEP-13 决策 5 ①,承诺未兑现 —— 「采用该公理为判据」是选择事实,无机器可检声明项;输入侧 vocabulary 与 INV-CEP-12-IC1 共享,不计专属证据;运行期待 litmus",

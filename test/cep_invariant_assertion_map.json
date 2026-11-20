@@ -65,6 +65,13 @@
         "kind": ".cc"
       }
     ],
+    "CEN-Ib8": [
+      {
+        "file": "test/test_cep_invariant_cen_ib8.cc",
+        "line": 93,
+        "kind": ".cc"
+      }
+    ],
     "CEN-Ib9": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
@@ -226,6 +233,13 @@
         "kind": ".cc"
       }
     ],
+    "INV-CEP-08-IC1": [
+      {
+        "file": "test/test_cep_ordering_point_checker.cc",
+        "line": 386,
+        "kind": ".cc"
+      }
+    ],
     "INV-CEP-08-IC2": [
       {
         "file": "test/test_cep_ordering_point_checker.cc",
@@ -245,6 +259,13 @@
         "file": "test/test_cep_instance_declaration_contract.cc",
         "line": 231,
         "kind": ".cc"
+      }
+    ],
+    "INV-CEP-09-IC2": [
+      {
+        "file": "scripts/test/cep_invariant_ic2_absent_check.sh",
+        "line": 33,
+        "kind": ".sh"
       }
     ],
     "INV-CEP-09-IC3": [
@@ -354,14 +375,14 @@
     "INV-CEP-15-IC2": [
       {
         "file": "test/test_cep_module_factory_seam.cc",
-        "line": 262,
+        "line": 261,
         "kind": ".cc"
       }
     ],
     "INV-CEP-15-IC3": [
       {
         "file": "test/test_cep_module_factory_seam.cc",
-        "line": 163,
+        "line": 162,
         "kind": ".cc"
       }
     ],

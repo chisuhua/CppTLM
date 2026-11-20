@@ -615,6 +615,15 @@ namespace tlm::cep {
             (void)pa;
             out.home_node = node_id;
             out.coherent = false;
+            // ── `CEN-Ib8` 的 engine egress 可观测面（per Q-4 §2.4 + 裁决 §8.2 C-1 / §9.2 SF-1）──
+            // ⚠️ 复用档 2 的 `EventObservation`，**不新增字段** ⇒ 用既有 `Kind`/`Origin` 取值表达：
+            //   终结点在 engine 内 ⇒ 落一条 `Kind = Transition` + `Origin = LocalRequest` 的记录。
+            // ⚠️ `from == to`：本条**不改状态**（address_resolve 不迁移行态）⇒ 该记录是
+            //   「序列化/终结点标记」，不是状态迁移；判据在 `test/` 侧（实现侧只出事实）。
+            if (observations_enabled()) {
+                const State st = state_of(pa);
+                record_transition(EventObservation::Origin::LocalRequest, pa, Event::Rd, st, st);
+            }
         }
 
         /// 流 9 —— 屏障:只记账(决策 E-5)

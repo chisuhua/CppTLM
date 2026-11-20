@@ -27288,3 +27288,21 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **仍待处置（本轮未做）**：`cpptlm-cep-mesh-e2e-carrier` / `cpptlm-module-param-read-declares` /
 `cpptlm-spec-purpose-batch3` / `cpptlm-spec-scenario-level-fix` 4 份 improvement 的 `状态:` 仍写「已立项」
 但 change 已归档 ⇒ 状态行陈旧（dashboard 侧已被归档目录规则剔除，故不再误显示，但**状态行本身**仍是错的）。
+
+### Entry #512 — 2026-11-20 [builder](**CEP invariant 批 1 —— 3 条 ⭕-unmodelled 的处置（`CEN-Ib8` / `INV-CEP-08-IC1` / `INV-CEP-09-IC2`）**)
+
+**依据**：判据文件 `.rddf/reviews/cep-gap-plan-adjudication-q1-q11-2026-11-20.md` §2.4（Q-4 裁决「逐条给形态」）
++ §8.2 C-1（= AC-11：⛔ 不新增 `EventObservation` 字段，改用既有 `Kind`/`Origin`）
++ §9.2 SF-1~SF-3（AC-10 / AC-11 / AC-12 的判据收紧）。单元 = `.rddf/improvements/cep-invariant-modeling-batch1.md`（登记册队列 2 的 I-5）。
+
+| id | 处置（**⛔ 三者都不得表述为「已建模」**）| 载体（文件 → 锚点） | 判据 |
+|---|---|---|---|
+| `CEN-Ib8` | **真建模** —— 「一次 `address_resolve` 的终结点确实在 engine 内」获得判定级载体 | `include/tlm/cep/mesif_protocol_engine.hh` 的 `on_address_resolve`（落 `Kind = Transition` + `Origin = LocalRequest` 的终结点记录）· `test/test_cep_invariant_cen_ib8.cc`（`INV-CARRIER` 标记） | 每次 `address_resolve` 在 engine 内有**恰一条**合法记录（`Origin ∈ {LocalRequest, CompletionFill}`）；负控 = 不经 engine 的解析 ⇒ 违例**精确 == 1** |
+| `INV-CEP-08-IC1` | **部分覆盖**（⇒ **不构成完全达成**）| `test/test_cep_ordering_point_checker.cc`（`INV-CARRIER` 标记） | **已枚举集合内**逐点断言 J3 恰出现一次；⚠️ **集合外不被覆盖** —— J3 通用形式在结构上不可静态判定（`ordering_point_checker.hh:11-12`）⇒ 偏离落点**仅**本 Entry + 载体注释（⛔ 不进 deferrals、⛔ 不引入第三态）|
+| `INV-CEP-09-IC2` | **移出 ⭕ 登记，语义未达成** | `scripts/test/cep_invariant_ic2_absent_check.sh`（`INV-CARRIER` 标记） | **存在性反断言**：仓内**无**多 VC 仲裁实现（模式 `多 VC 仲裁` / `vc_arbitrat` / `VcArbitrat`，⛔ 不用 `Arbiter`）；一旦出现 ⇒ 闸红 ⇒ **强制重评**。⚠️ 该 invariant 的语义**仍未达成** |
+
+**同批落地（Q-5 裁决 §2.5）**：`test/cep_instance_golden.json`（`moesi_gpu` / `mesif` 的 13 键）+
+`scripts/test/cep_instance_golden_check.py`（与 `protocol_instances.json` **双向比对** ⇒ 单改一侧即红；⛔ 不是第二真源）。
+
+**结果**：`⭕-unmodelled` 由 **5 条降为 2 条**（剩 `INV-CEP-13-IC1` / `INV-CEP-13-IC3` ⇒ 批 2）；
+`66 = 64 有牙载体 + 2 授权⭕`；新增 invariant 数 **0**、编号位仍 **67**（`INV-CEP-04-IC4` 仍跳空）。
