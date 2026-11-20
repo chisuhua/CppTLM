@@ -8,8 +8,11 @@
 #     ① **引用完整性** —— 清单里每一处 ArchForge `file:line` 仍存在且仍含预期符号;
 #     ② **契约侧锚点** —— 清单依赖的 CppTLM 侧契约符号仍在(防 CppTLM 改了契约、清单没跟)。
 #
-# ⚠️ **ArchForge 仓不在本仓环境时** → 检查**优雅跳过**(打印「跳过」,退出 0):
+# ⚠️ **ArchForge 仓不在本仓环境时** → 检查**优雅跳过**(打印 `[SKIP]`,退出 0):
 #    跨仓路径是外部条件,缺失不是本仓的缺陷。
+#    ⚠️ 但「跳过」与「跑过」必须可区分 —— 故首行显式标 `[SKIP]`
+#    (与 `cep_decl_alignment_check.sh` 的 token 同形;ctest 侧由
+#     `SKIP_REGULAR_EXPRESSION "\\[SKIP\\]"` 把本用例记为 **Skipped 而非 Passed**)。
 #
 # 用法:
 #   bash scripts/test/cep_archforge_alignment_check.sh
@@ -28,7 +31,7 @@ if [ ! -f "$CHECKLIST" ]; then
 fi
 
 if [ ! -d "$ARCHFORGE" ]; then
-  echo "  · 跳过:ArchForge 仓不在本环境($ARCHFORGE)—— 跨仓引用完整性无法在本仓校验"
+  echo "  · [SKIP] ArchForge 仓不在本环境($ARCHFORGE)—— 跨仓引用完整性无法在本仓校验"
   echo "    (设置 ARCHFORGE_DIR=<路径> 可启用)"
   exit 0
 fi

@@ -85,6 +85,24 @@ jobs:
           exit 1
         fi
 
+    # 跨仓契约闸在无 ArchForge checkout 的 CI 上必须**显式可察**（Q-10 方案甲）：
+    #   ctest 层已用 SKIP_REGULAR_EXPRESSION 把 `cep_archforge_alignment_check` 记为
+    #   **Skipped**（而非 Passed）；本步把该状态提升为 GitHub Annotation。
+    #   ⛔ 不判红（方案甲：CI 不引入跨仓 checkout），但 ⛔ 也**不等于通过**。
+    - name: Surface cross-repo gate SKIP (ArchForge absent)
+      run: |
+        set +e
+        out=$(bash scripts/test/cep_archforge_alignment_check.sh 2>&1)
+        rc=$?
+        printf '%s\n' "$out"
+        if [ "$rc" -ne 0 ]; then
+          echo "::error::cep_archforge_alignment_check 对齐检查失败 (rc=$rc)"
+          exit "$rc"
+        fi
+        if printf '%s' "$out" | grep -qF '[SKIP]'; then
+          echo "::warning::cep_archforge_alignment_check SKIPPED —— ArchForge 仓不在 CI 环境 ⇒ 跨仓契约一致性未验证（不计为通过）"
+        fi
+
     - name: Run E2E simulation tests (Release only)
       if: matrix.build-type == 'Release'
       run: ./test.sh --e2e

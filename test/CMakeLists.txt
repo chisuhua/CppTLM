@@ -639,8 +639,13 @@ set_tests_properties(cep_spike_delta_verification PROPERTIES
                      DEPENDS "cep_poc_spike_s1;cep_poc_spike_s2;cep_poc_spike_s3")
 add_test(NAME cep_archforge_alignment_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_archforge_alignment_check.sh)
+# ⚠️ SKIP_REGULAR_EXPRESSION:ArchForge 仓不在本环境时脚本打印 `[SKIP]` 并 exit 0
+#    ⇒ 必须让 ctest 把它显示为 **Skipped** 而不是 **Passed** —— 否则 CI 上一个恒跳过的
+#    跨仓闸看起来像「验过了」(与上面的 cep_decl_alignment_check 同型,2026-10-22 复审 S2)。
+#    ⚠️ **不可**设 SKIP_RETURN_CODE 0 —— 那会把**正常通过**也标成 Skipped。
 set_tests_properties(cep_archforge_alignment_check
-                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                                SKIP_REGULAR_EXPRESSION "\\[SKIP\\]")
 
 # `validate_topology` target 的对账闸(per 台账 Entry #358)。
 # ⚠️ 该 target 此前首条命令引用**已被物理删除**的 config ⇒ 整条 target 跑不完 ⇒
