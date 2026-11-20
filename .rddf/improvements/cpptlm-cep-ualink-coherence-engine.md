@@ -6,7 +6,7 @@ phase: phase-10
   - ADR-CEP-12
   - ADR-CEP-04
   - ADR-CEP-01
-状态: "✅ **已完成并归档**(2026-11-07,per 台账 Entry #268 立项 → **#269** architect 裁决(用户裁「引擎强度 = **甲**」+ oracle→critic)→ **#270** 实施 → **#271** 归档;delta 合并进 `openspec/specs/cep-ualink-coherence-engine/spec.md`)"
+状态: "✅ **已完成 · 已归档**(2026-11-07,per 台账 Entry #268 立项 → **#269** architect 裁决(用户裁「引擎强度 = **甲**」+ oracle→critic)→ **#270** 实施 → **#271** 归档;delta 合并进 `openspec/specs/cep-ualink-coherence-engine/spec.md`)"
 created: 2026-11-07
 ---
 

@@ -402,6 +402,19 @@ LIVE_FILES=(
   ".rddf/improvements/cpptlm-cep-umbrella.md"
   ".rddf/improvements/cpptlm-cep-nvlink-sharp.md"
 )
+# ── 活口径**行**行长判据的受测文件（per 单元 `cep-doc-hygiene-kpi-and-impl-state` AC-1：
+#    「断言载体须可机测（**并入既有闸**），⛔ 不新建闸脚本类型」）
+# ⚠️ **只含 I-2 的 4 份 In-Scope 文档** —— `AGENTS.md` 与 `obj-cep-platform.md`
+#    **不在**该单元范围 ⇒ 天然免疫（per 该单元 AC-2 的「范围对账」注：
+#    `obj-cep-platform.md` 的锚点行本身 2963 字符 ⇒ 若纳入本判据会立即判红且与范围矛盾）。
+# ⚠️ 上限 1000 与 `scripts/test/agents_md_lint.py` 的既有单行阈同阈。
+KPI_LINE_MAX_FILES=(
+  ".rddf/roadmap.md"
+  ".rddf/roadmap/phases/phase-10.md"
+  ".rddf/improvements/cpptlm-cep-umbrella.md"
+  ".rddf/improvements/cpptlm-cep-nvlink-sharp.md"
+)
+KPI_LINE_MAX=1000
 _active="$(ls openspec/changes 2>/dev/null | grep -v '^archive$' | wc -l | tr -d ' ')"
 _unsynced=0
 _total_anchor_hits=0
@@ -432,6 +445,14 @@ for _entry in "${LIVE_ANCHORS[@]}"; do
     while IFS= read -r _line; do
         [ -z "$_line" ] && continue
         _found=$((_found + 1))
+        # ① 行长判据（per I-2 的 AC-1）—— 活口径行超长 ⇒ KPI 行堆积（锚点句被流水淹没）
+        #    ⚠️ `${#_line}` 在 UTF-8 locale 下取**字符数**（与 `agents_md_lint.py` 的单行阈同口径）
+        for _lf in "${KPI_LINE_MAX_FILES[@]}"; do
+            if [ "$_f" = "$_lf" ] && [ "${#_line}" -gt "$KPI_LINE_MAX" ]; then
+                fail "P-5 [$_f] 活口径行长度 ${#_line} > $KPI_LINE_MAX ⇒ KPI 行堆积（per I-2 的 AC-1;锚='$_anchor'）"
+                _bad=$((_bad + 1))
+            fi
+        done
         _val="$(printf '%s' "$_line" | grep -oE '[0-9]+[[:space:]]*/[[:space:]]*3' | head -1 | grep -oE '[0-9]+' | head -1)"
         if [ -z "${_val:-}" ]; then
             fail "P-5 [$_f] 锚所在行内未找到 N/3 取值（锚='$_anchor'）"
