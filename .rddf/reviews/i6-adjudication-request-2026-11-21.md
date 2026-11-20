@@ -84,3 +84,53 @@ I-6a 的「设计」若需要 schema 14 的声明项     ⇒ 反向依赖 I-6  �
 1. architect 出裁决（形态 + 三要素 + D-1~D-5 的答案）⇒ 落 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md`
 2. 用户 ratify R-1 / R-2
 3. builder 立项 OpenSpec change（占 1 slot）⇒ 实施 I-6 ⇒ 移除最后 2 条 `⭕-unmodelled` ⇒ `⭭-unmodelled` 归零
+
+---
+
+# 追加 · **I-7**（档 2 扩面到第 2 族 `tilelink_c`）—— 同属「架构取舍」，一并请裁
+
+> **追加日期**：2026-11-21 · **追加原因**：I-7 的前置「Q-a 裁决落盘」**未裁** ⇒ 与 I-6 同类阻塞 ⇒ 已把 I-7 移到队列末尾并在此一并提出。
+> **范围边界**：⛔ 本节**不含裁决**；✅ 只给已复验事实 + 必答问题 + 建议（供参考）。
+
+## 六、I-7 的已复验事实
+
+```
+G-1 I-7 的前置 = ① I-5 的 `CEN-Ib8` 落地 ✅（2026-11-20 已完成）② **Q-a 裁决落盘** ⏳（本节待裁）
+G-2 `tilelink_c` 的档 2 适用性**已登记**：test/cep_evidence_tiers.json 的 coverage_map.families
+     ⇒ tier2_applicable = **true**，disposition = applicable
+     （理由：TreeManager 的 completeness = EXACT 且无广播兜底 ⇒ 可回答「没有其他 sharer」）
+G-3 但 evidence_tiers 里**只有 1 个档 2 条目**（mesif-observation）⇒ 档 2 仍是**单族**
+G-4 ⛔ **Q-a 的实测答案 = 否**：`include/tlm/cep/sharer_tracker.hh` 的 `SharerTrackerIf` **只**声明
+     `lookup(...)`（⛔ 有副作用：首次 forward 时 `dir_.emplace` + 记 `AllocateOnFirstForward`
+     ⇒ 污染 tracker 事件流）；**没有** const 纯查询的 `view_of`
+G-5 而档 2 观测面**必须**用纯查询：mesif_protocol_engine.hh 的记录点明写
+     「⛔ **必须**用 `view_of`(const 纯查询) —— ⛔ **不得**用 `lookup`(它有副作用 …)」
+G-6 `TreeManager`（include/tlm/cep/tilelink_tree_manager.hh）实现了 `SharerTrackerIf`
+     （lookup / snoop 机制 / merged state），但**同样没有** `view_of`
+G-7 `tilelink_protocol_engine.hh` 是 **intent-only** 引擎（10 条 canonical 流全部只做
+     `consume(Intent::…)` 的掩码计数）⇒ **无行态、无 tracker 同步、无观测记录**
+G-8 ⛔ `include/tlm/cep/sharer_tracker.hh` 是 **I-5 AC-7 明令禁改**的文件
+     ⇒ 纯查询 API 的形态**不是** builder 可自决的实现细节
+```
+
+## 七、I-7 必答问题
+
+### Q-a · const 纯查询 sharer 视图的**形态**
+
+| 候选 | 形态 | 代价 | 风险 |
+|:--:|---|---|---|
+| **A** | 给 `SharerTrackerIf` 增 **纯虚** `view_of(addr)`（const 视图），由 `HierarchicalDirectory` 与 `TreeManager` **各自实现** | 改**公开接口** ⇒ 触碰所有实现者 | 破坏性接口变更 ⇒ 需评估 `StubCache` 等既有实现 |
+| **B** | 不动接口，在观测面侧加**可选能力查询**（如 `supports_const_view()` + 扩展接口 dynamic_cast） | 不破坏既有实现 | 双接口 ⇒ 复杂度上升；`view_of` 语义仍需定义 |
+| **C** | 档 2 扩面**不做**，改为「档 2 明确限定为单族 `mesif`」并在 `evidence_tiers` 写死该边界 | 零改动 | ⛔ `tilelink_c` 的适用性登记与「档 2 只覆盖 mesif」并存 ⇒ **口径矛盾**需同步清理 `coverage_map` |
+
+⇒ **建议 A**（与既有 `view_of` 调用点的事实一致 ⇒ 单一语义），⚠️ 但需 architect 明确**破坏性变更的迁移面**。建议仅供参考。
+
+### Q-b · 档 2 的读法措辞（**判据细节**，可不裁）
+
+扩面后仍「**两族** / 单拓扑 / **无通过态**」；⛔ 禁「全族达成 / 检测力已证 / 所有族」—— 与既有 `cannot_claim` 同型 ⇒ builder 可直接沿用既有措辞模板。
+
+## 八、⛔ 两项裁决的**顺序建议**
+
+1. 先裁 **I-7 的 Q-a**（纯查询 API 的形态）—— 它决定 `sharer_tracker.hh` 是否要改 ⇒ 影响面比 I-6 的 schema 面更靠底层；
+2. 再裁 **I-6 的 D-1~D-5**（schema 13→14 + 边类语义）—— 它的第 3 项前置（litmus）**已由 I-6a 落定** ✅；
+3. 两项裁决落盘后 ⇒ 各自 ratify（I-6 需 **schema 版本递增** ratify）⇒ builder 逐项实施。

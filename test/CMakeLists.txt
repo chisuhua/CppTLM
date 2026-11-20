@@ -775,6 +775,14 @@ set_tests_properties(cep_litmus_falsification_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                                 ENVIRONMENT "BUILD_DIR=${CMAKE_BINARY_DIR}")
 
+# openspec CLI 的**版本锁定**闸(per 登记册队列 2 的 I-8)
+#  —— 单一真源 = 仓根 `.openspec-cli-version`;CI 从该文件读 ⇒ 仓内**无第二份版本号**
+#  —— 判据三方一致:锁值 == CI 安装版本 == 本机 `openspec --version`
+add_test(NAME openspec_version_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/openspec_version_check.sh)
+set_tests_properties(openspec_version_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # M1 产物冻结校验(per obj-cep-platform §9.2 M1「产物冻结先于解读」)
 # —— 独立于 lint,便于单独定位"冻结产物被改动"
 add_test(NAME cep_freeze_check

@@ -178,7 +178,7 @@ _change_of_stage() {  # $1 = A/B/C → change 名
 #
 # 队列顺序（登记册 §6.4 队列 2 的实施行序）：
 QUEUE2=(
-  "I-0" "I-1" "I-9" "I-5" "I-2" "I-3" "I-4" "I-6a" "I-6" "I-7" "I-8" "I-10" "I-11" "I-12"
+  "I-0" "I-1" "I-9" "I-5" "I-2" "I-3" "I-4" "I-6a" "I-8" "I-10" "I-11" "I-12" "I-6" "I-7"
 )
 _queue2_done_count() {  # $1 = I-* 名 → 该 I-* 标 done 的数据行数
     awk -F'\t' -v q="$1" '!/^#/ && NF>=2 && $1==q && $5=="done" {n++} END{print n+0}' "$CARRIER"
@@ -579,7 +579,7 @@ PYEOF
     _mut2_pair="$(python3 - "$_shadow" <<'PYEOF'
 import sys
 root = sys.argv[1]
-QUEUE2 = ["I-0","I-1","I-9","I-5","I-2","I-3","I-4","I-6a","I-6","I-7","I-8","I-10","I-11","I-12"]
+QUEUE2 = ["I-0","I-1","I-9","I-5","I-2","I-3","I-4","I-6a","I-8","I-10","I-11","I-12","I-6","I-7"]
 p = f"{root}/scripts/test/rddf_ac_carrier.tsv"
 lines = open(p, encoding="utf-8").read().split("\n")
 def state(q):
@@ -623,7 +623,7 @@ PYEOF
     _mut3_next="$(python3 - "$_shadow" <<'PYEOF'
 import sys
 root = sys.argv[1]
-QUEUE2 = ["I-0","I-1","I-9","I-5","I-2","I-3","I-4","I-6a","I-6","I-7","I-8","I-10","I-11","I-12"]
+QUEUE2 = ["I-0","I-1","I-9","I-5","I-2","I-3","I-4","I-6a","I-8","I-10","I-11","I-12","I-6","I-7"]
 p = f"{root}/scripts/test/rddf_ac_carrier.tsv"
 lines = open(p, encoding="utf-8").read().split("\n")
 def state(q):

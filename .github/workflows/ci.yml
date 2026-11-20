@@ -60,9 +60,15 @@ jobs:
       # ⚠️ 状态一致性闸的断言①(KPI baseline)**实测** `openspec list --json` →
       #    CLI 缺失即 **fail-closed 报红**(2026-10-24 CI 实测:无 CLI →
       #    「无法实测 openspec list --json」→ `cep_docs_sync_check` + `cep_gate_selftest` 双红)。
-      #    版本与本地钉平(1.14.3)→ 避免 CLI 行为漂移导致 baseline 实测口径不一致。
+      # ⚠️ **版本单一真源 = `.openspec-cli-version`**(仓根) ⇒ CI **从该文件读**,
+      #    ⛔ 不在 workflow 里再写一份(两份 ⇒ 漂移无人发现)。per change
+      #    `cpptlm-openspec-version-pinning`(登记册队列 2 的 I-8)。
+      #    版本漂移会改变 CLI 行为 ⇒ baseline 实测口径不一致 ⇒ 由
+      #    `scripts/test/openspec_version_check.sh` 机判(仓内 CLI 版本 == 锁值 == CI 安装版本)。
       run: |
-        sudo npm install -g @fission-ai/openspec@1.14.3
+        OS_VER="$(cat .openspec-cli-version)"
+        echo "openspec 锁定版本: ${OS_VER}"
+        sudo npm install -g "@fission-ai/openspec@${OS_VER}"
         openspec --version
 
     - name: Configure CMake
