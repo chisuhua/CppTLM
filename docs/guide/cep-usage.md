@@ -217,7 +217,7 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 | | NVLink | 同上 | **external** | NVIDIA 发布**条款级**规范(白皮书 / 编程指南**不算**) |
 | | UALink | 同上 | **external** | Evaluation Copy 约束解除 / 联盟发布公开规范 |
 | **invariant ⏭**(5 条) | `CEN-Ib8` / `INV-CEP-08-IC1` / `INV-CEP-09-IC2` / `INV-CEP-13-IC1` / `INV-CEP-13-IC3` | `test/cep_invariant_deferrals.json` | 能力未建模 | 逐条 `trigger_condition` |
-| **ADR 归因**(18 条) | `condition_unmet` 2 · `carrier_buildable_id_blocked` 10 · `carrier_present_id_absent` 2 · `doc_layer_manual_review` 4 | `test/cep_adr_structural_deferrals.json` | 见逐条 `disposition` | **建 id 架构性不可行** ⇒ 归类收敛(per Entry #326/#331);⛔ 不新建 id |
+| **ADR 归因**(19 条) | `condition_unmet` 2 · `carrier_buildable_id_blocked` 10 · `carrier_present_id_absent` 2 · `doc_layer_manual_review` 5 | `test/cep_adr_structural_deferrals.json` | 见逐条 `disposition` | **建 id 架构性不可行** ⇒ 归类收敛(per Entry #326/#331);⛔ 不新建 id |
 | **口径 ④ 实施轮** | MUST-FIX-1 / MUST-FIX-2 | 台账 Entry #332 ⑧ | ✅ **已完成**(2026-11-12,change `cpptlm-cep-dod-reading-consistency` 已归档;MUST-FIX-3/4 已于 2026-11-12 / 13 落地(Entry #385 / #386)；口径 ④ 已于 2026-11-14 经用户 ratify 生效 —— 回执 per 台账 **Entry #375** 归档回执 + **Entry #376** 验收 15/15 AC PASS) | —(已闭合) |新 SU 落地时)执行;⚠️ **重裁落地前 §12.7 禁写 #3 按绝对禁令执行** |
 | | MUST-FIX-3 / MUST-FIX-4 | 台账 Entry #332 ⑧ | ✅ **已完成**（2026-11-12 / 13，`## §14` 归档态段 + 回滚路径；回执 per Entry #386） | 已闭合（2026-11-12 / 13） |
 | ~~**闸强度缺口**~~ | ✅ **已闭合 2026-11-12**(per 台账 Entry #342)—— `cep_b3b2_deferral_check.sh` 的恒真 grep 段(grep `$DECL` **自身**)已删,改为**集合覆盖 + 逐族锚校验**;⛔ 本表状态判定以**载体文件与台账**为准 | 同脚本 | ✅ 已闭合 | 决定性变异:删 1 族 / 同族加第 2 条 ⇒ 必红 |
