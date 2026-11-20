@@ -65,7 +65,13 @@
 
 ## 六、载体表 `state` 处置（**未标 done** · 与 I-9 同因）
 
-I-5 按用户指示**乱序**执行（队列原序 `I-0 → I-1 → … → I-5`，实际第 3 个做）。P-2a 是**严格串行**判据（任一已 done 项的前驱未 done ⇒ 红），而 `I-2`/`I-3`/`I-4` 仍未完成 ⇒ 标 `done` 会让 `--phase queue2` 与 `--self-test` 双红。处置与 I-9 一致：**保持 `pending`**，以本报告为完成凭据；两条待裁路径见 `.rddf/reviews/cep-archforge-ci-failclosed-verify.md` §六（路径 A = 正式重排队列；路径 B = 维持 pending + 报告凭据）。
+I-5 按用户指示**乱序**执行（队列原序 `I-0 → I-1 → … → I-5`）。P-2a 是**严格串行**判据（任一已 done 项的前驱未 done ⇒ 红），而 `I-2`/`I-3`/`I-4` 仍未完成 ⇒ 当时标 `done` 会让 `--phase queue2` 与 `--self-test` 双红 ⇒ 暂留 `pending`。
+
+### ✅ 已裁决（2026-11-20 · 用户选**路径 A**）
+
+队列 2 的 canonical 顺序已重排为 `I-0 → I-1 → I-9 → I-5 → I-2 → …`（已完成项构成前缀）
++ 同步 `QUEUE2` 数组 ⇒ `I-5` 的载体表 `state` 已置 **`done`**，P-2a 下一项推进为 **I-2**，三路径全 rc=0。
+详见 `.rddf/reviews/cep-archforge-ci-failclosed-verify.md` §六「已裁决」。
 
 ## 七、已用轮次
 

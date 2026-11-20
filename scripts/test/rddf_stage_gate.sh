@@ -178,7 +178,7 @@ _change_of_stage() {  # $1 = A/B/C → change 名
 #
 # 队列顺序（登记册 §6.4 队列 2 的实施行序）：
 QUEUE2=(
-  "I-0" "I-1" "I-2" "I-3" "I-4" "I-5" "I-6a" "I-6" "I-7" "I-8" "I-9" "I-10" "I-11" "I-12"
+  "I-0" "I-1" "I-9" "I-5" "I-2" "I-3" "I-4" "I-6a" "I-6" "I-7" "I-8" "I-10" "I-11" "I-12"
 )
 _queue2_done_count() {  # $1 = I-* 名 → 该 I-* 标 done 的数据行数
     awk -F'\t' -v q="$1" '!/^#/ && NF>=2 && $1==q && $5=="done" {n++} END{print n+0}' "$CARRIER"
@@ -555,10 +555,10 @@ PYEOF
     rm -rf "$_shadow"; mkdir -p "$_shadow/scripts/test" "$_shadow/.rddf/roadmap/objectives"
     cp "$CARRIER" "$_shadow/scripts/test/"; cp "$0" "$_shadow/scripts/test/rddf_stage_gate.sh"
     cp .rddf/roadmap/objectives/obj-cep-platform-remaining.md "$_shadow/.rddf/roadmap/objectives/" 2>/dev/null
-    python3 - "$_shadow" <<'PYEOF'
+    _mut2_pair="$(python3 - "$_shadow" <<'PYEOF'
 import sys
 root = sys.argv[1]
-QUEUE2 = ["I-0","I-1","I-2","I-3","I-4","I-5","I-6a","I-6","I-7","I-8","I-9","I-10","I-11"]
+QUEUE2 = ["I-0","I-1","I-9","I-5","I-2","I-3","I-4","I-6a","I-6","I-7","I-8","I-10","I-11","I-12"]
 p = f"{root}/scripts/test/rddf_ac_carrier.tsv"
 lines = open(p, encoding="utf-8").read().split("\n")
 def state(q):
@@ -584,9 +584,10 @@ if nxt is not None:
         open(p, "w", encoding="utf-8").write("\n".join(lines))
         print(f"{nxt} {tgt}")
 PYEOF
+    )"
     _mut2="$(cd "$_shadow" && bash scripts/test/rddf_stage_gate.sh --phase queue2 2>&1 | grep -c 'P-2a 队列 2 跳序')"
     if [ "${_mut2:-0}" -ge 1 ]; then
-        ok "SELF-TEST 变异② 队列 2 跳序被判红（I-1 标 done 而前驱 I-0 未完成）⇒ 顺序由机关保证"
+        ok "SELF-TEST 变异② 队列 2 跳序被判红（${_mut2_pair:-?} 标 done 而前驱未 done）⇒ 顺序由机关保证"
     else
         fail "SELF-TEST 变异② 队列 2 跳序未判红 ⇒ P-2a 无鉴别力"
         _self_fail=1
@@ -598,10 +599,10 @@ PYEOF
     rm -rf "$_shadow"; mkdir -p "$_shadow/scripts/test" "$_shadow/.rddf/roadmap/objectives"
     cp "$CARRIER" "$_shadow/scripts/test/"; cp "$0" "$_shadow/scripts/test/rddf_stage_gate.sh"
     cp .rddf/roadmap/objectives/obj-cep-platform-remaining.md "$_shadow/.rddf/roadmap/objectives/" 2>/dev/null
-    python3 - "$_shadow" <<'PYEOF'
+    _mut3_next="$(python3 - "$_shadow" <<'PYEOF'
 import sys
 root = sys.argv[1]
-QUEUE2 = ["I-0","I-1","I-2","I-3","I-4","I-5","I-6a","I-6","I-7","I-8","I-9","I-10","I-11"]
+QUEUE2 = ["I-0","I-1","I-9","I-5","I-2","I-3","I-4","I-6a","I-6","I-7","I-8","I-10","I-11","I-12"]
 p = f"{root}/scripts/test/rddf_ac_carrier.tsv"
 lines = open(p, encoding="utf-8").read().split("\n")
 def state(q):
@@ -622,9 +623,10 @@ if nxt is not None:
     open(p, "w", encoding="utf-8").write("\n".join(lines))
     print(nxt)
 PYEOF
+    )"
     _mut3="$(cd "$_shadow" && bash scripts/test/rddf_stage_gate.sh --phase queue2 2>&1 | grep -c 'P-2a 队列 2 跳序')"
     if [ "${_mut3:-0}" -eq 0 ]; then
-        ok "SELF-TEST 变异③ 合法顺序（I-0 done，I-1 pending）未误判跳序 ⇒ 判据无假阳"
+        ok "SELF-TEST 变异③ 合法顺序（${_mut3_next:-?} 置 done 且前驱已全 done）未误判跳序 ⇒ 判据无假阳"
     else
         fail "SELF-TEST 变异③ 合法顺序被误判跳序 ⇒ 判据有假阳"
         _self_fail=1

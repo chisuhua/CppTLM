@@ -63,12 +63,12 @@ I-1	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	口径 stale 集 
 I-2	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	L3 KPI 行堆积清理	pending
 I-3	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	L4 3 处 improvement 状态漂移回填	pending
 I-4	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	KPI 活口径同步固定化	pending
-I-5	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	invariant 建模批 1	pending
+I-5	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	invariant 建模批 1	done
 I-6	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	invariant 建模批 2	pending
 I-6a	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**litmus change 落地**	pending
 I-7	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	档 2 扩面到第 2 族	pending
 I-8	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	`openspec` 版本 pinning	pending
-I-9	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	S2-8 CI 假绿修复	pending
+I-9	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	S2-8 CI 假绿修复	done
 I-10	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**归档验收债补齐 + 机关落地**	pending
 I-11	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**spec 契约面 stale 引用修正**	pending
 I-12	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**doorbell 契约面失真修正**	pending
