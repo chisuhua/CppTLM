@@ -463,7 +463,12 @@ R-19  grep -n handle_cr_transaction AGENTS.md → :423 命中；实现为 regist
 
 R-18 在 §2.9 / §8.4 中被归入「文档面小修」是**不对的** —— `minimal-dgpu-soc-architecture/spec.md:101` 的 Requirement **标题本身**就是「doorbell 配置 vs 代码 hardcoded 不一致」⇒ 这是**已知契约缺陷被写进契约**。
 
-**Q-12 待裁二选一**：① 改代码对齐配置（doorbell 地址从配置读，取消 hardcoded）② 改契约承认 hardcoded（spec 改为「当前实现为 hardcoded，配置字段预留」）；并须给「是否动 `configs/dgpu_soc_minimal_v1.json:49`」的明确答复。
+**Q-12 待裁二选一**：① 改代码对齐配置（doorbell 地址从配置读，取消 hardcoded）② 改契约承认 hardcoded（spec 改为「当前实现为 hardcoded，配置字段预留」）
+
+> ✅ **Q-12 已于 2026-11-20 由 architect 正式裁决** —— 裁决文件 = **`.rddf/reviews/dgpu-doorbell-adjudication-q1-q12-2026-11-20.md`**（**独立文件**，⛔ 不 append 进本 CEP 记录 —— Q-12 的对象是 **dGPU 域**，append 会把 dGPU 议题钉进 CEP 载体）。
+> **裁决结论**：采 **② 改契约**，但范围**显著大于**上述二选一 —— 裁决对象 = `minimal-dgpu-soc-architecture/spec.md` 的 **3 处矛盾断言**（A-1 MUST 被全体违反 / A-2 Scenario 与实现相反 / A-3 僵尸条款）+ **3 处连带 spec**（⛔ 只改 `:101` 一行 ⇒ 裁决不成立）。
+> ⚠️ **与用户倾向的关系**：用户 2026-11-20 倾向 ①；architect 裁 ② **不是**否决方向，而是发现**真问题在契约面失真而非取值来源**（理由三条，见裁决 §5）⇒ 若未来仍要 ①，**须先走新 ADR 取代** `ADR-DGPU-09:120` / `ADR-DGPU-03:583`。
+> **落地**：登记册队列 2 的 **I-12**（新建 OpenSpec change · 占 1 KPI slot）。；并须给「是否动 `configs/dgpu_soc_minimal_v1.json:49`」的明确答复。
 
 ### §10.5 本节与 §2.9 / §4 / §8.4 的关系
 

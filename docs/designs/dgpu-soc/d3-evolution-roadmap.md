@@ -193,6 +193,16 @@ D3a-1 完成        └─→ D3a-2 (MemoryTLM capacity) [1d]
 - ArchForge GMMU SSOT — `ArchForge/docs/architecture/20-gmmu-evolution-roadmap.md` (跨仓镜像)
 - ArchForge SoC 架构 — `ArchForge/docs/architecture/` (跨仓镜像)
 
+
+---
+
+## Status Update
+
+### 2026-11-20 — Q-12 裁决：doorbell「维持现状」已转写进 spec 契约（本节 §3 的 doorbell 议题结论**不变**）
+
+- **裁决**：`openspec/specs/minimal-dgpu-soc-architecture/spec.md` 的 3 处矛盾断言（① `bar_sizes[1]` MUST ≥ 256MB+64KB · ② 「16MB ⇒ 不触发 doorbell 路由」 · ③ 「不一致 SHALL 是已知推迟项」）改写为**承认现状**。
+- **本节 §3 的决策「维持现状，不修」** ⇒ **不变**（⛔ 未反转）；**新增**的是：现状已从「实施延期声明」升级为「**契约面已对齐**」，且复活条件被写成**可机判**形态（原措辞「真 driver 集成时 doorbell 物理地址 ≠ 0x10010000 触发」不可机判 ⇒ 新契约给出 R-1/R-2/R-3 三个可机判替代表述，择一写死）。
+- **裁决文件**：`.rddf/reviews/dgpu-doorbell-adjudication-q1-q12-2026-11-20.md`。
 ---
 
 **维护**: CppTLM Team · **状态**: 🟡 DRAFT 待评审 · **评审入口**: §6 4 个开放问题

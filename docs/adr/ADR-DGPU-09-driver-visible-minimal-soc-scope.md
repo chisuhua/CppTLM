@@ -301,3 +301,10 @@ grep -rn "coherence\|cache_coherent\|dma_coherent" include/tlm/ src/tlm/ 2>/dev/
 
 **验证结果**: `[driver_visible]` 2 cases / 29 assertions (BAR2 fast-path round-trip + BAR1 alias + config BAR 双 dword) + `[minimal_dgpu_soc]` 12 cases + `[pcie-memory]` 24 cases + ctest 76/76 PASS, 0 regression。
 
+
+### 2026-11-20 — Q-12 裁决：§2.2.2 的「不修」转写进 spec 契约（⛔ 正文零改动）
+
+- **裁决**：`openspec/specs/minimal-dgpu-soc-architecture/spec.md` 中「doorbell 配置 vs 代码 hardcoded 不一致」及其连带断言改写为**承认现状**（⛔ **取值与取值来源均不变**：`kBar1DoorbellOffset = 0x10010000` 仍是代码常量）⇒ 本条 §2.2.2 的「**不修**」由**实施延期声明**升级为**契约面已对齐**。
+- **连带**：§2.2.2 的「改常量弄断既有 `[sdma][doorbell]` 测试」作为**理由**被订正（实测值断言仅 1 处 + 4 处字面量，其余为符号引用）⇒ **结论不变，理由订正**。
+- **裁决文件**：`.rddf/reviews/dgpu-doorbell-adjudication-q1-q12-2026-11-20.md`（含 7 处连带清单 + 3 条决定性变异 + 复活锁）。
+- **关联 change**：⏳ 待 builder 立项（OpenSpec change，占 1 KPI slot）。
