@@ -5,7 +5,11 @@
 > **对象**：登记册 §6.4 队列 2 的 **I-6** / **I-7**（§6.9 阶段 ③ 决策门）
 > **输入**：`.rddf/reviews/i6-adjudication-request-2026-11-21.md`（builder 提出的事实与问题清单）
 > **关联 change**：`openspec/changes/` 尚无 I-6 / I-7 的 change（⛔ architect 不创建 openspec change；立项由 planner）
-> **AC 映射**：⏳ 待 change 立项后由 planner 回填（本记录 §六 列出待回填的 AC 编号位）
+> **AC 映射**：✅ **已回填**（2026-11-21 · **主会话代录** per I-7a 的 AC-14）——
+>   · **I-6** ⇒ change `cpptlm-cep-invariant-modeling-batch2`（已归档）的 **AC-1 ~ AC-14**：§六 H-2 的「步骤 0 四件机械件」= **AC-1**（含 T0 的 deferrals 删除 + 映射表重生成）· 「AC-3 修订」= **AC-3**（schema 13→14 + `required` 仍 13 + 反 fixture）· 「AC-4 修订」= **AC-4**（4 个断言点 / 2 个用例标题改形清单）· 「`early_ack` 逐实例声明 + `unknown` 计数机器化」= **AC-9** · 「golden 零改动」= **AC-8**；其余 AC = 该 change proposal 的逐条判据。
+>   · **I-7a** ⇒ change `cpptlm-cep-tilelink-tree-manager-view-of`（已归档）的 **AC-1 ~ AC-14**：§四.2 的「`view_of` 签名同形」= **AC-1** · 「6 行夹具口径」= **AC-2** · 「快照 vs 判决」= **AC-3** · 「脏性口径」= **AC-4** · 「CHAIN in-flight 快照」= **AC-5** · 「零副作用」= **AC-6** · 「档 2 仍单族」= **AC-7** · 「零 diff 面」= **AC-8** · 「0 回归 + 队列语义」= **AC-10** · 「载体身份 + 逐字锚点」= **AC-11** · 「多 Tip 如实返回」= **AC-12** · 「载体表 8 行」= **AC-13**。
+>   · **I-7b** ⇒ `.rddf/improvements/cep-tilelink-home-side-state-driver.md`（⏳ **待立项**）⇒ AC 映射**待其 change 立项后回填**。
+> ⚠️ 本次回填**只登记编号对应** ⇒ ⛔ **未改动**本记录的任何决策文本（per AC-14「代录」限定）
 > **修订**：v3（2026-11-21 · oracle 轮 1 的 6 条高/中影响修正 + critic 轮 1 的 4 条 SHOULD_FIX + 4 条 NITS；修正 v1 的 3 处事实错误，见 §八）
 
 ---

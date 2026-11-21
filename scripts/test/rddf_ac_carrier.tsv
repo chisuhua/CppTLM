@@ -67,14 +67,14 @@ I-5	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	invariant 建模�
 I-6	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	invariant 建模批 2	done
 I-6a	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**litmus change 落地**	done
 I-7	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	档 2 扩面到第 2 族	pending
-I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-1: view_of 签名与 FullMapDirectory::view_of 同形	pending
-I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-2: view_of 逐字段口径(Tip/Branch/Nothing/空条目)	pending
-I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-3: lookup 不是快照(ESCALATE_UP 时 sharers 留 0)	pending
-I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-4: 脏性口径(dirty == tips;Branch ⇒ dirty == 0)	pending
-I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-5: CHAIN in-flight 期间 view_of 仍返回安装面视图	pending
-I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-6: 零副作用(has_node 探针 + events 长度不变)	pending
-I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-7: evidence_tiers 键仍 == 1(mesif-observation)	pending
-I-7	cmd	bash scripts/test/rddf_stage_gate.sh	--phase queue2	pending
+I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-1: view_of 签名与 FullMapDirectory::view_of 同形	done
+I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-2: view_of 逐字段口径(Tip/Branch/Nothing/空条目)	done
+I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-3: lookup 不是快照(ESCALATE_UP 时 sharers 留 0)	done
+I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-4: 脏性口径(dirty == tips;Branch ⇒ dirty == 0)	done
+I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-5: CHAIN in-flight 期间 view_of 仍返回安装面视图	done
+I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-6: 零副作用(has_node 探针 + events 长度不变)	done
+I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-7: evidence_tiers 键仍 == 1(mesif-observation)	done
+I-7	cmd	bash scripts/test/rddf_stage_gate.sh	--phase queue2	done
 I-8	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	`openspec` 版本 pinning	done
 I-9	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	S2-8 CI 假绿修复	done
 I-10	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**归档验收债补齐 + 机关落地**	done

@@ -45,11 +45,11 @@
 
 ## T5 · 收口
 
-- [ ] T5.1 验收报告 `.rddf/reviews/cpptlm-cep-tilelink-tree-manager-view-of-verify.md`
-- [ ] T5.2 台账 Entry（`.rddf/roadmap/objectives/obj-cep-platform.md`）—— 编号以落库时实测最大值 + 1 为准
-- [ ] T5.3 载体表 8 行 `state` → `done`（**单独 commit**）
-- [ ] T5.4 登记册回填：§6.4 队列 2 的 **I-7** 行（记 I-7a 已落地 · **I-7 仍未完成** ⇒ I-7b 待立项）
-- [ ] T5.5 **AC-14**：AC 映射回填进 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md`（主会话代录）
+- [x] T5.1 验收报告 `.rddf/reviews/cpptlm-cep-tilelink-tree-manager-view-of-verify.md`
+- [x] T5.2 台账 Entry（`.rddf/roadmap/objectives/obj-cep-platform.md`）—— 编号以落库时实测最大值 + 1 为准
+- [x] T5.3 载体表 8 行 `state` → `done`（**单独 commit**）
+- [x] T5.4 登记册回填：§6.4 队列 2 的 **I-7** 行（记 I-7a 已落地 · **I-7 仍未完成** ⇒ I-7b 待立项）
+- [x] T5.5 **AC-14**：AC 映射回填进 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md`（主会话代录）
 
 ## T6 · 归档
 

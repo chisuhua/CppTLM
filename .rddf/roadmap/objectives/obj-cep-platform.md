@@ -27367,3 +27367,29 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **⛔ 范围纪律**：⛔ 不改 `INV-CEP-12-IC1` 的语义 · ⛔ 不给镜像域实例(`moesi_gpu` / `mesif`)与 `test/cep_instance_golden.json` 加该属性 · ⛔ 不新增实例 · ⛔ 不在本单元定义 `rfe`/`fr`/`ws` 语义 · ⛔ 不由声明项派生填充 litmus 语料(通道依赖图 ≠ 操作图 ⇒ 范畴错误 ⇒ 假绿)。
 
 **关联**：登记册 §6.4 队列 2 的 **I-6**(`cep-invariant-modeling-batch2`)· openspec change `cpptlm-cep-invariant-modeling-batch2` · 裁决记录 §二 · 前置单元 **I-6a**(`cpptlm-cep-litmus-falsification-harness`,已归档)
+
+### Entry #515 — 2026-11-21 [builder](**CEP `TreeManager::view_of` 纯查询视图落地（登记册队列 2 的 **I-7a**）** —— I-7 拆分后的**前置产出单元**)
+
+**起因**：architect 裁决 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §四把 I-7 拆为 **I-7a / I-7b**（Q-a = **具体类**上补 `view_of`，⛔ 不动 `SharerTrackerIf`）。I-7a 的存在理由：`TreeManager::lookup` 的 `LocalView` **不是快照**（`ESCALATE_UP` 路径 `sharers` 留 0 ⇒ 漏 sharer；CHAIN in-flight 路径 `valid == false` ⇒ 无快照）⇒ I-7b 的 tracker 侧观测面无法开工 ⇒ 档 2 扩面永远停在单族。
+
+**交付**：`include/tlm/cep/tilelink_tree_manager.hh` 新增 `LocalView view_of(std::uint64_t addr) const`（**与 `FullMapDirectory::view_of` 逐字同形** · **零副作用**（⛔ 只 `find`）· `forward_to` **恒 `kInvalidNode`**）；`test/test_cep_tilelink_adapter.cc` 新增 1 个 TEST_CASE（`CEP TreeManager: view_of 纯查询视图(Tip/Branch/Nothing/空条目/CHAIN)` · **66 assertions**）。
+
+**载体落点**：
+
+- `include/tlm/cep/tilelink_tree_manager.hh`（实现 · **+28 / −0** · 既有行零触碰）
+- `test/test_cep_tilelink_adapter.cc`（判定级载体 · AC-1 ~ AC-12 逐条可红断言 + 逐字锚点注释）
+- `scripts/test/rddf_ac_carrier.tsv`（**I-7 +8 行**：7 行 `test` + 1 行 `cmd`；AC 编号用**父编号 `I-7`** ⇒ 天然「I-7 全部行 done 才算完成」）
+
+**决定性变异（4 条 · 全部有鉴别力）**：`view_of` 包一层 `lookup` ⇒ AC-3 红 · `entries_[addr]` ⇒ AC-6 的探针 + 源码文本判据红 · `dirty` 写成 `sharers` ⇒ AC-4 红 · `evidence_tiers` 加键 ⇒ AC-7 + AC-8 红。
+
+**诚实边界**：本单元建立的是**快照面**（安装面真相）—— ⛔ **不等于**档 2 已扩面（档 2 **仍单族** `mesif-observation`；扩面 = **I-7b** 的 home 侧状态驱动）⇒ ⛔ 不得表述为「档 2 第二族已达成」。⚠️ `dirty` 口径 = **Tip 集**（`Entry::tips`），**不是** `FullMapDirectory::Entry::dirty`（脏节点集）⇒ 两个 `dirty` **概念不同**。⚠️ 「`Trunk` 折叠 ⇒ may-contain-dirty 不可见」是**已登记的语义损失**。
+
+**⚠️ 实施侧事实核正（3 处 AC 口径 · 均在验收报告登记）**：① AC-5 的「`lookup` 返 `CHAIN`」—— 实测 CHAIN 在 **`hazard`** 上（`result` 仍是 `ANSWER_HERE`）② AC-6 的「`tm.events().size()`」—— **`TreeManager` 无 `events()`** ⇒ 该子判据不可执行 ⇒ 零副作用由 `has_node` 探针 + 源码文本判据承担 ③ AC-8 的 `git merge-base HEAD main` 口径 —— 本仓**直推 main** ⇒ 恒空 ⇒ **恒绿** ⇒ 精化为 3 条可执行判据。
+
+**⚠️ 机关缺陷修复**：载体表的 `cmd` 行**可指向机关自身** ⇒ P-3 会调起本脚本 ⇒ **无限递归**（实测 `rc=124`）⇒ 已加自调用防护（内层由 `RDDF_STAGE_GATE_INNER=1` 标记 ⇒ 整段跳过 P-3）⇒ 递归消失（`rc=0`）· ⛔ **未动** P-2a 判据。
+
+**冻结面**：⛔ **零冻结面成员改动** ⇒ **不触五步链**（未跑 `--update`；清单 diff = 空；无参 `cep_freeze_check` rc=0 · provenance 自检通过）⇒ 归档**零 delta spec**（`.openspec.yaml` 声明 `skip_specs: true`）⇒ **不合并**任何 main spec。
+
+**⚠️ 暂态（P-5）**：`_active` = 活跃 change 数 ⇒ **立项期间** P-5「活口径取值 != 实测」必然红（并经 P-3 的 cmd 行传染到内层）⇒ 沿用 I-6 先例**不回填**活口径 ⇒ **归档后 `_active` 归 0 ⇒ 自动恢复绿**。
+
+**关联**：登记册 §6.4 队列 2 的 **I-7**（= **I-7a** ✅ 落地 · **I-7b** ⏳ 待立项）· openspec change `cpptlm-cep-tilelink-tree-manager-view-of`（归档 `openspec/changes/archive/2026-11-21-cpptlm-cep-tilelink-tree-manager-view-of/`）· 验收报告 `.rddf/reviews/cpptlm-cep-tilelink-tree-manager-view-of-verify.md` · 裁决记录 §四（Q-a）· 旧单元 `cep-tier2-second-family-tilelink`（⏸ 已拆分 · 不可开工）
