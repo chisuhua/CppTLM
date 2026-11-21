@@ -48,15 +48,15 @@
 
 - [x] T6.1 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #514"`（**第 1 次**）
 - [x] T6.2 **commit A**（台账 + 全部改动 + 清单）
-- [ ] T6.3 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #514"`（**第 2 次** ⇒ `frozen_at_commit` = commit A）
-- [ ] T6.4 **commit B**（**清单单独 commit** · ⛔ 台账与清单不得合并提交）
-- [ ] T6.5 无参复验 `bash scripts/test/cep_freeze_check.sh` rc=0 + `cep_freeze_reverse_verify` rc=0
+- [x] T6.3 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #514"`（**第 2 次** ⇒ `frozen_at_commit` = commit A）
+- [x] T6.4 **commit B**（**清单单独 commit** · ⛔ 台账与清单不得合并提交）
+- [x] T6.5 无参复验 `bash scripts/test/cep_freeze_check.sh` rc=0 + `cep_freeze_reverse_verify` rc=0
 
 ## T7 · 0 回归
 
-- [ ] T7.1 ctest 全绿（⛔ 不写死数字）
-- [ ] T7.2 全部 `scripts/test/cep_*.sh` 逐个 rc=0 **且输出不含 `[SKIP]`**（⚠️ 须先确认 `$BUILD_DIR/bin/cpptlm_tests` 存在）
-- [ ] T7.3 `cep_adr_structural_check.py` · `rddf_stage_gate` · `docs_sync --strict` · `agents_md_lint` 全 rc=0（⚠️ `format --check` 的 **21 个既有 C++ 债** ⇒ 本单元零 C++ 改动 ⇒ 排除既有债后判 / 如实记录）
+- [x] T7.1 ctest 全绿（⛔ 不写死数字）
+- [x] T7.2 全部 `scripts/test/cep_*.sh` 逐个 rc=0 **且输出不含 `[SKIP]`**（⚠️ 须先确认 `$BUILD_DIR/bin/cpptlm_tests` 存在）
+- [x] T7.3 `cep_adr_structural_check.py` · `rddf_stage_gate` · `docs_sync --strict` · `agents_md_lint` 全 rc=0（⚠️ `format --check` 的 **21 个既有 C++ 债** ⇒ 本单元零 C++ 改动 ⇒ 排除既有债后判 / 如实记录）
 
 ## ⛔ 本 change 不做
 

@@ -70,7 +70,27 @@
 
 ## 五步链执行记录（AC-5）
 
-见 §回归记录与提交记录（台账 Entry **#514** 授权 · `--update` 两次 · **清单单独 commit** · 无参复验）。
+| 步 | 动作 | 实测 |
+|:--:|---|---|
+| 1 | 台账 Entry **#514** 落库（授权范围 = schema 可选属性扩展 + 两份 ADR 追加 SU）| ✅ Entry #514 **恰 1 处**（AC-5⑥ 唯一性 grep == 1）· 为当前**最大**编号 |
+| 2 | 改 schema + 实例 + 测试 + 两份 ADR SU + 新载体 + fixture + 闸 + deferrals + 映射表 + 语料 + CMakeLists | ✅ |
+| 3 | **commit A** = `bfc053bb`（25 files · +1147/−45）| ✅ 含台账 + 全部改动 + 清单首次 `--update` 结果 |
+| 4 | `--update --authorized-by "Entry #514"`（**第 2 次**）| ✅ `hash 变更 0` · `frozen_at_commit` `c6535358…` → **`bfc053bb…`**（= 产物 commit）|
+| 5 | **commit B** = `ee0e5003`（**清单单独 commit** · 1 file · +1/−1 · ⛔ 与台账不合并）| ✅ |
+| 6 | 无参复验 | ✅ `provenance 自检通过：90 个产物的 hash 与 commit bfc053bb 的内容一致` |
+
+**`--update` 第 1 次的差集（AC-5⑤ 的「无关漂移」检）**：`新增 0 · 移出 0 · hash 变更 4` ——
+4 个 = `schema` + `ADR-CEP-12` + `ADR-CEP-13` + **`openspec/specs/cep-core-contracts/spec.md`**（F-1）。
+
+⚠️ **commit A 时 3 个闸红 —— 全部是「比已提交态」的提交前假象**：
+
+| 闸 | 提交前红因 | commit A 后 |
+|---|---|---|
+| `cep_freeze_check` | `frozen_at_commit` = 上一 commit ⇒ 4 个产物 hash 与其内容不一致（provenance 滞后）| 第 2 次 `--update` ⇒ **绿** |
+| `cep_freeze_reverse_verify` | 其**基线**要求 freeze check 绿 | **绿** |
+| `cep_flow_support_reverse_verify` | 末项「仓内零改动复核」= `git diff --quiet -- protocol_instances.json` ⇒ 本单元**合法**改动该文件且未提交 | **绿** |
+
+⇒ 先例 = I-6a 的 `ab7b649a` → `51a7babd`（同型）；三者 commit A 后**已全部复验为绿**（见 §回归记录）。
 
 ## 回归记录
 
@@ -83,9 +103,16 @@
 | `python3 scripts/test/cep_invariant_batch1_ledger_check.py` | ✅ rc=0（批 1 未回归）|
 | `python3 scripts/test/cep_adr_structural_check.py` | ✅ `全部通过` |
 | `openspec validate --specs --strict --json` | ✅ **138 items / 55 invalid / 47 `cep-` / `cep-` invalid = 0** ⇒ 与基线**逐项一致** |
-| `bash scripts/test/rddf_stage_gate.sh`（默认 / `--phase queue2` / `--self-test`）| ✅ 三路径全 rc=0（`--self-test` 含新修队尾变异）|
-| ctest / 全部 `cep_*.sh` / 文档闸 | 见下方 §提交前回归（由后台回归填充）|
-| ⚠️ `format --check` | **既有红**：21 个既有 C++ 文件 ⇒ 本单元新增的 `.cc` **须**过格式化（见回归） |
+| `bash scripts/test/rddf_stage_gate.sh`（默认 / `--phase queue2` / `--self-test`）| ✅ 三路径全 rc=0（`--self-test` 含**新修队尾变异** `✓ 变异② (I-7 I-6 标 done 而前驱未 done)`）|
+| `ctest --test-dir build --output-on-failure -j4` | ✅ **198/198 passed**（0 failed · 188.10 s）—— 较基线 197 增 **1**（= 新注册的 `cep_invariant_batch2_ledger_check`）|
+| 全部 `scripts/test/cep_*.sh`（逐个 rc=0 ∧ **无 `[SKIP]`**）| ✅ **0 失败 / 47 · SKIP = 0**（⚠️ 已先确认 `build/bin/cpptlm_tests` 存在 ⇒ litmus 闸不会走 SKIP 分支；实测**无任何** `[SKIP]`）|
+| `bash scripts/test/cep_freeze_check.sh`（无参）| ✅ rc=0 —— **`provenance 自检通过：90 个产物的 hash 与 commit bfc053bb 的内容一致`**（`artifact_count` **90** 不变）|
+| `bash scripts/test/cep_freeze_reverse_verify.sh` | ✅ rc=0（commit A 前因其**基线**要求 freeze 绿而红 ⇒ **提交前假象**，见 §五步链）|
+| `bash scripts/test/cep_flow_support_reverse_verify.sh` | ✅ rc=0（commit A 前因末项 `git diff --quiet -- protocol_instances.json` 而红 ⇒ 同为**提交前假象**）|
+| `bash scripts/test/archive_verify_check.sh` | ✅ rc=0（扫面 **33** · 基线 33）|
+| `bash scripts/test/openspec_version_check.sh` | ✅ rc=0 |
+| `git status --porcelain`（排除 `.rddf/state/`）| ✅ **空**（工作区干净）|
+| ⚠️ `scripts/build/format.sh --check` | **21 个既有 C++ 文件**（与本单元无关）。⚠️ **实施中自查发现**：本单元对 `test/test_cep_schema.cc` 的编辑一度引入 **2 处**格式违规（债数 21 → 22）⇒ 已 `clang-format -i` ⇒ 债数回到 **21**；新增的 `test/test_cep_combination_contract.cc` **零违规** |
 
 ## 已用轮次
 
