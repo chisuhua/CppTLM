@@ -9,11 +9,24 @@ type: feature
   - ADR-CEP-20
   - ADR-CEP-06
   - ADR-CEP-12
-状态: "🟡 **已立项**(2026-11-20 · planner 起草 · 关联登记册 §6.3 归属表 I-7 · **硬前置 = `cep-invariant-modeling-batch1` 的 `CEN-Ib8` 落地**)"
+状态: "⏸ **已拆分 · ⛔ 不可开工**(2026-11-21 · architect 裁决 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §四 = I-7 拆 **I-7a** = `TreeManager::view_of` + **I-7b** = `.rddf/improvements/cep-tilelink-home-side-state-driver` · ⛔ 本文件规划的「**engine 侧**两处观测落点(对仗 mesif)」路径**与 `openspec/specs/cep-tilelink-runtime-engine/spec.md` 的边界行 + TLE-05 冲突**(引擎不持状态 / 不携带源态;「`Cap` 源不定」是 TileLink-C **规范事实**)⇒ 该路径作废 · ⚠️ 其「**硬前置 = `CEN-Ib8`(engine egress)**」的前提被本次裁决**否掉**(驱动不进引擎 ⇒ 无 egress 可依赖)⇒ ⛔ 本文件**不得**按原样开工 · 目标由 I-7a + I-7b 承接)"
 created: 2026-11-20
 ---
 
 # cep-tier2-second-family-tilelink: 档 2（协议级）观测面扩面到第 2 族 `tilelink_c`
+
+> ⛔ **⏸ 已拆分 · 不可开工（2026-11-21 · architect 裁决）**
+>
+> 本单元的目标（档 2 扩面到 `tilelink_c`）由两个 sub-id 承接：
+>
+> | sub-id | 内容 | 载体 |
+> |---|---|---|
+> | **I-7a** | `TreeManager::view_of`（const 纯查询）· 档 2 **仍单族** | ⏳ 待 planner 修订 AC + 登记 sub-id |
+> | **I-7b** | TileLink-C home 侧**消息簿记层** + tracker 侧观测 + 档 2 第二族 | `.rddf/improvements/cep-tilelink-home-side-state-driver.md` |
+>
+> ⛔ 本文件原规划的「**engine 侧**两处观测落点（对仗 mesif）」路径**作废** —— `openspec/specs/cep-tilelink-runtime-engine/spec.md` 的边界行 + **TLE-05** 禁止引擎持有状态 / 预设 from-state（grep 0 处 `TileLinkStateSpec::State` / transition matrix 的机械判据）。
+> ⚠️ 本文件的「硬前置 = `CEN-Ib8`(engine egress)」前提被同一裁决**否掉**：驱动**不进**引擎 ⇒ 无 egress 可依赖 ⇒ 该前置**不再成立**。
+> ⇒ 保留本文件作**历史留痕**（⛔ 原文不改，仅追加本段与状态行）· 开工前请以 I-7a / I-7b 为准。
 
 **主题**: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 

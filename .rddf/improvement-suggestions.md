@@ -23,9 +23,16 @@
 | [cep-stage-gate-p5-hardening](improvements/cep-stage-gate-p5-hardening.md) | P1 | 登记册 §6.2 S3-11 / 队列 2 **I-0**；architect Q-6a 裁决（P-5 判据形态 = **措辞锚定 + 命中数计数**，⛔ 不用行号）+ Q-6b/c/d（登记面收敛 / TODO 行规则 / 闸头转指）⇒ **顺序机关落地 + P-5 判据修正** | 2026-11-20 |
 | [cep-invariant-modeling-batch1](improvements/cep-invariant-modeling-batch1.md) | P1 | 登记册 §6.2 S1-1 批 1；architect Q-4（3 条 invariant 判据形态，载体 = 裁决记录 §2.4）+ M-1 + C-1 + C-2 + Q-5（13 键 golden）⇒ **3 条处置落地**（⛔ 非「3 条建模」）| 2026-11-20 |
 | [cep-invariant-modeling-batch2](improvements/cep-invariant-modeling-batch2.md) | P2 | 登记册 §6.2 S1-1 批 2；architect Q-4（schema 13→14 形态）+ 队列 2 **I-6a**（litmus change）⇒ **⏳ 阻塞**：user ratify 未落 | 2026-11-20 |
-| [cep-tier2-second-family-tilelink](improvements/cep-tier2-second-family-tilelink.md) | P1 | 登记册 §6.2 S1-2；队列 2 **I-7**；⇒ **⛔ BLOCKED**：`TreeManager` 无 `view_of`（仅 `lookup`，有副作用）⇒ 须 architect 裁 Q-a | 2026-11-20 |
+| [cep-tier2-second-family-tilelink](improvements/cep-tier2-second-family-tilelink.md) | P1 | ⛔ **⏸ 已拆分 · 不可开工**(2026-11-21 architect 裁决:engine 侧观测落点路径与 TLE-05 冲突 ⇒ 目标由 **I-7a**(`TreeManager::view_of`)+ **I-7b**(`cep-tilelink-home-side-state-driver`)承接)｜原登记:登记册 §6.2 S1-2；队列 2 **I-7**；⇒ **⛔ BLOCKED**：`TreeManager` 无 `view_of`（仅 `lookup`，有副作用）⇒ 须 architect 裁 Q-a | 2026-11-20 |
 | [cep-doc-hygiene-kpi-and-impl-state](improvements/cep-doc-hygiene-kpi-and-impl-state.md) | P2 | 登记册 §6.2 S2-6 / S3-6 / S3-7 / S3-8（A 类 2 项）+ 队列 2 I-1 / I-2 / I-3 | 2026-11-20 |
 | [cep-registry-stale-cleanup](improvements/cep-registry-stale-cleanup.md) | P1 | 登记册 §6.2 S2-6b/d / S3-1 / S3-2 / S3-9；architect Q-7（5 处 canonical = 台账 §11）+ Q-6e（R 编号空间冻结）⇒ **登记面收敛** | 2026-11-20 |
 | [cep-spec-stale-refs-r14-r15-r20](improvements/cep-spec-stale-refs-r14-r15-r20.md) | P2 | 登记册 §6.2 S3-8（B 类 **5** 项）；user Q-9（B → openspec change）+ 裁决记录 §10.9.3（R-12 / R-13 由 A 类改归 B 类）⇒ **走 openspec change**（占 1 KPI slot）| 2026-11-20 |
 | [cep-archforge-ci-failclosed](improvements/cep-archforge-ci-failclosed.md) | P2 | 登记册 §6.2 S2-8；user Q-10 拍板**方案甲**（缺席打 `[SKIP]` + CMake `SKIP_REGULAR_EXPRESSION` ⇒ ctest 记 **Skipped 而非 Passed**）⇒ 队列 2 **I-9** | 2026-11-20 |
 | [cep-openspec-version-pinning](improvements/cep-openspec-version-pinning.md) | P3 | 登记册 §6.2 S3-4；队列 2 **I-8**（`openspec` 版本未 pinning ⇒ 版本漂移不可察）| 2026-11-20 |
+
+## 2026-11-21 · I-6 / I-7 架构裁决后的两份 backlog（2 份）
+
+| Improvement | Priority | 来源 | 创建日期 |
+|---|---|---|---|
+| [cep-memory-model-operational-trace](improvements/cep-memory-model-operational-trace.md) | P2 | architect 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §三（登记册 §6.4 队列 2 的 **I-6 决策 2**：本仓**不定义** `rfe/fr/ws` 语义 ⇒ 独立立项）| 2026-11-21 |
+| [cep-tilelink-home-side-state-driver](improvements/cep-tilelink-home-side-state-driver.md) | P2 | architect 裁决记录同文件 §四（登记册 §6.4 队列 2 的 **I-7 决策 3** = I-7 拆 a/b；本单元 = **I-7b**；前置 = **I-7a** `TreeManager::view_of`）| 2026-11-21 |
