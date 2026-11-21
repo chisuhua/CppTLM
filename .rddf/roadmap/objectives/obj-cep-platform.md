@@ -27337,3 +27337,33 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **对 `INV-CEP-13-IC1` 的作用**：本 Entry 提供**证据来源**（litmus 工装 + 归档目录 + case 名），⛔ **该 invariant 本身仍未被移除登记** —— 移除属 **I-6**（schema 13→14 的结构化声明项落地后）。
 
 **冻结面五步链**：新增 main spec `openspec/specs/cep-litmus-falsification/spec.md` 落入 spec 侧**全量 glob**（`openspec/specs/cep-*/spec.md`）⇒ 冻结产物数 **89 → 90** ⇒ 本 Entry 为 `--update --authorized-by` 的**授权依据**（⛔ 冻结的是**已交付能力**的契约面，非占位半成品）。
+
+### Entry #514 — 2026-11-21 [builder](**CEP invariant 批 2 开工授权** —— 登记册队列 2 的 **I-6** · `INV-CEP-13-IC1` / `INV-CEP-13-IC3` 的声明面建模)
+
+**起因**：批 1 之后,`test/cep_invariant_deferrals.json` 里的 `⏭-unmodelled` **只剩** `INV-CEP-13-IC1` 与 `INV-CEP-13-IC3` 这 2 条 ⇒ 仓内 `⏭-unmodelled` 计数不归 0 ⇒ 「66 条全部有载体」永不成立(登记册 §6.2 S1-1 无法闭合)。两条的触发条件都要求**规格面修订**(结构化声明项 + schema 版本递增 + 已签批 ADR 的**追加式**修订)⇒ 拆为独立的批 2 单元(单独立项 + 单独立审批)。
+
+**形态来源**：architect 裁决 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §二(D-1 ~ D-5;oracle APPROVE + critic APPROVE_WITH_CONDITIONS,无 BLOCKER)· **用户 ratify R-2a ~ R-2f**(2026-11-21)⇒ 字段名 / 取值域 / 必填策略 / 消费方向 / 禁止项**已给定**,⛔ 实施侧不得自决。
+
+**授权范围(冻结面 · 三件)**：
+
+- `include/tlm/cep/protocol_instance.schema.json` —— 新增**可选**顶层属性 `combination_contract`(`properties` 13→14;`required` **仍 13** ⇒ `INV-CEP-12-IC1` 的机器载体零改动、镜像域零跨仓)
+- `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` —— **追加式** SU(⛔ 正文逐字不改)
+- `docs/adr/ADR-CEP-13-coherence-domain-ownership.md` —— **追加式** SU(⛔ 正文逐字不改)
+
+**本单元的载体落点**：
+
+- `include/tlm/cep/protocol_instance.schema.json`(声明面)
+- `test/test_cep_combination_contract.cc`(`INV-CARRIER: INV-CEP-13-IC1` / `INV-CEP-13-IC3` 的**判定级**载体)
+- `test/cep_combination_contract_expected.json`(逐实例期望值表)
+
+**处置**：`INV-CEP-13-IC1` 与 `INV-CEP-13-IC3` 的 `⏭-unmodelled` 登记**移除**(`test/cep_invariant_deferrals.json` ⇒ `deferrals == []`)⇒ 仓内 `⏭-unmodelled` 计数归 **0**、`⏭-pending` 计数归 **0** ⇒ 映射表闸的「66/66 = 66 项有牙载体」成立(`INV-CEP-04-IC4` 永久跳空 ⇒ 66 条已定义 + 1 跳空 = 67 编号位)。
+
+⚠️ **口径纪律(per 单元 AC-2)**：「66/66」**只能读作**「66 条全部**有载体**」—— ⛔ **不得**读作「每条都已给出判定结论」(`INV-CEP-09-IC2` = 超出范围的负断言)。
+
+⚠️ **诚实边界(声明 ≠ 判定)**：本单元建立的是**声明面**(结构化声明项 + 逐实例声明 + 条件判据)—— ⛔ **不等于**复合一致性公理已被检验(其判定载体归 backlog `cep-memory-model-operational-trace`;公理的可判定性仍受限于「本仓无操作级模型」)⇒ ⛔ 不得表述为「公理已成立 / 已被检验」。
+
+⚠️ **取值纪律**：本仓权威域 6 个实例的 `early_ack` **全为 `unknown`**(实测:仓内**无**任何逐协议的 early-ack 一手锚点;`ADR-CEP-13` 决策 4 的表是**行为类**而非逐协议表)⇒ ⛔ 不得编值 ⇒ ⛔ 不得把「声明面已建立」表述为「已取得协议事实」。
+
+**⛔ 范围纪律**：⛔ 不改 `INV-CEP-12-IC1` 的语义 · ⛔ 不给镜像域实例(`moesi_gpu` / `mesif`)与 `test/cep_instance_golden.json` 加该属性 · ⛔ 不新增实例 · ⛔ 不在本单元定义 `rfe`/`fr`/`ws` 语义 · ⛔ 不由声明项派生填充 litmus 语料(通道依赖图 ≠ 操作图 ⇒ 范畴错误 ⇒ 假绿)。
+
+**关联**：登记册 §6.4 队列 2 的 **I-6**(`cep-invariant-modeling-batch2`)· openspec change `cpptlm-cep-invariant-modeling-batch2` · 裁决记录 §二 · 前置单元 **I-6a**(`cpptlm-cep-litmus-falsification-harness`,已归档)

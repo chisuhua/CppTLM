@@ -305,6 +305,64 @@
           "type": "boolean"
         }
       }
+    },
+    "combination_contract": {
+      "description": "组合契约(per ADR-CEP-12 Status Update 2026-11-21):① bridging = 跨域桥接行为契约 ② compound_consistency = 复合一致性判据的实例化声明。⛔ 本属性为**可选**(不进 required);⛔ 边类语义不在本仓定义(见 ADR-CEP-13 决策 2)",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "bridging": {
+          "description": "跨域桥接行为契约(per ADR-CEP-13 决策 4:并发粒度由对端协议是否允许提前 ack 决定)。⚠️ 消费方向:桥 A↔B 的并发粒度读 **B**(对端)实例的 `early_ack`",
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "required": [
+            "early_ack"
+          ],
+          "properties": {
+            "early_ack": {
+              "description": "对端协议是否允许提前 ack(枚举前两项与 ADR-CEP-13 决策 4 表的两行「允许提前写 ack」/「不允许提前完成」**语义逐字对应**,kebab-case 转写;⛔ 非 ADR 原文的英文直译)。⛔ `unknown` = 无一手协议锚点时的**显式**声明(⛔ 不得编值);⛔ 本仓**无**「本实例是否参与跨域桥接」的判定面 ⇒ 该事实暂由 `unknown` 覆盖(见 ADR-CEP-12 Status Update 2026-11-21 的 P-9 说明)",
+              "enum": [
+                "allow-early-write-ack",
+                "deny-early-completion",
+                "unknown"
+              ]
+            }
+          }
+        },
+        "compound_consistency": {
+          "description": "复合一致性判据的实例化声明(per ADR-CEP-13 决策 2 + 决策 5 ①)。⛔ 本项只登记**取值域**与**可验范围**;⛔ 边类语义锚点 = ADR-CEP-13 决策 2(⛔ 本仓不复述、不重定义)",
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "required": [
+            "adopted"
+          ],
+          "properties": {
+            "adopted": {
+              "type": "boolean",
+              "description": "本实例参与的组合是否采用复合一致性判据"
+            },
+            "edge_classes": {
+              "type": "array",
+              "description": "判据在跨域关系上使用的边类取值域(⛔ 取值域 ≠ 语义定义)",
+              "items": {
+                "enum": [
+                  "rfe",
+                  "fr",
+                  "ws"
+                ]
+              }
+            },
+            "verification_scope": {
+              "type": "string",
+              "minLength": 1,
+              "description": "域内可验范围(per ADR-CEP-13 决策 5 ②:平台只尝试证伪,不提供无违例保证)"
+            }
+          }
+        }
+      }
     }
   }
 }

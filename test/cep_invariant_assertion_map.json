@@ -68,7 +68,7 @@
     "CEN-Ib8": [
       {
         "file": "test/test_cep_invariant_cen_ib8.cc",
-        "line": 93,
+        "line": 94,
         "kind": ".cc"
       }
     ],
@@ -278,7 +278,7 @@
     "INV-CEP-11-IC1": [
       {
         "file": "test/test_cep_schema.cc",
-        "line": 483,
+        "line": 507,
         "kind": ".cc"
       }
     ],
@@ -311,24 +311,31 @@
       },
       {
         "file": "test/test_cep_schema.cc",
-        "line": 307,
+        "line": 322,
         "kind": ".cc"
       },
       {
         "file": "test/test_cep_schema.cc",
-        "line": 621,
+        "line": 645,
         "kind": ".cc"
       },
       {
         "file": "test/test_cep_schema.cc",
-        "line": 646,
+        "line": 670,
         "kind": ".cc"
       }
     ],
     "INV-CEP-12-IC3": [
       {
         "file": "test/test_cep_schema.cc",
-        "line": 715,
+        "line": 739,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-13-IC1": [
+      {
+        "file": "test/test_cep_combination_contract.cc",
+        "line": 253,
         "kind": ".cc"
       }
     ],
@@ -336,6 +343,13 @@
       {
         "file": "test/test_cep_instance_declaration_contract.cc",
         "line": 339,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-13-IC3": [
+      {
+        "file": "test/test_cep_combination_contract.cc",
+        "line": 185,
         "kind": ".cc"
       }
     ],

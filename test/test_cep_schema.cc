@@ -231,7 +231,8 @@ namespace {
 
 } // namespace
 
-TEST_CASE("[cep][schema] schema 必含 13 个顶层属性(7 字段组的划分见下一用例)", "[cep][schema]") {
+TEST_CASE("[cep][schema] schema 必含 13 个顶层属性 + 1 个可选声明项(7 字段组的划分见下一用例)",
+          "[cep][schema]") {
     const json s = load_schema();
     REQUIRE(s.contains("properties"));
     const auto& props = s.at("properties");
@@ -249,15 +250,30 @@ TEST_CASE("[cep][schema] schema 必含 13 个顶层属性(7 字段组的划分�
                                              "vc_binding", // 前提假设面
                                              "sharer_tracker",
                                              "combination_capabilities"}; // 组合能力
-    REQUIRE(props.size() == groups.size()); // additionalProperties 是 properties 的兄弟,不在其内
+    // ⚠️ 第 14 个属性 = **可选**声明项(per 登记册队列 2 的 I-6 · 裁决 §2.1):
+    //    `combination_contract` ⛔ **不进** `required` ⇒ `INV-CEP-12-IC1` 的「13 个顶层属性」
+    //    = **必含**(`required`)属性数,逐字仍真 ⇒ 其机器载体零改动、镜像域零跨仓。
+    const std::vector<std::string> optional = {"combination_contract"};
+    REQUIRE(props.size() ==
+            groups.size() + optional.size()); // additionalProperties 是 properties 的兄弟,不在其内
     for (const auto& g : groups) {
         INFO("schema 缺字段组: " << g);
         REQUIRE(props.contains(g));
+    }
+    for (const auto& o : optional) {
+        INFO("schema 缺可选声明项: " << o);
+        REQUIRE(props.contains(o));
     }
     REQUIRE(s.at("required").size() == groups.size());
     for (const auto& g : groups) {
         INFO("required 未列 " << g);
         REQUIRE(std::find(s.at("required").begin(), s.at("required").end(), g) !=
+                s.at("required").end());
+    }
+    // ⚠️ 可选项 ⛔ **不得**进 `required`(进 `required` ⇒ IC1 语义变更 + 4 处断言 + 镜像域跨仓)
+    for (const auto& o : optional) {
+        INFO("可选声明项被塞进 required: " << o);
+        REQUIRE(std::find(s.at("required").begin(), s.at("required").end(), o) ==
                 s.at("required").end());
     }
 }
@@ -415,12 +431,16 @@ TEST_CASE("[cep][schema] status 是计数口径且枚举封闭", "[cep][schema]"
     REQUIRE(st == std::set<std::string>({"planned", "implemented", "excluded"}));
 }
 
-TEST_CASE("[cep][schema] schema 字段组完整性(7 组 / 13 个顶层属性)", "[cep][schema]") {
+TEST_CASE("[cep][schema] schema 字段组完整性(7 组 / 13 个必含属性 + 1 个可选属性)",
+          "[cep][schema]") {
     // ⚠️ 口径修订(2026-10-21,per 代码复审):「字段组数」此前在 4 处写着
     //    6 / 7 / 8 / 13 四个不同数字且**无人断言**。现统一为 7 组 / 13 属性。
+    // ⚠️ 口径修订(2026-11-21,per 登记册队列 2 的 I-6):schema 属性**总数**为 **14** ——
+    //    第 14 项 `combination_contract` 是**可选**声明项(⛔ 不进 `required`)⇒
+    //    「13 个必含属性」= `required` 集合,「+ 1 个可选属性」= `properties` 减去它。
     const json s = load_schema();
     const json props = s.at("properties");
-    REQUIRE(props.size() == 13);
+    REQUIRE(props.size() == 14);
 
     // 7 个字段组的显式划分(per ADR-CEP-12 IC1 口径修订)
     const std::vector<std::vector<std::string>> groups = {
@@ -434,7 +454,7 @@ TEST_CASE("[cep][schema] schema 字段组完整性(7 组 / 13 个顶层属性)",
     };
     REQUIRE(groups.size() == 7);
 
-    // 分组并集 == schema 的全部顶层属性(不多不少)
+    // 分组并集 == schema 的**必含**属性集合(不多不少)
     std::set<std::string> union_ids;
     for (const auto& g : groups) {
         for (const auto& k : g) {
@@ -444,7 +464,13 @@ TEST_CASE("[cep][schema] schema 字段组完整性(7 组 / 13 个顶层属性)",
             REQUIRE(props.contains(k));
         }
     }
-    REQUIRE(union_ids.size() == props.size());
+    // ⚠️ 拆成三条(per I-6 AC-4③):原式 `union_ids.size() == props.size()` 额外证明了
+    //    「7 组覆盖 schema **全部**属性」⇒ 若只弱化成「并集 == `required` 集合」是**净损失**
+    //    (新属性漏登记将不再被发现)⇒ 保留「恰好多 1 个」+「多的正是 `combination_contract`」。
+    const std::set<std::string> required_ids(s.at("required").begin(), s.at("required").end());
+    REQUIRE(union_ids == required_ids);
+    REQUIRE(props.size() - union_ids.size() == 1);
+    REQUIRE(props.contains("combination_contract"));
 
     // ADR 侧的表述必须与本口径一致(防止口径再次漂移)
     const auto adr12 = read_file(

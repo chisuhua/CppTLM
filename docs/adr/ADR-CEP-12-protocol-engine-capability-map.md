@@ -1106,3 +1106,71 @@ CXL / MOESI-GPU / MESIF 走**软件一致性 / 无 collective 能力** ⇒ 强�
 - [ ] 冻结面五步授权链已执行(⛔ 与 `ADR-CEP-01` 的 SU **同一次** `--update` 内重算;`artifact_count` 仍 **78**)
 
 **关联**:台账 **Entry #347**(开工授权)· **#349**(A2 实施回执)· **#351**(A4 并排取证)· **#344**(W0 方案 + K-2 裁决)· `ADR-CEP-01` 的 `Status Update 2026-11-12`(`R1-c` 的锚点)· `docs/architecture/cep/fabric-transport.md` R1 / R5 · `include/tlm/cep/collective_plane_contract.hh`(`R1-b` 实现)
+
+## Status Update(2026-11-21, per 台账 Entry #514)—— 新增**可选**声明项 `combination_contract`(schema 13→14)
+
+> **性质**: 追加式修订(per `AGENTS.md`「ADR 不可变 + Status Update」先例,形态照本 ADR §8)——
+> §2 决策 1 的 yaml 列举、§3 `INV-CEP-12-IC1` ~ `IC3` 的**编号与数量**、§4 抓取点、§6 决策汇总、
+> §7 修订记录 —— **原文不改**;**自本段起以本段文本为准**。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md` Entry **#514**(`adr-amendment`)
+> **落地载体**: `include/tlm/cep/protocol_instance.schema.json`(第 14 个属性)·
+> `include/tlm/cep/protocol_instances.json`(本仓权威域实例)·
+> `test/test_cep_combination_contract.cc`(`INV-CARRIER: INV-CEP-13-IC1` / `IC3` 的判定级载体)
+> **登记册**: §6.4 队列 2 的 **I-6**(`cep-invariant-modeling-batch2`)
+
+### 取代范围
+
+> **取代范围**:本段只**新增**一个**可选**顶层属性 `combination_contract`,并**追加**两处口径澄清;
+> §2 决策 1 的 yaml 顶层键列举、§3 `INV-CEP-12-IC1` ~ `IC3` 的**编号与数量**、§4 抓取点、
+> §6 决策汇总、§7 修订记录 —— **原文逐字不改**;**自本段起以本段文本为准**。
+> ⚠️ `INV-CEP-12-IC1` 的**语义不变**(`required` 集合仍 13 项、键集合逐名一致 ⇒ 其机器载体**零改动**)。
+
+### ① 新增声明项 + 两处口径澄清
+
+- **新增**:`combination_contract` —— **可选**顶层属性;schema 的 `properties` 由 **13** 项增至 **14** 项,
+  `required` **仍为 13** 项 ⇒ `INV-CEP-12-IC1` 的「13 个顶层属性」**逐字为真**、机器载体**零改动**、
+  镜像域(`moesi_gpu` / `mesif`,权威在 ArchForge)**零跨仓改动**。
+- **口径澄清 ①(必读)**:本 ADR §3 `INV-CEP-12-IC1` 的「**13 个顶层属性**」指**必含**(`required`)属性数;
+  schema 属性**总数**为 **14**,第 14 项 `combination_contract` 为**可选**声明项。
+- **口径澄清 ②(被取代表述)**:§3 `INV-CEP-12-IC1` 的口径修订括注「(= schema 实际属性数)」——
+  **自本段起该括注仅指必含属性数**(⛔ 正文不改;该括注属正文 ⇒ 以本段为准)。
+  ⇒ 避免读者把「13」误读成 `properties` 数而判定契约自相矛盾。
+
+### ② 子声明项(形态**逐字**取裁决记录 §2.2)
+
+- `bridging.early_ack` —— **恰 3** 值枚举:`allow-early-write-ack` / `deny-early-completion` / `unknown`;
+  前两项与 `ADR-CEP-13` 决策 4 表的两行「允许提前写 ack」/「不允许提前完成」**语义逐字对应**(kebab-case 转写)。
+  `bridging.required` **恰** `["early_ack"]`。
+  ⚠️ `unknown` = **无一手协议锚点**时的**显式**声明(⛔ **不得编值**);⛔ 枚举**不含** `not-applicable`
+  (本仓**无**「本实例是否参与跨域桥接」的判定面 ⇒ 该值无适用 predicate ⇒ 不可判的声明项)。
+- `compound_consistency` —— `adopted` / `edge_classes` / `verification_scope`;
+  `compound_consistency.required` **恰** `["adopted"]`;
+  **条件规则**:`adopted == true` ⇒ `edge_classes` **非空** ∧ `verification_scope` **非空**
+  (`false` ⇒ 允许两者为空)。⛔ schema **不写** `if/then` ⇒ 该规则落**判据**。
+
+### ③ 消费方向
+
+桥 A↔B 的**并发粒度读 B**(对端)实例的 `early_ack`(per `ADR-CEP-13` 决策 4「对端协议是否允许提前 ack」)。
+
+### ④ ⛔ 边类语义**不在本 ADR 定义**
+
+`edge_classes` 只登记**取值域**(`rfe` / `fr` / `ws`);语义锚点 = `ADR-CEP-13` 决策 2 的公式
+(⛔ 本 ADR **不复述、不重定义** ⇒ 避免**第二真源**)。定义工作归独立立项
+(backlog `cep-memory-model-operational-trace`)—— 选哪个 memory model 家族属**架构决策**,不在本段顺手做掉。
+
+### ⑤ ⛔ 禁止派生填充 litmus 语料
+
+`combination_contract` **不得**被用作 `test/cep_litmus_corpus.json` 的语料来源 ——
+工装的图是**通道依赖图**(顶点 = 实例 × 网络 × VC),而 `rfe`/`fr`/`ws` 是**操作级**关系
+⇒ 由声明项派生的环**不是**对复合一致性公理的证伪(范畴错误 ⇒ 假绿)。
+
+### ⑥ 落盘检查项
+
+本段全文**不得**出现旧字段组数(6 组)的字面串 —— 那是 `test/test_cep_schema.cc` 的**负向断言**所禁
+(保持该断言绿 ⇒ 本段只能以「7 组」口径表述)。
+
+### ⑦ 诚实边界(声明 ≠ 判定)
+
+本段登记的是**声明面**(结构化声明项 + 逐实例声明 + 条件判据)**成立** ——
+⛔ **不等于**复合一致性公理已被检验(其判定载体归 backlog `cep-memory-model-operational-trace`;
+公理的可判定性仍受限于「本仓无操作级模型」)⇒ ⛔ **不得**表述为「公理已成立 / 已被检验」。

@@ -765,6 +765,14 @@ add_test(NAME cep_invariant_batch1_ledger_check
 set_tests_properties(cep_invariant_batch1_ledger_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# invariant 批 2 的**台账锚可解析**闸(per 单元 AC-1④ · 台账 Entry #514)
+#  —— 为什么要独立:映射表闸的判据 ④ 只校验**仍在 deferrals 里**的条目;本批 2 条已移出
+#     deferrals(判据 ③「载体 ∩ ⏭ = ∅」)⇒ ④ 对它们不再生效 ⇒ 没有本闸,"台账已记录" 就只是自述
+add_test(NAME cep_invariant_batch2_ledger_check
+         COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/test/cep_invariant_batch2_ledger_check.py)
+set_tests_properties(cep_invariant_batch2_ledger_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # 复合一致性公理的 litmus **证伪工装**闸(per change `cpptlm-cep-litmus-falsification-harness`
 #  · 登记册队列 2 的 I-6a · `ADR-CEP-13` 决策 5 ②「实验只能证伪」)
 #  —— 两条臂:① 正控(判定诚实:不可证伪 + 具体原因 + 覆盖边界 + 无「已证明」表述)

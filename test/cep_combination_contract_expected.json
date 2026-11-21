@@ -1,0 +1,41 @@
+{
+  "schema": "cep-combination-contract-expected/v1",
+  "note": "本仓权威域协议实例的 `combination_contract.bridging.early_ack` **期望值表** —— 逐实例字面量,⛔ 不从声明源推导。判据载体 = `test/test_cep_combination_contract.cc`;声明源 = `include/tlm/cep/protocol_instances.json`(唯一权威)。⚠️ 本表是**变更检测器**,⛔ **不是独立 oracle** —— 值的权威仍是声明源;本表的契约力在于「声明值变更必须同步本表 + 附台账 Entry,否则红」。⚠️⚠️ **`unknown_count` = 「取 `unknown` 的实例数」的计数**,⛔ **不是**「声明面已有信息量」的证据 —— 当前 6 个实例**全部**为 `unknown`(实测 2026-11-21:仓内**无任何逐协议**的 early-ack 一手锚点;`ADR-CEP-13` 决策 4 的表是**行为类**(「允许提前写 ack」/「不允许提前完成」)**而非逐协议表**)⇒ ⛔ 不得把「声明面已建立」表述为「已取得协议事实」。",
+  "domain": {
+    "field": "repo_owned_instance_ids + authority_migrations[].instance_id",
+    "note": "域 = 声明源 `repo_owned_instance_ids` **∪** `authority_migrations[].instance_id` 的全集(权威在本仓;口径同 `scripts/test/cep_decl_alignment_check.sh`);⛔ 不按 `status` 过滤;镜像实例(`moesi_gpu` / `mesif`,权威在 ArchForge)**不在本表范围**。"
+  },
+  "instances": {
+    "chi_rnf": {
+      "bridging": {
+        "early_ack": "unknown"
+      }
+    },
+    "cxl_2_0": {
+      "bridging": {
+        "early_ack": "unknown"
+      }
+    },
+    "cxl_3_0_symmetric": {
+      "bridging": {
+        "early_ack": "unknown"
+      }
+    },
+    "nvlink_4": {
+      "bridging": {
+        "early_ack": "unknown"
+      }
+    },
+    "tilelink_c": {
+      "bridging": {
+        "early_ack": "unknown"
+      }
+    },
+    "ualink_4": {
+      "bridging": {
+        "early_ack": "unknown"
+      }
+    }
+  },
+  "unknown_count": 6
+}

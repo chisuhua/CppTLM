@@ -217,6 +217,11 @@
         "concurrent": true,
         "hierarchical": true,
         "heterogeneous": true
+      },
+      "combination_contract": {
+        "bridging": {
+          "early_ack": "unknown"
+        }
       }
     },
     {
@@ -279,6 +284,11 @@
         "concurrent": true,
         "hierarchical": true,
         "heterogeneous": true
+      },
+      "combination_contract": {
+        "bridging": {
+          "early_ack": "unknown"
+        }
       }
     },
     {
@@ -341,6 +351,11 @@
         "concurrent": true,
         "hierarchical": true,
         "heterogeneous": true
+      },
+      "combination_contract": {
+        "bridging": {
+          "early_ack": "unknown"
+        }
       }
     },
     {
@@ -402,6 +417,11 @@
         "concurrent": true,
         "hierarchical": true,
         "heterogeneous": true
+      },
+      "combination_contract": {
+        "bridging": {
+          "early_ack": "unknown"
+        }
       }
     },
     {
@@ -464,6 +484,11 @@
         "concurrent": true,
         "hierarchical": true,
         "heterogeneous": true
+      },
+      "combination_contract": {
+        "bridging": {
+          "early_ack": "unknown"
+        }
       }
     },
     {
@@ -524,6 +549,11 @@
         "concurrent": true,
         "hierarchical": false,
         "heterogeneous": true
+      },
+      "combination_contract": {
+        "bridging": {
+          "early_ack": "unknown"
+        }
       }
     }
   ],

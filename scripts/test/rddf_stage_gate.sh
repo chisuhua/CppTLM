@@ -597,13 +597,24 @@ for q in QUEUE2:
 # 跳序目标 = 它的**后继**（后继 done 而前驱未 done ⇒ 跳序）
 if nxt is not None:
     i = QUEUE2.index(nxt)
+    def mark(q, st):
+        for k, l in enumerate(lines):
+            if l.startswith(q + "\t"):
+                parts = l.split("\t"); parts[4] = st; lines[k] = "\t".join(parts)
     if i + 1 < len(QUEUE2):
         tgt = QUEUE2[i+1]
-        for k, l in enumerate(lines):
-            if l.startswith(tgt + "\t"):
-                parts = l.split("\t"); parts[4] = "done"; lines[k] = "\t".join(parts)
+        mark(tgt, "done")
         open(p, "w", encoding="utf-8").write("\n".join(lines))
         print(f"{nxt} {tgt}")
+    elif i > 0:
+        # ⚠️ **队尾特例(2026-11-21 实测 I-6 完成后暴露)**:`nxt` 已是**最后一项**
+        #    ⇒ 无「后继」可标 done ⇒ 原实现什么也不改 ⇒ `_mut2_pair` 为空 ⇒ 自测误报
+        #    「P-2a 无鉴别力」。⇒ 反向构造:把 `nxt` 标 done **且**把它的前驱改回 pending
+        #    ⇒ P-2a 仍看到「q done 而前驱未 done」⇒ 判据可被变异驱动(⛔ 判据本身不动)。
+        prevq = QUEUE2[i-1]
+        mark(nxt, "done"); mark(prevq, "pending")
+        open(p, "w", encoding="utf-8").write("\n".join(lines))
+        print(f"{nxt} {prevq}")
 PYEOF
     )"
     _mut2="$(cd "$_shadow" && bash scripts/test/rddf_stage_gate.sh --phase queue2 2>&1 | grep -c 'P-2a 队列 2 跳序')"

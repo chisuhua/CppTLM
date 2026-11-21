@@ -283,3 +283,41 @@ ArchForge 的评估过程(答复回执 `cep-interface-alignment-response-2026-10
 - 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
 
 **关联**:台账 **Entry #316**(授权 + 双审处置)· **#315 / #314**(第 2/1 批)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`
+
+## Status Update(2026-11-21, per 台账 Entry #514)—— `V-13-4` / `V-13-5` 的「机器载体不可得」判读被取代
+
+> **性质**: 追加式修订(per `AGENTS.md`「ADR 不可变 + Status Update」先例)——
+> §2 决策 2 / 决策 4 / 决策 5、§3 `INV-CEP-13-IC1` ~ `IC3`、§4 抓取点、§6 决策汇总、§7 修订记录 ——
+> **原文不改**;**自本段起以本段文本为准**。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md` Entry **#514**(`adr-amendment`)
+> **登记册**: §6.4 队列 2 的 **I-6**(`cep-invariant-modeling-batch2`)
+> ⚠️ 本段与 `ADR-CEP-12` 的同批 SU **同一 Entry 授权**即可(无需另立 Entry)。
+
+### ① 被取代的判读
+
+§Verification 的 **V-13-4**(复合一致性模型 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 的**可判定性**)
+与 **V-13-5**(跨域桥接并发粒度由「对端协议是否允许提前 ack」决定)当前标注
+「⚠️ **机器载体不可得**」⇒ **本段登记**:该判读**已被 I-6 的载体取代** ——
+
+- **schema 侧**:`combination_contract` 的两个子声明项
+  (`bridging.early_ack` 的枚举 + 逐实例声明;`compound_consistency` 的取值域 + 条件规则);
+- **实现侧**:`// INV-CARRIER: INV-CEP-13-IC1` 与 `// INV-CARRIER: INV-CEP-13-IC3`
+  的**判定级**载体(`test/test_cep_combination_contract.cc`)——
+  两条已从 `test/cep_invariant_deferrals.json` 的 `⏭-unmodelled` 登记中**移除**
+  ⇒ 仓内 `⏭-unmodelled` 计数归 **0**。
+
+### ② ⛔ 被取代的只是「载体不可得」这一判读
+
+**V-13-4 / V-13-5 的判据内容**(公理形式、保守/激进粒度规则)**逐字不变** —— 本段只登记
+「载体从无到有」这一**状态**;⛔ 不改判据、不放宽判据、不重新解释公理。
+
+### ③ ⚠️ 诚实边界(声明 ≠ 判定)
+
+载体成立 **不等于** 公理已被判定 —— 复合一致性公理的**可判定性**仍受限于
+「**本仓无操作级模型**」(操作级模型 + 边类语义定义归 backlog `cep-memory-model-operational-trace`)
+⇒ ⛔ **不得**表述为「公理已成立 / 已被检验」。本段登记的是**声明面**成立。
+
+### ④ 边类语义的归属(⛔ 本 ADR 仍是唯一真源)
+
+`combination_contract.compound_consistency.edge_classes` 只登记**取值域**(`rfe` / `fr` / `ws`);
+语义**锚点 = 本 ADR 决策 2 的公式**(⛔ 本仓不复述、不重定义 ⇒ 避免第二真源)。
