@@ -1,8 +1,21 @@
 # 验收报告 · `cpptlm-cep-litmus-falsification-harness`（登记册队列 2 的 **I-6a**）
 
+- **角色**：builder（**原始验收** —— 本报告在**归档前**完成，非追溯补验）
+- **原始验收 · 2026-11-21**
+- **文件名订正（2026-11-21 · I-10 追溯补验时）**：本报告原名 `cep-litmus-falsification-harness-verify.md`（**缺 `cpptlm-` 前缀**）⇒ 不满足闸的 join 规则 `strip_date_prefix(archive_dir) + "-verify.md"` ⇒ 已 `git mv` 改名（内容未改）；⚠️ 因该 change **归档前已完成验收**，本报告**不得**自称「原归档未验 / 追溯补验」⇒ 闸的 provenance 判据须同时接受两种形态（`原始验收` / `追溯补验`）。
+
 - **验收对象**：登记册 §6.4 队列 2 的 **I-6a**（litmus change 落地 · `INV-CEP-13-IC1` 的证据来源）· 实施路径 §6.9 阶段 ②
 - **实施形态**：**新建 1 个 OpenSpec change** ⇒ 实施 ⇒ **归档**（✅ 已完成归档语义：实现已落地 + delta spec 已合并）
 - **验收角色**：builder 侧验收 · **日期**：2026-11-21 · **已用轮次**：**1/3**
+
+## 判据来源
+
+| 来源 | 位置 |
+|---|---|
+| 完成判据 | 登记册 §6.4 队列 2 的 **I-6a** 行（「1 个 openspec change 归档」+「I-6 的前置之一成立」）|
+| 实施载体 | 归档目录 `openspec/changes/archive/2026-11-21-cpptlm-cep-litmus-falsification-harness/` · 工装 `include/tlm/cep/litmus_falsifier.hh` · 语料 `test/cep_litmus_corpus.json` · 测试 `test/test_cep_litmus_falsification.cc` · 闸 `scripts/test/cep_litmus_falsification_check.sh` · main spec `openspec/specs/cep-litmus-falsification/spec.md` |
+| 台账锚 | **Entry #513**（授权与证据来源登记）|
+| 关联 | `ADR-CEP-13` 决策 2（复合一致性公理）/ 决策 5 ②（平台不提供无违例保证）|
 
 ## 一、I-6a 的完成判据（登记册 §6.4 I-6a 行）
 
@@ -10,6 +23,13 @@
 |---|:--:|---|
 | `ls openspec/changes/archive/ \| grep -c litmus` ≥ **1** | ✅ | → **1**：`2026-11-21-cpptlm-cep-litmus-falsification-harness/`（proposal/design/tasks/specs/.openspec.yaml 齐全）|
 | ⇒ **I-6 的前置之一**成立 | ✅ | 台账 **Entry #513** 记录证据来源（归档目录 + 工装 + 语料 + case 名）；⚠️ `INV-CEP-13-IC1` **本身仍未移除登记**（移除属 I-6）|
+
+## 失败项与路由建议
+
+| # | 失败 / 不可判项 | 路由 |
+|:--:|---|---|
+| F-1 | **无失败项**（本单元的 5 条完成判据全部有工具证据）—— ⚠️ 但存在**一处遗留**：本报告原名缺 `cpptlm-` 前缀 ⇒ 不满足归档验收报告的 join 规则 ⇒ 已于 2026-11-21（I-10 追溯补验时）`git mv` 改名并补「判据来源」段 | ⇒ 已闭（改名 + 补段）；⇒ **命名规范**已入 I-10 的闸面（未来归档 change 的报告名 **必须** == `strip_date_prefix(archive_dir) + "-verify.md"`）|
+| F-2 | ⚠️ **本报告的 provenance 形态与 I-10 的 8 份不同**：本 change **归档前**已完成验收 ⇒ 本报告是「**原始验收**」形态（⛔ 不得自称「原归档未验 / 追溯补验」）⇒ 闸的 provenance 判据须同时接受两种形态 | ⇒ 已并入 I-10 的闸设计（`原始验收` / `追溯补验` 二选一 + `追溯补验` 形态须同时含「原归档未验」）|
 
 ## 二、关键诚实边界（**本单元的核心价值**）
 

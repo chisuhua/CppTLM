@@ -783,6 +783,15 @@ add_test(NAME openspec_version_check
 set_tests_properties(openspec_version_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# 归档验收报告的**存在性 + 形态**闸(per 登记册队列 2 的 I-10)
+#  —— 统一覆盖 `openspec/changes/archive/` 中日期 >= 2026-11-12 的目录(乙层);
+#     甲层(< 2026-11-12)是**一次性历史封存**,⛔ 不按名字逐项豁免
+#  —— fail-closed:① 畸形目录名 ② 扫面不可见(基线 = scripts/test/archive_verify_baseline.txt)
+add_test(NAME archive_verify_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/archive_verify_check.sh)
+set_tests_properties(archive_verify_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # M1 产物冻结校验(per obj-cep-platform §9.2 M1「产物冻结先于解读」)
 # —— 独立于 lint,便于单独定位"冻结产物被改动"
 add_test(NAME cep_freeze_check
