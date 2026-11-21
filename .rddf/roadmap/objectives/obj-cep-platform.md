@@ -27436,3 +27436,36 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 - ⚠️ `artifact_count` **不变**（不新增冻结成员：delta 走既有 spec；归档目录只匹配 `*cpptlm-cep-umbrella` 形态 ⇒ 不入集）
 
 **关联**：登记册 §6.4 队列 2 的 **I-7**（= **I-7a** ✅ + **I-7b** ✅）· 裁决 `.rddf/reviews/cep-i7b-adjudication-2026-11-21.md` · 交办包 `.rddf/reviews/cep-i7b-preflight-2026-11-21.md` · 验收报告 `.rddf/reviews/cpptlm-cep-tilelink-home-state-driver-verify.md`
+
+### Entry #517 — 2026-11-21 [builder](**R-13a 直改放行 + I-10 三处偏离追认** —— 两项均为**用户拍板**，⛔ 非实施侧自裁)
+
+**起因**：队列 2 收口后剩两项需用户裁决（R-13a 是 I-11 的唯一未闭合项；I-10 有 3 处实现相对草案的偏离待追认）。用户 2026-11-21 明确：**R-13a 授权直改** + **追认 I-10 的 F-1 / F-2 / F-4**。
+
+**① R-13a（直改 main spec 状态行）**
+
+| 项 | 内容 |
+|---|---|
+| 文件 | `openspec/specs/pcie-ip-microarch/spec.md:296` |
+| 改前 | `**状态**: 📋 Spec — 等待评审 + Phase 1 启动实施` |
+| 改后 | `**状态**: ✅ 已实施 —— Phase 1-8 全部交付(链路层 / 编码 / PHY 数字控制 / SR-IOV / AXI Stream Adapter / AXI4Mapper / Host Bypass + RC / 整合交付)` |
+| 为什么直改（而非 delta） | AC-0 spike 结论（`.rddf/reviews/cep-spec-stale-refs-r14-r15-r20-ac0-spike.md`）：该行是 **spec trailer**，`openspec` 的 delta 语法**无法表达**对它的修改（MODIFIED 只覆盖 Requirement 体），且任何触到该 capability 的归档都会把中文 trailer 整段清掉 ⇒ **delta 不可行** |
+| 一致性依据 | 新值与 `AGENTS.md` §PHASE STATE 的「**PCIe EP 微架构 = Phase 1-8 全部交付**」**逐字同源**（⛔ 不新造口径） |
+| 取证 | ① 无任何闸/测试断言该字面量（`grep -rn "等待评审 + Phase 1 启动实施" scripts/test/ test/` = 0）② `openspec validate pcie-ip-microarch --type spec` 仅剩**存量** WARNING（requirement 文本过长），⛔ 非本次引入 ③ `cep_doc_ref_check.sh --strict` / `docs_sync_check.sh --strict` rc=0 |
+
+⚠️ **同形态残留（未授权 · 不顺手改）**：另 5 份 PCIe spec 的 `**状态**` 行同样陈旧 —— `link-layer-and-fc:92` / `130b-encoding:56` / `axi-stream-adapter:72` / `axi4-mapper:51` / `host-bypass-and-rc:49`（各自写「Phase N 实施中」）⇒ 与 R-13a **同根因**，但 **R-13a 只授权 `pcie-ip-microarch` 一份** ⇒ 记为观察项，待单独授权（⛔ 不得据本次授权扩大范围）。
+
+**② I-10 三处偏离追认（用户 2026-11-21）**
+
+| # | 偏离（原报告 F-编号） | 内容 | 追认结论 |
+|:--:|---|---|---|
+| 1 | **F-1 / F-4**（AC-4 provenance 形态） | 第 9 份补验（`cpptlm-cep-litmus-falsification-harness`）**归档前已验收** ⇒ 强制写「原归档未验 / 追溯补验」是**假声明**；⇒ 闸的 provenance 判据放宽为**两形态**（原始验收 / 追溯补验） | **追认**：保留两形态判据；⛔ 不为凑 AC-4 字面而伪造 provenance |
+| 2 | **F-2**（AC-10 force-add 覆盖） | AC-10 原写「范围零改动」，实际需 `force-add` 乙层 **30** 个归档目录（`.gitignore:64` ⇒ 归档目录默认不入库，CI 上不可见 ⇒ 闸空转绿） | **追认**：`force-add` 是**闸可见性前提**，⛔ 不算越界；AC-10 的「范围零改动」按「**除归档目录 force-add 外的零改动**」解释 |
+| 3 | （F-4 的下半）闸判据放宽 | `archive_verify_check.sh` 的 provenance 判定从「单一形态」放宽为「两形态 OR」 | **追认**：与 ① 同源，判据强度未降（三检 + 去空白 ≥400 字符仍全量生效） |
+
+⇒ 三处均**保留现状**（⛔ 不回改 I-10 已归档产物 / 不回改其验收报告正文）；追认记录追加在 `.rddf/reviews/cep-d1-archive-verify-backfill-verify.md` 的「用户追认」段。
+
+**③ 三项定向补验（同批收口）**：甲层抽检命中的 3 份已定向补验（`.rddf/reviews/archive-audit-f3-targeted-2026-11-21.md`，commit `7d3bffa4`）⇒ **0 项实现债**；其中 `t3-mapping-survey` 的「真债」判定**订正为形态债**（无 delta spec 是该 change 的明文设计）。
+
+**冻结面**：⛔ **零 CEP 冻结面成员改动**（`openspec/specs/pcie-ip-microarch/spec.md` 不在 CEP 的 `openspec/specs/cep-*/spec.md` glob 内）⇒ **不触五步链**；`artifact_count` 90 不变。
+
+**关联**：R-13a ← `.rddf/reviews/cpptlm-spec-stale-refs-b-class-verify.md` F-1（本 Entry 闭合）· I-10 ← `.rddf/reviews/cep-d1-archive-verify-backfill-verify.md` F-1/F-2/F-4（本 Entry 追认）· AC-0 spike ← `.rddf/reviews/cep-spec-stale-refs-r14-r15-r20-ac0-spike.md`

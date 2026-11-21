@@ -51,3 +51,17 @@
 ## 已用轮次
 
 **1/3**（第 1 轮；无返工轮 —— 唯一返工点是 **AC-0 spike 首版的 trailer 判断**：首版写「合并器不会自动规范化 trailer」⇒ dry-run 实测**中文 trailer 会被丢弃** ⇒ 已更正 spike 记录，未产生代码返工）。
+
+---
+
+## 补记（2026-11-21 · 台账 Entry #517）—— **F-1 / R-13a 已闭合**
+
+> ⚠️ 追加段：⛔ 不改上文判定。
+
+| 项 | 原状态 | 现状态 |
+|---|---|---|
+| **F-1**（R-13a 未闭合） | `openspec/specs/pcie-ip-microarch/spec.md:296` 仍写 `**状态**: 📋 Spec — 等待评审 + Phase 1 启动实施`，**待 architect 裁** | ✅ **已闭合**：用户 2026-11-21 **授权直改**（无 delta 路径，理由见 AC-0 spike）⇒ 新值 `✅ 已实施 —— Phase 1-8 全部交付(链路层 / 编码 / PHY 数字控制 / SR-IOV / AXI Stream Adapter / AXI4Mapper / Host Bypass + RC / 整合交付)`（与 `AGENTS.md` §PHASE STATE 同源） |
+
+取证：无闸/测试断言该字面量（`grep -rn "等待评审 + Phase 1 启动实施" scripts/test/ test/` = 0）· `openspec validate pcie-ip-microarch --type spec` 仅剩**存量** WARNING · `cep_doc_ref_check.sh --strict` / `docs_sync_check.sh --strict` rc=0。
+
+⚠️ **同根因残留（未授权）**：另 5 份 PCIe spec 的状态行同样陈旧（`link-layer-and-fc:92` / `130b-encoding:56` / `axi-stream-adapter:72` / `axi4-mapper:51` / `host-bypass-and-rc:49`）—— 待单独授权，⛔ 不随本次扩大。

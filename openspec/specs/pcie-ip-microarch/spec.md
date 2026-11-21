@@ -293,7 +293,7 @@ CppTLM **SHALL** 提供独立 `HostBypassTLM` 组件(允许 Host 通过 AXI 直�
 ---
 
 **维护**: CppTLM Team (Sisyphus)
-**状态**: 📋 Spec — 等待评审 + Phase 1 启动实施
+**状态**: ✅ 已实施 —— Phase 1-8 全部交付(链路层 / 编码 / PHY 数字控制 / SR-IOV / AXI Stream Adapter / AXI4Mapper / Host Bypass + RC / 整合交付)
 
 ### Requirement: PcieSriovVfPool Stays as Value Member（新增）
 
