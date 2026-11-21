@@ -1,0 +1,17 @@
+schema: spec-driven
+created: 2026-11-21
+goal: 给 `TreeManager` 补一个与 `FullMapDirectory::view_of` 同形的 const 纯查询 sharer 视图(登记册 §6.4 队列 2 的 I-7a)
+affected_areas:
+  - include/tlm/cep/tilelink_tree_manager.hh
+  - test/test_cep_tilelink_adapter.cc
+# ⚠️ 本 change **零 capability 语义变更** ⇒ **无 delta spec**:
+#    `view_of` **不是** `SharerTrackerIf` 的能力面扩展(⛔ 接口零改动)⇒ 契约面零变更
+#    ⇒ 零冻结面改动 ⇒ **不触五步链**。
+#    ⚠️ 与「⏸ 暂存归档」语义**不同**:本单元**实现落地**(能力已在仓内)——
+#       只是**不需要**写 delta(⛔ 不得因 skip_specs 而误标为「未实施」)。
+#       逐字语义见 proposal.md 顶部的「归档语义」段。
+skip_specs: true
+x-phase: phase-10
+x-priority: P2
+x-status: proposed
+x-ledger: 登记册 obj-cep-platform-remaining §6.4 队列 2 的 I-7a · 裁决 cep-invariant-batch2-adjudication-2026-11-21 §四

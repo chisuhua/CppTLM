@@ -274,6 +274,15 @@ fi
 fi
 
 echo ""
+# ⚠️ **自调用防护**(2026-11-21,per I-7a 落地时暴露):载体表的 `cmd` 行**可以**指向本
+#    脚本自身(per I-7a 的 AC-13 行)⇒ P-3 会 `bash -c "$target $anchor"` 调起本脚本
+#    ⇒ 内层又跑 P-3 ⇒ **无限递归**(实测 rc=124 超时 ⇒ 机关直接挂)。
+# ⇒ 内层由环境变量 `RDDF_STAGE_GATE_INNER` 标记 ⇒ **整段跳过 P-3**
+#    (外层正在执行同一条命令 ⇒ 内层重复跑 P-3 无意义;其余判据仍照跑)。
+if [ -n "${RDDF_STAGE_GATE_INNER:-}" ]; then
+    echo "═══ P-3 AC 可寻址（内层调用 ⇒ 跳过，避免自调用无限递归）═══"
+    skip "P-3 内层跳过(外层正在执行同一条命令 ⇒ 防自调用递归)"
+else
 echo "═══ P-3 AC 可寻址（每个 AC 至少一条载体命中）═══"
 if [ ! -f "$CARRIER" ]; then
     fail "P-3 载体表不存在: $CARRIER"
@@ -329,7 +338,9 @@ else
             elif [ "$target" = "scripts/test/param_effect_inventory.py" ]; then
                 if python3 scripts/test/param_effect_inventory.py --json >/dev/null 2>&1; then ok "P-3 [$ac] cmd rc=0"; ac_hit["$ac"]=1; else fail "P-3 [$ac] cmd 非 0: $target"; fi
             else
-                if bash -c "$target $anchor" >/dev/null 2>&1; then ok "P-3 [$ac] cmd rc=0"; ac_hit["$ac"]=1; else fail "P-3 [$ac] cmd 非 0: $target $anchor"; fi
+                # ⚠️ **自调用防护**:带 `RDDF_STAGE_GATE_INNER=1` ⇒ 内层跳过 P-3
+                #    ⇒ `cmd` 行指向本脚本自身时**不会**无限递归(见 P-3 段首的说明)
+                if RDDF_STAGE_GATE_INNER=1 bash -c "$target $anchor" >/dev/null 2>&1; then ok "P-3 [$ac] cmd rc=0"; ac_hit["$ac"]=1; else fail "P-3 [$ac] cmd 非 0: $target $anchor"; fi
             fi
             continue
         fi
@@ -356,6 +367,7 @@ else
         fi
     done
 fi
+fi   # ← 闭合「内层跳过 P-3」的 else 分支
 
 echo ""
 echo "═══ P-4 跨阶段判别力不丢（A 阶段登记的判别测试不得被静默删除）═══"

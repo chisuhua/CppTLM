@@ -25,7 +25,12 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
+
+#include <nlohmann/json.hpp>
+
+#include <sys/wait.h>
 
 namespace {
 
@@ -100,12 +105,57 @@ namespace {
         return n;
     }
 
+    /// 抽取「含 `anchor` 的那行起、到花括号配平结束」的**函数/类体**文本。
+    /// ⚠️ 输入须**已去注释**(否则注释里的花括号会打乱配平)⇒ 调用方先 `strip_comments`。
+    std::string extract_block(const std::string& code, const std::string& anchor) {
+        const std::size_t pos = code.find(anchor);
+        if (pos == std::string::npos)
+            return {};
+        const std::size_t open = code.find('{', pos);
+        if (open == std::string::npos)
+            return {};
+        int depth = 0;
+        for (std::size_t i = open; i < code.size(); ++i) {
+            if (code[i] == '{')
+                ++depth;
+            else if (code[i] == '}') {
+                --depth;
+                if (depth == 0)
+                    return code.substr(open, i - open + 1);
+            }
+        }
+        return {}; // 未配平
+    }
+
+    /// `git diff --quiet HEAD -- <paths>` 的退出码(= 0 ⇒ 工作区与 HEAD 一致)。
+    /// ⚠️ 用 `HEAD` 而非 index ⇒ 同时覆盖「已 staged」与「未 staged」的工作区改动。
+    int git_diff_quiet(const std::string& paths) {
+        const std::string cmd = "git -C '" + repo_root_dir() + "' diff --quiet HEAD -- " + paths;
+        std::FILE* pipe = popen(cmd.c_str(), "r");
+        if (!pipe)
+            return -1;
+        char buf[64];
+        while (std::fgets(buf, sizeof(buf), pipe) != nullptr) {
+        }
+        const int rc = pclose(pipe);
+        return WEXITSTATUS(rc);
+    }
+
     /// 「零副本」违禁记号 —— adapter **不**命名任何枚举字面量,**也不**指名任何表。
     const std::vector<std::string>& forbidden_tokens() {
         static const std::vector<std::string> kTokens = {
             "State::", "Event::", "Perm::", "kTable", "kTransitions", "kPermProjection"};
         return kTokens;
     }
+
+    /// 成员指针 → **函数类型**(去类部分)—— **const 特化**版。
+    /// ⚠️ 既有 `MemberFnType`(`test_cep_sharer_tracker_base.cc:162-163`)**只特化非 const**
+    ///    成员指针 ⇒ const 成员函数无对应特化 ⇒ 本单元**本地**补一份
+    ///    (⛔ **不改** `test_cep_sharer_tracker_base.cc` —— 不在本单元 In-Scope 内)。
+    template <class MPtr> struct ConstMemberFnType;
+    template <class C, class R, class... A> struct ConstMemberFnType<R (C::*)(A...) const> {
+        using type = R(A...) const;
+    };
 
 } // namespace
 
@@ -447,4 +497,289 @@ TEST_CASE("CEP TreeManager: LocalView 零改动(复用 forward_to)+ 接口面不
     CHECK(count_member_virtuals(code) == 5u);
     // ── ③ `snoop_join_core` SHALL **不**是虚方法(公共机械 ⇒ 零虚函数)────────
     CHECK(code.find("virtual void snoop_join_core") == std::string::npos);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// I-7a —— `TreeManager::view_of` 纯查询视图
+//   登记册 §6.4 队列 2 的 **I-7a**(I-7 拆 a/b 后的前置产出单元)
+//   形态来源 = architect 裁决 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md`
+//   §四(Q-a):⛔ **不动** `SharerTrackerIf`,在**具体类**上补与 `FullMapDirectory::view_of`
+//   **同签名**的方法(消费方按具体类型持有,per mesif 先例「按具体实现接线是诚实的」)。
+//
+// ⚠️ 锚点纪律:AC-1 ~ AC-7 的锚点串**逐字照抄** `scripts/test/rddf_ac_carrier.tsv`
+//    的载体表内容(载体表对 `test` 行做 `grep -F` ⇒ 锚点串必须在此文件内命中);
+//    AC-8 ~ AC-12 的锚点串**不在载体表内** ⇒ 自拟描述。
+// ⚠️ 诚实边界:本载体证明的是**视图面**成立 —— ⛔ **不等于**档 2 已扩面
+//    (档 2 仍单族 `mesif-observation`;扩面 = I-7b 的 home 侧驱动)。
+// ══════════════════════════════════════════════════════════════════════════
+TEST_CASE("CEP TreeManager: view_of 纯查询视图(Tip/Branch/Nothing/空条目/CHAIN)",
+          "[cep][tilelink][adapter]") {
+    using TreeViewSig = ConstMemberFnType<decltype(&TreeMgr::view_of)>::type;
+    using FullViewSig = ConstMemberFnType<decltype(&tlm::cep::FullMapDirectory::view_of)>::type;
+
+    // I-7a AC-1: view_of 签名与 FullMapDirectory::view_of 同形
+    // ⚠️ 比**函数类型**(去类部分)而非成员指针 —— 两个成员指针**恒**是不同类型。
+    REQUIRE(std::is_same_v<TreeViewSig, FullViewSig>);
+
+    // I-7a AC-2: view_of 逐字段口径(Tip/Branch/Nothing/空条目)
+    {
+        const node_id_t kParent = tlm::cep::kNodeIdPcie;
+        const node_id_t kSelf = tlm::cep::kNodeIdSdma;
+        const node_id_t kPeer = tlm::cep::kNodeIdGmmu;
+        const responder_set_t mSelf = tlm::cep::responder_mask_of(kSelf);
+        const responder_set_t mPeer = tlm::cep::responder_mask_of(kPeer);
+        REQUIRE(mSelf != 0);
+        REQUIRE(mPeer != 0);
+
+        TreeMgr tm(kParent);
+
+        // ① 从未出现 ⇒ valid=false / sharers=0 / dirty=0 / forward_to 恒无效
+        {
+            const LocalView v = tm.view_of(0x9000);
+            CHECK_FALSE(v.valid);
+            CHECK(v.sharers == 0);
+            CHECK(v.dirty == 0);
+            CHECK(v.forward_to == tlm::cep::kInvalidNode);
+        }
+        // ② 空条目(`set_sharer(Nothing)` 建条目但无副本)⇒ valid=true / sharers=0 / dirty=0
+        {
+            tm.set_sharer(0x9001, kSelf, State::Nothing);
+            const LocalView v = tm.view_of(0x9001);
+            CHECK(v.valid);
+            CHECK(v.sharers == 0);
+            CHECK(v.dirty == 0);
+        }
+        // ③ Branch 单节点 ⇒ valid=true / sharers=m / dirty=0
+        {
+            tm.set_sharer(0x9002, kSelf, State::Branch);
+            const LocalView v = tm.view_of(0x9002);
+            CHECK(v.valid);
+            CHECK(v.sharers == mSelf);
+            CHECK(v.dirty == 0);
+        }
+        // ④ Tip 单节点 ⇒ valid=true / sharers=m / dirty=m
+        {
+            tm.set_sharer(0x9003, kSelf, State::Tip);
+            const LocalView v = tm.view_of(0x9003);
+            CHECK(v.valid);
+            CHECK(v.sharers == mSelf);
+            CHECK(v.dirty == mSelf);
+        }
+        // ⑤ Tip + 另一 Branch ⇒ sharers=m1|m2 / dirty=m1
+        {
+            tm.set_sharer(0x9004, kSelf, State::Tip);
+            tm.set_sharer(0x9004, kPeer, State::Branch);
+            const LocalView v = tm.view_of(0x9004);
+            CHECK(v.valid);
+            CHECK(v.sharers == (mSelf | mPeer));
+            CHECK(v.dirty == mSelf);
+        }
+        // ⑥ Tip→Branch 降级 ⇒ sharers=m / dirty=0
+        {
+            tm.set_sharer(0x9005, kSelf, State::Tip);
+            tm.set_sharer(0x9005, kSelf, State::Branch);
+            const LocalView v = tm.view_of(0x9005);
+            CHECK(v.valid);
+            CHECK(v.sharers == mSelf);
+            CHECK(v.dirty == 0);
+        }
+    }
+
+    // I-7a AC-3: lookup 不是快照(ESCALATE_UP 时 sharers 留 0)
+    {
+        const node_id_t kParent = tlm::cep::kNodeIdPcie;
+        const node_id_t kSelf = tlm::cep::kNodeIdSdma;
+        TreeMgr tm(kParent);
+        tm.set_sharer(0x9100, kSelf, State::Branch);
+        LookupResult r = LookupResult::ANSWER_HERE;
+        LocalView v;
+        LookupHazard hz = LookupHazard::NONE;
+        tm.lookup(0x9100, Intent::want_write, r, v, hz);
+        REQUIRE(r == LookupResult::ESCALATE_UP);
+        CHECK(v.sharers == 0);                  // ← 判决视图**漏** sharer
+        CHECK(tm.view_of(0x9100).sharers != 0); // ← 快照**不漏** ⇒ 本条的判别力来源
+    }
+
+    // I-7a AC-4: 脏性口径(dirty == tips;Branch ⇒ dirty == 0)
+    {
+        const node_id_t kParent = tlm::cep::kNodeIdPcie;
+        const node_id_t kSelf = tlm::cep::kNodeIdSdma;
+        const responder_set_t mSelf = tlm::cep::responder_mask_of(kSelf);
+        TreeMgr tm(kParent);
+        // ① Branch ⇒ dirty == 0 ∧ sharers != 0(防「顺手把 Branch 标脏」)
+        tm.set_sharer(0x9200, kSelf, State::Branch);
+        {
+            const LocalView v = tm.view_of(0x9200);
+            CHECK(v.dirty == 0);
+            CHECK(v.sharers != 0);
+        }
+        // ② Tip ⇒ dirty == tips ∧ dirty ⊆ sharers
+        tm.set_sharer(0x9201, kSelf, State::Tip);
+        {
+            const LocalView v = tm.view_of(0x9201);
+            CHECK(v.dirty == mSelf);
+            CHECK((v.dirty & v.sharers) == v.dirty);
+        }
+        // ③ Tip→Branch 降级 ⇒ dirty == 0 ∧ sharers == m(防 dirty 与 sharers 写成同一字段)
+        tm.set_sharer(0x9202, kSelf, State::Tip);
+        tm.set_sharer(0x9202, kSelf, State::Branch);
+        {
+            const LocalView v = tm.view_of(0x9202);
+            CHECK(v.dirty == 0);
+            CHECK(v.sharers == mSelf);
+        }
+    }
+
+    // I-7a AC-5: CHAIN in-flight 期间 view_of 仍返回安装面视图
+    {
+        const node_id_t kParent = tlm::cep::kNodeIdPcie;
+        const node_id_t kSelf = tlm::cep::kNodeIdSdma;
+        const responder_set_t mSelf = tlm::cep::responder_mask_of(kSelf);
+        TreeMgr tm(kParent);
+        tm.set_sharer(0x9300, kSelf, State::Tip);
+        tlm::cep::snoop_handle_t h = 0;
+        tm.snoop_begin(0x9300, mSelf, h);
+        REQUIRE(h != 0);
+        LookupResult r = LookupResult::ANSWER_HERE;
+        LocalView v;
+        LookupHazard hz = LookupHazard::NONE;
+        tm.lookup(0x9300, Intent::want_read, r, v, hz);
+        // ⚠️ CHAIN 体现在 **hazard** 上(`result` 仍是 ANSWER_HERE)—— per 实现 :147-149
+        CHECK(hz == LookupHazard::CHAIN);
+        CHECK_FALSE(v.valid);
+        // 快照面:反映**安装面**真相,与 in-flight 无关(snoop 只动 `inflight_`,不动 `entries_`)
+        const LocalView snap = tm.view_of(0x9300);
+        CHECK(snap.valid);
+        CHECK(snap.sharers == mSelf);
+    }
+
+    // I-7a AC-6: 零副作用(has_node 探针 + events 长度不变)
+    // ⚠️ **实测订正(2026-11-21)**:上面锚点串沿用载体表原文(⛔ 字面契约不改);
+    //    但 AC-6 原口径的「events 长度不变」子判据**不可执行** —— `TreeManager` **无**
+    //    `events()` 方法(实测:本类只有 `entries_`;in-flight 面在 `SnoopMechanics::inflight_`)
+    //    ⇒ 零副作用由下方 ② `has_node` 探针(测「不创建条目」)+ ③ 源码文本判据
+    //    (测「不改写内容」)承担 ⇒ **覆盖面不减**。
+    {
+        const node_id_t kParent = tlm::cep::kNodeIdPcie;
+        TreeMgr tm(kParent);
+        const std::uint64_t z = 0xDEAD0000ull;
+        // ① 未触碰地址
+        REQUIRE_FALSE(tm.has_node(z));
+        // ② 读操作**不创建**条目
+        const LocalView v = tm.view_of(z);
+        CHECK_FALSE(v.valid);
+        CHECK_FALSE(tm.has_node(z));
+    }
+    // ③ 源码文本判据:`view_of` 函数体不得含插入/删除原语,且 `entries_` 的**每次**使用
+    //    都必须是**只读**访问(`.find(` / `.end()`)⇒ 无 `entries_[…]` 写入、无 emplace/insert/erase
+    {
+        const std::string code =
+            strip_comments(read_repo_file("include/tlm/cep/tilelink_tree_manager.hh"));
+        REQUIRE_FALSE(code.empty());
+        const std::string body = extract_block(code, "LocalView view_of");
+        REQUIRE_FALSE(body.empty());
+        CHECK(body.find("operator[]") == std::string::npos);
+        CHECK(body.find("emplace") == std::string::npos);
+        CHECK(body.find("insert") == std::string::npos);
+        CHECK(body.find("erase") == std::string::npos);
+        // `entries_` 的每一次使用都必须是只读访问
+        std::size_t entries_uses = 0;
+        for (std::size_t p = body.find("entries_"); p != std::string::npos;
+             p = body.find("entries_", p + 1)) {
+            ++entries_uses;
+            const std::size_t after = body.find('.', p);
+            REQUIRE(after != std::string::npos);
+            const std::string accessor = body.substr(after, body.find('(', after) - after);
+            INFO("view_of 的 entries_ 使用形态: " << accessor);
+            // ⚠️ Catch2 v3 不支持断言内的 `||` ⇒ 先在**变量**里算好再断言
+            const bool is_read_only = (accessor == ".find") || (accessor == ".end");
+            CHECK(is_read_only);
+        }
+        CHECK(entries_uses >= 1u); // ⇒ 确实读了安装面(而非恒真占位)
+    }
+
+    // I-7a AC-7: evidence_tiers 键仍 == 1(mesif-observation)
+    // ⚠️ 精确对象 = `evidence_tiers`(⛔ 不是 `coverage_map`、不是 `coverage_scope.families`)
+    {
+        const std::string raw = read_repo_file("test/cep_evidence_tiers.json");
+        REQUIRE_FALSE(raw.empty());
+        const nlohmann::json doc = nlohmann::json::parse(raw);
+        REQUIRE(doc.contains("evidence_tiers"));
+        const auto& tiers = doc.at("evidence_tiers");
+        REQUIRE(tiers.is_object());
+        CHECK(tiers.size() == 1u);
+        CHECK(tiers.contains("mesif-observation"));
+    }
+
+    // I-7a AC-8: 零 diff 面(禁改路径未被本单元触碰)
+    // ⚠️ **实测订正(2026-11-21)**:AC-8 原口径用 `git diff --name-only $(git merge-base HEAD
+    //    main)..HEAD` ⇒ 本仓**直推 main** ⇒ `merge-base HEAD main == HEAD` ⇒ diff **恒空**
+    //    ⇒ **恒绿**(与 AC-8 自己警示的「无参 git diff 恒绿」同型)。
+    //    ⇒ 精化为下面 3 条**可执行且有鉴别力**的判据:
+    //      ① 接口面虚方法数仍 == 5(加纯虚 `view_of` ⇒ 6 ⇒ 红)
+    //      ② `SharerTrackerIf` 类体内**无独立** `view_of` 标识符(接口零扩展)
+    //      ③ 禁改路径的**工作区内容**与 HEAD 一致(抓「未提交就改了禁改面」)
+    //    ⚠️ 「已提交的越权」由**验收侧**承担(报告记录 `git show --stat` 的实际文件清单)。
+    {
+        const std::string code =
+            strip_comments(read_repo_file("include/tlm/cep/sharer_tracker.hh"));
+        REQUIRE_FALSE(code.empty());
+        // ①
+        CHECK(count_member_virtuals(code) == 5u);
+        // ② 「view_of」的出现次数 == 「peer_view_of」的出现次数 ⇒ 无**独立** `view_of`
+        const std::string iface = extract_block(code, "class SharerTrackerIf");
+        REQUIRE_FALSE(iface.empty());
+        std::size_t n_viewof = 0;
+        for (std::size_t p = iface.find("view_of"); p != std::string::npos;
+             p = iface.find("view_of", p + 1))
+            ++n_viewof;
+        std::size_t n_peer_viewof = 0;
+        for (std::size_t p = iface.find("peer_view_of"); p != std::string::npos;
+             p = iface.find("peer_view_of", p + 1))
+            ++n_peer_viewof;
+        CHECK(n_viewof == n_peer_viewof);
+        // ③
+        const std::string forbidden =
+            "include/tlm/cep/sharer_tracker.hh include/tlm/cep/protocol_engine_base.hh "
+            "docs/adr docs/architecture openspec/specs/cep-tilelink-runtime-engine/spec.md "
+            "test/cep_evidence_tiers.json";
+        CHECK(git_diff_quiet(forbidden) == 0);
+    }
+
+    // I-7a AC-9: 既有断言零回归(TMA-07 接口面 + `TreeManager::view_of` **非**虚方法)
+    {
+        const std::string code =
+            strip_comments(read_repo_file("include/tlm/cep/sharer_tracker.hh"));
+        REQUIRE_FALSE(code.empty());
+        CHECK(count_member_virtuals(code) == 5u);
+        CHECK(code.find("tree_parent") == std::string::npos); // LocalView 零改动
+        const std::string tm_code =
+            strip_comments(read_repo_file("include/tlm/cep/tilelink_tree_manager.hh"));
+        CHECK(tm_code.find("virtual LocalView view_of") == std::string::npos);
+    }
+
+    // I-7a AC-10: 0 回归 · 含队列语义 —— 判据在 **ctest / 闸层**(本载体不含)
+    //    (`bash scripts/test/rddf_stage_gate.sh --phase queue2` + `--self-test` +
+    //     全部 `scripts/test/cep_*.sh`;⚠️ ctest 裸调用**不覆盖**队列语义)
+
+    // I-7a AC-11: 载体身份 —— 本 TEST_CASE 即载体(`[cep][tilelink][adapter]`)
+    //    (名 = `CEP TreeManager: view_of 纯查询视图(Tip/Branch/Nothing/空条目/CHAIN)`;
+    //     每条 AC 的**逐字**锚点注释见上)
+
+    // I-7a AC-12: 多 Tip 如实返回(两个节点先后 `set_sharer(Tip)` ⇒ 两位都返回)
+    {
+        const node_id_t kParent = tlm::cep::kNodeIdPcie;
+        const node_id_t kSelf = tlm::cep::kNodeIdSdma;
+        const node_id_t kPeer = tlm::cep::kNodeIdGmmu;
+        const responder_set_t mSelf = tlm::cep::responder_mask_of(kSelf);
+        const responder_set_t mPeer = tlm::cep::responder_mask_of(kPeer);
+        TreeMgr tm(kParent);
+        tm.set_sharer(0x9400, kSelf, State::Tip);
+        tm.set_sharer(0x9400, kPeer, State::Tip);
+        const LocalView v = tm.view_of(0x9400);
+        // ⛔ 不得 `first_bit` 式实现 —— `set_sharer` 只做 `|=` ⇒ 「至多 1 个
+        // Tip」是**约定不是判据**
+        CHECK(v.dirty == (mSelf | mPeer));
+        CHECK(v.sharers == (mSelf | mPeer));
+    }
 }

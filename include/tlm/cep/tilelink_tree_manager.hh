@@ -131,6 +131,34 @@ namespace tlm::cep {
             return entries_.count(addr) != 0;
         }
 
+        /// 该地址在**本子树**内的 sharer **快照**(与 `FullMapDirectory::view_of` 同签名)。
+        ///
+        /// ⚠️ **本视图 ≠ `lookup` 的判决视图** —— `lookup` 只在 `Tip` / `Branch+want_read`
+        ///    路径填 `sharers`,`ESCALATE_UP` 路径**留 0**(⇒ 漏 sharer)、CHAIN in-flight 路径
+        ///    `valid == false`(⇒ 无快照);本方法恒返回**安装面**真相。
+        ///
+        /// ⚠️ **三条语义边界**(per 登记册 §6.4 队列 2 的 I-7a · 裁决 §四.2 Q-a):
+        ///  ① `dirty` 在本类映射的是 **Tip 集**(`Entry::tips`,持 R/W 副本的节点集)——
+        ///     **不是** `FullMapDirectory::Entry::dirty`(脏节点集)⇒ 两个 `dirty` **概念不同**;
+        ///     且 `Trunk` 折叠为 `Branch` ⇒ may-contain-dirty 在 `dirty` 上**不可见**
+        ///     (已登记的语义损失,与 `lookup` 的同处损失一致);
+        ///  ② `forward_to` **恒 `kInvalidNode`** ⇒ ⛔ **调用方不得读取**(本视图无「向上递归」语义);
+        ///  ③ **单线程假设 / 非线程安全**(`entries_` 是 `std::map` 且无锁)⇒ 不得跨线程并发观测。
+        ///
+        /// ⚠️ **零副作用**:只做 `find` ⇒ ⛔ 不创建条目、不改写安装面(⛔ 禁 `operator[]` / `emplace`
+        /// /
+        ///    `insert` / `erase` —— `entries_` 的条目**只**由 `set_sharer` / `clear_sharer` 改变)。
+        LocalView view_of(std::uint64_t addr) const {
+            LocalView v;
+            auto it = entries_.find(addr);
+            if (it == entries_.end())
+                return v; // 从未出现 ⇒ valid == false
+            v.valid = true;
+            v.sharers = it->second.sharers;
+            v.dirty = it->second.tips; // ⚠️ `dirty` 口径 = Tip 集(见 ①)
+            return v;
+        }
+
         /// 本 tracker 的**树父节点**(向上递归的终点)
         node_id_t tree_parent() const {
             return tree_parent_;
