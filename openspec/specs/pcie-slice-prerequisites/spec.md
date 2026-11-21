@@ -2,7 +2,9 @@
 
 ## Purpose
 固化 dGPU 板级 SoC 切片落地前必须成立的前置条件：报文结构的字节级布局由仓内编译期断言守护，地址翻译回调在越界、抛异常与重入下不得导致仿真崩溃，中断状态机的迁移必须可判定，门铃队列须在并发提交下保持有序，设备引擎与后门直访路径互不污染。
+
 ## Requirements
+
 ### Requirement: pcie-slice-wire-format-in-repo-guarded
 
 The system MUST enforce byte-level layout stability for `PcieTlpBundle` / `DmaDescriptorBundle` / `CompletionBundle` / `MsiXDeliveryBundle` (all `bundle_base`-derived types) via compile-time `static_assert`. Any field reordering or size change MUST fail the build.
@@ -11,7 +13,6 @@ The system MUST enforce byte-level layout stability for `PcieTlpBundle` / `DmaDe
 > 原需求描述 "防止跨仓 silent drift" 不完全成立:
 > - `bundle_serialization.hh:23-27` 自带注释"仅在单一仿真进程内使用"
 > - UsrLinuxEmu 经 23 ABI C 符号消费,从不 memcpy 这些 TLM Bundle
-> - 真正跨仓 ABI 由 `include/cudart/abi_guards.h` G-D4 17 条静态断言承担 (per AGENTS.md CROSS-PROJECT)
 >
 > 本需求**实际作用是仓内布局守卫**: 防止 `cpptlm-dgpu-board-soc-split` (change C) 集成时本仓 bundle 布局被意外修改。
 
@@ -116,4 +117,3 @@ The `SdmaEngineTLM::DmaTranslateCb` callback (per ADR-088 §D3.8) MUST handle th
 
 **Maintenance**: CppTLM Team (Sisyphus)
 **Status**: 📝 Proposed — 待评审后启动 T-prereq-1~5 实施
-
