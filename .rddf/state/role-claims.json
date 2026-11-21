@@ -24,23 +24,23 @@
     "/workspace/project/CppTLM|builder": {
       "work_root": "/workspace/project/CppTLM",
       "role": "builder",
-      "session_id": "ses_e0b3959e9ffeHRY5h7EQJ6D53T",
+      "session_id": "ses_e011c3d56ffeUJU4VjKzp9B4xJ",
       "kind": "main",
-      "claim_gen": 19,
+      "claim_gen": 20,
       "state": "active",
-      "acquired_at": "2026-11-21T14:09:35.081Z",
-      "heartbeat_at": "2026-11-21T14:09:35.081Z"
+      "acquired_at": "2026-11-21T17:05:16.977Z",
+      "heartbeat_at": "2026-11-21T17:05:16.977Z"
     },
     "/workspace/project/CppTLM|planner": {
       "work_root": "/workspace/project/CppTLM",
       "role": "planner",
-      "session_id": "ses_e0b3959e9ffeHRY5h7EQJ6D53T",
+      "session_id": "ses_e011c3d56ffeUJU4VjKzp9B4xJ",
       "kind": "main",
-      "claim_gen": 12,
+      "claim_gen": 13,
       "state": "released",
-      "acquired_at": "2026-11-21T03:37:19.458Z",
-      "heartbeat_at": "2026-11-21T03:37:19.458Z",
-      "released_at": "2026-11-21T03:59:13.449Z"
+      "acquired_at": "2026-11-21T16:52:28.306Z",
+      "heartbeat_at": "2026-11-21T16:52:28.306Z",
+      "released_at": "2026-11-21T17:05:16.995Z"
     },
     "/workspace/project/CppTLM|verifier": {
       "work_root": "/workspace/project/CppTLM",
@@ -89,6 +89,11 @@
       "work_root": "/workspace/project/CppTLM",
       "role": "builder",
       "claim_gen": 19
+    },
+    "ses_e011c3d56ffeUJU4VjKzp9B4xJ": {
+      "work_root": "/workspace/project/CppTLM",
+      "role": "builder",
+      "claim_gen": 20
     }
   }
 }

@@ -28,6 +28,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT" || exit 2
 
 CARRIER="scripts/test/rddf_ac_carrier.tsv"
+# ⚠️ **登记册自身路径**（v5 · G-1 · W1-b）—— P-3b 自指载体判据用：
+#    若某 AC 把**本文件之外**的这个路径当载体 ⇒ 必须另有第二条非登记册载体行。
+REGISTRY_SELF=".rddf/roadmap/objectives/obj-cep-platform-remaining.md"
 RED=$'\033[0;31m'; GRN=$'\033[0;32m'; YLW=$'\033[0;33m'; RST=$'\033[0m'
 
 # ── 参数解析（--phase 接受 A / B / C / queue2）────────────────────────────
@@ -233,7 +236,14 @@ if [ "$PHASE_ARG" = "queue2" ]; then
     else
         NEXT_I="$(_queue2_next)"
         if [ -z "$NEXT_I" ]; then
-            ok "P-2a 队列 2 全部 I-* 已声明完成 ⇒ 无下一项可提前开工"
+            # ⚠️ **v5 · G-1 · W1-e**：「无下一目标」原表述是**散文**（「全部 I-* 已声明完成」）
+            #    ⇒ 改为**计数形态**（可机判的证据而非叙述）⇒ 并显式指向下一轮的载体。
+            _q2_done_rows=0; _q2_total_rows=0
+            for _q in "${QUEUE2[@]}"; do
+                _q2_done_rows=$((_q2_done_rows + $(_queue2_done_count "$_q")))
+                _q2_total_rows=$((_q2_total_rows + $(_queue2_total_count "$_q")))
+            done
+            ok "P-2a 队列 2 **收口**：${#QUEUE2[@]} 个 I-* 的载体行全部标 done（$_q2_done_rows/$_q2_total_rows 行）⇒ 无下一项可提前开工；下一轮由登记册 §6.4 的工作流承载"
         else
             ok "P-2a 队列 2 下一项 ($NEXT_I) ⇒ 无跳序 ⇒ 队列顺序未被跳过"
         fi
@@ -288,6 +298,13 @@ if [ ! -f "$CARRIER" ]; then
     fail "P-3 载体表不存在: $CARRIER"
 else
     declare -A ac_hit=()
+    # ⚠️ **v5 · G-1 · W1-a**：`unavailable` 载体**不再算命中** ⇒ 干净 clone 上
+    #    「载体不存在」不再被静默当成「已命中」⇒ 消灭免费通过。
+    #    ⇒ 改为：skip + 计入 `UNAVAIL_COUNT`（可见）+ 标记 `ac_unavail[$ac]`
+    #       ⇒ 由下方**收尾环**豁免（skip，不判红）⇒ 既不假绿也不假红。
+    declare -A ac_unavail=()
+    UNAVAIL_COUNT=0
+    UNAVAIL_EXEMPT_COUNT=0
     # ⚠️ **第 5 列 `state` 存在**（per Q-6b「不新建第三个登记面」⇒ 状态与载体同表）
     #    ⇒ 读取必须用 **5 变量**，否则 `anchor` 会被尾随的 state 污染
     #    （⛔ 回归记录：4 变量 read ⇒ anchor 变成 `'### D-1.2 类别 ①<TAB>pending'` ⇒ P-3 全红）
@@ -346,8 +363,13 @@ else
         fi
         resolve_path "$target"; target="$RESOLVE_PATH"
         if [ "$RESOLVE_STATE" = "unavailable" ]; then
+            # ⚠️ **v5 · G-1 · W1-a**（原实现 `ac_hit=1` ⇒ 干净 clone 上「无载体」
+            #    被静默当成「已命中」⇒ 免费通过）：
+            #    ⇒ 载体不可分发**不算命中**；只 skip + 计入可见计数 + 标记该 AC
+            #       ⇒ 由收尾环**豁免**（不判红，因为那是**载体分发问题**，不是判据失败）。
             skip "P-3 [$ac] 载体已归档且不在工作树: $target"
-            ac_hit["$ac"]=1
+            UNAVAIL_COUNT=$((UNAVAIL_COUNT + 1))
+            ac_unavail["$ac"]=1
             continue
         fi
         if [ ! -f "$target" ]; then fail "P-3 [$ac] 载体文件不存在: $target"; continue; fi
@@ -363,9 +385,57 @@ else
         [ "$ac" = "AC-01" ] && continue   # AC-01 的载体是 cmd（脚本口径），由上面的 cmd 分支判
         if [ -z "${ac_hit[$ac]:-}" ]; then
             # 该 AC 可能只登记了 TODO ⇒ 不算失败（上面已 skip）
-            if grep -P "^$ac\tTODO\t" "$CARRIER" >/dev/null 2>&1; then :; else fail "P-3 [$ac] 没有任何载体命中"; fi
+            if grep -P "^$ac\tTODO\t" "$CARRIER" >/dev/null 2>&1; then :; else
+                # ⚠️ **v5 · G-1 · W1-a**：该 AC 只有**不可分发**载体（干净 clone 上
+                #    归档内容不在工作树）⇒ 这是**载体分发问题**，不是判据失败
+                #    ⇒ 豁免（skip，⛔ 不判红）**但必须计入可见计数**
+                #       （否则 skip 之后没人知道有多少行被跳过 ⇒ 回到「免费通过」）。
+                if [ -n "${ac_unavail[$ac]:-}" ]; then
+                    UNAVAIL_EXEMPT_COUNT=$((UNAVAIL_EXEMPT_COUNT + 1))
+                    skip "P-3 [$ac] 载体不可分发（归档内容不在工作树）⇒ 非判据失败 ⇒ 收尾环豁免"
+                else
+                    fail "P-3 [$ac] 没有任何载体命中"
+                fi
+            fi
         fi
     done
+    # ── 不可分发载体的**可见计数**（只报告；⛔ 永不设阈值判红）────────────────
+    # ⚠️ **为什么永不设阈值**：该计数由「文件是否在盘」决定 ⇒ 是**环境相关量**
+    #    ⇒ 一旦设阈值，环境差异（本地有归档内容 / CI 没有）会经计数差重新引入
+    #    dev-green / CI-red 分裂（per critic SHOULD_FIX 2②）。
+    if [ "$UNAVAIL_COUNT" -gt 0 ]; then
+        ok "P-3 不可分发载体 $UNAVAIL_COUNT 条（收尾环豁免 $UNAVAIL_EXEMPT_COUNT 个 AC）⛔ 只报告不判红"
+    else
+        ok "P-3 不可分发载体 0 条"
+    fi
+
+    # ── P-3b 自指载体判据（v5 · G-1 · W1-b）──────────────────────────────
+    # 判据：若某 AC 把**登记册自身**当载体 ⇒ 它必须另有**第二条指向非登记册
+    #       路径**的载体行 ⇒ 否则 P-3 对它是**同义反复**（载体与锚点同行 ⇒ 永远绿）。
+    # ⚠️ **判据只数「行是否存在」，不看该行能否命中** ⇒ 载体分发问题归 W1-a 的
+    #    收尾环豁免处理，本判据只管「有没有第二条独立证据」。
+    declare -A ac_self_rows=() ac_nonreg_rows=()
+    while IFS=$'\t' read -r ac kind target anchor state; do
+        case "${ac:-}" in ''|'#'*) continue;; esac
+        if [ "$target" = "$REGISTRY_SELF" ]; then
+            ac_self_rows["$ac"]=1
+        else
+            ac_nonreg_rows["$ac"]=1
+        fi
+    done < "$CARRIER"
+    _self_bad=0
+    # ⚠️ **键展开写法**：`"${!arr[@]}"` 才是「列出关联数组的键」；
+    #    `${!arr[@]+"${!arr[@]}"}` 是**间接展开**（按元素值去展开同名变量）⇒ **恒为空**
+    #    ⇒ 曾导致本判据**静默不执行**（实测：变异⑤ 不判红）。⛔ 不得再写成后者。
+    for ac in "${!ac_self_rows[@]}"; do
+        if [ -z "${ac_nonreg_rows[$ac]:-}" ]; then
+            fail "P-3b [$ac] 载体指向登记册自身且**无第二条非登记册载体** ⇒ P-3 对它是同义反复（永远绿）"
+            _self_bad=$((_self_bad + 1))
+        fi
+    done
+    if [ "$_self_bad" -eq 0 ]; then
+        ok "P-3b 自指载体 ${#ac_self_rows[@]} 个 AC，均有第二条非登记册载体 ⇒ P-3 非同义反复"
+    fi
 fi
 fi   # ← 闭合「内层跳过 P-3」的 else 分支
 
@@ -601,18 +671,25 @@ def state(q):
     return ""
 def total(q):
     return sum(1 for l in lines if l.startswith(q + "\t"))
+def mark(q, st):
+    for k, l in enumerate(lines):
+        if l.startswith(q + "\t"):
+            parts = l.split("\t"); parts[4] = st; lines[k] = "\t".join(parts)
 # 当前下一项 = 第一个「未全部 done」的
 nxt = None
 for q in QUEUE2:
     if total(q) == 0 or state(q) != "done":
         nxt = q; break
+# 🆕 **队列已收口的情形**（2026-11-21 I-6 完成后队列 2 全部 done ⇒「当前下一项」为空
+#    ⇒ 原构造**空转** ⇒ 变异② 曾**静默失效**）：⇒ **反向构造** —— 把**队列首项**
+#    标回 pending ⇒ 它成为「当前下一项」⇒ 再把它的**后继**标 done
+#    ⇒ P-2a 看到「后继 done 而前驱未 done」⇒ 跳序 ⇒ 判据被变异驱动（⛔ 判据本身不动）。
+if nxt is None and len(QUEUE2) >= 2:
+    mark(QUEUE2[0], "pending")
+    nxt = QUEUE2[0]
 # 跳序目标 = 它的**后继**（后继 done 而前驱未 done ⇒ 跳序）
 if nxt is not None:
     i = QUEUE2.index(nxt)
-    def mark(q, st):
-        for k, l in enumerate(lines):
-            if l.startswith(q + "\t"):
-                parts = l.split("\t"); parts[4] = st; lines[k] = "\t".join(parts)
     if i + 1 < len(QUEUE2):
         tgt = QUEUE2[i+1]
         mark(tgt, "done")
@@ -631,7 +708,7 @@ PYEOF
     )"
     _mut2="$(cd "$_shadow" && bash scripts/test/rddf_stage_gate.sh --phase queue2 2>&1 | grep -c 'P-2a 队列 2 跳序')"
     if [ "${_mut2:-0}" -ge 1 ]; then
-        ok "SELF-TEST 变异② 队列 2 跳序被判红（${_mut2_pair:-?} 标 done 而前驱未 done）⇒ 顺序由机关保证"
+        ok "SELF-TEST 变异② 队列 2 跳序被判红（${_mut2_pair:-?} ⇒ 后继 done 而前驱未 done）⇒ 顺序由机关保证"
     else
         fail "SELF-TEST 变异② 队列 2 跳序未判红 ⇒ P-2a 无鉴别力"
         _self_fail=1
@@ -656,14 +733,24 @@ def state(q):
     return ""
 def total(q):
     return sum(1 for l in lines if l.startswith(q + "\t"))
+def mark(q, st):
+    for k, l in enumerate(lines):
+        if l.startswith(q + "\t"):
+            parts = l.split("\t"); parts[4] = st; lines[k] = "\t".join(parts)
 nxt = None
 for q in QUEUE2:
     if total(q) == 0 or state(q) != "done":
         nxt = q; break
+# 🆕 **队列已收口的情形** ⇒ 原构造**空洞**（把已 done 的项再标 done = 无变化 ⇒
+#    变异什么都没做 ⇒ 「零误红」是**平凡通过** ⇒ 判据未被真实走到）。
+#    ⇒ 改为构造**合法顺序**：全部标 pending ⇒ 只把**队列首项**标 done
+#    ⇒ 首项无前驱 ⇒ 合法 ⇒ P-2a 必须零红（⇒ 证明判据无假阳，**且路径被真实走到**）。
+if nxt is None:
+    for q in QUEUE2:
+        mark(q, "pending")
+    nxt = QUEUE2[0]
 if nxt is not None:
-    for k, l in enumerate(lines):
-        if l.startswith(nxt + "\t"):
-            parts = l.split("\t"); parts[4] = "done"; lines[k] = "\t".join(parts)
+    mark(nxt, "done")
     open(p, "w", encoding="utf-8").write("\n".join(lines))
     print(nxt)
 PYEOF
@@ -673,6 +760,95 @@ PYEOF
         ok "SELF-TEST 变异③ 合法顺序（${_mut3_next:-?} 置 done 且前驱已全 done）未误判跳序 ⇒ 判据无假阳"
     else
         fail "SELF-TEST 变异③ 合法顺序被误判跳序 ⇒ 判据有假阳"
+        _self_fail=1
+    fi
+
+    # ── 变异 ④（v5 · G-1 · W1-d ①）：**clean-clone 态模拟** ──────────────────
+    # ⚠️ **判据不是「判红」而是「不判红」**：干净 clone 上归档内容不在工作树
+    #    ⇒ 载体**不可分发**（不是判据失败）⇒ 闸若判红 ⇒ CI 常红 ⇒ 机关变成噪声源。
+    # ⇒ 三条断言**合起来**才区分 W1-a 的两半：
+    #    ① 收尾环 **零** fail（无「没有任何载体命中」）⇒ 收尾环豁免生效
+    #    ② 「不可分发载体」计数 **≥ 1**                 ⇒ 确实走了 unavailable 分支
+    #    ③ 合成探针 `Z-CLEAN` **走收尾环豁免**（点对点）⇒ unavailable **不算命中**
+    #       ⚠️ ③ 必须点对点：退回「unavailable 算命中」时全仓豁免计数只从 3 降到 1
+    #          ⇒ 「计数 ≥1」仍成立 ⇒ 计数断言**无鉴别力**（实测）。
+    #    ⇒ 去掉任一半 ⇒ 对应断言归 0 ⇒ 本变异红。
+    rm -rf "$_shadow"; mkdir -p "$_shadow/scripts/test" "$_shadow/.rddf/roadmap/phases" \
+        "$_shadow/.rddf/roadmap/objectives" "$_shadow/.rddf/improvements" \
+        "$_shadow/docs/implementation" "$_shadow/test" "$_shadow/build/bin"
+    cp "$CARRIER" "$_shadow/scripts/test/"; cp "$0" "$_shadow/scripts/test/rddf_stage_gate.sh"
+    cp .rddf/roadmap/objectives/obj-cep-platform-remaining.md "$_shadow/.rddf/roadmap/objectives/" 2>/dev/null
+    cp .rddf/roadmap/objectives/obj-cep-platform.md "$_shadow/.rddf/roadmap/objectives/" 2>/dev/null
+    cp .rddf/roadmap.md "$_shadow/.rddf/" 2>/dev/null
+    cp .rddf/roadmap/phases/phase-10.md "$_shadow/.rddf/roadmap/phases/" 2>/dev/null
+    cp AGENTS.md "$_shadow/" 2>/dev/null
+    cp .rddf/improvements/cpptlm-cep-umbrella.md "$_shadow/.rddf/improvements/" 2>/dev/null
+    cp .rddf/improvements/cpptlm-cep-nvlink-sharp.md "$_shadow/.rddf/improvements/" 2>/dev/null
+    # ⚠️ **刻意不拷 `openspec/`** ⇒ 所有指向归档 change 的载体在影子里**不存在**
+    #    ⇒ `resolve_path` 判 `unavailable` ⇒ 复现干净 clone 的真实形态。
+    cp -r .rddf/reviews "$_shadow/.rddf/" 2>/dev/null
+    cp scripts/test/*.sh scripts/test/*.py "$_shadow/scripts/test/" 2>/dev/null
+    cp docs/implementation/module-param-baseline.md "$_shadow/docs/implementation/" 2>/dev/null
+    cp test/test_param_effect_landing.cc test/test_lint007_ports_validation.cc "$_shadow/test/" 2>/dev/null
+    printf '#!/bin/sh\nexit 0\n' > "$_shadow/build/bin/cpptlm_tests"
+    chmod +x "$_shadow/build/bin/cpptlm_tests"
+    # ⚠️ **合成探针 AC**：在影子的载体表里加一行，指向一个**必然 unavailable** 的路径
+    #    ⇒ 该 AC 在完整机制下**必然**走「收尾环豁免」分支 ⇒ 用**点对点断言**（不是计数）
+    #    ⇒ 对 W1-a 的两半**各自**都有鉴别力：
+    #       · 退回「unavailable 算命中」 ⇒ Z-CLEAN 拿到 hit ⇒ **不走豁免** ⇒ 断言红
+    #       · 退回「收尾环豁免」       ⇒ Z-CLEAN 被 fail ⇒ 断言红（且收尾环 fail > 0）
+    #    ⇒ ⛔ **不用计数断言**（实测：计数从 3 降到 1 仍 ≥1 ⇒ 判据失灵）。
+    printf 'Z-CLEAN\tdoc\topenspec/changes/archive/9999-00-00-nonexistent-clean-probe/tasks.md\tclean-clone 探针锚点\tpending\n' >> "$_shadow/scripts/test/rddf_ac_carrier.tsv"
+    _mut4_out="$(cd "$_shadow" && bash scripts/test/rddf_stage_gate.sh 2>&1)"
+    _mut4_fail="$(printf '%s\n' "$_mut4_out" | grep -c '没有任何载体命中')"
+    _mut4_unavail="$(printf '%s\n' "$_mut4_out" | grep -oE '不可分发载体 [0-9]+ 条' | head -1 | grep -oE '[0-9]+' | head -1)"
+    _mut4_exempt="$(printf '%s\n' "$_mut4_out" | grep -c 'P-3 \[Z-CLEAN\].*收尾环豁免')"
+    if [ "${_mut4_fail:-1}" -eq 0 ] && [ "${_mut4_unavail:-0}" -ge 1 ] && [ "${_mut4_exempt:-0}" -ge 1 ]; then
+        ok "SELF-TEST 变异④ clean-clone 态：收尾环零 fail + 不可分发载体 ${_mut4_unavail} 条 + 合成探针 Z-CLEAN 走收尾环豁免 ⇒ 载体不可分发不判红"
+    else
+        fail "SELF-TEST 变异④ clean-clone 态异常（收尾环 fail=${_mut4_fail:-?} · 不可分发=${_mut4_unavail:-0} · Z-CLEAN 豁免=${_mut4_exempt:-0}）⇒ W1-a 无鉴别力"
+        _self_fail=1
+    fi
+
+    # ── 变异 ⑤（v5 · G-1 · W1-d ②）：**自指载体缺第二载体 ⇒ 必红** ────────────
+    # ⚠️ **只删「第二载体行」** ⇒ 该 AC 仍有登记册行 ⇒ P-3 仍绿 ⇒ **唯一红因是 P-3b**
+    #    ⇒ 变异与判据**正交**（不靠「把整个 AC 删掉」制造噪声）。
+    rm -rf "$_shadow"; mkdir -p "$_shadow/scripts/test" "$_shadow/.rddf/roadmap/objectives"
+    cp "$CARRIER" "$_shadow/scripts/test/"; cp "$0" "$_shadow/scripts/test/rddf_stage_gate.sh"
+    cp .rddf/roadmap/objectives/obj-cep-platform-remaining.md "$_shadow/.rddf/roadmap/objectives/" 2>/dev/null
+    python3 - "$_shadow" <<'PYEOF'
+import sys
+root = sys.argv[1]
+p = f"{root}/scripts/test/rddf_ac_carrier.tsv"
+lines = open(p, encoding="utf-8").read().split("\n")
+REG = ".rddf/roadmap/objectives/obj-cep-platform-remaining.md"
+out = []
+for l in lines:
+    parts = l.split("\t")
+    # 删掉 I-1 的**非登记册**载体行（保留登记册行 ⇒ P-3 仍绿）
+    if len(parts) >= 3 and parts[0] == "I-1" and parts[2] != REG:
+        continue
+    out.append(l)
+open(p, "w", encoding="utf-8").write("\n".join(out))
+PYEOF
+    _mut5="$(cd "$_shadow" && bash scripts/test/rddf_stage_gate.sh 2>&1 | grep -c 'P-3b \[I-1\] 载体指向登记册自身且')"
+    if [ "${_mut5:-0}" -ge 1 ]; then
+        ok "SELF-TEST 变异⑤ 自指载体缺第二载体被判红（P-3b [I-1]）⇒ P-3 非同义反复有牙齿"
+    else
+        fail "SELF-TEST 变异⑤ 自指载体缺第二载体未判红 ⇒ P-3b 无鉴别力"
+        _self_fail=1
+    fi
+
+    # ── 变异 ⑥（v5 · G-1 · W1-d ③）：**合法行不得误红** ─────────────────────
+    # ⚠️ 基线形态（14 个自指 AC **都有**第二载体）⇒ P-3b **必须零红**
+    rm -rf "$_shadow"; mkdir -p "$_shadow/scripts/test" "$_shadow/.rddf/roadmap/objectives"
+    cp "$CARRIER" "$_shadow/scripts/test/"; cp "$0" "$_shadow/scripts/test/rddf_stage_gate.sh"
+    cp .rddf/roadmap/objectives/obj-cep-platform-remaining.md "$_shadow/.rddf/roadmap/objectives/" 2>/dev/null
+    _mut6="$(cd "$_shadow" && bash scripts/test/rddf_stage_gate.sh 2>&1 | grep -c '载体指向登记册自身且\*\*无第二条非登记册载体\*\*')"
+    if [ "${_mut6:-1}" -eq 0 ]; then
+        ok "SELF-TEST 变异⑥ 合法形态（14 个自指 AC 均有第二载体）零误红 ⇒ P-3b 无假阳"
+    else
+        fail "SELF-TEST 变异⑥ 合法形态被判红 ${_mut6:-?} 处 ⇒ P-3b 有假阳"
         _self_fail=1
     fi
 
@@ -695,7 +871,7 @@ PYEOF
         echo -e "${RED}SELF-TEST 失败：$_self_fail 项${RST}"
         exit 1
     fi
-    echo -e "${GRN}SELF-TEST 全部通过（3 项决定性变异 + 字节指纹）${RST}"
+    echo -e "${GRN}SELF-TEST 全部通过（6 项决定性变异 + 字节指纹）${RST}"
     exit 0
 fi
 

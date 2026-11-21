@@ -102,3 +102,39 @@ I-9	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	S2-8 CI 假绿修
 I-10	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**归档验收债补齐 + 机关落地**	done
 I-11	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**spec 契约面 stale 引用修正**	done
 I-12	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**doorbell 契约面失真修正**	done
+# ── 队列 2 · v5「第二载体」行（per G-1 · W1-b）────────────────────────────────
+# ⚠️ **为什么加这 14 行**：上列 14 行的载体是**登记册自身**
+#    （`.rddf/roadmap/objectives/obj-cep-platform-remaining.md`）⇒ 锚点与载体同行
+#    ⇒ P-3 对它们是**同义反复**（永远绿）⇒ 闸的 P-3b 判据据此判红。
+# ⇒ **修法 = 补第二载体**（不是删登记册行 —— 那些行是队列 2 的**顺序声明面**）
+#    ⇒ 每行给一条**指向非登记册路径**的独立证据（验收报告 / 台账 Entry / 机关脚本）。
+# ⚠️ **先补载体、同一 commit 再启用判红**（顺序颠倒即红 —— 判据会先于证据生效）。
+I-0	doc	.rddf/reviews/cep-stage-gate-p5-hardening-verify.md	登记册队列 2 的 **I-0**	done
+I-1	doc	.rddf/reviews/cep-registry-stale-cleanup-verify.md	登记册队列 2 的 **I-1**	done
+I-2	doc	.rddf/reviews/cep-doc-hygiene-kpi-and-impl-state-verify.md	| **I-2** | 4 份文档的 5 条超长 KPI 行	done
+I-3	doc	.rddf/reviews/cep-doc-hygiene-kpi-and-impl-state-verify.md	| **I-3** | 3 份 improvement 的**状态行**	done
+I-4	doc	.rddf/reviews/cep-doc-hygiene-kpi-and-impl-state-verify.md	| **I-4** | **零代码改动**	done
+I-5	doc	.rddf/roadmap/objectives/obj-cep-platform.md	### Entry #512	done
+I-6	doc	.rddf/roadmap/objectives/obj-cep-platform.md	### Entry #514	done
+I-6a	doc	.rddf/roadmap/objectives/obj-cep-platform.md	### Entry #513	done
+I-7	doc	.rddf/roadmap/objectives/obj-cep-platform.md	### Entry #516	done
+I-8	test	scripts/test/openspec_version_check.sh	登记册队列 2 的 **I-8**	done
+I-9	test	scripts/test/cep_archforge_alignment_check.sh	[SKIP] ArchForge 仓不在本环境	done
+I-10	doc	.rddf/reviews/cep-d1-archive-verify-backfill-verify.md	# 验收报告 · **I-10**	done
+I-11	doc	.rddf/reviews/cpptlm-spec-stale-refs-b-class-verify.md	的 4 项 B 类 stale 文本	done
+I-12	doc	.rddf/reviews/cpptlm-doorbell-contract-alignment-verify.md	登记册 §6.4 队列 2 **I-12**	done
+# ── v5 工作流行（登记册 §6.4 的 W1 · 机关完整性）──────────────────────────────
+# ⚠️ **W-1c 的载体是「归档路径」本身** ⇒ 它的存在即证明该归档内容**已入库**
+#    ⇒ 干净 clone 上 `resolve_path` 能把它解析成 `archived`（真查）⇒ 载体**可分发**
+#    ⇒ 这正是 W-1c 的全部内容（登记册原写「force-add 3 个归档目录」⇒ **实测已满足，零动作**）。
+W-1a	test	scripts/test/rddf_stage_gate.sh	P-3 不可分发载体	done
+W-1b	test	scripts/test/rddf_stage_gate.sh	P-3b 自指载体判据	done
+W-1c	doc	openspec/changes/archive/2026-11-18-cpptlm-module-param-effect-landing/design.md	D-1.2 类别 ①	done
+W-1d	test	scripts/test/rddf_stage_gate.sh	clean-clone 态模拟	done
+W-1e	test	scripts/test/rddf_stage_gate.sh	队列 2 **收口**	done
+# ── v5 · W1 的验收证据行（builder 实施侧自验 · per「state=done 必须与验收证据同 commit」）──
+W-1a	doc	.rddf/reviews/cep-w1-stage-gate-integrity-verify.md	| **W-1a** |	done
+W-1b	doc	.rddf/reviews/cep-w1-stage-gate-integrity-verify.md	| **W-1b** |	done
+W-1c	doc	.rddf/reviews/cep-w1-stage-gate-integrity-verify.md	| **W-1c** |	done
+W-1d	doc	.rddf/reviews/cep-w1-stage-gate-integrity-verify.md	| **W-1d** |	done
+W-1e	doc	.rddf/reviews/cep-w1-stage-gate-integrity-verify.md	| **W-1e** |	done
