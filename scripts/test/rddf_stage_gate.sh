@@ -18,7 +18,8 @@
 #
 # 用法：
 #   bash scripts/test/rddf_stage_gate.sh              # 全量检查（P-1~P-6）
-#   bash scripts/test/rddf_stage_gate.sh --phase A    # 额外断言「阶段 A 的前置已完成」
+#   bash scripts/test/rddf_stage_gate.sh --phase A    # ⚠️ **已退役**（v5 · G-14 · W2-e）：
+#                                                     #   三个框架治理 change 均已归档 ⇒ 报「已退役」并 rc=0
 #   bash scripts/test/rddf_stage_gate.sh --phase queue2  # 额外断言「队列 2 的下一 I-* 未被声明完成」
 #
 # 退出码：0 = 全绿；1 = 有项失败（每项打印可定位的原因）
@@ -250,6 +251,23 @@ if [ "$PHASE_ARG" = "queue2" ]; then
     fi
 else
     # ── 旧规划（A/B/C 三阶段）分支 ──────────────────────────────────────
+    # ⚠️ **v5 · G-14 · W2-e**：该模式**已退役** —— 三个框架治理 change
+    #    （`cpptlm-module-param-effect-landing` / `cpptlm-config-type-registration-align`
+    #     / `cpptlm-module-param-migrate-batch2`）已于 2026-11-18~19 全部归档且 task 全勾
+    #    ⇒ `--phase A|B|C` 的判定前提（「下一阶段尚未开工」）**永久不成立** ⇒
+    #    旧实现会永久判红（「下一阶段已有 44 个 task 被勾选」）= **机关自身报假红**。
+    #    ⇒ 退役规则：**三个 change 均不在工作树**（=均已归档）⇒ 直接报退役并 rc=0，
+    #       不再进入「下一阶段」判定。（⛔ 不删旧分支逻辑：若某 change 被重新
+    #       立项回工作树，该分支仍需按原语义判序。）
+    _all_archived=1
+    for _s in A B C; do
+        _c="$(_change_of_stage "$_s")"
+        if [ -d "openspec/changes/$_c" ]; then _all_archived=0; break; fi
+    done
+
+    if [ "$_all_archived" = "1" ]; then
+        ok "P-2a 旧阶段模式 (A|B|C) **已退役**：三个框架治理 change 均已归档 ⇒ 无阶段顺序可判（⛔ 不判红）"
+    else
     CUR_STAGE="$PHASE_ARG"
     if [ -z "$CUR_STAGE" ]; then
         for _s in A B C; do
@@ -281,6 +299,7 @@ else
 fi
         fi
     fi
+    fi   # ← v5 · G-14 · W2-e：闭合「已退役判定」的 else（未退役时走原 A/B/C 语义）
 fi
 
 echo ""

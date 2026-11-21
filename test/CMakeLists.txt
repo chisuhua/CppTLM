@@ -757,6 +757,25 @@ add_test(NAME cep_instance_golden_check
 set_tests_properties(cep_instance_golden_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# 登记册 §0.1「活基线」的文档取值 == 实测 比对闸(per 登记册 §6.4 W2-a · 承载 G-2)
+#  —— 为什么独立而不并入 rddf_stage_gate.sh:
+#     §0.1 是**手写表**,每次归档/新增 spec/新增闸都会 stale(G-2 已复发 5 次);
+#     本闸把「表里的数」与「当场重算的数」互为锁 ⇒ 单改任一侧即红。
+#     ⛔ 不查 HEAD sha / 实测日期(每次 commit 即漂移 ⇒ 会把闸变成噪声源)。
+add_test(NAME cep_registry_baseline_check
+         COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/test/cep_registry_baseline_check.py)
+set_tests_properties(cep_registry_baseline_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# 登记册「旧口径残留串」的反向判据闸(per 登记册 §6.4 W2-b · 承载 G-10)
+#  —— §6.3.2 的 40 条反向判据此前只写在文档里、靠人跑;三处传播缺口(D-b/D-c/D-d)
+#     全是「上游已改、下游漏改」⇒ 判据必须进闸。MARK 词表固定在闸内(per §6.6 P-12)。
+#  ⚠️ 刻意独立于 rddf_stage_gate.sh:后者已有自调用递归前科且缠 P-2a/P-3/P-5 三类职责。
+add_test(NAME cep_registry_stale_refs_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_registry_stale_refs_check.sh)
+set_tests_properties(cep_registry_stale_refs_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # invariant 批 1 的**台账锚可解析**闸(per 单元 AC-4 · 台账 Entry #512)
 #  —— 为什么要独立:映射表闸的判据 ④ 只校验**仍在 deferrals 里**的条目;本批 3 条已移出
 #     deferrals(判据 ③「载体 ∩ ⏕ = ∅」)⇒ ④ 对它们不再生效 ⇒ 没有本闸,"台账已记录" 就只是自述。

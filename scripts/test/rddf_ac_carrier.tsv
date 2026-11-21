@@ -138,3 +138,17 @@ W-1b	doc	.rddf/reviews/cep-w1-stage-gate-integrity-verify.md	| **W-1b** |	done
 W-1c	doc	.rddf/reviews/cep-w1-stage-gate-integrity-verify.md	| **W-1c** |	done
 W-1d	doc	.rddf/reviews/cep-w1-stage-gate-integrity-verify.md	| **W-1d** |	done
 W-1e	doc	.rddf/reviews/cep-w1-stage-gate-integrity-verify.md	| **W-1e** |	done
+# ── v5 · W2 工作流行（登记册 §6.4 的 W2 · 机械化）──────────────────────────────
+# ⚠️ W-2c / W-2d 的载体是**登记册自身**（它们是登记册的文本判据）⇒ 各自另有一条
+#    指向本报告的独立证据行（P-3b 的非登记册载体要求）。
+W-2a	test	scripts/test/cep_registry_baseline_check.py	[cep-registry-baseline] §0.1 活基线	done
+W-2b	test	scripts/test/cep_registry_stale_refs_check.sh	[cep-registry-stale-refs] §6.3.2 旧口径残留串扫描	done
+W-2c	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**收敛路径 = 已收敛**（W2-c · 2026-11-22）	done
+W-2d	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	| 🆕 **P-10** |	done
+W-2e	test	scripts/test/rddf_stage_gate.sh	旧阶段模式 (A|B|C) **已退役**	done
+# ── v5 · W2 的验收证据行（builder 实施侧自验 · per「state=done 必须与验收证据同 commit」）
+W-2a	doc	.rddf/reviews/cep-w2-mechanization-verify.md	| **W-2a** |	done
+W-2b	doc	.rddf/reviews/cep-w2-mechanization-verify.md	| **W-2b** |	done
+W-2c	doc	.rddf/reviews/cep-w2-mechanization-verify.md	| **W-2c** |	done
+W-2d	doc	.rddf/reviews/cep-w2-mechanization-verify.md	| **W-2d** |	done
+W-2e	doc	.rddf/reviews/cep-w2-mechanization-verify.md	| **W-2e** |	done
