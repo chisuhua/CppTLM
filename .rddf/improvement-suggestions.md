@@ -35,4 +35,5 @@
 | Improvement | Priority | 来源 | 创建日期 |
 |---|---|---|---|
 | [cep-memory-model-operational-trace](improvements/cep-memory-model-operational-trace.md) | P2 | architect 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §三（登记册 §6.4 队列 2 的 **I-6 决策 2**：本仓**不定义** `rfe/fr/ws` 语义 ⇒ 独立立项）| 2026-11-21 |
+| [cep-tilelink-tree-manager-view-of](improvements/cep-tilelink-tree-manager-view-of.md) | P2 | architect 裁决记录同文件 §四（登记册 §6.4 队列 2 的 **I-7 决策 3** = I-7 拆 a/b；本单元 = **I-7a** = `TreeManager::view_of` const 纯查询；⚠️ 旧单元 `cep-tier2-second-family-tilelink` 的 engine 侧观测落点路径与 TLE-05 冲突 ⇒ 已标 ⏸ 不可开工）| 2026-11-21 |
 | [cep-tilelink-home-side-state-driver](improvements/cep-tilelink-home-side-state-driver.md) | P2 | architect 裁决记录同文件 §四（登记册 §6.4 队列 2 的 **I-7 决策 3** = I-7 拆 a/b；本单元 = **I-7b**；前置 = **I-7a** `TreeManager::view_of`）| 2026-11-21 |

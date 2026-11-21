@@ -21,7 +21,7 @@ created: 2026-11-20
 >
 > | sub-id | 内容 | 载体 |
 > |---|---|---|
-> | **I-7a** | `TreeManager::view_of`（const 纯查询）· 档 2 **仍单族** | ⏳ 待 planner 修订 AC + 登记 sub-id |
+> | **I-7a** | `TreeManager::view_of`（const 纯查询）· 档 2 **仍单族** | ✅ 已立项 · 可开工 → `.rddf/improvements/cep-tilelink-tree-manager-view-of.md` |
 > | **I-7b** | TileLink-C home 侧**消息簿记层** + tracker 侧观测 + 档 2 第二族 | `.rddf/improvements/cep-tilelink-home-side-state-driver.md` |
 >
 > ⛔ 本文件原规划的「**engine 侧**两处观测落点（对仗 mesif）」路径**作废** —— `openspec/specs/cep-tilelink-runtime-engine/spec.md` 的边界行 + **TLE-05** 禁止引擎持有状态 / 预设 from-state（grep 0 处 `TileLinkStateSpec::State` / transition matrix 的机械判据）。
