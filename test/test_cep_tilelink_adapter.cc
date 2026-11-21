@@ -698,8 +698,12 @@ TEST_CASE("CEP TreeManager: view_of 纯查询视图(Tip/Branch/Nothing/空条目
         CHECK(entries_uses >= 1u); // ⇒ 确实读了安装面(而非恒真占位)
     }
 
-    // I-7a AC-7: evidence_tiers 键仍 == 1(mesif-observation)
+    // I-7a AC-7: 族 1 的档 2 条目(`mesif-observation`)完好无损
     // ⚠️ 精确对象 = `evidence_tiers`(⛔ 不是 `coverage_map`、不是 `coverage_scope.families`)
+    // ⚠️ **口径订正(2026-11-21 · I-7b)**:原断言 `size() == 1` 表达的是「I-7a 本单元**未**扩面」;
+    //    I-7b 已**授权**新增族 2 条目 ⇒ 该计数不再是 I-7a 的边界,且会与授权扩面直接互斥。
+    //    ⇒ 改为断言**族 1 条目本身**仍完好 —— 这才是 I-7a 该守的内容;
+    //    「两族登记完备 + 与覆盖地图闭合」由 I-7b 的 T8/T9 承担(⛔ 不在此重复,避免第二判据源)。
     {
         const std::string raw = read_repo_file("test/cep_evidence_tiers.json");
         REQUIRE_FALSE(raw.empty());
@@ -707,8 +711,12 @@ TEST_CASE("CEP TreeManager: view_of 纯查询视图(Tip/Branch/Nothing/空条目
         REQUIRE(doc.contains("evidence_tiers"));
         const auto& tiers = doc.at("evidence_tiers");
         REQUIRE(tiers.is_object());
-        CHECK(tiers.size() == 1u);
-        CHECK(tiers.contains("mesif-observation"));
+        REQUIRE(tiers.contains("mesif-observation"));
+        const auto& mesif = tiers.at("mesif-observation");
+        CHECK(mesif.at("tier").get<int>() == 2);
+        CHECK(mesif.at("family").get<std::string>() == "mesif");
+        CHECK(mesif.at("run_produced").get<bool>() == false);
+        CHECK(mesif.at("has_verdict").get<bool>() == false);
     }
 
     // I-7a AC-8: 零 diff 面(禁改路径未被本单元触碰)
@@ -739,10 +747,16 @@ TEST_CASE("CEP TreeManager: view_of 纯查询视图(Tip/Branch/Nothing/空条目
             ++n_peer_viewof;
         CHECK(n_viewof == n_peer_viewof);
         // ③
+        // ⚠️ **两项移出(2026-11-21 · I-7b)**:
+        //    · `test/cep_evidence_tiers.json` —— 档 2 第二族条目**属 I-7b 写集**;
+        //    · `docs/architecture` —— I-7b 的 AC-17 授权在 `07-coherence-exploration-platform.md`
+        //      **追加** SU(append-only)。
+        //    留在「工作区 == HEAD」面 ⇒ **任何授权的后续单元**都会在提交前把本测试判红
+        //    (判据与被守护的边界错位)。⇒ 本清单只保留**永久冻结**面;
+        //    「既有 SU 段落逐字不改」由 I-7b AC-17 的 diff 证据承担。
         const std::string forbidden =
             "include/tlm/cep/sharer_tracker.hh include/tlm/cep/protocol_engine_base.hh "
-            "docs/adr docs/architecture openspec/specs/cep-tilelink-runtime-engine/spec.md "
-            "test/cep_evidence_tiers.json";
+            "docs/adr openspec/specs/cep-tilelink-runtime-engine/spec.md";
         CHECK(git_diff_quiet(forbidden) == 0);
     }
 

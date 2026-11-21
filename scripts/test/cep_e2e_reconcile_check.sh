@@ -30,7 +30,7 @@
 #
 # 用法:
 #   bash scripts/test/cep_e2e_reconcile_check.sh               # 基线正控(真实仓)
-#   bash scripts/test/cep_e2e_reconcile_check.sh --mutations   # + 4 条决定性变异(影子副本)
+#   bash scripts/test/cep_e2e_reconcile_check.sh --mutations   # + 11 条决定性变异(影子副本)
 #   CEP_RECONCILE_JSONL=... CEP_RECONCILE_TIERS=... bash ...   # 影子副本模式(变异用)
 #
 # ── 2026-11-14(change `cep-evidence-tier2-minimal-slice` / per `ADR-CEP-20` 决策 6):
@@ -55,6 +55,19 @@
 #    ⚠️ **为什么必须有 T7**:`completeness == EXACT` **不足以**判定适用 ——
 #      `nvlink_4`(BroadcastNull)是 EXACT 但 `broadcast_fallback = true` + `scope = NONE`
 #      ⇒ sharer 视图恒为**全广播** ⇒ 「他人 sharer」恒非空 ⇒ **恒判违例**(⛔ 不是零违例)。
+#
+# ── 2026-11-21(change `cpptlm-cep-tilelink-home-state-driver` · I-7b):
+#    **档 2 两族**的跨表闭合与载体词表 —— 此前两张表**无任何判据绑定**
+#      · **T8** `evidence_tiers` ↔ `coverage_map` **双向**一致:
+#        ① 条目族 ∈ 覆盖地图 ② 该族 `tier2_applicable is True`
+#        ③ 反向:覆盖地图声明适用 ⇒ **必须**有条目覆盖
+#        ⇒ 否则 `档 2 条目家族不在覆盖地图` / `档 2 条目家族在覆盖地图标记不适用` /
+#          `覆盖地图声明档 2 适用但无条目覆盖`
+#      · **T9** `carrier_kind` **封闭词表**(`protocol-engine-observation` / `tracker-observation`)
+#        + 两条目**互异**(两族载体形态不同:引擎侧 ↔ tracker 侧)
+#        ⇒ 否则 `载体形态词表外取值` / `载体形态撞值`
+#    ⚠️ **为什么需要 T9**:`carrier_kind` 在 `cep-evidence-tiers/v1` 里只有 tag 字符串、
+#      **无 schema 文件** ⇒ 取值域无处封闭 ⇒ 错一个字也能过 T4 的非空检查。
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -222,6 +235,10 @@ DOC_UNITS = [
     # (相对 docs_root 的路径, 段标题前缀(None=整份), 单元标签)
     ("docs/architecture/07-coherence-exploration-platform.md",
      "## Status Update 2026-11-14", "07号 · 档 2 SU 段"),
+    # ⚠️ 2026-11-21(I-7b):第二族的 SU 段 —— 必须**显式登记**,
+    #    否则新 SU 完全落在 T6 的扫描面之外(⛔ 结构上不受保护)。
+    ("docs/architecture/07-coherence-exploration-platform.md",
+     "## Status Update 2026-11-21", "07号 · 档 2 第二族 SU 段"),
     ("docs/guide/cep-usage.md", "## 12.10", "手册 · §12.10 段"),
     ("openspec/specs/cep-evidence-tier2-observation/spec.md",
      None, "main spec(整份 · 整体即档 2 产出物)"),
@@ -358,6 +375,56 @@ else:
                         print(f"✗ {ev_path} 覆盖地图 caps 与代码真源不符: {iid}.{k} "
                               f"表={rec.get(k)!r} 代码={traits[impl][k]!r}", file=sys.stderr)
                         problems += 1
+
+# ── T8:evidence_tiers ↔ coverage_map **双向**跨表一致(2026-11-21 · I-7b)─────
+#
+# ⚠️ **真缺口**:T4/T5 只管单表内部(T4 字段 / T5 表述),T7 只管 coverage_map 自己
+#    (与实例声明 + 代码 traits 对账)⇒ **没有任何判据把两张表绑在一起** ⇒
+#    可以出现「登记了档 2 条目,但它所属的族在覆盖地图里标着不适用」这种自相矛盾
+#    ⇒ 本组补三个方向:
+#      ① 条目族 ∈ 覆盖地图(⛔ 否则该条目的适用性无从判定)
+#      ② 该族 `tier2_applicable is True`(⛔ 否则条目与地图自相矛盾)
+#      ③ 反向:覆盖地图声明适用 ⇒ **必须**有条目覆盖(⛔ 否则地图的适用性是空承诺)
+if isinstance(cov, dict) and isinstance(cov.get("families"), dict):
+    fam = cov["families"]
+    covered_fams = set()
+    for cid, e in entries.items():
+        f = e.get("family")
+        covered_fams.add(f)
+        if f not in fam:
+            print(f"✗ {ev_path} 档 2 条目家族不在覆盖地图: carrier_id={cid!r} family={f!r}",
+                  file=sys.stderr)
+            problems += 1
+            continue
+        if fam[f].get("tier2_applicable") is not True:
+            print(f"✗ {ev_path} 档 2 条目家族在覆盖地图标记不适用: carrier_id={cid!r} "
+                  f"family={f!r} tier2_applicable={fam[f].get('tier2_applicable')!r}", file=sys.stderr)
+            problems += 1
+    for f, rec in fam.items():
+        if rec.get("tier2_applicable") is True and f not in covered_fams:
+            print(f"✗ {ev_path} 覆盖地图声明档 2 适用但无条目覆盖: family={f!r}", file=sys.stderr)
+            problems += 1
+
+# ── T9:carrier_kind **封闭词表** + 两条目互异(2026-11-21 · I-7b)────────────
+#
+# ⚠️ **为什么需要**:`carrier_kind` 在 `cep-evidence-tiers/v1` 里**只有 tag 字符串、
+#    无 schema 文件** ⇒ 取值域**无处封闭**(写错一个字都能通过 T4 的非空检查)。
+#    ⇒ 词表由本判据封闭;⚠️ 且两族**载体形态必须互异** —— 族 1 是引擎侧、族 2 是
+#    tracker 侧,撞值意味着「两种形态」这个读法是假的。
+CARRIER_KINDS = ("protocol-engine-observation", "tracker-observation")
+seen_kind = {}
+for cid, e in entries.items():
+    k = e.get("carrier_kind")
+    if k not in CARRIER_KINDS:
+        print(f"✗ {ev_path} 载体形态词表外取值: carrier_id={cid!r} carrier_kind={k!r} "
+              f"允许={CARRIER_KINDS!r}", file=sys.stderr)
+        problems += 1
+    if k in seen_kind:
+        print(f"✗ {ev_path} 载体形态撞值: carrier_id={cid!r} 与 {seen_kind[k]!r} 同为 {k!r}",
+              file=sys.stderr)
+        problems += 1
+    else:
+        seen_kind[k] = cid
 
 print(f"[evidence-tiers] 档 2 非 run 载体登记 {len(entries)} 条 · "
       f"文档产出物 {doc_units} 个 · "
@@ -539,7 +606,7 @@ fi
 
 echo "✓ CEP E2E 双向闸通过(台账 ↔ 仓内 run 产物)"
 
-# ── 9 条决定性变异(⛔ 只在影子副本上做;每条须**按签名红**)──────────────
+# ── 11 条决定性变异(⛔ 只在影子副本上做;每条须**按签名红**)─────────────
 if [[ $MUTATIONS -eq 1 ]]; then
   echo "── 决定性变异(影子副本)──────────────────────────────"
   FP_BEFORE="$(sha256sum "$LEDGER" "$TIERS" "$EVIDENCE_TIERS" "$DOC07" "$GUIDE" "$SPEC")"
@@ -612,6 +679,14 @@ elif no == "g":    # 档 2 **文档产出物**被植入**肯定式**夸大表述
                 if lines[i].startswith("## ")), len(lines))
     lines.insert(end, "> 档 2 的检测力已证,所有族均达成通过态。")
     p.write_text("\n".join(lines), encoding="utf-8")
+elif no == "j":    # 档 2 条目的族**指向覆盖地图里不适用的族**(T8)
+    ev = json.loads(evt.read_text(encoding="utf-8"))
+    ev["evidence_tiers"]["tilelink_c-observation"]["family"] = "moesi_gpu"
+    evt.write_text(json.dumps(ev, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+elif no == "k":    # 两族**载体形态撞值**(T9)
+    ev = json.loads(evt.read_text(encoding="utf-8"))
+    ev["evidence_tiers"]["tilelink_c-observation"]["carrier_kind"] = "protocol-engine-observation"
+    evt.write_text(json.dumps(ev, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 led.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
 tir.write_text(json.dumps(tiers, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PYM
@@ -638,6 +713,8 @@ PYM
   mutate "文档夸大表述"                  g "档 2 文档产出物被植入肯定式夸大表述"
   mutate "覆盖地图推导规则不符"            h "覆盖地图的 tier2_applicable 反转(tilelink_c)"
   mutate "覆盖地图 caps 与代码真源不符"      i "覆盖地图的 mesif.completeness 改 CONSERVATIVE(推导保持自洽)"
+  mutate "档 2 条目家族在覆盖地图标记不适用"  j "新条目 family 改成 moesi_gpu ⇒ T8 红"
+  mutate "载体形态撞值"                      k "新条目 carrier_kind 撞值成 protocol-engine-observation ⇒ T9 红"
 
   FP_AFTER="$(sha256sum "$LEDGER" "$TIERS" "$EVIDENCE_TIERS" "$DOC07" "$GUIDE" "$SPEC")"
   if [[ "$FP_BEFORE" != "$FP_AFTER" ]]; then
@@ -645,6 +722,6 @@ PYM
   fi
   echo "  ✓ 真实仓字节指纹前后相等"
   [[ $MF -ne 0 ]] && { echo "✗ $MF 条变异未按签名红"; exit 1; }
-  echo "✓ 9 条决定性变异全部按签名红 + 还原绿"
+  echo "✓ 11 条决定性变异全部按签名红 + 还原绿"
 fi
 exit 0

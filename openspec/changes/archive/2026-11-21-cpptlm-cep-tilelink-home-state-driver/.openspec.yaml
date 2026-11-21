@@ -1,0 +1,7 @@
+schema: spec-driven
+created: 2026-11-21
+goal: 档 2 第二族(tilelink_c)的 home 侧消息簿记层 + tracker 侧观测面
+skip_specs: false
+x-phase: phase-10
+x-priority: P2
+x-status: proposed

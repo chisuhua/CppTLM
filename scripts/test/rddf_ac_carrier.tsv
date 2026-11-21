@@ -73,8 +73,30 @@ I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-3: lookup 不是快照(ESCALA
 I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-4: 脏性口径(dirty == tips;Branch ⇒ dirty == 0)	done
 I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-5: CHAIN in-flight 期间 view_of 仍返回安装面视图	done
 I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-6: 零副作用(has_node 探针 + events 长度不变)	done
-I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-7: evidence_tiers 键仍 == 1(mesif-observation)	done
+I-7	test	test/test_cep_tilelink_adapter.cc	I-7a AC-7: 族 1 的档 2 条目(`mesif-observation`)完好无损	done
 I-7	cmd	bash scripts/test/rddf_stage_gate.sh	--phase queue2	done
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-1: 安装表恰 10 行 / 行序 == 消息枚举值 / 消息名集合 == 规范 10 词表	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-2: 逐行 basis ↔ ref kind 一致	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-3: Pending 行 ⇒ 动作恒 NoOp	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-4: 影子表改 basis ⇒ 判据红(判别力)	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-5: 驱动头文件**不得**出现规约层映射表的自有字面量副本	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-6 · D-1:单调性 —— Grant→Release 配对 ⇒ 终态 sharers **精确 == 0**	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-7 · D-2: 「保留 vs 放弃」单差异 ⇒ 方向相反 ⇒ 目标不同	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-8 · D-3: 载荷折叠试金石 —— 无载荷(0)给需要载荷的行 ⇒ 不可判	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-9: 源 = Tip 再收 Grant ⇒ 依 TLC-06	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-10 · 正控:合法流 ⇒ 违例数 **0**	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-10 · 负控:写者取 Tip 时目录里还有他人 ⇒ 违例 **精确 == 1**	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-10 · 判定行只取「Tip 获取」 ⇒ 纯非 Tip 事件 ⇒ 判定行增量 == 0	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-11 · 反 fixture:绕过驱动直接播种 ⇒ provenance_broken	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-12 · 装配期硬断言 ①:node 未映射 ⇒ 不可判	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-12 · 硬断言 ②:多 Tip ⇒ 不装表 + 不可判	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-13 · 观测面默认关闭 ⇒ 零记录 + 不可判	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-13 · 有界性:溢出 ⇒ 丢弃计数递增 ⇒ 不可判	pending
+I-7	test	test/test_cep_tilelink_home_driver.cc	I-7b AC-14 ③:载体内容判据	pending
+I-7	test	test/cep_evidence_tiers.json	"carrier_kind": "tracker-observation"	pending
+I-7	test	scripts/test/cep_e2e_reconcile_check.sh	载体形态撞值	pending
+I-7	test	openspec/changes/cpptlm-cep-tilelink-home-state-driver/specs/cep-evidence-tier2-observation/spec.md	tracker 侧载体 SHALL 在驱动边界产生 per-installation 观测	pending
+I-7	doc	docs/architecture/07-coherence-exploration-platform.md	## Status Update 2026-11-21	pending
 I-8	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	`openspec` 版本 pinning	done
 I-9	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	S2-8 CI 假绿修复	done
 I-10	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**归档验收债补齐 + 机关落地**	done

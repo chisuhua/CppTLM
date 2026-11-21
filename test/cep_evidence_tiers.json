@@ -39,6 +39,44 @@
         "test/test_cep_tier2_observation.cc"
       ],
       "non_empty_gate": "scripts/test/cep_e2e_reconcile_check.sh"
+    },
+    "tilelink_c-observation": {
+      "tier": 2,
+      "family": "tilelink_c",
+      "carrier_kind": "tracker-observation",
+      "version_caliber": "no-version-dimension",
+      "version_caliber_note": "档 2 **无版本维**(per architect 裁决 R1)⇒ ⛔ 非协议语义版本;tracker 侧观测面记录的是**安装前副本分布**与归因来源,⛔ 不是版本代理",
+      "coverage_scope": {
+        "families": [
+          "tilelink_c"
+        ],
+        "topologies": [
+          "single-topology"
+        ],
+        "instances": 1,
+        "note": "**单族(tilelink_c)/ 单拓扑 / 一次实例**,且限定**本子树内**(`ESCALATE_UP` 使兄弟/祖先子树的持有者在本 tracker 上恒不可见)⇒ ⛔ 一次实例不等于各族 / 各拓扑达成"
+      },
+      "attribution": "sharer 可见性维的归因 = **home 侧消息簿记层的安装动作**(驱动边界观测 + 安装台账溯源);⛔ 不是「引擎实现错误」的证据(该载体无引擎态迁移)",
+      "evidence_scope": "档 2(协议级)观测面 + 契约级断言 —— 协议级 sharer 可见性判据经 **tracker 侧载体**(单族 tilelink_c / 单拓扑 / **本子树内**);⭕ **无 run / 无 verdict / 无通过态**;data-value 维不在该载体范围内(`Trunk` 折叠为 `Branch` ⇒ may-contain-dirty 不可见)⇒ ⛔ 不构成「检测力已证」",
+      "run_produced": false,
+      "has_verdict": false,
+      "can_claim": [
+        "协议级 sharer 可见性判据可经 tracker 侧载体机判(写者获取独占时该地址是否仍被他人持有)",
+        "不可判形态(装配前提不成立 / 载荷超域 / 观测面关闭 / 丢弃非零)可与零违例严格区分",
+        "每条观测的「他人 sharer」位可溯源到输入流消息 id(绕过驱动的安装判 provenance_broken)"
+      ],
+      "cannot_claim": [
+        "不得宣称与 `mesif-observation` 同型(载体形态不同:tracker 侧无引擎态迁移、无数据前后值)",
+        "不得宣称档 2 存在「通过态」(该档位不产 run ⇒ 无 verdict)",
+        "不得宣称覆盖 data-value 维(`Trunk` 折叠为 `Branch` ⇒ may-contain-dirty 不可见)",
+        "不得宣称覆盖跨子树(单 tracker 实例 ⇒ 兄弟/祖先子树的持有者不可见)",
+        "不得宣称协议语义全覆盖(权限维与标签维不在该档位范围内)"
+      ],
+      "carrier_files": [
+        "include/tlm/cep/tilelink_home_state_driver.hh",
+        "test/test_cep_tilelink_home_driver.cc"
+      ],
+      "non_empty_gate": "scripts/test/cep_e2e_reconcile_check.sh"
     }
   },
   "coverage_map": {
@@ -92,7 +130,7 @@
         "broadcast_fallback": false,
         "tier2_applicable": true,
         "disposition": "applicable",
-        "reason": "`TreeManager`: completeness = EXACT 且无广播兜底 ⇒ 可回答「没有其他 sharer」⇒ 档 2 判据有判别力"
+        "reason": "`TreeManager`: completeness = EXACT 且无广播兜底 ⇒ 可回答「没有其他 sharer」⇒ 档 2 判据有判别力;⚠️ 限定「**本子树内**」—— `ESCALATE_UP` 使兄弟/祖先子树的持有者在本 tracker 上**恒不可见**(per 该载体的 `Scope::SUBTREE` 契约)⇒ 该族档 2 判据的覆盖范围仅限本子树,⛔ 不得读作全局"
       },
       "nvlink_4": {
         "impl": "BroadcastNull",

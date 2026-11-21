@@ -27393,3 +27393,46 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **⚠️ 暂态（P-5）**：`_active` = 活跃 change 数 ⇒ **立项期间** P-5「活口径取值 != 实测」必然红（并经 P-3 的 cmd 行传染到内层）⇒ 沿用 I-6 先例**不回填**活口径 ⇒ **归档后 `_active` 归 0 ⇒ 自动恢复绿**。
 
 **关联**：登记册 §6.4 队列 2 的 **I-7**（= **I-7a** ✅ 落地 · **I-7b** ⏳ 待立项）· openspec change `cpptlm-cep-tilelink-tree-manager-view-of`（归档 `openspec/changes/archive/2026-11-21-cpptlm-cep-tilelink-tree-manager-view-of/`）· 验收报告 `.rddf/reviews/cpptlm-cep-tilelink-tree-manager-view-of-verify.md` · 裁决记录 §四（Q-a）· 旧单元 `cep-tier2-second-family-tilelink`（⏸ 已拆分 · 不可开工）
+
+### Entry #516 — 2026-11-21 [builder](**CEP 档 2 第二族 `tilelink_c` 的 home 侧消息簿记层落地（登记册队列 2 的 **I-7b**）** —— 档 2 的**载体形态**由「一族」扩为「两族」)
+
+**起因**：档 2（协议级）观测面此前**只有 1 族**（`mesif` · 引擎侧）。`coverage_map` 早把 `tilelink_c` 标为 `tier2_applicable = true`，但**没有载体**：`TreeManager` 的构造点全仓仅 1 处（作 CHAIN 对照）⇒ 档 2 判据所需的「写者获取独占时目录里还有别人」**无产生点**；且驱动**不能**放进 tilelink 引擎（受 `openspec/specs/cep-tilelink-runtime-engine/spec.md` 边界行 + TLE-05 约束）⇒ 缺口 = home 侧的**消息簿记层**。
+
+**形态来源**：architect 裁决 `.rddf/reviews/cep-i7b-adjudication-2026-11-21.md`（**Q-1** 逐行 basis 纪律 · **Q-2** 契约面主体；oracle APPROVE → critic APPROVE_WITH_CONDITIONS，**2 条条件 BLOCKER 复审已闭合**）· 用户 ratify（2026-11-21）⇒ ⛔ 实施侧不得自决语义，行内容由 change `design.md` 的 D-1 承载。
+
+**交付**：
+
+| 项 | 落点 |
+|---|---|
+| home 侧消息簿记层（header-only） | `include/tlm/cep/tilelink_home_state_driver.hh` |
+| 判定级载体（AC-1 ~ AC-14 逐条） | `test/test_cep_tilelink_home_driver.cc`（5 cases / 110 assertions） |
+| 档 2 第二族条目 | `test/cep_evidence_tiers.json` → `tilelink_c-observation`（`carrier_kind = "tracker-observation"`） |
+| 跨表闭合 + 载体词表闸 | `scripts/test/cep_e2e_reconcile_check.sh` 的 **T8** / **T9**（变异基座 9 → **11** 条） |
+| 契约面（delta → main） | `openspec/specs/cep-evidence-tier2-observation/spec.md`（主体首句改「两载体形态」+ tracker 侧新 Scenario；族 1 的 7 个 Scenario 逐字保留） |
+| 读法 SU（append-only） | `docs/architecture/07-coherence-exploration-platform.md`（索引按生成器重生成） |
+| 归档 change | `openspec/changes/archive/2026-11-21-cpptlm-cep-tilelink-home-state-driver/` |
+
+**逐行 basis（10 行表 · per Q-1）**：3 行无事件消息（`Acquire` / `ReleaseAck` / `GrantAck`）= `Direct`（`event_ref` 与 `payload_ref` 均 SpecClause）；7 行 = `SelfDerived`（`event_ref` = `TLC-M-0x` SpecClause · `payload_ref` = `repo` RepoDerived）—— ⚠️ **载荷域排除项是本仓推导**（规约只给 `toT/toB/toN` 记号；**每类消息允许哪几个目标态**在仓内无逐值锚点）⇒ 显式登记，⛔ 不表述为规范锚定。`Pending` ⇒ 动作恒 NoOp（fail-closed）。
+
+**关键设计事实**：⛔ `Cap` 行（源不定 · 3 位目标）**不可直接安装** ⇒ 任何需 `Cap` 的输入恒 `Undecidable`；⛔ 驱动**不持有** T3 表 / 12 格表的自有副本（经 `t3_consumable_event_mask` / `transition` 只读消费 ⇒ C-5 静态扫描）。
+
+**决定性变异（真变异 2 条 + 影子 2 条 + 闸内 2 条）**：
+
+- M-1 安装表前两行换序 ⇒ `CHECK(row_universe_ok(kTlHomeInstallRows))` **false**（C-1 行序锁）；还原后 sha256 一致、全绿
+- M-2 删 `tracker_->set_sharer(...)` 调用 ⇒ AC-14③ 载体内容判据 **false** + AC-10 正控 `invalid` + AC-10 负控 `swmr_violations == 1` 变 `0 == 1` + AC-6 单调性 `sharers == 1` 变 `0 == 1`；还原后 sha256 一致、全绿
+- 闸内 j：新条目 `family` → `moesi_gpu` ⇒ **T8** 红（签名「档 2 条目家族在覆盖地图标记不适用」）
+- 闸内 k：`carrier_kind` → `protocol-engine-observation`（与族 1 撞值）⇒ **T9** 红（签名「载体形态撞值」）
+
+**⚠️ 上游表述被实施事实推翻（3 处 · 已在 design / 测试登记）**：① `Grant` / `GrantData` 的目标是 **`Grow`**（`TLC-M-02`）⛔ 不是 `Cap` 行（源不定）② preflight 的「G-1 不可判定」**撤销**（T3 表 11 行全 `Direct`）③ `tilelink_state_spec.hh:735-744` 的 basis 一致性是**运行时谓词**（非 `static_assert`）。
+
+**⚠️ I-7a 口径随授权扩面订正（2 处 · 非弱化）**：`test/test_cep_tilelink_adapter.cc` 的 ① AC-7 原断言 `evidence_tiers.size() == 1`（表达「I-7a 未扩面」）⇒ 改为断言**族 1 条目本身**仍完好（`tier == 2` / `family == mesif` / 不产 run / 无 verdict）；② AC-8 的「工作区 == HEAD」禁改面移除 `test/cep_evidence_tiers.json` 与 `docs/architecture`（二者已属 I-7b 授权写集；留着会让**任何**授权扩面在提交前把无关测试判红）。载体表对应锚点同步更新。
+
+**诚实边界**：本单元建立的是**观测面**（tracker 侧 · 单子树 / 单 tracker 实例）—— ⛔ **不等于**档 2 已全面达成（`coverage_map` 中 `tier2_applicable = false` 的族仍无判别力）；⛔ 不覆盖 data-value 维（`Trunk` 折叠为 `Branch` ⇒ may-contain-dirty 不可见）；⛔ 无 run / 无 verdict / 无通过态。
+
+**冻结面（五步链 · 本 Entry 即授权）**：
+
+- `docs/architecture/07-coherence-exploration-platform.md` —— **追加式** SU（既有正文与既有 SU 逐字不改；索引段按生成器重生成）
+- `openspec/specs/cep-evidence-tier2-observation/spec.md` —— 归档合并 delta（主体首句 + 1 个新 Scenario）
+- ⚠️ `artifact_count` **不变**（不新增冻结成员：delta 走既有 spec；归档目录只匹配 `*cpptlm-cep-umbrella` 形态 ⇒ 不入集）
+
+**关联**：登记册 §6.4 队列 2 的 **I-7**（= **I-7a** ✅ + **I-7b** ✅）· 裁决 `.rddf/reviews/cep-i7b-adjudication-2026-11-21.md` · 交办包 `.rddf/reviews/cep-i7b-preflight-2026-11-21.md` · 验收报告 `.rddf/reviews/cpptlm-cep-tilelink-home-state-driver-verify.md`

@@ -858,9 +858,45 @@ group-scoped completion     → Fabric Collective Plane
 
 > ⚠️ **冻结面授权链的时序(⛔ 随引用重复)**:本则改动的 4 个文件**全在 M1 冻结面**(86 产物,per `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`)⇒ `cep_freeze_check.sh` 报红是**预期态**;`--update` 的 `--authorized-by <台账 entry id>` 为**必填**,而台账唯一写入方是 **rdd-planner** ⇒ **须待 planner 落台账 Entry 后**方可执行 `--update` ⇒ 在此之前本则的**冻结清单 provenance 未闭合**。索引 B 的「台账」列暂显 `—`(generator 只识别 `台账 Entry #N`;`—` 有先例)⇒ **本则的台账可追性由上行的 `backlog:` 指针承担**。
 
+## Status Update 2026-11-21(档 2 第二族 `tilelink_c` · tracker 侧载体 · per 台账 Entry #516)—— 档 2 的**载体形态**由一族扩为两族
+
+> **性质**:纯**追加** SU(append-only)。⛔ 不改本文件既有正文与任何既有 SU —— **逐字保留不重写**。
+> **依据**:`.rddf/improvements/cep-tilelink-home-side-state-driver.md`(登记册 §6.4 队列 2 的 **I-7b**)· 实施形态裁决 `.rddf/reviews/cep-i7b-adjudication-2026-11-21.md`(Q-1 逐行 basis 纪律 + Q-2 契约面主体;oracle APPROVE / critic APPROVE_WITH_CONDITIONS,2 条条件 BLOCKER 复审已闭合)· 用户 ratify(2026-11-21)。
+
+### ① 档 2 的载体形态:从「一族一形态」到「两族两形态」
+
+| # | 族 | 载体形态(`carrier_kind`) | 产生点 | 观测粒度 |
+|:--:|---|---|---|---|
+| 1 | `mesif` | `protocol-engine-observation` | 协议级引擎的**状态迁移 / 行数据装入**落点 | per-event |
+| 2 | `tilelink_c` | `tracker-observation` | home 侧**消息簿记层**的**驱动边界** | per-installation |
+
+- 族 2 的载体 = `include/tlm/cep/tilelink_home_state_driver.hh`(header-only · **被动**簿记层:把输入消息流翻译为树表安装,⛔ 不自主发 `Probe`/`Grant`,不做超时与 transient 处理)。
+- 观测取 `TreeManager::view_of` 的 const 纯查询(I-7a 提供),快照时点 = **安装前**;观测点⛔ 不在 `TreeManager` 内部(观测自己维持的不变量 = 同义反复 ⇒ 必绿)。
+- 两族登记面 = `test/cep_evidence_tiers.json` 的 `evidence_tiers`(2 条);跨表闭合与载体词表由 `scripts/test/cep_e2e_reconcile_check.sh` 的 **T8**(两表双向一致)/ **T9**(载体词表封闭 + 两位互异)机检。
+
+### ② 读法(⛔ 随引用重复)
+
+1. **两族 / 两种载体形态** —— ⛔ 不等于各族均已达成本档位;`coverage_map` 中 `tier2_applicable = false` 的族(如 `moesi_gpu` 的 CONSERVATIVE、`nvlink_4` 的全广播)仍**判据无判别力**。
+2. **单子树** —— 族 2 的覆盖范围限**本子树内**:`TreeManager` 的 `Scope::SUBTREE` + `ESCALATE_UP` ⇒ 兄弟/祖先子树的持有者在本 tracker 上恒不可见。
+3. **单 tracker 实例** —— 族 2 的 `instances = 1`、`topologies = ["single-topology"]`;⛔ 一次实例不构成跨拓扑 / 多实例的证据。
+4. **无通过态** —— 档 2 不产 4 件套 run ⇒ 无 `hypothesis_id` / 无 verdict;⛔ 「观测到 0 违例」不得读作本档位的通过态。
+5. **不可判 ≠ 零违例** —— 装配前提不成立(node 未映射 / 多 Tip)、载荷超域、观测面关闭、丢弃计数非零 ⇒ 一律计**不可判**(⛔ 不得记 0)。
+6. **族 2 不覆盖 data-value 维** —— `Trunk` 折叠为 `Branch` ⇒ may-contain-dirty 在 `dirty`(= Tip 集)掩码上不可见;观测记录内⛔ 无引擎态的迁移前后态 / 数据前后值。
+
+### ③ Verification(可勾选 · 前瞻)
+
+- [x] 本则已**追加**;本文件既有正文与**全部**既有 SU **逐字未变**(索引段按生成器重生成 ⇒ 行号随之更新,非内容改写);新增 invariant 数 = **0**
+- [x] 档 2 登记面 **2 条**(`mesif-observation` + `tilelink_c-observation`),`carrier_kind` 互异且落在封闭词表内(T9)
+- [x] 两条目的 `family` 均在 `coverage_map.families` 内且该族 `tier2_applicable is True`;反向:每个 `tier2_applicable is True` 的族都有条目覆盖(T8)
+- [x] 两条目均 `run_produced = false` / `has_verdict = false`(档 2 ⭔ 不产 run)
+- [x] `coverage_map.families.tilelink_c.reason` 追加「**本子树内**」限定(既有文字逐字保留)
+- [x] 本段已登记进 `cep_e2e_reconcile_check.sh` 的 `DOC_UNITS` ⇒ T6 的防夸大扫描面覆盖它
+
+**关联**:`openspec/changes/cpptlm-cep-tilelink-home-state-driver/`(本单元 change)· `test/test_cep_tilelink_home_driver.cc`(判定级载体)· `.rddf/reviews/cep-i7b-preflight-2026-11-21.md`(技术探测)· I-7a:`commit a2a4c7ae`(`TreeManager::view_of`)
+
 ## §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295)
 
-> **用途**:本文件已 **35 个一级节 / 22 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
+> **用途**:本文件已 **36 个一级节 / 23 则 Status Update** —— **全部** `## ` 级标题与**全部** Status Update 逐条列于下表(索引 A / 索引 B 由 `scripts/cep/generate_doc_index.py` **全量机械生成**,含**实测行号列**)⇒ 故设本索引(以**零影响**既有 `path:line` 锚点 —— ArchForge 对齐清单按行号锚定)
 
 > ⚠️ **新纪律(per 台账 Entry #295,逐字)**:本索引**永久置于文末**;此后**新增段落 SHALL 插在本索引之前** ⇒ **新增内容永不使既有 `path:line` 锚点位移**;⚠️ **最新 SU 在本索引之前**(⛔ 勿在本文末找最新段)。
 
@@ -868,7 +904,7 @@ group-scoped completion     → Fabric Collective Plane
 
 > ⚠️ **2026-11-12 起**:索引 A / 索引 B **全量列出**(⛔ 不再有「另有 N 个未列入」的 `## ` 标题);自述数 == 索引行数 == 文件**实际** `## ` / SU 数(`cep_index_position_check.sh` 三合一判据 + 行号逐行判据)。⚠️ **待人工判断的导航标注不在索引 A / B**(索引 A/B 是机械视图)⇒ 见索引 C 与 `§11` / `§12` 的正文说明。
 
-### 索引 A · 一级节(35)
+### 索引 A · 一级节(36)
 
 | # | 章节 | 行 |
 |---|---|---|
@@ -906,9 +942,10 @@ group-scoped completion     → Fabric Collective Plane
 | 32 | Status Update 2026-11-14(档 2 协议级观测面 · per 台账 Entry #410)—— 天花板档的**载体形态**与**读法边界** | 719 |
 | 33 | Status Update 2026-11-14(二 · objective 归档 + 口径 ④ ratify · per 台账 Entry #419)—— 终局 Ⅲ-甲:**归档与 DoD Go 解耦** | 765 |
 | 34 | Status Update 2026-11-14(架构文档对齐订正 · 台账 `backlog: cep-architecture-doc-alignment-2026-11-14`)—— 文档 ↔ 代码 10 处漂移的措辞澄清 + 6 处残余登记 | 818 |
-| 35 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 861 |
+| 35 | Status Update 2026-11-21(档 2 第二族 `tilelink_c` · tracker 侧载体 · per 台账 Entry #516)—— 档 2 的**载体形态**由一族扩为两族 | 861 |
+| 36 | §末 文档索引(2026-11-08 移置文末,per 台账 Entry #295) | 897 |
 
-### 索引 B · Status Update(22 · 2026-10-28 起)
+### 索引 B · Status Update(23 · 2026-10-28 起)
 
 | # | 日期 | 主题 | 台账 | 行 |
 |---|---|---|---|---|
@@ -934,6 +971,7 @@ group-scoped completion     → Fabric Collective Plane
 | 20 | 2026-11-14 | Status Update 2026-11-14(档 2 协议级观测面 · per 台账 Entry #410)—— 天花板档的**载体形态**与**读法边界** | Entry #410 | 719 |
 | 21 | 2026-11-14 | Status Update 2026-11-14(二 · objective 归档 + 口径 ④ ratify · per 台账 Entry #419)—— 终局 Ⅲ-甲:**归档与 DoD Go 解耦** | Entry #419 | 765 |
 | 22 | 2026-11-14 | Status Update 2026-11-14(架构文档对齐订正 · 台账 `backlog: cep-architecture-doc-alignment-2026-11-14`)—— 文档 ↔ 代码 10 处漂移的措辞澄清 + 6 处残余登记 | — | 818 |
+| 23 | 2026-11-21 | Status Update 2026-11-21(档 2 第二族 `tilelink_c` · tracker 侧载体 · per 台账 Entry #516)—— 档 2 的**载体形态**由一族扩为两族 | Entry #516 | 861 |
 
 ### 索引 C · 关键表指针(高频查阅)
 
