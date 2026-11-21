@@ -273,6 +273,7 @@
 | 溯源纪律 | 观测点必须在**驱动边界**（调用前后的快照）⇒ ⛔ 不得放在 `TreeManager` 内部（那会观测它自己维持的不变量 ⇒ 同义反复 ⇒ 必绿）|
 | 载体类型 | `carrier_kind = "tracker-observation"`（与 `mesif-observation` 的 `protocol-engine-observation` 区分）|
 | 落盘状态 | ⏳ 待 planner 立项（草稿全文见 §附录 B，**可直接落盘**）|
+| **实施形态的补充裁定** | ⇒ **`.rddf/reviews/cep-i7b-adjudication-2026-11-21.md`**（2026-11-21 · architect · oracle APPROVE + critic APPROVE_WITH_CONDITIONS，**2 条条件 BLOCKER 复审已闭合**）—— 裁 **Q-1**「规约事件 → 树表安装动作」的**逐行 basis 纪律**（键 = (消息, 载荷) · 三档 basis 复用 `T3BasisKind` · `Pending` ⇒ fail-closed · **C-1 ~ C-5** + **D-1 ~ D-3** 机械判据）+ **Q-2**「档 2 spec 主体 + tracker 侧 Scenario（含族 1 的四条 disciplines）+ `Purpose` 段不动」；⚠️ **该记录同时订正了本记录与 oracle 的两处表述**（`Cap` vs `Grow`；「G-1 不可判定」撤销 ⇒ 真实缺口在**最后一跳**）⇒ ⏳ **待用户 ratify** |
 
 ---
 
