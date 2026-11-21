@@ -2,7 +2,9 @@
 
 ## Purpose
 为 SoC 内部的控制寄存器访问、门铃递交与消息读取三条路径提供统一的总线设施，使这些访问经由带格式的总线而非对具体实现模块的直接调用，从而让内部接口贴近真实物理 IP 边界。
+
 ## Requirements
+
 ### Requirement: lwc-bus-hub-core (新增)
 
 `LwcBusHub` SHALL 提供统一的轻量级总线中心 (1 Hub + 4-32 IP port, 树形/星形结构), 与既有 `SocInternalNoc` (mesh) 正交分层. Hub SHALL 同时支持 `CrBundle` 与 `DoorbellBundle` 2 种异构 Bundle 类型路由 (per §0.1.1 修复路线图).
@@ -137,7 +139,7 @@
 
 ### Requirement: sdma-doorbell-in-handling (新增, Gap J 核心)
 
-`SdmaEngineTLM` SHALL 加 `doorbell_in` SlavePort (ChStreamInputStreamAdapter<DoorbellBundle>), 在 `tick()` 处理 DoorbellBundle transaction, 把 wptr 写入 ring consumer (替换 BAR1 0x10010000 直调).
+`SdmaEngineTLM` SHALL 加 `doorbell_in` SlavePort (ChStreamInputStreamAdapter<DoorbellBundle>), 在 `tick()` 处理 DoorbellBundle transaction, 把 wptr 写入 ring consumer (替换 BAR1 0x10010000 直调).doorbell 识别**基于偏移量**(测试专用合成偏移),**不依赖** BAR1 实窗大小(16MB 实窗下同样命中)。
 
 #### Scenario: SDMA 收 DoorbellBundle 写 ring 0 (per Gap J 修复)
 
@@ -152,8 +154,6 @@
 - **GIVEN** 编译时调用 `sdma.mmio_write(1, kBar1DoorbellOffset, wptr)`
 - **THEN** 编译器 emit `[[deprecated]]` warning
 - **AND** 行为 fallback 到直接 ring 提交
-
----
 
 ### Requirement: mmio-read-cr-bus-handling (新增, Gap K 核心)
 
@@ -248,4 +248,3 @@
 - **NOTE**: Change A 走 `pcie_memory.handle_slave_port` 数据路径; Change B 走 `DGpuBoard::mmio_*` 寄存器路径; **不同函数, 0 冲突**
 
 ---
-

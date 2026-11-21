@@ -2,7 +2,9 @@
 
 ## Purpose
 定义 dGPU SoC 的时序仿真形态：与功能形态并列共存而不替换，在该形态下推进按周期计数、地址翻译驻留、带宽上限与仲裁成为可观察的语义，同时保持功能形态的行为不变。
+
 ## Requirements
+
 ### Requirement: 仿真模式切换 (per §1.4 仿真模式声明)
 
 DGpuBoard SHALL 通过 JSON 顶层 `simulation_mode` 字段在 functional-mode 与 timing-mode 间切换,默认 functional-mode,**不**破坏既有 functional-mode 行为。
@@ -400,7 +402,7 @@ timing-mode 性能测试 SHALL **禁止** 用 `DGpuBoard::backdoor_read/write` �
 
 ### Requirement: BAR 路由优先级 (per TInv-5,沿用 minimal_v1)
 
-BAR1 路由 SHALL 沿用 minimal_v1 §4.2 优先级;timing-mode 在 doorbell 路径上累加 1 cyc parse latency。
+BAR1 路由 SHALL 沿用 minimal_v1 §4.2 优先级;timing-mode 在 doorbell 路径上累加 1 cyc parse latency。doorbell 识别**基于偏移量**(测试专用合成偏移),**不依赖** BAR1 实窗大小(16MB 实窗下同样命中)。
 
 #### Scenario: doorbell 路径时序
 
@@ -416,8 +418,6 @@ BAR1 路由 SHALL 沿用 minimal_v1 §4.2 优先级;timing-mode 在 doorbell 路
 - **WHEN** DGpuBoard::mmio_write 检测 PcieStorage 路由
 - **THEN** pcie_tlp_latency (**2 cyc**, per Phase 5 PcieAxiAdapter) + functional-mode backdoor memcpy (**0 cyc**, per v0.2 §4 简化: BAR 路径不引入 Crossbar/VramCtrl cascade)
 - **AND** 数据写入 vram_storage_ (同 cycle 内 per TInv-2)
-
----
 
 ### Requirement: translate_cb 签名兼容 (per TInv-6)
 
@@ -547,4 +547,3 @@ timing-mode SHALL 提供 ≥ 30 unit cases + ≥ 5 E2E cases,新增 `[dgpu_soc_t
 - **AND** 通过 type 字符串 "VramControllerTLM" 实例化成功
 
 ---
-

@@ -308,3 +308,13 @@ grep -rn "coherence\|cache_coherent\|dma_coherent" include/tlm/ src/tlm/ 2>/dev/
 - **连带**：§2.2.2 的「改常量弄断既有 `[sdma][doorbell]` 测试」作为**理由**被订正（实测值断言仅 1 处 + 4 处字面量，其余为符号引用）⇒ **结论不变，理由订正**。
 - **裁决文件**：`.rddf/reviews/dgpu-doorbell-adjudication-q1-q12-2026-11-20.md`（含 7 处连带清单 + 3 条决定性变异 + 复活锁）。
 - **关联 change**：⏳ 待 builder 立项（OpenSpec change，占 1 KPI slot）。
+
+### 2026-11-21 — I-12 落地：Q-12 裁决的 7 处连带已合并进 spec 契约（⛔ 正文零改动）
+
+- **状态**：Q-12 裁决**已落地** —— 本仓 spec 契约面已与「合成偏移**不依赖** BAR1 实窗大小」的现状对齐（§2.2.2 的「不修」由**契约层**承载，非仅由本 ADR 承载）。
+- **合并面**（openspec change `cpptlm-doorbell-contract-alignment` **已归档** 2026-11-21）：3 份 main spec —— `minimal-dgpu-soc-architecture`（含 1 处 Requirement **改名**：旧「doorbell 配置 vs 代码 hardcoded 不一致(per §13 R4)」→ 新「doorbell 合成偏移是已裁定的现状(per ADR-DGPU-09 §2.2.2 + d3-evolution-roadmap)」）· `dgpu-soc-timing` · `lwc-bus-hub-mvp`；`dgpu-soc-control-hub` 经核对**不含** doorbell 偏移语义 ⇒ **无需改**（显式记录，非静默跳过）。
+- **取值与来源均未变**（⛔ 本次只改契约）：⛔ 未改 `kBar1DoorbellOffset`（3 处硬编码保持）· ⛔ 未改 `configs/*.json` 的 `bar_sizes`（仍 16MB）· ⛔ 未改 driver ABI 面（per ADR-DGPU-03 的「BAR1 doorbell 行为」冻结项）· ⛔ 未改 `docs/designs/dgpu-driver/architecture.md`。
+- **复活锁**：新契约内含**可机判触发带**（任一含 SoC 的配置出现 `bar_sizes[1] >= 268435464` ⇒ 合成偏移落入实窗 ⇒ 前提失效）+ d3-roadmap 的**语义触发条件**（「真 driver 集成时 doorbell 物理地址 ≠ 0x10010000 ⇒ 才回头修」）⇒ 条款自我封闭。
+- **决定性变异**（3 条均有鉴别力证据，见验收报告）：M-1 删门铃优先匹配分支 ⇒ 门铃路由断言变红（`pcie_ep_doorbell_count()` `0 == 1`）⇒ 证明新 Scenario 与实现挂钩；M-2 配置维持 16MB ⇒ 新条款仍满足；M-3 删 C-3 新措辞 ⇒ 复活锁判据 `1 → 0`。
+- **裁决文件**：`.rddf/reviews/dgpu-doorbell-adjudication-q1-q12-2026-11-20.md`（含 7 处连带清单 + 3 条决定性变异 + 复活锁）。
+- **关联 change**：`cpptlm-doorbell-contract-alignment`（**已归档** · 占 1 KPI slot）· 验收报告 `.rddf/reviews/cpptlm-doorbell-contract-alignment-verify.md`。
