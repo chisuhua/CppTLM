@@ -82,6 +82,13 @@
 **`--update` 第 1 次的差集（AC-5⑤ 的「无关漂移」检）**：`新增 0 · 移出 0 · hash 变更 4` ——
 4 个 = `schema` + `ADR-CEP-12` + `ADR-CEP-13` + **`openspec/specs/cep-core-contracts/spec.md`**（F-1）。
 
+⚠️ **`frozen_at_commit` 落后 HEAD 是常态**（⛔ 不是缺陷）：清单 commit 必然**先于**其后的任何 commit
+⇒ 只要最后一个 commit 不是清单 commit，`! frozen_at_commit(…) ≠ 当前 HEAD(…)` 就会显示。
+本例：`frozen_at_commit = bfc053bb`（产物 commit）· 其后 `ee0e5003`（清单）+ `ba0eb1a2`（docs）
+⇒ 仍显示 `!`。**真判据 = `provenance 自检`**：`✓ 90 个产物的 hash 与 commit bfc053bb 的内容一致`
+（docs commit **零冻结产物改动** ⇒ provenance 依然成立）· rc=0。先例 I-6a 同型（`frozen_at_commit` = `ab7b649a`，HEAD 早已前进）。
+⚠️ 重跑 `--update` **不消除**该 `!`（只会把滞后推进到下一 commit）⇒ ⛔ 不做无意义的重刷。
+
 ⚠️ **commit A 时 3 个闸红 —— 全部是「比已提交态」的提交前假象**：
 
 | 闸 | 提交前红因 | commit A 后 |
