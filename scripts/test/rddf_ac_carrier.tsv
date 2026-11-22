@@ -195,3 +195,6 @@ G-16	test	scripts/test/cep_docs_sync_check.sh	ADR 清单**反向**完整性（�
 G-16	test	scripts/test/cep_adr_exclude.txt	显式排除集	done
 G-16	test	scripts/test/cep_adr_reverse_check_selftest.sh	变异①：磁盘新增未登记 ADR	done
 G-16	doc	.rddf/reviews/cep-g16-adr-list-reverse-verify.md	| **G-16 的完成判据** |	done
+# ── v5 · W4 批 2（G-3 / G-7）的验收证据行 ──────────────────────────────
+G-3	doc	.rddf/reviews/cep-g37-ledger-kpi-line-verify.md	G-3 缺口本体消除	done
+G-7	doc	.rddf/reviews/cep-g37-ledger-kpi-line-verify.md	G-7 超阈自解	done

@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **3 个 active**（`cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 **归档** ⇒ slot 已释放,per 台账 Entry #439;再此前 `cep-responder-bitmap-expansion` 已于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #424;⚠️ 其 delta 已合并进 `cep-sharer-tracker-base/spec.md`）(档 2 `cep-evidence-tier2-minimal-slice` 于 2026-11-14 **归档** ⇒ slot 已释放,per 台账 Entry #412;C8 `cep-evidence-tier-declaration` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #405;C7 `cpptlm-cep-full-green-run-evidence` 于 2026-11-13 **归档** ⇒ slot 已释放,per 台账 Entry #398;C6 `cpptlm-cep-b3b2-archive-form` 于 2026-11-13 归档 ⇒ slot 已释放,per 台账 Entry #386;C5 `cpptlm-cep-iag-gate-execution-arm` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #381;C4 `cpptlm-cep-dod-reading-consistency` 于 2026-11-12 归档 ⇒ slot 已释放,per 台账 Entry #375;`cpptlm-cep-invariant-gate-teeth`(C3 治理机制机器化:R-c / R-d 两项残留登记的牙齿)于 2026-11-12 归档 ⇒ slot 已释放,per 台账 **Entry #367**;2026-11-12 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**（`cpptlm-module-param-migrate-batch2` 于 2026-11-19 **归档** ⇒ slot 已释放,per 台账 Entry #500；`cpptlm-config-type-registration-align` 于 2026-11-18 **归档** ⇒ slot 已释放,per 台账 Entry #487；`cpptlm-module-param-effect-landing` 于 2026-11-18 **归档** ⇒ slot 已释放,per 台账 Entry #485；`cpptlm-module-param-effect-landing` + `cpptlm-module-param-migrate-batch2` 于 2026-11-18 **立项** ⇒ 占 2 slot,per 台账 Entry #475/#476；`cpptlm-nictlm-credit-flit-filter` 于 2026-11-18 **归档** ⇒ slot 已释放,per 台账 Entry #479；`cpptlm-config-type-registration-align` 于 2026-11-18 **立项** ⇒ 占 1 slot,per 台账 Entry #480；`cpptlm-module-param-read-declares` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #472；同日 **归档** ⇒ slot 已释放,per 台账 Entry #474;`cpptlm-nictlm-credit-flit-filter` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #466;`cpptlm-router-buffer-size-param` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #467；同日 **归档** ⇒ slot 已释放,per 台账 Entry #471;`cpptlm-nictlm-credit-flit-filter` 于 2026-11-17 **立项** ⇒ 占 1 slot,per 台账 Entry #466;`cpptlm-router-local-port-credit-exhaustion` 于 2026-11-17 **归档** ⇒ slot 已释放,per 台账 Entry #464;`cpptlm-router-credit-flit-leak-to-consumer` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #457;`cpptlm-simmodule-exposed-port-wiring` + `cpptlm-cep-mesh-interconnect-submodule` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #451;此前二者于 2026-11-16 **立项** ⇒ 各占 1 slot,per 台账 Entry #450;此前 `cpptlm-cep-mesh-e2e-carrier` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #449;此前该 change 于 2026-11-16 **立项**并占 1 slot,per 台账 Entry #448;此前 `cpptlm-spec-purpose-batch3` 于 2026-11-16 **归档** ⇒ slot 已释放,per 台账 Entry #445;`cpptlm-spec-purpose-batch3` 于 2026-11-16 归档 ⇒ slot 已释放,per Entry #445;此前 `cpptlm-spec-purpose-batch1` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #442;此前 `cpptlm-spec-scenario-level-fix` 于 2026-11-15 归档 ⇒ slot 已释放,per Entry #439;再此前 `cep-responder-bitmap-expansion` 已归档,per Entry #424）。
+`openspec/changes/` 当前 **0 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 0/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -27891,3 +27891,55 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **⑤ 回归**：`cep_docs_sync_check.sh --strict`（13 组全绿）· `cep_adr_reverse_check_selftest.sh`（**7/7**）· `rddf_stage_gate.sh`（rc=0）· `cep_registry_baseline_check.py`（5 项 == 实测）· `cep_registry_stale_refs_check.sh` · `docs_sync_check.sh --strict` · `cep_freeze_check.sh` —— 全 rc=0；`git diff --name-only` ⇒ **零 ADR 正文 / 零冻结面成员**改动。
 
 **关联**：授权 **Entry #527** · 验收报告 `.rddf/reviews/cep-g16-adr-list-reverse-verify.md` · 登记册 §0.1（闸族 **48→49** · 载体表 **118→122** 数据行 / `G-*` **3→7** 行）· §6.2（G-16 移入「已闭合项」表）· §6.3（归属表 G-16 标 ✅）· 载体表 `G-16` 4 行 · `scripts/README.md`（守门表 +1 行 · `cep_docs_sync_check.sh` 描述改「13 组」）
+
+### Entry #529 — 2026-11-23 [builder](**W4 批 2 落地回执** —— G-3 台账行内自相矛盾 + G-7 KPI 行超阈 · `:474` 瘦身为纯活口径)
+
+**起因**：登记册 §6.4 **W4-a**（G-3 · 台账**追加式**订正 Entry 存在 + 旧串在「非订正引述」行上为 0）与 **W4-e**（G-7 · S3-6 行收口 + `obj:474` 处置）。两条缺口落在**同一行** `obj-cep-platform.md:474` ⇒ 本 Entry 一次处置。
+
+**⛔ 处置路径的合法性依据（先于动手核实 · 关键）**
+
+`:474` 属 `### 5.2 当前真实 baseline` —— 该节**自身**已写明两条规则：
+
+| 台账行 | 原文 | 含义 |
+|---|---|---|
+| `:476` | 「⚠️ **本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**」 | ⇒ 该行的 33 段归档流水**本就不该在此** |
+| `:477` | 「**历史快照去向**：本节原先承载的 …逐次 baseline 变更链，**已由 §11 台账完整承载**(append-only)⇒ **删除不丢信息**」 | ⇒ 删除**零信息损失** |
+
+⇒ 处置 = **按台账自身写明的规则执行** ⇒ **不需要** G-7 原写的二选一新裁决（「扩 `KPI_LINE_MAX_FILES` **或** 显式接受」—— 该二选一的**前提**是「保留流水」，而流水本就不该在此 ⇒ 删流水即**超阈自解**）。
+
+**① 零信息损失的硬证据（实测）**
+
+| 项 | 实测 |
+|---|---|
+| `:474` 原行 | **2963** 字符 · 拆出 **34** 段（`;` / `；` 分隔）· 引用台账 Entry **34** 次 / 去重 **28** 个不同编号 |
+| **28 个被引用的 Entry 是否真实存在于台账** | **28/28 全部存在**（`^### Entry #(\d+)` 实测）⇒ **0 个悬空引用** ⇒ 每条流水都可由台账 Entry 完整回查 |
+| 34 段的成分 | **33** 段 = 纯历史归档流水（每次立项 / 归档 / slot 释放）· **2** 段含活口径（`[0]` 散文 + `[11]` 结论），其余 32 段为流水 |
+| 结论 | 删去 33 段流水 = **零信息损失**（台账 Entry 完整承载）· ⛔ **零 append-only 违规**（append-only 约束的是**历史 Entry 正文**，`:474` 是 §5.2 的 **living 现状行**，非 Entry 正文） |
+
+**② 改写后（`:474` · 2963 ⇒ 253 字符 · 纯活口径）**
+
+正文 = 「`openspec/changes/` 当前 **0 个 active**（实测）」+ 结论「Proposed 并发 0/3」（**`0/3` 取值 == 实测 active/3**）+ 一句「⛔ 本行不再承载逐次 KPI 变更的归档流水 ⇒ per 本节自述（`:476`）与历史快照去向（`:477`），流水已由 §11 台账完整承载（append-only）⇒ 删除不丢信息」。
+
+> ⚠️ 本 Entry **不复述** `:474` 的整行原文 —— 那会让 P-5 的「Proposed 并发」活口径锚在台账内**多命中 1 处**（锚点表期望 1 处）⇒ 判红。
+
+**③ G-3 闭合（同行自相矛盾 ⇒ 已消除）**
+
+| 判据 | 实测 |
+|---|---|
+| **缺口本体**：「同行散文写『当前 **3 个 active**』而同行结论写『当前 Proposed 并发 = **0/3**』⇒ 实测 active = **0** ⇒ 散文 stale（结论对）⇒ 读法陷阱」 | ⇒ 散文**已订正为 0 个 active**（实测 active = **0**）⇒ **同行现自洽**（散文 0 / 结论 0/3）⇒ 读法陷阱消除 |
+| 旧串「3 个 active」在**非订正引述**行上为 0 | 台账内**残余 4 处**逐处核实：**全部非活口径** ⇒ ① `:1533` / `:1550` / `:1553` 在 **历史 Entry 正文**内（`### Entry #2` / `#4`，2026-10-20）⇒ **append-only 禁改**且属历史事实陈述 ② `:489` 在 `### 5.3` 节的**历史前置条件快照**（2026-10-20）⇒ 非活口径 ③ `:25820` 在 `### KPI 回填（3/3 → 2/3）` 变更记录的**历史 diff 描述** ⇒ 订正引述。⇒ **活口径面 0 处残留** |
+| 活口径自洽 | 文档取值 **0/3** == 实测 `openspec/changes/` active = **0** ⇒ ✓ |
+
+**④ G-7 闭合（KPI 行超阈 ⇒ 超阈自解）**
+
+| 判据 | 实测 |
+|---|---|
+| 唯一仍超 = `obj-cep-platform.md:474` = 2964 字符 | ⇒ 现 **253** 字符（`wc -m`，阈 1000）⇒ **远低于阈** ⇒ **超阈自解**（⛔ 无需扩 `KPI_LINE_MAX_FILES`、⛔ 无需「显式接受」） |
+| 范围错配（闸头明写 `:474` 不在 I-2 的 In-Scope 内 ⇒ 该行超阈**不被任何闸判红**） | ⇒ 现状保留：**该行仍不在 `KPI_LINE_MAX_FILES`**（4 份受测文件不变）⇒ 闸头注释与实际取值**仍一致** ⇒ 无需改闸 |
+| 台账行数 | **27893 ⇒ 27893**（**零行号位移** ⇒ 其后所有行号锚点不受影响） |
+
+**⑤ 登记册回填**：§6.2 G-3 / G-7 移入「已闭合项」表（**19 → 21 行**）· §6.2 口径头「**仍开 = 3 → 1 项**」（仅余 `G-13`）· §6.3 归属表 G-3 / G-7 标 ✅ · §0.1 载体表计数（G-3 / G-7 各 +1 证据行）· 台账本 Entry · 验收报告 `.rddf/reviews/cep-g37-ledger-kpi-line-verify.md`
+
+**⑥ 回归**：`rddf_stage_gate.sh` · `cep_registry_baseline_check.py` · `cep_registry_stale_refs_check.sh` · `docs_sync_check.sh --strict` · `cep_freeze_check.sh` —— 全 rc=0；ctest 4/4 Passed（`cep_docs_sync_check` · `rddf_stage_gate` · `cep_registry_baseline_check` · `cep_registry_stale_refs_check`）
+
+**关联**：登记册 §6.2 G-3 / G-7 行（实施前）· §6.3 归属表 · §6.4 **W4-a** / **W4-e** · 验收报告 `.rddf/reviews/cep-g37-ledger-kpi-line-verify.md`
