@@ -253,3 +253,22 @@ change `cpptlm-cep-full-green-run-evidence`(已归档,台账 Entry #398)达成:*
 - ⛔ 本 ADR **不改**任何判据 / 阈值 / 预登记 / `experimental/metrics.schema.json` / retention 条款;
 - ⛔ 本 ADR **不改** B4 的达成结论(台账 Entry #228 ③)· ⛔ **不改** `B3b-2 = 0/4`;
 - ⚠️ **两条遗留交叉引用(⛔ 非本 ADR 义务)**:① *可选* —— 在 `ADR-CEP-06` 追加一条 SU 交叉引用本 ADR(critic NIT;签发后由任意后续批次执行);② 决策 6(iii) 的 8 处载体中,`docs/guide/cep-usage.md` §12.8 与 `ADR-CEP-06` SU 2026-11-13 ③ 的**可达性**由 `cep_doc_ref_check` 兜底,⛔ 但它们**是否仍逐字携带口径**无机器闸(见 V-20-1 的文档层标注)。
+
+---
+
+## Status Update 2026-11-22(per 台账 **Entry #520** · 单元 `cep-freeze-lexicon-pointers`)—— **「引擎」三词口径指针**(⛔ 决策 / 判据 / 计数**零变更**)
+
+> **性质**:本则 = **口径指针登记**(append-only;⛔ 不改 §1~§8 任何正文,⛔ 不改 `:88` / `:126` 原文)。
+
+**为什么需要本则**:仓内对「引擎」曾并存 **5** 与 **6** 两个计数 —— 二者数的**不是同一物**,且**都没定义「引擎」** ⇒ 读者无从判断哪个对。architect 裁决(`docs/guide/cep-usage.md §12.2.1`)已把**三词定义**落在使用手册侧;但**冻结面是读者最先到达的面** ⇒ 定义在手册、矛盾在冻结面 ⇒ 手册裁决**无法在冻结面生效**。⇒ 本则把指针补进本 ADR。
+
+| 项 | 值 |
+|---|---|
+| 本 ADR 的「引擎」计数 | `:88`(决策 5)与 `:126`(选项 D)写的「**6 个引擎** / **6 个协议引擎**」= **engine 文件**口径（`include/tlm/cep/*_protocol_engine.hh` 的文件计数,**含** `cohif` Null 外壳）⇒ **数值本身正确** |
+| 三词定义（真源） | `docs/guide/cep-usage.md §12.2.1` —— **adapter = 8** · **engine 文件 = 6** · **协议族引擎 = 5**（CHI / MOESI-GPU / MESIF / TileLink / UALink） |
+| 读法（本 ADR 内） | 本 ADR 出现「引擎」一词时,**一律按上表三词口径解释**;其中「6」指 **engine 文件**,而**承载协议族状态机**的**协议族引擎 = 5** |
+| ⛔ 不变的部分 | **决策 1~6 全部不变** · 档位阶梯(档 0/1/2)与**跨档聚合禁令**不变 · 判别力路由结论不变（档 2 **本仓可达**）· `B3b-2 = 0/4` **不变** · `B4` 达成结论不变 · 新增 invariant 数 = **0** |
+| 同批指针 | `docs/architecture/07-coherence-exploration-platform.md:138`（分层图注 · 同行追加）· `docs/architecture/cep/protocol-engine.md:44`（§5.1.1 口径澄清 · 同行追加）⇒ 三处**同批**走 M1 五步链（台账 Entry #520） |
+| 冻结面 | 本 ADR 在 M1 冻结集内 ⇒ 本则经 `cep_freeze_check.sh --update --authorized-by "Entry #520"` 更新清单（`artifact_count` **90 → 90** 不变） |
+
+**关联**:`docs/guide/cep-usage.md §12.2.1` · architect 裁决记录 `.rddf/reviews/cep-gap-plan-adjudication-q1-q11-2026-11-20.md` §2.1 / §5.2 / L-3 · 台账 **Entry #520** · 单元 `.rddf/improvements/cep-freeze-lexicon-pointers.md`

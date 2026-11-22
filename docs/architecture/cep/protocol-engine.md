@@ -41,7 +41,7 @@
 > **状态值以 `ADR-CEP-05 §13.1` 为唯一权威**(本表**不复制**状态值,per 防双真源立场);
 > 本行的「已落地 / 已排期」状态**不受影响**(排期 ≠ 就绪)。
 >
-> ⚠️ **「族」与「实现」的两条口径澄清**(2026-11-14 实测补记):① **「6 族」= 来源族叙述口径**(gem5 调研的工业 6 族,含 `moesi_gpu` / `mesif` 合族的先例);**声明侧 `family` 字段实为 `industrial` 7 + `academic` 1**(`tilelink_c` —— 学术起源,per `ADR-CEP-12` Status Update 的明确认定)⇒ **「6 族」与 `family` 字段是两个正交维度**(来源族 vs 血统分类),**互不构成反驳**;引用「族」时须注明所指维度;② 本表 **8 行 = 8 个 `status=implemented` 实例** ⇒ **已落地 8 实例 / 8 adapter**(计数机检 = `test/test_cep_moesi_gpu_adapter.cc` 的 `REQUIRE(implemented == 8)` ⇒ 第 9 个实例落地即红,腐化不可能静默);⚠️ **「adapter」列有值 ≠ 有可运行引擎** —— **CXL 2.0 / CXL 3.0 对称 / NVLink 三族无专用引擎**(仅 adapter + state spec + tracker),引擎载体只有 CHI / MOESI-GPU / MESIF / TileLink / UALink 五个。
+> ⚠️ **「族」与「实现」的两条口径澄清**(2026-11-14 实测补记):① **「6 族」= 来源族叙述口径**(gem5 调研的工业 6 族,含 `moesi_gpu` / `mesif` 合族的先例);**声明侧 `family` 字段实为 `industrial` 7 + `academic` 1**(`tilelink_c` —— 学术起源,per `ADR-CEP-12` Status Update 的明确认定)⇒ **「6 族」与 `family` 字段是两个正交维度**(来源族 vs 血统分类),**互不构成反驳**;引用「族」时须注明所指维度;② 本表 **8 行 = 8 个 `status=implemented` 实例** ⇒ **已落地 8 实例 / 8 adapter**(计数机检 = `test/test_cep_moesi_gpu_adapter.cc` 的 `REQUIRE(implemented == 8)` ⇒ 第 9 个实例落地即红,腐化不可能静默);⚠️ **「adapter」列有值 ≠ 有可运行引擎** —— **CXL 2.0 / CXL 3.0 对称 / NVLink 三族无专用引擎**(仅 adapter + state spec + tracker),引擎载体只有 CHI / MOESI-GPU / MESIF / TileLink / UALink 五个。⚠️ **「引擎」三词口径**(adapter **8** / engine 文件 **6**(含 `cohif` Null 外壳)/ 协议族引擎 **5**)见 `docs/guide/cep-usage.md §12.2.1` —— **本处「引擎」= 协议族引擎(5)**。
 
 ### 5.1.2 Ruby-SLICC 协议族(1 族 / 8 实例,per `ADR-CEP-17 §2 Decision 2`)
 

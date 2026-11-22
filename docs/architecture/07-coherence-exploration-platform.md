@@ -135,7 +135,7 @@ Core / Traffic Generator
 Coherence Interface Layer             ← §3 canonical 10 流,协议无关
         │
         ▼
-Protocol Engine                       ← §5 协议引擎插件(CHI / MOESI-GPU / MESIF / TileLink / UALink;CXL 2.0 / CXL 3.0 对称 / NVLink **仅 adapter + state spec,无引擎**)
+Protocol Engine                       ← §5 协议引擎插件(CHI / MOESI-GPU / MESIF / TileLink / UALink;CXL 2.0 / CXL 3.0 对称 / NVLink **仅 adapter + state spec,无引擎**;⚠️「引擎」口径 = 协议族引擎(5) —— 与 engine 文件(6,含 Null 外壳)/ adapter(8) 是三个不同的词 ⇒ 口径见 docs/guide/cep-usage.md §12.2.1)
         │
         ▼
 Directory & Ordering Plane    ∥(横向并列,非堆叠)
