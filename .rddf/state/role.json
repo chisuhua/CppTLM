@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-22T12:03:15.742Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-22T12:14:07.140Z",
   "updated_by": "user",
   "session_id": "ses_e011c3d56ffeUJU4VjKzp9B4xJ",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-20T08:58:08.671Z",
-      "by": "user",
-      "reason": ""
-    },
     {
       "role": "verifier",
       "at": "2026-11-20T09:12:35.934Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-22T12:03:15.742Z",
       "by": "user",
       "reason": ""
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-22T12:14:07.140Z",
+      "by": "user",
+      "reason": ""
     }
   ],
   "auto_switch_window": null,
@@ -163,8 +163,8 @@
       }
     },
     "ses_e011c3d56ffeUJU4VjKzp9B4xJ": {
-      "current_role": "builder",
-      "updated_at": "2026-11-22T12:03:15.742Z"
+      "current_role": "planner",
+      "updated_at": "2026-11-22T12:14:07.140Z"
     }
   }
 }

@@ -27,20 +27,20 @@
       "session_id": "ses_e011c3d56ffeUJU4VjKzp9B4xJ",
       "kind": "main",
       "claim_gen": 22,
-      "state": "active",
+      "state": "released",
       "acquired_at": "2026-11-22T12:03:15.734Z",
-      "heartbeat_at": "2026-11-22T12:03:15.734Z"
+      "heartbeat_at": "2026-11-22T12:03:15.734Z",
+      "released_at": "2026-11-22T12:14:07.148Z"
     },
     "/workspace/project/CppTLM|planner": {
       "work_root": "/workspace/project/CppTLM",
       "role": "planner",
       "session_id": "ses_e011c3d56ffeUJU4VjKzp9B4xJ",
       "kind": "main",
-      "claim_gen": 15,
-      "state": "released",
-      "acquired_at": "2026-11-22T11:59:23.969Z",
-      "heartbeat_at": "2026-11-22T11:59:23.969Z",
-      "released_at": "2026-11-22T12:03:15.748Z"
+      "claim_gen": 16,
+      "state": "active",
+      "acquired_at": "2026-11-22T12:14:06.816Z",
+      "heartbeat_at": "2026-11-22T12:14:06.816Z"
     },
     "/workspace/project/CppTLM|verifier": {
       "work_root": "/workspace/project/CppTLM",
@@ -92,8 +92,8 @@
     },
     "ses_e011c3d56ffeUJU4VjKzp9B4xJ": {
       "work_root": "/workspace/project/CppTLM",
-      "role": "builder",
-      "claim_gen": 22
+      "role": "planner",
+      "claim_gen": 16
     }
   }
 }

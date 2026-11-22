@@ -159,3 +159,9 @@ W-3a	doc	docs/architecture/cep/protocol-engine.md	本处「引擎」= 协议族�
 W-3a	doc	docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md	协议族引擎 = 5	done
 # ── v5 · W3-a 的验收证据行（builder 实施侧自验 · per「state=done 必须与验收证据同 commit」）
 W-3a	doc	.rddf/reviews/cep-freeze-lexicon-pointers-verify.md	| **AC-1** |	done
+# ── v5 · W3-c / W3-d 工作流行（登记册 §6.4 的 W3-c / W3-d · 纯台账追加式）────────
+# ⚠️ 两项都是**台账追加式**（⛔ 台账 append-only ⇒ 原文逐字保留 ⇒ 载体是台账 Entry）。
+#    W-3c 的第二条 = 8 行摘要表 sha256 锚点（per W3-c 判据「sha256 逐字未变」）。
+W-3c	doc	.rddf/roadmap/objectives/obj-cep-platform.md	§4.0-a 指引（强化版）	done
+W-3c	doc	.rddf/roadmap/objectives/obj-cep-platform.md	3f1fdc905a07da2a304ed9fa5733d733533469cce5734d29909513e87f8fe3ae	done
+W-3d	doc	.rddf/roadmap/objectives/obj-cep-platform.md	Q-11 三元组合一登记	done
