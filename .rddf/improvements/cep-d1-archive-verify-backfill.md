@@ -7,7 +7,7 @@ type: chore
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 依赖:
   - ADR-0035
-状态: "🟡 **已立项 · user 已拍板**(2026-11-20 · 关联登记册 `obj-cep-platform-remaining.md` §1.1 D-1 / §6.2 S3-5 / §6.3.1 · 决策来源 = 用户 2026-11-20 四项拍板 Q-8 / Q-9 / Q-10 / **Q-13**)"
+状态: "✅ **已落地**（I-10 · 2026-11-21 · 机关闸 `scripts/test/archive_verify_check.sh` 实测「扫面 35 · 基线 35 · git 跟踪 35」（**已落地** · 登记册该行**未记**归档 change 名） · per 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2）"
 created: 2026-11-20
 ---
 

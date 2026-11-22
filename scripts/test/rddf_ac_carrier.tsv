@@ -175,3 +175,16 @@ W-3b	doc	.rddf/roadmap/objectives/obj-cep-platform.md	architect 追加裁决 §1
 G-15	test	scripts/test/cep_decision_block_check.py	DECISION_CH_HEADING_RE	done
 G-15	test	test/cep_decision_block_snapshot.json	ADR-CEP-21-sharer-bitmap-expansion.md	done
 G-15	doc	.rddf/reviews/cep-g15-decision-block-coverage-verify.md	| **D3 ①** |	done
+# ── v5 · W4 工作流行（登记册 §6.4 的 W4-b / W4-c / W4-d / W4-f · 零授权批）────────────
+# ⚠️ W4-a / W4-e（同一行 obj:474）属**待授权批**，⏔ 不在本块。
+W-4b	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	伪缺口 / 已订正	done
+W-4c	doc	.rddf/improvements/cep-archforge-ci-failclosed.md	已落地	done
+W-4c	doc	.rddf/improvements/cep-tilelink-tree-manager-view-of.md	已落地	done
+W-4d	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	| `cep-memory-model-operational-trace` |	done
+W-4f	doc	AGENTS.md	cr_write()	done
+W-4f	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	git-history-proposal	done
+# ── v5 · W4 批 1 的验收证据行（builder 实施侧自验 · per「state=done 必须与验收证据同 commit」）
+W-4b	doc	.rddf/reviews/cep-w4-batch1-text-corrections-verify.md	| **W4-b** |	done
+W-4c	doc	.rddf/reviews/cep-w4-batch1-text-corrections-verify.md	| **W4-c** |	done
+W-4d	doc	.rddf/reviews/cep-w4-batch1-text-corrections-verify.md	| **W4-d** |	done
+W-4f	doc	.rddf/reviews/cep-w4-batch1-text-corrections-verify.md	| **W4-f** |	done

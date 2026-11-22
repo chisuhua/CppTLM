@@ -7,7 +7,7 @@ type: chore
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 依赖:
   - ADR-SOC-20
-状态: "🟡 **已立项**(2026-11-20 · 关联登记册 §1.3 终态表 B 类 · 用户拍板 Q-9「B → openspec change」+ 裁决记录 §10.9.3 把 R-12 / R-13 并入)"
+状态: "✅ **已落地**（I-11 · 2026-11-21 · 归档 `2026-11-21-cpptlm-spec-stale-refs-b-class` · per 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2）"
 created: 2026-11-20
 ---
 

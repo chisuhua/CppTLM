@@ -10,7 +10,7 @@ type: feature
   - ADR-CEP-08
   - ADR-CEP-09
   - ADR-CEP-04
-状态: "🟡 **已立项**(2026-11-20 · planner 起草 · 经 metis 1 轮 + oracle 1 轮 + critic 3 轮审查(critic 第 3 轮 APPROVE_WITH_CONDITIONS)· 关联登记册 §6.3 归属表 I-5 · 前置 = Q-4 architect 判据裁决)"
+状态: "✅ **已落地**（I-5 · 2026-11-21 · `⭭-unmodelled` 5 → 2（**已落地** · 登记册该行**未记**归档 change 名；批 2 = `2026-11-21-cpptlm-cep-invariant-modeling-batch2`） · per 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2）"
 created: 2026-11-20
 ---
 

@@ -27796,3 +27796,38 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **⑥ 时限**：`ADR-CEP-21` 状态 = 🟢 **Proposed**（未签发）⇒ G-15 的「**签发前完成射程修复**」时限**已满足** ⇒ 缺口**前瞻性**成立、尚未形成「已签发 ADR 的覆盖漏洞」。
 
 **关联**：architect 追加裁决 **§11**（commit `302465d8`）· 台账 **Entry #524**（授权）· 登记册 §6.2 **G-15** / §6.3 归属表 · 载体表 `G-15` 行 · 验收报告 `.rddf/reviews/cep-g15-decision-block-coverage-verify.md` · `scripts/test/cep_decision_block_check.py` + `.sh` · `test/cep_decision_block_snapshot.json`
+
+### Entry #526 — 2026-11-23 [builder](**W4 批 1 落地回执** —— 零授权子项 W4-b / W4-c / W4-d / W4-f · G-4 / G-5 / G-6 / G-11 闭合 + G-10 / G-14 记账遗漏补闭)
+
+**起因**：登记册 §6.4 的 **W4**（一揽子文本订正）拆为两批：⛔ **批 1 = 零授权子项**（本 Entry）· ⏸ **批 2 = 待授权**（`W4-a` + `W4-e`，落在台账 `:474` 同一行）。⚠️ W4 的「**刻意单 commit**」纪律按「**是否需授权**」分批落地，且**每批内部自洽**（锚点与目标文本同 commit）。
+
+**① 批 1 的四项（逐条）**
+
+| 子项 | 缺口 | 落地 |
+|---|---|---|
+| **W4-b** | G-4 | 登记册 §6.4 的 **I-11 行追加**订正（⛔ 原行逐字保留 · ⛔ TSV anchor「**spec 契约面 stale 引用修正**」未动）⇒ 含「**伪缺口 / 已订正**」标记 + 三项证伪证据（`test/test_pcie_slice_wire_format_snapshot.cc:62-71` 的 **29 条 `static_assert`** · `openspec/specs/pcie-slice-prerequisites/spec.md:21` 的 Scenario 点名该文件 · `test/CMakeLists.txt:96` 已注册 ctest） |
+| **W4-c** | G-5 | **7 份**单元的状态行「🟡 已立项 / 待立项」→「✅ **已落地**」（I-5 / I-7a / I-7b / I-8 / I-9 / I-10 / I-11）⚠️ 其中 **4 份**的队列行**未记**归档 change 名 ⇒ 状态行**如实**写明 ⛔ 不臆造；§6.8 的白名单**补入「已落地」** + 自查命令与口径**同步订正**（现行输出 = **1 份**活义务） |
+| **W4-d** | G-6 | 登记册 §6.3 归属表**新增** `cep-memory-model-operational-trace` 的**独立行**（⛔ 原先只在 G-6 行里被提到 ⇒ **提到 ≠ 有归属行** ⇒ 旧对账口径会假绿） |
+| **W4-f** | G-11 | ① **R-19**：`AGENTS.md:423` 的两个 handler 名**同行替换**为真实名 `cr_write()` / `doorbell_write()`（per `include/tlm/lwc/lwc_bus_hub.hh:94/107`）⇒ 旧串实测 **0**；⛔ **行数不变** ⇒ P-5 活口径锚点 `AGENTS.md:313` **零位移**。② **R-17**：**归档形态从未进过 git**（`.gitignore:64` 排除整个 `openspec/changes/archive/`）⇒ 正确判据 = **`git-history-proposal` 形态**（本台账 M-3 已订正）⇒ 实测 `git show 0345d283:…/cpptlm-dgpu-soc-timing-mvp/proposal.md`（**168 行**）与 `git show 689752ef:…/cpptlm-driver-visible-minimal-soc/proposal.md`（**228 行**）**可达** ⇒ §6.3 的完成定义形态**同步订正**（⛔ **无需 force-add**） |
+
+**② 顺带补闭的两处记账遗漏**（实施早已完成，登记册回填滞后）
+
+| 缺口 | 实际闭合于 | 证据 |
+|---|---|---|
+| **G-10** | **W2-b**（2026-11-22 · `40fe6b69`） | `scripts/test/cep_registry_stale_refs_check.sh`（ctest **#154**）⇒ 实测「**40 项全部为 0**」；⛔ §6.3.2 的「尚未接入闸」自述**同步订正** |
+| **G-14** | **W2-e**（2026-11-22 · `40fe6b69`） | 闸内退役判定 ⇒ `--phase A` / `B` / `C` 三条**实测均 rc=0** |
+
+**③ 实施期发现的两处「原计划事实错误」**（已订正）
+
+| # | 登记册原述 | 实测 | 处置 |
+|:--:|---|---|---|
+| **E-1** | W4-c 回填「**8** 份」 | 真 stale = **7** 份 —— 第 8 个是 2026-11-22 新建的 `cep-freeze-lexicon-pointers`（**真实活义务**，非 stale） | 回填 **7** 份；§6.8 口径改为「**1 份活义务**」 |
+| **E-2** | 白名单 = `已归档\|已实施\|已拆分\|已作废` | 漏了**「已落地」**（本仓通用完成态 token）⇒ 回填成「已落地」后**仍会被判 stale**；且白名单的**域 = 文件全文**（⛔ 非仅 `状态:` 行） | 白名单**补入「已落地」** + 记录「域 = 文件全文」 |
+
+**④ 登记册现状**：缺口「**仍开 = 4 项**」—— `G-3` / `G-7`（同一行 `obj-cep-platform.md:474`，⏸ 待授权）· `G-13`（待 user 授权）· `G-16`（已登记未处置）。「已闭合项」表 **19 行**（v4 旧 ID **7 行** + 12 个 `G-*`）。
+
+**⑤ 冻结面 / 范围**：⛔ **零 CEP 冻结面成员改动** · 零 ADR / spec / C++ 改动 · **零 force-add** ⇒ **不触五步链**；台账本 Entry 是**追加式**（⛔ 未改台账任何历史正文）。
+
+**⑥ 回归**：`rddf_stage_gate.sh` · `cep_registry_baseline_check.py` · `cep_registry_stale_refs_check.sh` · `docs_sync_check.sh --strict` · `cep_freeze_check.sh` —— 全 rc=0；`grep -c 'handle_cr_transaction' AGENTS.md` == **0**。
+
+**关联**：验收报告 `.rddf/reviews/cep-w4-batch1-text-corrections-verify.md` · 登记册 §6.2 / §6.3 / §6.3.2 / §6.4（W4 段）/ §6.8 / §6.9 阶段 ④ · 载体表 `W-4b` / `W-4c` / `W-4d` / `W-4f` 行 · `AGENTS.md:423` · 7 份 `.rddf/improvements/cep-*.md` 的状态行

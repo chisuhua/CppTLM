@@ -7,7 +7,7 @@ type: feature
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 依赖:
   - ADR-CEP-04
-状态: "🟡 **已立项 · 可开工**(2026-11-21 · planner 起草 · 登记册 §6.4 队列 2 的 **I-7a**(I-7 拆分后的**前置产出单元**,per architect 裁决 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §四)· 架构裁决 = Q-a = **具体类**上补 `view_of`(⛔ 不动 `SharerTrackerIf`)· 前置 = **无** · 经 **metis 1 轮**(新建 · P0×7/P1×6/P2×4 逐条处置见 §审查轨迹)· ⏳ 待立项 openspec change)"
+状态: "✅ **已落地**（I-7a · 2026-11-21 · 归档 `2026-11-21-cpptlm-cep-tilelink-tree-manager-view-of` · per 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2）"
 created: 2026-11-21
 ---
 

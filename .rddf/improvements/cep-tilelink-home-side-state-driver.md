@@ -9,7 +9,7 @@ type: feature
   - ADR-CEP-20
   - ADR-CEP-04
   - ADR-CEP-12
-状态: "🟡 **待立项**(2026-11-21 · planner 起草 · 架构裁决已落 = architect 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §四(登记册 §6.4 队列 2 的 **I-7 决策 3** · 本单元 = **I-7b** sub-id)· 前置 = **I-7a**(`TreeManager::view_of`)落地 · 经 **metis 1 轮**(P0/P1/P2 逐条处置见 §审查轨迹)· ⏳ 待立项)"
+状态: "✅ **已落地**（I-7b · 2026-11-21 · 归档 `2026-11-21-cpptlm-cep-tilelink-home-state-driver` · per 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2）"
 created: 2026-11-21
 ---
 
