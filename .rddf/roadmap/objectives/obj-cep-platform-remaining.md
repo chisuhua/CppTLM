@@ -409,7 +409,7 @@ R-5.AC-08 ◄── C2.T0.2（嵌套失败传播）—— **可选**：C2 未落
 | **G-5** | **W4-c** | 8 份 stale improvement 状态行含「已归档」**且** §6.8 自查命令输出为空（白名单口径） |
 | **G-6** | **W4-d** | 本表**显式列行**登记 `cep-memory-model-operational-trace`（⛔ 不落兜底行）⇒ 单元 ↔ 登记册对账命令输出为空 |
 | **G-7** | **W4-e**（**含新裁决**） | S3-6 行收口（结论改为「1 处超阈 + 1 处范围错配」）+ `obj:474` 的处置二选一**经裁决写死**（扩 `KPI_LINE_MAX_FILES` **或** 显式接受 + 在 §6.1 写明理由）⇒ 闸头注释与实际取值一致 |
-| **G-8** | **W3-a**（队列 0 的 **P-5**） | 冻结面三处加「引擎口径见 `cep-usage.md §12.2.1`」指针（⛔ ADR 只追加 SU）⇒ **一次**五步链同批（⛔ 不分两次）+ 无参 `cep_freeze_check.sh` rc=0 |
+| **G-8** | **W3-a**（队列 0 的 **P-5**）· 🆕 **归属单元 = `cep-freeze-lexicon-pointers`**（2026-11-22 立项 · per architect 裁决记录 §5.2 末段「归属 `cep-registry-stale-cleanup`？⇒ ⛔ **不** ⇒ **另立单元**」—— 理由：该单元的 **AC-6** 明写「`git diff --name-only` **不含** `docs/adr/` · `docs/architecture/`」⇒ 物理不可执行）| 冻结面三处加「引擎口径见 `cep-usage.md §12.2.1`」指针（⛔ ADR 只追加 SU）⇒ **一次**五步链同批（⛔ 不分两次）+ 无参 `cep_freeze_check.sh` rc=0；⚠️ **三处均「同行追加 / 文末追加 SU」⇒ 零行数位移**（`07 号` 索引 A/B 行号列 + 跨仓锚点 `protocol-engine.md:16` 全部不受影响）|
 | **G-9** | **W3-d**（队列 1 的 **Q-11**） | 台账新增行**同时**含「责任方 / 触发条件 / 落点」三词（承认 `:16732` / `:23123` 散件已存在，只做合一形态） |
 | **G-10** | **W2-b** | §6.3.2 的 9 条旧串 + `MARK` 词表**移进独立小闸** + `sed` 截断排除约定机器化 ⇒ 把任一订正文本改回旧串即判红 |
 | **G-11** | **W4-f** | `cep-doc-hygiene-kpi-and-impl-state` 收口：R-19 旧串 `handle_cr_transaction` `grep -c` == **0** + R-17 的 2 份来源 change 归档目录可解析 |
@@ -614,7 +614,7 @@ sed -e '/^### §0.2/,/^## §1 /d' -e '/^#### §6.3.2/,$d' <登记册> \
 
 | 子项 | 内容 | 判据（可机判） |
 |---|---|---|
-| **W3-a** | **P-5 冻结面三处「引擎口径」指针**（`07:138` + `protocol-engine.md:44` + `ADR-CEP-20` 只加 SU）⇒ **一次**五步链同批（⛔ 不分两次）| 无参 `cep_freeze_check.sh` rc=0 + 清单 diff 恰 N 处 + **台账与清单不得合并提交** |
+| **W3-a** | **P-5 冻结面三处「引擎口径」指针**（`07:138` + `protocol-engine.md:44` + `ADR-CEP-20` 只加 SU）⇒ **一次**五步链同批（⛔ 不分两次）⇒ 🆕 **实施单元 = `cep-freeze-lexicon-pointers`**（2026-11-22 立项；⛔ **不归 `cep-registry-stale-cleanup`** —— 其 AC-6 禁止 `docs/architecture/` diff）| 无参 `cep_freeze_check.sh` rc=0 + 清单 diff 恰 **3** 处（`~ hash 变更`· 零新增 · 零移出）+ **台账与清单不得合并提交**；⚠️ **三处均「同行追加 / 文末追加 SU」⇒ 零行数位移** |
 | **W3-b** | **Q-7「同一事实 5 处」canonical 化**（裁定「台账 §11 为源」）⇒ **先补承接单元**（当前落 §6.3 兜底行，违反该表纪律）⇒ 建议归 `cep-registry-stale-cleanup` | 5 处中 1 处为源 + 其余 4 处改引用 + §6.3 **显式列行** |
 | **W3-c** | **P-3 `obj §4.0-a` 指引强化**（追加式）<br>✅ `docs/guide/cep-usage.md` **不在** `FROZEN_GLOBS` ⇒ **不触五步链**（⛔ 执行方勿误套五步链流程）| 订正 Entry 存在 + grep 命中 + **8 行摘要表 sha256 逐字未变** |
 | **W3-d** | **Q-11 三元组合一登记**（承认台账 `:16732` / `:23123` 散件已存在，只做「责任方 + 触发条件 + 落点」合一形态）| 台账新增行**同时**含三词 |
@@ -714,11 +714,12 @@ sed -e '/^### §0.2/,/^## §1 /d' -e '/^#### §6.3.2/,$d' <登记册> \
 ### §6.8 关联
 
 - 审查轨迹（v5）：**metis 1 轮**（gap 分析 · 指出初稿 3 处测量错误 + 5 处过度陈述 + 5 类缺失判据）→ **oracle 1 轮**（对抗式 · **APPROVE** · 1 处事实错误 + 1 处排序纪律违反 + 1 处 CI 分裂风险 + 3 处过度陈述）→ **critic 1 轮**（**APPROVE_WITH_CONDITIONS** · `mergeable: yes` · **无 BLOCKER** · 4 条 SHOULD_FIX + 1 条 NIT）⇒ 逐条复验并吸收，详见本节顶部与 §6.6
-- **v5 落点（4 个工作流 ⇒ 待立单元）**：`W1`（机关完整性 · 归 `cep-stage-gate-p5-hardening` 的后续单元）· `W2`（机械化 · 归 `cep-registry-stale-cleanup`）· `W3`（已裁未落地 · 归 `cep-registry-stale-cleanup` + `cep-stage-gate-p5-hardening`）· `W4`（一揽子文本订正 · 归 `cep-registry-stale-cleanup` + `cep-doc-hygiene-kpi-and-impl-state`）⇒ ⚠️ **单元文件名待立**（⛔ 不新建第三个登记面 ⇒ 复用既有 4 份 improvement 单元扩写，⛔ 不另起新文件）
-- **`.rddf/improvements/` 下全部 CEP 单元的 v5 处置（18 份 · ⛔ 单元 ↔ 登记册对账须输出为空）**：
+- **v5 落点（4 个工作流 ⇒ 待立单元）**：`W1`（机关完整性 · 归 `cep-stage-gate-p5-hardening` 的后续单元）· `W2`（机械化 · 归 `cep-registry-stale-cleanup`）· `W3`（已裁未落地 · 归 `cep-registry-stale-cleanup` + `cep-stage-gate-p5-hardening`；⚠️ **其中 W3-a 改归新建单元 `cep-freeze-lexicon-pointers`** —— 走冻结面五步链，⛔ 不受 `cep-registry-stale-cleanup` 的 AC-6「零 `docs/architecture/` diff」约束）· `W4`（一揽子文本订正 · 归 `cep-registry-stale-cleanup` + `cep-doc-hygiene-kpi-and-impl-state`）⇒ ⚠️ **单元文件名待立**（⛔ 不新建第三个登记面 ⇒ 复用既有 4 份 improvement 单元扩写；⛔ **例外 = W3-a** —— architect 裁决记录 §5.2 末段明写「**另立一个单元**」⇒ 该单元是唯一新建的 improvement 草稿）
+- **`.rddf/improvements/` 下全部 CEP 单元的 v5 处置（19 份 · ⛔ 单元 ↔ 登记册对账须输出为空）**：
 
 | 单元 | v5 处置 | 归属缺口 / 工作流 |
 |---|---|---|
+| 🆕 `cep-freeze-lexicon-pointers` | **已立项**（2026-11-22 · planner）· **W3-a 的实施单元**（冻结面五步链 · 三处「引擎」三词口径指针 · 新增 invariant 数 = **0** · 零 OpenSpec change） | G-8 / W3-a |
 | `cep-stage-gate-p5-hardening` | 已归档载体（I-0 / I-4）· **W1 已落地（✅ 2026-11-22 · `0c2a7ea1`）⇒ G-1 闭合**；剩余承接面 = **W2-e**（G-14） | G-1（✅ 闭合）/ G-14 |
 | `cep-registry-stale-cleanup` | 已立项 · **扩写承接 W2 / W3 / W4** | G-2 / G-6 / G-9 / G-10 / G-12 |
 | `cep-doc-hygiene-kpi-and-impl-state` | 已立项 · **扩写承接 W4**（含 R-17 / R-19 收口） | G-7 / G-11 |
