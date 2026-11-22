@@ -36,7 +36,8 @@
 
 | 脚本 | 作用 | 状态 |
 |------|------|------|
-| `cep_docs_sync_check.sh` | CEP 契约面同步检查（24 份 ADR 锚点 + invariant 计数单一真源 + P 编号口径 + 传输层 `CATEGORY_*` 分层纪律），共 **10 组** | ✅ 生效 |
+| `cep_docs_sync_check.sh` | CEP 契约面同步检查（24 份 ADR 锚点 + invariant 计数单一真源 + P 编号口径 + 传输层 `CATEGORY_*` 分层纪律 + **ADR 清单反向完整性**），共 **13 组** | ✅ 生效 |
+| `cep_adr_exclude.txt` | 上者的**显式排除集**（数据文件，非闸）：每条 `<文件名>|<理由>`；⛔ 理由须非空 + 文件须在磁盘存在 + 不得与 `ADR_LIST` 重复 | ✅ 生效（配套 `cep_docs_sync_check.sh` 第 [13/13] 组）|
 | `cep_doc_ref_check.sh` | 对外文档引用可达性（节号引用目标节存在 + 语义断言 + 负向断言 + 跨仓 `path:line` 锚点） | ✅ 生效（ctest 注册 `--strict`） |
 | `cep_freeze_check.sh` | M1 冻结面授权闸（成员数以清单为准）（`--update --authorized-by "Entry #N"` + 两步 commit） | ✅ 生效 |
 | `cep_archforge_alignment_check.sh` | 跨仓（ArchForge）对齐锚点守门，33 锚点 | ✅ 生效 |

@@ -188,3 +188,10 @@ W-4b	doc	.rddf/reviews/cep-w4-batch1-text-corrections-verify.md	| **W4-b** |	don
 W-4c	doc	.rddf/reviews/cep-w4-batch1-text-corrections-verify.md	| **W4-c** |	done
 W-4d	doc	.rddf/reviews/cep-w4-batch1-text-corrections-verify.md	| **W4-d** |	done
 W-4f	doc	.rddf/reviews/cep-w4-batch1-text-corrections-verify.md	| **W4-f** |	done
+# ── v5 · G-16（独立批次 · ADR 清单反向完整性闸）的实施 + 验收证据 ─────────────
+#    · 实施载体 = `cep_docs_sync_check.sh` 第 [13/13] 组 + 排除集数据文件
+#    · 证据载体 = 决定性变异自测（6 条按签名红）+ 验收报告
+G-16	test	scripts/test/cep_docs_sync_check.sh	ADR 清单**反向**完整性（磁盘 ⇒ 覆盖集）	done
+G-16	test	scripts/test/cep_adr_exclude.txt	显式排除集	done
+G-16	test	scripts/test/cep_adr_reverse_check_selftest.sh	变异①：磁盘新增未登记 ADR	done
+G-16	doc	.rddf/reviews/cep-g16-adr-list-reverse-verify.md	| **G-16 的完成判据** |	done

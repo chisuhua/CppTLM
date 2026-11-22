@@ -10,7 +10,7 @@
 #       7. M1 产物冻结校验(28 产物 SHA-256,冻结后不可改)
 #       8. CEP ↔ ArchForge 接口对齐清单漂移检测(21 个 ArchForge 锚点)
 #       9. ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查(判据 C-4 的机器化)
-#      10. 传输层 CATEGORY_* 分层纪律(6 类一致性词表**不**落传输层;A14-1 / A14-2 的机器化)
+#      10. 传输层 CATEGORY_* 分层纪律(6 类一致性词表**不**落传输层;A14-1 / A14-2 的机器化)  ·  11. ADR 清单**反向**完整性(磁盘 `ADR-CEP-*.md` 全量 ⇒ 须被 `ADR_LIST` ∪ 显式排除集覆盖)
 #
 # 用法：
 #   ./scripts/test/cep_docs_sync_check.sh            # 检查并打印报告
@@ -46,7 +46,7 @@ pass() { echo -e "  ${GREEN}✓${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; FAILED=$((FAILED + 1)); }
 warn() { echo -e "  ${YELLOW}!${NC} $1"; }
 
-echo -e "${BLUE}[1/12] ADR 清单与关键节${NC}"
+echo -e "${BLUE}[1/13] ADR 清单与关键节${NC}"
 ADR_LIST=(
   "ADR-CEP-00-platform-charter-and-governance.md"
   "ADR-CEP-00A-real-source-anchor-map.md"
@@ -95,7 +95,7 @@ done
 [ "$NO_SECTION" -eq 0 ] && pass "每份 ADR 均有「不变量」或「决策」节"
 
 echo ""
-echo -e "${BLUE}[2/12] invariant 计数与 07 号总表一致性${NC}"
+echo -e "${BLUE}[2/13] invariant 计数与 07 号总表一致性${NC}"
 python3 - <<'PYEOF'
 import glob, re, os, sys
 
@@ -381,7 +381,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[3/12] 06 §15.4 P 编号口径(禁 P6)${NC}"
+echo -e "${BLUE}[3/13] 06 §15.4 P 编号口径(禁 P6)${NC}"
 python3 - <<'PYEOF'
 import glob, os, re, sys
 
@@ -401,7 +401,7 @@ for pat in ("docs/adr/ADR-CEP-*.md", "docs/architecture/07-*.md",
             # 脱离 P6 全禁规则的扫描范围(守门覆盖度静默下降 = 更危险)。
             # ⚠️ glob 写法:**归档目录名带日期前缀**(archive/<date>-<name>/)→ 必须用
             #    `*cpptlm-cep-umbrella` 而**不是** `*/cpptlm-cep-umbrella`(后者匹配 0)。
-            #    下方 [12/12] 组有断言「归档 4 件套必须在扫描集内」兜底此类错误。
+            #    下方 [12/13] 组有断言「归档 4 件套必须在扫描集内」兜底此类错误。
             # ⚠️ 只扫 **umbrella 自己的**归档目录(保持归档前的覆盖度):仓内另有大量
             #    历史归档 change,其文档合法地提及**项目优先级标记** `P0.5` 与旧
             #    `06 §15.4` 的 `P6` → 触发规则 A/B 大量假阳性;不写死条数(会漂移)。
@@ -555,7 +555,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[4/12] ADR 交叉引用可达性${NC}"
+echo -e "${BLUE}[4/13] ADR 交叉引用可达性${NC}"
 BROKEN=0
 for f in "${ADR_LIST[@]}"; do
   [ -f "docs/adr/$f" ] || continue
@@ -569,7 +569,7 @@ done
 [ "$BROKEN" -eq 0 ] && pass "ADR 之间的相对链接无断裂(全量 .md 链接)"
 
 echo ""
-echo -e "${BLUE}[5/12] Stage 0 umbrella change 4 件套${NC}"
+echo -e "${BLUE}[5/13] Stage 0 umbrella change 4 件套${NC}"
 # 2026-10-23(Entry #29):umbrella 归档后路径带日期前缀 → 动态解析两态
 CH="$(ls -d openspec/changes/cpptlm-cep-umbrella openspec/changes/archive/*cpptlm-cep-umbrella 2>/dev/null | head -1)"
 [ -n "$CH" ] || { echo "  ✗ 找不到 umbrella change(active 或 archive 均未命中)"; exit 1; }
@@ -580,23 +580,23 @@ done
 [ "$MISS" -eq 0 ] && pass "umbrella change 4 件套齐备"
 
 echo ""
-echo -e "${BLUE}[6/12] Stage 0 契约产物${NC}"
+echo -e "${BLUE}[6/13] Stage 0 契约产物${NC}"
 for f in "include/tlm/cep/protocol_instance.schema.json" "experimental/metrics.schema.json" "experimental/.gitkeep"; do
   [ -f "$f" ] && pass "$f 存在" || fail "$f 缺失"
 done
 
 echo ""
-echo -e "${BLUE}[7/12] M1 产物冻结校验(冻结后不可改)${NC}"
+echo -e "${BLUE}[7/13] M1 产物冻结校验(冻结后不可改)${NC}"
 # ⚠️ 不可裸调用:本脚本 `set -e`,裸调用的失败会**立即中止**整个脚本
 #    → 后续组与汇总永不打印,且下面的 `if [ $? -ne 0 ]` 是死代码(2026-10-22 代码复审 S3)
 if ! bash scripts/test/cep_freeze_check.sh; then FAILED=$((FAILED + 1)); fi
 
 echo ""
-echo -e "${BLUE}[8/12] CEP ↔ ArchForge 接口对齐清单漂移检测${NC}"
+echo -e "${BLUE}[8/13] CEP ↔ ArchForge 接口对齐清单漂移检测${NC}"
 if ! bash scripts/test/cep_archforge_alignment_check.sh; then FAILED=$((FAILED + 1)); fi
 
 echo ""
-echo -e "${BLUE}[9/12] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查${NC}"
+echo -e "${BLUE}[9/13] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查${NC}"
 # ⚠️ 「跳过」与「跑过」必须可区分:脚本首行标 [RUN] / [SKIP],退出码都是 0。
 #    跳过时**不算通过**(跨仓外部条件缺失不是「声明对齐已被验证」)。
 if DECL_OUT="$(bash scripts/test/cep_decl_alignment_check.sh 2>&1)"; then
@@ -614,13 +614,13 @@ else
     pass "ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查通过"
 fi
 
-echo -e "${BLUE}[10/12] 预登记 out-of-scope 集合:真源 ↔ 机器投影 drift 检测${NC}"
+echo -e "${BLUE}[10/13] 预登记 out-of-scope 集合:真源 ↔ 机器投影 drift 检测${NC}"
 # ⚠️ 不可裸调用:本脚本 `set -e`,裸调用的失败会**立即中止**整个脚本
 #    → 后续组与汇总永不打印(per 2026-10-22 代码复审 S3)
 if ! bash scripts/test/cep_prereg_drift_check.sh; then FAILED=$((FAILED + 1)); fi
 
 echo ""
-echo -e "${BLUE}[11/12] 传输层 CATEGORY_* 分层纪律(对应 A14-1 / A14-2)${NC}"
+echo -e "${BLUE}[11/13] 传输层 CATEGORY_* 分层纪律(对应 A14-1 / A14-2)${NC}"
 # 契约:6 类一致性消息词表落在 **Coherence Interface 层**(per ADR-CEP-12 §8 IC2 ③),
 #       CATEGORY_* 保持**传输层 3 类** —— 不得为承载该词表而扩成 6 类(词表混层)。
 # 机器强制 3 项:
@@ -848,7 +848,7 @@ if [ $? -ne 0 ]; then FAILED=$((FAILED + 1)); fi
 # ── CEP-GATE-10-END ─────────────────────────────────────────────────
 
 echo ""
-echo -e "${BLUE}[12/12] 归档后状态一致性(7 类客观断言)${NC}"
+echo -e "${BLUE}[12/13] 归档后状态一致性(7 类客观断言)${NC}"
 # ⚠️ 2026-10-23(Entry #32)重新设计:前两版的「散文语义正则」被 critic 实测出
 #    10/13 同义改述绕过 + 行尾贴白名单词即可绕过 → 属 overclaim。
 #    本版只做**客观可判定**的断言(数字 / 同行关联 / glob 覆盖),不再声称「理解语义」。
@@ -1514,6 +1514,76 @@ if failed:
 PYEOF
 if [ $? -ne 0 ]; then FAILED=$((FAILED + 1)); fi
 # ── CEP-GATE-11-END ─────────────────────────────────────────────────
+
+# ── CEP-GATE-ADR-REVERSE-BEGIN ─────────────────────────────────────────
+# G-16 · ADR 清单**反向**完整性（磁盘 ⇒ 覆盖集）
+#
+# 「已登记集」= 本脚本既有的 `ADR_LIST` 数组（单一真源，⛔ 不另建清单）。
+# 「显式排除集」= `scripts/test/cep_adr_exclude.txt`（每行 "<文件名>|<理由>"）。
+#   · 理由**非空**（缺理由 ⇒ 判红：纸面排除 = 无声脱检）
+#   · 文件必须**在磁盘上真实存在**（防「预先排除一个未来才出现的文件」⇒ 提前挖洞）
+#   · 文件**不得**同时在 `ADR_LIST` 内（那会让排除变成多余登记 ⇒ 判红）
+#
+# ⚠️ **测试用环境变量覆盖**（per `cep_freeze_check.sh` 的 `CEP_FREEZE_MANIFEST`
+#    / `cep_e2e_reconcile_check.sh` 的 `CEP_RECONCILE_DOCS_ROOT` 同一先例）：
+#    默认行为**完全不变**（ADR 目录 = `docs/adr`，排除集 = 仓内数据文件）⇒
+#    仅供**决定性变异**在影子目录上跑（⛔ 不改真实仓任何文件）。
+#      CEP_ADR_DIR=<影子目录> CEP_ADR_EXCLUDE_FILE=<影子文件> \
+#        bash scripts/test/cep_docs_sync_check.sh --strict
+CEP_ADR_DIR="${CEP_ADR_DIR:-docs/adr}"
+CEP_ADR_EXCLUDE_FILE="${CEP_ADR_EXCLUDE_FILE:-scripts/test/cep_adr_exclude.txt}"
+
+_adr_listed="$(printf '%s\n' "${ADR_LIST[@]}")"
+
+# ── 排除集自身的违规项（每条违规点名具体文件）─────────────────────────
+_adr_excl_bad=""
+if [ ! -f "$CEP_ADR_EXCLUDE_FILE" ]; then
+  fail "显式排除集文件不存在: $CEP_ADR_EXCLUDE_FILE"
+else
+  while IFS= read -r _adr_line || [ -n "$_adr_line" ]; do
+    case "$_adr_line" in ''|'#'*) continue ;; esac
+    _adr_file="${_adr_line%%|*}"
+    _adr_reason="${_adr_line#*|}"
+    if [ "$_adr_reason" = "$_adr_line" ] || [ -z "${_adr_reason// /}" ]; then
+      _adr_excl_bad="${_adr_excl_bad}排除项缺理由: ${_adr_file}"$'\n'
+      continue
+    fi
+    if [ ! -f "$CEP_ADR_DIR/$_adr_file" ]; then
+      _adr_excl_bad="${_adr_excl_bad}排除项在磁盘上不存在: ${_adr_file}"$'\n'
+      continue
+    fi
+    if printf '%s\n' "$_adr_listed" | grep -qxF -- "$_adr_file"; then
+      _adr_excl_bad="${_adr_excl_bad}排除项已在 ADR_LIST 内(排除多余): ${_adr_file}"$'\n'
+      continue
+    fi
+  done < "$CEP_ADR_EXCLUDE_FILE"
+fi
+if [ -n "$_adr_excl_bad" ]; then
+  fail "显式排除集违规:"
+  printf '%s' "$_adr_excl_bad" | sed 's/^/      /'
+fi
+
+# ── 反向覆盖：磁盘全量 ⇒ 已登记 ∪ 显式排除 ────────────────────────────
+_adr_uncovered=""
+for _adr_f in "$CEP_ADR_DIR"/ADR-CEP-*.md; do
+  [ -f "$_adr_f" ] || continue
+  _adr_base="$(basename "$_adr_f")"
+  if printf '%s\n' "$_adr_listed" | grep -qxF -- "$_adr_base"; then
+    continue
+  fi
+  if [ -f "$CEP_ADR_EXCLUDE_FILE" ] \
+     && grep -qF -- "$_adr_base|" "$CEP_ADR_EXCLUDE_FILE"; then
+    continue
+  fi
+  _adr_uncovered="${_adr_uncovered}${_adr_base}"$'\n'
+done
+if [ -n "$_adr_uncovered" ]; then
+  fail "磁盘 ADR 未登记进 ADR_LIST/显式排除集（漏登记 ⇒ 静默脱检）:"
+  printf '%s' "$_adr_uncovered" | sed 's/^/      /'
+else
+  pass "磁盘 $(ls "$CEP_ADR_DIR"/ADR-CEP-*.md 2>/dev/null | wc -l | tr -d ' ') 份 CEP ADR 全部被 ADR_LIST ∪ 显式排除集覆盖"
+fi
+# ── CEP-GATE-ADR-REVERSE-END ───────────────────────────────────────────
 
 echo ""
 echo "════════════════════════════════════════"

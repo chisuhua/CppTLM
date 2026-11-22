@@ -27831,3 +27831,63 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **⑥ 回归**：`rddf_stage_gate.sh` · `cep_registry_baseline_check.py` · `cep_registry_stale_refs_check.sh` · `docs_sync_check.sh --strict` · `cep_freeze_check.sh` —— 全 rc=0；`grep -c 'handle_cr_transaction' AGENTS.md` == **0**。
 
 **关联**：验收报告 `.rddf/reviews/cep-w4-batch1-text-corrections-verify.md` · 登记册 §6.2 / §6.3 / §6.3.2 / §6.4（W4 段）/ §6.8 / §6.9 阶段 ④ · 载体表 `W-4b` / `W-4c` / `W-4d` / `W-4f` 行 · `AGENTS.md:423` · 7 份 `.rddf/improvements/cep-*.md` 的状态行
+
+### Entry #527 — 2026-11-23 [planner](**G-16 独立批次落地授权** —— ADR 清单**反向**完整性闸 · 登记册 §6.3 归属表 G-16 行)
+
+**起因**：登记册 §6.2 缺口 **G-16** —— `scripts/test/cep_docs_sync_check.sh` 的 `ADR_LIST` 是**正向**覆盖集（清单 → 磁盘：存在 + 含「不变量/决策」节）；⛔ **无**「磁盘 → `ADR_LIST`」的**反向**检查 ⇒ 该脚本注释自述「漏登记 = 新 ADR **静默脱检**」；⚠️ 结构闸的分区完整性（磁盘 == `decision_adrs` ∪ `excluded`）可兜底**归类**，但归类后**仍可能**漏加 `ADR_LIST` ⇒ 与 G-15 **非同型**（G-15 = 射程依赖形态；本项 = 缺反向检查）。
+
+**授权范围（枚举 · 与实现一一对应）**
+
+| # | 授权项 | 落点 |
+|:--:|---|---|
+| **1** | `cep_docs_sync_check.sh` 增**第 [13/13] 组**「ADR 清单反向完整性（磁盘 ⇒ 覆盖集）」 | 判据 = 磁盘 `docs/adr/ADR-CEP-*.md` **全量** ⇒ 每份必须落在「`ADR_LIST` ∪ 显式排除集」之内 ⇒ **新增 ADR 忘登记即判红**（**点名具体文件**，⛔ 非「计数 ≥1」） |
+| **2** | 「已登记集」**必须复用脚本内既有的 `ADR_LIST` 数组**（⛔ 不另建第二份清单 ⇒ 不造新漂移源） | 判据侧直接 `printf '%s
+' "${ADR_LIST[@]}"` |
+| **3** | 「显式排除集」落**独立数据文件** `scripts/test/cep_adr_exclude.txt`（每行 `<文件名>\|<理由>`），并受**三条自校验**约束 | ① 理由**非空** ② 文件**在磁盘上真实存在**（防「预先排除一个未来才出现的文件」⇒ 提前挖洞）③ **不得**同时在 `ADR_LIST` 内（防多余登记）；任一违规 ⇒ 判红并点名该文件 |
+| **4** | **决定性变异自测**必须**按签名红**且**点对点**（⛔ 计数 ≥1 无鉴别力），且**影子模式零污染** | 载体 `scripts/test/cep_adr_reverse_check_selftest.sh`；影子 ADR 目录（⛔ 真仓 `docs/adr/ADR-CEP-*.md` 属**冻结面** ⇒ 绝不在真仓增删）+ env seam（`CEP_ADR_DIR` / `CEP_ADR_EXCLUDE_FILE`，默认行为**完全不变**）+ 收尾校验真实仓字节指纹前后相等 |
+| **5** | **落点纪律：零行号位移** | 多处历史记录按**行号**引用本脚本（`cpptlm-cep-gate-robustness.md:88` → `:4`、`:94` → `:50`；`cpptlm-cep-invariant-gate-teeth.md:56` → `:156`；台账 `:23989` → `:50`）⇒ 新组**追加在文件末尾**（`CEP-GATE-11-END` 之后）+ 头部用途清单**同行追加**（不加行）+ 分组计数 `[N/12]→[N/13]` **同行内**替换 ⇒ `:4` / `:50` / `:156` / `:266` / `:271` / `:281` / `:392` **逐字不变** |
+| **6** | **不触五步链** | ⛔ 未动任何**冻结面成员**（`FROZEN_GLOBS` = docs/adr·architecture·include/tlm/cep·openspec/specs·experimental·tools）⇒ 排除集数据文件与新自测脚本**均不在冻结面** ⇒ 零 hash 变更 ⇒ 无需 `--update --authorized-by` |
+
+**⛔ 不授权**：① 改动任何 ADR 正文（⛔ 只读）② 改动 `ADR_LIST` 数组的**内容**（本批只复用，不增删条目）③ 改动 `docs/adr/ADR-CEP-*.md`（**冻结面**）④ 改动任何**历史 Entry 正文**（台账 append-only）
+
+**关联**：登记册 §6.2 G-16 行（实施前）· §6.3 归属表 G-16 行 · 验收报告 `.rddf/reviews/cep-g16-adr-list-reverse-verify.md`
+
+### Entry #528 — 2026-11-23 [builder](**G-16 落地回执** —— ADR 清单**反向**完整性闸 · 第 [13/13] 组 + 显式排除集 + 6 条决定性变异)
+
+**起因**：登记册 §6.3 归属表 G-16 独立批次（授权源 = **Entry #527**）—— 补上 `ADR_LIST` 的**反向**覆盖检查 ⇒ **新增 ADR 忘登记即判红**（原先只查「清单里的都在」，不查「磁盘上的都在清单里」⇒ 漏登记 ⇒ 静默脱检）。
+
+**① 实施内容（判据侧 · ⛔ 未动任何 ADR 正文）**
+
+| 项 | 内容 |
+|---|---|
+| 新增组 | `cep_docs_sync_check.sh` **第 [13/13] 组**「ADR 清单反向完整性（磁盘 ⇒ 覆盖集）」⇒ 判据 = 磁盘 `docs/adr/ADR-CEP-*.md` **全量** ⇒ 每份须落在「`ADR_LIST` ∪ 显式排除集」之内 |
+| 单一真源 | 「已登记集」**直接复用**脚本内既有的 `ADR_LIST` 数组（⛔ 不另建第二份清单 ⇒ 不造新漂移源） |
+| 显式排除集 | 新数据文件 `scripts/test/cep_adr_exclude.txt`（每行 `<文件名>\|<理由>`）⇒ **三条自校验**堵死「纸面排除 = 无声脱检」：① 理由**非空** ② 文件**磁盘上真实存在** ③ **不得**与 `ADR_LIST` 重复 |
+| 影子 seam | `CEP_ADR_DIR` / `CEP_ADR_EXCLUDE_FILE`（默认行为**完全不变** ⇒ 沿用 `cep_freeze_check.sh` 的 `CEP_FREEZE_MANIFEST` / `cep_e2e_reconcile_check.sh` 的 `CEP_RECONCILE_DOCS_ROOT` 同一先例） |
+| 落点纪律 | 新组**追加在文件末尾**（`CEP-GATE-11-END` 之后）；头部用途清单**同行追加**；分组计数 `[N/12]→[N/13]` **同行内**替换 ⇒ **`:4` / `:50` / `:156` / `:266` / `:271` / `:281` / `:392` 逐字不变**（实测 7/7 ✓） |
+| ⛔ 未动 | **零 ADR 正文改动** · **零冻结面成员改动**（`docs/adr/ADR-CEP-*.md` 全程零改动 ⇒ **不触五步链**）· 零 `openspec/changes/**` 改动 · 零 force-add · `ADR_LIST` 数组**内容零改动**（只复用） |
+
+**② 决定性变异（6 条 · 全部**按签名红** · 点对点 · 影子模式零污染）**
+
+| # | 变异 | 实测 |
+|:--:|---|---|
+| ① | **G-16 专属面**：影子 ADR 目录多一份「**已归类**（OWNERS/NO_INV 覆盖）但**未登记进 `ADR_LIST`**」的 ADR | **rc=1** 且输出**点名 `ADR-CEP-98-classified-but-unregistered.md`**（⛔ 非「计数 ≥1」） |
+| ② | 同一影子目录 + 把该 ADR **显式排除**（带理由） | rc=**0** 且报「全部被覆盖」⇒ 排除是**有效出口**（非死代码） |
+| ③ | 排除项**缺理由** | rc=1 且**点名该文件** |
+| ④ | 排除项指向**磁盘上不存在**的文件（预先挖洞） | rc=1 且**点名该文件** |
+| ⑤ | 排除项与 `ADR_LIST` **重复** | rc=1 且**点名该文件** |
+| ⑥ | **反向对照**：真实 ADR 目录 + 真实排除集 | rc=**0** 且报「24 份全部被覆盖」（无假红） |
+
+> 载体 `scripts/test/cep_adr_reverse_check_selftest.sh` ⇒ 实测 **7/7 通过**（含「真实仓字节指纹前后相等」⇒ 零污染）。⚠️ 本自测**刻意不注册 ctest**（同 `rddf_stage_gate.sh --self-test` 纪律：开发期/评审期证据）；**回归闸本体 = `cep_docs_sync_check`**（已注册 ctest，`--strict` ⇒ 反向判据不绿即 CI 红）。
+
+**③ 实施期实测发现（原计划的事实错误 · 已订正）**
+
+| # | 原述 | 实测 | 处置 |
+|:--:|---|---|---|
+| **E-1** | 「新增未登记 ADR ⇒ 本组判红」可由**直接往真仓 `docs/adr/` 加一份文件**验证 | **不可行**：① 真仓 `docs/adr/ADR-CEP-*.md` 属**冻结面**（`cep_freeze_check.sh` 的 `FROZEN_GLOBS`）⇒ 增删即触五步链；② 且 `[2/13]` 组（invariant 覆盖检查）会**先**判红并因 `set -e` **中止整个脚本** ⇒ 本组根本不输出 ⇒ 拿不到本组签名 | 改用**影子 ADR 目录 + env seam** ⇒ 真仓零改动 + 影子目录只多 1 份**已归类**的 ADR ⇒ 绕过 `[2/13]` 的先判 ⇒ 精确命中本组签名。**顺带确认**：G-16 的**专属面**确为「**已归类但漏加 `ADR_LIST`**」⇒ 与结构闸的分区完整性**非同型**（结构闸兜底归类、不兜底 `ADR_LIST` 登记），与缺口陈述一致 |
+
+**④ 登记册现状**：缺口「**仍开 = 3 项**」—— `G-3` / `G-7`（同一行 `obj-cep-platform.md:474`，⏸ 待授权）· `G-13`（待 user 授权）。「已闭合项」表 **20 行**（v4 旧 ID **7 行** + 13 个 `G-*`）。
+
+**⑤ 回归**：`cep_docs_sync_check.sh --strict`（13 组全绿）· `cep_adr_reverse_check_selftest.sh`（**7/7**）· `rddf_stage_gate.sh`（rc=0）· `cep_registry_baseline_check.py`（5 项 == 实测）· `cep_registry_stale_refs_check.sh` · `docs_sync_check.sh --strict` · `cep_freeze_check.sh` —— 全 rc=0；`git diff --name-only` ⇒ **零 ADR 正文 / 零冻结面成员**改动。
+
+**关联**：授权 **Entry #527** · 验收报告 `.rddf/reviews/cep-g16-adr-list-reverse-verify.md` · 登记册 §0.1（闸族 **48→49** · 载体表 **118→122** 数据行 / `G-*` **3→7** 行）· §6.2（G-16 移入「已闭合项」表）· §6.3（归属表 G-16 标 ✅）· 载体表 `G-16` 4 行 · `scripts/README.md`（守门表 +1 行 · `cep_docs_sync_check.sh` 描述改「13 组」）
