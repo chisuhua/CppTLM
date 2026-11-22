@@ -165,3 +165,6 @@ W-3a	doc	.rddf/reviews/cep-freeze-lexicon-pointers-verify.md	| **AC-1** |	done
 W-3c	doc	.rddf/roadmap/objectives/obj-cep-platform.md	§4.0-a 指引（强化版）	done
 W-3c	doc	.rddf/roadmap/objectives/obj-cep-platform.md	3f1fdc905a07da2a304ed9fa5733d733533469cce5734d29909513e87f8fe3ae	done
 W-3d	doc	.rddf/roadmap/objectives/obj-cep-platform.md	Q-11 三元组合一登记	done
+# ── v5 · W3-b 工作流行（登记册 §6.4 的 W3-b · architect 追加裁决 §11）────────────
+W-3b	doc	.rddf/reviews/cep-gap-plan-adjudication-q1-q11-2026-11-20.md	§11 追加裁决	done
+W-3b	doc	.rddf/roadmap/objectives/obj-cep-platform.md	architect 追加裁决 §11 的落地登记	done

@@ -19,7 +19,7 @@ phase_refs:
 > **写入权**: rdd-planner(per `rdd-planner/SKILL.md:156` + ADR-0028 + ADR-0054 D5 唯一写入方)
 > **schema**: `_lib/schemas/objective_schema.json` v1(9 必填字段齐;`kind` / `phase_refs` 为扩展字段)
 > **关联**: `.rddf/roadmap/phases/phase-10.md`(CEP 实施 phase)+ `.rddf/improvements/cpptlm-cep-umbrella.md`(5-segment 草稿)
-> **关联真源**: **21 份** ADR `docs/adr/ADR-CEP-*.md`(per `ADR-CEP-NUMBER-MAP §2 Decision 1`;基座 00/00A/01~07 + NUMBER-MAP,实例/排序/版本/契约/演进 08/09/11~18/07A)
+> **关联真源**: **24 份** `ADR-CEP-*.md`(其中**决策类 21 份**;per `ADR-CEP-NUMBER-MAP §2 Decision 1`;基座 00/00A/01~07 + NUMBER-MAP,实例/排序/版本/契约/演进 08/09/11~21/07A)
 > **关联变更**: `cpptlm-cep-umbrella`(Stage 0)+ Stage 1~3 **13** 个串行 change(2026-Q4 ~ **2030-Q1**)
 
 ---
@@ -155,7 +155,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | 编号 + 真源锚点 | `ADR-CEP-NUMBER-MAP` §2 + §3 | CEP-08~16 预分配;INV-CEP-NUM-IC1~3 |
 | 真源章节映射 | `ADR-CEP-00A` §3 + §4 | 章节行号实证;14 条伪引清单 |
 
-> **完整 21 份 ADR 清单**: `docs/adr/ADR-CEP-*.md`(per `ADR-CEP-NUMBER-MAP §2 Decision 1`)。本表仅列**基座**决策依据;实例 / 排序 / 版本 / 契约 / 演进映射类(08/09/11~16/17/18/07A)见 `phase-10.md` §真源 3 与 `07 号 §4`。
+> **完整 24 份 ADR 清单**(其中**决策类 21 份**): `docs/adr/ADR-CEP-*.md`(per `ADR-CEP-NUMBER-MAP §2 Decision 1`)。本表仅列**基座**决策依据;实例 / 排序 / 版本 / 契约 / 演进映射类(08/09/11~21/07A)见 `phase-10.md` §真源 3 与 `07 号 §4`。
 
 ---
 
@@ -27716,3 +27716,39 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **⑤ 冻结面 / 范围**：⛔ 零冻结面成员改动（本 Entry 只写台账）⇒ **不触五步链**；⛔ 零 C++ / spec / test 改动；⛔ **不改 8 行摘要表**（sha256 已钉）；⛔ **不改 Entry #334 段原文**（`:18632-18644` 零字节触碰）。
 
 **⑥ 关联**：登记册 §6.4 **W3-c**（承载 **S2-5**）· v4 缺口表 **S2-5** 行（`obj:18624-18643`）· 台账 **Entry #334**（`§4.0-a` 表 + 原文快照的落位 Entry）· `.rddf/reviews/cep-m-class-migration-payload.md` §之三（差异矩阵）
+
+### Entry #524 — 2026-11-22 [planner](**architect 追加裁决 §11 的落地登记** —— Q-7 执行路线撤回 · G-15 / G-16 立项 · 台账「21 份 → 24 份」订正授权)
+
+**起因**：architect 的追加裁决 **§11**（`.rddf/reviews/cep-gap-plan-adjudication-q1-q11-2026-11-20.md` · commit `302465d8`）对 **Q-7** 作**改判**：撤回「同一事实 5 处 canonical 化 + 机械生成 + 双向对账闸」执行路线，并把实测暴露的真残余转为 **G-15**、顺带登记 **G-16**。本 Entry 是该裁决的**落地登记 + 快照变更授权**（⛔ 台账是唯一授权源）。
+
+**① D4 订正（本 Entry 授权，planner 已执行）**
+
+| 位置 | 改前 | 改后 | 理由 |
+|---|---|---|---|
+| `obj:22`（文件头「关联真源」行） | 「**21 份** ADR `docs/adr/ADR-CEP-*.md`（… 实例/排序/版本/契约/演进 08/09/11~18/07A）」 | 「**24 份** `ADR-CEP-*.md`（其中**决策类 21 份**；… 08/09/11~21/07A）」 | 磁盘实测 **24** 份；括注枚举**只列 21 个名字、缺 19/20/21** ⇒ ⛔ 只做数字替换会造「24 份 + 21 个名字」的新矛盾 ⇒ **枚举同步补齐** |
+| `obj:158`（§3 架构依据「完整 ADR 清单」行） | 「**完整 21 份 ADR 清单** … (08/09/11~16/17/18/07A)」 | 「**完整 24 份 ADR 清单**（其中**决策类 21 份**）… (08/09/11~21/07A)」 | 同上 |
+
+> ⚠️ **同名异义消歧**：台账里「**21 份**」另有一处**语义正确**的用法 —— `:1372`「**21 份决策 ADR**（结构闸分母，per `test/cep_adr_structural_deferrals.json`）」⇒ 修法写成「**24 份（其中决策类 21 份）**」而非笼统「21 → 24」，以免与 `:1372` **同名异义**。
+> ⛔ **历史时点表述逐字保留**：`:230` / `:234` / `:235` / `:864` / `:1372` / `:2505` 等处的「21 份」是**时点快照**或**另一语义**，**不在本次订正面**。
+
+**② G-15 立项 + 快照变更授权**
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | **G-15**（S3 治理流程债 · `needs: builder`）—— 决策块级机器检查的**射程依赖 ADR 章节标题形态** ⇒ `ADR-CEP-21`（🟢 **Proposed** · `## 决策` 无编号形态）**签发后**，其决策块将落在所有机器射程之外。**时限 = 须在 `ADR-CEP-21` 签发 / 归档前完成** |
+| 判据语义（per 裁决 §11.1 D3） | ① 覆盖义务谓词 = 「**有决策章**」（`## 2 …` 与 `## 决策` 两形态都算）② 章定位函数 `section2()` 须**同步**扩展（⛔ 只改谓词不改定位 ⇒ **登记即红**：`check_rd` 对 `section2() is None` 的已登记 ADR 报「§2 章缺失」恒红）③ 快照补 `ADR-CEP-21`：**块数 = 0**（按现有 `DECISION_RE` 口径）⇒ `count` **23 → 24** · `total` **不变（+0）** ④ ⛔ 不改 `DECISION_RE` ⑤ ⛔ 不改任何 ADR 正文 |
+| **快照变更授权** | `test/cep_decision_block_snapshot.json` 是**闸外快照**（`authorized_by` 须指向真实存在的台账 Entry，闸会校验）⇒ ⛔ **本 Entry 即该快照新值的授权源** ⇒ builder 补录时须把快照的 `authorized_by` 改为 **`Entry #524`**，⛔ **不得沿用 `Entry #431`**（旧授权不覆盖新内容） |
+| 归属 | `cep-registry-stale-cleanup`（写盘面 = `scripts/test/` + `test/` + 台账 ⇒ **不触**其 AC-6 的六个禁止路径 ⇒ **不需另立单元**） |
+
+**③ G-16 立项（本 Entry 只登记，不处置）**
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | **G-16**（S3 · `needs: builder`）—— `cep_docs_sync_check.sh` 的 `ADR_LIST` 检查是**正向**的（ADR_LIST → 磁盘）⇒ **缺反向完整性检查**（磁盘 → ADR_LIST）⇒ 该脚本注释自述「漏登记 = 新 ADR **静默脱检**」。⚠️ 结构闸的分区完整性（磁盘 == `decision_adrs` ∪ `excluded`）可兜底**归类**，但归类后**仍可能**漏加 `ADR_LIST` |
+| 与 G-15 的关系 | **非同型**（G-15 = 射程依赖形态；G-16 = 缺反向完整性检查）⇒ 独立登记、独立排期 |
+
+**④ 登记册回填（planner 执行）**：§6.2 新增 **G-15** / **G-16**；§6.2 的 **G-12** 行中「Q-7」部分**以「撤回 + 转缺口」形式闭合**（⛔ 不是「未做」也不是「已做完」）；§6.3 归属表新增两行；§6.4 **W3-b** 标 ✅ 收口；§6.9 阶段 ③ 同步。
+
+**⑤ 冻结面**：⛔ **零 CEP 冻结面成员改动**（本 Entry 只写台账 + 登记册）⇒ **不触五步链**；台账**不在** `FROZEN_GLOBS`（per `cep-usage.md §12.6`「台账 = `--authorized-by` 的授权目标，不是被哈希冻结的成员」）。
+
+**关联**：architect 追加裁决 **§11**（commit `302465d8` · 审查链 = oracle 1 轮 `PASS-WITH-NOTES` + critic 1 轮 `APPROVE_WITH_CONDITIONS` · 0 BLOCKER）· 登记册 §6.2 **G-15 / G-16 / G-12** / §6.3 归属表 / §6.4 **W3-b** · 判据载体 `scripts/test/cep_decision_block_check.py` + `test/cep_decision_block_snapshot.json` · 结构闸 `scripts/test/cep_adr_structural_check.sh` · 文档同步闸 `scripts/test/cep_docs_sync_check.sh`
