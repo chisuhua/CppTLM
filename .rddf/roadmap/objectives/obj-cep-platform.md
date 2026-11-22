@@ -27752,3 +27752,47 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **⑤ 冻结面**：⛔ **零 CEP 冻结面成员改动**（本 Entry 只写台账 + 登记册）⇒ **不触五步链**；台账**不在** `FROZEN_GLOBS`（per `cep-usage.md §12.6`「台账 = `--authorized-by` 的授权目标，不是被哈希冻结的成员」）。
 
 **关联**：architect 追加裁决 **§11**（commit `302465d8` · 审查链 = oracle 1 轮 `PASS-WITH-NOTES` + critic 1 轮 `APPROVE_WITH_CONDITIONS` · 0 BLOCKER）· 登记册 §6.2 **G-15 / G-16 / G-12** / §6.3 归属表 / §6.4 **W3-b** · 判据载体 `scripts/test/cep_decision_block_check.py` + `test/cep_decision_block_snapshot.json` · 结构闸 `scripts/test/cep_adr_structural_check.sh` · 文档同步闸 `scripts/test/cep_docs_sync_check.sh`
+
+### Entry #525 — 2026-11-22 [builder](**G-15 落地回执** —— 决策块覆盖义务的**射程去形态化** · `## 决策` 无编号形态进入射程 · 快照 schema 升 v2)
+
+**起因**：architect **追加裁决 §11**（`.rddf/reviews/cep-gap-plan-adjudication-q1-q11-2026-11-20.md` · commit `302465d8`）的 **D2 / D3 / D5** —— **G-15**（S3 治理流程债 · `needs: builder` · 归 `cep-registry-stale-cleanup`）的**判据语义**由 architect 给定，本 Entry 是**实施回执**。⚠️ 快照变更的**授权源**是上一条 **Entry #524**（⛔ 本 Entry 是回执，不是授权）。
+
+**① 实施内容（判据侧 · ⛔ 未动任何 ADR 正文）**
+
+| 项 | 内容 |
+|---|---|
+| 决策章标题口径 | 新增共享常量 `DECISION_CH_HEADING_RE = ^(?:## 2\b.*\|##\s*决策\s*)$` ⇒ **编号形态**（`## 2 …`，21 份）与**无编号形态**（`## 决策`，先例 `ADR-CEP-21`）**都算决策章**；⛔ 精确匹配（`\s*决策\s*$` 收口）⇒ **不误伤** `## 6. 决策汇总` / `## 5. 待决项与决策汇总` / SU 标题里的「决策」；⛔ **编号形态在前**（§2 在前） |
+| 章定位 | `SEC2_RE`（`section2()` 用）与**围栏感知的** `section2_line_range()`（`danger_fences` 用）**同步**改用该常量 ⇒ 两处射程一致（⛔ 不同口径 ⇒ 围栏危险标记会误报 / 漏报） |
+| 覆盖义务 | `check_coverage()` 的谓词**复用** `section2()` ⇒ 自动覆盖两形态；⛔ **未新写正则**；消息措辞同步泛化为「有决策章(`## 2 …` 或 `## 决策`)」 |
+| ⛔ 未动 | `DECISION_RE`（**决策块的形态定义**）**零改动** ⇒ 其余 23 份既有 ADR 的计数口径零变化；⛔ **零 ADR 正文改动**（`git diff --name-only` 不含 `docs/adr/**`） |
+| 驱动壳 | **变异⑥ 的断言语义反转**：旧断言「`## 决策` 形态**不**误报」（⛔ 旧射程例外）⇒ 改为「**必须**按 `决策块覆盖缺失` 变红」⇒ 两形态都被钉住 |
+
+**② 快照变更（授权源 = Entry #524）**
+
+| 项 | 改前 | 改后 |
+|---|---|---|
+| `schema` | `cep-decision-block-snapshot-v1` | **`cep-decision-block-snapshot-v2`**（新增必填 `notes` 注释位；校验器同步：v2 下 `notes` 缺失即红） |
+| `files` | **23** 份 | **24** 份（+ `ADR-CEP-21-sharer-bitmap-expansion.md`: **0**） |
+| `count` | 23 | **24** |
+| `total` | 131 | **131**（**不变** —— `ADR-CEP-21` 贡献 0 块） |
+| `authorized_by` | `Entry #431` | **`Entry #524`**（⛔ 未沿用旧授权） |
+| `notes`（新） | — | 口径说明：① 块形定义 ② `ADR-CEP-21` = **0** 的成因（其决策章无 `### 决策` 子标题）＋ ⛔ 「不是『计数适用于它』」③ 两形态都在射程 ④ `count`/`total` 语义 |
+
+> ⚠️ **为什么升 v2**（与裁决字面「在快照注释里写明」的偏差登记）：快照 v1 **无注释位**（固定 5 键 + `files` 值域为整数 ⇒ `total` 由求和导出 ⇒ 无法承载文本）⇒ 扩一个注释位 = **格式变更** ⇒ 诚实做法是升 v2（**仅 2 处引用**：`cep_decision_block_check.py` 的 `SNAPSHOT_SCHEMA` + 快照文件本身）。⚠️ `openspec/changes/archive/2026-11-12-cpptlm-cep-invariant-gate-teeth/design.md:115` 仍留 v1 字符串 ⇒ **归档 change 的历史快照，⛔ 不改**（归档件不可变；`cep_doc_ref_check.sh` 的排除集含 `openspec/changes/archive/**/*.md`）。
+
+**③ 决定性变异（4 条 · 全部按签名红 · 影子树内进行）**
+
+| # | 变异 | 实测 |
+|:--:|---|---|
+| M1 | 影子树里把 `ADR-CEP-21` 从快照删掉 | 「❌ 决策块覆盖缺失: `ADR-CEP-21-…`: 有决策章(`## 2 …` 或 `## 决策`)但未登记决策块快照」⇒ **覆盖义务对 ADR-CEP-21 真的开火** |
+| M2 | 只回退**章定位**（`SEC2_RE` 不再认 `## 决策`），快照仍含 `ADR-CEP-21` | 「❌ 决策块计数快照偏离: `ADR-CEP-21-…`: §2 章缺失(快照期望 0 块)」⇒ **裁决 D3② 的「登记即红」警告成立** ⇒ 两处必须同时改 |
+| M3 | 给 `ADR-CEP-21` 的决策章加一个 `### 决策 1` | 「❌ 决策块计数快照偏离: 期望 0 块, 实得 1 块, 差值 +1」⇒ 快照值**自钉住** |
+| M4 | 驱动壳变异⑥ 语义反转后的探针 | 「✅ R-d 变异⑥(无编号决策章·开火) 按签名变红:决策块覆盖缺失」⇒ 两形态都被钉住 |
+
+**④ 回归**：`cep_decision_block_check.sh`（**20 项通过 / 0 项失败** · 含基线 + 10 条决定性变异）· `cep_adr_structural_check.sh` · `cep_docs_sync_check.sh` · `rddf_stage_gate.sh` · `cep_registry_baseline_check.py` · `cep_registry_stale_refs_check.sh` · `cep_freeze_check.sh` · `docs_sync_check.sh --strict` —— 全 rc=0。
+
+**⑤ 冻结面**：⛔ **零 CEP 冻结面成员改动**（写盘面 = `scripts/test/` + `test/` + 载体表 + 登记册 + 台账）⇒ **不触五步链**；⇒ `cep-registry-stale-cleanup` 的 **AC-6**（禁 `docs/adr/` · `docs/architecture/` · `openspec/specs/` · `include/tlm/cep/` · `experimental/` · `tools/`）**未被违反**。
+
+**⑥ 时限**：`ADR-CEP-21` 状态 = 🟢 **Proposed**（未签发）⇒ G-15 的「**签发前完成射程修复**」时限**已满足** ⇒ 缺口**前瞻性**成立、尚未形成「已签发 ADR 的覆盖漏洞」。
+
+**关联**：architect 追加裁决 **§11**（commit `302465d8`）· 台账 **Entry #524**（授权）· 登记册 §6.2 **G-15** / §6.3 归属表 · 载体表 `G-15` 行 · 验收报告 `.rddf/reviews/cep-g15-decision-block-coverage-verify.md` · `scripts/test/cep_decision_block_check.py` + `.sh` · `test/cep_decision_block_snapshot.json`

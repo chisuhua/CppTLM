@@ -136,8 +136,9 @@ def expect_carrier(_unused):
         return None
     i_rows = [r for r in rows if r[0].startswith("I-")]
     w_rows = [r for r in rows if r[0].startswith("W-")]
+    g_rows = [r for r in rows if r[0].startswith("G-")]
     ac_rows = [r for r in rows if r[0].startswith("AC-")]
-    return [len(rows), len(i_rows), len(w_rows), len(ac_rows)]
+    return [len(rows), len(i_rows), len(w_rows), len(g_rows), len(ac_rows)]
 
 
 # 每项：(行首列标签, 从「实测」格抽数的正则, 期望值函数, 各数含义)
@@ -170,9 +171,10 @@ CHECKS = [
     (
         "顺序机关载体表",
         r"\*\*(\d+)\*\*\s*个数据行.*?\*\*(\d+)\*\*\s*个\s*`I-\*`.*?"
-        r"\*\*(\d+)\*\*\s*个\s*`W-\*`.*?\*\*(\d+)\*\*\s*个旧框架治理",
+        r"\*\*(\d+)\*\*\s*个\s*`W-\*`.*?\*\*(\d+)\*\*\s*个\s*`G-\*`.*?"
+        r"\*\*(\d+)\*\*\s*个旧框架治理",
         expect_carrier,
-        ["数据行总数", "I-* 行数", "W-* 行数", "AC-* 行数"],
+        ["数据行总数", "I-* 行数", "W-* 行数", "G-* 行数", "AC-* 行数"],
     ),
 ]
 

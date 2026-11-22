@@ -43,7 +43,7 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 SNAPSHOT_REL = os.path.join("test", "cep_decision_block_snapshot.json")
 LEDGER_REL = os.path.join(".rddf", "roadmap", "objectives", "obj-cep-platform.md")
-SNAPSHOT_SCHEMA = "cep-decision-block-snapshot-v1"
+SNAPSHOT_SCHEMA = "cep-decision-block-snapshot-v2"
 
 # ── 红因签名(与 design.md D-8 一一对应;发布即冻结)──────────────────────────
 SIG_COUNT_MISMATCH = "决策块计数快照偏离"
@@ -60,8 +60,18 @@ SIG_COVERAGE_MISSING = "决策块覆盖缺失"
 SIG_REF_UNRESOLVED = "引用解析缺失"
 
 # ── D-3.1 四步口径(per D-1)─────────────────────────────────────────────────
-SEC2_RE = re.compile(r"^## 2\b.*$", re.M)
+# ⚠️ **决策章标题的两种形态**（per G-15 · architect 追加裁决 §11.1 D3①② · 台账 Entry #524）：
+#   · **编号形态** = `## 2 …`（21 份既有 ADR）
+#   · **无编号形态** = `## 决策`（先例 `ADR-CEP-21`）
+# ⇒ **两形态都算决策章** ⇒ 覆盖义务的射程不再依赖**标题写法**。
+# ⛔ **必须精确匹配 `## 决策`**（⛔ 不得误伤 `## 6. 决策汇总` / `## 5. 待决项与决策汇总` / SU 标题里的「决策」）
+#    ⇒ 正则用 `\s*决策\s*$` 收口（其后不得跟任何字符）。
+# ⛔ **匹配顺序 = 编号形态在前**：同一份 ADR 若两者都有，先命中编号形态（§2 在前）。
+DECISION_CH_HEADING_RE = re.compile(r"^(?:## 2\b.*|##\s*决策\s*)$")
+SEC2_RE = re.compile(r"^(?:## 2\b.*|##\s*决策\s*)$", re.M)
 NEXT_SEC_RE = re.compile(r"^##\s", re.M)
+# ⛔ **决策块的形态定义**（`### 决策 N` 的层级 / 编号口径）—— per G-15 D3④：**不得改**
+#    （改它会连带改变其余 23 份既有 ADR 的计数口径 ⇒ 越出本裁决范围）。
 DECISION_RE = re.compile(r"^(#{2,6})\s*决策\s*(.*)$")
 NUM_RE = re.compile(r"\s*(\d+(?:\.\d+)?)")
 # D-3.2 块 ID 的终止符集(实测形态:「决策 1:」「决策 2(精简):」「决策 2.1」)
@@ -82,7 +92,11 @@ def strip_fences(text):
 
 
 def section2(text):
-    """D-3.1 ②:取 §2 章范围(§2 标题之后 → 下一个 `^##\\s` 之前);无 §2 ⇒ None"""
+    """D-3.1 ②:取决策章范围(决策章标题之后 → 下一个 `^##\\s` 之前);无决策章 ⇒ None
+
+    ⚠️ **两种标题形态都算决策章**（per G-15 · 台账 Entry #524）：`## 2 …`（编号形态）
+       与 `## 决策`（无编号形态，先例 `ADR-CEP-21`）⇒ 覆盖义务的射程不再依赖标题写法。
+    """
     m = SEC2_RE.search(text)
     if not m:
         return None
@@ -144,14 +158,18 @@ def fence_aware_lines(text):
 
 
 def section2_line_range(text):
-    """围栏感知地定位 §2 行区间(围栏内的 `## ` **不**算章节边界)"""
+    """围栏感知地定位**决策章**行区间(围栏内的 `## ` **不**算章节边界)
+
+    ⚠️ **必须与 `SEC2_RE` 同口径**（per G-15 · 台账 Entry #524）：两形态都算决策章
+       ⇒ 否则 `danger_fences` 的射程会与 `section2()` 不一致（⛔ 误报 / 漏报围栏危险）。
+    """
     flags, _ = fence_aware_lines(text)
     lines = text.splitlines()
     start = None
     for i, line in enumerate(lines):
         if flags[i]:
             continue
-        if re.match(r"^## 2\b", line):
+        if DECISION_CH_HEADING_RE.match(line):
             start = i
             break
     if start is None:
@@ -195,6 +213,11 @@ def load_snapshot():
         return None, [(SIG_SNAPSHOT_BAD, f"快照无法解析: {exc}")]
     if snap.get("schema") != SNAPSHOT_SCHEMA:
         reds.append((SIG_SNAPSHOT_BAD, f"schema 非 {SNAPSHOT_SCHEMA}: {snap.get('schema')!r}"))
+    # ⚠️ **v2 新增 `notes` 注释位**（per G-15 · architect 追加裁决 §11.1 D3③ · 台账 Entry #524）：
+    #   快照是**机器投影**，原先**无注释位** ⇒ 「已知限制」（如 `ADR-CEP-21` 的块数 = 0）
+    #   只能落在仓外文档 ⇒ v2 起 `notes` 为**必填键**，承载口径说明（⛔ 不参与 count/total 求和）。
+    if not isinstance(snap.get("notes"), str) or not snap.get("notes", "").strip():
+        reds.append((SIG_SNAPSHOT_BAD, f"notes 缺失或非非空字符串(v2 必填): {snap.get('notes')!r}"))
     files = snap.get("files")
     if not isinstance(files, dict):
         return None, reds + [(SIG_SNAPSHOT_BAD, "files 字段缺失或非对象")]
@@ -233,14 +256,16 @@ def adr_files(corpus_root):
 
 # ── 覆盖义务(语料 → 快照) ──────────────────────────────────────────────────
 def check_coverage(corpus_root):
-    """覆盖义务:凡有 §2 决策章的 `ADR-CEP-*.md` MUST 出现在快照 `files` 里。
+    """覆盖义务:凡有**决策章**的 `ADR-CEP-*.md` MUST 出现在快照 `files` 里。
 
     补的是 `check_rd` 划走的另一半:新增 ADR 若**只**进了 `cep_adr_structural_check.sh`
     的分类表而**忘了**登记快照,此前**无人红**。
     ⚠️ 谓词**复用** `section2(strip_fences(...))`(⛔ 不新写正则 —— 围栏内的 `## 2`
     不得算章,`SIG_DANGER_FENCE` 证明这种围栏确实存在)。
     ⚠️ **计数仍是闸外期望值**;本判据只推导 key 集。
-    ⚠️ **射程 = `ADR-CEP-*.md`**;`## 决策`(无编号)形态(先例 `ADR-CEP-21`)不适用。
+    ✅ **两种决策章形态都在射程内**（per G-15 · architect 追加裁决 §11.1 D3① · 台账 Entry #524）:
+       `## 2 …`（编号形态,21 份）**与** `## 决策`（无编号形态,先例 `ADR-CEP-21`）
+       ⇒ 射程**不再依赖标题写法** ⇒ 先前「`## 决策` 形态不适用」的例外**已取消**。
     """
     reds = []
     snap, _ = load_snapshot()
@@ -256,12 +281,12 @@ def check_coverage(corpus_root):
         with open(os.path.join(adr_dir, name), encoding="utf-8") as fh:
             text = fh.read()
         if section2(strip_fences(text)) is None:
-            continue  # 无 §2 章 ⇒ 结构性不适用(先例 ADR-CEP-21)
+            continue  # 无决策章 ⇒ 结构性不适用(既非 `## 2 …` 也非 `## 决策`)
         if name not in registered:
             reds.append(
                 (
                     SIG_COVERAGE_MISSING,
-                    f"{name}: 有 §2 决策章但未登记决策块快照 ⇒ 登记义务:`files` 补 "
+                    f"{name}: 有决策章(`## 2 …` 或 `## 决策`)但未登记决策块快照 ⇒ 登记义务:`files` 补 "
                     f'"{name}": <块数> 并同步 count/total(authorized_by 复用同一台账 Entry)',
                 )
             )
@@ -272,13 +297,15 @@ def check_coverage(corpus_root):
 def check_rd(corpus_root):
     """R-d:快照逐份比对 + 两条显式红 + 围栏危险标记。
 
-    职责边界:本段遍历**快照已登记的文件**(23 份);语料里**新增**的 ADR **不**由本段
+    职责边界:本段遍历**快照已登记的文件**(24 份);语料里**新增**的 ADR **不**由本段
     负责 —— 改由 **`check_coverage`**(`决策块覆盖缺失`)承接,方向互补:
       · `check_rd`    :**快照 → 语料**(文件缺失 / 计数偏离 / 层级 / 编号)
-      · `check_coverage`:**语料 → 快照**(有 §2 章的 `ADR-CEP-*.md` 必须登记)
+      · `check_coverage`:**语料 → 快照**(有决策章的 `ADR-CEP-*.md` 必须登记)
     ⇒ 两段红因仍然唯一(计数偏离 vs 未登记,签名不同)。
     ⚠️ **计数仍是闸外期望值**(人工登记 + 台账 Entry 授权);`check_coverage` 只推导 **key 集**。
-    ⚠️ **射程 = `ADR-CEP-*.md`**;`## 决策`(无编号)形态(先例 `ADR-CEP-21`)**不在射程内**。
+    ✅ **两种决策章形态都在射程内**（per G-15 · architect 追加裁决 §11.1 D3① · 台账 Entry #524）:
+       `## 2 …`（编号形态）**与** `## 决策`（无编号形态，先例 `ADR-CEP-21`）⇒ 先前
+       「`## 决策` 形态**不在射程内**」的例外**已取消**。
     """
     results = []
     snap, reds = load_snapshot()

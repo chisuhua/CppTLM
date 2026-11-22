@@ -7,8 +7,10 @@
 #   bash scripts/test/cep_decision_block_check.sh --list     # 只打印判据清单
 #
 # 检查 2 段(判据见 `scripts/test/cep_decision_block_check.py` 头注 / design.md D-1):
-#   [R-d] 23 份 ADR 的 §2 决策块计数 **逐份** == 快照(D-1 四步 + D-3.2 块 ID 全匹配)
+#   [R-d] **24** 份 ADR 的**决策块**计数 **逐份** == 快照(D-1 四步 + D-3.2 块 ID 全匹配)
 #          + 显式红①(非 ### 级)+ 显式红②(编号非法)+ 围栏危险标记
+#          ⚠️ **两种决策章标题形态都在射程内**(`## 2 …` 编号形态 + `## 决策` 无编号形态)
+#             —— per G-15 · architect 追加裁决 §11.1 D3① · 台账 Entry #524
 #   [R-c] 双向对账:正向(磁盘集合 ⇄ 无同号拆出件)+ 反向(新 SU 的 `### ⑥` 重述块)
 #
 # + **决定性变异**(⛔ 在**影子树**上运行,⛔ 不动真实仓)—— 证明闸**有牙**:
@@ -17,7 +19,8 @@
 #   R-d 变异③ §2 内插入 `### 决策 Ⅻ`       ⇒ 必须按 `决策块编号非法` 变红
 #   R-d 变异④ 删掉一个 `### 决策 N` 段     ⇒ 必须按 `决策块计数快照偏离` 变红
 #   R-d 变异⑤ **新增**一份有 §2 章的 ADR  ⇒ 必须按 `决策块覆盖缺失` 变红(覆盖义务)
-#   R-d 变异⑥ 新增 `## 决策`(无编号)形态 ⇒ 必须**不**误报(复刻 `ADR-CEP-21`)
+#   R-d 变异⑥ 新增 `## 决策`(无编号)形态 ⇒ 必须**同样**按 `决策块覆盖缺失` 变红
+#          (⚠️ 2026-11-22 语义反转 per G-15 —— 旧断言是「**不**误报」)
 #   R-c 变异① 删重述块一行                  ⇒ 必须按 `重述块缺项` 变红
 #   R-c 变异② 影子树造 `ADR-CEP-02a-*.md`   ⇒ 必须按 `存在同号拆出件` 变红
 #                                          ⇒ ⛔ 且 `cep_adr_structural_check.sh` **同时红**(双闸各报各的签名)
@@ -261,7 +264,10 @@ run_shadow_expect_red "决策块覆盖缺失" "R-d 变异⑤(覆盖义务·开�
 rm -f "$SHADOW/docs/adr/ADR-CEP-30-coverage-probe.md"
 run_shadow_expect_green "R-d 变异⑤"
 
-# 变异⑥(**不误报**):`## 决策`(无编号)形态 —— 复刻 `ADR-CEP-21` ⇒ 必须**不**触发覆盖判据
+# 变异⑥(**开火**):`## 决策`(无编号)形态 —— 复刻 `ADR-CEP-21` ⇒ **必须**按覆盖缺失变红
+#   ⚠️ **2026-11-22 语义反转**（per G-15 · architect 追加裁决 §11.1 D3① · 台账 Entry #524）：
+#      旧断言是「`## 决策` 形态**不**触发覆盖判据」（⛔ 射程例外）⇒ 新语义下**两形态都在射程内**
+#      ⇒ 该探针**必须开火**；否则覆盖义务仍依赖标题写法 ⇒ G-15 未真正闭合。
 shadow_reset
 cat > "$SHADOW/docs/adr/ADR-CEP-31-nonumbered-probe.md" <<'PROBE_EOF'
 # ADR-CEP-31: 无编号决策章探针(仅存在于影子树)
@@ -280,8 +286,9 @@ cat > "$SHADOW/docs/adr/ADR-CEP-31-nonumbered-probe.md" <<'PROBE_EOF'
 
 无。
 PROBE_EOF
-run_shadow_expect_green "R-d 变异⑥(覆盖义务·不误报)"
+run_shadow_expect_red "决策块覆盖缺失" "R-d 变异⑥(无编号决策章·开火)"
 rm -f "$SHADOW/docs/adr/ADR-CEP-31-nonumbered-probe.md"
+run_shadow_expect_green "R-d 变异⑥"
 
 echo ""
 echo "══ ③ R-c 决定性变异 ══"
