@@ -200,3 +200,11 @@ G-3	doc	.rddf/reviews/cep-g37-ledger-kpi-line-verify.md	G-3 缺口本体消除	d
 G-7	doc	.rddf/reviews/cep-g37-ledger-kpi-line-verify.md	G-7 超阈自解	done
 # ── v5 · G-13 的验收证据行 ─────────────────────────────────────────────
 G-13	doc	.rddf/reviews/cep-g13-pcie-spec-trailer-verify.md	G-13 完成判据	done
+# ── v5 · W4 批 2（W-4a / W-4e）的载体行 ────────────────────────────────
+W-4a	doc	.rddf/roadmap/objectives/obj-cep-platform.md	**③ G-3 闭合（同行自相矛盾 ⇒ 已消除）**	done
+W-4a	doc	.rddf/reviews/cep-g37-ledger-kpi-line-verify.md	G-3 缺口本体消除	done
+W-4e	doc	.rddf/roadmap/objectives/obj-cep-platform.md	**④ G-7 闭合（KPI 行超阈 ⇒ 超阈自解）**	done
+W-4e	doc	.rddf/reviews/cep-g37-ledger-kpi-line-verify.md	G-7 超阈自解	done
+# ── v5 · G-17 的载体行 ────────────────────────────────────────────────
+G-17	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**登记册自身状态面未随实施结果刷新**	done
+G-17	doc	.rddf/reviews/cep-g17-registry-status-sync-verify.md	**登记册内状态性标注 0 处与实测矛盾**	done
