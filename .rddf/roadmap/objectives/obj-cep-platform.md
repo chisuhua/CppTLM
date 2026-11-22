@@ -27943,3 +27943,64 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **⑥ 回归**：`rddf_stage_gate.sh` · `cep_registry_baseline_check.py` · `cep_registry_stale_refs_check.sh` · `docs_sync_check.sh --strict` · `cep_freeze_check.sh` —— 全 rc=0；ctest 4/4 Passed（`cep_docs_sync_check` · `rddf_stage_gate` · `cep_registry_baseline_check` · `cep_registry_stale_refs_check`）
 
 **关联**：登记册 §6.2 G-3 / G-7 行（实施前）· §6.3 归属表 · §6.4 **W4-a** / **W4-e** · 验收报告 `.rddf/reviews/cep-g37-ledger-kpi-line-verify.md`
+
+### Entry #530 — 2026-11-23 [builder](**G-13 落地回执** —— 5 份 PCIe spec 的中文 trailer 状态行事实同步 · 判据订正「不触五步链」· 登记册缺口清零)
+
+**授权来源**：用户 **「继续推进」** / **「继续」** 两轮指令（承接登记册 §6.4 「🔑 授权请求（user · G-13）」—— 该节原写「⚠️ 拍板前计划文本保持授权请求形态，⛔ 不得写成已决」；本次为用户以指令形态拍板）。
+
+**起因**：登记册 §6.2 缺口 **G-13** —— `openspec/specs/{link-layer-and-fc,130b-encoding,axi-stream-adapter,axi4-mapper,host-bypass-and-rc}/spec.md` 的中文 trailer `**状态**` 行仍写「Phase N **实施中**」，而 `AGENTS.md:441` §PHASE STATE 早已写「PCIe EP 微架构 | **Phase 1-8 全部交付**」⇒ **事实矛盾**。
+
+**① 实施内容（5 个文件路径逐条枚举 · 单 commit）**
+
+| # | 文件 | 改前 | 改后 |
+|:--:|---|---|---|
+| 1 | `openspec/specs/link-layer-and-fc/spec.md:92` | `📋 Spec — Phase 1 实施中` | **`✅ 已实施 —— Phase 1 交付`** |
+| 2 | `openspec/specs/130b-encoding/spec.md:56` | `📋 Spec — Phase 2 实施中(待 Phase 1 Oracle 评审通过)` | **`✅ 已实施 —— Phase 2 交付`** |
+| 3 | `openspec/specs/axi-stream-adapter/spec.md:72` | `📋 Spec — Phase 5 实施中(待 Phase 4 Oracle 评审放行)` | **`✅ 已实施 —— Phase 5 交付`** |
+| 4 | `openspec/specs/axi4-mapper/spec.md:51` | `📋 Spec — Phase 6 实施中（待 Phase 5 Oracle 评审放行）` | **`✅ 已实施 —— Phase 6 交付`** |
+| 5 | `openspec/specs/host-bypass-and-rc/spec.md:49` | `📋 Spec — Phase 7 实施中` | **`✅ 已实施 —— Phase 7 交付`** |
+
+> 形态依据 = **已交付范本** `openspec/specs/pcie-ip-microarch/spec.md:296`（`**状态**: ✅ 已实施 —— Phase 1-8 全部交付(...)`）。括号内的「待 Phase N Oracle 评审…」是**已届满的前置条件**陈述 ⇒ 随状态行一并移除（否则与「已实施」自相矛盾）。
+
+**② 机判判据（登记册 §6.3 的完成判据）**
+
+| 判据 | 改前 | 改后 |
+|---|---|---|
+| `grep -c "Phase [1-7] 实施中"`（5 份合计） | **5** | **0** ✅ |
+
+**③ 判据订正（实施期实测 · 登记册原写前提不成立）**
+
+| # | 登记册原述 | 实测 | 处置 |
+|:--:|---|---|---|
+| **E-1** | 完成判据写「+ **一次五步链同批**（⛔ 台账与清单不得合并提交）」 | 这 5 份 `openspec/specs/<name>/spec.md` **均不在** `cep_freeze_check.sh` 的 `FROZEN_GLOBS`（冻结面只含 `openspec/specs/cep-*/spec.md` 等 ⇒ 这 5 份**非 `cep-*` 前缀**）⇒ 改它们**不触五步链** | 实测 `cep_freeze_check.sh` **rc=0**、**90 产物 hash 不变** ⇒ 「一次五步链同批」**不适用**；「台账与清单不得合并提交」的约束随之解除（本 Entry 与 5 份 spec 改动**同一 commit**） |
+
+> ⚠️ 该订正记入**本 Entry**（⛔ 不回改登记册的历史判据表述；登记册 §6.2 的 G-13 行与 §6.3 归属行已按结果更新为「已闭合 / user 已授权」）。
+
+**④ 零回归核对（改前/改后对照 · 硬证据）**
+
+| 检查 | 改前 | 改后 |
+|---|---|---|
+| `openspec validate --specs --strict` | **83 passed / 55 failed**（138 items） | **83 passed / 55 failed**（138 items）⇒ **完全一致** |
+| 这 5 份**逐个** `openspec validate <name> --type spec` | — | **5/5 `is valid`** |
+| `cep_freeze_check.sh` | rc=0 | **rc=0**（90 产物 hash 不变） |
+| `docs_sync_check.sh --strict` | rc=0 | **rc=0** |
+| `rddf_stage_gate.sh` | rc=0 | **rc=0** |
+| `cep_registry_baseline_check.py` | rc=0 | **rc=0** |
+| `cep_registry_stale_refs_check.sh` | rc=0 | **rc=0** |
+| `cep_docs_sync_check.sh --strict` | rc=0 | **rc=0**（13 组全绿） |
+
+> ⚠️ 55 failed 系**其他 spec 的既有问题**（与本批 5 份无关）⇒ 本批**零引入**；对照采用 `git stash push -- <5 路径>` 实测改前数。
+
+**⑤ 登记册现状：缺口清零**
+
+| 项 | 值 |
+|---|---|
+| **仍开** | **0 项** ✅ |
+| 「已闭合项」表 | **23 行**（v4 旧 ID **7 行** + `G-1` ~ `G-16` 共 16 个 `G-*`；其中 `G-13` 为末项） |
+| §6.4 授权请求节 | 标题改为「✅ **2026-11-23 已授权并落地**」 |
+
+**⑥ 范围纪律**
+
+⛔ 零 ADR 正文改动 · ⛔ 零**冻结面**成员改动（5 份非 `cep-*` 前缀 ⇒ 不在 `FROZEN_GLOBS`）· 零 C++ 改动 · 零 `openspec/changes/**` 改动 · 零 force-add · ⛔ 未改任何历史 Entry 正文（本 Entry 追加式）。
+
+**关联**：登记册 §6.2（G-13 移入已闭合项 · 22→23 行）· §6.3（归属表 G-13 标 ✅）· §6.2 口径头（**仍开 1 → 0 项**）· §6.4（授权请求节标为已授权）· 载体表 `G-13` 1 行 · 验收报告 `.rddf/reviews/cep-g13-pcie-spec-trailer-verify.md`

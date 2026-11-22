@@ -89,5 +89,5 @@ PcieEndpointIP **SHALL** 实现 Flow Control Token Bucket 引擎(P/NP/Cpl 各一
 ---
 
 **维护**: CppTLM Team (Sisyphus)
-**状态**: 📋 Spec — Phase 1 实施中
+**状态**: ✅ 已实施 —— Phase 1 交付
 

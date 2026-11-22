@@ -29,7 +29,7 @@
       "claim_gen": 24,
       "state": "active",
       "acquired_at": "2026-11-22T12:50:06.353Z",
-      "heartbeat_at": "2026-11-22T18:09:44.690Z"
+      "heartbeat_at": "2026-11-22T18:15:54.166Z"
     },
     "/workspace/project/CppTLM|planner": {
       "work_root": "/workspace/project/CppTLM",

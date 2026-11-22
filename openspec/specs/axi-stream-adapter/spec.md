@@ -69,5 +69,5 @@ PcieEndpointIP **SHALL** 暴露多端口 AXI Stream Adapter（master / slave / c
 ---
 
 **维护**: CppTLM Team (Sisyphus)
-**状态**: 📋 Spec — Phase 5 实施中(待 Phase 4 Oracle 评审放行)
+**状态**: ✅ 已实施 —— Phase 5 交付
 

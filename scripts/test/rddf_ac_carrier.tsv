@@ -198,3 +198,5 @@ G-16	doc	.rddf/reviews/cep-g16-adr-list-reverse-verify.md	| **G-16 的完成判�
 # ── v5 · W4 批 2（G-3 / G-7）的验收证据行 ──────────────────────────────
 G-3	doc	.rddf/reviews/cep-g37-ledger-kpi-line-verify.md	G-3 缺口本体消除	done
 G-7	doc	.rddf/reviews/cep-g37-ledger-kpi-line-verify.md	G-7 超阈自解	done
+# ── v5 · G-13 的验收证据行 ─────────────────────────────────────────────
+G-13	doc	.rddf/reviews/cep-g13-pcie-spec-trailer-verify.md	G-13 完成判据	done

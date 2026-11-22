@@ -53,5 +53,5 @@ PcieEndpointIP **SHALL** 建模 128b/130b 编码延迟(Gen1-5 各 Gen 速率对�
 ---
 
 **维护**: CppTLM Team (Sisyphus)
-**状态**: 📋 Spec — Phase 2 实施中(待 Phase 1 Oracle 评审通过)
+**状态**: ✅ 已实施 —— Phase 2 交付
 

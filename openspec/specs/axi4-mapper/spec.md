@@ -48,5 +48,5 @@ AXI4Mapper **SHALL** 作为独立模块（`include/framework/axi4_mapper.hh` + `
 ---
 
 **维护**: CppTLM Team (Sisyphus)
-**状态**: 📋 Spec — Phase 6 实施中（待 Phase 5 Oracle 评审放行）
+**状态**: ✅ 已实施 —— Phase 6 交付
 

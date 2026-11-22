@@ -26,7 +26,7 @@
 | OpenSpec | active **0** · 归档 **change 目录数** **170**（CEP **54**）· KPI **0/3**（**空档 ⇒ 可立新提案**） | `ls openspec/changes/ \| grep -v archive \| wc -l` |
 | CEP 归档 change 缺独立验收报告 | **0** —— I-10 落地后的现行口径 = 机关闸 `scripts/test/archive_verify_check.sh` 实测「**扫面 35 份 · 基线 35 · git 跟踪 35**」，三检 + provenance 一致性全绿（⛔ 旧「31」「40」等**逐份对账口径已作废**，现行口径**以闸为准**，⛔ 不得再用份数做判据 —— 份数会随每次归档漂移） | `bash scripts/test/archive_verify_check.sh` |
 | KPI 活口径同步面 | **7 处** —— 权威清单 = 既有闸 `scripts/test/rddf_stage_gate.sh` 的 `LIVE_FILES`；P-5 实测输出 = 「✓ P-5 **0 处**活口径全部同步（**锚定 7 处**，逐处取值 == 实测）」⇒ 取值全部 == `0/3` | `bash scripts/test/rddf_stage_gate.sh` |
-| 顺序机关载体表 | `scripts/test/rddf_ac_carrier.tsv` = **124** 个数据行（**58** 个 `I-*`（44 原始 + 14 W1-b 第二载体）**全 `done`** + **39** 个 `W-*` 行（W1 / W2 / W3 / W4 的实施 + 验收证据）+ **9** 个 `G-*` 行（`G-15` 的实施 + 验收证据 3 行 · `G-16` 的实施 + 验收证据 4 行 · `G-3` / `G-7` 各 1 行验收证据）· **18** 个旧框架治理 `AC-01~AC-09` 行 `pending`） |
+| 顺序机关载体表 | `scripts/test/rddf_ac_carrier.tsv` = **125** 个数据行（**58** 个 `I-*`（44 原始 + 14 W1-b 第二载体）**全 `done`** + **39** 个 `W-*` 行（W1 / W2 / W3 / W4 的实施 + 验收证据）+ **10** 个 `G-*` 行（`G-15` 3 行 · `G-16` 4 行 · `G-3` / `G-7` / `G-13` 各 1 行验收证据）· **18** 个旧框架治理 `AC-01~AC-09` 行 `pending`） |
 
 > ✅ **KPI 0/3** ⇒ 三个框架治理 change（`cpptlm-module-param-effect-landing` / `cpptlm-config-type-registration-align` / `cpptlm-module-param-migrate-batch2`）已于 2026-11-18~19 **全部归档** ⇒ **§1.5 整节已作废**（见该节顶部）⇒ **当前可立新提案**（`AGENTS.md` 的 Proposed ≤3 门槛 = **0/3**）。
 > ⚠️ **本表 2026-11-20 的数字与上一版（2026-11-18）的差异全部来自那三个 change 的归档** ⇒ **不是**测量口径变更。
@@ -331,7 +331,7 @@ R-5.AC-08 ◄── C2.T0.2（嵌套失败传播）—— **可选**：C2 未落
 ### §6.2 缺口清单（CEP 域 · **v5** · 2026-11-22 实测）
 
 > **本轮口径**：2026-11-22 在 HEAD `a09c1ffa` 上**逐条重测** v4 的 23 项 ⇒ **13 项仍开** + **9 项闭合** + **1 项降级为 S5**（**v5 立项时口径**；现行口径见下一行）。v4 的 `S*-x` 编号**冻结为历史快照**（⛔ 不重编号 —— 旧 ID 被 improvement 单元与台账 Entry 引用）。
-> **W1 / W3 / W4 落地后的口径（2026-11-23 · W4 批 2 闭合后）**：**仍开 = 1 项**，编号集 = **`G-13`** —— `G-2`（W2-a）· `G-3` / `G-7`（W4-a / W4-e）· `G-4` / `G-5` / `G-6` / `G-11`（W4-b/c/d/f）· `G-10`（W2-b）· `G-8`（W3-a）· `G-9`（W3-d）· `G-12`（W3-c + W3-b）· `G-14`（W2-e）· `G-15`（G-15 实施）· `G-16`（独立批次 · ADR 清单反向完整性闸）**均已闭合**（证据见「已闭合项」表）；⏳ **`G-13` 仍开**（5 份 PCIe spec 的中文 trailer 状态行陈旧 ⇒ 属 **user 授权请求**域，⛔ 不走 architect / 不走 openspec change）。
+> **W1 / W3 / W4 全部落地后的口径（2026-11-23 · **登记册缺口清零**）**：**仍开 = 0 项** —— `G-1` / `G-2` / `G-3` / `G-4` / `G-5` / `G-6` / `G-7` / `G-8` / `G-9` / `G-10` / `G-11` / `G-12` / `G-13` / `G-14` / `G-15` / `G-16` **全部闭合**（证据见「已闭合项」表）；⛔ **无待处置缺口**、**无待授权项**；后续若发现新缺口 ⇒ 按 §6.4 的「编号空间登记表」用 `G-17+` 续编（⛔ 不重用旧 ID）。
 > ⚠️ **重测纪律**：本节每条缺口都带**一条可复跑命令**；⛔ **禁止**引用 v4 的数字而不重跑（v4 → v5 的实测偏差已达 **4 处**：闸族 45→60、CEP 测试 73→77、S3-6 的字符/字节量纲、归档份数口径；**第 5 处**由 W1 执行期实测发现：`G-1` 的「force-add 3 个归档目录」**前提不成立**（三个目录已在 git index），见 W1-c 与 §6.3）。
 
 #### S0 · 宣称不成立级 —— **0 项**（v5 复测维持）
@@ -339,7 +339,7 @@ R-5.AC-08 ◄── C2.T0.2（嵌套失败传播）—— **可选**：C2 未落
 > **诚实结论**：v4 初稿曾列 2 项 S0（DoD 7 口径 / 引擎强度表），经三轮复核**均降级**。v5 复测**未新增 S0**；且 v4 的两处降级依据在 v5 依然成立（`obj §0 DoD` 12 项逐条有证据支撑；「引擎 5 vs 6」已由 `docs/guide/cep-usage.md §12.2.1` 定义三词消解 ⇒ 见 **G-8**，不再是 S0/S2）。
 > ⚠️ §0.1 的 stale（v4 载 active 3 / KPI 3/3）方向是**过 restrictive**（虚报已满）⇒ 不制造假绿 ⇒ v5 已按 §0.1 的实测刷新（active **0** / KPI **0/3**）。
 
-#### 已闭合项（**22 行**（v4 旧 ID **7 行** + `G-1` / `G-2` / `G-3` / `G-4` / `G-5` / `G-6` / `G-7` / `G-8` / `G-9` / `G-10` / `G-11` / `G-12` / `G-14` / `G-15` / `G-16`）· v5 复测确认 + W1 / W3-a / W3-d + G-15 落地 · ⛔ 不再登记为缺口）
+#### 已闭合项（**23 行**（v4 旧 ID **7 行** + `G-1` / `G-2` / `G-3` / `G-4` / `G-5` / `G-6` / `G-7` / `G-8` / `G-9` / `G-10` / `G-11` / `G-12` / `G-13` / `G-14` / `G-15` / `G-16`）· v5 复测确认 + W1 / W3-a / W3-d + G-15 落地 · ⛔ 不再登记为缺口）
 
 | v4 ID | 闭合证据（2026-11-22 复测） |
 |---|---|
@@ -363,6 +363,7 @@ R-5.AC-08 ◄── C2.T0.2（嵌套失败传播）—— **可选**：C2 未落
 | **G-16**（**v5 新增 ID** · 2026-11-23 闭合） | **`ADR_LIST` 缺反向完整性检查** —— `scripts/test/cep_docs_sync_check.sh` 的 `ADR_LIST` 是**正向**覆盖集（ADR_LIST → 磁盘：存在 + 含「不变量/决策」节）；⛔ **无**「磁盘 → ADR_LIST」的反向检查 ⇒ 该脚本注释自述「漏登记 = 新 ADR **静默脱检**」；⚠️ 结构闸的分区完整性（磁盘 == `decision_adrs` ∪ `excluded`）可兜底**归类**，但归类后**仍可能**漏加 `ADR_LIST` ⇒ 与 G-15 **非同型**（G-15 = 射程依赖形态；本项 = 缺反向检查） ✅ **已闭合**（2026-11-23 · **独立批次** · 台账 **Entry #527** 授权 + #528 回执）：`cep_docs_sync_check.sh` 增**第 [13/13] 组**「ADR 清单反向完整性（磁盘 ⇒ 覆盖集）」——判据 = 磁盘 `ADR-CEP-*.md` **全量** ⇒ 每份必须落在「`ADR_LIST`（复用脚本内既有数组 = **单一真源**，⛔ 不另建第二份清单）∪ **显式排除集**（新数据文件 `scripts/test/cep_adr_exclude.txt`，每条须带**非空理由** + **磁盘上真实存在** + **不得**与 `ADR_LIST` 重复 ⇒ 三条自校验堵死「纸面排除 = 无声脱检」）」之内 ⇒ **新增 ADR 忘登记即判红**（点名具体文件，非计数 ≥1） |
 | **G-3**（**v5 新增 ID** · 2026-11-23 闭合） | **台账行内自相矛盾** —— 同行散文写「`openspec/changes/` 当前 **3 个 active**」而同行结论写「当前 Proposed 并发 = **0/3**」⇒ 实测 active = **0** ⇒ 散文 stale（结论对）⇒ 读法陷阱 ✅ **已闭合**（2026-11-23 · **W4-a** · 台账 **Entry #529** 追加式订正）：`obj-cep-platform.md:474`（`### 5.2 当前真实 baseline` 的 **living 现状行**）的散文**订正为 0 个 active**（实测 active = **0**）⇒ **同行现自洽**（散文 0 / 结论 0/3）⇒ 读法陷阱消除；⛔ **追加式**（未回改任何历史 Entry 正文）⇒ 台账内「3 个 active」残余 **4 处**逐处核实**全部非活口径**（3 处历史 Entry 正文内 + 1 处历史前置条件快照 + 1 处历史 diff 描述）⇒ **活口径面 0 处残留** |
 | **G-7**（**v5 新增 ID** · 2026-11-23 闭合） | **KPI 行仅剩 1 处超阈** —— v4 的 S3-6 结论「4 份文档 KPI 行单行 6.3~6.8K 字符」**已过时**（v4 实测用 `awk length` = **字节**；v5 按**字符** `wc -m` 重测：`.rddf/roadmap.md:5`=**148** · `phase-10.md:209`=**165** · `cpptlm-cep-umbrella.md:306`=**90** · `cpptlm-cep-nvlink-sharp.md:31`=**125** · `:211`=**139** · `AGENTS.md:313`=**839** ⇒ **全部 ≤ 1000 ✅**）⇒ **唯一仍超 = `obj-cep-platform.md:474` = 2964 字符**，而闸头 `scripts/test/rddf_stage_gate.sh:419-421` **明写它不在 I-2 的 In-Scope 范围内**（闸注释自述该行 2963 字符）⇒ ⛔ **结论须订正**：不是「4 处未达标」，而是「**1 处超阈 + 1 处范围错配**」 ✅ **已闭合**（2026-11-23 · **W4-e** · 台账 **Entry #529**）：**第三条路** —— 该节**自身**（台账 `:476` / `:477`）已写明「**本节只承载活口径**，逐次 KPI 变更的归档流水**不堆在本节** ⇒ 全部见 §11 台账」与「**已由 §11 台账完整承载**(append-only)⇒ **删除不丢信息**」⇒ 删去该行 **33 段**归档流水 ⇒ **2963 → 253 字符** ⇒ **超阈自解**（⛔ 无需扩 `KPI_LINE_MAX_FILES`、⛔ 无需「显式接受」—— 原二选一裁决的**前提**是「保留流水」，而流水本就不该在此）；⛔ **零信息损失**：该行引用的 **28** 个台账 Entry **28/28 全部真实存在**（逐条可回查）⇒ **零 append-only 违规**（append-only 约束的是**历史 Entry 正文**，`§5.2` 是 living 现状行）· 台账行数**零位移** ⇒ 其后行号锚点不受影响 |
+| **G-13**（**v5 新增 ID** · 2026-11-23 闭合） | **5 份 PCIe spec 的中文 trailer 状态行陈旧** —— `link-layer-and-fc`「Phase 1 实施中」· `130b-encoding`「Phase 2 实施中」· `axi-stream-adapter`「Phase 5 实施中」· `axi4-mapper`「Phase 6 实施中」· `host-bypass-and-rc`「Phase 7 实施中」⇒ 与 `AGENTS.md` §PHASE STATE「**Phase 1-8 全部交付**」矛盾 ✅ **已闭合**（2026-11-23 · **user 授权**「继续推进」/「继续」· 台账 **Entry #530**）：5 份**全部**改为 `✅ 已实施 —— Phase N 交付`（per 已交付范本 `pcie-ip-microarch/spec.md:296` 的形态）⇒ 机判判据 **`grep -c "Phase [1-7] 实施中"` 5 → 0**（实测）；⚠️ **判据订正（实施期实测）**：登记册原写「+ **一次五步链同批**」—— 该前提**不成立**：这 5 份 `openspec/specs/<name>/spec.md` **均不在** `cep_freeze_check.sh` 的 `FROZEN_GLOBS`（冻结面只含 `openspec/specs/cep-*/spec.md` 等 ⇒ 这 5 份非 `cep-*` 前缀）⇒ 改它们**不触五步链**（实测 `cep_freeze_check.sh` rc=0、90 产物 hash 不变）⇒ 「台账与清单不得合并提交」的约束随之**不适用**；另实测 `openspec validate --specs --strict` **改前改后同为 83 passed / 55 failed**（这 5 份**逐个 valid**）⇒ 改动**零回归** |
 | **G-10**（**v5 新增 ID** · 2026-11-23 闭合） | **剩余 grep 判据未接闸** —— §6.3.2 的旧口径串表在本册 §6.3.2 处自写「⚠️ **本表的 grep 尚未接入闸**」⇒ 下游漂移无自动守门 ✅ **已闭合**（2026-11-22 · **W2-b**，commit `40fe6b69`）：新增 `scripts/test/cep_registry_stale_refs_check.sh`（已注册 ctest **#154**）⇒ §6.3.2 的旧串 + `MARK` 词表**移进闸文件** + `sed` 截断排除约定机器化 ⇒ 实测「**40 项全部为 0**」 ⇒ 判据从「靠人跑」变为「机器守门」（⚠️ §6.3.2 的「尚未接入闸」自述已于 2026-11-23 同步订正） |
 | **G-11**（**v5 新增 ID** · 2026-11-23 闭合） | **R-17 / R-19（A 类 2 项）** —— ① **R-19**：`AGENTS.md` 记载的 LWC handler 名 **stale**（`handle_cr_transaction()` / `handle_doorbell_transaction()` ⇒ 真实名 = **`cr_write()` / `doorbell_write()`**，per `include/tlm/lwc/lwc_bus_hub.hh:94/107`） ② **R-17**：2 份来源 change 的**归档形态从未进过 git**（`.gitignore:64` 排除整个 `openspec/changes/archive/`） ⇒ **正确判据 = `git-history-proposal` 形态**（台账 Entry 的 M-3 已订正）：`git show 0345d283:…/cpptlm-dgpu-soc-timing-mvp/proposal.md`（168 行）与 `git show 689752ef:…/cpptlm-driver-visible-minimal-soc/proposal.md`（228 行）⇒ **实测可达** ✅ **已闭合**（2026-11-23 · **W4-f**）：R-19 的 `AGENTS.md:423` **同行替换**两个方法名（⛔ 行数不变 ⇒ P-5 锚点 `AGENTS.md:313` 零位移）＋ R-17 的完成定义形态在 §6.3 归属表**订正**为 `git-history-proposal`（⛔ **不要求**归档目录入库） |
 | **G-14**（**v5 新增 ID** · 2026-11-23 闭合） |  | **`--phase A\|B\|C` 旧阶段模式恒红** —— 三个框架治理 change 于 2026-11-18~19 全部归档且 task 全勾 ⇒ 旧模式永久判红（既有失败，HEAD 版同签名）⇒ ⚠️ CI 不受影响（ctest 只注册无参调用）⇒ 但闸头文档化了该用法 ⇒ 机关自身报假红 = 噪声源 ✅ **已闭合**（2026-11-22 · **W2-e**，commit `40fe6b69`）：闸内新增退役判定（**三 change 均不在工作树** ⇒ 报「已退役」并 rc=0） ⇒ `--phase A` / `B` / `C` 三条**实测均 rc=0**；⛔ 旧分支逻辑**保留**（change 被重新立项时仍按原语义判序） \|
@@ -374,7 +375,6 @@ R-5.AC-08 ◄── C2.T0.2（嵌套失败传播）—— **可选**：C2 未落
 
 | # | 缺口 | 证据 | `needs` |
 |:--:|---|---|---|
-| **G-13** | **5 份 PCIe spec 的中文 trailer 状态行陈旧** —— `link-layer-and-fc`「Phase 1 实施中」· `130b-encoding`「Phase 2 实施中」· `axi-stream-adapter`「Phase 5 实施中」· `axi4-mapper`「Phase 6 实施中」· `host-bypass-and-rc`「Phase 7 实施中」⇒ 与 `AGENTS.md` §PHASE STATE「PCIe EP 微架构 = Phase 1-8 全部交付」矛盾；台账 Entry #517 明确记「⚠️ 同形态残留（**未授权** · 不顺手改）」⇒ **已登记为观察项 · 无执行单元** ⇒ v5 升为缺口并**请求 user 一条授权**（不走 architect：无设计取舍可裁，是事实同步；不走 openspec change：F-4 已实证合并器**丢弃中文 trailer**，工具与目标互噬） | `openspec/specs/{link-layer-and-fc,130b-encoding,axi-stream-adapter,axi4-mapper,host-bypass-and-rc}/spec.md` 的 `**状态**` 行 | **user**（授权） |
 
 #### S3 · 治理流程债（**4** 项 · v5 修订：**G-1 / G-9 已闭合**（移入上表）· **G-14 新登记**）
 
@@ -419,7 +419,7 @@ R-5.AC-08 ◄── C2.T0.2（嵌套失败传播）—— **可选**：C2 未落
 | **G-10** | ✅ **已完成**（2026-11-23 · 证据见 §6.2「已闭合项」表）· **W2-b** | §6.3.2 的 9 条旧串 + `MARK` 词表**移进独立小闸** + `sed` 截断排除约定机器化 ⇒ 把任一订正文本改回旧串即判红 |
 | **G-11** | ✅ **已完成**（2026-11-23 · 证据见 §6.2「已闭合项」表）· **W4-f** | `cep-doc-hygiene-kpi-and-impl-state` 收口：R-19 旧串 `handle_cr_transaction` `grep -c` == **0** + R-17 的 2 份来源 change 按 **`git-history-proposal` 形态**可达（`git show 0345d283:openspec/changes/cpptlm-dgpu-soc-timing-mvp/proposal.md` 168 行 · `git show 689752ef:openspec/changes/cpptlm-driver-visible-minimal-soc/proposal.md` 228 行 ⇒ **实测可达**；⛔ **不要求**归档目录入库 —— 该两者的归档形态**从未进过 git**（`.gitignore:64` 排除整个 archive/），台账 Entry 的 M-3 已把归因订正为 `git-history-proposal` 形态 ⇒ **比『归档目录可解析』强且可达**） |
 | **G-12** | **W3-c + W3-b · ✅ 两条均已闭合**（2026-11-22） | P-3：订正 Entry 存在（**#523**）+ grep 命中 + **8 行摘要表 sha256 逐字未变**；Q-7：architect **追加裁决 §11**（commit `302465d8`）⇒ ⛔ 撤回执行路线 + 残余转 **G-15**（✅ 已闭合）⇒ **W3-b 收口** |
-| **G-13** | **授权请求（user）** | 一条授权 Entry **枚举 5 个文件路径** + 机判前后判据（`grep -c "Phase [1-7] 实施中"` **5 → 0**）+ **一次**五步链同批；⛔ **拍板前不得写成已决** |
+| **G-13** | **user 已授权 · ✅ 已完成**（2026-11-23 · 授权来源 = 用户「**继续推进**」/「**继续**」两轮指令 · 台账 **Entry #530**）| 一条授权 Entry（用户指令）· 5 个文件路径**逐条枚举**（`link-layer-and-fc` / `130b-encoding` / `axi-stream-adapter` / `axi4-mapper` / `host-bypass-and-rc` 的 `spec.md`）· 机判前后判据 `grep -c "Phase [1-7] 实施中"` **5 → 0**（实测）· ⚠️ **判据订正**：这 5 份**不在冻结面** ⇒ **不触五步链**（登记册原写「一次五步链同批」前提不成立）|
 | **G-15** | **独立批次**（`cep-registry-stale-cleanup` · ✅ **2026-11-22 已完成** · 台账 Entry #524 授权 + #525 回执） | 覆盖义务谓词 + 章定位函数 `section2()` **同时**支持 `## 2 …` 与 `## 决策` 两形态；快照补 `ADR-CEP-21`（**块数 = 0** · `count` 23→24 · `total` **不变** · `authorized_by` 指向 **Entry #524**）；⛔ 不改 `DECISION_RE` · ⛔ 不改 ADR 正文 |
 | **G-16** | **独立批次**（`cep-registry-stale-cleanup` · ✅ **2026-11-23 已完成** · 台账 **Entry #527** 授权 + **#528** 回执 · 验收报告 `.rddf/reviews/cep-g16-adr-list-reverse-verify.md`） | `cep_docs_sync_check.sh` 增**反向**完整性检查（磁盘 `ADR-CEP-*.md` 全量 ⇒ 须被 `ADR_LIST` ∪ 显式排除集覆盖）⇒ 新 ADR 漏登记即判红 |
 | **S4-1** | ⭕ **不排期**（治理上正确处置 = 登记）| `test/cep_b3b2_deferrals.json` + `cep_b3b2_deferral_check.sh` 已机器守门 ⇒ ⛔ 不得进入任何工作流的 AC |
@@ -644,7 +644,7 @@ sed -e '/^### §0.2/,/^## §1 /d' -e '/^#### §6.3.2/,$d' <登记册> \
 > ⏸ **W4 批 2（待授权）**：`W4-a` + `W4-e`（**同一行** `obj-cep-platform.md:474`）—— 该行属 `### 5.2 当前真实 baseline`（**living 现状节** · 自述「只承载活口径 ⇒ 归档流水应移到别处」）⇒ 处置 = **删去约 30 条重复 slot 流水**（每条都带**已存在的**台账 Entry ⇒ **零信息损失**）⇒ 该行由 **2964** 字符降到约 90 ⇒ **超阈自解** ⇒ ⛔ **不需要**「扩 `KPI_LINE_MAX_FILES` / 显式接受」的二选一裁决；⚠️ 但「删现状行里的历史流水」仍需**用户点头**（待授权项 1）。
 **W4 前置命中判据**：`grep -c 'cep-memory-model-operational-trace' .rddf/roadmap/objectives/obj-cep-platform-remaining.md` **≥ 1**（本次修订已满足 ⇒ W4 的实体工作可开工）。
 
-#### 🔑 授权请求（**user** · G-13）— 不占 KPI slot · 不走 architect · 不走 openspec change
+#### 🔑 授权请求（**user** · G-13）— ✅ **2026-11-23 已授权并落地**（用户「继续推进」/「继续」· 台账 Entry #530）
 
 | 项 | 内容 |
 |---|---|
