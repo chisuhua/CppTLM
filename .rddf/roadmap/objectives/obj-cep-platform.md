@@ -27588,3 +27588,25 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **验证（可复跑）**：`cep_registry_baseline_check.py` rc=0（5 项）· `cep_registry_stale_refs_check.sh` rc=0（40 项）· `rddf_stage_gate.sh` 无参/queue2/A/B/C/`--self-test` 全 rc=0 · `ctest -R "cep_registry|rddf_stage_gate"` **3/3 Passed** · `cep_freeze_check.sh` / `archive_verify_check.sh` / `cep_b3b2_deferral_check.sh` / `docs_sync_check.sh --strict` 全 rc=0。
 
 **关联**：W2 验收报告 `.rddf/reviews/cep-w2-mechanization-verify.md` · 登记册 §6.4（W2 段）/ §6.6（P-9 / P-10 / P-11）/ §0.1 · 载体表 `W-2a`~`W-2e` 行 · 上一单元 W1（提交 `0c2a7ea1` · 台账 Entry #518）
+
+### Entry #520 — 2026-11-22 [planner](**W3-a 冻结面写盘授权** —— 三处「引擎」三词口径指针 · 走 M1 五步链 · 实施单元 `cep-freeze-lexicon-pointers`)
+
+**起因**：登记册 §6.4 的 **W3-a**（= 队列 0 的 **P-5**）已立项实施单元 `cep-freeze-lexicon-pointers`（commit `68025dc0`）。该单元要写的三处**全部在 M1 冻结集**内 ⇒ 须先落本条**授权记录**，再走 `docs/guide/cep-usage.md §12.6` 的五步链。
+
+**授权范围（逐条，⛔ 超出即未授权）**
+
+| # | 冻结产物 | 授权的改动 | ⛔ 不授权 |
+|:--:|---|---|---|
+| 1 | `docs/architecture/07-coherence-exploration-platform.md` | **第 138 行**（§2.1 分层图注，**在 ```` ``` ```` 代码块内**）**同行追加**「⚠️『引擎』口径 = 协议族引擎(5) —— 与 engine 文件(6,含 Null 外壳)/ adapter(8) 是三个不同的词 ⇒ 口径见 `docs/guide/cep-usage.md §12.2.1`」 | ⛔ **不新增行**（⇒ 索引 A/B 的「行」列与「活锚点 ≤ 690 零位移」全部不变）· ⛔ 不动该行既有文字 |
+| 2 | `docs/architecture/cep/protocol-engine.md` | **第 44 行**（§5.1.1 口径澄清 blockquote）**同行追加**「⚠️『引擎』三词口径（adapter 8 / engine 文件 6 / 协议族引擎 5）见 `docs/guide/cep-usage.md §12.2.1` —— 本处『引擎』= 协议族引擎(5)」 | ⛔ **不新增行**（⇒ 跨仓机器锚点 `protocol-engine.md:16` 的字面量「16 个 adapter 实例」**仍在第 16 行**）· ⛔ 不动该行既有文字 |
+| 3 | `docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md` | **文末追加**一则 `## Status Update 2026-11-22(...)`：声明该 ADR `:88` / `:126` 的「6 个引擎」= **engine 文件**口径（含 `cohif` Null 外壳）、**协议族引擎 = 5**、**adapter = 8**，三词定义见 `docs/guide/cep-usage.md §12.2.1`；并逐字声明「**不改**任何决策 / 判据 / 计数（`B3b-2 = 0/4` 不变、档位阶梯不变）」 | ⛔ **不改 `:88` / `:126` 原文**（ADR 签发后只追加 SU）· ⛔ 不改 §1~§8 任何正文 · ⛔ 不改 §8 修订记录表 |
+
+**冻结面影响**：**零新增 · 零移出 · 零排除** —— 本次只**原地修改**既有 3 个产物的内容 ⇒ `artifact_count` **90 → 90** 不变，冻结范围与成员集完全不变。（⇒ 本条**不含**任何冻结面移出 / 排除声明；`--update` 的差集回显应恰为 **3 处 `~ hash 变更`**，若出现「新增 / 移出」即属越权 ⇒ 闸会阻断。）
+
+**为什么需要这次写盘**（architect 裁决记录 `.rddf/reviews/cep-gap-plan-adjudication-q1-q11-2026-11-20.md` §2.1 + §5.2 + L-3）：仓内对「引擎」并存 **5** 与 **6** 两个计数，二者数的**不是同一物**，且**都没定义「引擎」**；三词定义已落在 `docs/guide/cep-usage.md §12.2.1`（**adapter 8 / engine 文件 6 / 协议族引擎 5**），但**冻结面是读者最先到达的面** ⇒ 定义在手册、矛盾在冻结面 ⇒ 手册裁决无法在冻结面生效（L-3 原话：「否则 Q-1 只解了**使用手册侧**，**冻结面的 5 vs 6 冲突仍会被新读者读到**」）。⇒ 三处的**数值本身都正确**，缺的只是「『引擎』指哪一个」的**指针**。
+
+**验收判据（可机判）**：AC-1~AC-8 见 `.rddf/improvements/cep-freeze-lexicon-pointers.md`（含「清单 diff 恰 3 处 hash 变更 · `artifact_count` == 90 · `frozen_at_commit` == 产物 commit 的 sha · 5 个相关闸全 rc=0」）。
+
+**执行序（⛔ 台账与清单不得合并提交）**：本 Entry（授权）→ 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #520"` → 清单**单独** commit → 无参复验 rc=0。
+
+**关联**：单元 `cep-freeze-lexicon-pointers`（commit `68025dc0`）· 登记册 §6.3 **G-8** / §6.4 **W3-a** / §6.8 单元表 · architect 裁决记录 §2.1 / §5.2 / L-3 · 冻结面机制 `docs/guide/cep-usage.md §12.6`
