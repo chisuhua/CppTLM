@@ -152,3 +152,10 @@ W-2b	doc	.rddf/reviews/cep-w2-mechanization-verify.md	| **W-2b** |	done
 W-2c	doc	.rddf/reviews/cep-w2-mechanization-verify.md	| **W-2c** |	done
 W-2d	doc	.rddf/reviews/cep-w2-mechanization-verify.md	| **W-2d** |	done
 W-2e	doc	.rddf/reviews/cep-w2-mechanization-verify.md	| **W-2e** |	done
+# ── v5 · W3 工作流行（登记册 §6.4 的 W3-a · 冻结面「引擎」三词口径指针）────────
+# ⚠️ 三条实施行 = 三个冻结产物各一处「同行追加 / 文末追加 SU」⇒ 全部零行数位移。
+W-3a	doc	docs/architecture/07-coherence-exploration-platform.md	⚠️「引擎」口径 = 协议族引擎(5)	done
+W-3a	doc	docs/architecture/cep/protocol-engine.md	本处「引擎」= 协议族引擎(5)	done
+W-3a	doc	docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md	协议族引擎 = 5	done
+# ── v5 · W3-a 的验收证据行（builder 实施侧自验 · per「state=done 必须与验收证据同 commit」）
+W-3a	doc	.rddf/reviews/cep-freeze-lexicon-pointers-verify.md	| **AC-1** |	done

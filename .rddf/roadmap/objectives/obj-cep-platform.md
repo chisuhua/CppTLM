@@ -27610,3 +27610,37 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 **执行序（⛔ 台账与清单不得合并提交）**：本 Entry（授权）→ 产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #520"` → 清单**单独** commit → 无参复验 rc=0。
 
 **关联**：单元 `cep-freeze-lexicon-pointers`（commit `68025dc0`）· 登记册 §6.3 **G-8** / §6.4 **W3-a** / §6.8 单元表 · architect 裁决记录 §2.1 / §5.2 / L-3 · 冻结面机制 `docs/guide/cep-usage.md §12.6`
+
+### Entry #521 — 2026-11-22 [builder](**W3-a 落地回执** —— 冻结面「引擎」三词口径指针 · 五步链走完 · `cep-freeze-lexicon-pointers` 单元验收通过)
+
+**起因**：单元 `cep-freeze-lexicon-pointers`（commit `68025dc0` 立项）实施完毕。授权 = 本台账 **Entry #520**。
+
+**五步链执行（⛔ 台账与清单未合并提交）**
+
+| 步 | commit | 内容 |
+|:--:|---|---|
+| 1 | `d2094a08` | 台账 **Entry #520**（授权记录 · 逐条授权 + 「零新增 / 零移出 / 零排除」声明） |
+| 2 | `d860430a` | 产物：3 个冻结文件各一处改动（+21 / −2） |
+| 3 | — | `cep_freeze_check.sh --update --authorized-by "Entry #520"` ⇒ 「授权校验通过」· 差集「**新增 0 · 移出 0 · hash 变更 3**」 |
+| 4 | `e92aa61d` | 清单**单独** commit（只含 `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`） |
+| 5 | — | 无参 `cep_freeze_check.sh` ⇒ **rc=0**（90 个产物 hash 全部一致） |
+
+**三处改动（全部零行数位移）**
+
+| 载体 | 改法 | 位移 |
+|---|---|---|
+| `docs/architecture/07-coherence-exploration-platform.md:138` | 分层图注**同行追加**「⚠️『引擎』口径 = 协议族引擎(5) —— 与 engine 文件(6,含 Null 外壳)/ adapter(8) 是三个不同的词 ⇒ 口径见 docs/guide/cep-usage.md §12.2.1」 | **0 行**（diff 1 增 / 1 删）⇒ 索引 A/B 的「行」列不变 |
+| `docs/architecture/cep/protocol-engine.md:44` | §5.1.1 口径澄清**同行追加**「⚠️『引擎』三词口径（adapter 8 / engine 文件 6 / 协议族引擎 5）见 `docs/guide/cep-usage.md §12.2.1` —— 本处『引擎』= 协议族引擎(5)」 | **0 行** ⇒ 跨仓机器锚点 `protocol-engine.md:16` 的「16 个 adapter 实例」**仍在第 16 行** |
+| `docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md` | **文末追加** `## Status Update 2026-11-22(per Entry #520)`：声明 `:88`/`:126` 的「6 个引擎」= **engine 文件**口径（含 `cohif` Null 外壳）· 三词定义见 §12.2.1 · 逐字声明「不改任何决策 / 判据 / 计数（`B3b-2 = 0/4` 不变）」 | 追加在文末 ⇒ `:88`/`:126` **零位移**（diff 19 增 / **0 删**） |
+
+**验收（单元 AC-1~AC-8 逐条可机判 · 报告 `.rddf/reviews/cep-freeze-lexicon-pointers-verify.md`）**：**8/8 ✅**。要点：AC-1（`:138` 含 §12.2.1）· AC-2（`cep_index_position_check.sh` rc=0 —— 它逐行核对索引 A/B 行号 ⇒ 插行即红）· AC-3（`:44` 含 §12.2.1 · `:16` 字面量零位移）· AC-4（ADR 零删除行）· AC-5（差集恰 3 处 hash 变更 · `artifact_count` **90 → 90** · `frozen_at_commit` == 产物 commit sha）· AC-6（`git diff --name-only 68025dc0..HEAD -- openspec/specs openspec/changes src include test` ⇒ **空**；active changes **0**；KPI 活口径零改动）· AC-7（7 个相关闸全 rc=0）· AC-8（单元 ↔ 登记册对账输出为空）。
+
+**冻结面**：**零新增 / 零移出 / 零排除** ⇒ 范围与成员集完全不变 ⇒ `artifact_count` **90 → 90**。⚠️ 第 5 步的 `frozen_at_commit ≠ HEAD` 告警是**清单提交后的常态且不阻断**（per `cep-usage.md §12.6`）⇒ **未重复 `--update`**。
+
+**回归**：`cep_freeze_check` · `cep_index_position_check` · `cep_doc_ref_check` · `cep_docs_sync_check` · `cep_adr_structural_check` · `rddf_stage_gate` · `cep_registry_baseline_check` · `cep_registry_stale_refs_check` · `docs_sync_check --strict` 全 rc=0；全量 `ctest -R "cep_"` **108/108 Passed**。
+
+**顺带同步（闸自身强制，非裁决）**：载体表新增 4 行（W-3a 3 条实施 + 1 条验收证据）⇒ §0.1「顺序机关载体表」**96 → 100** 数据行、`W-*` **20 → 24**（由 W2-a 的活基线闸当场判红 ⇒ 同步修正）。
+
+**新登记的观察项**：`docs/guide/cep-usage.md §12.5` 的「闸清单」段仍写「**44** 个可执行 `scripts/test/cep_*.sh`（磁盘 **45** 个）」⇒ 与 v5 实测（**48** `.sh` + **14** `.py`）不符 ⇒ ⛔ 本单元**不碰**（不在授权面内，且该文件不属 M1 冻结集但属另一样本面）⇒ 交 planner 决定是否单独立项。
+
+**关联**：单元 `.rddf/improvements/cep-freeze-lexicon-pointers.md` · 台账 **Entry #520**（授权）· 登记册 §6.3 **G-8** / §6.4 **W3-a** / §6.8 单元表 · architect 裁决记录 §2.1 / §5.2 / L-3 · 验收报告 `.rddf/reviews/cep-freeze-lexicon-pointers-verify.md`
