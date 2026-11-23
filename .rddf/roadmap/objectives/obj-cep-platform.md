@@ -28446,3 +28446,59 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 **⑧ 关联**
 
 `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md`（I2 · metis 1 轮已处置 3 条）· `.rddf/roadmap/cep-gen-family-gap-closure.md`（实施路径 Stage B'）· `openspec/changes/cep-litmus-falsifier-naming-disambiguation/{proposal,design,tasks}.md` · `scripts/test/cep_litmus_naming_check.sh` · `ADR-CEP-13`（决策 5 ②「平台不提供无违例保证」）· Entry #537
+
+### Entry #539 — 2026-11-23 [architect](Stage C 裁定 C1 + C2 · 「可达」两义与「归属」三义的口径限定 · M1 冻结面两文件同批)
+
+**① 主题**：把两处**冻结面**文档的读法歧义**消歧**，⛔ **零决策变更**（两处均为口径限定 / 事实登记，不反转任何既有决策）。
+
+| # | 落点 | 性质 | 动作 |
+|:--:|---|---|---|
+| **C1** | `docs/architecture/cep/protocol-engine.md` §5.1.3（`:81` 末句「真实协议的瞬态复杂度全部归 Protocol Engine 插件」之后） | **架构主题文档**措辞口径限定 | **追加**一个「⚠️ 归属三义的口径澄清」块（**零正文行改动**） |
+| **C2** | `docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md` **文末** | **已签发 ADR** ⇒ 正文不可变，只能**追加** `## Status Update` 段 | **追加**「可达两义的口径限定」SU 段（**零正文行改动**） |
+
+**② 审查轨迹**：**metis 1 轮**（6 节齐备 · 枚举 C1「归属」三义混叠 / C2「可达」两义 / AI slop 高危形态 / 4 条机检 + 2 条人工判据 / 边界情况）→ **oracle 1 轮**（审查域 = 其他审查 · 判定 **APPROVE** · Q1 行级清单封闭 / Q2 五句层骨架 / Q3 六段 SU 骨架 + 防反转结构性装置 + 2 处必改点）。
+
+**③ 两个不（人工判据 · C1 与 C2 共同 gate）**
+
+| 不 | 内容 | 锚 |
+|:--:|---|---|
+| **不 1** | ⛔ **不削弱** `ADR-CEP-17 §2 Decision 4` 的分层归属（彼谈**设计**，此谈**读法**） | 该决策 = 跨 ADR 边界契约「协议瞬态状态与协议私有状态一律住在 Protocol Engine 插件内部」+ 新增 `INV-CEP-05-IC1` |
+| **不 2** | ⛔ **不否定** `ADR-CEP-20` 决策 5「**强度上限本仓可达**」的**路由**结论（彼谈**判别力载体路由**，此谈**逐实例承载现状**，两层面正交） | 决策 5 原文 + SU 2026-11-22 的「⛔ 不变的部分」行 |
+
+**④ 措辞纪律（本次裁定）**
+
+| 面 | 纪律 | 依据 |
+|---|---|---|
+| **零数值复述** | 两处均**不复述任何实例级数值**（瞬态态计数 / 实例比 / 覆盖比）⇒ 数值**唯一真源** = I1 机器面（`include/tlm/cep/engine_capabilities.hh` · 闸 · main spec） | oracle Q2 句 3；⚠️ 与 `protocol-engine.md:44` 先例**纪律不同**（彼为**声明侧静态计数**且**有机检兜底**，此处若写数值则为**实例级动态计数**，随实例集腐化且**无闸**）⇒ 须**显式登记该差异**，不可沉默缺席 |
+| **零转折连词** | C2 的「为什么需要」段**禁用**「但 / 然而 / 不过」⇒ 转折连词 = 反转读法触发器 | oracle Q3 |
+| **零量级词** | C2 **禁**「大部分 / 仅少数 / 绝大多数」⇒ 撞决策 5「⛔ 不裁决工程量级与排期」 | oracle Q3；⚠️ 「非均匀」是**允许的定性词** |
+| **零自造档位词** | C2 档位引用**逐字**用决策 6 三词（**样本通路活性** / **语义判据** / **协议语义**）；⛔ 禁「档 N.N」「增强档」；⛔ 禁「真 FSM」「成熟度」「完备度」等无定义新词 ⇒ 只能复用 I1 判定维度（**在飞建模** / **egress 形态**）+ SU 2026-11-22 的**协议族引擎** | oracle Q3 + metis slop 清单 |
+| **零逆改措辞** | C2 ⛔ 禁「修正 / 勘误 / 反转登记 / 订正」类措辞 ⇒ 任何此类措辞 = 实质反转读法 | oracle「已排除的替代方案」 |
+| **零指针兜底误述** | C2 SU ⛔ **不得**写「指针可达性由 `cep_doc_ref_check.sh` 兜底」⇒ 该脚本 DOCS 数组（`:60-82`）**不含** ADR-CEP-20；C1 块写则成立（`protocol-engine.md` 在数组内） | oracle 修正点 1（实测） |
+| **指针形态** | C2 同批指针行沿 SU 2026-11-22 先例用 `file:line` 形态（**非节号**）⇒ 规避 `ADR-CEP-00A` 锚点面 | oracle 修正点 2 |
+| **只引决策号** | 两处引 `ADR-CEP-20` 只引**决策 5**（⛔ 不引其节号）；引 `ADR-CEP-17` 只引 **§2 Decision 4** | oracle「下一步」第 3 点 |
+
+**⑤ 冻结面与五步链**
+
+- 两文件均在 M1 冻结清单内（`docs/architecture/cep/*.md` + `docs/adr/ADR-CEP-*.md`）⇒ 须走**五步授权链**：**先**本 Entry 落盘 → **再**改两文件 → **产物 commit** → `cep_freeze_check.sh --update --authorized-by "Entry #539"` → **清单单独 commit** → **无参复验**
+- `artifact_count` **91 → 91** 不变（仅 2 个产物 hash 变）；**diff 恰 2 文件**
+- C1 + C2 **同批一个 Entry**（沿 Entry #520「三处同批」先例）⇒ 规避分批的指针时机坑
+
+**⑥ 变更形态（doc-only）**
+
+⛔ **不占 OpenSpec Proposed KPI slot**（per `AGENTS.md` doc-only cleanup 豁免：本次**仅文档**改动，0 函数签名 / 0 逻辑 / 0 构建改动）⇒ **KPI 活口径不变（0/3）** · 登记册 §0.1 不变 · **不开立 openspec change**。
+
+**⑦ 验收判据（4 机检 + 2 人工）**
+
+| # | 判据 |
+|:--:|---|
+| 机检 ① | C1 新增块**零**实例级数值（计数断言形态 grep 即红）+ 含 I1 三路径指针（指针可达性由 `cep_doc_ref_check.sh` 兜底 ✔ 成立） |
+| 机检 ② | `ADR-CEP-20` 的**唯一 diff = 文末新增一个 `## Status Update` 段**（§1~§8 / 修订记录 / 既有 2 个 SU / header **零改动**）⇒ 冻结清单 hash 对账 + diff 形状断言**双证** |
+| 机检 ③ | C2 新 SU 段：档位三词**逐字** + **零**自造档位词 + 含「新增 invariant 数 = 0」 |
+| 机检 ④ | 全部 `scripts/test/cep_*.sh` rc=0 · `ctest -R cep` 全绿 · `cep_docs_sync_check.sh --strict` rc=0 · `cep_freeze_check.sh` 无参 rc=0（91 产物 hash 一致） |
+| 人工 ① | 「两个不」逐字核对（不 1 / 不 2 各能在文中找到**原文语义在场**） |
+| 人工 ② | C2 新 SU 段**零**排期 / 量级 / 优先级 / 补齐意向语言 |
+
+**⑧ 关联**
+
+`.rddf/improvements/cep-protocol-engine-capability-declaration.md`（I1 · 承载能力声明面 = 本次唯一事实真源）· `docs/architecture/cep/protocol-engine.md:44`（同文件口径澄清块的**格式先例** · Entry #520）· `docs/adr/ADR-CEP-20-*.md` SU 2026-11-22（**格式先例** · Entry #520）· `docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md` §2 决策 4（分层归属原文）· `.rddf/roadmap/cep-gen-family-gap-closure.md`（Stage C）· Entry #537（I1）/ Entry #538（I2）
