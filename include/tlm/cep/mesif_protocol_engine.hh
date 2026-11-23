@@ -55,6 +55,7 @@
 #define TLM_CEP_MESIF_PROTOCOL_ENGINE_HH
 
 #include "tlm/cep/mesif_adapter.hh"
+#include "tlm/cep/engine_capabilities.hh"
 #include "tlm/cep/protocol_engine_base.hh"
 #include "tlm/cep/sharer_tracker.hh"
 
@@ -839,6 +840,19 @@ namespace tlm::cep {
         unsigned last_atomic_vc_ = 0;
         std::size_t next_port_ = 0;
     };
+
+// ══════════════════════════════════════════════════════════════════════════
+//  引擎承载能力特化（per change cep-protocol-engine-capability-declaration）
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ 本特化是**类型级能力声明**；J-1 判据把它与 `HasInFlightApi<T>`（真实 API）
+//    交叉核对 ⇒ 二者不一致即**编译失败**。
+template <>
+struct EngineTypeTraits<MesifProtocolEngine> {
+    static constexpr InFlightModeling in_flight = InFlightModeling::NotModeled;
+    static constexpr const char* basis =
+        "真表驱动状态机 + 有 egress(emit_snoop_resp/请求装填)，但决策 E-5 显式不建模在飞 snoop 集合(Stage 2)";
+};
 
 } // namespace tlm::cep
 

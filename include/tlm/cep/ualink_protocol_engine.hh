@@ -60,6 +60,7 @@
 #define TLM_CEP_UALINK_PROTOCOL_ENGINE_HH
 
 #include "tlm/cep/protocol_engine_base.hh"
+#include "tlm/cep/engine_capabilities.hh"
 
 #include <array>
 #include <cstddef>
@@ -179,6 +180,19 @@ namespace tlm::cep {
         std::unordered_set<std::uint64_t> outstanding_;
         Counters ctr_{};
     };
+
+// ══════════════════════════════════════════════════════════════════════════
+//  引擎承载能力特化（per change cep-protocol-engine-capability-declaration）
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ 本特化是**类型级能力声明**；J-1 判据把它与 `HasInFlightApi<T>`（真实 API）
+//    交叉核对 ⇒ 二者不一致即**编译失败**。
+template <>
+struct EngineTypeTraits<UalinkProtocolEngine> {
+    static constexpr InFlightModeling in_flight = InFlightModeling::NotModeled;
+    static constexpr const char* basis =
+        "零发射、零状态机(计数器自增)；outstanding_ 为私有记账，无公开在飞查询 API";
+};
 
 }  // namespace tlm::cep
 

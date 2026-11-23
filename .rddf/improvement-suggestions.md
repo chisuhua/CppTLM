@@ -37,3 +37,16 @@
 | [cep-memory-model-operational-trace](improvements/cep-memory-model-operational-trace.md) | P2 | architect 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §三（登记册 §6.4 队列 2 的 **I-6 决策 2**：本仓**不定义** `rfe/fr/ws` 语义 ⇒ 独立立项）| 2026-11-21 |
 | [cep-tilelink-tree-manager-view-of](improvements/cep-tilelink-tree-manager-view-of.md) | P2 | architect 裁决记录同文件 §四（登记册 §6.4 队列 2 的 **I-7 决策 3** = I-7 拆 a/b；本单元 = **I-7a** = `TreeManager::view_of` const 纯查询；⚠️ 旧单元 `cep-tier2-second-family-tilelink` 的 engine 侧观测落点路径与 TLE-05 冲突 ⇒ 已标 ⏸ 不可开工）| 2026-11-21 |
 | [cep-tilelink-home-side-state-driver](improvements/cep-tilelink-home-side-state-driver.md) | P2 | architect 裁决记录同文件 §四（登记册 §6.4 队列 2 的 **I-7 决策 3** = I-7 拆 a/b；本单元 = **I-7b**；前置 = **I-7a** `TreeManager::view_of`）| 2026-11-21 |
+
+## 2026-11-23 · Gen 族 Gap 闭合批次（2 份）
+
+> **来源**：`.rddf/roadmap/cep-gen-family-gap-closure.md`（本轮实施路径文档 · Oswald 博士论文 178 页一手 PDF 逐章核对 × 本仓 CEP 实现面对照）。
+> **用户裁决**：2026-11-23 批准「I1 完整闭环 + I2 登记」。
+> **审查轨迹**：metis 各 1 轮（I1 处置 17 条 / I2 处置 3 条，见各单元 `## 审查轨迹`）。
+> **实施状态**：I1 = 已实施（builder · 2 commits）· I2 = 已就绪、**本轮不实施**（阶段 1 零冻结面；阶段 2 触及冻结面 spec）。
+> **登记说明**：本节由 builder 补登（planner 角色写集不含本文件 ⇒ 当时被 role-gate 拦；builder 写集为 `**`）。
+
+| Improvement | Priority | 来源 | 创建日期 |
+|---|---|---|---|
+| [cep-protocol-engine-capability-declaration](improvements/cep-protocol-engine-capability-declaration.md) | P1 | gap 分析 G1（协议 FSM 承载能力无机器可查的现状面）；来源 = `.rddf/roadmap/cep-gen-family-gap-closure.md` §2.2 F1/F2/F3 + §2.3 G1；先例 = `MesifProtocolEngine::kEngineDecisions[]` | 2026-11-23 |
+| [cep-litmus-falsifier-naming-disambiguation](improvements/cep-litmus-falsifier-naming-disambiguation.md) | P2 | gap 分析 G6（「litmus」命名与能力错配）；来源 = 同文件 §2.3 G6；⏸ 本轮不实施（阶段 1 已就绪） | 2026-11-23 |

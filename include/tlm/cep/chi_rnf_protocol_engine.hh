@@ -42,6 +42,7 @@
 #define TLM_CEP_CHI_RNF_PROTOCOL_ENGINE_HH
 
 #include "tlm/cep/chi_rnf_adapter.hh"
+#include "tlm/cep/engine_capabilities.hh"
 #include "tlm/cep/protocol_engine_base.hh"
 
 #include <array>
@@ -641,6 +642,19 @@ private:
     std::unordered_map<std::uint64_t, Line>   lines_;
     std::unordered_map<std::uint64_t, std::uint64_t> txn_addr_;
     std::deque<Pending>                       pending_;
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+//  引擎承载能力特化（per change cep-protocol-engine-capability-declaration）
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ 本特化是**类型级能力声明**；J-1 判据把它与 `HasInFlightApi<T>`（真实 API）
+//    交叉核对 ⇒ 二者不一致即**编译失败**。⛔ 不得在此处「顺手」增减能力位。
+template <>
+struct EngineTypeTraits<ChiRnfProtocolEngine> {
+    static constexpr InFlightModeling in_flight = InFlightModeling::Modeled;
+    static constexpr const char* basis =
+        "公开 API txn_in_flight(id) / in_flight_count() / pending_egress()；6 通道事务生命周期";
 };
 
 }  // namespace tlm::cep
