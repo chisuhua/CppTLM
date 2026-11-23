@@ -90,12 +90,17 @@ Stage B'（2026-11-23 · builder 实施，I2 阶段 1 闭环 ✅ 已完成并归
   │     （⛔ 阶段 2 的改名 + 冻结面 spec REMOVED requirement 另立）
   └─ B'5 验收：verifier 本地验收（无 iteration.json ⇒ 不走 rdd-verifier skill）
 
-Stage C（后续 · 需 architect / 用户 ratify，本轮仅登记）
+Stage C（后续 · 需 architect / 用户 ratify）  ← C1 + C2 已于 2026-11-23 完成
   ├─ C1 architect：裁定 F4 的措辞背离（docs/architecture/cep/protocol-engine.md 是冻结面 ⇒ 五步链）
+  │     ✅ **已完成 2026-11-23**（台账 Entry #539 · oracle 判定 APPROVE · 审稿报告
+  │        `.rddf/reviews/cep-gen-family-gap-closure-stage-c-review.md`）—— 追加「归属」三义口径澄清块
+  │        （零正文行改动 · 零数值复述 · 「两个不」人工 gate 通过）
   ├─ C2 architect：在 ADR-CEP-20 显式登记「档 2 天花板被非穷尽锁定」
-  ├─ C3 用户 ratify：cep-memory-model-operational-trace（G2 的唯一路径）
-  ├─ C4 architect：追认 HierarchicalDirectory 的 3 层语义 + 5 条基线约束闸（G3）
-  └─ C5 planner：评估 fence → 标签映射素材（G4）
+  │     ✅ **已完成 2026-11-23**（台账 Entry #539 · 同批五步链）—— 文末追加「可达」两义口径限定 SU 段
+  │        （零正文行改动 · 零决策变更 · 新增 invariant 数 = 0）
+  ├─ C3 用户 ratify：cep-memory-model-operational-trace（G2 的唯一路径）  ← ⏸ **待用户裁决**
+  ├─ C4 architect：追认 HierarchicalDirectory 的 3 层语义 + 5 条基线约束闸（G3）  ← ⏸ 待办
+  └─ C5 planner：评估 fence → 标签映射素材（G4）  ← ⏸ 待办
 ```
 
 **依赖方向单向**：`G1（Stage B）` ⇒ `G10` ⇒ `G3 的协议侧` ⇒ `G5`。**G2 独立**（走既有 backlog 线）。
@@ -186,6 +191,8 @@ I1 的产出是**现状面**（把「哪一层被承载」变成事实），为 
 |---|---|
 | 本轮 I1 improvement | `.rddf/improvements/cep-protocol-engine-capability-declaration.md` |
 | 本轮 I2 improvement | `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md` |
+| Stage C 审稿报告（C1 + C2 · APPROVE） | `.rddf/reviews/cep-gen-family-gap-closure-stage-c-review.md` |
+| Stage C 授权与判据（台账） | `.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #539** |
 | 论文侧调研真源 | `docs/research/cep-coherence-protocol-space-survey.md` |
 | 决策图（导航面） | `docs/adr/CEP-DECISION-DIGEST.md` |
 | 生成路线范围 ADR | `docs/adr/ADR-CEP-18-protocol-generation-scope.md` |
