@@ -272,3 +272,22 @@ change `cpptlm-cep-full-green-run-evidence`(已归档,台账 Entry #398)达成:*
 | 冻结面 | 本 ADR 在 M1 冻结集内 ⇒ 本则经 `cep_freeze_check.sh --update --authorized-by "Entry #520"` 更新清单（`artifact_count` **90 → 90** 不变） |
 
 **关联**:`docs/guide/cep-usage.md §12.2.1` · architect 裁决记录 `.rddf/reviews/cep-gap-plan-adjudication-q1-q11-2026-11-20.md` §2.1 / §5.2 / L-3 · 台账 **Entry #520** · 单元 `.rddf/improvements/cep-freeze-lexicon-pointers.md`
+
+## Status Update 2026-11-23(per 台账 **Entry #539** · 单元 `cep-gen-family-gap-closure`)—— **「可达」两义的口径限定**(⛔ 决策 5 / 档位阶梯 / 计数**零变更**)
+
+> **性质**:本则 = **口径限定登记**(append-only;⛔ 不改 §1~§8 任何正文,⛔ 不改修订记录,⛔ 不改既有 2 个 Status Update 段,⛔ 不改 header 状态行)。
+
+**为什么需要本则**:决策 5 的「可达」一词兼载两层 —— **路由层**的判词(协议语义级判别力的载体在本仓,⛔ 不是外部阻塞)与**实例层**的即期可用性。协议引擎承载能力声明面已在本仓落地(见「关联」)⇒ 实例层现状**机器可查**。不登记则「上限可达」易被读作「逐实例即期均匀可用」⇒ 被判作反转决策 5。本则把两层登记为**不同对象**,两层面正交。
+
+| 项 | 值 |
+|---|---|
+| 「可达」· 义 A(**路由层**) | 决策 5 原文**不变**:**强度上限本仓可达**,⛔ **不是外部阻塞**;仅当需要**新协议语义的设计**(而非实现既有设计)时,才按 `ADR-CEP-00` 的单向门取 ArchForge 的设计权威 |
+| 「可达」· 义 B(**实例层**) | 本则登记对象 = **逐实例即期可用性非均匀**;唯一真源 = 承载能力声明面(见「关联」)⇒ ⛔ 本则**不复述任何实例级数值** |
+| 维度对账(与既有 SU 2026-11-22 并读) | 既有 SU 的「协议族引擎 = 5」是**存在性**计数(答「引擎在不在」);本则的实例层差异在**正交维度**(答「各实例现在能承载什么」)⇒ 两者**互相补强而非矛盾** |
+| 档位词读法 | 决策 6 的三档词**逐字**沿用:**样本通路活性** / **语义判据** / **协议语义**;⛔ 本则**不新增档位词**,实例层维度**不进**档位阶梯表 |
+| ⛔ 不变的部分 | **决策 1~6 全部不变** · 档位阶梯(档 0/1/2)与**跨档聚合禁令**不变 · 判别力路由结论不变(档 2 **强度上限本仓可达**、⛔ **不是外部阻塞**)· `B3b-2 = 0/4` **不变** · `B4` 达成结论不变 · 「引擎」三词口径不变 · 新增 invariant 数 = **0** |
+| ⛔ 不登记 | 工程量级 · 排期 · 补齐意向(决策 5 已明文「⛔ 不裁决工程量级与排期」) |
+| 同批指针 | `docs/architecture/cep/protocol-engine.md:81`(§5.1.3「归属」三义口径澄清 · **同行追加**)⇒ 两处**同批**走 M1 五步链(台账 Entry #539) |
+| 冻结面 | 本 ADR 在 M1 冻结集内 ⇒ 本则经 `cep_freeze_check.sh --update --authorized-by "Entry #539"` 更新清单(`artifact_count` **91 → 91** 不变;diff 恰 2 文件) |
+
+**关联**:`include/tlm/cep/engine_capabilities.hh` · `scripts/test/cep_engine_capabilities_check.sh` · `openspec/specs/cep-protocol-engine-capability-declaration/spec.md` · `.rddf/improvements/cep-protocol-engine-capability-declaration.md` · 台账 **Entry #537** · 台账 **Entry #539**

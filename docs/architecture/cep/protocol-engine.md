@@ -80,6 +80,11 @@
 
 > **v0.2 证据补强**(per `docs/research/cep-coherence-protocol-space-survey.md` v0.2 §4.1.2 / §4.1.5):ProtoGen 论文实测 **MSI 协议含 18 个瞬态状态**,non-stalling MSI/MESI/MOSI 为 **18-20 状态 / 46-60 转换**(`ProtoGen_ISCA2018-draft.md:89-90`, `:1282-1285`)。→ **CEP Stub Cache 的 4 个稳定状态不是缓存模型,而是客户端侧协议状态投影**;真实协议的瞬态复杂度全部归 Protocol Engine 插件。
 
+> ⚠️ **「归属」三义的口径澄清**(2026-11-23 · per 台账 Entry #537 落地的承载能力声明面):本小节「状态类别」表的归属列、「**依据**」段末句与上段末句三处「归」,**一律指 [设计归属]** —— 即 `ADR-CEP-17 §2 Decision 4` 的**跨 ADR 边界契约**「协议瞬态状态与协议私有状态一律住在 Protocol Engine 插件内部」(该决策同时新增 `INV-CEP-05-IC1`);⛔ **非**「实现承载现状」,⛔ **非**「能力承诺」——两个排他否定**缺一不可**(缺任一 ⇒ 「现状缺口」会被误读为「设计错误」或「机制不可承载」,后者与 `ADR-CEP-20` 决策 5 直接冲突)。
+> **实例级承载现状的唯一真源** = 协议引擎承载能力声明面:`include/tlm/cep/engine_capabilities.hh` · 闸 `scripts/test/cep_engine_capabilities_check.sh` · main spec `openspec/specs/cep-protocol-engine-capability-declaration/spec.md` · 台账 Entry #537 ⇒ ⛔ **本块不复述任何实例级数值**(与本文件 `:44` 的口径澄清块**纪律不同**:彼为**声明侧静态计数**且**有机检兜底**(计数漂移即红),本处若写数值则为**实例级动态计数**,随实例集变化腐化且**无闸** ⇒ 数值**只在该声明面**)。
+> ⛔ **不削弱** `ADR-CEP-17 §2 Decision 4` 的分层归属(彼谈**设计**,此谈**读法**);⛔ **不否定** `ADR-CEP-20` 决策 5「**强度上限本仓可达**」的**路由**结论(彼谈**判别力载体路由**,此谈**逐实例承载现状**,两层面正交)。
+> 本块 = **append-only 口径限定** · 零决策变更 · 新增 invariant 数 = **0**。
+
 ### 5.1.4 协议语义实例(按一致性模型索引)(5 语义,per `ADR-CEP-17 §2 Decision 7`)
 
 > **来源**:Oswald *Gen 算法族*(ProtoGen ISCA 2018 / HieraGen ISCA 2020 / HeteroGen HPCA 2022)论文 case study 集(per `HeteroGen_HPCA2022-draft.md:1266-1276` Table I)
