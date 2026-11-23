@@ -1,7 +1,7 @@
 schema: spec-driven
 created: 2026-11-24
-phase: phase-10
-priority: P2
+x-phase: phase-10
+x-priority: P2
 x-status: in_progress
 goal: |
   把 CEP 的「litmus 证伪工装」改名为「**复合图证伪工装**」—— 本仓工装检验**装配期通道依赖图**上的

@@ -1,4 +1,4 @@
-// test/test_cep_litmus_falsification.cc
+// test/test_cep_compound_graph_falsification.cc
 // 复合一致性公理 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 的 litmus **证伪工装**判据
 //
 // per change `cpptlm-cep-litmus-falsification-harness`（登记册队列 2 的 **I-6a**）
@@ -16,7 +16,7 @@
 #include "catch_amalgamated.hpp"
 
 #include "tlm/cep/channel_dependency_graph.hh"
-#include "tlm/cep/litmus_falsifier.hh"
+#include "tlm/cep/compound_graph_falsifier.hh"
 
 #include <cstdlib>
 #include <fstream>
@@ -54,7 +54,7 @@ namespace {
     }
 
     std::string corpus_path_from_env(const char* fallback) {
-        const char* p = std::getenv("CPPTLM_LITMUS_CORPUS");
+        const char* p = std::getenv("CPPTLM_COMPOUND_GRAPH_CORPUS");
         return (p != nullptr && *p != '\0') ? std::string(p) : std::string(fallback);
     }
 
@@ -64,13 +64,13 @@ namespace {
 //  [generic] 诚实性 —— 判定形态与语料无关；并写出判定产物
 // ══════════════════════════════════════════════
 TEST_CASE("CEP litmus: 诚实性 —— 判定形态与语料无关 + 产出判定产物",
-          "[cep][litmus][falsification][generic]") {
-    const std::string path = corpus_path_from_env("test/cep_litmus_corpus.json");
+          "[cep][compound-graph][falsification][generic]") {
+    const std::string path = corpus_path_from_env("test/cep_compound_graph_corpus.json");
     bool readable = false;
-    const auto corpus = cep::load_litmus_corpus(path, &readable);
+    const auto corpus = cep::load_compound_graph_corpus(path, &readable);
     REQUIRE(readable);
 
-    const auto v = cep::evaluate_litmus_falsification(decl(), corpus);
+    const auto v = cep::evaluate_compound_graph_falsification(decl(), corpus);
 
     // ① 覆盖说明恒非空（必须随判定一起读）
     REQUIRE_FALSE(v.coverage_note.empty());
@@ -90,7 +90,7 @@ TEST_CASE("CEP litmus: 诚实性 —— 判定形态与语料无关 + 产出判�
     CHECK((v.cycles.empty()) != v.falsified);
 
     // ④ 判定产物（env 驱动 ⇒ 平时**零写盘**）—— 闸据此机读核对
-    const char* report_path = std::getenv("CPPTLM_LITMUS_REPORT");
+    const char* report_path = std::getenv("CPPTLM_COMPOUND_GRAPH_REPORT");
     if (report_path != nullptr && *report_path != '\0') {
         nlohmann::json rep;
         rep["corpus_path"] = path;
@@ -111,13 +111,13 @@ TEST_CASE("CEP litmus: 诚实性 —— 判定形态与语料无关 + 产出判�
 //  [repo-corpus] 正控 —— **仓内**语料为空 ⇒ 复合公理当前**不可证伪**
 // ══════════════════════════════════════════════
 TEST_CASE("CEP litmus: 正控 —— 仓内语料为空 ⇒ 复合公理当前不可证伪",
-          "[cep][litmus][falsification][repo-corpus]") {
+          "[cep][compound-graph][falsification][repo-corpus]") {
     bool readable = false;
-    const auto corpus = cep::load_litmus_corpus("test/cep_litmus_corpus.json", &readable);
+    const auto corpus = cep::load_compound_graph_corpus("test/cep_compound_graph_corpus.json", &readable);
     REQUIRE(readable);
     CHECK(corpus.value("compound_edges", nlohmann::json::array()).empty());
 
-    const auto v = cep::evaluate_litmus_falsification(decl(), corpus);
+    const auto v = cep::evaluate_compound_graph_falsification(decl(), corpus);
     // ① 不可达 + 给出**具体原因**
     CHECK(v.reachable == false);
     REQUIRE_FALSE(v.unreachable_reason.empty());
@@ -130,8 +130,8 @@ TEST_CASE("CEP litmus: 正控 —— 仓内语料为空 ⇒ 复合公理当前�
 // ══════════════════════════════════════════════
 //  [fixture] 反 fixture —— 跨域环 ⇒ 证伪成功（证明工装有牙）
 // ══════════════════════════════════════════════
-TEST_CASE("CEP litmus: 反 fixture —— 跨域环 ⇒ 证伪成功", "[cep][litmus][falsification][fixture]") {
-    const auto v = cep::evaluate_litmus_falsification(decl(), cross_domain_cycle_corpus());
+TEST_CASE("CEP litmus: 反 fixture —— 跨域环 ⇒ 证伪成功", "[cep][compound-graph][falsification][fixture]") {
+    const auto v = cep::evaluate_compound_graph_falsification(decl(), cross_domain_cycle_corpus());
     // ① 语料非空 ⇒ 可达
     CHECK(v.reachable == true);
     CHECK(v.unreachable_reason.empty());
@@ -153,7 +153,7 @@ TEST_CASE("CEP litmus: 反 fixture —— 跨域环 ⇒ 证伪成功", "[cep][li
 //  [fixture] 诚实性 —— 端点未绑定的边**不参与**（不得造出假环）
 // ══════════════════════════════════════════════
 TEST_CASE("CEP litmus: 诚实性 —— 端点未绑定 ⇒ 该边不参与、不得造出假环",
-          "[cep][litmus][falsification][fixture]") {
+          "[cep][compound-graph][falsification][fixture]") {
     nlohmann::json j;
     j["compound_edges"] = nlohmann::json::array({
         {{"instance", "mesif"},
@@ -163,7 +163,7 @@ TEST_CASE("CEP litmus: 诚实性 —— 端点未绑定 ⇒ 该边不参与、�
          {"to_vc", 0},
          {"class", "rfe"}},
     });
-    const auto v = cep::evaluate_litmus_falsification(decl(), j);
+    const auto v = cep::evaluate_compound_graph_falsification(decl(), j);
     CHECK(v.reachable == true);
     // 自环边端点存在 ⇒ 它**确实**构成环（语料自洽的体现）
     CHECK(v.falsified == true);
@@ -178,7 +178,7 @@ TEST_CASE("CEP litmus: 诚实性 —— 端点未绑定 ⇒ 该边不参与、�
          {"to_vc", 7},
          {"class", "rfe"}},
     });
-    const auto v2 = cep::evaluate_litmus_falsification(decl(), bad);
+    const auto v2 = cep::evaluate_compound_graph_falsification(decl(), bad);
     CHECK(v2.reachable == true);
     CHECK(v2.falsified == false);
     CHECK(v2.cycles.empty());
@@ -200,10 +200,10 @@ TEST_CASE("CEP litmus: 诚实性 —— 端点未绑定 ⇒ 该边不参与、�
 
 // 编译期事实：本工装**不是**内存模型 litmus（⛔ 改 `true` ⇒ 编译失败，见 probe 反 fixture）
 static_assert(!tlm::cep::kFalsifierIsMemoryModelLitmus,
-              "litmus-scope: litmus_falsifier 检验通道依赖图的环,不是内存模型 litmus");
+              "litmus-scope: compound_graph_falsifier 检验通道依赖图的环,不是内存模型 litmus");
 
 TEST_CASE("CEP litmus: 消歧常量 —— 作用域为通道依赖图 · 非内存模型 litmus",
-          "[cep][litmus][falsification][disambiguation]") {
+          "[cep][compound-graph][falsification][disambiguation]") {
     // ① 作用域串逐字相等（下游文档可引用该串 ⇒ 避免两处各写一份、久而久之漂移）
     CHECK(std::string(tlm::cep::kFalsifierScope) == "channel-dependency-graph");
     // ② 否定式命名：编译期已断言（上方 static_assert），此处复核运行期取值
@@ -213,9 +213,9 @@ TEST_CASE("CEP litmus: 消歧常量 —— 作用域为通道依赖图 · 非内
     CHECK(std::string(tlm::cep::kFalsifierScope).find("memory_model") == std::string::npos);
     // ④ 既有判定行为不受消歧常量影响（⛔ 逻辑等价：语料为空 ⇒ 仍不可证伪）
     bool readable = false;
-    const auto corpus = cep::load_litmus_corpus("test/cep_litmus_corpus.json", &readable);
+    const auto corpus = cep::load_compound_graph_corpus("test/cep_compound_graph_corpus.json", &readable);
     REQUIRE(readable);
-    const auto v = cep::evaluate_litmus_falsification(decl(), corpus);
+    const auto v = cep::evaluate_compound_graph_falsification(decl(), corpus);
     CHECK(v.reachable == false);
     CHECK(v.falsified == false);
 }

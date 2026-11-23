@@ -82,6 +82,9 @@ Stage B（本轮 · builder 实施，I1 闭环）  ← 2026-11-23 metis P0-1 后
   └─ B5 验收：verifier 报告落 .rddf/reviews/
 
 Stage B'（2026-11-23 · builder 实施，I2 阶段 1 闭环 ✅ 已完成并归档）  ← 用户裁决「选择 A」
+  └─ B''（2026-11-24 · builder 实施，I2 **阶段 2** 改名闭环）—— 「litmus 证伪工装」⇒「**复合图证伪工装**」
+       （活代码面 + 活契约面；零决策变更 · 零行为变更；⛔ 命名消歧闸**文件名与红因码保留**
+       （其管辖违例类不随工件改名过期 + 阶段 1 审计链）；台账 Entry #540）
   ├─ B'1 include/tlm/cep/litmus_falsifier.hh：追加消歧常量
   │     （kFalsifierScope / kFalsifierIsMemoryModelLitmus=false）+ 诚实边界段升级为可引用声明
   ├─ B'2 test/test_cep_litmus_falsification.cc：尾部追加 2 条断言（⛔ 既有断言段逐字不变）

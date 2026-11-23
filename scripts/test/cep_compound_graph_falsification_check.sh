@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/test/cep_litmus_falsification_check.sh
+# scripts/test/cep_compound_graph_falsification_check.sh
 #   —— 复合一致性公理的 litmus **证伪工装**闸
 #
 # per change `cpptlm-cep-litmus-falsification-harness`（登记册队列 2 的 I-6a）
@@ -15,8 +15,8 @@
 # ⚠️ 该闸**不判定公理成立**，只判定「证伪尝试**真的跑了**且判定形态诚实」。
 #
 # 用法:
-#   bash scripts/test/cep_litmus_falsification_check.sh
-#   BUILD_DIR=build bash scripts/test/cep_litmus_falsification_check.sh
+#   bash scripts/test/cep_compound_graph_falsification_check.sh
+#   BUILD_DIR=build bash scripts/test/cep_compound_graph_falsification_check.sh
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -24,7 +24,7 @@ cd "$ROOT" || exit 2
 
 BUILD_DIR="${BUILD_DIR:-build}"
 BIN="$BUILD_DIR/bin/cpptlm_tests"
-CORPUS="test/cep_litmus_corpus.json"
+CORPUS="test/cep_compound_graph_corpus.json"
 
 if [ ! -x "$BIN" ]; then
   echo "  · [SKIP] 未找到测试二进制($BIN) —— litmus 判定需先构建(cpptlm_tests)"
@@ -35,8 +35,8 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 # ── 臂① 正控：真实语料 ────────────────────────────────────────────────
-CPPTLM_LITMUS_CORPUS="$CORPUS" CPPTLM_LITMUS_REPORT="$TMP/report.json" \
-  "$BIN" "[cep][litmus][falsification][generic],[cep][litmus][falsification][repo-corpus]" -r compact >"$TMP/pos.out" 2>&1
+CPPTLM_COMPOUND_GRAPH_CORPUS="$CORPUS" CPPTLM_COMPOUND_GRAPH_REPORT="$TMP/report.json" \
+  "$BIN" "[cep][compound-graph][falsification][generic],[cep][compound-graph][falsification][repo-corpus]" -r compact >"$TMP/pos.out" 2>&1
 if [ $? -ne 0 ]; then
   echo "  ✗ litmus 判据未全绿："
   tail -20 "$TMP/pos.out" | sed 's/^/    /'
@@ -87,8 +87,8 @@ cat >"$TMP/cyclic_corpus.json" <<'JSONEOF'
 }
 JSONEOF
 
-CPPTLM_LITMUS_CORPUS="$TMP/cyclic_corpus.json" CPPTLM_LITMUS_REPORT="$TMP/report2.json" \
-  "$BIN" "[cep][litmus][falsification][generic]" -r compact >"$TMP/neg.out" 2>&1
+CPPTLM_COMPOUND_GRAPH_CORPUS="$TMP/cyclic_corpus.json" CPPTLM_COMPOUND_GRAPH_REPORT="$TMP/report2.json" \
+  "$BIN" "[cep][compound-graph][falsification][generic]" -r compact >"$TMP/neg.out" 2>&1
 if [ $? -ne 0 ]; then
   echo "  ✗ 反向 fixture:litmus 判据未全绿（⛔ 说明工装在有环时也会红 ⇒ 恒绿占位）"
   tail -20 "$TMP/neg.out" | sed 's/^/    /'

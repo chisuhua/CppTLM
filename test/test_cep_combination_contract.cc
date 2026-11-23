@@ -309,7 +309,7 @@ TEST_CASE("[cep][combination-contract] IC1 —— 复合一致性声明项的取
     REQUIRE(valid_compound(csc, c3, why));
 
     // ④ 禁止派生填充 litmus 语料(范畴错误 ⇒ 假绿):语料**必须**仍为空
-    const json corpus = load_json("test/cep_litmus_corpus.json");
+    const json corpus = load_json("test/cep_compound_graph_corpus.json");
     REQUIRE(corpus.at("compound_edges").is_array());
     REQUIRE(corpus.at("compound_edges").empty());
 }

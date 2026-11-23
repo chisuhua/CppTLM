@@ -1,4 +1,4 @@
-// include/tlm/cep/litmus_falsifier.hh
+// include/tlm/cep/compound_graph_falsifier.hh
 // 复合一致性公理 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 的**证伪工装**
 //
 // 依据（**全部是既有已签批内容**，本文件不新增任何语义）:
@@ -34,12 +34,12 @@
 //   ⛔ 因此**不得**据本工装的存在声称「CEP 已能证伪复合一致性公理」
 //     （per `ADR-CEP-13` 决策 5 ②「平台不提供无违例保证」）。
 //
-//   ⛔ **不要**由文件名 `litmus_falsifier` 推断本工装具备内存模型 litmus 能力 ——
-//     该能力**不存在**；实际改名属**阶段 2**（`compound_graph_falsifier`，另立 + 冻结面五步链）。
+//   ⛔ **不要**由**旧文件名** `litmus_falsifier` 推断本工装具备内存模型 litmus 能力 ——
+//     该能力**不存在**；该旧名已于 2026-11-24 退役为 `compound_graph_falsifier`（改名 · 判定语义零变更）。
 //
 // 作者: CppTLM Team / 日期: 2026-11-21（消歧声明 2026-11-23 追加）
-#ifndef CPPTLM_CEP_LITMUS_FALSIFIER_HH
-#define CPPTLM_CEP_LITMUS_FALSIFIER_HH
+#ifndef CPPTLM_CEP_COMPOUND_GRAPH_FALSIFIER_HH
+#define CPPTLM_CEP_COMPOUND_GRAPH_FALSIFIER_HH
 
 #include <algorithm>
 #include <fstream>
@@ -62,12 +62,12 @@ inline constexpr const char* kFalsifierScope = "channel-dependency-graph";
 
 /// **消歧常量（2026-11-23）** —— 本工装**不是**内存模型 litmus（herd7 memory-model litmus）。
 ///
-/// ⛔ **恒为 `false`**；改 `true` ⇒ 违反 `test/test_cep_litmus_falsification.cc` 的
+/// ⛔ **恒为 `false`**；改 `true` ⇒ 违反 `test/test_cep_compound_graph_falsification.cc` 的
 /// `static_assert` ⇒ 编译失败（见 `scripts/test/cep_litmus_naming_check.sh` 的 probe 反 fixture）。
 inline constexpr bool kFalsifierIsMemoryModelLitmus = false;
 
-/// 一次 litmus 证伪尝试的判定（⛔ **无「已证明」一档** —— 见文件头）
-struct LitmusVerdict {
+/// 一次复合图证伪尝试的判定（⛔ **无「已证明」一档** —— 见文件头）
+struct CompoundGraphVerdict {
     /// 复合公理**当前是否可达**（= 是否有跨域边声明面）
     bool reachable = false;
     /// 不可达时的**具体原因**（可达时为空）
@@ -90,9 +90,9 @@ struct LitmusVerdict {
 /// **顶点** = (instance, network, vc) —— 与既有装配期闸 `channel_dependency_graph.hh` 同形。
 ///
 /// ⚠️ 本函数**只尝试证伪**:无环 ⇒ 「在本次语料范围内**未证伪**」,⛔ 不是「已证明」。
-inline LitmusVerdict evaluate_litmus_falsification(const ChannelDeclaration& decl,
+inline CompoundGraphVerdict evaluate_compound_graph_falsification(const ChannelDeclaration& decl,
                                                      const nlohmann::json& corpus) {
-    LitmusVerdict v;
+    CompoundGraphVerdict v;
     v.coverage_note =
         "复合一致性公理 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 的**边类**(`rfe`/`fr`/`ws`)在两仓"
         "**均无定义** ⇒ 本工装只对**已声明的跨域边**尝试证伪;⛔ 无环**不等于**公理成立"
@@ -190,7 +190,7 @@ inline LitmusVerdict evaluate_litmus_falsification(const ChannelDeclaration& dec
 }
 
 /// 读语料文件（⛔ 缺文件 = **不可达**,⛔ 不是「通过」）
-inline nlohmann::json load_litmus_corpus(const std::string& path, bool* readable) {
+inline nlohmann::json load_compound_graph_corpus(const std::string& path, bool* readable) {
     if (readable != nullptr)
         *readable = false;
     std::ifstream in(path);
@@ -206,4 +206,4 @@ inline nlohmann::json load_litmus_corpus(const std::string& path, bool* readable
 
 } // namespace tlm::cep
 
-#endif // CPPTLM_CEP_LITMUS_FALSIFIER_HH
+#endif // CPPTLM_CEP_COMPOUND_GRAPH_FALSIFIER_HH

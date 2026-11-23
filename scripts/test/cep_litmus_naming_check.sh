@@ -49,9 +49,9 @@ cd "$ROOT" || exit 2
 # ⚠️ `SCAN_ROOT` 可覆盖扫描集根：① 闸的「影子副本」自测用（构造缺成员的扫描集）
 #    ② 与工件改名**解耦**（改名只改下面 3 个相对路径）。
 SCAN_ROOT="${SCAN_ROOT:-$ROOT}"
-HDR_REL="include/tlm/cep/litmus_falsifier.hh"
-TESTF_REL="test/test_cep_litmus_falsification.cc"
-SPEC_REL="openspec/specs/cep-litmus-falsification/spec.md"
+HDR_REL="include/tlm/cep/compound_graph_falsifier.hh"
+TESTF_REL="test/test_cep_compound_graph_falsification.cc"
+SPEC_REL="openspec/specs/cep-compound-graph-falsification/spec.md"
 HDR="$SCAN_ROOT/$HDR_REL"
 TESTF="$SCAN_ROOT/$TESTF_REL"
 SPEC="$SCAN_ROOT/$SPEC_REL"

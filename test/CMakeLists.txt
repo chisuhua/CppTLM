@@ -799,13 +799,13 @@ add_test(NAME cep_invariant_batch2_ledger_check
 set_tests_properties(cep_invariant_batch2_ledger_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
-# 复合一致性公理的 litmus **证伪工装**闸(per change `cpptlm-cep-litmus-falsification-harness`
+# 复合一致性公理的**复合图证伪工装**闸(per change `cpptlm-cep-litmus-falsification-harness`
 #  · 登记册队列 2 的 I-6a · `ADR-CEP-13` 决策 5 ②「实验只能证伪」)
 #  —— 两条臂:① 正控(判定诚实:不可证伪 + 具体原因 + 覆盖边界 + 无「已证明」表述)
 #     ② 反向 fixture(含跨域环的语料 ⇒ 必须翻转成 falsified ⇒ 工装有牙)
-add_test(NAME cep_litmus_falsification_check
-         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_litmus_falsification_check.sh)
-set_tests_properties(cep_litmus_falsification_check
+add_test(NAME cep_compound_graph_falsification_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_compound_graph_falsification_check.sh)
+set_tests_properties(cep_compound_graph_falsification_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                                 ENVIRONMENT "BUILD_DIR=${CMAKE_BINARY_DIR}")
 
