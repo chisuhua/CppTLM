@@ -1,7 +1,10 @@
 # cep-protocol-engine-capability-declaration Specification
 
 ## Purpose
-TBD - created by archiving change cep-protocol-engine-capability-declaration. Update Purpose after archive.
+
+把「某个协议实例的协议语义由谁承载、承载到哪一层」从引擎头文件里的散文变成**机器可查的声明面**：`kEngineCapabilities` 逐实例登记 egress 形态，`EngineTypeTraits<T>` 逐引擎登记在飞事务建模与否并与 `HasInFlightApi<T>`（真实公开 API）**编译期交叉核对**，瞬态态以策略上限锁住，实例集与 `protocol_instances.json` 双向零 orphan。
+
+本能力**只登记现状、只让缺口可检出**，⛔ 不补齐瞬态态 / 在飞 snoop 集合 / egress 机检（那属协议 FSM 语义设计，归 ArchForge 与架构裁决）。`egress` 字段当前**无机器判据**，由 `kEgressHasMachineCheck = false` 显式登记。
 
 ## Requirements
 
