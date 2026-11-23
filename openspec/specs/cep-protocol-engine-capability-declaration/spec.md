@@ -1,4 +1,9 @@
-## ADDED Requirements
+# cep-protocol-engine-capability-declaration Specification
+
+## Purpose
+TBD - created by archiving change cep-protocol-engine-capability-declaration. Update Purpose after archive.
+
+## Requirements
 
 ### Requirement: 协议引擎承载能力声明面
 

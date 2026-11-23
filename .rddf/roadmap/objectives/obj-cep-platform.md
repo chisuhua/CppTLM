@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**（`cpptlm-cep-protocol-engine-capability-declaration`,实测 per `openspec list --json`；⇒ **当前 Proposed 并发 = 1/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
+`openspec/changes/` 当前 **0 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 0/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -28355,3 +28355,41 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 ⛔ 未改两个 batch 闸的源码（改闸判据面属**范围外** + 该单元未立项）· ⛔ 未改台账任何**历史 Entry 正文**（本 Entry 追加式 · Entry #535 是本轮自写，提交前修正）· ⛔ 零 C++ · 零冻结面成员 · ⛔ 未新建登记面文件。
 
 **关联**：登记册 §6.2 S3 表 + 合并登记清单（`R-g`）· `scripts/test/cep_invariant_batch1_ledger_check.py` · `scripts/test/cep_invariant_batch2_ledger_check.py` · Entry **#512** / **#514**（I-5 / I-6 的真正落点）· Entry **#535**（G-20 落地回执）· 验收报告 `.rddf/reviews/cep-g20-dod-reading-caliber-verify.md`
+
+### Entry #537 — 2026-11-23 [builder](change `cep-protocol-engine-capability-declaration` 立项 → 实施 → 验收 → 归档 + 冻结面新增授权 + KPI 回 0/3)
+
+**① 主题**：把「协议引擎承载到哪一层」从引擎头里的散文变成**编译期 + 闸双重保证的声明面**。⛔ 本单元**只做检出、不做补齐**（补齐 = 协议 FSM 语义设计，属 architect + ArchForge）。
+
+**② 交付面**
+
+| # | 交付 | 判据 |
+|:--:|---|---|
+| 1 | `include/tlm/cep/engine_capabilities.hh`（通用层 · 零协议名 · 8 行声明表 + SFINAE `HasInFlightApi` + dependent-false 主模板 + 纯函数自洽谓词） | AC-1 / AC-2 / AC-5 / AC-9 |
+| 2 | 5 个引擎头各追加 `EngineTypeTraits<T>` 特化（仅 `in_flight` + `basis`，各 +14 行） | AC-3 |
+| 3 | `test/test_cep_engine_capabilities.cc`（J-1/J-3 编译期 · J-2/J-2b 运行期 · 变异负控；91 assertions / 6 cases） | AC-3/4/5/6 |
+| 4 | `scripts/test/cep_engine_capabilities_check.sh`（双向零 orphan + 引擎头文件集反向存在性 + 单真源扫描 + **probe TU 编译失败验证**） | AC-7 / AC-8 / AC-9 |
+| 5 | `openspec/specs/cep-protocol-engine-capability-declaration/spec.md`（归档合并 · 6 个 ADDED Requirement） | 归档产物 |
+
+**③ 冻结面新增授权**（per `scripts/test/cep_freeze_check.sh --update`）
+
+- 冻结面新增 `openspec/specs/cep-protocol-engine-capability-declaration/spec.md`：本 change 归档时由 delta spec 合并生成；冻结对象 = `openspec/specs/` 下**任何**已交付能力的 spec（per Entry #324 的 glob 全量口径），⛔ 非缩小冻结面，属**扩容**登记。
+
+**④ KPI 与计数同步**
+
+| 面 | 变化 |
+|---|---|
+| KPI 活口径 | 立项 **0/3 → 1/3** → 同日归档 **1/3 → 0/3**（6 处：`AGENTS.md` / `.rddf/roadmap.md` / `phase-10.md` / `obj §5.2` / 2 个 improvement） |
+| 注册册 §0.1 | spec 总数 138→**139** · cep-* 47→**48** · 归档 change 目录 170→**171** · CEP 归档 54→**55** · active 1→**0** · 闸 `cep_*.sh` 49→**50** · 闸族 63→**64** · `test_cep_*.cc` 77→**78** |
+
+**⑤ 验收**
+
+- 报告 = `.rddf/reviews/cep-protocol-engine-capability-declaration-verify.md`（verifier 第 1 轮 · **PASS** 附 2 项环境条件）
+- ✅ **条件 C-1（`ctest -R cep` 全绿）与 C-2（归档计数 171/55）均已在本 Entry 之后的主仓复验**（见 §⑥）
+
+**⑥ 合并与复验**
+
+- 合并 = `git merge --no-ff openspec/cep-protocol-engine-capability-declaration`（5 commits：实施 / 测试补足 / 索引补登 / 验收报告 / 分支自洽性修复）
+- 归档 = `openspec archive cep-protocol-engine-capability-declaration --yes` ⇒ `2026-11-23-cep-protocol-engine-capability-declaration`
+- 主仓 ctest / 闸复验结论见同批次收尾提交
+
+**关联**：`.rddf/roadmap/cep-gen-family-gap-closure.md`（实施路径）· `.rddf/improvements/cep-protocol-engine-capability-declaration.md`（I1）· `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md`（I2 · 已就绪未实施）· `ADR-CEP-18`（生成路线范围 · T1–T4 复评未达）· Entry #536
