@@ -95,10 +95,10 @@ namespace tlm {
         // `flit_category = CATEGORY_CREDIT`；`reverse_port(LOCAL) == LOCAL` ⇒ 经 LOCAL
         // 口进入 router 的 flit，其 credit 沿 `resp_out[LOCAL]` 回流到本模块）
         // ⇒ 显式丢弃：不计数、不进 reassemble、不写 pe_resp_out_
-        //（否则产出事务号 / 地址 / 数据全 0 的垃圾响应）。
+        // （否则产出事务号 / 地址 / 数据全 0 的垃圾响应）。
         if (flit.flit_category.read() == bundles::NoCFlitBundle::CATEGORY_CREDIT) {
             ++stats_credits_dropped_;
-            return true;  // flit 已被消费 ⇒ 返回值与既有「处理了 1 个 flit」语义一致
+            return true; // flit 已被消费 ⇒ 返回值与既有「处理了 1 个 flit」语义一致
         }
 
         ++stats_flits_received_;

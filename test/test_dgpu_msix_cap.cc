@@ -19,7 +19,8 @@ using json = nlohmann::json;
 
 // C2: 内联 SOC + PcieEndpointTLM 配置, 无 cwd 依赖。
 //
-// ⚠️ **键名语义已变更**（change `cpptlm-module-param-migrate-batch2`，verifier 验收 finding F1 返工）:
+// ⚠️ **键名语义已变更**（change `cpptlm-module-param-migrate-batch2`，verifier 验收 finding F1
+// 返工）:
 //   `PcieEndpointIP` 的**顶层** `num_msix_vectors`（旧名）与 `msix_num_vectors`（新名）
 //   **在本类都没有消费面**（MSI-X vector 数由 `sr_iov.vf_msix_vectors` /
 //   `transaction_layer.msix_num_vectors` 这类**嵌套键**承载）⇒ 二者自本次起
@@ -30,21 +31,18 @@ static json msix_cap_board_cfg(const std::string& key) {
     if (!key.empty()) {
         ep_params[key] = 8;
     }
-    return json{
-        {"name", "msix_cap_board"},
-        {"params",
-         {{"device_id", "0x1234"},
-          {"quantum_cycles", 1000},
-          {"ptx_emu_root", "/tmp/test-ptx-emu"}}},
-        {"modules",
-         json::array(
-             {{{"name", "soc"},
-               {"type", "DGpuSoc"},
-               {"modules", json::array({{{"name", "pcie_ep"},
-                                         {"type", "PcieEndpointIP"},
-                                         {"params", ep_params}}})},
-               {"connections", json::array()}}})},
-        {"connections", json::array()}};
+    return json{{"name", "msix_cap_board"},
+                {"params",
+                 {{"device_id", "0x1234"},
+                  {"quantum_cycles", 1000},
+                  {"ptx_emu_root", "/tmp/test-ptx-emu"}}},
+                {"modules", json::array({{{"name", "soc"},
+                                          {"type", "DGpuSoc"},
+                                          {"modules", json::array({{{"name", "pcie_ep"},
+                                                                    {"type", "PcieEndpointIP"},
+                                                                    {"params", ep_params}}})},
+                                          {"connections", json::array()}}})},
+                {"connections", json::array()}};
 }
 
 // C2 测试 1: MSI-X Cap 存在 + Message Control Table Size 反映 init 的 vector 数。

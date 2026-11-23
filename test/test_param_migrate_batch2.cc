@@ -23,17 +23,14 @@
 
 #include <nlohmann/json.hpp>
 
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "core/param_admission.hh"
 #include "tlm/cep/cep_mesh_interconnect.hh"
-#include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/cep/cohif_nic.hh"
 #include "tlm/cep/cohif_responder.hh"
-#include "tlm/gpu/gmmu_tlm.hh"
-#include "tlm/gpu/sdma_engine_tlm.hh"
 #include "tlm/cluster/apu_soc.hh"
 #include "tlm/cluster/cache_cluster.hh"
 #include "tlm/cluster/compute_cluster.hh"
@@ -43,8 +40,11 @@
 #include "tlm/cluster/gpu_noc_cluster.hh"
 #include "tlm/cluster/memory_cluster.hh"
 #include "tlm/cluster/tpc_cluster.hh"
+#include "tlm/gpu/gmmu_tlm.hh"
+#include "tlm/gpu/sdma_engine_tlm.hh"
 #include "tlm/memory_tlm.hh"
 #include "tlm/nic_tlm.hh"
+#include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/vram_controller_tlm.hh"
 
 using json = nlohmann::json;
@@ -59,7 +59,8 @@ namespace {
     /// 构造一个只含单模块的顶层配置（`instantiateAll` 需要 `modules` + `connections`）
     json one_module(const std::string& name, const std::string& type, json params) {
         json m{{"name", name}, {"type", type}};
-        if (!params.is_null()) m["params"] = std::move(params);
+        if (!params.is_null())
+            m["params"] = std::move(params);
         return json{{"modules", json::array({m})}, {"connections", json::array()}};
     }
 
@@ -76,8 +77,8 @@ TEST_CASE("AC-02: NICTLM.node_id 生效 —— 两个合法值 ⇒ getter 不同
     auto node_id_of = [](std::uint32_t v) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "nic_x", "NICTLM", json{{"node_id", v}, {"mesh_x", 4}, {"mesh_y", 4}})));
+        REQUIRE(factory.instantiateAll(
+            one_module("nic_x", "NICTLM", json{{"node_id", v}, {"mesh_x", 4}, {"mesh_y", 4}})));
         auto* nic = dynamic_cast<tlm::NICTLM*>(factory.getInstance("nic_x"));
         REQUIRE(nic != nullptr);
         return nic->node_id();
@@ -119,8 +120,8 @@ TEST_CASE("AC-03: NICTLM.node_id 缺失 ⇒ 装配失败（必填真值唯一 �
     ModuleFactory factory(&eq);
 
     // 只给 mesh，不给 node_id ⇒ `load_param("node_id", ...)` 无默认值 ⇒ 必填缺失 ⇒ 抛
-    REQUIRE_FALSE(
-        factory.instantiateAll(one_module("nic_bad", "NICTLM", json{{"mesh_x", 2}, {"mesh_y", 2}})));
+    REQUIRE_FALSE(factory.instantiateAll(
+        one_module("nic_bad", "NICTLM", json{{"mesh_x", 2}, {"mesh_y", 2}})));
 }
 
 TEST_CASE("AC-07: NICTLM 拼错键 ⇒ 装配失败且错误含键名（准入已启用）",
@@ -133,8 +134,8 @@ TEST_CASE("AC-07: NICTLM 拼错键 ⇒ 装配失败且错误含键名（准入�
     CHECK(cpptlm::is_param_admitted("NICTLM"));
 
     // `nodeid` 是 `node_id` 的常见拼错
-    const json cfg =
-        one_module("nic_typo", "NICTLM", json{{"node_id", 0}, {"nodeid", 3}, {"mesh_x", 2}, {"mesh_y", 2}});
+    const json cfg = one_module("nic_typo", "NICTLM",
+                                json{{"node_id", 0}, {"nodeid", 3}, {"mesh_x", 2}, {"mesh_y", 2}});
     REQUIRE_FALSE(factory.instantiateAll(cfg));
 }
 
@@ -145,14 +146,13 @@ TEST_CASE("AC-02: NICTLM.address_regions 生效（非标量 / 态② 模块内�
     ModuleFactory factory(&eq);
 
     // `address_regions` 是对象数组 ⇒ `load_param` 不承载（D-2 态②）⇒ 模块内解析 + 登记
-    const json cfg = one_module("nic_reg", "NICTLM",
-                                json{{"node_id", 0},
-                                     {"mesh_x", 4},
-                                     {"mesh_y", 4},
-                                     {"address_regions",
-                                      json::array({json{{"base", 0x1000},
-                                                        {"size", 0x1000},
-                                                        {"target_node", 3}}})}});
+    const json cfg = one_module(
+        "nic_reg", "NICTLM",
+        json{{"node_id", 0},
+             {"mesh_x", 4},
+             {"mesh_y", 4},
+             {"address_regions",
+              json::array({json{{"base", 0x1000}, {"size", 0x1000}, {"target_node", 3}}})}});
     REQUIRE(factory.instantiateAll(cfg));
 
     auto* nic = dynamic_cast<tlm::NICTLM*>(factory.getInstance("nic_reg"));
@@ -173,7 +173,8 @@ TEST_CASE("AC-02: MemoryTLM.capacity_gb 生效 —— 两个合法值 ⇒ 容量
     auto cap_of = [](int gb) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module("mem_x", "MemoryTLM", json{{"capacity_gb", gb}})));
+        REQUIRE(
+            factory.instantiateAll(one_module("mem_x", "MemoryTLM", json{{"capacity_gb", gb}})));
         auto* m = dynamic_cast<MemoryTLM*>(factory.getInstance("mem_x"));
         REQUIRE(m != nullptr);
         return m->size_cap();
@@ -193,8 +194,8 @@ TEST_CASE("AC-02: MemoryTLM.read_latency / write_latency 生效（两值 ⇒ 读
     auto lat_of = [](std::uint64_t rl, std::uint64_t wl) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "mem_l", "MemoryTLM", json{{"read_latency", rl}, {"write_latency", wl}})));
+        REQUIRE(factory.instantiateAll(
+            one_module("mem_l", "MemoryTLM", json{{"read_latency", rl}, {"write_latency", wl}})));
         auto* m = dynamic_cast<MemoryTLM*>(factory.getInstance("mem_l"));
         REQUIRE(m != nullptr);
         // 单值 `read_latency` ⇒ hit 与 miss **同值**（细粒度拆分归板级键）
@@ -261,7 +262,8 @@ TEST_CASE("AC-02: GmmuTLM.page_size_bytes 生效 —— 两个合法值 ⇒ gett
     auto ps_of = [](std::uint64_t ps) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module("gmmu_x", "GmmuTLM", json{{"page_size_bytes", ps}})));
+        REQUIRE(
+            factory.instantiateAll(one_module("gmmu_x", "GmmuTLM", json{{"page_size_bytes", ps}})));
         auto* g = dynamic_cast<tlm::gpu::GmmuTLM*>(factory.getInstance("gmmu_x"));
         REQUIRE(g != nullptr);
         return g->page_size_bytes();
@@ -282,8 +284,7 @@ TEST_CASE("AC-02: GmmuTLM.page_size_bytes 生效 —— 两个合法值 ⇒ gett
 // T1.6 — SdmaEngineTLM
 // ============================================================================
 
-TEST_CASE("AC-02: SdmaEngineTLM 三键生效（两值 ⇒ 读数不同）",
-          "[param][migrate][batch2][sdma]") {
+TEST_CASE("AC-02: SdmaEngineTLM 三键生效（两值 ⇒ 读数不同）", "[param][migrate][batch2][sdma]") {
     register_all_types();
 
     auto read_of = [](std::uint32_t mi, std::uint32_t tl, std::uint64_t vs) {
@@ -315,8 +316,8 @@ TEST_CASE("AC-02: CohIfNICTLM 三键生效 + address_regions 非标量登记",
     auto node_of = [](std::uint32_t nid) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(
-            one_module("cnic_x", "CohIfNICTLM", json{{"node_id", nid}, {"mesh_x", 4}, {"mesh_y", 4}})));
+        REQUIRE(factory.instantiateAll(one_module(
+            "cnic_x", "CohIfNICTLM", json{{"node_id", nid}, {"mesh_x", 4}, {"mesh_y", 4}})));
         auto* c = dynamic_cast<tlm::cep::CohIfNICTLM*>(factory.getInstance("cnic_x"));
         REQUIRE(c != nullptr);
         return c->node_id();
@@ -332,7 +333,8 @@ TEST_CASE("AC-02: CohIfNICTLM 三键生效 + address_regions 非标量登记",
     REQUIRE(factory.instantiateAll(one_module(
         "cnic_reg", "CohIfNICTLM",
         json{{"node_id", 0},
-             {"address_regions", json::array({json{{"base", 0x2000}, {"size", 0x1000}, {"target_node", 5}}})}})));
+             {"address_regions",
+              json::array({json{{"base", 0x2000}, {"size", 0x1000}, {"target_node", 5}}})}})));
     auto* c = dynamic_cast<tlm::cep::CohIfNICTLM*>(factory.getInstance("cnic_reg"));
     REQUIRE(c != nullptr);
     // ⚠️ `lookup_node` 是 private（地址映射属实现细节）⇒ 本 case **不**断言解析结果，
@@ -342,9 +344,8 @@ TEST_CASE("AC-02: CohIfNICTLM 三键生效 + address_regions 非标量登记",
     // 反证：同一份配置若**不**登记 `address_regions` 会因未知键失败 —— 见下一条断言
     EventQueue eq2;
     ModuleFactory f2(&eq2);
-    REQUIRE_FALSE(f2.instantiateAll(
-        one_module("cnic_bad", "CohIfNICTLM",
-                   json{{"node_id", 0}, {"address_regionz", json::array()}})));
+    REQUIRE_FALSE(f2.instantiateAll(one_module(
+        "cnic_bad", "CohIfNICTLM", json{{"node_id", 0}, {"address_regionz", json::array()}})));
 }
 
 // ============================================================================
@@ -358,12 +359,11 @@ TEST_CASE("AC-02: CohIfResponderTLM 四键生效（两值 ⇒ 读数不同）",
     auto cfg_of = [](bool ec, unsigned lat, bool es, unsigned iv) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "cresp", "CohIfResponderTLM",
-            json{{"emit_completions", ec},
-                 {"completion_latency_cycles", lat},
-                 {"emit_snoops", es},
-                 {"snoop_interval_cycles", iv}})));
+        REQUIRE(factory.instantiateAll(one_module("cresp", "CohIfResponderTLM",
+                                                  json{{"emit_completions", ec},
+                                                       {"completion_latency_cycles", lat},
+                                                       {"emit_snoops", es},
+                                                       {"snoop_interval_cycles", iv}})));
         auto* r = dynamic_cast<tlm::cep::CohIfResponderTLM*>(factory.getInstance("cresp"));
         REQUIRE(r != nullptr);
         const auto& c = r->config();
@@ -395,8 +395,7 @@ TEST_CASE("AC-02: CohIfResponderTLM 四键生效（两值 ⇒ 读数不同）",
 namespace {
 
     /// 取模块类型 T 实例的辅助（失败 ⇒ REQUIRE 终止该 case）
-    template <typename T>
-    T* get_as(ModuleFactory& factory, const std::string& name) {
+    template <typename T> T* get_as(ModuleFactory& factory, const std::string& name) {
         return dynamic_cast<T*>(factory.getInstance(name));
     }
 
@@ -425,8 +424,8 @@ TEST_CASE("AC-02: CpuCluster.num_cpus / cluster_id 生效", "[param][migrate][ba
     // 拼错键 ⇒ 装配失败（准入已启用）
     EventQueue eq;
     ModuleFactory factory(&eq);
-    REQUIRE_FALSE(factory.instantiateAll(
-        one_module("cc_typo", "CpuCluster", json{{"num_cpu", 2}})));
+    REQUIRE_FALSE(
+        factory.instantiateAll(one_module("cc_typo", "CpuCluster", json{{"num_cpu", 2}})));
 }
 
 // ── T2.2 CacheCluster ────────────────────────────────────────────────────
@@ -437,8 +436,8 @@ TEST_CASE("AC-02: CacheCluster.l1_count 决定子模块数 + 尺寸字符串落�
     auto sub_count = [](int l1n) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(
-            one_module("cache_c", "CacheCluster", json{{"l1_count", l1n}})));
+        REQUIRE(
+            factory.instantiateAll(one_module("cache_c", "CacheCluster", json{{"l1_count", l1n}})));
         auto* c = get_as<cpptlm::tlm::CacheCluster>(factory, "cache_c");
         REQUIRE(c != nullptr);
         // 判别力：l1_count 直接决定 L1 实例数（+1 个 L2）
@@ -451,8 +450,8 @@ TEST_CASE("AC-02: CacheCluster.l1_count 决定子模块数 + 尺寸字符串落�
 
     EventQueue eq;
     ModuleFactory factory(&eq);
-    REQUIRE(factory.instantiateAll(one_module(
-        "cache_sz", "CacheCluster", json{{"l1_size", "32KB"}, {"l2_size", "1MB"}})));
+    REQUIRE(factory.instantiateAll(
+        one_module("cache_sz", "CacheCluster", json{{"l1_size", "32KB"}, {"l2_size", "1MB"}})));
     auto* c = get_as<cpptlm::tlm::CacheCluster>(factory, "cache_sz");
     REQUIRE(c != nullptr);
     CHECK(c->l1_size() == "32KB");
@@ -467,8 +466,8 @@ TEST_CASE("AC-02: MemoryCluster.channel_count 生效 + memory_type 态②拒绝"
     auto sub_count = [](int ch) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(
-            one_module("mem_c", "MemoryCluster", json{{"channel_count", ch}, {"channel_size", "2GB"}})));
+        REQUIRE(factory.instantiateAll(one_module(
+            "mem_c", "MemoryCluster", json{{"channel_count", ch}, {"channel_size", "2GB"}})));
         auto* c = get_as<cpptlm::tlm::MemoryCluster>(factory, "mem_c");
         REQUIRE(c != nullptr);
         CHECK(c->channel_size() == "2GB");
@@ -516,11 +515,11 @@ TEST_CASE("AC-02: TpcCluster.tpc_id / cu_per_tpc 生效", "[param][migrate][batc
     auto probe = [](int id, int cu) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "tpc", "TpcCluster",
-            json{{"tpc_id", id},
-                 {"cu_per_tpc", cu},
-                 {"cu_template", "configs/templates/compute_unit_v1.json"}})));
+        REQUIRE(factory.instantiateAll(
+            one_module("tpc", "TpcCluster",
+                       json{{"tpc_id", id},
+                            {"cu_per_tpc", cu},
+                            {"cu_template", "configs/templates/compute_unit_v1.json"}})));
         auto* c = get_as<cpptlm::tlm::TpcCluster>(factory, "tpc");
         REQUIRE(c != nullptr);
         CHECK(c->tpc_id() == id);
@@ -539,12 +538,12 @@ TEST_CASE("AC-02: GpcCluster.gpc_id / tpc_per_gpc / cu_per_tpc 生效",
     auto probe = [](int id, int tpc) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "gpc", "GpcCluster",
-            json{{"gpc_id", id},
-                 {"tpc_per_gpc", tpc},
-                 {"cu_per_tpc", 2},
-                 {"cu_template", "configs/templates/compute_unit_v1.json"}})));
+        REQUIRE(factory.instantiateAll(
+            one_module("gpc", "GpcCluster",
+                       json{{"gpc_id", id},
+                            {"tpc_per_gpc", tpc},
+                            {"cu_per_tpc", 2},
+                            {"cu_template", "configs/templates/compute_unit_v1.json"}})));
         auto* c = get_as<cpptlm::tlm::GpcCluster>(factory, "gpc");
         REQUIRE(c != nullptr);
         CHECK(c->gpc_id() == id);
@@ -563,12 +562,12 @@ TEST_CASE("AC-02: GpuCluster.gpc_count / 几何参数生效", "[param][migrate][
     auto probe = [](int gpc, int tpc, int cu) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "gpu", "GpuCluster",
-            json{{"gpc_count", gpc},
-                 {"tpc_per_gpc", tpc},
-                 {"cu_per_tpc", cu},
-                 {"cu_template", "configs/templates/compute_unit_v1.json"}})));
+        REQUIRE(factory.instantiateAll(
+            one_module("gpu", "GpuCluster",
+                       json{{"gpc_count", gpc},
+                            {"tpc_per_gpc", tpc},
+                            {"cu_per_tpc", cu},
+                            {"cu_template", "configs/templates/compute_unit_v1.json"}})));
         auto* c = get_as<cpptlm::tlm::GpuCluster>(factory, "gpu");
         REQUIRE(c != nullptr);
         return std::make_tuple(c->gpc_count(), c->tpc_per_gpc(), c->cu_per_tpc());
@@ -585,10 +584,10 @@ TEST_CASE("AC-02: ApuSoC.cpu_topology / gpu_topology 生效", "[param][migrate][
     auto probe = [](const std::string& cpu_path) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "apu", "ApuSoC",
-            json{{"cpu_topology", cpu_path},
-                 {"gpu_topology", "configs/templates/gpu_2gpc_2tpc_2cu.json"}})));
+        REQUIRE(factory.instantiateAll(
+            one_module("apu", "ApuSoC",
+                       json{{"cpu_topology", cpu_path},
+                            {"gpu_topology", "configs/templates/gpu_2gpc_2tpc_2cu.json"}})));
         auto* c = get_as<cpptlm::tlm::ApuSoC>(factory, "apu");
         REQUIRE(c != nullptr);
         return c->cpu_topology();
@@ -604,8 +603,9 @@ TEST_CASE("AC-02: CepMeshInterconnect.template 生效", "[param][migrate][batch2
 
     EventQueue eq;
     ModuleFactory factory(&eq);
-    REQUIRE(factory.instantiateAll(one_module(
-        "fabric", "CepMeshInterconnect", json{{"template", "configs/interconnect/cep_mesh_2x2.json"}})));
+    REQUIRE(factory.instantiateAll(
+        one_module("fabric", "CepMeshInterconnect",
+                   json{{"template", "configs/interconnect/cep_mesh_2x2.json"}})));
     auto* c = get_as<tlm::cep::CepMeshInterconnect>(factory, "fabric");
     REQUIRE(c != nullptr);
     CHECK(c->template_path() == "configs/interconnect/cep_mesh_2x2.json");
@@ -732,8 +732,7 @@ TEST_CASE("AC-07: 三种不同类型的拼错键 ⇒ ParamValidationError 且 pa
     // 三个**不同**类型（ChStream 家族 / SimModule 家族各取样）
     SECTION("NICTLM: nodeid（应为 node_id）") {
         tlm::NICTLM nic("nic", &eq);
-        expect_unknown_key([&] { nic.set_config(json{{"node_id", 0}, {"nodeid", 7}}); },
-                           "nodeid");
+        expect_unknown_key([&] { nic.set_config(json{{"node_id", 0}, {"nodeid", 7}}); }, "nodeid");
     }
     SECTION("MemoryTLM: capacit_gb（应为 capacity_gb）") {
         MemoryTLM mem("mem", &eq);
@@ -780,8 +779,7 @@ TEST_CASE("AC-08: 板级直读键（台账表 A）不被判为未知键", "[para
     }
     SECTION("GmmuTLM 的 2 个板级直读键") {
         tlm::gpu::GmmuTLM gmmu("gmmu", &eq);
-        REQUIRE_NOTHROW(
-            gmmu.set_config(json{{"tlb_size", 64}, {"tlb_miss_latency_cycles", 50}}));
+        REQUIRE_NOTHROW(gmmu.set_config(json{{"tlb_size", 64}, {"tlb_miss_latency_cycles", 50}}));
     }
     SECTION("CohIfNICTLM / NICTLM 的 address_regions（非标量）") {
         tlm::cep::CohIfNICTLM cnic("cnic", &eq);
@@ -831,8 +829,9 @@ TEST_CASE("F1: PcieEndpointIP 的 num_msix_vectors / msix_num_vectors ⇒ 显式
     SECTION("num_msix_vectors（旧 EP 模型遗留名）") {
         tlm::pcie::PcieEndpointIP ep("ep_nv", &eq);
         ep.init();
-        expect_rejected([&] { ep.set_config(json{{"config_size", 4096}, {"num_msix_vectors", 16}}); },
-                        "num_msix_vectors");
+        expect_rejected(
+            [&] { ep.set_config(json{{"config_size", 4096}, {"num_msix_vectors", 16}}); },
+            "num_msix_vectors");
     }
 }
 
@@ -854,9 +853,9 @@ TEST_CASE("F1: PcieEndpointIP 的合法键集仍可装配", "[param][migrate][ba
     register_all_types();
     EventQueue eq;
     ModuleFactory factory(&eq);
-    REQUIRE(factory.instantiateAll(one_module(
-        "ep_ok", "PcieEndpointIP",
-        json{{"config_size", 4096}, {"bar_sizes", json::array({4096, 16777216})}})));
+    REQUIRE(factory.instantiateAll(
+        one_module("ep_ok", "PcieEndpointIP",
+                   json{{"config_size", 4096}, {"bar_sizes", json::array({4096, 16777216})}})));
 }
 
 // ============================================================================
@@ -872,10 +871,10 @@ TEST_CASE("F3: ApuSoC.coherent_xbar_name / gpu_topology 生效",
     auto xbar_name_of = [](const std::string& v) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "apu", "ApuSoC",
-            json{{"cpu_topology", "configs/templates/cpu_cluster_2level.json"},
-                 {"coherent_xbar_name", v}})));
+        REQUIRE(factory.instantiateAll(
+            one_module("apu", "ApuSoC",
+                       json{{"cpu_topology", "configs/templates/cpu_cluster_2level.json"},
+                            {"coherent_xbar_name", v}})));
         auto* c = get_as<cpptlm::tlm::ApuSoC>(factory, "apu");
         REQUIRE(c != nullptr);
         return c->coherent_xbar_name();
@@ -889,10 +888,10 @@ TEST_CASE("F3: ApuSoC.coherent_xbar_name / gpu_topology 生效",
     auto gpu_topo_of = [](const std::string& path) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "apu", "ApuSoC",
-            json{{"cpu_topology", "configs/templates/cpu_cluster_2level.json"},
-                 {"gpu_topology", path}})));
+        REQUIRE(factory.instantiateAll(
+            one_module("apu", "ApuSoC",
+                       json{{"cpu_topology", "configs/templates/cpu_cluster_2level.json"},
+                            {"gpu_topology", path}})));
         auto* c = get_as<cpptlm::tlm::ApuSoC>(factory, "apu");
         REQUIRE(c != nullptr);
         // ★ 消费证据：蓝图被加载 ⇒ 内层 `gpu` 容器存在
@@ -909,8 +908,7 @@ TEST_CASE("F3: ApuSoC.coherent_xbar_name / gpu_topology 生效",
     auto cpu_topo_of = [](const std::string& path) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(
-            one_module("apu", "ApuSoC", json{{"cpu_topology", path}})));
+        REQUIRE(factory.instantiateAll(one_module("apu", "ApuSoC", json{{"cpu_topology", path}})));
         auto* c = get_as<cpptlm::tlm::ApuSoC>(factory, "apu");
         REQUIRE(c != nullptr);
         REQUIRE(c->getInternalInstance("cpu") != nullptr);
@@ -948,8 +946,8 @@ TEST_CASE("F4: CacheCluster.l1_size/l2_size 与 MemoryCluster.channel_size 生�
     auto channel_size_of = [](const std::string& sz) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "mem", "MemoryCluster", json{{"channel_count", 2}, {"channel_size", sz}})));
+        REQUIRE(factory.instantiateAll(
+            one_module("mem", "MemoryCluster", json{{"channel_count", 2}, {"channel_size", sz}})));
         auto* c = get_as<cpptlm::tlm::MemoryCluster>(factory, "mem");
         REQUIRE(c != nullptr);
         return c->channel_size();
@@ -980,9 +978,9 @@ TEST_CASE("F4: ComputeCluster/TpcCluster/GpcCluster/GpuCluster.cu_template 被�
     SECTION("TpcCluster ⇒ 子实例 compute_grp 存在（cu_template 已转发）") {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "tpc", "TpcCluster",
-            json{{"tpc_id", 0}, {"cu_per_tpc", 1}, {"cu_template", kCuTemplate}})));
+        REQUIRE(factory.instantiateAll(
+            one_module("tpc", "TpcCluster",
+                       json{{"tpc_id", 0}, {"cu_per_tpc", 1}, {"cu_template", kCuTemplate}})));
         auto* c = get_as<cpptlm::tlm::TpcCluster>(factory, "tpc");
         REQUIRE(c != nullptr);
         CHECK(c->cu_template() == kCuTemplate);
@@ -991,10 +989,11 @@ TEST_CASE("F4: ComputeCluster/TpcCluster/GpcCluster/GpuCluster.cu_template 被�
     SECTION("GpcCluster ⇒ 子实例 tpc0 存在") {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "gpc", "GpcCluster",
-            json{{"gpc_id", 0}, {"tpc_per_gpc", 1}, {"cu_per_tpc", 1},
-                 {"cu_template", kCuTemplate}})));
+        REQUIRE(factory.instantiateAll(one_module("gpc", "GpcCluster",
+                                                  json{{"gpc_id", 0},
+                                                       {"tpc_per_gpc", 1},
+                                                       {"cu_per_tpc", 1},
+                                                       {"cu_template", kCuTemplate}})));
         auto* c = get_as<cpptlm::tlm::GpcCluster>(factory, "gpc");
         REQUIRE(c != nullptr);
         CHECK(c->cu_template() == kCuTemplate);
@@ -1003,10 +1002,11 @@ TEST_CASE("F4: ComputeCluster/TpcCluster/GpcCluster/GpuCluster.cu_template 被�
     SECTION("GpuCluster ⇒ 子实例 gpc0 存在") {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "gpu", "GpuCluster",
-            json{{"gpc_count", 1}, {"tpc_per_gpc", 1}, {"cu_per_tpc", 1},
-                 {"cu_template", kCuTemplate}})));
+        REQUIRE(factory.instantiateAll(one_module("gpu", "GpuCluster",
+                                                  json{{"gpc_count", 1},
+                                                       {"tpc_per_gpc", 1},
+                                                       {"cu_per_tpc", 1},
+                                                       {"cu_template", kCuTemplate}})));
         auto* c = get_as<cpptlm::tlm::GpuCluster>(factory, "gpu");
         REQUIRE(c != nullptr);
         CHECK(c->cu_template() == kCuTemplate);
@@ -1064,10 +1064,12 @@ TEST_CASE("F5: RouterTLM.credit_timeout 生效（两个合法值 ⇒ getter 不�
     auto timeout_of = [](std::uint64_t v) {
         EventQueue eq;
         ModuleFactory factory(&eq);
-        REQUIRE(factory.instantiateAll(one_module(
-            "rt", "RouterTLM",
-            json{{"node_x", 0}, {"node_y", 0}, {"mesh_x", 2}, {"mesh_y", 2},
-                 {"credit_timeout", v}})));
+        REQUIRE(factory.instantiateAll(one_module("rt", "RouterTLM",
+                                                  json{{"node_x", 0},
+                                                       {"node_y", 0},
+                                                       {"mesh_x", 2},
+                                                       {"mesh_y", 2},
+                                                       {"credit_timeout", v}})));
         auto* r = dynamic_cast<tlm::RouterTLM*>(factory.getInstance("rt"));
         REQUIRE(r != nullptr);
         return r->credit_timeout();
@@ -1102,9 +1104,9 @@ TEST_CASE("F1: EP 最小框架验证示例只含框架面键", "[param][migrate]
     CHECK(params.contains("bar_sizes"));
 
     // 硬件建模面键必须缺席（语义归 ArchForge 规格，不在最小示例里承载）
-    for (const char* k : {"link_layer", "phy_digital", "sr_iov", "transaction_layer",
-                          "bypass_mode", "pm_cap_control", "bar0_registers", "config_size",
-                          "resizable_bars", "num_msix_vectors", "msix_num_vectors"}) {
+    for (const char* k : {"link_layer", "phy_digital", "sr_iov", "transaction_layer", "bypass_mode",
+                          "pm_cap_control", "bar0_registers", "config_size", "resizable_bars",
+                          "num_msix_vectors", "msix_num_vectors"}) {
         INFO("unexpected hardware-modeling key: " << k);
         CHECK_FALSE(params.contains(k));
     }

@@ -414,7 +414,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 //    但**不得**退回原来的 `DPRINTF(...)` + 静默继续 —— `DPRINTF` 仅 Debug
                 //    生效（`include/core/sim_core.hh:8-16`）⇒ Release 下等于没报，
                 //    正是本 change 要消灭的「静默丢模块」形态。
-                //    ⇒ 万一将来预扫描被绕过（新增入口 / 提前 return 的改动），此处必须**响亮地失败**。
+                //    ⇒ 万一将来预扫描被绕过（新增入口 / 提前 return
+                //    的改动），此处必须**响亮地失败**。
                 std::cerr << "[ModuleFactory] ERROR: unregistered type \"" << type
                           << "\" (instance \"" << name << "\") reached instance creation"
                           << " — Step 0.3 pre-scan should have rejected it. Refusing.\n";
@@ -525,9 +526,10 @@ bool ModuleFactory::instantiateAll(const json& config) {
                     sim_mod->instantiate(internal_cfg);
                     if (!sim_mod->instantiate_succeeded()) {
                         // ⚠️ 嵌套装配失败 ⇒ 向上传播（change C2 T0.2）
-                        std::fprintf(stderr,
-                                     "[ModuleFactory] ERROR: nested assembly failed for module '%s'\n",
-                                     name.c_str());
+                        std::fprintf(
+                            stderr,
+                            "[ModuleFactory] ERROR: nested assembly failed for module '%s'\n",
+                            name.c_str());
                         return false;
                     }
                 } else {
@@ -568,7 +570,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
         } catch (const std::exception& e) {
             DPRINTF(MODULE, "[ERROR] simulate_instantiate failed for '%s': %s\n", name.c_str(),
                     e.what());
-            std::fprintf(stderr, "[ModuleFactory] ERROR: simulate_instantiate failed for '%s': %s\n",
+            std::fprintf(stderr,
+                         "[ModuleFactory] ERROR: simulate_instantiate failed for '%s': %s\n",
                          name.c_str(), e.what());
             return false;
         }

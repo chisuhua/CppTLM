@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <cstring>
 #include <vector>
-#include "event_queue.hh"
 #include "core/param_admission.hh"
 #include "core/param_errors.hh"
+#include "event_queue.hh"
 #include "tlm/memory_tlm.hh"
 #include <catch2/catch_all.hpp>
 

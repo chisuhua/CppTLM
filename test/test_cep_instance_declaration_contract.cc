@@ -653,8 +653,8 @@ TEST_CASE("[cep][instance-decl] flow_support 60 格逐键锁 + 出处可核 + �
 
             // 逐格比对(失败消息含 id / key / 期望 / 实际)
             for (const auto& key : canonical) {
-                INFO("实例 " << id << " / 流 " << key << ":期望 "
-                     << efs.at(key).get<bool>() << " ≠ 声明源 " << dfs.at(key).get<bool>());
+                INFO("实例 " << id << " / 流 " << key << ":期望 " << efs.at(key).get<bool>()
+                             << " ≠ 声明源 " << dfs.at(key).get<bool>());
                 REQUIRE(efs.at(key).get<bool>() == dfs.at(key).get<bool>());
             }
 
@@ -670,13 +670,14 @@ TEST_CASE("[cep][instance-decl] flow_support 60 格逐键锁 + 出处可核 + �
             } else {
                 REQUIRE(src.contains("file"));
                 REQUIRE(src.contains("anchors"));
-                const auto f = std::filesystem::path(repo_root() / src.value("file", std::string()));
+                const auto f =
+                    std::filesystem::path(repo_root() / src.value("file", std::string()));
                 REQUIRE(std::filesystem::exists(f));
                 const auto text = read_file(f.string());
                 REQUIRE_FALSE(text.empty());
                 for (const auto& a : src.at("anchors")) {
                     INFO("出处锚点未命中 " << src.value("file", std::string()) << ":"
-                         << a.value("text", std::string()));
+                                           << a.value("text", std::string()));
                     REQUIRE(text.find(a.value("text", std::string())) != std::string::npos);
                     for (const auto& k : a.at("keys")) {
                         REQUIRE(canonical.count(k) == 1u);
@@ -691,7 +692,8 @@ TEST_CASE("[cep][instance-decl] flow_support 60 格逐键锁 + 出处可核 + �
                     REQUIRE(pk == canonical);
                 } else {
                     REQUIRE_FALSE(pk.empty());
-                    REQUIRE(src.value("note", std::string()).find("无逐值出处") != std::string::npos);
+                    REQUIRE(src.value("note", std::string()).find("无逐值出处") !=
+                            std::string::npos);
                 }
             }
         }
@@ -710,7 +712,7 @@ TEST_CASE("[cep][instance-decl] flow_support 60 格逐键锁 + 出处可核 + �
                 if (i.value("id", std::string()) != id)
                     continue;
                 for (auto& kv : i.at("flow_support").items()) {
-                    if (!kv.value().get<bool>()) {  // 翻一个 false → true
+                    if (!kv.value().get<bool>()) { // 翻一个 false → true
                         const auto before = kv.value().get<bool>();
                         kv.value() = true;
                         INFO("实例 " << id << " / 流 " << kv.key() << ":翻转值 == 原值(空转)");
@@ -730,7 +732,8 @@ TEST_CASE("[cep][instance-decl] flow_support 60 格逐键锁 + 出处可核 + �
                 if (i.value("id", std::string()) != id)
                     continue;
                 for (const auto& kv : i.at("flow_support").items()) {
-                    if (!efs.contains(kv.key()) || efs.at(kv.key()).get<bool>() != kv.value().get<bool>())
+                    if (!efs.contains(kv.key()) ||
+                        efs.at(kv.key()).get<bool>() != kv.value().get<bool>())
                         matched = false;
                 }
             }

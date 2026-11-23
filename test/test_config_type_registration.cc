@@ -18,8 +18,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 
@@ -32,8 +32,9 @@ namespace {
         return json{
             {"name", "valid_min"},
             {"modules",
-             json::array({json{{"name", "cpu"}, {"type", "CPUTLM"}},
-                          json{{"name", "mem"}, {"type", "MemoryTLM"}, {"params", {{"capacity_gb", 1}}}}})},
+             json::array(
+                 {json{{"name", "cpu"}, {"type", "CPUTLM"}},
+                  json{{"name", "mem"}, {"type", "MemoryTLM"}, {"params", {{"capacity_gb", 1}}}}})},
             {"connections", json::array()},
         };
     }
@@ -46,7 +47,8 @@ namespace {
 
 } // namespace
 
-TEST_CASE("AC-01: 全已注册类型的配置 ⇒ 装配成功（不误伤）", "[config][type-registry][registration]") {
+TEST_CASE("AC-01: 全已注册类型的配置 ⇒ 装配成功（不误伤）",
+          "[config][type-registry][registration]") {
     EventQueue eq;
     register_all();
     ModuleFactory factory(&eq);
@@ -60,7 +62,8 @@ TEST_CASE("AC-01: 全已注册类型的配置 ⇒ 装配成功（不误伤）", 
     REQUIRE(factory.getInstance("mem") != nullptr);
 }
 
-TEST_CASE("AC-02: 含未注册类型 ⇒ 装配失败 + 实例表零污染", "[config][type-registry][registration]") {
+TEST_CASE("AC-02: 含未注册类型 ⇒ 装配失败 + 实例表零污染",
+          "[config][type-registry][registration]") {
     EventQueue eq;
     register_all();
     ModuleFactory factory(&eq);
@@ -88,7 +91,8 @@ TEST_CASE("AC-02: 含未注册类型 ⇒ 装配失败 + 实例表零污染", "[c
     CHECK(factory.getInstance("bogus2") == nullptr);
 }
 
-TEST_CASE("AC-03: 失败后可重入 —— 同一 factory 再跑合法配置仍成功", "[config][type-registry][registration]") {
+TEST_CASE("AC-03: 失败后可重入 —— 同一 factory 再跑合法配置仍成功",
+          "[config][type-registry][registration]") {
     EventQueue eq;
     register_all();
     ModuleFactory factory(&eq);
@@ -108,7 +112,8 @@ TEST_CASE("AC-03: 失败后可重入 —— 同一 factory 再跑合法配置仍
     REQUIRE(factory.getInstance("mem") != nullptr);
 }
 
-TEST_CASE("AC-04: 三份曾含未注册类型的配置均可装配", "[config][type-registry][registration][from-config]") {
+TEST_CASE("AC-04: 三份曾含未注册类型的配置均可装配",
+          "[config][type-registry][registration][from-config]") {
     EventQueue eq;
     register_all();
 

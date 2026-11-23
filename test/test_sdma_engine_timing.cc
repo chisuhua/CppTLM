@@ -13,12 +13,12 @@
 #include <cstdint>
 #include <cstring>
 #include <vector>
-#include <nlohmann/json.hpp>
 #include "core/event_queue.hh"
 #include "tlm/gpu/dma_descriptor_mvp.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/gpu/sdma_engine_tlm.hh"
 #include <catch2/catch_all.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace tlm::gpu;
 using namespace bundles;
@@ -259,13 +259,13 @@ TEST_CASE("F2: SdmaEngineTLM.translate_latency 生效（两个合法值 ⇒ 完�
         return sdma.last_descriptor_complete_cycle() - submit_cycle;
     };
 
-    const uint64_t a = diff_with_latency(0);   // 0 + 4（descriptor pipeline）
-    const uint64_t b = diff_with_latency(10);  // 10 + 4
-    const uint64_t c = diff_with_latency(25);  // 25 + 4
+    const uint64_t a = diff_with_latency(0);  // 0 + 4（descriptor pipeline）
+    const uint64_t b = diff_with_latency(10); // 10 + 4
+    const uint64_t c = diff_with_latency(25); // 25 + 4
 
     CHECK(a == 4);
     CHECK(b == 14);
     CHECK(c == 29);
-    CHECK(b - a == 10);   // ★ 判别力：差值恰等于该键
+    CHECK(b - a == 10); // ★ 判别力：差值恰等于该键
     CHECK(c - b == 15);
 }

@@ -28,22 +28,21 @@ namespace {
              nlohmann::json::array(
                  {{{"type", "DGpuSoc"},
                    {"name", "soc"},
-                   {"modules", nlohmann::json::array(
-                                   {{{"type", "PcieEndpointIP"},
-                                     {"name", "pcie_ep"},
-                                     {"params",
-                                      {{"config_size", 4096},
-                                       {"bar_sizes", {4096, 16777216, 8589934592}}}}},
-                                    // `capacity_gb` 已落态②（容量由注入 backing 决定）
-                                    {{"type", "PcieMemoryDevice"},
-                                     {"name", "pcie_memory"}},
-                                    {{"type", "SdmaEngineTLM"},
-                                     {"name", "sdma"},
-                                     {"params", {{"max_inflight", 4}}}},
-                                    {{"type", "GmmuTLM"},
-                                     {"name", "gmmu"},
-                                     {"params", {{"page_size_bytes", 4096}}}},
-                                    {{"type", "CompletionRingTLM"}, {"name", "completion"}}})},
+                   {"modules",
+                    nlohmann::json::array(
+                        {{{"type", "PcieEndpointIP"},
+                          {"name", "pcie_ep"},
+                          {"params",
+                           {{"config_size", 4096}, {"bar_sizes", {4096, 16777216, 8589934592}}}}},
+                         // `capacity_gb` 已落态②（容量由注入 backing 决定）
+                         {{"type", "PcieMemoryDevice"}, {"name", "pcie_memory"}},
+                         {{"type", "SdmaEngineTLM"},
+                          {"name", "sdma"},
+                          {"params", {{"max_inflight", 4}}}},
+                         {{"type", "GmmuTLM"},
+                          {"name", "gmmu"},
+                          {"params", {{"page_size_bytes", 4096}}}},
+                         {{"type", "CompletionRingTLM"}, {"name", "completion"}}})},
                    {"connections", nlohmann::json::array()}}})},
             {"connections", nlohmann::json::array()}};
         return cfg;

@@ -287,8 +287,8 @@ namespace tlm::gpu {
             //    后者由 callback 按 TLB 命中/未命中给出）。
             //    ⛔ 此前该成员**只有写、没有读** ⇒ 该配置键零效果
             //    （verifier 验收 finding F2）⇒ 本行是它的**唯一消费点**。
-            last_descriptor_complete_cycle_ = getCurrentCycle() + last_tlb_latency_ +
-                                              translate_latency_ + kDescriptorBaseCycles;
+            last_descriptor_complete_cycle_ =
+                getCurrentCycle() + last_tlb_latency_ + translate_latency_ + kDescriptorBaseCycles;
             last_tlb_latency_ = 0; // 单次消费 (避免重复累加)
         }
 

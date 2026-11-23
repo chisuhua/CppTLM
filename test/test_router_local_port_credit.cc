@@ -3,69 +3,68 @@
 //           credit 流控）+ mesh 侧 credit 停滞可观测（D4）。对应 change
 //           `cpptlm-router-local-port-credit-exhaustion` 的 AC-01 / AC-02 / AC-03 / AC-07。
 // 作者 CppTLM Team / 日期 2026-11-17
+#include <cstdint>
 #include "bundles/noc_bundles_tlm.hh"
 #include "core/event_queue.hh"
 #include "tlm/router_tlm.hh"
 #include <catch2/catch_all.hpp>
-#include <cstdint>
 
 using namespace tlm;
 using FlitBundle = bundles::NoCFlitBundle;
 
 namespace {
 
-constexpr unsigned kLocal = static_cast<unsigned>(RouterPort::LOCAL);
-constexpr unsigned kEast = static_cast<unsigned>(RouterPort::EAST);
-constexpr unsigned kWest = static_cast<unsigned>(RouterPort::WEST);
+    constexpr unsigned kLocal = static_cast<unsigned>(RouterPort::LOCAL);
+    constexpr unsigned kEast = static_cast<unsigned>(RouterPort::EAST);
+    constexpr unsigned kWest = static_cast<unsigned>(RouterPort::WEST);
 
-/// 单 flit packet（HEAD_TAIL）—— 每 packet 唯一 transaction_id（`routing_table_` 以其为键）
-FlitBundle make_flit(std::uint64_t txid, std::uint32_t dst, unsigned vc) {
-    FlitBundle f;
-    f.transaction_id.write(txid);
-    f.src_node.write(0);
-    f.dst_node.write(dst);
-    f.vc_id.write(vc);
-    f.flit_type.write(FlitBundle::FLIT_HEAD_TAIL);
-    f.flit_index.write(0);
-    f.flit_count.write(1);
-    f.flit_category.write(FlitBundle::CATEGORY_REQUEST);
-    return f;
-}
-
-/// 读 `credit_stall_cycles` 标量（跨 (port, vc) 累计的停滞周期数）
-tlm_stats::Counter stall_cycles(RouterTLM& r) {
-    for (auto& [n, stat] : r.stats().stats()) {
-        if (n == "credit_stall_cycles") {
-            if (auto* s = dynamic_cast<tlm_stats::Scalar*>(stat.get()))
-                return s->value();
-        }
+    /// 单 flit packet（HEAD_TAIL）—— 每 packet 唯一 transaction_id（`routing_table_` 以其为键）
+    FlitBundle make_flit(std::uint64_t txid, std::uint32_t dst, unsigned vc) {
+        FlitBundle f;
+        f.transaction_id.write(txid);
+        f.src_node.write(0);
+        f.dst_node.write(dst);
+        f.vc_id.write(vc);
+        f.flit_type.write(FlitBundle::FLIT_HEAD_TAIL);
+        f.flit_index.write(0);
+        f.flit_count.write(1);
+        f.flit_category.write(FlitBundle::CATEGORY_REQUEST);
+        return f;
     }
-    return 0;
-}
 
-/// 每周期最多注入 1 个 flit（全局 1 flit/cycle）⇒ 输入 buffer 不会因超速而静默丢弃
-bool try_inject(RouterTLM& r, unsigned port, unsigned& injected, unsigned total,
-                std::uint64_t tx_base, std::uint32_t dst, unsigned vc) {
-    if (injected >= total || r.req_in()[port].valid())
-        return false;
-    r.req_in()[port].data() = make_flit(tx_base + injected, dst, vc);
-    r.req_in()[port].set_valid(true);
-    ++injected;
-    return true;
-}
+    /// 读 `credit_stall_cycles` 标量（跨 (port, vc) 累计的停滞周期数）
+    tlm_stats::Counter stall_cycles(RouterTLM& r) {
+        for (auto& [n, stat] : r.stats().stats()) {
+            if (n == "credit_stall_cycles") {
+                if (auto* s = dynamic_cast<tlm_stats::Scalar*>(stat.get()))
+                    return s->value();
+            }
+        }
+        return 0;
+    }
 
-/// 读出一个出向 flit（读后立即 clear_valid —— `OutputStreamAdapter::write` 不清 valid）
-bool try_drain(RouterTLM& r, unsigned port) {
-    if (!r.resp_out()[port].valid())
-        return false;
-    r.resp_out()[port].clear_valid();
-    return true;
-}
+    /// 每周期最多注入 1 个 flit（全局 1 flit/cycle）⇒ 输入 buffer 不会因超速而静默丢弃
+    bool try_inject(RouterTLM& r, unsigned port, unsigned& injected, unsigned total,
+                    std::uint64_t tx_base, std::uint32_t dst, unsigned vc) {
+        if (injected >= total || r.req_in()[port].valid())
+            return false;
+        r.req_in()[port].data() = make_flit(tx_base + injected, dst, vc);
+        r.req_in()[port].set_valid(true);
+        ++injected;
+        return true;
+    }
+
+    /// 读出一个出向 flit（读后立即 clear_valid —— `OutputStreamAdapter::write` 不清 valid）
+    bool try_drain(RouterTLM& r, unsigned port) {
+        if (!r.resp_out()[port].valid())
+            return false;
+        r.resp_out()[port].clear_valid();
+        return true;
+    }
 
 } // namespace
 
-TEST_CASE("RLC-1 (AC-01): LOCAL 端口 40 flit 全到 —— 无 8-flit 平台期",
-          "[router][credit][local]") {
+TEST_CASE("RLC-1 (AC-01): LOCAL 端口 40 flit 全到 —— 无 8-flit 平台期", "[router][credit][local]") {
     // ADR-X.16 D1：LOCAL 不参与 downstream credit 流控 ⇒ 连续投递不受 BUFFER_DEPTH 限制。
     // 旧行为下第 9 个 flit 会永停（credit 不归还），本用例即为该缺陷的判别力载体。
     EventQueue eq;

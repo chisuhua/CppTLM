@@ -23,8 +23,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 
@@ -42,15 +42,14 @@ namespace {
     /// @param child_params 内层 RouterTLM 的 params（缺 `node_x` 即「必填缺失」）
     json nested_cfg(json child_params) {
         return json{
-            {"modules",
-             json::array({json{{"name", "box"},
-                               {"type", "CpuCluster"},
-                               {"params", json::object()},
-                               {"modules",
-                                json::array({json{{"name", "inner_r"},
-                                                  {"type", "RouterTLM"},
-                                                  {"params", std::move(child_params)}}})},
-                               {"connections", json::array()}}})},
+            {"modules", json::array({json{
+                            {"name", "box"},
+                            {"type", "CpuCluster"},
+                            {"params", json::object()},
+                            {"modules", json::array({json{{"name", "inner_r"},
+                                                          {"type", "RouterTLM"},
+                                                          {"params", std::move(child_params)}}})},
+                            {"connections", json::array()}}})},
             {"connections", json::array()},
         };
     }
@@ -83,8 +82,7 @@ TEST_CASE("AC-05 反向: 嵌套容器内参数齐备 ⇒ 外层 instantiateAll �
     ModuleFactory factory(&eq);
 
     // 同一个嵌套结构，只是把 node_x 补齐 ⇒ 必须装配成功
-    const json cfg =
-        nested_cfg(json{{"node_x", 0}, {"node_y", 0}, {"mesh_x", 2}, {"mesh_y", 2}});
+    const json cfg = nested_cfg(json{{"node_x", 0}, {"node_y", 0}, {"mesh_x", 2}, {"mesh_y", 2}});
 
     REQUIRE(factory.instantiateAll(cfg));
 

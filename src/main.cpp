@@ -29,18 +29,19 @@
 using namespace tlm;
 
 void print_usage(const char* prog) {
-    std::cerr << "Usage: " << prog << " <config.json> [options]\n"
-              << "Options:\n"
-              << "  --stream-stats           Enable streaming statistics\n"
-              << "  --stream-interval <N>    Report interval in cycles (default: 10000)\n"
-              << "  --stream-path <path>     Output path for stats stream (default: "
-                 "output/stats_stream.jsonl)\n"
-              << "  --cycles <N>             Number of simulation cycles (default: 10000)\n"
-              << "  --f12b-ld                Enable F12b-LD MemoryBridge (PTX-EMU bridge)\n"
-              << "  --debug-config           Enable verbose config parsing output\n"
-              << "  --list-types [--json]    Print the runtime type registry and exit\n"
-              << "                           (--json: {\"count\":N,\"types\":[...]}；无 config 参数)\n"
-              << "  --help, -h               Show this help message\n";
+    std::cerr
+        << "Usage: " << prog << " <config.json> [options]\n"
+        << "Options:\n"
+        << "  --stream-stats           Enable streaming statistics\n"
+        << "  --stream-interval <N>    Report interval in cycles (default: 10000)\n"
+        << "  --stream-path <path>     Output path for stats stream (default: "
+           "output/stats_stream.jsonl)\n"
+        << "  --cycles <N>             Number of simulation cycles (default: 10000)\n"
+        << "  --f12b-ld                Enable F12b-LD MemoryBridge (PTX-EMU bridge)\n"
+        << "  --debug-config           Enable verbose config parsing output\n"
+        << "  --list-types [--json]    Print the runtime type registry and exit\n"
+        << "                           (--json: {\"count\":N,\"types\":[...]}；无 config 参数)\n"
+        << "  --help, -h               Show this help message\n";
 }
 
 // 类型注册集中在一处 —— 正常仿真路径与 `--list-types` 导出必须看到**同一个**注册集，
@@ -101,12 +102,14 @@ int main(int argc, char* argv[]) {
             //    若将来注册机制允许其它字符，此处必须补转义。
             std::cout << "{\"count\":" << types.size() << ",\"types\":[";
             for (std::size_t i = 0; i < types.size(); ++i) {
-                if (i != 0) std::cout << ',';
+                if (i != 0)
+                    std::cout << ',';
                 std::cout << '"' << types[i] << '"';
             }
             std::cout << "]}" << std::endl;
         } else {
-            for (const auto& t : types) std::cout << t << "\n";
+            for (const auto& t : types)
+                std::cout << t << "\n";
         }
         return 0;
     }

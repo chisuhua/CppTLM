@@ -30,21 +30,20 @@
 
 #include "cep_adr_parser.hh"
 
+#include "bundles/bundle_serialization.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "core/packet_pool.hh"
-#include "bundles/bundle_serialization.hh"
 #include "metrics/stats.hh"
 #include "tlm/cep/cep_mesh_interconnect.hh"
 #include "tlm/cep/cohif_nic.hh"
-#include "tlm/cep/stub_cache_endpoint.hh"
 #include "tlm/cep/cohif_responder.hh"
+#include "tlm/cep/stub_cache_endpoint.hh"
 #include "tlm/router_tlm.hh"
 
 #include <nlohmann/json.hpp>
 
 #include <cstdint>
-#include <cstdio>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -56,17 +55,17 @@ using namespace cpptlm;
 
 namespace {
 
-/// 端到端判据的**结果分类**（照 `test/cep_cohif_assembly_helper.hh:35-40` 的既有范式）
-enum class MeshOutcome {
-    AssemblyFailed,   ///< 装配本身失败(配置被拒)—— **不是**端到端判据的目标
-    NotInstantiated,  ///< 装配成功但拿不到模块实例
-    NotArrived,       ///< 装配成功、模块在位,但事务**没有**抵达对端 ← 反向 fixture 期望
-    Arrived,          ///< 事务**穿过** mesh 抵达对端 ← 正控期望
-};
+    /// 端到端判据的**结果分类**（照 `test/cep_cohif_assembly_helper.hh:35-40` 的既有范式）
+    enum class MeshOutcome {
+        AssemblyFailed,  ///< 装配本身失败(配置被拒)—— **不是**端到端判据的目标
+        NotInstantiated, ///< 装配成功但拿不到模块实例
+        NotArrived,      ///< 装配成功、模块在位,但事务**没有**抵达对端 ← 反向 fixture 期望
+        Arrived,         ///< 事务**穿过** mesh 抵达对端 ← 正控期望
+    };
 
-/// ⚠️ 平铺基线（**冻结副本**）：把 4 个 router 平铺在顶层 + 17 条 connection。
-///    它是 `cpptlm-cep-mesh-e2e-carrier` 归档时的绿基线，用于「层次化前后行为等价」比对。
-const char* FLAT_BASELINE = R"JSON({
+    /// ⚠️ 平铺基线（**冻结副本**）：把 4 个 router 平铺在顶层 + 17 条 connection。
+    ///    它是 `cpptlm-cep-mesh-e2e-carrier` 归档时的绿基线，用于「层次化前后行为等价」比对。
+    const char* FLAT_BASELINE = R"JSON({
   "modules": [
     { "name": "tg",   "type": "TrafficGenTLM",   "params": { "seed": 20261116 } },
     { "name": "w",    "type": "StubCacheEndpointTLM" },
@@ -101,161 +100,163 @@ const char* FLAT_BASELINE = R"JSON({
   ]
 })JSON";
 
-std::filesystem::path repo_root() {
-    std::filesystem::path p = std::filesystem::current_path();
-    for (int i = 0; i < 5; ++i) {
-        if (std::filesystem::exists(p / "configs") && std::filesystem::exists(p / "test")) {
-            return p;
+    std::filesystem::path repo_root() {
+        std::filesystem::path p = std::filesystem::current_path();
+        for (int i = 0; i < 5; ++i) {
+            if (std::filesystem::exists(p / "configs") && std::filesystem::exists(p / "test")) {
+                return p;
+            }
+            p = p.parent_path();
         }
-        p = p.parent_path();
+        return std::filesystem::current_path();
     }
-    return std::filesystem::current_path();
-}
 
-/// 加载层次化主拓扑并把**所有仓库根相对路径**绝对化
-/// ⚠️ `cep.protocol_instances` 与 `fabric.params.template` 都以「仓库根」为
-///    基准书写,而测试的 CWD 不固定 ⇒ 必须绝对化
-json load_hier_topology(const std::string& blueprint_override = "",
-                        bool emit_completions = true) {
-    const auto root = repo_root();
-    std::ifstream in(root / "configs" / "cep_mesh_e2e.json");
-    if (!in.good()) {
-        throw std::runtime_error("无法打开 mesh 拓扑配置");
-    }
-    json cfg = json::parse(in);
-    cfg["cep"]["protocol_instances"] =
-        (root / "include" / "tlm" / "cep" / "protocol_instances.json").string();
-
-    const std::string bp = blueprint_override.empty()
-                               ? (root / "configs" / "interconnect" / "cep_mesh_2x2.json").string()
-                               : blueprint_override;
-    for (auto& m : cfg["modules"]) {
-        if (m.value("type", "") == "CepMeshInterconnect") {
-            m["params"]["template"] = bp;
+    /// 加载层次化主拓扑并把**所有仓库根相对路径**绝对化
+    /// ⚠️ `cep.protocol_instances` 与 `fabric.params.template` 都以「仓库根」为
+    ///    基准书写,而测试的 CWD 不固定 ⇒ 必须绝对化
+    json load_hier_topology(const std::string& blueprint_override = "",
+                            bool emit_completions = true) {
+        const auto root = repo_root();
+        std::ifstream in(root / "configs" / "cep_mesh_e2e.json");
+        if (!in.good()) {
+            throw std::runtime_error("无法打开 mesh 拓扑配置");
         }
-        if (m.value("name", "") == "home") {
-            // ⚠️ `emit_completions = false` ⇒ **断开跨 mesh 回程** ⇒ 开环拓扑
-            //    (见 MESH-3a:等价性的权威判据面)
-            m["params"]["emit_completions"] = emit_completions;
+        json cfg = json::parse(in);
+        cfg["cep"]["protocol_instances"] =
+            (root / "include" / "tlm" / "cep" / "protocol_instances.json").string();
+
+        const std::string bp =
+            blueprint_override.empty()
+                ? (root / "configs" / "interconnect" / "cep_mesh_2x2.json").string()
+                : blueprint_override;
+        for (auto& m : cfg["modules"]) {
+            if (m.value("type", "") == "CepMeshInterconnect") {
+                m["params"]["template"] = bp;
+            }
+            if (m.value("name", "") == "home") {
+                // ⚠️ `emit_completions = false` ⇒ **断开跨 mesh 回程** ⇒ 开环拓扑
+                //    (见 MESH-3a:等价性的权威判据面)
+                m["params"]["emit_completions"] = emit_completions;
+            }
         }
+        return cfg;
     }
-    return cfg;
-}
 
-/// 平铺基线拓扑
-json load_flat_topology(bool emit_completions = true) {
-    json cfg = json::parse(FLAT_BASELINE);
-    cfg["cep"]["protocol_instances"] =
-        (repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json").string();
-    for (auto& m : cfg["modules"]) {
-        if (m.value("name", "") == "home") {
-            // ⚠️ 与层次化侧同口径:`emit_completions = false` ⇒ 开环(见 MESH-3a)
-            m["params"]["emit_completions"] = emit_completions;
+    /// 平铺基线拓扑
+    json load_flat_topology(bool emit_completions = true) {
+        json cfg = json::parse(FLAT_BASELINE);
+        cfg["cep"]["protocol_instances"] =
+            (repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json").string();
+        for (auto& m : cfg["modules"]) {
+            if (m.value("name", "") == "home") {
+                // ⚠️ 与层次化侧同口径:`emit_completions = false` ⇒ 开环(见 MESH-3a)
+                m["params"]["emit_completions"] = emit_completions;
+            }
         }
-    }
-    return cfg;
-}
-
-int64_t scalar_of(tlm_stats::StatGroup& g, const std::string& name) {
-    auto* s = dynamic_cast<tlm_stats::Scalar*>(g.findStat(name));
-    return s ? static_cast<int64_t>(s->value()) : -1;
-}
-
-/// 单个 router 的观测（flit 数 / hop 数）
-struct RouterObs {
-    int64_t flits = 0;
-    int64_t packets = 0;
-    int64_t hops = 0;
-};
-
-struct MeshRun {
-    MeshOutcome outcome = MeshOutcome::AssemblyFailed;
-    int64_t nic_a_sent = -1;
-    int64_t nic_a_recv = -1;
-    int64_t nic_b_sent = -1;
-    int64_t nic_b_recv = -1;
-    int64_t nic_a_dropped = -1;
-    int64_t nic_b_dropped = -1;
-    int64_t nic_a_credits_dropped = -1;  ///< AC-02: 过滤掉的 credit flit 数
-    int64_t nic_b_credits_dropped = -1;
-    int64_t nic_a_last_recv_hops = -1;   ///< AC-03: 最后到达**真 flit** 的 hop 数
-    int64_t nic_b_last_recv_dst = -1;
-    int64_t nic_b_last_recv_hops = -1;
-    int64_t stub_completions_in = -1;
-    int64_t stub_net_requests_out = -1;
-    int64_t home_requests_consumed = -1;
-    int64_t home_foreign_consumed = -1;
-    int64_t internal_router_count = -1;
-    std::vector<RouterObs> routers;  ///< r00, r01, r10, r11
-};
-
-/// router 观测：层次化从 `fabric` 内部取，平铺从顶层取（同一取值口径）
-RouterObs observe_router(tlm::RouterTLM* r) {
-    RouterObs o;
-    if (!r) return o;
-    o.flits = scalar_of(r->stats(), "flits_forwarded");
-    o.packets = scalar_of(r->stats(), "packets_forwarded");
-    o.hops = scalar_of(r->stats(), "total_hops");
-    return o;
-}
-
-MeshRun run_mesh(const json& cfg, int cycles) {
-    MeshRun out;
-    EventQueue eq;
-    ModuleFactory factory(&eq);
-    if (!factory.instantiateAll(cfg)) {
-        return out;
-    }
-    factory.startAllTicks();
-    eq.run(static_cast<uint64_t>(cycles));
-
-    auto* fabric = dynamic_cast<tlm::cep::CepMeshInterconnect*>(factory.getInstance("fabric"));
-    auto* nic_a = dynamic_cast<tlm::cep::CohIfNICTLM*>(factory.getInstance("nic_a"));
-    auto* nic_b = dynamic_cast<tlm::cep::CohIfNICTLM*>(factory.getInstance("nic_b"));
-    auto* stub = dynamic_cast<tlm::cep::StubCacheEndpointTLM*>(factory.getInstance("w"));
-    if (!nic_a || !nic_b || !stub) {
-        out.outcome = MeshOutcome::NotInstantiated;
-        return out;
+        return cfg;
     }
 
-    out.nic_a_sent = static_cast<int64_t>(nic_a->flits_sent());
-    out.nic_a_recv = static_cast<int64_t>(nic_a->flits_received());
-    out.nic_b_sent = static_cast<int64_t>(nic_b->flits_sent());
-    out.nic_b_recv = static_cast<int64_t>(nic_b->flits_received());
-    out.nic_a_dropped = static_cast<int64_t>(nic_a->dropped_unmapped());
-    out.nic_b_dropped = static_cast<int64_t>(nic_b->dropped_unmapped());
-    out.nic_a_credits_dropped = static_cast<int64_t>(nic_a->credits_dropped());
-    out.nic_b_credits_dropped = static_cast<int64_t>(nic_b->credits_dropped());
-    out.nic_a_last_recv_hops = static_cast<int64_t>(nic_a->last_recv_hops());
-    out.nic_b_last_recv_dst = static_cast<int64_t>(nic_b->last_recv_dst_node());
-    out.nic_b_last_recv_hops = static_cast<int64_t>(nic_b->last_recv_hops());
-    out.stub_completions_in = static_cast<int64_t>(stub->counters().net_completions_in);
-    out.stub_net_requests_out = static_cast<int64_t>(stub->counters().net_requests_out);
-    if (auto* h = dynamic_cast<tlm::cep::CohIfResponderTLM*>(factory.getInstance("home"))) {
-        out.home_requests_consumed = static_cast<int64_t>(h->counters().requests_consumed);
-        out.home_foreign_consumed = static_cast<int64_t>(h->counters().foreign_consumed);
+    int64_t scalar_of(tlm_stats::StatGroup& g, const std::string& name) {
+        auto* s = dynamic_cast<tlm_stats::Scalar*>(g.findStat(name));
+        return s ? static_cast<int64_t>(s->value()) : -1;
     }
 
-    for (const char* rn : {"r00", "r01", "r10", "r11"}) {
-        tlm::RouterTLM* r = nullptr;
+    /// 单个 router 的观测（flit 数 / hop 数）
+    struct RouterObs {
+        int64_t flits = 0;
+        int64_t packets = 0;
+        int64_t hops = 0;
+    };
+
+    struct MeshRun {
+        MeshOutcome outcome = MeshOutcome::AssemblyFailed;
+        int64_t nic_a_sent = -1;
+        int64_t nic_a_recv = -1;
+        int64_t nic_b_sent = -1;
+        int64_t nic_b_recv = -1;
+        int64_t nic_a_dropped = -1;
+        int64_t nic_b_dropped = -1;
+        int64_t nic_a_credits_dropped = -1; ///< AC-02: 过滤掉的 credit flit 数
+        int64_t nic_b_credits_dropped = -1;
+        int64_t nic_a_last_recv_hops = -1; ///< AC-03: 最后到达**真 flit** 的 hop 数
+        int64_t nic_b_last_recv_dst = -1;
+        int64_t nic_b_last_recv_hops = -1;
+        int64_t stub_completions_in = -1;
+        int64_t stub_net_requests_out = -1;
+        int64_t home_requests_consumed = -1;
+        int64_t home_foreign_consumed = -1;
+        int64_t internal_router_count = -1;
+        std::vector<RouterObs> routers; ///< r00, r01, r10, r11
+    };
+
+    /// router 观测：层次化从 `fabric` 内部取，平铺从顶层取（同一取值口径）
+    RouterObs observe_router(tlm::RouterTLM* r) {
+        RouterObs o;
+        if (!r)
+            return o;
+        o.flits = scalar_of(r->stats(), "flits_forwarded");
+        o.packets = scalar_of(r->stats(), "packets_forwarded");
+        o.hops = scalar_of(r->stats(), "total_hops");
+        return o;
+    }
+
+    MeshRun run_mesh(const json& cfg, int cycles) {
+        MeshRun out;
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        if (!factory.instantiateAll(cfg)) {
+            return out;
+        }
+        factory.startAllTicks();
+        eq.run(static_cast<uint64_t>(cycles));
+
+        auto* fabric = dynamic_cast<tlm::cep::CepMeshInterconnect*>(factory.getInstance("fabric"));
+        auto* nic_a = dynamic_cast<tlm::cep::CohIfNICTLM*>(factory.getInstance("nic_a"));
+        auto* nic_b = dynamic_cast<tlm::cep::CohIfNICTLM*>(factory.getInstance("nic_b"));
+        auto* stub = dynamic_cast<tlm::cep::StubCacheEndpointTLM*>(factory.getInstance("w"));
+        if (!nic_a || !nic_b || !stub) {
+            out.outcome = MeshOutcome::NotInstantiated;
+            return out;
+        }
+
+        out.nic_a_sent = static_cast<int64_t>(nic_a->flits_sent());
+        out.nic_a_recv = static_cast<int64_t>(nic_a->flits_received());
+        out.nic_b_sent = static_cast<int64_t>(nic_b->flits_sent());
+        out.nic_b_recv = static_cast<int64_t>(nic_b->flits_received());
+        out.nic_a_dropped = static_cast<int64_t>(nic_a->dropped_unmapped());
+        out.nic_b_dropped = static_cast<int64_t>(nic_b->dropped_unmapped());
+        out.nic_a_credits_dropped = static_cast<int64_t>(nic_a->credits_dropped());
+        out.nic_b_credits_dropped = static_cast<int64_t>(nic_b->credits_dropped());
+        out.nic_a_last_recv_hops = static_cast<int64_t>(nic_a->last_recv_hops());
+        out.nic_b_last_recv_dst = static_cast<int64_t>(nic_b->last_recv_dst_node());
+        out.nic_b_last_recv_hops = static_cast<int64_t>(nic_b->last_recv_hops());
+        out.stub_completions_in = static_cast<int64_t>(stub->counters().net_completions_in);
+        out.stub_net_requests_out = static_cast<int64_t>(stub->counters().net_requests_out);
+        if (auto* h = dynamic_cast<tlm::cep::CohIfResponderTLM*>(factory.getInstance("home"))) {
+            out.home_requests_consumed = static_cast<int64_t>(h->counters().requests_consumed);
+            out.home_foreign_consumed = static_cast<int64_t>(h->counters().foreign_consumed);
+        }
+
+        for (const char* rn : {"r00", "r01", "r10", "r11"}) {
+            tlm::RouterTLM* r = nullptr;
+            if (fabric) {
+                r = dynamic_cast<tlm::RouterTLM*>(fabric->getInternalInstance(rn));
+            } else {
+                r = dynamic_cast<tlm::RouterTLM*>(factory.getInstance(rn));
+            }
+            out.routers.push_back(observe_router(r));
+        }
         if (fabric) {
-            r = dynamic_cast<tlm::RouterTLM*>(fabric->getInternalInstance(rn));
-        } else {
-            r = dynamic_cast<tlm::RouterTLM*>(factory.getInstance(rn));
+            out.internal_router_count =
+                static_cast<int64_t>(fabric->getInternalFactory().getAllInstances().size());
         }
-        out.routers.push_back(observe_router(r));
-    }
-    if (fabric) {
-        out.internal_router_count =
-            static_cast<int64_t>(fabric->getInternalFactory().getAllInstances().size());
+
+        // 「抵达对端」= 对端 NIC 收到了 flit（不依赖到达顺序）
+        out.outcome = (out.nic_b_recv > 0) ? MeshOutcome::Arrived : MeshOutcome::NotArrived;
+        return out;
     }
 
-    // 「抵达对端」= 对端 NIC 收到了 flit（不依赖到达顺序）
-    out.outcome = (out.nic_b_recv > 0) ? MeshOutcome::Arrived : MeshOutcome::NotArrived;
-    return out;
-}
-
-}  // namespace
+} // namespace
 
 TEST_CASE("MESH-1 (J-1): 层次化拓扑可装配 —— 6 顶层实例 + fabric 内部 4 router",
           "[cep][e2e][mesh]") {
@@ -294,9 +295,9 @@ TEST_CASE("MESH-2 (J-2/J-3): 层次命名空间与端口暴露成立", "[cep][e2
         const char* internal;
     };
     const Exposed exposed[] = {
-        {"node0_req_in", "r00.req_in[4]"},  {"node0_req_out", "r00.req_out[4]"},
+        {"node0_req_in", "r00.req_in[4]"},   {"node0_req_out", "r00.req_out[4]"},
         {"node0_resp_in", "r00.resp_in[4]"}, {"node0_resp_out", "r00.resp_out[4]"},
-        {"node3_req_in", "r11.req_in[4]"},  {"node3_req_out", "r11.req_out[4]"},
+        {"node3_req_in", "r11.req_in[4]"},   {"node3_req_out", "r11.req_out[4]"},
         {"node3_resp_in", "r11.resp_in[4]"}, {"node3_resp_out", "r11.resp_out[4]"},
     };
     for (const auto& e : exposed) {
@@ -305,8 +306,7 @@ TEST_CASE("MESH-2 (J-2/J-3): 层次命名空间与端口暴露成立", "[cep][e2
     }
 }
 
-TEST_CASE("MESH-3a (AC-05): **开环**下层次化与平铺的 mesh 转发语义逐项相等",
-          "[cep][e2e][mesh]") {
+TEST_CASE("MESH-3a (AC-05): **开环**下层次化与平铺的 mesh 转发语义逐项相等", "[cep][e2e][mesh]") {
     // ⚠️ **开环** = `home.emit_completions = false` ⇒ 断开跨 mesh 回程 ⇒ mesh 上只剩
     //    单向流量 ⇒ 转发计数**只由注入决定** ⇒ 两侧输入相同 ⇒ 输出必须相同。
     //    (闭环下两侧的**注入流本身**就因反馈回路而不同 ⇒ 比较输出总量在逻辑上不成立,
@@ -338,8 +338,7 @@ TEST_CASE("MESH-3a (AC-05): **开环**下层次化与平铺的 mesh 转发语义
     REQUIRE(hier.internal_router_count == 4);
 }
 
-TEST_CASE("MESH-3b (AC-05): **闭环**下层次化与平铺各自的 mesh 不变量成立",
-          "[cep][e2e][mesh]") {
+TEST_CASE("MESH-3b (AC-05): **闭环**下层次化与平铺各自的 mesh 不变量成立", "[cep][e2e][mesh]") {
     // ⚠️ 闭环下**两侧的注入流本身**就因反馈回路而不同(实测 20 vs 19)⇒ 比较输出
     //    总量在逻辑上不成立 ⇒ 此处只断言各自的**不变量**;跨装配的等价性由
     //    MESH-3a(开环)承担(见本 change 的 `design.md` D-3)。
@@ -353,10 +352,10 @@ TEST_CASE("MESH-3b (AC-05): **闭环**下层次化与平铺各自的 mesh 不变
         REQUIRE(r->routers.size() == 4);
         REQUIRE(r->routers[0].flits > 0);
         REQUIRE(r->routers[3].flits > 0);
-        REQUIRE(r->routers[3].hops > r->routers[3].flits);  // 确实多跳(非直连)
-        REQUIRE(r->nic_a_dropped == 0);                       // 无静默丢弃
+        REQUIRE(r->routers[3].hops > r->routers[3].flits); // 确实多跳(非直连)
+        REQUIRE(r->nic_a_dropped == 0);                    // 无静默丢弃
         REQUIRE(r->nic_b_dropped == 0);
-        REQUIRE(r->nic_b_recv > 0);                           // 对端确实收到
+        REQUIRE(r->nic_b_recv > 0); // 对端确实收到
     }
     // 层次化的结构等价性:互联件收进容器 ⇒ 顶层不再有 router,内部 4 个在位
     REQUIRE(hier.internal_router_count == 4);
@@ -370,8 +369,7 @@ TEST_CASE("MESH-4 (J-4b): Completion 经 mesh 回程抵达 stub", "[cep][e2e][me
     REQUIRE(r.nic_a_recv > 0);
 }
 
-TEST_CASE("MESH-5 (J-5): 决定性变异 —— 蓝图断开环边必红,且**按正确原因**红",
-          "[cep][e2e][mesh]") {
+TEST_CASE("MESH-5 (J-5): 决定性变异 —— 蓝图断开环边必红,且**按正确原因**红", "[cep][e2e][mesh]") {
     // ⚠️ 层次化后,变异作用于**蓝图**而非主拓扑 —— 这正是「换形态只改蓝图」的能力体现。
     const auto broken = std::filesystem::path("/tmp/opencode/cep_mesh_2x2_broken.json");
     std::filesystem::create_directories(broken.parent_path());
@@ -408,10 +406,14 @@ TEST_CASE("MESH-6 (AC-07): 换蓝图复用 —— 同一容器装配 1×2 蓝图
     cfg["modules"] = json::array({
         json{{"name", "fabric"},
              {"type", "CepMeshInterconnect"},
-             {"params", {{"template", (root / "configs" / "interconnect" / "cep_mesh_1x2.json").string()}}},
-             {"outputs", json::array({json{{"internal", "r01.req_out[4]"}, {"external", "top_req_out"}}})},
-             {"inputs", json::array({json{{"internal", "r00.req_in[4]"}, {"external", "top_req_in"}}})}},
-        json{{"name", "peer"}, {"type", "RouterTLM"},
+             {"params",
+              {{"template", (root / "configs" / "interconnect" / "cep_mesh_1x2.json").string()}}},
+             {"outputs",
+              json::array({json{{"internal", "r01.req_out[4]"}, {"external", "top_req_out"}}})},
+             {"inputs",
+              json::array({json{{"internal", "r00.req_in[4]"}, {"external", "top_req_in"}}})}},
+        json{{"name", "peer"},
+             {"type", "RouterTLM"},
              {"params", {{"node_x", 0}, {"node_y", 0}, {"mesh_x", 1}, {"mesh_y", 2}}}},
     });
     cfg["connections"] = json::array({
@@ -476,17 +478,17 @@ TEST_CASE("MESH-7 (AC-01): 网络 ingress 丢弃 credit flit —— 不计数 / 
     nic.pe_resp_out().clear_valid();
 
     // ── 第二步：credit flit ⇒ 三面零变化 + 丢弃计数 +1 ──
-    Flit credit;  // ⚠️ `dst_node` / `hops` 保持默认 0（与 `fill_credit` 一致）
-    credit.transaction_id.write(7);  // 故意复用同一事务号：排除「因字段不同而蒙对」
+    Flit credit;                    // ⚠️ `dst_node` / `hops` 保持默认 0（与 `fill_credit` 一致）
+    credit.transaction_id.write(7); // 故意复用同一事务号：排除「因字段不同而蒙对」
     credit.flit_type.write(Flit::FLIT_HEAD_TAIL);
     credit.flit_category.write(Flit::CATEGORY_CREDIT);
     inject(credit);
 
     REQUIRE(nic.credits_dropped() == 1);
-    REQUIRE(nic.flits_received() == 1);        // 未计入
-    REQUIRE(nic.last_recv_dst_node() == 3);    // 未被覆写为 0
-    REQUIRE(nic.last_recv_hops() == 2);        // 未被覆写为 0
-    REQUIRE_FALSE(nic.pe_resp_out().valid());  // 未产出伪 Completion
+    REQUIRE(nic.flits_received() == 1);       // 未计入
+    REQUIRE(nic.last_recv_dst_node() == 3);   // 未被覆写为 0
+    REQUIRE(nic.last_recv_hops() == 2);       // 未被覆写为 0
+    REQUIRE_FALSE(nic.pe_resp_out().valid()); // 未产出伪 Completion
 }
 
 TEST_CASE("MESH-8 (AC-02/AC-03): credit 不再污染 NIC 侧观测 —— 层次化与平铺各自成立",
@@ -517,8 +519,9 @@ TEST_CASE("MESH-8 (AC-02/AC-03): credit 不再污染 NIC 侧观测 —— 层次
 TEST_CASE("MESH-9 (AC-07): 伪 Completion 消失 —— PE 侧零 foreign + 完成数不多于真实事务数",
           "[cep][e2e][mesh][credit]") {
     // ⚠️ 判别力来自「修复前必红」的对照实测(临时关掉过滤测得):
-    //    修复前 home.foreign_consumed = 7 且 w.net_completions_in = 11/12 > home.requests_consumed = 7
-    //    修复后 home.foreign_consumed = 0 且 w.net_completions_in = 5/7 <= home.requests_consumed = 8/7
+    //    修复前 home.foreign_consumed = 7 且 w.net_completions_in = 11/12 > home.requests_consumed
+    //    = 7 修复后 home.foreign_consumed = 0 且 w.net_completions_in = 5/7 <=
+    //    home.requests_consumed = 8/7
     const MeshRun hier = run_mesh(load_hier_topology(), 300);
     const MeshRun flat = run_mesh(load_flat_topology(), 300);
 

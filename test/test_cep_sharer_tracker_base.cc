@@ -1000,11 +1000,11 @@ TEST_CASE("CEP SharerTracker: IC1 —— caps 4 字段是 enum 类型且取值 �
 TEST_CASE("CEP SharerTracker: responder 位宽常量与掩码数值锚", "[cep][sharer-tracker]") {
     // ① 阶段 1「未扩容」状态被机器钉死(per `ADR-CEP-21` V1-6 的自认真空)
     INFO("kResponderMappedBits 实测 = " << cep::kResponderMappedBits
-         << "(期望 4;非 4 ⇒ `ADR-CEP-21` 阶段 2 已被执行或被误改)");
+                                        << "(期望 4;非 4 ⇒ `ADR-CEP-21` 阶段 2 已被执行或被误改)");
     REQUIRE(cep::kResponderMappedBits == 4u);
 
     // ② 掩码数值锚(⛔ 非恒等式 —— 恒等式是定义复述 ⇒ 零判别力)
-    INFO("kMappedResponderMask 实测 = 0x" << std::hex << cep::kMappedResponderMask
-         << std::dec << "(期望 0xF;≠ 0xF ⇒ 掩码语义已漂移,而文本锚闸照绿)");
+    INFO("kMappedResponderMask 实测 = 0x" << std::hex << cep::kMappedResponderMask << std::dec
+                                          << "(期望 0xF;≠ 0xF ⇒ 掩码语义已漂移,而文本锚闸照绿)");
     REQUIRE(cep::kMappedResponderMask == 0xFu);
 }

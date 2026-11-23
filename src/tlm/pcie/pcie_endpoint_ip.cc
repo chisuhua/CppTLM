@@ -389,8 +389,7 @@ namespace tlm::pcie {
 
         warn_unconsumed(params, {"axi_adapter", "link_layer", "phy_digital", "sr_iov",
                                  "transaction_layer", "bypass_mode", "pm_cap_control",
-                                 "bar0_registers", "bar_sizes", "config_size",
-                                 "resizable_bars"});
+                                 "bar0_registers", "bar_sizes", "config_size", "resizable_bars"});
 
         // ── 已消费键的**统一登记**（change `cpptlm-module-param-migrate-batch2` T1.7）
         //
@@ -419,8 +418,7 @@ namespace tlm::pcie {
         //    ⛔ **不得**使装配失败（per `ADR-DGPU-15` §2.2 四态表的态③）。
         for (const char* k : {"axi_adapter", "link_layer", "phy_digital", "sr_iov",
                               "transaction_layer", "bypass_mode", "pm_cap_control",
-                              "bar0_registers", "bar_sizes", "config_size",
-                              "resizable_bars"}) {
+                              "bar0_registers", "bar_sizes", "config_size", "resizable_bars"}) {
             ignore_param(k);
         }
     }

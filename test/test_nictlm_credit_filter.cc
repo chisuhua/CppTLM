@@ -26,66 +26,67 @@ using Flit = bundles::NoCFlitBundle;
 
 namespace {
 
-/// 读一个 Scalar 统计的值（找不到 ⇒ -1）—— 手法照既有 `test_noc_mesh_binding_semantics.cc`
-int64_t scalar_of(tlm_stats::StatGroup& g, const std::string& name) {
-    auto* s = dynamic_cast<tlm_stats::Scalar*>(g.findStat(name));
-    return s ? static_cast<int64_t>(s->value()) : -1;
-}
+    /// 读一个 Scalar 统计的值（找不到 ⇒ -1）—— 手法照既有 `test_noc_mesh_binding_semantics.cc`
+    int64_t scalar_of(tlm_stats::StatGroup& g, const std::string& name) {
+        auto* s = dynamic_cast<tlm_stats::Scalar*>(g.findStat(name));
+        return s ? static_cast<int64_t>(s->value()) : -1;
+    }
 
-/// 真响应 flit（`CATEGORY_RESPONSE` · `FLIT_HEAD_TAIL`）—— 走 `reassemble` 的
-/// `is_new_packet` 分支 ⇒ 产出恰好一条 `pe_resp_out` 响应
-Flit make_resp_flit(std::uint64_t tid, std::uint64_t data) {
-    Flit f;
-    f.transaction_id.write(tid);
-    f.src_node.write(0);
-    f.dst_node.write(1);
-    f.address.write(0x1000);
-    f.data.write(data);
-    f.size.write(8);
-    f.vc_id.write(0);
-    f.flit_type.write(Flit::FLIT_HEAD_TAIL);
-    f.flit_index.write(0);
-    f.flit_count.write(1);
-    f.hops.write(0);
-    f.flit_category.write(Flit::CATEGORY_RESPONSE);
-    f.is_ok.write(1);
-    return f;
-}
+    /// 真响应 flit（`CATEGORY_RESPONSE` · `FLIT_HEAD_TAIL`）—— 走 `reassemble` 的
+    /// `is_new_packet` 分支 ⇒ 产出恰好一条 `pe_resp_out` 响应
+    Flit make_resp_flit(std::uint64_t tid, std::uint64_t data) {
+        Flit f;
+        f.transaction_id.write(tid);
+        f.src_node.write(0);
+        f.dst_node.write(1);
+        f.address.write(0x1000);
+        f.data.write(data);
+        f.size.write(8);
+        f.vc_id.write(0);
+        f.flit_type.write(Flit::FLIT_HEAD_TAIL);
+        f.flit_index.write(0);
+        f.flit_count.write(1);
+        f.hops.write(0);
+        f.flit_category.write(Flit::CATEGORY_RESPONSE);
+        f.is_ok.write(1);
+        return f;
+    }
 
-/// credit flit —— 形状照 `BundleDirectionTraits<NoCFlitBundle>::fill_credit`
-/// （`vc_id` + `flit_category = CATEGORY_CREDIT` + `flit_type = FLIT_HEAD_TAIL`）
-Flit make_credit_flit(std::uint64_t tid, std::uint8_t flit_type) {
-    Flit f;
-    f.transaction_id.write(tid);
-    f.vc_id.write(0);
-    f.flit_category.write(Flit::CATEGORY_CREDIT);
-    f.flit_type.write(flit_type);
-    f.flit_index.write(0);
-    f.flit_count.write(1);
-    return f;
-}
+    /// credit flit —— 形状照 `BundleDirectionTraits<NoCFlitBundle>::fill_credit`
+    /// （`vc_id` + `flit_category = CATEGORY_CREDIT` + `flit_type = FLIT_HEAD_TAIL`）
+    Flit make_credit_flit(std::uint64_t tid, std::uint8_t flit_type) {
+        Flit f;
+        f.transaction_id.write(tid);
+        f.vc_id.write(0);
+        f.flit_category.write(Flit::CATEGORY_CREDIT);
+        f.flit_type.write(flit_type);
+        f.flit_index.write(0);
+        f.flit_count.write(1);
+        return f;
+    }
 
-/// 向 NICTLM 的网络 ingress 注入 1 个 flit（裸模块注入路径：
-/// `InputStreamAdapter::data()` + `set_valid(true)`，随后 `tick()` 消费）
-void inject(tlm::NICTLM& nic, const Flit& f) {
-    nic.net_resp_in().data() = f;
-    nic.net_resp_in().set_valid(true);
-}
+    /// 向 NICTLM 的网络 ingress 注入 1 个 flit（裸模块注入路径：
+    /// `InputStreamAdapter::data()` + `set_valid(true)`，随后 `tick()` 消费）
+    void inject(tlm::NICTLM& nic, const Flit& f) {
+        nic.net_resp_in().data() = f;
+        nic.net_resp_in().set_valid(true);
+    }
 
-/// 向 CohIfNICTLM 的网络 ingress 注入 1 个 flit（与上面同款路径）
-void inject(tlm::cep::CohIfNICTLM& nic, const Flit& f) {
-    nic.net_resp_in().data() = f;
-    nic.net_resp_in().set_valid(true);
-}
+    /// 向 CohIfNICTLM 的网络 ingress 注入 1 个 flit（与上面同款路径）
+    void inject(tlm::cep::CohIfNICTLM& nic, const Flit& f) {
+        nic.net_resp_in().data() = f;
+        nic.net_resp_in().set_valid(true);
+    }
 
-}  // namespace
+} // namespace
 
 // ────────────────────────────────────────────────────────────────────────────
 // AC-01 —— **带判别力**的序列：先证明「过滤器在跑」（真响应 flit 走完全程），
 //          再注入同 tid 的 credit ⇒ 三面**保持** + 丢弃计数 == 1。
 //          ⛔ 不得写成「注入前计数为 0 ⇒ 注入后仍为 0」（空断言陷阱）。
 // ────────────────────────────────────────────────────────────────────────────
-TEST_CASE("NIC-CREDIT-1: 注入 credit flit ⇒ 计数 / 重组 / 业务流三面零变化", "[nictlm][credit][filter]") {
+TEST_CASE("NIC-CREDIT-1: 注入 credit flit ⇒ 计数 / 重组 / 业务流三面零变化",
+          "[nictlm][credit][filter]") {
     EventQueue eq;
     tlm::NICTLM nic("nic", &eq, /*node_id=*/0, /*mesh_x=*/2, /*mesh_y=*/1);
 
@@ -106,9 +107,9 @@ TEST_CASE("NIC-CREDIT-1: 注入 credit flit ⇒ 计数 / 重组 / 业务流三�
     inject(nic, make_credit_flit(kTid, Flit::FLIT_HEAD_TAIL));
     nic.tick();
 
-    REQUIRE(scalar_of(*g, "flits_received") == 1);    // 不变（credit 不计入）
-    REQUIRE(scalar_of(*g, "packets_received") == 1);  // 不变（credit 不触发重组）
-    REQUIRE_FALSE(nic.pe_resp_out().valid());         // 不产出垃圾响应
+    REQUIRE(scalar_of(*g, "flits_received") == 1);   // 不变（credit 不计入）
+    REQUIRE(scalar_of(*g, "packets_received") == 1); // 不变（credit 不触发重组）
+    REQUIRE_FALSE(nic.pe_resp_out().valid());        // 不产出垃圾响应
     REQUIRE(nic.credits_dropped() == 1);             // 丢弃计数
 
     // ③ 观测面：stat group 暴露**同名**标量（与访问器同名）
@@ -208,48 +209,48 @@ TEST_CASE("NIC-CREDIT-3: 同 tid 的 credit flit 不劫持在途包状态", "[ni
 // ────────────────────────────────────────────────────────────────────────────
 namespace {
 
-json build_e2e_topology() {
-    json mods = json::array();
-    mods.push_back({{"name", "cpu0"}, {"type", "CPUTLM"}});
-    mods.push_back({{"name", "ni0"},
-                    {"type", "NICTLM"},
-                    {"params",
-                     {{"node_id", 0},
-                      {"mesh_x", 2},
-                      {"mesh_y", 1},
-                      {"address_regions",
-                       json::array({{{"base", "0x1000"},
-                                     {"size", "0x1000"},
-                                     {"target_node", 1}}})}}}});
-    mods.push_back({{"name", "ni1"},
-                    {"type", "NICTLM"},
-                    {"params", {{"node_id", 1}, {"mesh_x", 2}, {"mesh_y", 1}}}});
-    mods.push_back({{"name", "r0"},
-                    {"type", "RouterTLM"},
-                    {"params", {{"node_x", 0}, {"node_y", 0}, {"mesh_x", 2}, {"mesh_y", 1}}}});
-    mods.push_back({{"name", "r1"},
-                    {"type", "RouterTLM"},
-                    {"params", {{"node_x", 1}, {"node_y", 0}, {"mesh_x", 2}, {"mesh_y", 1}}}});
+    json build_e2e_topology() {
+        json mods = json::array();
+        mods.push_back({{"name", "cpu0"}, {"type", "CPUTLM"}});
+        mods.push_back(
+            {{"name", "ni0"},
+             {"type", "NICTLM"},
+             {"params",
+              {{"node_id", 0},
+               {"mesh_x", 2},
+               {"mesh_y", 1},
+               {"address_regions",
+                json::array({{{"base", "0x1000"}, {"size", "0x1000"}, {"target_node", 1}}})}}}});
+        mods.push_back({{"name", "ni1"},
+                        {"type", "NICTLM"},
+                        {"params", {{"node_id", 1}, {"mesh_x", 2}, {"mesh_y", 1}}}});
+        mods.push_back({{"name", "r0"},
+                        {"type", "RouterTLM"},
+                        {"params", {{"node_x", 0}, {"node_y", 0}, {"mesh_x", 2}, {"mesh_y", 1}}}});
+        mods.push_back({{"name", "r1"},
+                        {"type", "RouterTLM"},
+                        {"params", {{"node_x", 1}, {"node_y", 0}, {"mesh_x", 2}, {"mesh_y", 1}}}});
 
-    json conns = json::array();
-    auto add = [&](const char* s, const char* d) {
-        conns.push_back({{"src", s}, {"dst", d}, {"latency", 1}, {"bandwidth", 100}});
-    };
-    add("cpu0", "ni0.0");
-    add("ni0.0", "cpu0");
-    add("ni0.1", "r0.4");
-    add("r0.4", "ni0.1");
-    add("r0.1", "r1.3");
-    add("r1.3", "r0.1");
-    add("r1.4", "ni1.1");
-    add("ni1.1", "r1.4");
+        json conns = json::array();
+        auto add = [&](const char* s, const char* d) {
+            conns.push_back({{"src", s}, {"dst", d}, {"latency", 1}, {"bandwidth", 100}});
+        };
+        add("cpu0", "ni0.0");
+        add("ni0.0", "cpu0");
+        add("ni0.1", "r0.4");
+        add("r0.4", "ni0.1");
+        add("r0.1", "r1.3");
+        add("r1.3", "r0.1");
+        add("r1.4", "ni1.1");
+        add("ni1.1", "r1.4");
 
-    return json{{"modules", mods}, {"connections", conns}};
-}
+        return json{{"modules", mods}, {"connections", conns}};
+    }
 
-}  // namespace
+} // namespace
 
-TEST_CASE("NIC-CREDIT-4: 端到端 —— credit 抵达 NIC 且被丢弃，计数零污染", "[nictlm][credit][filter][e2e]") {
+TEST_CASE("NIC-CREDIT-4: 端到端 —— credit 抵达 NIC 且被丢弃，计数零污染",
+          "[nictlm][credit][filter][e2e]") {
     EventQueue eq;
     ModuleFactory factory(&eq);
     REQUIRE(factory.instantiateAll(build_e2e_topology()));

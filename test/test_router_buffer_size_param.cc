@@ -12,12 +12,12 @@
 //         4 个 in_port 汇聚到同一 LOCAL 出口 ⇒ 消费 1/cycle 远慢于注入 4/cycle
 //         ⇒ 首轮即填满缓冲 ⇒ 超出部分被静默丢弃。
 // 作者 CppTLM Team / 日期 2026-11-17
+#include <cstdint>
 #include "bundles/noc_bundles_tlm.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "tlm/router_tlm.hh"
 #include <catch2/catch_all.hpp>
-#include <cstdint>
 #include <nlohmann/json.hpp>
 
 using namespace tlm;
@@ -26,84 +26,85 @@ using json = nlohmann::json;
 
 namespace {
 
-constexpr unsigned kLocal = static_cast<unsigned>(RouterPort::LOCAL);
-constexpr unsigned kEast = static_cast<unsigned>(RouterPort::EAST);
-/// 4 个 mesh 向 in_port（NORTH/EAST/SOUTH/WEST）—— 它们的 flit 汇聚到同一 out_port(LOCAL)
-constexpr unsigned kInjectPorts = 4;
+    constexpr unsigned kLocal = static_cast<unsigned>(RouterPort::LOCAL);
+    constexpr unsigned kEast = static_cast<unsigned>(RouterPort::EAST);
+    /// 4 个 mesh 向 in_port（NORTH/EAST/SOUTH/WEST）—— 它们的 flit 汇聚到同一 out_port(LOCAL)
+    constexpr unsigned kInjectPorts = 4;
 
-FlitBundle make_flit(std::uint64_t txid, std::uint32_t dst, unsigned vc) {
-    FlitBundle f;
-    f.transaction_id.write(txid);
-    f.src_node.write(0);
-    f.dst_node.write(dst);
-    f.vc_id.write(vc);
-    f.flit_type.write(FlitBundle::FLIT_HEAD_TAIL);
-    f.flit_index.write(0);
-    f.flit_count.write(1);
-    f.flit_category.write(FlitBundle::CATEGORY_REQUEST);
-    return f;
-}
+    FlitBundle make_flit(std::uint64_t txid, std::uint32_t dst, unsigned vc) {
+        FlitBundle f;
+        f.transaction_id.write(txid);
+        f.src_node.write(0);
+        f.dst_node.write(dst);
+        f.vc_id.write(vc);
+        f.flit_type.write(FlitBundle::FLIT_HEAD_TAIL);
+        f.flit_index.write(0);
+        f.flit_count.write(1);
+        f.flit_category.write(FlitBundle::CATEGORY_REQUEST);
+        return f;
+    }
 
-/// 从 4 个 in_port **每周期各注入 1 个** flit（`dst` = 本节点 ⇒ 全部路由到 LOCAL）：
-/// 注入 4 flit/cycle vs egress 1 flit/cycle ⇒ 净积压 ⇒ 每 buffer 超过 `buffer_depth_` 即丢弃。
-/// @param inject_per_port 每个 port 注入多少个（总量 = 4 × 该值）
-/// @return `resp_out[LOCAL]` 实际读到的 flit 数
-std::size_t inject_to_local(RouterTLM& r, std::size_t inject_per_port, unsigned vc = 0) {
-    std::size_t per_port_injected[kInjectPorts] = {0, 0, 0, 0};
-    std::size_t drained = 0;
-    std::uint64_t txid = 100000;
+    /// 从 4 个 in_port **每周期各注入 1 个** flit（`dst` = 本节点 ⇒ 全部路由到 LOCAL）：
+    /// 注入 4 flit/cycle vs egress 1 flit/cycle ⇒ 净积压 ⇒ 每 buffer 超过 `buffer_depth_` 即丢弃。
+    /// @param inject_per_port 每个 port 注入多少个（总量 = 4 × 该值）
+    /// @return `resp_out[LOCAL]` 实际读到的 flit 数
+    std::size_t inject_to_local(RouterTLM& r, std::size_t inject_per_port, unsigned vc = 0) {
+        std::size_t per_port_injected[kInjectPorts] = {0, 0, 0, 0};
+        std::size_t drained = 0;
+        std::uint64_t txid = 100000;
 
-    // 周期预算：注入阶段 4×K 周期 + 排空阶段（最多 4×K 个 flit，egress 1/cycle）
-    const unsigned budget = static_cast<unsigned>(8 * inject_per_port + 128);
-    for (unsigned cyc = 0; cyc < budget; ++cyc) {
-        for (unsigned p = 0; p < kInjectPorts; ++p) {
-            if (per_port_injected[p] < inject_per_port) {
-                r.req_in()[p].data() = make_flit(txid++, 0, vc);
-                r.req_in()[p].set_valid(true);
-                ++per_port_injected[p];
+        // 周期预算：注入阶段 4×K 周期 + 排空阶段（最多 4×K 个 flit，egress 1/cycle）
+        const unsigned budget = static_cast<unsigned>(8 * inject_per_port + 128);
+        for (unsigned cyc = 0; cyc < budget; ++cyc) {
+            for (unsigned p = 0; p < kInjectPorts; ++p) {
+                if (per_port_injected[p] < inject_per_port) {
+                    r.req_in()[p].data() = make_flit(txid++, 0, vc);
+                    r.req_in()[p].set_valid(true);
+                    ++per_port_injected[p];
+                }
+            }
+            r.tick();
+            if (r.resp_out()[kLocal].valid()) {
+                ++drained;
+                r.resp_out()[kLocal].clear_valid();
             }
         }
-        r.tick();
-        if (r.resp_out()[kLocal].valid()) {
-            ++drained;
-            r.resp_out()[kLocal].clear_valid();
-        }
+        return drained;
     }
-    return drained;
-}
 
-/// 向 **mesh 向**（EAST 口）注入 —— 裸 router（`adapter_ == nullptr`）⇒ credit 永不归还
-/// ⇒ 转发数封顶于该口的 **credit 预算**（= `buffer_depth_`）
-std::size_t inject_to_east(RouterTLM& r, std::size_t inject_count) {
-    std::size_t injected = 0;
-    std::size_t drained = 0;
-    std::uint64_t txid = 200000;
+    /// 向 **mesh 向**（EAST 口）注入 —— 裸 router（`adapter_ == nullptr`）⇒ credit 永不归还
+    /// ⇒ 转发数封顶于该口的 **credit 预算**（= `buffer_depth_`）
+    std::size_t inject_to_east(RouterTLM& r, std::size_t inject_count) {
+        std::size_t injected = 0;
+        std::size_t drained = 0;
+        std::uint64_t txid = 200000;
 
-    for (unsigned cyc = 0; cyc < 4000 && drained < inject_count + 64; ++cyc) {
-        if (injected < inject_count) {
-            r.req_in()[0].data() = make_flit(txid++, 1, 0); // dst = node(1,0) ⇒ EAST
-            r.req_in()[0].set_valid(true);
-            ++injected;
+        for (unsigned cyc = 0; cyc < 4000 && drained < inject_count + 64; ++cyc) {
+            if (injected < inject_count) {
+                r.req_in()[0].data() = make_flit(txid++, 1, 0); // dst = node(1,0) ⇒ EAST
+                r.req_in()[0].set_valid(true);
+                ++injected;
+            }
+            r.tick();
+            if (r.resp_out()[kEast].valid()) {
+                ++drained;
+                r.resp_out()[kEast].clear_valid();
+            }
         }
-        r.tick();
-        if (r.resp_out()[kEast].valid()) {
-            ++drained;
-            r.resp_out()[kEast].clear_valid();
-        }
+        return drained;
     }
-    return drained;
-}
 
-/// 构造单 router 的最小 config（`params` 可注入 `buffer_size`）
-json make_router_config(bool with_buffer_size, int buffer_size = 0) {
-    json cfg;
-    json params{{"node_x", 0}, {"node_y", 0}, {"mesh_x", 2}, {"mesh_y", 2}};
-    if (with_buffer_size)
-        params["buffer_size"] = buffer_size;
-    cfg["modules"] = json::array({json{{"name", "r0"}, {"type", "RouterTLM"}, {"params", params}}});
-    cfg["connections"] = json::array();
-    return cfg;
-}
+    /// 构造单 router 的最小 config（`params` 可注入 `buffer_size`）
+    json make_router_config(bool with_buffer_size, int buffer_size = 0) {
+        json cfg;
+        json params{{"node_x", 0}, {"node_y", 0}, {"mesh_x", 2}, {"mesh_y", 2}};
+        if (with_buffer_size)
+            params["buffer_size"] = buffer_size;
+        cfg["modules"] =
+            json::array({json{{"name", "r0"}, {"type", "RouterTLM"}, {"params", params}}});
+        cfg["connections"] = json::array();
+        return cfg;
+    }
 
 } // namespace
 
