@@ -128,3 +128,28 @@ FAILED: cep_full_green_run_check.sh
 - 遗留清扫：**全项干净**。
 
 **verifier 未修改任何实现文件**（角色边界）。本轮为**第 1 轮**（上限 3）。
+
+---
+
+## 7. 复验回执（2026-11-23 · 归档合并后于主仓复验）
+
+> 本节由 **builder** 在归档合并后记录 —— 闭合本文 §3.4 的两个条件项；
+> `§6` 的 PASS（附条件）据此**更新为 PASS（无条件）**。
+
+| 条件 | 复验命令 | 结果 |
+|:--:|---|---|
+| **C-1** `ctest -R cep` 全绿 | `ctest --test-dir build -R cep -j4` | ✅ **110/110 Passed**（含本 change 的 `cep_engine_capabilities` + `cep_engine_capabilities_check` 两条新条目） |
+| **C-2** 归档计数同步 | `python3 scripts/test/cep_registry_baseline_check.py` | ✅ **5/5 == 实测**（spec 139 / cep-* 48 / 归档 **171** / CEP **55** / active **0** / 闸 50 / test 78） |
+
+**额外的全量回归（主仓）**：
+
+| 项 | 结果 |
+|---|---|
+| 全部 `scripts/test/cep_*.sh` | ✅ **50/50 全绿**（worktree 期唯一红的 `cep_full_green_run_check.sh` 在主仓通过，印证 §3.3 的环境归因） |
+| `bash scripts/test/cep_freeze_check.sh`（无参） | ✅ RC=0 · `provenance 自检通过：91 产物 hash 与 commit 46c55728 一致` |
+| `bash scripts/test/cep_docs_sync_check.sh --strict` | ✅ RC=0 |
+| `bash scripts/test/cep_doc_ref_check.sh` | ✅ RC=0 |
+| `bash scripts/test/cep_spec_strict_check.sh` | ✅ RC=0（6 项）—— ⚠️ 归档时 `openspec archive` 写入占位 Purpose 曾致 ① 零红失败，已在 commit `46c55728` 补写真实 Purpose 修复 |
+| 主仓全量构建 | ✅ `MAIN_BUILD_RC=0`（91/91） |
+
+**⇒ 判定更新：PASS（无条件）。** §6 的「附 2 项环境条件」已全部闭合。
