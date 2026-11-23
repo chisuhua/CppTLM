@@ -43,10 +43,10 @@
 > **来源**：`.rddf/roadmap/cep-gen-family-gap-closure.md`（本轮实施路径文档 · Oswald 博士论文 178 页一手 PDF 逐章核对 × 本仓 CEP 实现面对照）。
 > **用户裁决**：2026-11-23 批准「I1 完整闭环 + I2 登记」。
 > **审查轨迹**：metis 各 1 轮（I1 处置 17 条 / I2 处置 3 条，见各单元 `## 审查轨迹`）。
-> **实施状态**：I1 = 已实施并归档（builder · 2026-11-23）· I2 = ✅ **本轮实施阶段 1**（builder · 2026-11-23；阶段 1 零冻结面 + 零 main spec delta ⇒ `skip_specs: true`；⚠️ 实施期占 1 KPI slot，**归档后释放**）。
+> **实施状态**：I1 = 已实施并归档（builder · 2026-11-23）· I2 = ✅ **本轮实施阶段 1**并归档（builder · 2026-11-23；阶段 1 零冻结面 + 零 main spec delta ⇒ `skip_specs: true`；验收 PASS（无条件）· 归档 `2026-11-23-cep-litmus-falsifier-naming-disambiguation`；⚠️ **阶段 2**（实际改名 + 冻结面 spec REMOVED requirement）另立）。
 > **登记说明**：本节由 builder 补登（planner 角色写集不含本文件 ⇒ 当时被 role-gate 拦；builder 写集为 `**`）。
 
 | Improvement | Priority | 来源 | 创建日期 |
 |---|---|---|---|
 | [cep-protocol-engine-capability-declaration](improvements/cep-protocol-engine-capability-declaration.md) | P1 | gap 分析 G1（协议 FSM 承载能力无机器可查的现状面）；来源 = `.rddf/roadmap/cep-gen-family-gap-closure.md` §2.2 F1/F2/F3 + §2.3 G1；先例 = `MesifProtocolEngine::kEngineDecisions[]` | 2026-11-23 |
-| [cep-litmus-falsifier-naming-disambiguation](improvements/cep-litmus-falsifier-naming-disambiguation.md) | P2 | gap 分析 G6（「litmus」命名与能力错配）；来源 = 同文件 §2.3 G6；✅ **本轮实施阶段 1**（零冻结面 · 零 main spec delta · `skip_specs: true`） | 2026-11-23 |
+| [cep-litmus-falsifier-naming-disambiguation](improvements/cep-litmus-falsifier-naming-disambiguation.md) | P2 | gap 分析 G6（「litmus」命名与能力错配）；来源 = 同文件 §2.3 G6；✅ **已实施阶段 1 并归档**（零冻结面 · 零 main spec delta · `skip_specs: true`；⏸ 阶段 2 另立） | 2026-11-23 |

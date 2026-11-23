@@ -81,7 +81,7 @@ Stage B（本轮 · builder 实施，I1 闭环）  ← 2026-11-23 metis P0-1 后
   │     （实例集双向零 orphan + 引擎头文件集反向存在性 + 反向 fixture）
   └─ B5 验收：verifier 报告落 .rddf/reviews/
 
-Stage B'（2026-11-23 · builder 实施，I2 阶段 1 闭环）  ← 用户裁决「选择 A」
+Stage B'（2026-11-23 · builder 实施，I2 阶段 1 闭环 ✅ 已完成并归档）  ← 用户裁决「选择 A」
   ├─ B'1 include/tlm/cep/litmus_falsifier.hh：追加消歧常量
   │     （kFalsifierScope / kFalsifierIsMemoryModelLitmus=false）+ 诚实边界段升级为可引用声明
   ├─ B'2 test/test_cep_litmus_falsification.cc：尾部追加 2 条断言（⛔ 既有断言段逐字不变）

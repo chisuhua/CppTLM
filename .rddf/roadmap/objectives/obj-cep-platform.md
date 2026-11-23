@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**（`cep-litmus-falsifier-naming-disambiguation`,实测 per `openspec list --json`；⇒ **当前 Proposed 并发 = 1/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
+`openspec/changes/` 当前 **0 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 0/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -28392,7 +28392,7 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 - 归档 = `openspec archive cep-protocol-engine-capability-declaration --yes` ⇒ `2026-11-23-cep-protocol-engine-capability-declaration`
 - 主仓 ctest / 闸复验结论见同批次收尾提交
 
-**关联**：`.rddf/roadmap/cep-gen-family-gap-closure.md`（实施路径）· `.rddf/improvements/cep-protocol-engine-capability-declaration.md`（I1）· `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md`（I2 · 已就绪未实施）· `ADR-CEP-18`（生成路线范围 · T1–T4 复评未达）· Entry #536
+**关联**：`.rddf/roadmap/cep-gen-family-gap-closure.md`（实施路径）· `.rddf/improvements/cep-protocol-engine-capability-declaration.md`（I1）· `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md`（I2 · 已实施并归档 2026-11-23 · per Entry #538）· `ADR-CEP-18`（生成路线范围 · T1–T4 复评未达）· Entry #536
 
 ### Entry #538 — 2026-11-23 [builder](change `cep-litmus-falsifier-naming-disambiguation` 立项 → 实施（阶段 1）· 零冻结面)
 
@@ -28433,6 +28433,16 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 
 ⛔ **零改动** —— `include/tlm/cep/litmus_falsifier.hh` / `test/` / `scripts/test/` **均不在** M1 冻结清单（清单 91 产物中 litmus 相关仅 `openspec/specs/cep-litmus-falsification/spec.md`，本单元**只读**它）⇒ **无需五步授权链**（AC-5 硬查通过：`git diff --name-only` 不含 `openspec/specs/cep-litmus-falsification/spec.md` / `docs/adr/ADR-CEP-*` / `docs/architecture/cep/*`）。
 
-**⑦ 关联**
+**⑦ 验收与归档**
+
+- 验收报告 = `.rddf/reviews/cep-litmus-falsifier-naming-disambiguation-verify.md`（verifier 本地验收 · **PASS（无条件）** · 6/6 AC 全有工具证据）
+  - 走**本地验收**而非 `rdd-verifier` skill：分流条件 ②（P3 archive gate · `iteration.json`）**不满足**（该文件不存在）
+- 归档 = `openspec archive cep-litmus-falsifier-naming-disambiguation --yes` ⇒ `2026-11-23-cep-litmus-falsifier-naming-disambiguation`
+  - ⛔ **零 main spec 产出**（`skip_specs: true`）⇒ `openspec/specs/` 总数 **139 不变** · `cep-*` **48 不变** ⇒ **冻结清单 91 产物零变化 ⇒ 无需五步授权链**
+- 计数回填：归档 **171→172**（CEP **55→56**）· active **1→0** · KPI 活口径 **7 处** 回 0/3
+- 复验：registry 5/5 ✅ · `rddf_stage_gate` P-5 ✅ · `cep_freeze_check.sh` 无参 ✅（91 hash 一致）· `ctest -R cep -j2` **111/111** ✅ · 全部 `cep_*.sh` **51/51** ✅ · `cep_docs_sync_check.sh --strict` ✅
+- ⚠️ **遗留观察（不在本 change 范围，未修）**：`scripts/cep/parity/run_parity*.sh` 系列共用 `$ROOT/build/parity` **固定目录**（无 per-test 隔离）⇒ `cep_parity_e2e` 与 `cep_parity_linear_e2e` 并发跑存在产物互相覆盖风险（验收期实测偶发红 1 次，归因为**超默认并发度 `-j4`** 的资源竞争；仓内默认 `-j2` OOM-safe 下全绿，事后 `-j4` 连跑 2 轮亦绿）⇒ 建议后续用已存在的 `PARITY_OUT_DIR` env 按测试名隔离
+
+**⑧ 关联**
 
 `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md`（I2 · metis 1 轮已处置 3 条）· `.rddf/roadmap/cep-gen-family-gap-closure.md`（实施路径 Stage B'）· `openspec/changes/cep-litmus-falsifier-naming-disambiguation/{proposal,design,tasks}.md` · `scripts/test/cep_litmus_naming_check.sh` · `ADR-CEP-13`（决策 5 ②「平台不提供无违例保证」）· Entry #537

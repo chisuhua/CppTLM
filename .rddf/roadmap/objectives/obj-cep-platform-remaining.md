@@ -23,7 +23,7 @@
 | └ 非 CEP Requirement 正文 >500 | **26**（与 Purpose 重叠 16） | 同上（按红 spec 去重计数） |
 | 闸族 | **51** 个 `cep_*.sh` **+ 14** 个 `cep_*.py` = **65** | `ls scripts/test/cep_*.sh \| wc -l` · `ls scripts/test/cep_*.py \| wc -l` |
 | CEP 测试 | **78** 个 `test_cep_*.cc` | `ls test/test_cep_*.cc \| wc -l` |
-| OpenSpec | active **1**（`cep-litmus-falsifier-naming-disambiguation`）· 归档 **change 目录数** **171**（CEP **55**）· KPI **1/3** | `ls openspec/changes/ \| grep -v archive \| wc -l` |
+| OpenSpec | active **0** · 归档 **change 目录数** **172**（CEP **56**）· KPI **0/3** | `ls openspec/changes/ \| grep -v archive \| wc -l` |
 | CEP 归档 change 缺独立验收报告 | **0** —— I-10 落地后的现行口径 = 机关闸 `scripts/test/archive_verify_check.sh` 实测「**扫面 35 份 · 基线 35 · git 跟踪 35**」，三检 + provenance 一致性全绿（⛔ 旧「31」「40」等**逐份对账口径已作废**，现行口径**以闸为准**，⛔ 不得再用份数做判据 —— 份数会随每次归档漂移） | `bash scripts/test/archive_verify_check.sh` |
 | KPI 活口径同步面 | **7 处** —— 权威清单 = 既有闸 `scripts/test/rddf_stage_gate.sh` 的 `LIVE_FILES`；P-5 实测输出 = 「✓ P-5 **0 处**活口径全部同步（**锚定 7 处**，逐处取值 == 实测）」⇒ 取值全部 == `0/3` | `bash scripts/test/rddf_stage_gate.sh` |
 | 顺序机关载体表 | `scripts/test/rddf_ac_carrier.tsv` = **137** 个数据行（**58** 个 `I-*`（44 原始 + 14 W1-b 第二载体）**全 `done`** + **43** 个 `W-*` 行（W1 / W2 / W3 / W4 的实施 + 验收证据）+ **18** 个 `G-*` 行（`G-15` 3 行 · `G-16` 4 行 · `G-17` 2 行 · `G-18` 2 行 · `G-19` 2 行 · `G-20` 2 行 · `G-3` / `G-7` / `G-13` 各 1 行验收证据）· **18** 个旧框架治理 `AC-01~AC-09` 行 `pending`） |
