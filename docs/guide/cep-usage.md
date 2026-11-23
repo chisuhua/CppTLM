@@ -197,7 +197,7 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 ```
 
 - **分母 = 66**(编号位 67)· **N ≥ 1**(全 ⏭ ⇒ **不得**登记为达成)· **M = 66 − N** 为授权 ⏭ 项,须**逐条机器可查登记**
-- **当前实测**:**61 项有牙载体 + 5 项授权 ⏭** ⇒ `test/cep_invariant_assertion_map.json`(61 条,派生视图)+ `test/cep_invariant_deferrals.json`(5 条 `⏭-unmodelled`)
+- **当前实测**:**66 项有牙载体 + 0 项授权 ⏭** ⇒ `test/cep_invariant_assertion_map.json`(**66** 条,派生视图)+ `test/cep_invariant_deferrals.json`(**0** 条 · `deferrals` = `[]`)。⛔ 「61 + 5」是 **2026-11-06 达成时点**的 N/M 分解快照(per 台账 `objective-cep-platform §6.2` 的「当前分母口径」条 · 台账 **Entry #535** · **G-20** 订正)⇒ **不得再作当前口径**;⚠️ **分母 66 恒定未变**(编号位 67)⇒ 本次只变分解,⛔ 不动分母
 - ⛔ **映射表是生成物**(`// INV-CARRIER: <id>` 刚性标记)⇒ **不是**手写口径源;**重新生成** = `python3 scripts/test/cep_invariant_map_check.py --generate`
 
 **终态 Go 的当前状态**：**⏳ 挂起**（口径 ②，per 台账 Entry #264；⚠️ **objective 已于 2026-11-14 归档(终局 Ⅲ-甲,⏸ 暂存语义)** —— 但「objective 归档」≠「DoD Go 已开」≠「`B3b-2` 已关闭」⇒ 终态 Go **仍挂起**）。口径 ④「条件化终局 + `B3b-2` 判定规则预登记」**已于 2026-11-14 经用户 ratify 生效**（MUST-FIX-1~4 全部落地）⇒ 但 `B3b-2` = **0/4 ⏭** ⇒ **终局 Ⅰ 不触发** ⇒ 终态门**仍不开**；⚠️ 生效的只是「**N ≥ 1 之日的登记格式**」⇒ 将来任一受限族解冻后按 `✅ N/4`（N ≥ 1 + M 授权⏭ 逐族机器可查）登记。本体 SU 已落 `07 号` 的 `Status Update 2026-11-14(二)`。
@@ -216,7 +216,7 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 | | CXL 3.0 对称 DCOH | 同上 | **external** | 同上 |
 | | NVLink | 同上 | **external** | NVIDIA 发布**条款级**规范(白皮书 / 编程指南**不算**) |
 | | UALink | 同上 | **external** | Evaluation Copy 约束解除 / 联盟发布公开规范 |
-| **invariant ⏭**(5 条) | `CEN-Ib8` / `INV-CEP-08-IC1` / `INV-CEP-09-IC2` / `INV-CEP-13-IC1` / `INV-CEP-13-IC3` | `test/cep_invariant_deferrals.json` | 能力未建模 | 逐条 `trigger_condition` |
+| ~~**invariant ⏭**(5 条)~~ | ✅ **已闭合**(2026-11-20 **I-5** 清 3 条 + 2026-11-21 **I-6** 清 2 条 ⇒ 真建模落地)—— `CEN-Ib8` / `INV-CEP-08-IC1` / `INV-CEP-09-IC2` / `INV-CEP-13-IC1` / `INV-CEP-13-IC3` | `test/cep_invariant_deferrals.json`(`deferrals` = `[]`)+ 映射表 `test/cep_invariant_assertion_map.json`(66 条) | — | — (per 台账 **Entry #535** · **G-20** 订正) |
 | **ADR 归因**(19 条) | `condition_unmet` 2 · `carrier_buildable_id_blocked` 10 · `carrier_present_id_absent` 2 · `doc_layer_manual_review` 5 | `test/cep_adr_structural_deferrals.json` | 见逐条 `disposition` | **建 id 架构性不可行** ⇒ 归类收敛(per Entry #326/#331);⛔ 不新建 id |
 | **口径 ④ 实施轮** | MUST-FIX-1 / MUST-FIX-2 | 台账 Entry #332 ⑧ | ✅ **已完成**(2026-11-12,change `cpptlm-cep-dod-reading-consistency` 已归档;MUST-FIX-3/4 已于 2026-11-12 / 13 落地(Entry #385 / #386)；口径 ④ 已于 2026-11-14 经用户 ratify 生效 —— 回执 per 台账 **Entry #375** 归档回执 + **Entry #376** 验收 15/15 AC PASS) | —(已闭合) |新 SU 落地时)执行;⚠️ **重裁落地前 §12.7 禁写 #3 按绝对禁令执行** |
 | | MUST-FIX-3 / MUST-FIX-4 | 台账 Entry #332 ⑧ | ✅ **已完成**（2026-11-12 / 13，`## §14` 归档态段 + 回滚路径；回执 per Entry #386） | 已闭合（2026-11-12 / 13） |
