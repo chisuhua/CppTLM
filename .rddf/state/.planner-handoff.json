@@ -2,16 +2,16 @@
   "schema": "planner-handoff-v1",
   "version": 1,
   "owner": "rdd-planner",
-  "planner_complete_at": "2026-11-12T11:50:48.213912+00:00",
+  "planner_complete_at": "2026-11-23T09:39:34.646619+00:00",
   "current_sprint": "sprint-2026-11",
   "proposals_ready": [
-    "cpptlm-cep-dod-reading-consistency"
+    "cep-litmus-falsifier-naming-disambiguation"
   ],
   "proposals_approved_count": 0,
   "features_active": [],
   "awaiting_builder": [
-    "add-cpptlm-cep-dod-reading-consistency"
+    "cep-litmus-falsifier-naming-disambiguation"
   ],
-  "recommended_route": "complex",
+  "recommended_route": "simple",
   "active_objectives": []
 }

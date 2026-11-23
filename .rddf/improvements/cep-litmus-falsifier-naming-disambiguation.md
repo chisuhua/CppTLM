@@ -7,7 +7,7 @@ type: refactor
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 依赖:
 - ADR-CEP-13
-状态: 🟢 已登记·就绪(planner · 2026-11-23 · 待 metis 审查 · ⏸ 本轮不实施)
+状态: 🟢 已登记·就绪(planner · 2026-11-23 · metis 1 轮已处置 · ✅ 本轮实施阶段 1)
 created: 2026-11-23
 roadmap_ref:
   project_id: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
@@ -116,8 +116,15 @@ Oswald 博士论文 §8.7.2 / HeteroGen §VII 用 herd7 生成 **111 个异构 m
 ## Capabilities
 
 > **形态裁决（planner 现定 · ⛔ 不留给 rdd-builder P0）**：**阶段 1 不独立成 spec** ——
-> 能力由「头文件常量 + 闸」承载 ⇒ **无 spec delta** ⇒ 属 refactor 类 change ⇒ **不占 KPI slot**（同 `doc-only cleanup` 既有先例）。
+> 能力由「头文件常量 + 闸」承载 ⇒ **无 spec delta** ⇒ 属 refactor 类 change ⇒ 归档时 `skip_specs: true`
+> ⇒ **零 main spec 产出**（先例 = `2026-11-09-cpptlm-cep-bidirectional-multiport-inbound`：代码改动 + 零 delta）。
 > ⚠️ 若 rdd-builder 或 verifier 认为必须有 spec 面 ⇒ 属**阶段 2** 的范畴（含改名 + 冻结面五步链），⛔ 不得在阶段 1 补 delta。
+>
+> **KPI 口径修正（2026-11-23 · 实施前实测修正）**：⛔ 本单元**不适用** AGENTS.md 的「doc-only cleanup 不占 slot」豁免
+> —— 该豁免的判据是「**0 函数签名/逻辑/构建改动**」，而本单元含**新闸脚本 + ctest 注册**（构建面改动）
+> ⇒ **立项期间占 1 slot**（实测口径 = `openspec list --json` 的 active 数；探针实测 `skip_specs: true` 的 change **仍被计入** active）
+> ⇒ 活文档 KPI 活口径：**实施期 1/3** · 归档后回 **0/3**（与 I1 `cep-protocol-engine-capability-declaration` 同构）。
+> ⚠️ 「不占 slot」在**能力 spec 面**上成立（`openspec/specs/cep-*` 计数 **零变化**），在 **change 存量面**上**不成立** —— 两个面不可混谈。
 
 | capability | 关系 | 说明 |
 |---|---|---|
@@ -135,7 +142,7 @@ Oswald 博士论文 §8.7.2 / HeteroGen §VII 用 herd7 生成 **111 个异构 m
 | **零改动（硬查 · AC-5）** | `openspec/specs/cep-litmus-falsification/spec.md` · `scripts/test/cep_litmus_falsification_check.sh` · `test/cep_litmus_corpus.json` · `docs/adr/ADR-CEP-*.md` · `docs/architecture/cep/*.md` |
 | **冻结面** | **无**（阶段 1）⇒ ⛔ 不需要五步链；**阶段 2 有**（spec REMOVED requirement + 改名） |
 | **闸** | `scripts/test/cep_litmus_naming_check.sh` 新增 1 个 · ctest 断言 +2（⛔ 数量不是鉴别力指标） |
-| **KPI** | 阶段 1 若独立成 spec ⇒ 占 1 slot；若并入既有 capability ⇒ **不占 slot**（⚠️ 由 rdd-builder P0 判定形态） |
+| **KPI** | **实施期占 1 slot**（`skip_specs: true` 的 change 仍计入 `openspec list --json` active 数）· 归档后释放回 0/3 · **能力 spec 面零变化**（`openspec/specs/cep-*` 计数不变 ⇒ 冻结清单不变 ⇒ 无需五步链） |
 | **风险** | ① 禁用表述闸**误报**（正常讨论「litmus」被误判）⇒ 缓解：只匹配**肯定式**表述，且要求同段无否定标记 ② 消歧常量被误读为「能力增强」⇒ 缓解：常量名带 `IsMemoryModelLitmus = false`（**否定式命名**，语义自明）③ 阶段 2 被遗忘 ⇒ 缓解：AC-7 强制登记触发条件 |
 | **阶段 2 触发条件（AC-7）** | **触发** = ① 有人主张改名，或 ② 操作级模型（`cep-memory-model-operational-trace`）落地需「litmus」名让位。**成本** = 冻结面五步链 ×1（`openspec/specs/cep-litmus-falsification/spec.md` 的 REMOVED requirement）+ 全仓引用改名 |
 

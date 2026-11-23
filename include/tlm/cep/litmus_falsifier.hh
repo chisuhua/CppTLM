@@ -22,7 +22,22 @@
 //   (范畴错误 ⇒ 假绿)。语料的填充须等**操作级模型**落地(backlog
 //   `cep-memory-model-operational-trace`),由**该模型**产生边类声明。
 //
-// 作者: CppTLM Team / 日期: 2026-11-21
+// ── 消歧声明（2026-11-23 · 「litmus」命名与能力错配的消歧 · 阶段 1）────────────
+//
+// ⚠️ **本工装不是内存模型 litmus**（`herd7` memory-model litmus）—— 两者**同名不同物**：
+//   · **本工装**：检验**装配期静态图**上的**环**存在性。
+//     顶点 = `(instance, network, vc)`（即**通道依赖图**，与装配期闸同形）；
+//     边类 `rfe`/`fr`/`ws` 仅**记录**、**不解释**。
+//   · **论文侧不是本工装**：Oswald 博士论文 §8.7.2 / HeteroGen §VII 用 `herd7` 生成 111 个异构 litmus，
+//     那**不是**本工装 —— 它检验**执行迹的允许结果**（运行期语义的可满足性）。
+//   ⇒ **范畴不同**：一个是装配期通道图的**结构**判据，一个是运行期**内存模型公理**的语义判据。
+//   ⛔ 因此**不得**据本工装的存在声称「CEP 已能证伪复合一致性公理」
+//     （per `ADR-CEP-13` 决策 5 ②「平台不提供无违例保证」）。
+//
+//   ⛔ **不要**由文件名 `litmus_falsifier` 推断本工装具备内存模型 litmus 能力 ——
+//     该能力**不存在**；实际改名属**阶段 2**（`compound_graph_falsifier`，另立 + 冻结面五步链）。
+//
+// 作者: CppTLM Team / 日期: 2026-11-21（消歧声明 2026-11-23 追加）
 #ifndef CPPTLM_CEP_LITMUS_FALSIFIER_HH
 #define CPPTLM_CEP_LITMUS_FALSIFIER_HH
 
@@ -37,6 +52,19 @@
 #include "tlm/cep/channel_dependency_graph.hh"
 
 namespace tlm::cep {
+
+/// **消歧常量（2026-11-23）** —— 本工装的判据作用域（= 装配期**通道依赖图**上的**环**存在性）。
+///
+/// ⛔ **不是** `herd7` memory-model litmus（后者检验执行迹的允许结果，见文件头「消歧声明」段）。
+/// 下游可 `static_assert(!kFalsifierIsMemoryModelLitmus)` 把「本工装不是内存模型 litmus」
+/// 变成**编译期**事实，而非散文。
+inline constexpr const char* kFalsifierScope = "channel-dependency-graph";
+
+/// **消歧常量（2026-11-23）** —— 本工装**不是**内存模型 litmus（herd7 memory-model litmus）。
+///
+/// ⛔ **恒为 `false`**；改 `true` ⇒ 违反 `test/test_cep_litmus_falsification.cc` 的
+/// `static_assert` ⇒ 编译失败（见 `scripts/test/cep_litmus_naming_check.sh` 的 probe 反 fixture）。
+inline constexpr bool kFalsifierIsMemoryModelLitmus = false;
 
 /// 一次 litmus 证伪尝试的判定（⛔ **无「已证明」一档** —— 见文件头）
 struct LitmusVerdict {

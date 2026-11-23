@@ -44,6 +44,7 @@
 | `cep_decl_alignment_check.sh` | 协议实例声明 ↔ schema 双向映射（判据 C-4） | ✅ 生效 |
 | `cep_decl_reverse_verify.sh` | 上者的**反向验证**（防自证） | ✅ 生效 |
 | `cep_engine_capabilities_check.sh` | 协议引擎承载能力声明面（change `cep-protocol-engine-capability-declaration`）：实例集**双向零 orphan**（`kEngineCapabilities` ↔ `protocol_instances.json` 的 `id`）+ **引擎头文件集反向存在性**（出现新 `*_protocol_engine.hh` ⇒ 必红）+ 通用层零协议名/零 include 协议头 + 单真源（struct/init 区段禁 `transient`/`in_flight`）+ **probe TU 编译失败验证**（AC-3/AC-4，须命中实例 id 签名） | ✅ 生效（ctest 注册） |
+| `cep_litmus_naming_check.sh` | 「litmus」命名消歧**禁用表述闸**（change `cep-litmus-falsifier-naming-disambiguation` 阶段 1）：扫描 3 文件（`litmus_falsifier.hh` + `test_cep_litmus_falsification.cc` + 冻结 spec `cep-litmus-falsification/spec.md`〔**只读** ⇒ 零冻结面改动〕），凡指涉「memory-model litmus」/「herd7」/「RISC-V litmus」/「内存模型 litmus」的行**必须同段带否定标记**（⛔ 否定词表 = `不是`/`非`/`⛔`/`不`，**不含「区别」**）⇒ 否则红（红因码 `litmus-scope-claim`）+ **闸自身有牙**（三路反 fixture：①肯定句红 ②否定句绿 ③「区别是」红 + probe TU：常量改 `true` ⇒ 编译失败且命中 `litmus-scope` 签名） | ✅ 生效（ctest 注册） |
 | `cep_cohif_reverse_verify.sh` | CohIf 载体（CC-01 / CC-02）的**反向验证**（静态扫描 + 编译期锁毒化副本） | ✅ 生效（ctest 注册） |
 | `cep_protocol_engine_reverse_verify.sh` | ProtocolEngine 端口面（`INV-CEP-07-IC2`）的反向验证 | ✅ 生效（ctest 注册） |
 | `cep_protocol_bridge_reverse_verify.sh` | ProtocolBridge 特化桥（CC-03 / CC-05 / CC-06）的反向验证 | ✅ 生效（ctest 注册） |

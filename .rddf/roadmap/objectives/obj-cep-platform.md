@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 0/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
+`openspec/changes/` 当前 **1 个 active**（`cep-litmus-falsifier-naming-disambiguation`,实测 per `openspec list --json`；⇒ **当前 Proposed 并发 = 1/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -28393,3 +28393,46 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 - 主仓 ctest / 闸复验结论见同批次收尾提交
 
 **关联**：`.rddf/roadmap/cep-gen-family-gap-closure.md`（实施路径）· `.rddf/improvements/cep-protocol-engine-capability-declaration.md`（I1）· `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md`（I2 · 已就绪未实施）· `ADR-CEP-18`（生成路线范围 · T1–T4 复评未达）· Entry #536
+
+### Entry #538 — 2026-11-23 [builder](change `cep-litmus-falsifier-naming-disambiguation` 立项 → 实施（阶段 1）· 零冻结面)
+
+**① 主题**：消除「本仓具备内存模型 litmus 能力」这一**能力高估**（gap 分析 G6）。⛔ 本单元**只做命名与表述的消歧**（`skip_specs: true` ⇒ **零 main spec delta**）。
+
+**② 交付面**
+
+| # | 交付 | 判据 |
+|:--:|---|---|
+| 1 | `include/tlm/cep/litmus_falsifier.hh`：新增 2 个**消歧常量**（`kFalsifierScope = "channel-dependency-graph"` · `kFalsifierIsMemoryModelLitmus = false`）+ 顶部「诚实边界」段**升级**为可引用声明（三要素：顶点形态 / 判据对象 / 与内存模型 litmus 的区别） | AC-1 / AC-3 |
+| 2 | `test/test_cep_litmus_falsification.cc`：**文件尾部**追加 `// == disambiguation additions ==` 分隔段（`static_assert` + 1 个新 `TEST_CASE` / 7 断言）；⛔ 既有 4 个 `TEST_CASE` **逐字未变** | AC-1 / AC-4 |
+| 3 | `scripts/test/cep_litmus_naming_check.sh`（新闸）：扫描 3 文件（头 + 测试 + 冻结 spec〔**只读**〕），指涉「内存模型 litmus」的行**必须同段带否定标记**（⛔ 否定词表不含「区别」）⇒ 否则红（红因码 `litmus-scope-claim`）+ **闸自身有牙**（三路反 fixture ①红②绿③红 + probe TU 编译失败且命中签名） | AC-2 / AC-5 |
+| 4 | `test/CMakeLists.txt` 注册 `cep_litmus_naming_check`（ctest 110→**111**）· `scripts/README.md` 守门表新增 1 行 | — |
+
+**③ 关键设计裁决（实施期发现，已落 improvement + design.md）**
+
+- **D-5「同一行」判据 ⇒ 跨行否定句会假红** ⇒ ⛔ **接受**（宁可假红不可假绿：假绿 = 能力高估复发）⇒ 消歧表述**每行自洽**（论文侧对照句压成单行并自带否定语境）。实施期因此改写了头文件 + 测试的对照说明各 1 处。
+- **扫描实现不用 `case` + 反斜杠续行**（pattern 位置续行有陷阱）⇒ 改 `[[ ]]` + 变量展开逐 pattern 判定。
+- **扫描结果经全局变量 `SCAN_HIT` 传递，⛔ 不用退出码** —— 判据脚本的退出码在部分 shell 实现 / 包装环境下**不可靠**（`if <func>; then` 可能读到被重定向污染的退出码）⇒ 判据正确性**不得**依赖退出码语义。
+
+**④ 口径修正（planner 域 · 实施前实测）**
+
+⚠️ I2 improvement 原写「**不占 KPI slot**（同 doc-only cleanup 先例）」⇒ **与机械判据冲突**，已修正：
+探针实测 `openspec list --json` 对 `skip_specs: true` 的 change **仍计入 active**；且 AGENTS.md 的 doc-only 豁免判据是「**0 函数签名/逻辑/构建改动**」，而本单元含**新闸脚本 + ctest 注册**（构建面改动）⇒ **不适用豁免** ⇒ **实施期占 1 slot**（活口径 1/3），归档后释放回 0/3。
+⇒ **「不占 slot」在能力 spec 面成立（`openspec/specs/cep-*` 计数零变化），在 change 存量面不成立** —— 两面不可混谈。
+
+**⑤ 计数同步（登记册 §0.1 · 实测复核）**
+
+| 面 | 变化 |
+|---|---|
+| 闸族 | `cep_*.sh` 50→**51** · 闸族合计 64→**65**（`.py` 14 不变） |
+| CEP 测试 | `test_cep_*.cc` **78**（不变 —— 追加断言到**既有**文件，⛔ 不新建测试文件） |
+| 全仓主 spec | **139**（不变）· `cep-*` **48**（不变）—— ⛔ 零 delta ⇒ 冻结清单**零变化** ⇒ **无需五步链** |
+| OpenSpec | active 0→**1**（实施期）· 归档 **171**（CEP **55**）不变（归档后 active 回 0 / 归档 172 / CEP 56） |
+| KPI 活口径 | **7 处**全部 0/3 → **1/3**（`rddf_stage_gate.sh` P-5 实测「1 处活口径全部同步（锚定 7 处）」） |
+
+**⑥ 冻结面**
+
+⛔ **零改动** —— `include/tlm/cep/litmus_falsifier.hh` / `test/` / `scripts/test/` **均不在** M1 冻结清单（清单 91 产物中 litmus 相关仅 `openspec/specs/cep-litmus-falsification/spec.md`，本单元**只读**它）⇒ **无需五步授权链**（AC-5 硬查通过：`git diff --name-only` 不含 `openspec/specs/cep-litmus-falsification/spec.md` / `docs/adr/ADR-CEP-*` / `docs/architecture/cep/*`）。
+
+**⑦ 关联**
+
+`.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md`（I2 · metis 1 轮已处置 3 条）· `.rddf/roadmap/cep-gen-family-gap-closure.md`（实施路径 Stage B'）· `openspec/changes/cep-litmus-falsifier-naming-disambiguation/{proposal,design,tasks}.md` · `scripts/test/cep_litmus_naming_check.sh` · `ADR-CEP-13`（决策 5 ②「平台不提供无违例保证」）· Entry #537

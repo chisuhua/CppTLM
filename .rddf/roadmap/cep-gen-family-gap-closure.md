@@ -81,6 +81,15 @@ Stage B（本轮 · builder 实施，I1 闭环）  ← 2026-11-23 metis P0-1 后
   │     （实例集双向零 orphan + 引擎头文件集反向存在性 + 反向 fixture）
   └─ B5 验收：verifier 报告落 .rddf/reviews/
 
+Stage B'（2026-11-23 · builder 实施，I2 阶段 1 闭环）  ← 用户裁决「选择 A」
+  ├─ B'1 include/tlm/cep/litmus_falsifier.hh：追加消歧常量
+  │     （kFalsifierScope / kFalsifierIsMemoryModelLitmus=false）+ 诚实边界段升级为可引用声明
+  ├─ B'2 test/test_cep_litmus_falsification.cc：尾部追加 2 条断言（⛔ 既有断言段逐字不变）
+  ├─ B'3 闸：scripts/test/cep_litmus_naming_check.sh（禁用表述闸 · 三路反 fixture）
+  ├─ B'4 形态：skip_specs: true ⇒ 零 main spec delta ⇒ 冻结清单零变化 ⇒ 无需五步链
+  │     （⛔ 阶段 2 的改名 + 冻结面 spec REMOVED requirement 另立）
+  └─ B'5 验收：verifier 本地验收（无 iteration.json ⇒ 不走 rdd-verifier skill）
+
 Stage C（后续 · 需 architect / 用户 ratify，本轮仅登记）
   ├─ C1 architect：裁定 F4 的措辞背离（docs/architecture/cep/protocol-engine.md 是冻结面 ⇒ 五步链）
   ├─ C2 architect：在 ADR-CEP-20 显式登记「档 2 天花板被非穷尽锁定」

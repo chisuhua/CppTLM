@@ -1,0 +1,20 @@
+schema: spec-driven
+created: 2026-11-23
+x-phase: phase-10
+x-priority: P2
+x-status: in_progress
+goal: |
+  消除「litmus」同名误导 —— 本仓 `litmus_falsifier` 检验的是**装配期通道依赖图的环存在性**，
+  **不是**论文侧（Oswald §8.7.2 / HeteroGen §VII）的 herd7 memory-model litmus（检验执行迹的允许结果）。
+  阶段 1 只做**命名与表述的消歧**（常量 + 诚实边界段 + 禁用表述闸），⛔ 不改任何证伪逻辑。
+affected_areas:
+  - include/tlm/cep/litmus_falsifier.hh
+  - test/test_cep_litmus_falsification.cc
+  - scripts/test/cep_litmus_naming_check.sh
+# ⛔ **零 delta spec**：本 change 是**命名/表述消歧**，能力面由「头文件常量 + 闸」承载，
+#    **不改任何 main spec 的契约面**（`openspec/specs/cep-litmus-falsification/spec.md` 命中 M1 冻结 glob
+#    ⇒ 任何改动都须走五步授权链 ⇒ 阶段 1 不做）。
+#    ⇒ 按 openspec 的口径声明 `skip_specs: true`（先例 = `cpptlm-cep-bidirectional-multiport-inbound`）。
+#    ⚠️ 阶段 2 的实际改名（`litmus_falsifier` ⇒ `compound_graph_falsifier`）会产生 REMOVED requirement
+#       ⇒ **属阶段 2**，须另行立项 + 五步链，⛔ 不得在阶段 1 补。
+skip_specs: true

@@ -183,3 +183,39 @@ TEST_CASE("CEP litmus: 诚实性 —— 端点未绑定 ⇒ 该边不参与、�
     CHECK(v2.falsified == false);
     CHECK(v2.cycles.empty());
 }
+
+// == disambiguation additions ==
+// ─────────────────────────────────────────────────────────────────────
+// 2026-11-23 · 「litmus」命名与能力错配的消歧（阶段 1）
+//
+// ⚠️ **本工装不是内存模型 litmus**（herd7 memory-model litmus）—— 两者同名不同物：
+//   本工装检验**装配期通道依赖图**上的**环**存在性（顶点 = `(instance, network, vc)`）；
+//   论文侧的 herd7 litmus（Oswald §8.7.2 / HeteroGen §VII）**不是**本工装 ——
+//   它检验**执行迹的允许结果**。
+//   ⇒ 不得据本工装的存在声称「CEP 已能证伪复合一致性公理」。
+//
+// ⛔ 本段**追加**于既有断言之后；既有断言段**逐字未变**（per change
+//    `cep-litmus-falsifier-naming-disambiguation` 的 AC-4 逻辑等价判据）。
+// ─────────────────────────────────────────────────────────────────────
+
+// 编译期事实：本工装**不是**内存模型 litmus（⛔ 改 `true` ⇒ 编译失败，见 probe 反 fixture）
+static_assert(!tlm::cep::kFalsifierIsMemoryModelLitmus,
+              "litmus-scope: litmus_falsifier 检验通道依赖图的环,不是内存模型 litmus");
+
+TEST_CASE("CEP litmus: 消歧常量 —— 作用域为通道依赖图 · 非内存模型 litmus",
+          "[cep][litmus][falsification][disambiguation]") {
+    // ① 作用域串逐字相等（下游文档可引用该串 ⇒ 避免两处各写一份、久而久之漂移）
+    CHECK(std::string(tlm::cep::kFalsifierScope) == "channel-dependency-graph");
+    // ② 否定式命名：编译期已断言（上方 static_assert），此处复核运行期取值
+    CHECK(tlm::cep::kFalsifierIsMemoryModelLitmus == false);
+    // ③ 作用域串不得自称内存模型 litmus
+    CHECK(std::string(tlm::cep::kFalsifierScope).find("memory-model") == std::string::npos);
+    CHECK(std::string(tlm::cep::kFalsifierScope).find("memory_model") == std::string::npos);
+    // ④ 既有判定行为不受消歧常量影响（⛔ 逻辑等价：语料为空 ⇒ 仍不可证伪）
+    bool readable = false;
+    const auto corpus = cep::load_litmus_corpus("test/cep_litmus_corpus.json", &readable);
+    REQUIRE(readable);
+    const auto v = cep::evaluate_litmus_falsification(decl(), corpus);
+    CHECK(v.reachable == false);
+    CHECK(v.falsified == false);
+}

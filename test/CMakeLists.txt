@@ -809,6 +809,18 @@ set_tests_properties(cep_litmus_falsification_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                                 ENVIRONMENT "BUILD_DIR=${CMAKE_BINARY_DIR}")
 
+# 「litmus」命名与能力错配的**禁用表述闸**(per change
+# `cep-litmus-falsifier-naming-disambiguation` 阶段 1)
+#  —— 扫描 3 文件(头文件 + 测试 + 冻结 spec[只读]);凡指涉「内存模型 litmus」的行
+#     必须**同段**带否定标记(⛔ 否定词表不含「区别」)⇒ 否则红(红因码 `litmus-scope-claim`)
+#  —— 闸**自身有牙**:三路反 fixture(①肯定句红 ②否定句绿 ③「区别是」红)
+#     + probe TU(常量改 true ⇒ 编译失败且命中「litmus-scope」签名)
+add_test(NAME cep_litmus_naming_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_litmus_naming_check.sh)
+set_tests_properties(cep_litmus_naming_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                                ENVIRONMENT "BUILD_DIR=${CMAKE_BINARY_DIR}")
+
 # openspec CLI 的**版本锁定**闸(per 登记册队列 2 的 I-8)
 #  —— 单一真源 = 仓根 `.openspec-cli-version`;CI 从该文件读 ⇒ 仓内**无第二份版本号**
 #  —— 判据三方一致:锁值 == CI 安装版本 == 本机 `openspec --version`
