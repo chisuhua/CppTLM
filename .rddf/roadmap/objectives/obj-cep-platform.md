@@ -28502,3 +28502,34 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 **⑧ 关联**
 
 `.rddf/improvements/cep-protocol-engine-capability-declaration.md`（I1 · 承载能力声明面 = 本次唯一事实真源）· `docs/architecture/cep/protocol-engine.md:44`（同文件口径澄清块的**格式先例** · Entry #520）· `docs/adr/ADR-CEP-20-*.md` SU 2026-11-22（**格式先例** · Entry #520）· `docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md` §2 决策 4（分层归属原文）· `.rddf/roadmap/cep-gen-family-gap-closure.md`（Stage C）· Entry #537（I1）/ Entry #538（I2）
+
+### Entry #540 — 2026-11-24 [builder](change `cep-litmus-falsifier-compound-graph-rename` 立项授权 · I2 阶段 2 改名 · 冻结面 spec 退役+新增)
+
+**① 主题**：把 CEP 的「litmus 证伪工装」改名「**复合图证伪工装**」—— 本仓工装检验**装配期通道依赖图**上的**环存在性**，与论文侧（Oswald §8.7.2 / HeteroGen §VII）的 `herd7` **memory-model litmus**（检验**执行迹的允许结果**）**同名不同物** ⇒ 消除据文件名/符号名的**能力高估**（gap 分析 G6 的最后一道口子）。⛔ **零决策变更** · 零判据语义变更 · 零 invariant 编号变更 · 零行为变更。
+
+**② 审查轨迹**：architect 裁定记录 `.rddf/reviews/cep-litmus-falsifier-rename-adjudication-2026-11-24.md` —— **oracle 1 轮**（审查域 = 其他审查 · 判定 **APPROVE** · Q1 行级清单 + Q2 闸存续形态 + Q3 spec 四类措辞边界 + Q4 闸缺陷修复归属）→ **critic 1 轮**（review_profile = `plan, build` · 判定 **mergeable: no** · 1 BLOCKER + 3 SHOULD_FIX + 2 NITS）⇒ **BLOCKER 已闭合**（`test/test_cep_combination_contract.cc:312` 的语料路径硬编码补入范围）。
+
+**③ 冻结面移出声明行**（`cep_freeze_check.sh` C-1b 硬要求）
+
+- 冻结面移出 `openspec/specs/cep-litmus-falsification/spec.md`: capability 改名 `cep-litmus-falsification` ⇒ `cep-compound-graph-falsification`（与论文侧 herd7 memory-model litmus 同名不同物 ⇒ 活契约面消除能力高估）；**判定语义零变更**（4 个 Scenario 的结构与全部否定句逐字保留）；新 spec 由变更**新增**（glob `openspec/specs/cep-*/spec.md` 自动入集，无需声明）
+
+**④ 关键实施裁决（openspec 行为探针实测 · 2026-11-24）**
+
+| 探针 | 形态 | 结果 |
+|:--:|---|---|
+| P-1 | delta = REMOVED(旧) + ADDED(新)，旧 spec 存在，无 `retire_capabilities` | ❌ 归档**中止**（"Spec must have at least one requirement"）⇒ `Aborted. No files were changed.` |
+| P-2 | 同 P-1 + `retire_capabilities: true` | ✅ 旧 spec 删除（**无残留空壳**）· 新 spec Purpose = **占位** ⇒ 须归档后补写 ⇒ 冻结链 **2 次** |
+| P-3 | 实施期已 `git mv`（旧 spec 不存在）+ 完整 delta | ✅ REMOVED 被忽略（警告，无害）· 新 spec **零改动**（"already in sync"）⇒ **实施期写真实 Purpose 不被占位覆盖** ⇒ 冻结链 **1 次** |
+| P-4 | 同 P-3 的 `validate --strict` | ✅ valid |
+
+⇒ 选 **P-3 形态**：实施期 `git mv` + 完整 delta（REMOVED 旧 + ADDED 新）+ `.openspec.yaml` 声明 `retire_capabilities: true`。
+
+**⑤ 必不改登记（防后续「零误导清扫」误改）**：命名消歧闸**文件名** `cep_litmus_naming_check.sh` + **红因码** `litmus-scope-claim`（其管辖违例类是「litmus 能力冒称」，不随工件改名过期；且阶段 1 归档 change 的 AC 证据逐字引用 ⇒ 改名即断**审计链**）· `kFalsifierIsMemoryModelLitmus`（否定式命名）· static_assert token `litmus-scope` · **V3 barrier 分类 litmus 家族**（不同义项 · `ADR-CEP-01 §3.1` 冻结锚定 ⇒ 范围外）· `openspec/specs/cep-core-contracts/spec.md:273`（冻结面 + 清单 diff 须恰 2 项）· 已签批 ADR 正文与 `.rddf/**` 历史叙述（不可变历史，非误导源）。
+
+**⑥ 闸缺陷修复（并入本 change · 判据缺陷非功能缺陷）**：命名消歧闸的扫描实现 `[ -f "$f" ] || continue` ⇒ 扫描集缺失 ⇒ **静默跳过 ⇒ 假绿**（实测：spec 路径改错 ⇒ 闸仍 RC=0「全部判据通过」）⇒ 修复：HDR 不存在 ⇒ 整闸 SKIP 保持；**HDR 在而 TESTF/SPEC 缺失 ⇒ FAIL**（红因 `litmus-scan-set-missing`）+ 第④路影子 fixture。⚠️ 该缺陷由改名**直接触发**（spec 路径一变、不改扫描集 ⇒ 闸永久假绿）⇒ 故**必须同批**修。
+
+**⑦ 时序钉（critic 硬约束 · 不可拆）**：spec 改名 · 闸扫描集改路径 · 语料改名 · `test/test_cep_combination_contract.cc:312` 单行等长替换 ⇒ **同批 commit**（否则「新 FAIL 逻辑 + 指向未建的新 spec」⇒ 归档前全程红）。
+
+**⑧ 后果登记**：`ADR-CEP-12:1163`（**已签批 ADR 正文**）引用旧语料路径 ⇒ 改名后**悬空** ⇒ ⛔ 本 change **不改 ADR 正文**（若需消解走 Status Update 追加，须单独授权）。
+
+**⑨ 关联**：裁定记录 `.rddf/reviews/cep-litmus-falsifier-rename-adjudication-2026-11-24.md` · I2 阶段 1 `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md` + 归档 `2026-11-23-cep-litmus-falsifier-naming-disambiguation` · 实施路径 `.rddf/roadmap/cep-gen-family-gap-closure.md` · change `openspec/changes/cep-litmus-falsifier-compound-graph-rename/` · `ADR-CEP-13`（决策 2 / 决策 5 ②）· `ADR-CEP-17 §2 Decision 4` · Entry #538（I2 阶段 1）/ #539（Stage C C1+C2）

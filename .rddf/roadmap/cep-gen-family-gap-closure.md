@@ -39,7 +39,7 @@
 | F2 | **「在飞的 snoop 集合」被显式推迟**：MESIF 引擎自陈「本引擎不建模在飞的 snoop 集合与屏障域（Stage 2）」；`moesi_gpu` 决策 M-6「canonical 10 流的 `on_*` 只记账」 | `include/tlm/cep/mesif_protocol_engine.hh`、`include/tlm/cep/moesi_gpu_protocol_engine.hh` |
 | F3 | **仅 2/8 实例有真协议 FSM 驱动**（`chi_rnf` 有 `in_flight_` / egress；`mesif` 有 egress 但不建模在飞集合）；`tilelink_c` = 事件计数上报器；`moesi_gpu` / `ualink_4` = 零发射；`cxl_2_0` / `cxl_3_0_symmetric` / `nvlink_4` = **无引擎** | 同上 + `include/tlm/cep/ualink_protocol_engine.hh`、`include/tlm/cep/tilelink_protocol_engine.hh` |
 | F4 | **架构文档断言 vs 实现背离**：`docs/architecture/cep/protocol-engine.md` 写「真实协议的瞬态复杂度全部归 Protocol Engine 插件」 | 该文件（**冻结面**） |
-| F5 | **复合一致性公理当前不可证伪**：`rfe` / `fr` / `ws` 两仓均无定义 + 语料为空 ⇒ `reachable == false` | `include/tlm/cep/litmus_falsifier.hh` + `test/cep_litmus_corpus.json` |
+| F5 | **复合一致性公理当前不可证伪**：`rfe` / `fr` / `ws` 两仓均无定义 + 语料为空 ⇒ `reachable == false` | `include/tlm/cep/compound_graph_falsifier.hh`（2026-11-24 改名，原 `litmus_falsifier.hh`）+ `test/cep_compound_graph_corpus.json`（原 `cep_litmus_corpus.json`） |
 | F6 | **「不完整目录知识」无表达**：`Completeness::PARTIAL` 是**非法声明**（冻结 schema 只允许 `EXACT` / `CONSERVATIVE`）；实际用 `CONSERVATIVE` 超集上界表达；⛔ 无 belief / unknown 模型 | `include/tlm/cep/sharer_tracker.hh`、`include/tlm/cep/ordering_point_checker.hh` |
 | F7 | **死锁自由 = 装配期静态论证**：Fabric 层无 CEP 自有运行时实现；多 VC 仲裁被反向存在性闸锁住（「仓内不存在多 VC 仲裁实现」为真值，一旦出现即红） | `docs/architecture/cep/fabric-transport.md`、`scripts/test/cep_invariant_ic2_absent_check.sh` |
 | F8 | **CEP 的 hierarchical = 目录聚合层级**（`HierarchicalDirectory` 3 级 + `TreeManager` 树形），**不是**分层协议组合；且 3 层语义标注 pending 待追认 | `include/tlm/cep/sharer_tracker.hh`、`include/tlm/cep/tilelink_tree_manager.hh`、`openspec/specs/cep-hierarchical-directory/spec.md` |
