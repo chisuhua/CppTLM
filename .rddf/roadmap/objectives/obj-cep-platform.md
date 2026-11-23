@@ -28119,3 +28119,72 @@ C/D 两项（`--update` 静默收缩冻结面 / `exclusions` 死机制 / globs �
 | 后续新缺口编号 | **`G-19+`**（per §6.4「编号空间登记表」；⛔ 不重用旧 ID）|
 
 **关联**：登记册 §6.2（口径头 + S3 说明行 + S3 表行 + 已闭合项表）· §6.3（兜底注 + 归属表）· §6.4（编号空间表）· §6.8（单元表 + 白名单 + 口径订正）· 单元 `.rddf/improvements/cep-memory-model-operational-trace.md`（状态行 + 范围纪律行）· 载体表 `G-18` 2 行 · 验收报告 `.rddf/reviews/cep-b1-backlog-status-verify.md`
+
+### Entry #533 — 2026-11-23 [builder](**G-19 落地回执** —— L1「CI 红线」第三次复发：21 文件 `clang-format` + 观察项 O-3 处置)
+
+**授权来源**：用户 **「B」** —— 承接上一轮选项表「**B · 登记 + 一起修**」（选项说明：登记为新缺口 `G-19` 并同轮修复 ⇒ `G-*` 仍 0 项在册未闭合）。
+
+**① 观察项 O-3 的裁定（先裁后修）**
+
+| 项 | 实测 |
+|---|---|
+| O-3 的「互斥」是否成立 | ⛔ **不成立** —— `:970` 是 **2026-11-07 §10 规划快照**（L1 当时待办），`:16457` 是**同日稍后**的 Entry #275（13 文件已清）⇒ **时间序自洽**，不是记录矛盾 |
+| 但两者是否描述当下 | ⛔ **都不描述** —— 实测 `bash scripts/build/format.sh --check` ⇒ **rc=1 · 21 个文件需要格式化** |
+| 是否版本漂移造成 | ⛔ 否 —— 本地 `clang-format 22.1.6` == CI pin 的 `clang-format-22`（`ci.yml:186-199`） |
+| 复发史 | Entry #275（2026-11-07 清 **13** 个）→ Entry #360（2026-11-12 清 **10** 个）⇒ 本次为**第三次** |
+
+⇒ O-3 由「待裁」转为 **✅ 已裁**，承载缺口编号 = **`G-19`**。
+
+**② 修复内容（21 文件）**
+
+| 域 | 文件数 | 清单 |
+|---|:--:|---|
+| `src/` | **6** | `core/module_factory.cc` · `main.cpp` · `tlm/gpu/dgpu_board_shell.cc` · `tlm/gpu/sdma_engine_tlm.cc` · `tlm/nic_tlm.cc` · `tlm/pcie/pcie_endpoint_ip.cc` |
+| `test/` | **15** | `test_cep_instance_declaration_contract.cc` · `test_cep_mesh_e2e.cc` · `test_cep_sharer_tracker_base.cc` · `test_config_type_registration.cc` · `test_dgpu_msix_cap.cc` · `test_memory_tlm_backing.cc` · `test_nested_failure_propagation.cc` · `test_nictlm_credit_filter.cc` · `test_noc_mesh_binding_semantics.cc` · `test_param_migrate_batch2.cc` · `test_realip_facade_wiring.cc` · `test_router_buffer_size_param.cc` · `test_router_local_port_credit.cc` · `test_sdma_engine_timing.cc` · `test_simmodule_exposed_port_wiring.cc` |
+
+工具 = `./scripts/build/format.sh`（与 `--check` **同一条** ⇒ 判定与修复不脱钩）。修复后 `--check` ⇒ **rc=0** ·「✅ 格式化完成！」。diff 规模 = **21 files · +892 / −856**；改动文件集合与修复前 `--check` 报出的 21 个**逐条一致**。
+
+**③ 三重语义验证（⛔ 不靠「编译过了」单点，判据同 Entry #360）**
+
+| # | 判据 | 结果 |
+|:--:|---|---|
+| ① | **代码体**（去注释 + 去空白 + 剔除 include 行）逐文件比对 | **21/21 完全相同** |
+| ② | **include 多重集**（去重后）逐文件比对 | **21/21 相同**；唯一差异 = `test_cep_mesh_e2e.cc` 有一处**重复的 `#include <cstdio>`** 被 clang-format `SortIncludes` **去重**（20 → 19）⇒ 语义中性 |
+| ③ | **注释正文**（去注释标记 + 去空白）逐文件比对 | **21/21 完全相同**；唯二非空白差异 = 两处注释折行新增的 `//` 续行标记（`module_factory.cc` / `test_dgpu_msix_cap.cc` 各 +2 字符） |
+
+**④ 回归**
+
+| 检查 | 结果 |
+|---|---|
+| 构建 | `ninja: no work to do`（`verify_test_seam_fix.sh` 已用**格式化后**源码重编） |
+| 9 核心标签 | **603 cases / 49535 assertions 全过**（`[pcie]` 452 cases / 36773 assertions 等 9 个标签逐一 PASS） |
+| 全量 `ctest` | ✅ **200/200 Passed**（365 sec） |
+| 冻结面 | `cep_freeze_check.sh` rc=0（90 产物 hash 不变）· 21 文件全在 `src/**` `test/**` ⇒ 不在 `FROZEN_GLOBS` |
+
+**⑤ 附带发现（本轮验证时撞到，均**预存在**、均**不在 CI / ctest 内**，已登记「仓级」段 · 本轮不修）**
+
+| # | 发现 | 取证 |
+|:--:|---|---|
+| a | `scripts/test/check_pcie_ip_facade.sh` **rc=1** —— `pcie_completer_engine.cc:118-119` 访问 `PcieEndpointIP` internals | 该文件**不在本轮 21 个改动内**（`git status` 空）· HEAD 同内容 · 违规自 **`d1a2239f` 2026-09-17** 引入 ⇒ 与格式化无关 |
+| b | `scripts/test/verify_test_seam_fix.sh` STEP 5 **rc=1** —— 期望 `601 cases / 49525 assertions`，实测 `603 / 49535` | 期望值**硬编码**于该脚本 `:269`（脚本最后改动 `1acd7f91` · 2026-10-12）⇒ 随新增测试静默陈旧；两脚本均**未注册 ctest**、**不在 `ci.yml`** |
+
+**⑥ 附带残余（已登记 · 与本轮处置同型）**
+
+⚠️ 该债**无本地守门**：`.pre-commit-config.yaml` 里虽有 clang-format hook，但本 clone 的 `.git/hooks/pre-commit` 只装了 code-review-graph 的 wrapper（**pre-commit 框架未 install**）⇒ **复发机制仍在**（第三次复发即证据）⇒ 建议后续把 `--check` 挂进本地钩子；⛔ 本轮不改（改闸判据面属范围外）。
+
+**⑦ 范围纪律**
+
+⛔ 零 `include/**` · 零 `openspec/**` · 零 ADR 正文 · ⛔ 零**冻结面**成员 ⇒ 不触五步链 · ⛔ 未改任何**历史 Entry 正文**（本 Entry 追加式）· ⛔ 未改任何已签批 ADR 的决策内容。
+
+**⑧ 登记册现状（本 Entry 后）**
+
+| 项 | 值 |
+|---|---|
+| **`G-*` 编号空间仍开** | **0 项**（`G-1` ~ `G-19` 共 **19** 项全部闭合）|
+| 「已闭合项」表 | **26 行**（v4 旧 ID **7 行** + 19 个 `G-*`）|
+| 观察项 | **4 项**（O-3 转 ✅ 已裁，行保留）|
+| 仓级（非 CEP 域） | **6 项**（新增 a / b 两条，仅登记不排期）|
+| 载体表 | 数据行 **133 → 135** · `G-*` **14 → 16** |
+| 后续新缺口编号 | **`G-20+`**（per §6.4「编号空间登记表」；⛔ 不重用旧 ID）|
+
+**关联**：观察项 **O-3**（登记册 `:409`）· 台账 **#275**（首次清债 13 个）· **#360**（第二次 10 个）· `.github/workflows/ci.yml:180-204`（code-format job）· 验收报告 `.rddf/reviews/cep-l1-format-recurrence-verify.md` · 载体表 `G-19` 2 行
