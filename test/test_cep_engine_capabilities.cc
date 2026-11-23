@@ -143,6 +143,17 @@ TEST_CASE("CEP engine_capabilities: 谓词变异副本负控（AC-6）", "[cep][
     }
 }
 
+TEST_CASE("CEP engine_capabilities: 枚举名映射（egress / in_flight）", "[cep][engine_capabilities]") {
+    using tlm::cep::egress_mode_name;
+    using tlm::cep::in_flight_modeling_name;
+    CHECK(std::string(egress_mode_name(tlm::cep::EgressMode::ProtocolMessages)) ==
+          "protocol_messages");
+    CHECK(std::string(egress_mode_name(tlm::cep::EgressMode::None)) == "none");
+    CHECK(std::string(in_flight_modeling_name(tlm::cep::InFlightModeling::Modeled)) == "modeled");
+    CHECK(std::string(in_flight_modeling_name(tlm::cep::InFlightModeling::NotModeled)) ==
+          "not_modeled");
+}
+
 TEST_CASE("CEP engine_capabilities: 实例集双向零 orphan（J-2 / AC-2）", "[cep][engine_capabilities]") {
     const auto path = (repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json").string();
     std::ifstream in(path);
