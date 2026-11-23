@@ -243,13 +243,15 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 | 档 | 载体 | 违例类证据强度 | 机器载体 |
 |---|---|---|---|
 | **0** | 拓扑级 E2E 装置(`StubCacheEndpointTLM` + `CohIfResponderTLM`) | **样本通路活性**(⛔ **非**语义判据) | `scripts/test/cep_full_green_run_check.sh` 的 **C1'** + `observation_keys.memory_ops_checked_addrs` |
-| **1** | 模型级 `ConsistencyCompletionModel`(B4 的载体) | **语义判据**(三负控 + 耦合探针 + watchdog 非空洞) | `ADR-CEP-06` SU#4 ② 六条非空洞性约束 |
-| **2** | 协议级引擎(`include/tlm/cep/*_protocol_engine.hh`) | **协议语义**(天花板) | `ADR-CEP-12` 的实例面 ⇒ ⏭ 观测面**未建**(另立 change 评估) |
+| **1** | 模型级 `ConsistencyCompletionModel`(B4 的载体)—— ⚠️ **归属 = 实验 harness 面**(`test/cep_consistency_completion_model.hh`,仅 `test_cep_b4_evidence_device.cc` / `test_cep_experiment_emit.cc` 2 个测试调用方)⇒ **不在 07 号 §2 的 6 层运行时架构内** | **语义判据**(三负控 + 耦合探针 + watchdog 非空洞) | `ADR-CEP-06` SU#4 ② 六条非空洞性约束 |
+| **2** | 协议级引擎(`include/tlm/cep/*_protocol_engine.hh`)+ tracker 侧簿记层 | **协议语义**(天花板) | ✅ **已落地两族**(`mesif` 引擎侧 + `tilelink_c` tracker 侧)⇒ **载体形态 / 覆盖范围 / 四条硬边界见 §12.10**;⏭ **不产 4 件套 run ⇒ 无 verdict / 无通过态** |
+
+> **落点导航**(三面一致):**决策面** = `ADR-CEP-20` 决策 6 · **机器登记面** = `test/cep_e2e_run_tiers.json`(run 级)+ `test/cep_evidence_tiers.json`(观测级)· **架构文档侧载体** = `docs/architecture/07-coherence-exploration-platform.md` 的附录 SU 三则(2026-11-13 证据档位阶梯 / 2026-11-14 档 2 载体形态 / 2026-11-21 档 2 第二族)⇒ 读法约束以「**本节 + 该三则 SU + ADR 决策 6**」三面一致为准。
 
 **两条义务(⛔ 引用一致性结论时不可省)**
 
 1. **档位声明义务** —— 任何一致性断言**必须**声明档位与载体;⛔ **禁止跨档比较强度**(档 0 的 0 **不得**与档 1 的 0 并列引用);
-2. **跨档聚合禁令** —— ⚠️ **对账注册表与报告词表不分档**:`test/cep_e2e_runs.jsonl` 里**唯一**的 `"ic3_verdict": "✓ 通过"` 是**档 0**;`ic3_verdict` 三态词表(`✓ 通过` / `❌ 违例 fail` / `⚪ 不适用`)**不含档位维度** ⇒ ⇒ **按 `hypothesis_id` 聚合 verdict 前,必须同读同条目的 `evidence_scope`**,⛔ 不得仅凭 verdict 计数。档位登记的机器面 = `test/cep_e2e_run_tiers.json` + `scripts/test/cep_e2e_reconcile_check.sh`(T1~T3 + T2b:每个档 0 run 必须落在 `declaration_required` 或 `grandfathered` 之一,⛔ 不得静默跳过)。
+2. **跨档聚合禁令** —— ⚠️ **对账注册表与报告词表不分档**:`test/cep_e2e_runs.jsonl` 里**唯一**的 `"ic3_verdict": "✓ 通过"` 是**档 0**;`ic3_verdict` 三态词表(`✓ 通过` / `❌ 违例 fail` / `⚪ 不适用`)**不含档位维度** ⇒ ⇒ **按 `hypothesis_id` 聚合 verdict 前,必须同读同条目的 `evidence_scope`**,⛔ 不得仅凭 verdict 计数。档位登记的机器面 = `test/cep_e2e_run_tiers.json` + `scripts/test/cep_e2e_reconcile_check.sh`(T1~T3 + T2b:每个档 0 run 必须落在 `declaration_required` 或 `grandfathered` 之一,⛔ 不得静默跳过)。⚠️ **档 2 走另一张表**(`test/cep_evidence_tiers.json` · **观测级**;⏭ 档 2 不产 run ⇒ 不入 run 级表)⇒ 见 **§12.10**。
 
 **⚠️ 档 0 的口径(⛔ 随引用重复)**
 
@@ -257,7 +259,7 @@ B2 ✅ 66/66(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)
 - 写数据**恒 0** + home 只回显 ⇒ **无版本语义** ⇒ data-value 检查**无判别力** ⇒ ⇒ 该 0 是「**本装置无该形态**」的 0,⛔ **不得**表述为「已证明协议层无违例」,⛔ **不得**称「检测力已证」;
 - ⇒ **一次通过态实例 ≠**「所有协议族 / 所有拓扑达成」;⛔ **不得**读成「B4 被推翻」(B4 由**档 1** 达成)。
 
-**要看真判别力**:⇒ **档 2**(协议引擎不变量观测面)= 本仓可达但**未建**,量级见 `.rddf/reviews/cep-evidence-tier2-scale-assessment.md`(最小切片 ≈ 7-11 人日)。
+**要看真判别力**:⇒ **档 2**(协议引擎不变量观测面)—— ✅ **已落地两族**(`mesif` 引擎侧 / `tilelink_c` tracker 侧)⇒ **载体形态 / 覆盖范围 / 四条硬边界 / 可覆盖性地图见 §12.10**;⏭ 档 2 **不产 4 件套 run** ⇒ 无 verdict ⇒ ⛔ **不得**宣称「档 2 已通过」。· 量级参照(首次落地切片评估)= `.rddf/reviews/cep-evidence-tier2-scale-assessment.md`。
 
 ---
 
