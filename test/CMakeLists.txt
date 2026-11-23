@@ -62,6 +62,13 @@ add_test(NAME cep_authority_migration COMMAND cpptlm_tests "[cep][authority-migr
 # 队列 #9 `cpptlm-cep-mesif-adapter` 的**规约层**判据(MESIF 状态机规约 + 5→4 perm 投影表)
 add_test(NAME cep_mesif_state_spec COMMAND cpptlm_tests "[cep][mesif-state-spec]" -r compact)
 
+# change `cep-protocol-engine-capability-declaration`：协议引擎承载能力声明面
+#   J-1 在飞建模一致(编译期) / J-2 双向零 orphan / J-2b 声明自洽 / J-3 瞬态态策略(编译期)
+add_test(NAME cep_engine_capabilities COMMAND cpptlm_tests "[cep][engine_capabilities]" -r compact)
+# 同 change 的契约闸：实例集双向零 orphan + 引擎头文件集反向存在性 + probe TU 编译失败验证
+add_test(NAME cep_engine_capabilities_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_engine_capabilities_check.sh)
+
 # board-soc-split T-bs-1: DGpuSoc 容器测试
 # (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/tasks.md §T-bs-1)
 add_test(NAME test_dgpu_soc_from_config COMMAND cpptlm_tests "[dgpu][json]" -r compact)

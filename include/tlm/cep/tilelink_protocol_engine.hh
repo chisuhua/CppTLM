@@ -47,6 +47,7 @@
 #define CPPTLM_TLM_CEP_TILELINK_PROTOCOL_ENGINE_HH
 
 #include "tlm/cep/protocol_engine_base.hh"
+#include "tlm/cep/engine_capabilities.hh"
 #include "tlm/cep/tilelink_state_spec.hh"
 
 #include <array>
@@ -184,6 +185,19 @@ private:
     }
 
     Counters ctr_{};
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+//  引擎承载能力特化（per change cep-protocol-engine-capability-declaration）
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ 本特化是**类型级能力声明**；J-1 判据把它与 `HasInFlightApi<T>`（真实 API）
+//    交叉核对 ⇒ 二者不一致即**编译失败**。
+template <>
+struct EngineTypeTraits<TileLinkProtocolEngine> {
+    static constexpr InFlightModeling in_flight = InFlightModeling::NotModeled;
+    static constexpr const char* basis =
+        "事件计数/上报器，不建 PE 本地树状态机(决策)；无公开在飞事务查询 API";
 };
 
 } // namespace tlm::cep
