@@ -8,7 +8,7 @@ type: feature
 依赖:
   - ADR-CEP-13
   - ADR-CEP-12
-状态: "🟡 **待立项**(2026-11-21 · planner 起草 · 架构裁决已落 = architect 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §三(登记册 §6.4 队列 2 的 **I-6 决策 2**)· 经 **metis 1 轮**(P0/P1/P2 逐条处置见 §审查轨迹)· ⏳ **待用户 ratify**(本单元的「每域模型来源」ratify 项 + I-6 的 R-2)· ⏳ 待立项)"
+状态: "🟢 **已登记·backlog**(2026-11-21 · planner 起草 · 架构裁决已落 = architect 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §三(登记册 §6.4 队列 2 的 **I-6 决策 2**)· 经 **metis 1 轮**(P0/P1/P2 逐条处置见 §审查轨迹)· ✅ **立项形态已拍板**(2026-11-21 · 裁决记录 §一 决策 2「登记 backlog，独立立项解决」)· ✅ **R-2a~R-2f 已 ratify** + I-6 已落地(归档 `2026-11-21-cpptlm-cep-invariant-modeling-batch2` · schema properties 14 / required 13) ⇒ **AC-16 开工门实测 = 1**(`grep -c '"combination_contract"' include/tlm/cep/protocol_instance.schema.json`) · ⏸ **待触发条件**:需要「复合一致性公理**可判**」时(per 裁决记录 §三)· ⏭ **开工前置链** = architect 裁 AC-1「每域模型来源 + 域间边构造规则」(新建 ADR) → 用户 ratify → planner 立 openspec change → builder 实施(含**两处冻结面**五步链 ×2)· ⛔ **不占 KPI slot**(未立项))"
 created: 2026-11-21
 ---
 
@@ -16,7 +16,7 @@ created: 2026-11-21
 
 **主题**: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 
-> **范围纪律**: ⛔ **不改任何已签批 ADR 的正文**(新建 ADR 是**新文件**,不触碰既有正文 ⇒ 两件事)· ⛔ **不产 run** · ⛔ **新增 invariant 数 = 0** · ⛔ **不改** `combination_contract` 的字段类型 / 取值域(已由 architect 裁决给定,⛔ 待用户 ratify)
+> **范围纪律**: ⛔ **不改任何已签批 ADR 的正文**(新建 ADR 是**新文件**,不触碰既有正文 ⇒ 两件事)· ⛔ **不产 run** · ⛔ **新增 invariant 数 = 0** · ⛔ **不改** `combination_contract` 的字段类型 / 取值域(已由 architect 裁决给定 + **用户已于 2026-11-21 ratify** R-2a~R-2f)
 
 ## 架构依据
 
