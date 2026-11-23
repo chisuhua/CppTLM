@@ -28532,4 +28532,16 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 
 **⑧ 后果登记**：`ADR-CEP-12:1163`（**已签批 ADR 正文**）引用旧语料路径 ⇒ 改名后**悬空** ⇒ ⛔ 本 change **不改 ADR 正文**（若需消解走 Status Update 追加，须单独授权）。
 
+**⑨ 实施与验收回执（2026-11-24）**
+
+| # | 交付 | 结果 |
+|:--:|---|---|
+| 1 | 闸缺陷修复（commit `193e8e3f`，**可独立**）：扫描集缺失 ⇒ 必红（`litmus-scan-set-missing`）+ 第④路影子 fixture + 扫描集路径改用**相对路径变量** | ✅ 实证：spec 路径改错 ⇒ 修复前 RC=0（假绿）⇒ 修复后 RC=1（带红因码） |
+| 2 | 改名同批（commit `ecb0da55`）：4 个文件 `git mv` + 3 符号 + tag 族 + env var 两侧 + 冻结面 spec 退役+新增 + `test_cep_combination_contract.cc:312` 单行替换（**critic BLOCKER 闭合**）+ delta（ADDED 段**从实施期新 spec 提取** ⇒ 逐字一致） | ✅ 新标签族 **37 断言全绿**（= 改名前同数 ⇒ 零行为变更）· 既有闸两臂 rc=0 · `[cep][combination-contract]` IC1 载体绿 · 机检①命中项 ⊆ 必不改登记表 |
+| 3 | 冻结链（commit `965afa6d`）：`--update --authorized-by "Entry #540"` ⇒ **新增 1 · 移出 1 · hash 变更 0** · `artifact_count` **91 → 91** | ✅ 无参复验通过（91 产物 hash 一致） |
+| 4 | 归档：`openspec archive … --yes` ⇒ `2026-11-24-cep-litmus-falsifier-compound-graph-rename` | ✅ 行为与探针 P-3 预测**完全一致**（REMOVED 被忽略 + `Totals: + 0, ~ 0, - 0` ⇒ **零 spec 改动** ⇒ 无需二次 `--update`）· 旧 capability **无残留空壳** · 新 spec Purpose **非占位**（0 处 TBD） |
+| 5 | 计数回填：归档 **172→173**（CEP **56→57**）· 闸 51 / 闸族 65 / `test_cep_*.cc` 78 / spec 总数 **139** / `cep-*` **48** **均不变** | ✅ registry 5/5 |
+
+**⑩ 过程瑕疵登记（诚实）**：本单元**立项期间**（commit `6d7a1e5e` → 归档）`openspec list --json` 的 active 数为 **1**，而活文档 KPI 口径仍为 **0/3** ⇒ 该窗口内 `cep_docs_sync_check.sh` 断言①（KPI 口径 == 实测）**会红**。⚠️ 与 I1 的处理差异（I1 立项时同步改了 7 处活口径为 1/3）⇒ 本单元**漏了**该同步。⇒ **最终态一致**（归档后 active=0 ⇒ 活口径 0/3 == 实测 ⇒ registry 与 docs_sync 均绿）⇒ 无残留不一致；但窗口期的不一致**登记在案**，供后续 change 立项时对照（立项 ⇒ 同步活口径 ⇒ 归档 ⇒ 回填）。
+
 **⑨ 关联**：裁定记录 `.rddf/reviews/cep-litmus-falsifier-rename-adjudication-2026-11-24.md` · I2 阶段 1 `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md` + 归档 `2026-11-23-cep-litmus-falsifier-naming-disambiguation` · 实施路径 `.rddf/roadmap/cep-gen-family-gap-closure.md` · change `openspec/changes/cep-litmus-falsifier-compound-graph-rename/` · `ADR-CEP-13`（决策 2 / 决策 5 ②）· `ADR-CEP-17 §2 Decision 4` · Entry #538（I2 阶段 1）/ #539（Stage C C1+C2）

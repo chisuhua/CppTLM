@@ -98,6 +98,13 @@ done
 #   · 花括号展开 / 多路径合写 / 目录列表 —— 无法作为单一路径判存在
 # ⚠️ 新增条目必须写清理由 —— 这个白名单是「有意例外」的登记处，不是消音器。
 VIRTUAL_PATHS=(
+  # ── 2026-11-24（I2 阶段 2 改名 · 台账 Entry #540）：旧名路径在**历史 Entry** 与
+  #    **冻结面移出声明行**中的引用 —— 台账 append-only 不可回改；且「冻结面移出」声明行
+  #    **必须**写旧路径（`cep_freeze_check.sh` C-1b 硬要求）⇒ 闸侧豁免（现行路径 = 新名）。
+  "include/tlm/cep/litmus_falsifier.hh"  # 已改名 ⇒ include/tlm/cep/compound_graph_falsifier.hh（台账 Entry #513/#538 历史引述 + Entry #540 移出声明）
+  "openspec/specs/cep-litmus-falsification/spec.md"  # capability 已改名并退役 ⇒ openspec/specs/cep-compound-graph-falsification/spec.md（Entry #513/#540 历史/移出声明）
+  "scripts/test/cep_litmus_falsification_check.sh"  # 已改名 ⇒ scripts/test/cep_compound_graph_falsification_check.sh（Entry #513 历史引述）
+  "openspec/changes/cep-litmus-falsifier-compound-graph-rename/"  # 本 unit 的 change 目录**已归档**（2026-11-24；归档件不入库）⇒ Entry #540 ⑨ 关联行的 active 路径形态
   "ArchForge:docs/microarchitecture/pcie-endpoint.md"  # **跨仓 · 待建产物**(2026-11-19,per 台账 Entry #497 · ADR-DGPU-15 §D3):该文件是 ArchForge 侧「EP 键面契约」的**交付物**,由 backlog `cpptlm-ep-key-surface-reconciliation` 产出(待 planner 立项)⇒ 现阶段**本就不存在**;⚠️ 引用带 `ArchForge:` 前缀 ⇒ 走跨仓路径校验分支(对方仓在位时仍会判「文件不存在」⇒ 本条豁免)—— 契约落地后应**删除本条豁免**
   "include/core/param_rules.hh"  # **已删除**(2026-11-19,per 台账 Entry #492 —— change `cpptlm-module-param-migrate-batch2` 的 T4 退役 ParamRules 机制)⇒ 台账该 Entry 记录的是「删了什么」,引用的必然是已不存在的路径;⛔ 台账 append-only 不可回改 ⇒ 闸侧豁免（`ParamType` 已迁入 `include/core/param_parser.hh`）
   "docs/roadmap/cep-interface-alignment"            # 跨仓:ArchForge 侧文档
