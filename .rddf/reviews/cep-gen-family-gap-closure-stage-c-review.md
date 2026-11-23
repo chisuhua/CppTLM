@@ -128,6 +128,18 @@ I1（change `cep-protocol-engine-capability-declaration` · 台账 Entry #537）
 
 C2 SU 内「排期 / 计划 / 预计 / 工作量 / 优先级 / 补齐」类词**仅命中 1 处**，且为**显式否定行**（「⛔ 不登记 | 工程量级 · 排期 · 补齐意向(决策 5 已明文「⛔ 不裁决工程量级与排期」)」）⇒ 合规。
 
+**全量回归实测（HEAD `5683d0f0` 之后）**：
+
+| 判据 | 结果 |
+|---|---|
+| 全部 `scripts/test/cep_*.sh` | ✅ **51/51**（PASS=51 · FAIL=0） |
+| `ctest --test-dir build -R cep -j2` | ✅ **111/111 Passed**（219.16s） |
+| `bash scripts/test/cep_docs_sync_check.sh --strict` | ✅ rc=0 |
+| `bash scripts/test/cep_doc_ref_check.sh` | ✅ rc=0 |
+| `python3 scripts/test/cep_registry_baseline_check.py` | ✅ rc=0 |
+| `bash scripts/test/cep_freeze_check.sh`（无参） | ✅ provenance 自检通过（91 产物 hash 与 commit `a5c6a2ba` 一致） |
+| KPI 活口径 | ✅ active 实测 **0** ⇒ 全部活文档 **0/3**（doc-only 形态不占 slot） |
+
 ---
 
 ## 6. 五步授权链（执行记录）
