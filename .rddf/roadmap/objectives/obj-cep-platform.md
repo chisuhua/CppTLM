@@ -28647,4 +28647,29 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | 4 | 冻结清单**单独** commit | ⬜ |
 | 5 | 无参复验 `cep_freeze_check.sh`（rc=0 · 92 产物 hash 一致） | ⬜ |
 
+**⑧ 实施与验收回执（2026-11-24）**
+
+| # | 交付 | 结果 |
+|:--:|---|---|
+| 1 | **操作级轨迹模型**（新增 `include/tlm/cep/memory_model_trace.hh`）—— 操作 / 域绑定 / 读自映射 / 同地址写序候选 + **决策 3 的读侧/写侧授权表** + 解析期**拒收面**（8 类原因码） | ✅ |
+| 2 | **工装改型**（`compound_graph_falsifier.hh`）—— 四态 + 原因码闭集 **11 码** · 公理面图（`ppo_com ∪ rfe ∪ fr ∪ ws`）+ **双图折衷**（域内 `rf` 只进观测面）· 候选枚举（逐地址写序候选的**笛卡尔积**）+ **∃/∀ 聚合**（短路）· 截断 ⇒ `undecided` | ✅ 7 用例 / **202 断言** 全绿 |
+| 3 | **语料** `test/cep_memory_model_traces.json`（5 条迹）+ 测试改写（`[cep][compound-graph][falsification][*]` 族**不变**） | ✅ |
+| 4 | **闸臂替换**（AC-11）—— 旧 2 臂 ⇒ **6 臂**（正控 / **取代臂** `channel-edge-not-op-edge` / 派生边 / 未绑定域 / 截断 / 开工门）+ **旧→新语义映射表**落进脚本注释 | ✅ 闸 rc=0 |
+| 5 | **命名消歧闸臂④ 同步**（判据对象 ⇒ `kFalsifierScope` 操作级作用域标记）；⛔ 文件名与红因码 `litmus-scope-claim` **保留** | ✅ 闸 rc=0 |
+| 6 | **主 spec 整条替换**（MODIFIED）+ delta **由主 spec 提取生成** | ✅ 归档「**Specs already in sync; no files changed**」⇒ **零 spec 漂移** · Purpose **非占位**（0 处 TBD） |
+| 7 | **五步链**：`--update --authorized-by "Entry #542"` ⇒ **新增 0 · 移出 0 · hash 变更 1** · `artifact_count` **92 → 92**（与 ⑥ 的期望**逐字一致**）· 清单单独 commit · 无参复验 92 产物 hash 一致 | ✅ |
+| 8 | **归档** `2026-11-24-cep-memory-model-operational-trace` ⇒ active **1 → 0** · 归档 **173 → 174**（CEP **57 → 58**）· KPI **1/3 → 0/3** | ✅ |
+
+**⑨ 实施期发现的架构问题（如实登记 —— **未落 SU，v1.0 维持不动**）**
+
+实施前我（architect → builder）怀疑 `ADR-CEP-22` v1.0 的 `ws`（逐地址 `co`）**窄于**上游「全局内存序」⇒ 起草了一份 **SU 修正草案**（`/tmp/opencode/adr/ADR-CEP-22-SU-draft.md` · 含反例）⇒ 经 **oracle 审查 = REJECT**：
+- **反例无效** —— 我误把「**单一候选**成环」当作证伪；按 `ADR-CEP-22` 决策 5 ③ 的 **∃/∀ 聚合语义**，该迹在候选 `w1 < r < w2` 下**无环** ⇒ **∃ 可行候选 ⇒ `not_falsified`** 才是正确判定。⇒ 我**违反了自己写的规则**。
+- 且草案的「修正版」把 `fr` 改为 ≺-派生**写→写**形态 ⇒ 丢掉了 `cat` 标准 `fr`（读→写）承载的 `r ≺ w2` 约束 ⇒ **欠约束**。
+⇒ ⇒ **判定：v1.0 维持不动，SU 不落盘**（草案留仓外存档）。⚠️ 该轮**未消耗 critic 预算**（无产出物变更）。
+
+**⑩ 过程瑕疵登记（诚实）**
+
+① **ADR 落盘批次漏登决策块快照** —— Entry #541 的批次只登记了 `decision_adrs`，**漏**了 `test/cep_decision_block_snapshot.json` ⇒ 被 `cep_decision_block_check.sh`（「有决策章但未登记决策块快照」）抓出 ⇒ 本次补登（`files` 24 → 25 · `total` 131 → 140 · `authorized_by` = Entry #541）。⇒ **教训**：新 ADR 落盘的三件套实为**四件套**（`decision_adrs` + 决策块快照 + 索引/编号表 + 冻结链）。
+② **立项期 KPI 窗口** —— 立项（active 1）到归档之间的窗口内，活口径若写 0/3 会与实测不一致（本轮已同步为 1/3，归档后回填 0/3）⇒ 与 Entry #540 ⑩ 同型，**已按纪律同步**（本轮**无**残留不一致）。
+
 **⑦ 关联**：Entry **#541**（`ADR-CEP-22` 落盘授权 · 用户 ratify）· Entry **#540**（I2 阶段 2 改名 · G2 的活代码面铺路）· Entry **#514**（I-6 声明面落地）· Entry **#513**（litmus harness 落地）· `ADR-CEP-22` · `ADR-CEP-13` 决策 1 / 2 / 5② · `ADR-CEP-12` 决策 3 / 4 + R-2e · `ADR-CEP-09` 决策 A（通道环判据归属）· backlog `.rddf/improvements/cep-memory-model-operational-trace.md` · 审稿报告 `.rddf/reviews/ADR-CEP-22-memory-model-source-and-cross-domain-edges-review.md`
