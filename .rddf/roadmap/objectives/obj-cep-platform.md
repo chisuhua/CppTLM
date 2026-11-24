@@ -28735,10 +28735,10 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | 步 | 动作 | 状态 |
 |:--:|---|:--:|
 | 1 | 台账 Entry 先落（本 Entry） | ✅ |
-| 2 | 产物 commit（声明面 + 测试 + 闸 + main spec + 计数同步） | ⬜ |
-| 3 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #543"` ⇒ 期望「**新增 1 · 移出 0 · hash 变更 0**」（新建 main spec）· `artifact_count` **92 → 93** | ⬜ |
-| 4 | 冻结清单**单独** commit | ⬜ |
-| 5 | 无参复验 `cep_freeze_check.sh`（rc=0 · 93 产物 hash 一致） | ⬜ |
+| 2 | 产物 commit（声明面 + 测试 + 闸 + main spec + 计数同步） | ✅ commit 6884f298 |
+| 3 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #543"` ⇒ 期望「**新增 1 · 移出 0 · hash 变更 0**」（新建 main spec）· `artifact_count` **92 → 93** | ✅ 新增 1 · 移出 0 · hash 变更 0 · 93 |
+| 4 | 冻结清单**单独** commit | ✅ commit 85382985 |
+| 5 | 无参复验 `cep_freeze_check.sh`（rc=0 · 93 产物 hash 一致） | ✅ rc=0 · 93 产物 hash 一致 |
 
 **⑥ ⚠️ 回归口径纪律（per Entry #542 ⑪⑫ 的教训 —— 本单元**强制**）**
 
