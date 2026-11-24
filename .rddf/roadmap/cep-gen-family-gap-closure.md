@@ -52,13 +52,55 @@
 | **G1** | 协议 FSM 承载能力（瞬态态 / 在飞事务 / 引擎存在性）**无机器可查的现状面** | 🔴 P0 | **本仓可做**（声明面 + 编译期反射） | planner → builder |
 | **G2** | 复合一致性公理**不可证伪**（边类语义 + 操作级模型缺失） | 🔴 P0 | 需独立立项 + 用户 ratify | **既有 backlog** `cep-memory-model-operational-trace`（本轮不动） |
 | **G3** | 分层协议组合 = 零（目录层已就位，协议层未建） | 🟡 P1 | 需 architect 追认层级语义 | architect |
-| **G4** | fence 无一致性标签（论文一致性接口第三元缺失） | 🟡 P1 | 需评估外部素材可复用性 | planner → backlog |
+| **G4** | fence 无一致性标签（论文一致性接口第三元缺失） | 🟡 P1 · **素材已盘点**（2026-11-24） | **素材齐全**（论文 fence 效果表 + 一致性标签表已在仓内调研文档）⇒ 缺口是「**表达位置**」而非「缺料」；**存在零 schema 变更形态**（派生视图 + 闸）⇒ 见 §2.3.1 | planner（盘点 ✅）→ **architect**（表达位置 a/b/c 裁决）+ builder（G4-a 可做） |
 | **G5** | 协议级死锁自由论证不存在 | 🟡 P1 | 论文侧亦未解决（§9.3.1）⇒ **抄不到** | backlog |
 | **G6** | 「litmus」命名与能力错配（实为通道图找环） | 🟡 P1 | **本仓可做**（低成本） | planner → builder |
 | **G7** | 「不完整目录知识」无表达（无 belief 模型） | 🟡 P1 | 需 architect 判取值域 | architect |
 | **G8** | `SnoopState` 无 `F` ⇒ MESIF 转发点角色在 tracker 不可保真 | 🟡 P2 | 已显式登记（HD-05） | backlog |
 | **G9** | sharer 位图 64-bit 类型但只映射 4 bit | 🟡 P2 | `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md` 已立**触发式**扩容判据 | 既有 ADR（阶段 2 不得预先执行） |
 | **G10** | 无网络 hop / 时序模型 | ✅ **本仓可做部分已闭**（2026-11-24） | **只登记现状 + 让缺口可检出**（⛔ **不补** hop / 时序模型 ⇒ 属协议 FSM 语义设计，归 ArchForge） | 依赖 G1（已闭）· change `cep-hop-timing-capability-declaration` 已归档 |
+
+---
+
+### 2.3.1 G4 素材盘点结论（2026-11-24 · planner · 一次性调研，零写入）
+
+> **问题**：fence 在论文的一致性接口（read / write / **fence**）里是**第三元**，但本仓的
+> `protocol_instances.json` 的 `consistency_labels` 只有 read / write ⇒ **fence 效果无处表达**。
+
+**① 论文侧素材：本仓已有（⛔ 不是「抄不到」）**
+
+| 论文事实 | 本仓落点 |
+|---|---|
+| 一致性接口 = read / write / **fence**（HeteroGen HPCA2022 p.3 §II-B） | `docs/research/cep-coherence-protocol-space-survey.md` §4.3.1（:532） |
+| **fence 效果按一致性模型而异**：SC 无 / TSO 全屏障 / RC release·acquire / PLO 只补 W→W·R→W | 同文 §4.3.1 的四行表 + :961 |
+| 一致性标签体系（SC / TSO / RC-×4 / PLO，**read·write 方向标签**） | 同文 §4.3.2（:549，Table I :1266-1276） |
+
+**② 关键语义澄清**：论文里**没有**「fence 标签」—— fence 的效果是**「一致性模型 + 方向」的组合效果**，
+而非与 read / write 并列的第三个标签值 ⇒ 若在 schema 里加一个 `fence` 枚举值，**语义上**是把
+「组合效果」误当「标签」。
+
+**③ 本仓已有二维足以推导（零 schema 变更即可表达）**
+
+| 实例 | read 标签 | write 标签 | `flow_support.barrier` | ⇒ 论文口径的 fence 效果 |
+|---|---|:--:|:--:|---|
+| `mesif` | RC-acquire | RC-release | ✅ | RC = release/acquire（按方向）⇒ **已被现有标签蕴含** |
+| `moesi_gpu` | RC-data | RC-release | ✅ | RC = release/acquire ⇒ **acquire 侧未被标签声明** ⇒ ⚠️ 需裁决（读标签是 RC-data） |
+| `nvlink_4` | SC | SC | ✅ | SC 已全序 ⇒ **无额外效果**（被 SC 标签蕴含） |
+| `chi_rnf` / `cxl_2_0` / `cxl_3_0_symmetric` / `tilelink_c` | SC | SC | ❌ | **无 barrier 流 ⇒ fence 无通道** |
+| `ualink_4` | PLO | PLO | ❌ | 无 barrier 流；PLO 下 fence 只补 W→W 与 R→W（但无通道） |
+
+⇒ **结论**：G4 的缺口**不是**「论文缺料 / 标签取值域未知」，而是**「fence 效果这层表达没有落点」**。
+
+**④ 三个候选落点（⛔ 需 architect 判权的是 b / c）**
+
+| 候选 | 形态 | 冻结面影响 | 归属 |
+|:--:|---|---|---|
+| **G4-a（推荐）** | **派生声明面**：新增「由 `consistency_labels` + `flow_support.barrier` 推导 fence 效果」的**只读派生视图 + 闸 + 反向 fixture**（形态照抄 G10） | **零**（不改 schema / 不改 instances / 不改 ADR） | **builder 可做** |
+| **G4-b** | 写回实例声明面：`consistency_labels` 增设 `fence` 子字段 | **有**（schema = 冻结面 ⇒ 五步链） | **architect**（取值域 + 语义） |
+| **G4-c** | 只登记推导规则：写进 `ADR-CEP-13` 的 SU 段 | **有**（ADR 正文 = 冻结面 ⇒ 五步链） | **architect** |
+
+**⑤ 待决点（交 architect + 用户）**：fence 效果的**表达位置**（派生视图 a / 写回 schema b / 只登记规则 c）。
+⇒ **builder 可先做 a**（零契约面变更）；若裁决要 b / c，则须走五步链。
 
 ---
 
@@ -124,7 +166,9 @@ Stage C（后续 · 需 architect / 用户 ratify）  ← C1 + C2 已于 2026-11
   │     ✅ **已完成 2026-11-24**（台账 Entry #541 / #542 · `ADR-CEP-22` 已签发（冻结面 92）· change 已归档
   │        · 验收 **PASS 17/17** · 报告 `.rddf/reviews/cep-memory-model-operational-trace-verify.md`）
   ├─ C4 architect：追认 HierarchicalDirectory 的 3 层语义 + 5 条基线约束闸（G3）  ← ⏸ 待办
-  └─ C5 planner：评估 fence → 标签映射素材（G4）  ← ⏸ 待办
+  └─ C5 planner：评估 fence → 标签映射素材（G4）
+        ✅ **盘点已完成 2026-11-24**（§2.3.1）⇒ 素材齐全；⏭ **待 architect + 用户裁决表达位置**
+           （**G4-a** 派生视图〔零冻结面 · builder 可做〕/ **G4-b** 写回 schema〔冻结面〕/ **G4-c** 只登记规则〔冻结面〕）
 ```
 
 **依赖方向单向**：`G1（Stage B · ✅ 已闭）` ⇒ `G10（Stage B''' · ✅ 本仓可做部分已闭 · 补模型跨仓）` ⇒ `G3 的协议侧（⛔ 跨仓 ArchForge）` ⇒ `G5（⛔ 不可抄：论文侧 §9.3.1 亦未解决）`。**G2 独立**（走既有 backlog 线 · ✅ 已闭 + 残余 5 项已单独登记）。
