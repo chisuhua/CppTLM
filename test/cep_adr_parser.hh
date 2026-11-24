@@ -180,7 +180,12 @@ namespace cpptlm {
                 // 2026-11-14(Entry #421):ADR-CEP-21 = Sharer 位宽的扩容机制与触发判据
                 // (两阶段 · **新增 invariant 数 = 0**,per 其 X-3)⇒ 与
                 // scripts/test/cep_docs_sync_check.sh 的 NO_INV 同步登记(两处规则重复)。
-                "ADR-CEP-21-sharer-bitmap-expansion.md",            };
+                "ADR-CEP-21-sharer-bitmap-expansion.md",
+                // 2026-11-24(Entry #542):ADR-CEP-22 = 每域模型来源与域间边构造规则
+                // (**新增 invariant 数 = 0**,per 其决策 1~9;归因 id 复用 INV-CEP-13-IC1)
+                // ⇒ 与 scripts/test/cep_docs_sync_check.sh 的 NO_INV 白名单**同步登记**。
+                "ADR-CEP-22-memory-model-source-and-cross-domain-edges.md",
+            };
             return v;
         }
 

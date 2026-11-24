@@ -76,6 +76,10 @@ ADR_LIST=(
   # 实测(2026-11-15):补后 **24 条** == 磁盘 `ADR-CEP-*.md` 全量(含 NUMBER-MAP / 00A)。
   "ADR-CEP-20-topology-ic3-evidence-strength.md"
   "ADR-CEP-21-sharer-bitmap-expansion.md"
+  # 2026-11-24(change `cep-memory-model-operational-trace` · 台账 Entry #542):补 **-22**。
+  # ⚠️ 本清单是「存在 + 含不变量/决策节」两项检查的**覆盖集**;漏登记 = 新 ADR **静默脱检**
+  #    (本轮实测:ADR 落盘批次漏了本项 + 决策块快照 + no_inv 两处 ⇒ 三闸同时红)。
+  "ADR-CEP-22-memory-model-source-and-cross-domain-edges.md"
   "ADR-CEP-NUMBER-MAP.md"
 )
 MISSING=0
