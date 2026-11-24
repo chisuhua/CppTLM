@@ -321,3 +321,57 @@ ArchForge 的评估过程(答复回执 `cep-interface-alignment-response-2026-10
 
 `combination_contract.compound_consistency.edge_classes` 只登记**取值域**(`rfe` / `fr` / `ws`);
 语义**锚点 = 本 ADR 决策 2 的公式**(⛔ 本仓不复述、不重定义 ⇒ 避免第二真源)。
+
+---
+
+## Status Update(2026-11-24)—— 一致性标签 → fence 效果派生规则登记（G4-c）+ fence 子字段不增设（G4-b）
+
+> **台账 Entry**：待 builder 收口时回填（architect 不写 `.rddf/roadmap/**`）。
+> **触发**：G4 gap 闭合（`.rddf/roadmap/cep-gen-family-gap-closure.md` §2.3 G4）—— G4-a 已把「fence 效果」做成**派生声明面**（change `cep-fence-consistency-effect-derivation` 已归档 · 验收 PASS 16/16），其 R5 读数标为 **provisional** 待本 ADR 追认。
+
+### ① 登记内容：派生规则 R1–R7（**声明口径**，⛔ 不是协议语义真源）
+
+> **定位**：本 SU 登记的是「本平台**如何从** `consistency_labels` + `flow_support.barrier` 派生 fence 效果」—— 一致性接口第三元（fence）在**声明面**的口径。决策 2 的 `INV-CEP-13-IC1` **判据定义不变**；协议语义真源仍归 ArchForge（`ADR-CEP-00` 决策 1）。
+
+| 规则 | 条件 | 派生效果 | 依据 |
+|:--:|---|:--:|---|
+| **R1** | 实例不支持 barrier 流 | None（**最高优先级**，遮蔽模型规则） | 无 fence 通道 ⇒ 无从谈效果 |
+| **R2** | 读 / 写标签跨族 | Invalid | 域外（合法实例不构造跨族组合） |
+| **R3** | SC | None | SC 已全序 ⇒ fence **可提供的**效果为空 |
+| **R4** | TSO | FullBarrier | 补回 store→load 序 |
+| **R5** | RC | ReleaseAcquire | 见 ②（本次**修正**） |
+| **R6** | PLO | Partial | 只补 W→W 与 R→W |
+| **R7** | 标签在 schema 枚举之外 | Invalid | 域外 |
+
+**口径统一说明**：全表取 **「上界口径」** —— 派生的是「fence 在该模型下**可提供**的效果」，**不是**「相对该实例基线 ppo 的增量」。这是 R3 的取值方式（SC 下 fence 可提供的效果 = 空），也是本次修正 R5 的判据（见 ②）。
+
+### ② R5 修正：**推翻** G4-a 的 provisional 读数
+
+**被推翻的读数**：原 R5 把 acquire 门控在「读标签 == RC-acquire」上 ⇒ moesi_gpu（read=RC-data / write=RC-release）派生为 ReleaseOnly。
+
+**推翻理由**（两条，各自独立成立）：
+
+1. **基线选择不一致（精确诊断）**：全表其余行取**模型基线**（= fence 相对**模型裸 ppo** 的增量）—— mesif 亦按模型基线给 ReleaseAcquire；唯 moesi_gpu 按**实例标签基线**给 ReleaseOnly。⚠️ SC / TSO / PLO 三行在两个基线下**恰好重合**（fence 可提供的全部效果 = 相对模型裸 ppo 的增量）⇒ **RC 行是两基线的唯一分叉点**，矛盾必然在 RC 族内爆发。统一取**模型基线**后 RC 族一律 ReleaseAcquire。
+2. **语义**：fence 是 reads / writes / **fences** 三元接口中的**独立操作**，其 ppo 边按**方向**成立（论文 RC 行「release / acquire（**按方向**）」= fence 自身的 release / acquire 方向维度）⇒ **访问标签只决定**基线 ppo 的强弱（RC-acquire 读 / RC-release 写已自带边），**不决定** fence 可提供的边。⚠️ 调研 §4.3.1 的 fence 效果表**行键是一致性模型**（SC / TSO / RC / PLO）而非标签组合；§4.3.2 的标签是**访存类型**标签 ⇒ 两组概念正交，fence 效果由**模型族**决定。
+
+**修正结果**：RC 族一律 ReleaseAcquire ⇒ moesi_gpu 由 ReleaseOnly 改为 ReleaseAcquire；mesif 不变。实施面随之修正，走**五步授权链**（冻结面 hash 变更），清单 = ① `include/tlm/cep/fence_effects.hh` 的 R5 分支（及其 8 行派生表）② 判据测试的独立 oracle ③ main spec 的规则表（含 R5 行）④ **main spec 的 Purpose 段 provisional 注记**（须改为「已经 `ADR-CEP-13` SU(2026-11-24) 追认」—— ⛔ 只改规则表而不改注记 ⇒ 同一文本一边说「待追认」一边已取新口径，自相矛盾）。
+
+**死枚举登记（本 SU 的处置，builder 照此实施）**：修正后 `ReleaseOnly` / `AcquireOnly` 在 8 行实例表上**不可达**（RC 族恒 `ReleaseAcquire`；其余族为 None / FullBarrier / Partial / Invalid）。处置 = **保留枚举值**并在 `fence_effects.hh` 注明「**预留**：单方向 fence 建模时启用」，⛔ **不删除** —— 删枚举值 = **值序变更 = 公共契约面破坏**（与 G7 选项 C 同理）。⚠️ 其启用条件与 ③ 的重开条件①**同源**（都指向「单方向 fence 建模 / 按 read·write 分列多值」这一未来事件）⇒ 两处须**同步演进**，⛔ 不得各自漂移。
+
+### ③ G4-b 裁决：⛔ **不增设** schema 的 fence 子字段
+
+| 维度 | 结论 |
+|---|---|
+| 为什么派生而非存储 | fence 效果是 `consistency_labels` + `flow_support.barrier` 的**纯函数** ⇒ 存一份即造**第二真源**，必然漂移。⚠️ 须区分两种数据：**输入副本**（`fence_effects.hh` 内的 read / write / barrier 镜像）**本身就是第二份数据**，靠闸的逐字段比对（红因 `fence-input-copy-drift`）守 ⇒ 派生视图的准确表述是「无**不可检出的**漂移面」；本裁决否掉的只是**输出**（fence 效果）存储这一份额外真源 |
+| 本阶段结论 | G4-b 按「**不实施**」收敛 —— 不是「推迟」，是**决定不做**（理由如上） |
+| 重开条件（两条，任一成立） | ① 出现「按 read / write **分列多值**」的真实需求（当前 schema 的政策是**单值**）；② 出现**非 C++ 消费者**（Python 分析脚本 / ArchForge 侧）需要读取 fence 效果 —— 这是存储的**唯一真实收益**（互操作；值域一致性已由 `FenceEffect` 枚举编译期保证 ⇒ schema 级值域校验收益 ≈ 0）。⇒ 重新开 G4-b，走 schema 五步链，并同步扩张派生枚举 |
+
+### ④ 未变更项（明示）
+
+决策 1 ~ 6 **全部未变**；`INV-CEP-13-IC1` / `IC2` / `IC3` 判据**定义**未变；`Verification` 的 V-13-1 ~ V-13-5 未变；`protocol_instance.schema.json` / `protocol_instances.json` / `test/cep_invariant_assertion_map.json` **零改动**。
+
+### ⑤ 边界（诚实）
+
+- 本 SU 登记的是**本平台的派生口径**，⛔ 不是 RC 协议语义的真源（真源归 ArchForge）—— 若 ArchForge 给出不同口径，以**取代流程**修正本 SU，⛔ 不得直接改本段。
+- 派生粒度 = **实例**（per 决策 1：`barrier_domain` ≠ 一致性域边界）⇒ 派生值 ⛔ **不构成**跨一致性域的 barrier 保证。
+- 「fence 可提供的效果」⛔ **不等于**引擎行为语义：本平台不建模 fence 的**执行**（何时生效 / 如何排队），只声明其**一致性效果**。
