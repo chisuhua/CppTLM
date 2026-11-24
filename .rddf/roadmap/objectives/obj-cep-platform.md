@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 1/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
+`openspec/changes/` 当前 **0 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 0/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -28745,3 +28745,31 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 **零回归证据 = 全量 ctest（⛔ 不按 `-R` 过滤）+ 全部 `cep_*.sh` + 非 `cep` 只读闸 + `docs_sync --strict`** ⇒ ⛔ 不得用 `-R <前缀>` 过滤后的子集冒充「零回归」（过滤会**按名字**排除判据面 —— 上轮即因此漏掉 3 个红闸）。
 
 **⑦ 关联**：gap 分析 **G10**（+ 依赖 **G1**）· I1 `cep-protocol-engine-capability-declaration`（形态模板）· `ADR-CEP-19`（CohIf 载体形态）· `ADR-CEP-13`（一致性公理）· `ADR-CEP-20`（能力阶梯）· Entry **#542**（G2 实施 + ⑪⑫ 口径教训）· Entry **#541**（`ADR-CEP-22` 落盘授权）· backlog `.rddf/improvements/cep-hop-timing-capability-declaration.md`
+
+**⑧ 收口（2026-11-24 · builder 实施 + verifier 独立验收）**
+
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | **归档** | ✅ | change 移入 `openspec/changes/archive/2026-11-24-cep-hop-timing-capability-declaration/`；主 spec 合并输出「**Specs already in sync; no files changed**」⇒ 冻结面**零 hash 变更** · 冻结产物保持 **93** |
+| 2 | **独立验收** | ✅ **PASS 17/17** | verifier（角色内建 · 本地验收：`.rddf/state/iteration.json` 不存在 ⇒ P3 archive gate 不可检测 ⇒ 按契约走 1-5 步本地验收）· 报告 `.rddf/reviews/cep-hop-timing-capability-declaration-verify.md`；⛔ 0 失败 · 非阻塞发现 3 条（F-1 SHOULD_FIX「探针只看 public 成员」注释级补写 / F-2 / F-3 NIT） |
+| 3 | **零回归（全量口径）** | ✅ | 全量 ctest（⛔ 不按 `-R` 过滤）**205/205** rc=0 · `cep_*.sh` **52/52** rc=0 · 非 `cep` 只读闸 **9/9** rc=0 · `cep_docs_sync_check.sh --strict` rc=0 · `cep_freeze_check.sh` 无参 rc=0（93 产物 hash 一致） |
+| 4 | **计数 / KPI 回填** | ✅ | active **1 → 0** · KPI **1/3 → 0/3**（7 处活口径逐处回填）· 归档 **174 → 175**（CEP **58 → 59**）· 主 spec **140**（`cep-*` **49**）· 闸 **52** + **14** py · `test_cep_*.cc` **79** · ctest **205** · 冻结 **93** |
+| 5 | **commit 链** | ✅ | `6884f298` 产物 · `85382985` 冻结清单（单独）· `57683fb2` 五步链回执 · 收口 commit（归档 + 回填 + 报告 + 收口段） |
+| 6 | **零决策 / 零 schema / 零 invariant 变更** | ✅ | `git diff --name-only 9d10eddc..HEAD -- docs/adr/ include/tlm/cep/protocol_instance.schema.json include/tlm/cep/protocol_instances.json include/tlm/cep/engine_capabilities.hh` ⇒ **空**；`cep_invariant_map_check.py` ⇒ 66/66（0 unmodelled / 0 pending） |
+
+**⛔ 边界（不变）**：本单元**只登记现状** · ⛔ **不补** hop / 时序模型（归 ArchForge）· ⛔ 零 schema / ADR 正文 / invariant 变更 · ⛔ 零协议头改动 · ⛔ 与 G1（`engine_capabilities.hh`）**正交**。
+
+**⏭ G10 后续（本仓外）**：协议语义层的 hop 计数与消息级时序模型**本身** ⇒ 属协议 FSM 语义设计，per 宪章归 ArchForge；本仓侧**缺口已可检出**（J-4 反向存在性 + J-5 编译期否定断言）。
+
+**⑨ 附带发现（⛔ 非 G10 范围 · 待 planner 立项 / 用户裁决）—— 并行 ctest 下「变异型闸」的还原竞态 ⇒ 工作树污染**
+
+| # | 事实 | 证据 |
+|:--:|---|---|
+| 1 | 本轮第三轮回归（`ctest --test-dir build -j4`）结束后，仓内留下**被变异的冻结件**：`include/tlm/cep/fabric.json` 被清空（0 字节）· `include/tlm/cep/protocol_instances.json` 残留 15 处 `-MUT` 标记 | 本轮实测（已 `git checkout --` **字节还原** ⇒ 冻结面 93 产物 hash 不变） |
+| 2 | 两个闸**都改写同两个文件**且靠 `trap` 还原：`cep_freeze_reverse_verify.sh`（`cp $FABRIC $BACKUP` + `trap cleanup EXIT`）· `cep_decl_reverse_verify.sh`（`cp $FABRIC $TMP/fabric.json.bak` + `cp $REPO_DECL $TMP/protocol_instances.json.bak` + `trap cleanup EXIT`） | `scripts/test/cep_freeze_reverse_verify.sh:34-58` · `scripts/test/cep_decl_reverse_verify.sh:31-42` |
+| 3 | 并行竞态路径：A 备份(原) → B 备份(A 已变异) → A 还原(原) → B 还原(变异) ⇒ **残留** | 与观测残留形态一致（前两轮 `-j4` 未命中 ⇒ **概率性**） |
+| 4 | 仓内**已有**该风险的认知与**正确形态**：「本脚本**只写自己的临时目录**、**不改**仓内任何文件 ⇒ 可安全并行进 ctest」 | `test/CMakeLists.txt:347-359`（`cep_flow_support_reverse_verify.sh` 注释）· 本单元 G10 闸亦按该形态实现（`--root` 拷贝根 ⇒ 零污染） |
+
+**候选修法（⛔ 本单元不实施 · 待裁决）**：**A** 把 `cep_freeze_reverse_verify.sh` 改为**拷贝根**形态（与 G10 闸同型 · 与仓内既有正确形态一致 · 中等代价）｜**B** 在 `test/CMakeLists.txt` 给两个变异闸加 `RESOURCE_LOCK` / `RUN_SERIAL`（最小改动 · 但闸外并发无保护）｜**C** 文件级 `flock` 互斥（覆盖闸外并发）。
+**影响**：污染对象是**冻结面** ⇒ 之后 `cep_freeze_check.sh` + `cep_docs_sync_check.sh` + 多个 `cep_*.sh` 全红 ⇒ **假红淹没真信号** ⇒ 与本 change 无关，但**任何** change 的全量回归都可能踩中。
+**⏭ 待办**：登记为 backlog 改进（建议名 `cep-mutation-gate-parallel-race`）⇒ 由 planner 立项 + 用户裁决修法（A / B / C）。
