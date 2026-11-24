@@ -262,13 +262,15 @@ else
     fail "臂③ 变异锚点未命中（判据失去牙）"
 fi
 
-# ── 臂④ AC-3 头文件边界三要素共现（顶点形态 ∧ 判据对象 ∧ 否定标记）──
+# ── 臂④ 头文件诚实边界三要素共现（作用域标记 ∧ 判据对象 ∧ 否定标记）──
+# ⚠️ **2026-11-24 操作级改型**：判据对象由「通道顶点形态 `(instance, network, vc)`」
+#    改为「**操作级**作用域标记」⇒ 工装的图 = 操作图（per `ADR-CEP-22` 决策 4/6）。
 echo "--- 臂④ 头文件诚实边界三要素共现 ---"
-VERTEX_KEY='(instance, network, vc)'
-if grep -qF "$VERTEX_KEY" "$HDR" && grep -qF '环' "$HDR" && grep -qE '不是|非|⛔|不' "$HDR"; then
-    pass "臂④ 头文件含顶点形态 '(instance, network, vc)' ∧ 判据对象「环」 ∧ 否定标记"
+SCOPE_KEY='kFalsifierScope = "operation-level-composite-graph"'
+if grep -qF "$SCOPE_KEY" "$HDR" && grep -qF '环' "$HDR" && grep -qE '不是|非|⛔|不' "$HDR"; then
+    pass "臂④ 头文件含作用域标记 'operation-level-composite-graph' ∧ 判据对象「环」 ∧ 否定标记"
 else
-    fail "litmus-scope-boundary: 头文件边界段缺三要素（顶点形态 / 判据对象 / 否定语境）"
+    fail "litmus-scope-boundary: 头文件边界段缺三要素（作用域标记 / 判据对象 / 否定语境）"
 fi
 
 # ── 汇总 ───────────────────────────────────────────────────────────────

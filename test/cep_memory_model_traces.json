@@ -1,0 +1,449 @@
+{
+  "_status": "操作级轨迹语料（v1 = **手写** litmus 迹；per `ADR-CEP-22` 决策 5⑤ + backlog What Changes #7）· ⛔ **运行期采集另立 backlog** · ⛔ 本文件**只**含操作级字段（⛔ 无通道边字段 ⇒ 与 `test/cep_compound_graph_corpus.json` **物理分离**）· 锚点 allowlist 见 `include/tlm/cep/memory_model_trace.hh` 的 `anchor_allowlist()`",
+  "_domains": "域标识 → 协议实例 `id`（per `ADR-CEP-22` 决策 1：域身份**只**在迹数据面；⛔ 不进 schema）· 域模型（`ppo_i`）由实例的 `consistency_labels` 解析（决策 2）",
+  "traces": [
+    {
+      "id": "xdomain-sb",
+      "family": "hetero-sb",
+      "source_litmus": "SB+cross-domain（域 A 读域 B 的写 + 域 B 读域 A 的写）",
+      "anchor_id": "ADR-CEP-13-decision-2",
+      "domains": [
+        {
+          "id": "cpuA",
+          "instance": "chi_rnf"
+        },
+        {
+          "id": "gpuB",
+          "instance": "moesi_gpu"
+        }
+      ],
+      "threads": [
+        {
+          "id": "t1",
+          "domain": "cpuA",
+          "ops": [
+            "r1",
+            "w2"
+          ]
+        },
+        {
+          "id": "t2",
+          "domain": "gpuB",
+          "ops": [
+            "r2",
+            "w1"
+          ]
+        }
+      ],
+      "ops": [
+        {
+          "id": "r1",
+          "kind": "read",
+          "addr": 100,
+          "value": 0
+        },
+        {
+          "id": "w2",
+          "kind": "write",
+          "addr": 200,
+          "value": 2
+        },
+        {
+          "id": "r2",
+          "kind": "read",
+          "addr": 200,
+          "value": 0
+        },
+        {
+          "id": "w1",
+          "kind": "write",
+          "addr": 100,
+          "value": 1
+        }
+      ],
+      "rf": [
+        {
+          "read": "r1",
+          "write": "w1"
+        },
+        {
+          "read": "r2",
+          "write": "w2"
+        }
+      ],
+      "co_candidates": {
+        "100": [
+          {
+            "id": "co1",
+            "order": [
+              "w1"
+            ]
+          }
+        ],
+        "200": [
+          {
+            "id": "co1",
+            "order": [
+              "w2"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "xdomain-sb-companion",
+      "family": "hetero-sb",
+      "source_litmus": "SB+cross-domain 的 companion（**唯一差异** = 域绑定 ⇒ 两线程同域 ⇒ 读自为**域内**）",
+      "anchor_id": "ADR-CEP-13-decision-2",
+      "domains": [
+        {
+          "id": "cpuA",
+          "instance": "chi_rnf"
+        },
+        {
+          "id": "gpuB",
+          "instance": "moesi_gpu"
+        }
+      ],
+      "threads": [
+        {
+          "id": "t1",
+          "domain": "cpuA",
+          "ops": [
+            "r1",
+            "w2"
+          ]
+        },
+        {
+          "id": "t2",
+          "domain": "cpuA",
+          "ops": [
+            "r2",
+            "w1"
+          ]
+        }
+      ],
+      "ops": [
+        {
+          "id": "r1",
+          "kind": "read",
+          "addr": 100,
+          "value": 0
+        },
+        {
+          "id": "w2",
+          "kind": "write",
+          "addr": 200,
+          "value": 2
+        },
+        {
+          "id": "r2",
+          "kind": "read",
+          "addr": 200,
+          "value": 0
+        },
+        {
+          "id": "w1",
+          "kind": "write",
+          "addr": 100,
+          "value": 1
+        }
+      ],
+      "rf": [
+        {
+          "read": "r1",
+          "write": "w1"
+        },
+        {
+          "read": "r2",
+          "write": "w2"
+        }
+      ],
+      "co_candidates": {
+        "100": [
+          {
+            "id": "co1",
+            "order": [
+              "w1"
+            ]
+          }
+        ],
+        "200": [
+          {
+            "id": "co1",
+            "order": [
+              "w2"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "co-two-candidates",
+      "family": "hetero-co",
+      "source_litmus": "同址写序二择一（`co1` = w2→w1 ⇒ **成环**；`co2` = w1→w2 ⇒ **可行**）—— per `ADR-CEP-22` 决策 5③ 的 ∃/∀ 聚合面（**候选次序**：成环者在前 ⇒ 短路前先记录到两个候选的判定）",
+      "anchor_id": "ADR-CEP-22-decision-4",
+      "domains": [
+        {
+          "id": "cpuA",
+          "instance": "chi_rnf"
+        },
+        {
+          "id": "gpuB",
+          "instance": "moesi_gpu"
+        }
+      ],
+      "threads": [
+        {
+          "id": "t1",
+          "domain": "cpuA",
+          "ops": [
+            "r",
+            "w2"
+          ]
+        },
+        {
+          "id": "t2",
+          "domain": "gpuB",
+          "ops": [
+            "w1"
+          ]
+        }
+      ],
+      "ops": [
+        {
+          "id": "r",
+          "kind": "read",
+          "addr": 100,
+          "value": 0
+        },
+        {
+          "id": "w2",
+          "kind": "write",
+          "addr": 100,
+          "value": 2
+        },
+        {
+          "id": "w1",
+          "kind": "write",
+          "addr": 100,
+          "value": 1
+        }
+      ],
+      "rf": [
+        {
+          "read": "r",
+          "write": "w1"
+        }
+      ],
+      "co_candidates": {
+        "100": [
+          {
+            "id": "co1",
+            "order": [
+              "w2",
+              "w1"
+            ]
+          },
+          {
+            "id": "co2",
+            "order": [
+              "w1",
+              "w2"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rf-intra-domain",
+      "family": "rf-class",
+      "source_litmus": "读自**域内**（⇒ 观测面边类 == `rf`，⛔ 不进公理面）",
+      "anchor_id": "ADR-CEP-22-decision-3",
+      "domains": [
+        {
+          "id": "cpuA",
+          "instance": "chi_rnf"
+        }
+      ],
+      "threads": [
+        {
+          "id": "t1",
+          "domain": "cpuA",
+          "ops": [
+            "r"
+          ]
+        },
+        {
+          "id": "t2",
+          "domain": "cpuA",
+          "ops": [
+            "w1"
+          ]
+        }
+      ],
+      "ops": [
+        {
+          "id": "r",
+          "kind": "read",
+          "addr": 100,
+          "value": 0
+        },
+        {
+          "id": "w1",
+          "kind": "write",
+          "addr": 100,
+          "value": 1
+        }
+      ],
+      "rf": [
+        {
+          "read": "r",
+          "write": "w1"
+        }
+      ],
+      "co_candidates": {
+        "100": [
+          {
+            "id": "co1",
+            "order": [
+              "w1"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rf-cross-domain",
+      "family": "rf-class",
+      "source_litmus": "读自**跨域**（⇒ 观测面边类 == `rfe`）—— 与 `rf-intra-domain` 的**唯一差异** = writer 的域",
+      "anchor_id": "ADR-CEP-22-decision-3",
+      "domains": [
+        {
+          "id": "cpuA",
+          "instance": "chi_rnf"
+        },
+        {
+          "id": "gpuB",
+          "instance": "moesi_gpu"
+        }
+      ],
+      "threads": [
+        {
+          "id": "t1",
+          "domain": "cpuA",
+          "ops": [
+            "r"
+          ]
+        },
+        {
+          "id": "t2",
+          "domain": "gpuB",
+          "ops": [
+            "w1"
+          ]
+        }
+      ],
+      "ops": [
+        {
+          "id": "r",
+          "kind": "read",
+          "addr": 100,
+          "value": 0
+        },
+        {
+          "id": "w1",
+          "kind": "write",
+          "addr": 100,
+          "value": 1
+        }
+      ],
+      "rf": [
+        {
+          "read": "r",
+          "write": "w1"
+        }
+      ],
+      "co_candidates": {
+        "100": [
+          {
+            "id": "co1",
+            "order": [
+              "w1"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "co-single",
+      "family": "hetero-co",
+      "source_litmus": "单一写序候选（w1→w2）—— `fr` / `ws` **派生**边集合的逐条核对面（AC-3②）",
+      "anchor_id": "ADR-CEP-22-decision-4",
+      "domains": [
+        {
+          "id": "cpuA",
+          "instance": "chi_rnf"
+        },
+        {
+          "id": "gpuB",
+          "instance": "moesi_gpu"
+        }
+      ],
+      "threads": [
+        {
+          "id": "t1",
+          "domain": "cpuA",
+          "ops": [
+            "r",
+            "w2"
+          ]
+        },
+        {
+          "id": "t2",
+          "domain": "gpuB",
+          "ops": [
+            "w1"
+          ]
+        }
+      ],
+      "ops": [
+        {
+          "id": "r",
+          "kind": "read",
+          "addr": 100,
+          "value": 0
+        },
+        {
+          "id": "w2",
+          "kind": "write",
+          "addr": 100,
+          "value": 2
+        },
+        {
+          "id": "w1",
+          "kind": "write",
+          "addr": 100,
+          "value": 1
+        }
+      ],
+      "rf": [
+        {
+          "read": "r",
+          "write": "w1"
+        }
+      ],
+      "co_candidates": {
+        "100": [
+          {
+            "id": "co1",
+            "order": [
+              "w1",
+              "w2"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

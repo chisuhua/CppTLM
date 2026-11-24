@@ -1,0 +1,21 @@
+schema: spec-driven
+created: 2026-11-24
+x-phase: phase-10
+x-priority: P2
+x-status: in_progress
+goal: |
+  把复合一致性公理 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 的**判定对象**从装配期**通道依赖图**
+  （顶点 = `(instance, network, vc)`）改为**操作级复合图**（顶点 = 操作）—— 即落地
+  `ADR-CEP-22`「每域模型来源 + 域间边构造规则」的裁定，使 `INV-CEP-13-IC1` 从**不可证伪**
+  （语料为空）走向**可机判**（操作迹可判定）。
+  ⛔ 零决策变更 · 零 invariant 新增（复用 `INV-CEP-13-IC1`）· ⛔ 不改 schema
+  （`ADR-CEP-12` R-2e）· ⛔ 轨迹来源 = 手写 litmus 迹（运行期采集另立 backlog）
+  · ⛔ 不承诺「已证明」（per `ADR-CEP-13` 决策 5 ②）。
+affected_areas:
+  - include/tlm/cep/memory_model_trace.hh
+  - include/tlm/cep/compound_graph_falsifier.hh
+  - test/test_cep_compound_graph_falsification.cc
+  - test/cep_memory_model_traces.json
+  - scripts/test/cep_compound_graph_falsification_check.sh
+  - scripts/test/cep_litmus_naming_check.sh
+  - openspec/specs/cep-compound-graph-falsification/spec.md
