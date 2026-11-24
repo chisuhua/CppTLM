@@ -86,6 +86,12 @@ add_test(NAME cep_fence_effects
 add_test(NAME cep_fence_effects_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_fence_effects_check.sh)
 
+# docs/research/oswald：CEP × Gen 族 gap 分析的**论文侧溯源闸**
+#   抽取件 sha256 + 21 条承重论断的行级锚点(行区间/关键字/区间 sha256) + 索引↔manifest 双向零 orphan
+#   + 论文原文已物化时的 sha256 校验(未物化 ⇒ SKIP，⛔ 不当绿)
+add_test(NAME cep_oswald_provenance_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_oswald_provenance_check.sh)
+
 # board-soc-split T-bs-1: DGpuSoc 容器测试
 # (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/tasks.md §T-bs-1)
 add_test(NAME test_dgpu_soc_from_config COMMAND cpptlm_tests "[dgpu][json]" -r compact)

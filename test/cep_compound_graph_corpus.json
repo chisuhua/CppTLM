@@ -1,6 +1,6 @@
 {
   "_note": "litmus 语料 —— 复合一致性公理 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 的跨域边声明面",
-  "_status": "当前为空 —— `rfe` / `fr` / `ws` 三类边在 CppTLM 与 ArchForge **两仓均无定义**（实测：两仓 grep 仅命中公理公式本身）⇒ 复合公理**当前不可证伪**。空语料**不是**「公理已成立」。",
+  "_status": "本文件是**通道图语料**（顶点 = 实例 × 网络 × VC）⇒ `compound_edges` **恒为空**且**不得填充**：① 派生边（rfe/fr/ws）⛔ 不得作输入（`derived-edge-as-input`）② 通道边 ≠ 操作边（`channel-edge-not-op-edge`）。**操作级语料**（线程 / 操作 / 读自 / 同址写序候选）见 `test/cep_memory_model_traces.json` ⇒ 复合一致性公理 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 对**操作级迹可证伪**（四类边由 `include/tlm/cep/compound_graph_falsifier.hh` 派生计算）。⛔ 空语料**不是**「公理已成立」，也**不是**「不可证伪」。",
   "_fill_when": "⏭ **待操作级模型落地**（backlog `cep-memory-model-operational-trace`）—— ⛔ **不得**由 `combination_contract` 声明项**派生**填充：工装的图是**通道依赖图**（顶点 = 实例 × 网络 × VC），而 `rfe` / `fr` / `ws` 是**操作级**关系 ⇒ **通道图 ≠ 操作图** ⇒ 由声明项派生的环**不是**对复合一致性公理的证伪（范畴错误 ⇒ 假绿）。语料的填充须等**操作级模型**（线程 / 操作 / 读写事件 / 值）落地后，由**该模型**产生边类声明。",
   "_edge_schema": {
     "instance": "协议实例 id（须在 protocol_instances.json 的 instances 内）",

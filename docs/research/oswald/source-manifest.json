@@ -1,0 +1,351 @@
+{
+ "schema": "cep-oswald-source-manifest/v1",
+ "purpose": "CEP × Gen 族 gap 分析的**论文侧溯源单一真源**：原文身份（sha256）+ 派生抽取件身份 + 承重论断的行级锚点",
+ "provenance_note": "原文 PDF 存于仓外 mynotes 仓（`/workspace/main/mynotes/00_Raw_Sources/`）；本仓按 `docs/research/AGENTS.md` §5「第三方原文不存放」不 vendor PDF 二进制，以 `materialized_path` + sha256 锚定，可用 `materialize_papers.sh` 物化到本目录 `.papers/`（gitignored）。",
+ "papers": [
+  {
+   "id": "thesis",
+   "title": "Automatic Generation of Highly Concurrent, Hierarchical and Heterogeneous Cache Coherence Protocols from Atomic Specifications",
+   "author": "Nicolai Alexander Oswald",
+   "venue": "PhD Thesis, University of Edinburgh",
+   "year": 2023,
+   "pages": 178,
+   "origin_path": "/workspace/main/mynotes/00_Raw_Sources/papers/Nicolai_Oswald_PhD_Thesis.pdf",
+   "materialized_path": ".papers/Nicolai_Oswald_PhD_Thesis.pdf",
+   "sha256": "7c9e4e0bdd315edd370c6b4ea659817cba404274e2f8afb9f5feb409d3322544",
+   "bytes": 15190447
+  },
+  {
+   "id": "protogen",
+   "title": "ProtoGen: Automatically Generating Directory Cache Coherence Protocols from Atomic Specifications",
+   "author": "N. Oswald, V. Nagarajan, D. J. Sorin",
+   "venue": "ISCA 2018",
+   "year": 2018,
+   "pages": 14,
+   "origin_path": "/workspace/main/mynotes/00_Raw_Sources/papers/gen-family/ProtoGen_ISCA2018.pdf",
+   "materialized_path": ".papers/ProtoGen_ISCA2018.pdf",
+   "sha256": "85166ad878ca2b882a96284a2c91902817d7f583c2070dcb6f7bd515aea277fc",
+   "bytes": 342318
+  },
+  {
+   "id": "hieragen",
+   "title": "HieraGen: Automated Generation of Concurrent, Hierarchical Cache Coherence Protocols",
+   "author": "N. Oswald, V. Nagarajan, D. J. Sorin",
+   "venue": "ISCA 2020",
+   "year": 2020,
+   "pages": 12,
+   "origin_path": "/workspace/main/mynotes/00_Raw_Sources/papers/gen-family/HieraGen_ISCA2020.pdf",
+   "materialized_path": ".papers/HieraGen_ISCA2020.pdf",
+   "sha256": "bd550aae5d7f424ea172b995c8fcffb92577af5b27ab1e6aeaa952f462c88235",
+   "bytes": 797895
+  },
+  {
+   "id": "hetergen",
+   "title": "HeteroGen: Automatic Synthesis of Heterogeneous Cache Coherence Protocols",
+   "author": "N. Oswald, V. Nagarajan, D. J. Sorin, V. Gavrielatos, T. Olausson, R. Carr",
+   "venue": "HPCA 2022",
+   "year": 2022,
+   "pages": 16,
+   "origin_path": "/workspace/main/mynotes/00_Raw_Sources/papers/gen-family/HeteroGen_HPCA2022.pdf",
+   "materialized_path": ".papers/HeteroGen_HPCA2022.pdf",
+   "sha256": "27a745fa28145d14728656f795d3ba2cbeabbf311494425f9e22cd2a7624aafa",
+   "bytes": 1102815
+  }
+ ],
+ "extracts": [
+  {
+   "id": "thesis-text",
+   "path": "extracts/thesis-text-extract.md",
+   "derived_from": "thesis",
+   "extraction_method": "PyMuPDF page.get_text() 逐页 + '===== PAGE n =====' 页标记",
+   "note": "论文全文抽取件（行号可寻址）；PDF 原文为唯一真源（sha256 见 papers[]）",
+   "sha256": "33b4a040c4b728b581c2780fd9c0245c1db816a9b6a5631ccfe48c5d9b224d55",
+   "bytes": 376880,
+   "lines": 8542
+  },
+  {
+   "id": "protogen-draft",
+   "path": "extracts/ProtoGen_ISCA2018-draft.md",
+   "derived_from": "protogen",
+   "extraction_method": "（mynotes 仓既有抽取件，逐字节复制）",
+   "note": "行号锚点与仓内既有引文 `ProtoGen_ISCA2018-draft.md:<行号>` 逐字对齐",
+   "sha256": "c8a5ae40d4a90a97d3406be4e52cbffadb8e979e74ca503412325554d7f6b839",
+   "bytes": 72860,
+   "lines": 1687
+  },
+  {
+   "id": "hieragen-draft",
+   "path": "extracts/HieraGen_ISCA2020-draft.md",
+   "derived_from": "hieragen",
+   "extraction_method": "（mynotes 仓既有抽取件，逐字节复制）",
+   "note": "同上",
+   "sha256": "069abd13544b5dbfd7ab9bc1ef6ab98a905b14d8fddae4e33aaab12f3ecf0a59",
+   "bytes": 59567,
+   "lines": 1399
+  },
+  {
+   "id": "hetergen-draft",
+   "path": "extracts/HeteroGen_HPCA2022-draft.md",
+   "derived_from": "hetergen",
+   "extraction_method": "（mynotes 仓既有抽取件，逐字节复制）",
+   "note": "同上；⚠️ 仓内引文 `HeteroGen_HPCA2022-draft.md:1266-1276` 指向 Table I（协议清单表），非序语义表",
+   "sha256": "3f0db11ebd1a802c655db10df2721e6fceed98a5c73367c0e130e36c79101bd0",
+   "bytes": 78852,
+   "lines": 1874
+  }
+ ],
+ "claims": [
+  {
+   "id": "T-C01",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    1104,
+    1104
+   ],
+   "must_contain": "Write-Serialization",
+   "anchor_sha256": "fa8fd09b2534fa3fe52d15e1d7691dd92b0977e614a20a95cd83b0ef3191f871",
+   "claim": "一致性定义 = Write-Serialization + Write-Propagation（另 SWMR / Data-Value）",
+   "layer": "背景"
+  },
+  {
+   "id": "T-C02",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    1392,
+    1392
+   ],
+   "must_contain": "seventeen transient states",
+   "anchor_sha256": "e4604d381dcac0877bc706b5a4972a752af15191362ffa7356372f4c69037a32",
+   "claim": "瞬态态代价：MSI = 3 稳定态 + 17 瞬态态（ProtoGen 论文实测 18）",
+   "layer": "并发"
+  },
+  {
+   "id": "T-C03",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    3964,
+    3964
+   ],
+   "must_contain": "ProtoGen is",
+   "anchor_sha256": "22ccb90802c4b7bc6eab7a820aeaee7e4926dcaf5168732fd29891c992d98fe4",
+   "claim": "ProtoGen 局限 L4（VC 须用户手工定义）+ L5（仅目录式协议）",
+   "layer": "并发"
+  },
+  {
+   "id": "T-C04",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    4007,
+    4007
+   ],
+   "must_contain": "ProtoGen would rename",
+   "anchor_sha256": "e6e4f822b3185d5664a49b1cf0f67bc57747dc3e4adb8456336683dc0a1eabb2",
+   "claim": "Step 1 转发请求改名（Fwd GetS / O Fwd GetS）⇒ 缓存可反推竞态胜负",
+   "layer": "并发"
+  },
+  {
+   "id": "T-C05",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    4121,
+    4121
+   ],
+   "must_contain": "must be assigned to the state sets",
+   "anchor_sha256": "1edfc01ae66ce30b0b211fde6babfa1ca315fcd08fd2e2f1d60f5e0fe480ff9e",
+   "claim": "Step 2 State Set 对偶性（IMAD ∈ I ∩ M）",
+   "layer": "并发"
+  },
+  {
+   "id": "T-C06",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    5419,
+    5419
+   ],
+   "must_contain": "Directories are inclusive",
+   "anchor_sha256": "2949c9421e08a1dcee05f000ba3a72ea3a247b714cf45944c19abba0dc2d4425",
+   "claim": "HieraGen 基线约束：包容式全映射目录（+ 不静默逐出只读块）",
+   "layer": "分层"
+  },
+  {
+   "id": "T-C07",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    6130,
+    6130
+   ],
+   "must_contain": "sil",
+   "anchor_sha256": "40425ddd63469ba4b3fe145c0ab29573d2bf5545a6f5725b5bdd1569f87c6bc0",
+   "claim": "E 态静默升级 ⇒ 层间兼容性判据（E 可静默升 M ⇒ 破坏全局 SWMR）",
+   "layer": "分层"
+  },
+  {
+   "id": "T-C08",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    5395,
+    5395
+   ],
+   "must_contain": "exactly one of the dir",
+   "anchor_sha256": "ac4c975237cf91cbeaed320ac2f65f35fdd5a81ec3fe5cf754b177cdb5da2f12",
+   "claim": "唯一序列化点不变量：任意两条竞争事务恰在一个目录序列化",
+   "layer": "分层"
+  },
+  {
+   "id": "T-C09",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    6287,
+    6287
+   ],
+   "must_contain": "handled in the input SSPs",
+   "anchor_sha256": "355a11ae7e6e35cc20f84192b55e7213ed801542cca5cbab6047cc83916a5672",
+   "claim": "§7.6.2 不完整目录知识 ⇒ 由输入 SSP 处理（算法本身不需 belief）",
+   "layer": "分层"
+  },
+  {
+   "id": "T-C10",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    6303,
+    6303
+   ],
+   "must_contain": "Dir1B",
+   "anchor_sha256": "fe40de6f88626d3aeb9585f0034b85b77e67e065eb0ef4a484a258c5a89467ed",
+   "claim": "§7.6.3 null directory（Dir1B）= 广播式 snooping 视角",
+   "layer": "分层"
+  },
+  {
+   "id": "T-C11",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    6838,
+    6838
+   ],
+   "must_contain": "reads, writes, and fences",
+   "anchor_sha256": "b84a59b62e8f696bcac534cd918868907768fe24a2b7e50cbbef6120004ab25d",
+   "claim": "一致性接口 = read / write / **fence** 三元",
+   "layer": "异构"
+  },
+  {
+   "id": "T-C12",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    6887,
+    6887
+   ],
+   "must_contain": "release consistency",
+   "anchor_sha256": "d8df6ad2f7a7022b04d971eaa4eac510c09b20d6c9fe1914ced89166828ae5c2",
+   "claim": "RC 仅作**语义**刻画（release/acquire 操作）—— 论文**未给出** RC 的 ppo 关系",
+   "layer": "异构·NG1承重"
+  },
+  {
+   "id": "T-C13",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    7098,
+    7103
+   ],
+   "must_contain": "• SC",
+   "anchor_sha256": "a811a7625fe0ba30f02a7c0aa5c0b6a7c3689c9df5da3b72ab4f50f2c705fc82",
+   "claim": "**SC 的 ppo 形式化**：ppo ≜ po（论文给出的两个 ppo 之一）",
+   "layer": "异构·NG1承重"
+  },
+  {
+   "id": "T-C14",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    7104,
+    7110
+   ],
+   "must_contain": "x86-TSO",
+   "anchor_sha256": "3d4fa9e88242f457b813a8d2c21a21046ac8aded95fc732237dc41212f9b14e9",
+   "claim": "**x86-TSO 的 ppo 形式化**：ppo ≜ po \\ (st(x);po;ld(y))（论文给出的两个 ppo 之二）",
+   "layer": "异构·NG1承重"
+  },
+  {
+   "id": "T-C15",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    7162,
+    7174
+   ],
+   "must_contain": "acyclic(",
+   "anchor_sha256": "f29685dc367155eb8b3e7e0e080f0226b80eb2a36f0af9f67028c34574eed000",
+   "claim": "**复合一致性公理（Eq 8.3）**：acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)",
+   "layer": "异构·承重"
+  },
+  {
+   "id": "T-C16",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    7123,
+    7123
+   ],
+   "must_contain": "intra-cluster and inter-cluster",
+   "anchor_sha256": "1f840811859f079696d53e3392b23a91e748351882cf2b79253416e70e29ab78",
+   "claim": "公理面**不含域内 rf** ⇒ 域内一致性不由复合公理检查（各域自身义务）",
+   "layer": "异构·承重"
+  },
+  {
+   "id": "T-C17",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    8053,
+    8053
+   ],
+   "must_contain": "stand alone tools",
+   "anchor_sha256": "5fe24661dfb834936b9bc7758e240e515c439e9582c155dfef24ad9fb78135f6",
+   "claim": "§9.2 工具未整合（HeteroGen 不含 HieraGen 阶段）",
+   "layer": "工具链"
+  },
+  {
+   "id": "T-C18",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    8113,
+    8113
+   ],
+   "must_contain": "automatically assign messages to virtual",
+   "anchor_sha256": "3235e09c6628487603d52bb20437a36d4faacc54c69061fafd535eddb783cc53",
+   "claim": "§9.3.1 自动 VC 分配未做（为保证死锁自由）⇒ 对应缺口论文侧亦未解决",
+   "layer": "工具链"
+  },
+  {
+   "id": "T-C19",
+   "file": "extracts/thesis-text-extract.md",
+   "lines": [
+    8161,
+    8161
+   ],
+   "must_contain": "formally proving the correctness",
+   "anchor_sha256": "e6ccbb704c89036e17a3d6e7d9202a5d198dfa2ea1d8eecc48d44f7b5bcfc6a6",
+   "claim": "§9.3.7 形式化证明 = future work",
+   "layer": "工具链"
+  },
+  {
+   "id": "H-C01",
+   "file": "extracts/HeteroGen_HPCA2022-draft.md",
+   "lines": [
+    1275,
+    1276
+   ],
+   "must_contain": "Protocols used in the case studies",
+   "anchor_sha256": "ddadbe4932662fb13fcb477ec6fc1df24a1b0938019fac7e1523693816ddbab3",
+   "claim": "HeteroGen Table I = **case study 协议清单**（SC→MSI/MESI；TSO→TSO-CC；RC→RCC-O/RCC/GPU；PLO→PLO-CC）",
+   "layer": "异构·NG1承重"
+  },
+  {
+   "id": "H-C02",
+   "file": "extracts/HeteroGen_HPCA2022-draft.md",
+   "lines": [
+    1243,
+    1243
+   ],
+   "must_contain": "seven homogeneous protocols",
+   "anchor_sha256": "90edbf2d030b8917f7c53bc7d87f2de2f3b05e920f24efe26a70c2d2092df7c3",
+   "claim": "Table I 列的是**七个同构协议** ⇒ 该表是协议清单，**非**一致性模型序语义表",
+   "layer": "异构·NG1承重"
+  }
+ ]
+}

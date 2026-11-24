@@ -1,0 +1,3 @@
+# 论文原文 PDF（第三方原文）—— 按 docs/research/AGENTS.md §5「第三方原文不存放」不入 git
+# 物化方式: bash docs/research/oswald/materialize_papers.sh（按 source-manifest.json 的 sha256 校验）
+.papers/

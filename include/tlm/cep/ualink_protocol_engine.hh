@@ -191,7 +191,8 @@ template <>
 struct EngineTypeTraits<UalinkProtocolEngine> {
     static constexpr InFlightModeling in_flight = InFlightModeling::NotModeled;
     static constexpr const char* basis =
-        "零发射、零状态机(计数器自增)；outstanding_ 为私有记账，无公开在飞查询 API";
+        "零发射、零状态机(计数器自增)；平台层只读记账 outstanding_request_ids() 公开但无协议层语义；"
+        "未暴露 txn_in_flight 探针面 ⇒ 协议层不建模在飞事务";
 };
 
 }  // namespace tlm::cep

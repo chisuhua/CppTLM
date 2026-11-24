@@ -446,7 +446,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 ## ARCHIVES & HISTORY
 
-子目录级 AGENTS.md 索引（18 份；⛔ 新增/删除须同步本清单 —— `agents_md_lint.py --all` 会与磁盘对账）:
+子目录级 AGENTS.md 索引（19 份；⛔ 新增/删除须同步本清单 —— `agents_md_lint.py --all` 会与磁盘对账）:
 - `include/AGENTS.md` — 头文件总览 + 注册宏体系表（`REGISTER_OBJECT` / `REGISTER_MODULE` / `REGISTER_CHSTREAM` / `REGISTER_ALL`）
 - `include/core/AGENTS.md` — 核心框架
 - `include/tlm/AGENTS.md` — TLM 2.0 模块（V2.1+ 新增）
@@ -465,6 +465,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - `cpptlm/AGENTS.md` — Python library for CppTLM
 - `cpptlm_config/AGENTS.md` — Python 配置验证与生成工具
 - `docs/research/AGENTS.md` — 框架级调研（CEP 一致性 / gem5 协议族 / cpptlm 融合）
+- `docs/research/oswald/AGENTS.md` — Oswald *Gen 族* 论文侧证据锚点层（抽取件 + 21 条承重论断行级锚点）
 
 **分工纪律（子目录文件只写本目录特有）**：
 

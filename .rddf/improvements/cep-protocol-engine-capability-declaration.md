@@ -9,7 +9,7 @@ type: feature
   - ADR-CEP-12
   - ADR-CEP-13
   - ADR-CEP-18
-状态: "🟡 起草中(planner · 2026-11-23 · metis 1 轮已处置 · 待 rdd-builder P0)"
+状态: "✅ **已实施**（builder 2026-11-23/24 · Stage B 闭环）—— 声明面 `include/tlm/cep/engine_capabilities.hh`（8 行 `kEngineCapabilities{id, egress, basis}`）+ 5 个 `EngineTypeTraits<T>` 特化 + `HasInFlightApi<T>` SFINAE 探针 + `static_assert` 交叉核对 + 闸 `scripts/test/cep_engine_capabilities_check.sh` + main spec `openspec/specs/cep-protocol-engine-capability-declaration/spec.md`（台账 Entry #537）· 验收报告 `.rddf/reviews/cep-protocol-engine-capability-declaration-verify.md`"
 created: 2026-11-23
 ---
 
