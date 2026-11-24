@@ -30,7 +30,8 @@
     "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md",
     "ADR-CEP-20-topology-ic3-evidence-strength.md",
     "ADR-CEP-21-sharer-bitmap-expansion.md",
-    "ADR-CEP-22-memory-model-source-and-cross-domain-edges.md"
+    "ADR-CEP-22-memory-model-source-and-cross-domain-edges.md",
+    "ADR-CEP-23-incomplete-directory-knowledge-boundary.md"
   ],
   "excluded": [
     {
@@ -81,7 +82,7 @@
         "target": "include/tlm/cep/cxl_dcoh_tracker.hh",
         "expect": "不含 PARTIAL"
       },
-      "next_action": "PARTIAL tracker 实现落地时改判并补断言"
+      "next_action": "按 ADR-CEP-23 决策 5 收敛：本判据的 PARTIAL 分支为**合成声明专用反向判据**，**不再等待**任何实例声明 PARTIAL（可声明域 = {EXACT, CONSERVATIVE}）；若未来另立 belief 模型（决策 4），随新 ADR 重开"
     },
     {
       "adr": "ADR-CEP-05-stub-cache-core-interface.md",

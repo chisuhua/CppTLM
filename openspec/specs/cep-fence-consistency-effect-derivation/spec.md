@@ -14,8 +14,10 @@ per 宪章归 ArchForge）。
 调研文档 §4.3.1 的**论文口径**提升为机器可检规则 ⇒ **不是**「零决策变更」。
 ⚠️ **诚实边界**：派生值 = **声明效果**（由声明推导）⛔ **不是**引擎的行为语义 ⛔ **不是**
 **跨一致性域**的 barrier 保证（per ADR-CEP-13 决策 1：barrier_domain ≠ 一致性域边界 ⇒
-本视图粒度 = **实例**）⚠️ R5 中「read=RC-data ⇒ fence 不提供 acquire」的解读为 **provisional**
-（待 architect 追认）。
+本视图粒度 = **实例**）。
+⚠️ **R5 口径已追认**：RC 族一律 `ReleaseAcquire`（**模型基线**：fence 在 RC 下可提供
+release + acquire 两方向；⛔ **不由访问标签门控**）。本口径由 `ADR-CEP-13` 的
+Status Update(2026-11-24)（G4-c 登记）追认 —— 其历史读数与推翻理由见该 SU ②。
 
 来源：gap 分析 `.rddf/roadmap/cep-gen-family-gap-closure.md` **G4** + §2.3.1 素材盘点结论 ·
 台账 Entry **#544**（立项授权 + 规则表 + metis 处置）· 形态照抄 G10 的现成范式。
@@ -49,8 +51,8 @@ CEP SHALL 提供**协议语义层**的 fence 一致性效果**派生声明面**�
 - **THEN** SHALL 依次应用：**R1** 无 barrier 通道 ⇒ **None**（**最高**优先级 · 遮蔽模型规则）→
   **R2** read / write 标签**族不同** ⇒ **Invalid**（域外）→ **R3** 族 = SC ⇒ **None**
   （SC 已全序 ⇒ 与 barrier 存在与否**无关**）→ **R4** 族 = TSO ⇒ **FullBarrier** →
-  **R5** 族 = RC ⇒ **按方向逐项**（write=RC-release ⇒ release；read=RC-acquire ⇒ acquire；
-  论文 RC 行是**并集上界** ⇒ 本能力取**子集**）→ **R6** 族 = PLO ⇒ **Partial**（只补 W→W 与 R→W）→
+  **R5** 族 = RC ⇒ **ReleaseAcquire**（**模型基线**：fence 在 RC 下可提供 release + acquire
+  两方向；⛔ **不由访问标签门控** —— 标签只决定**基线 ppo 的强弱**，不决定 fence 的边）→ **R6** 族 = PLO ⇒ **Partial**（只补 W→W 与 R→W）→
   **R7** 标签族 ∉ {SC, TSO, RC-*, PLO} ⇒ **Invalid**（域外）
 
 #### Scenario: 域外组合 ⇒ 必红

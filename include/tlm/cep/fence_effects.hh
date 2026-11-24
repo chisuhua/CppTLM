@@ -17,13 +17,16 @@
 //   R2  read / write 标签**族不同**    ⇒ Invalid   （域外 · 必红）
 //   R3  族 = SC                       ⇒ None      （SC 已全序 · **与 barrier 存在与否无关**）
 //   R4  族 = TSO                      ⇒ FullBarrier（补回 store→load）
-//   R5  族 = RC                       ⇒ **按方向逐项**：write=RC-release ⇒ release ✓；
-//                                                 read =RC-acquire ⇒ acquire ✓
-//                                                 （论文 RC 行是**并集上界**；本单元取**子集**）
+//   R5  族 = RC                       ⇒ ReleaseAcquire（**模型基线**：fence 在 RC 下可提供
+//                                       release + acquire 两方向；⛔ 不由访问标签门控 ——
+//                                       标签只决定**基线 ppo 的强弱**，不决定 fence 的边）
 //   R6  族 = PLO                      ⇒ Partial   （只补 W→W 与 R→W）
 //   R7  标签族 ∈ {SC,TSO,RC-*,PLO} 之外 ⇒ Invalid
-//   ⚠️ R5 中「read=RC-data ⇒ fence **不**提供 acquire」的解读为 **provisional**
-//      （待 architect 追认 · per 台账 Entry #544）。
+//   ⚠️ R5 的口径已由 `ADR-CEP-13` 的 Status Update(2026-11-24) **追认**（G4-c：登记本
+//      派生规则表 + 推翻原 provisional 读法「read=RC-data ⇒ fence 不提供 acquire」——
+//      该读法把「模型基线」与「实例标签基线」混用 ⇒ 与 `mesif` 行自相矛盾）。
+//   ⚠️ 全表取**模型基线**（= fence 在该模型下**可提供**的效果），⛔ 不是「相对该实例
+//      基线 ppo 的增量」。这是 R3（SC ⇒ None）的取值方式，也是 R5 的取值方式。
 //
 // ── 协议中立（per `include/tlm/cep/AGENTS.md` 铁律 2）────────────────────
 //   本头**不得**出现任何协议**类名**，**不得** include 协议引擎 / adapter 头；
@@ -64,9 +67,12 @@ namespace tlm::cep {
     enum class FenceEffect : std::uint8_t {
         /// 无 fence 效果（无 barrier 通道 · 或 SC 已全序 ⇒ fence 是空操作）
         None = 0,
-        /// 仅 release 方向有效果（写标签 = RC-release，读侧不提供 acquire）
+        /// 仅 release 方向有效果 —— ⚠️ **预留值**：当前 R1–R7 下**不可达**
+        /// （RC 族恒 ReleaseAcquire；其余族为 None / FullBarrier / Partial / Invalid）
+        /// ⇒ ⛔ 删除是**枚举值序变更 = 公共契约面破坏**（per ADR-CEP-13 SU 死枚举处置）
         ReleaseOnly = 1,
-        /// 仅 acquire 方向有效果
+        /// 仅 acquire 方向有效果 —— ⚠️ **预留值**：当前 R1–R7 下**不可达**（同 ReleaseOnly）
+        /// ⇒ 单方向 fence 建模（「按 read / write 分列多值」）时启用
         AcquireOnly = 2,
         /// release + acquire 两方向都有效果（论文 RC 行）
         ReleaseAcquire = 3,
@@ -146,15 +152,11 @@ namespace tlm::cep {
                 // R6 · PLO：只补 W→W 与 R→W
                 return FenceEffect::Partial;
             case ConsistencyFamily::Rc:
-                // R5 · RC：按方向逐项（论文 RC 行 = 并集上界 · 本单元取子集）
-                {
-                    const bool release = (write_label == "RC-release");
-                    const bool acquire = (read_label == "RC-acquire");
-                    if (release && acquire) return FenceEffect::ReleaseAcquire;
-                    if (release) return FenceEffect::ReleaseOnly;
-                    if (acquire) return FenceEffect::AcquireOnly;
-                    return FenceEffect::None;
-                }
+                // R5 · RC：**模型基线** ⇒ fence 可提供 release + acquire（两方向）
+                //   ⛔ 不由访问标签门控：标签（RC-acquire 读 / RC-release 写 / RC-data）
+                //      只决定**基线 ppo 的强弱**，不决定 fence 的边
+                //   （per ADR-CEP-13 SU(2026-11-24) ② —— 原「按标签逐项」读数已推翻）
+                return FenceEffect::ReleaseAcquire;
             case ConsistencyFamily::Unknown:
             default:
                 return FenceEffect::Invalid;
@@ -197,10 +199,10 @@ namespace tlm::cep {
              "R1 · 无 barrier 流 ⇒ fence 无通道 ⇒ None（实例粒度 · 不区分网络侧）"},
             {"mesif", "RC-acquire", "RC-release", true,
              derive_fence_effect("RC-acquire", "RC-release", true),
-             "R5 · RC 且读写两方向齐备 ⇒ release+acquire（论文 RC 行）（实例粒度 · 不区分网络侧）"},
+             "R5 · RC 族 ⇒ fence 可提供 release + acquire（模型基线）（实例粒度 · 不区分网络侧）"},
             {"moesi_gpu", "RC-data", "RC-release", true,
              derive_fence_effect("RC-data", "RC-release", true),
-             "R5 · RC 且写标签为 RC-release ⇒ release；读标签 RC-data ⇒ 无 acquire（provisional）（实例粒度 · 不区分网络侧）"},
+             "R5 · RC 族 ⇒ fence 可提供 release + acquire（模型基线 · 与访问标签的基线强弱无关）（实例粒度 · 不区分网络侧）"},
             {"nvlink_4", "SC", "SC", true,
              derive_fence_effect("SC", "SC", true),
              "R3 · SC 已全序 ⇒ fence 无额外效果（有通道但空操作）（实例粒度 · 不区分网络侧）"},

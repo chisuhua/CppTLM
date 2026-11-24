@@ -65,8 +65,8 @@ constexpr ExpectedEffect kExpectedEffects[8] = {
     {"chi_rnf", FenceEffect::None},              // R1 · 无 barrier 流
     {"cxl_2_0", FenceEffect::None},              // R1 · 无 barrier 流
     {"cxl_3_0_symmetric", FenceEffect::None},    // R1 · 无 barrier 流
-    {"mesif", FenceEffect::ReleaseAcquire},      // R5 · RC 两方向齐备
-    {"moesi_gpu", FenceEffect::ReleaseOnly},     // R5 · RC 仅写方向（provisional 解读）
+    {"mesif", FenceEffect::ReleaseAcquire},      // R5 · RC 族 ⇒ release+acquire（模型基线）
+    {"moesi_gpu", FenceEffect::ReleaseAcquire},  // R5 · 同上（标签 RC-data / RC-release 不影响结论）
     {"nvlink_4", FenceEffect::None},             // R3 · SC 已全序（有通道但空操作）
     {"tilelink_c", FenceEffect::None},           // R1 · 无 barrier 流
     {"ualink_4", FenceEffect::None},             // R1 · 无 barrier 流（遮蔽 R6）
@@ -118,15 +118,17 @@ static_assert(kFenceEffectCapabilities[7].effect ==
               "ualink_4: 行的 effect 与推导函数结果不一致 ⇒ 表行不是由函数生成");
 
 // ══════════════════════════════════════════════════════════════════════════
-//  AC-8（编译期）：**死分支正控** —— TSO / PLO / RC-acquire-only 当前**无实例**
+//  AC-8（编译期）：**死分支正控** —— TSO / PLO 当前**无实例**
 //  ⇒ 用**合成行**覆盖（不进实例表 ⇒ 不破坏 AC-6 的双向零 orphan）
 // ══════════════════════════════════════════════════════════════════════════
 static_assert(derive_fence_effect("TSO", "TSO", true) == FenceEffect::FullBarrier,
               "TSO 分支正控: TSO 标签 + barrier ⇒ 必须是全屏障（当前无实例 ⇒ 靠合成行覆盖）");
 static_assert(derive_fence_effect("PLO", "PLO", true) == FenceEffect::Partial,
               "PLO 分支正控: PLO 标签 + barrier ⇒ 必须是部分效果（当前无实例 ⇒ 靠合成行覆盖）");
-static_assert(derive_fence_effect("RC-acquire", "RC-data", true) == FenceEffect::AcquireOnly,
-              "RC 单方向正控: 仅读标签为 RC-acquire ⇒ 只提供 acquire");
+static_assert(derive_fence_effect("RC-acquire", "RC-data", true) == FenceEffect::ReleaseAcquire,
+              "RC 模型基线正控: RC 族 ⇒ release+acquire（⛔ 不由访问标签门控）");
+static_assert(derive_fence_effect("RC-data", "RC-data", true) == FenceEffect::ReleaseAcquire,
+              "RC 标签无关性正控: 读写皆 RC-data ⇒ 仍为 release+acquire（模型基线口径的判别力所在）");
 static_assert(derive_fence_effect("SC", "SC", true) == FenceEffect::None,
               "SC 分支正控: SC 已全序 ⇒ fence 无额外效果（与 barrier 存在与否无关）");
 static_assert(derive_fence_effect("PLO", "PLO", false) == FenceEffect::None,
