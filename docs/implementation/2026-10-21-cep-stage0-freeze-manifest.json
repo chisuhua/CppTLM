@@ -1,5 +1,5 @@
 {
-  "artifact_count": 92,
+  "artifact_count": 93,
   "artifacts": {
     "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "a12f8d915c3575230984ff281e5c439b90fa256b1a19975c638e71647aaaee27",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4db673d7d582ac6231c6b3fa26ff78ef02dbea4483261b3cfcd7f4403201bd26",
@@ -63,6 +63,7 @@
     "openspec/specs/cep-evidence-tier2-observation/spec.md": "5544c6f95b156c0ea9c46f2ead21324845de57bddc722a96973baaedac090968",
     "openspec/specs/cep-full-green-run-evidence/spec.md": "4a6da8cf143453e80be2b68d4b4a1c6b1ada1a31581caeec3241b4607c27c1a5",
     "openspec/specs/cep-hierarchical-directory/spec.md": "729f8e7b9eda0a8a8d8e1f748857287824745526e427f67182dd870b1d2f222f",
+    "openspec/specs/cep-hop-timing-capability-declaration/spec.md": "27d3b69be28b26e193cfed590f4d13c07401d1ae82cfc2627450b5bdaa12536d",
     "openspec/specs/cep-instance-assembly/spec.md": "6d2b352f6b7ee6f56c2dd7ced2bb167f0852b5455b46245b18ca761842f64770",
     "openspec/specs/cep-instance-authority-partition/spec.md": "8fa4011df2ea90cb70f18a5f46a360f2b33c4b0823de10b55083c35dbcf171d6",
     "openspec/specs/cep-invariant-gate/spec.md": "7d6ae0c3597c8bf23da1c29f16605bb81dbed2d3a091274d881e532be135be97",
@@ -94,10 +95,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #542",
+  "authorized_by": "Entry #543",
   "exclusions": [],
   "frozen_at": "2026-11-24",
-  "frozen_at_commit": "4ac611ec61eeabce59f9f7ba3bd0b71070920b9f",
+  "frozen_at_commit": "6884f2985ae0694c6659bb3de6f9cae487ee3550",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
