@@ -6,6 +6,7 @@
 > **来源**：2026-11-23 对 Oswald 博士论文（*ProtoGen* / *HieraGen* / *HeteroGen*，178 页一手 PDF）全文逐章核对
 > × 本仓 CEP 实现面（`include/tlm/cep/**` 45 头文件 + 8 实例声明面 + 47 份 `openspec/specs/cep-*` + 24 份 CEP ADR）的对照分析。
 > **本轮决策**：用户 2026-11-23 批准「I1 完整闭环 + I2 登记」。
+> **状态更新（2026-11-24）**：**G1 / G2 / G6 已闭**（G2 = `ADR-CEP-22` 已签发 + change 已归档 · 验收 PASS 17/17）· **G10 的本仓可做部分已闭**（Stage B''' · change `cep-hop-timing-capability-declaration` 已归档 · 验收 PASS 17/17）· **G9 按设计闭**（触发式扩容判据已在 ADR-CEP-21）· 剩余 = **G4**（待 C5 素材盘点）/ **G7**（architect 裁取值域）/ **G3 协议侧 + G8**（跨仓 ArchForge）/ **G5**（论文侧亦无 ⇒ 不可抄）· ⛔ 本仓另有**仓级止血**项（Stage B'''' · 并行 ctest 下变异型闸的还原竞态 ⇒ 冻结件残留）。
 
 ---
 
@@ -57,7 +58,7 @@
 | **G7** | 「不完整目录知识」无表达（无 belief 模型） | 🟡 P1 | 需 architect 判取值域 | architect |
 | **G8** | `SnoopState` 无 `F` ⇒ MESIF 转发点角色在 tracker 不可保真 | 🟡 P2 | 已显式登记（HD-05） | backlog |
 | **G9** | sharer 位图 64-bit 类型但只映射 4 bit | 🟡 P2 | `docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md` 已立**触发式**扩容判据 | 既有 ADR（阶段 2 不得预先执行） |
-| **G10** | 无网络 hop / 时序模型 | 🟡 P2 | 需先有协议 FSM 语义 | 依赖 G1 |
+| **G10** | 无网络 hop / 时序模型 | ✅ **本仓可做部分已闭**（2026-11-24） | **只登记现状 + 让缺口可检出**（⛔ **不补** hop / 时序模型 ⇒ 属协议 FSM 语义设计，归 ArchForge） | 依赖 G1（已闭）· change `cep-hop-timing-capability-declaration` 已归档 |
 
 ---
 
@@ -93,7 +94,25 @@ Stage B'（2026-11-23 · builder 实施，I2 阶段 1 闭环 ✅ 已完成并归
   │     （⛔ 阶段 2 的改名 + 冻结面 spec REMOVED requirement 另立）
   └─ B'5 验收：verifier 本地验收（无 iteration.json ⇒ 不走 rdd-verifier skill）
 
-Stage C（后续 · 需 architect / 用户 ratify）  ← C1 + C2 已于 2026-11-23 完成
+Stage B'''（2026-11-24 · builder 实施，G10 闭环 ✅ 已完成并归档）—— 「协议语义层的 hop / 时序」承载能力声明面
+  （gap **G10** 的**本仓可做部分** = **让缺口可检出**；⛔ **不补** hop / 时序模型（归 ArchForge）；
+   ⛔ 零 schema / ADR 正文 / invariant 变更 · ⛔ 零协议头改动 · ⛔ 与 G1 正交；台账 Entry #543）
+  ├─ B'''1 include/tlm/cep/hop_timing_capabilities.hh：8 行声明表（逐行 basis）+ 自洽谓词 + SFINAE 探针 + 3 个诚实边界常量
+  ├─ B'''2 test/test_cep_hop_timing_capabilities.cc：5 实例引擎 × 2 编译期否定断言（失败签名带**实例 id**）+ 探针正控/负控 + J-1/J-2/J-3/J-6
+  ├─ B'''3 闸：scripts/test/cep_hop_timing_capabilities_check.sh（12 判据 + 3 条反向 fixture + `--root` / `--selftest`）
+  ├─ B'''4 契约面：main spec + delta（由主 spec **提取生成**）⇒ **冻结面新增 1** ⇒ 五步链 1 次（92 → 93）
+  └─ B'''5 验收：verifier 本地验收 **PASS 17/17**（报告 `.rddf/reviews/cep-hop-timing-capability-declaration-verify.md`）
+       · 归档：`openspec/changes/archive/2026-11-24-cep-hop-timing-capability-declaration/`
+       · ⛔ 归档目录按 `.gitignore` 政策**不入库**（「已完成归档」不属 force-add 例外）
+
+Stage B''''（待实施 · builder）—— 仓级止血：**并行 ctest 下「变异型闸」的还原竞态** ⇒ 冻结件残留
+  （2026-11-24 G10 收口期实测：`ctest -j4` 并行下 `cep_freeze_reverse_verify.sh` 与 `cep_decl_reverse_verify.sh`
+   **同改** `fabric.json` / `protocol_instances.json` 且靠 `trap` 还原 ⇒ **还原序错乱** ⇒ 冻结件被留成变异态
+   （本次实测：`fabric.json` 清空 + `protocol_instances.json` 残留 `-MUT`）⇒ 之后冻结闸 + 多个 CEP 闸**假红**；
+   仓内**既有正确形态**见 `test/CMakeLists.txt:347-359`（「只写自己的临时目录 ⇒ 可安全并行进 ctest」）；
+   台账 Entry #543 ⑨ 附带发现段；⛔ **修法待用户裁决 A / B / C**）
+
+Stage C（后续 · 需 architect / 用户 ratify）  ← C1 + C2 已于 2026-11-23 完成 · C3 已于 2026-11-24 完成
   ├─ C1 architect：裁定 F4 的措辞背离（docs/architecture/cep/protocol-engine.md 是冻结面 ⇒ 五步链）
   │     ✅ **已完成 2026-11-23**（台账 Entry #539 · oracle 判定 APPROVE · 审稿报告
   │        `.rddf/reviews/cep-gen-family-gap-closure-stage-c-review.md`）—— 追加「归属」三义口径澄清块
@@ -101,23 +120,27 @@ Stage C（后续 · 需 architect / 用户 ratify）  ← C1 + C2 已于 2026-11
   ├─ C2 architect：在 ADR-CEP-20 显式登记「档 2 天花板被非穷尽锁定」
   │     ✅ **已完成 2026-11-23**（台账 Entry #539 · 同批五步链）—— 文末追加「可达」两义口径限定 SU 段
   │        （零正文行改动 · 零决策变更 · 新增 invariant 数 = 0）
-  ├─ C3 用户 ratify：cep-memory-model-operational-trace（G2 的唯一路径）  ← ⏸ **待用户裁决**
+  ├─ C3 用户 ratify：cep-memory-model-operational-trace（G2 的唯一路径）
+  │     ✅ **已完成 2026-11-24**（台账 Entry #541 / #542 · `ADR-CEP-22` 已签发（冻结面 92）· change 已归档
+  │        · 验收 **PASS 17/17** · 报告 `.rddf/reviews/cep-memory-model-operational-trace-verify.md`）
   ├─ C4 architect：追认 HierarchicalDirectory 的 3 层语义 + 5 条基线约束闸（G3）  ← ⏸ 待办
   └─ C5 planner：评估 fence → 标签映射素材（G4）  ← ⏸ 待办
 ```
 
-**依赖方向单向**：`G1（Stage B）` ⇒ `G10` ⇒ `G3 的协议侧` ⇒ `G5`。**G2 独立**（走既有 backlog 线）。
+**依赖方向单向**：`G1（Stage B · ✅ 已闭）` ⇒ `G10（Stage B''' · ✅ 本仓可做部分已闭 · 补模型跨仓）` ⇒ `G3 的协议侧（⛔ 跨仓 ArchForge）` ⇒ `G5（⛔ 不可抄：论文侧 §9.3.1 亦未解决）`。**G2 独立**（走既有 backlog 线 · ✅ 已闭 + 残余 5 项已单独登记）。
 
 ---
 
 ## 4. 本轮范围与不做项
 
-### 4.1 做（2 个 improvement）
+### 4.1 做（3 个 improvement · I1 / I2 / **G10**）
 
 | ID | improvement | 目标 | 冻结面影响 |
 |:--:|---|---|---|
 | **I1** | `cep-protocol-engine-capability-declaration` | 让「每个协议实例的协议语义承载能力」成为**机器可查的声明面**：引擎存在性 / 在飞事务建模 / 瞬态态现状 ⇒ **G1 从文档漂移变为可检出缺口** | **零**（新建声明源 + 新建契约头 + 新建闸；⛔ 不动 `include/tlm/cep/protocol_instance.schema.json` 的 13 键 · 不动 `include/tlm/cep/protocol_instances.json` 的实例面） |
 | **I2** | `cep-litmus-falsifier-naming-disambiguation` | 消除「litmus」同名误导（实为通道依赖图找环，非内存模型 litmus）⇒ **G6** | **有**：`openspec/specs/cep-litmus-falsification/spec.md` 命中冻结 glob ⇒ 五步链 |
+
+| **G10** | `cep-hop-timing-capability-declaration` | 让「协议语义层**有没有** hop 计数 / 消息级时序模型」从**引擎头文件里的散文**变成**机器可检的现状面**（声明面 + 引擎层反向存在性 + 编译期否定断言）⇒ **G10 从不可检出变为可检出**（⛔ 只登记现状 · ⛔ 不补模型） | **有**：新建 `openspec/specs/cep-hop-timing-capability-declaration/spec.md` ⇒ 冻结面**新增 1**（92 → 93 · 五步链 1 次） |
 
 ### 4.2 不做（及理由）
 
@@ -126,6 +149,7 @@ Stage C（后续 · 需 architect / 用户 ratify）  ← C1 + C2 已于 2026-11
 | 引入 DSL / 解析器 / 代码生成器 | `docs/adr/ADR-CEP-18-protocol-generation-scope.md` 决策 1/6 已排除；切换判据 T1（规模）T2（表达力）实测**结构���未达** | architect 已决 |
 | 承诺自动协议组合 / 自动兼容性判定 / 无违例保证 | `docs/adr/ADR-CEP-13-coherence-domain-ownership.md` 决策 5/6 已排除 | architect 已决 |
 | 实现瞬态态格 / 在飞 snoop 集合 | ⛔ **本轮只做「让缺口可检出」**，不做「补齐缺口」—— 后者是协议 FSM 语义设计，属 architect + ArchForge | Stage C |
+| **补协议语义层的 hop 计数 / 消息级时序模型**（G10 的本体） | ⛔ G10 的**本仓可做部分只做「让缺口可检出」**（声明面 + 反向存在性 + 编译期否定断言）⇒ **补模型**属协议 FSM 语义设计，归 architect + ArchForge | ArchForge（跨仓） |
 | 定义 `rfe` / `fr` / `ws` 语义 + 操作级模型 | 既有 backlog `cep-memory-model-operational-trace` 已在办（⛔ 开工前置 = architect 裁「每域模型来源 + 域间边构造规则」+ 用户 ratify）⇒ 本轮**不重复立项** | Stage C |
 | 扩 `include/tlm/cep/protocol_instance.schema.json` 的 13 键 | 该 schema 是冻结面 ⇒ 五步链；且 `perm_upgrades.json` 已有**同型先例**（「本仓自持 ⇒ 不参与镜像比对」）⇒ 走**新建声明源**成本更低 | I1 的 D3 偏离 |
 | 归档/改写 `docs/architecture/cep/protocol-engine.md` 的措辞 | 冻结面 + architect 判权 ⇒ planner 不代裁 | Stage C |
@@ -203,3 +227,9 @@ I1 的产出是**现状面**（把「哪一层被承载」变成事实），为 
 | 定序点 ADR | `docs/adr/ADR-CEP-08-ordering-point-portability.md` |
 | 能力地图 ADR | `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` |
 | G2 既有 backlog | `.rddf/improvements/cep-memory-model-operational-trace.md` |
+| G10 change（已归档） | `openspec/changes/archive/2026-11-24-cep-hop-timing-capability-declaration/`（⛔ 归档目录按 `.gitignore` 不入库） |
+| G10 main spec（冻结面） | `openspec/specs/cep-hop-timing-capability-declaration/spec.md` |
+| G10 验收报告 | `.rddf/reviews/cep-hop-timing-capability-declaration-verify.md`（PASS 17/17） |
+| G10 台账（立项 + 收口 + 附带发现） | `.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #543** |
+| G10 improvement 草稿 | `.rddf/improvements/cep-hop-timing-capability-declaration.md` |
+| 仓级止血项（Stage B'''' · 并行变异闸竞态） | 台账 `.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #543 ⑨** |
