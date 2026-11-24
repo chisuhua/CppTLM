@@ -50,10 +50,10 @@
 ### Task 6: 五步授权链（Entry #544）
 
 - [x] 步 1：台账 Entry #544 先落 ✅
-- [ ] 步 2：产物 commit
-- [ ] 步 3：`cep_freeze_check.sh --update --authorized-by "Entry #544"` ⇒ 期望「**新增 1 · 移出 0 · hash 变更 0**」
-- [ ] 步 4：冻结清单**单独** commit
-- [ ] 步 5：无参复验 `cep_freeze_check.sh`（rc=0 · 产物 hash 一致）
+- [x] 步 2：产物 commit
+- [x] 步 3：`cep_freeze_check.sh --update --authorized-by "Entry #544"` ⇒ 期望「**新增 1 · 移出 0 · hash 变更 0**」
+- [x] 步 4：冻结清单**单独** commit
+- [x] 步 5：无参复验 `cep_freeze_check.sh`（rc=0 · 产物 hash 一致）
 
 ### Task 7: 验收与归档
 

@@ -103,7 +103,7 @@ PYEOF
         return $FAILED
     fi
     if printf '%s' "$JSON_ROWS" | grep -q "__MISSING_KEY__"; then
-        fail "fence-json-key-missing: $(printf '%s' "$JSON_ROWS" | grep '__MISSING_KEY__' | tr '\n' ' ')（缺 consistency_labels / flow_support.barrier ⇒ 必红）"
+        fail "fence-json-key-missing: $(printf '%s' "$JSON_ROWS" | grep '__MISSING_KEY__' | sed 's/^__MISSING_KEY__//' | tr '\n' ' ')（缺 consistency_labels / flow_support.barrier ⇒ 必红）"
     else
         pass "AC-5 JSON 键齐备（无缺键实例）"
     fi
