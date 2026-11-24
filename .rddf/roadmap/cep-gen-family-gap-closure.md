@@ -6,7 +6,7 @@
 > **来源**：2026-11-23 对 Oswald 博士论文（*ProtoGen* / *HieraGen* / *HeteroGen*，178 页一手 PDF）全文逐章核对
 > × 本仓 CEP 实现面（`include/tlm/cep/**` 45 头文件 + 8 实例声明面 + 47 份 `openspec/specs/cep-*` + 24 份 CEP ADR）的对照分析。
 > **本轮决策**：用户 2026-11-23 批准「I1 完整闭环 + I2 登记」。
-> **状态更新（2026-11-24）**：**G1 / G2 / G6 已闭**（G2 = `ADR-CEP-22` 已签发 + change 已归档 · 验收 PASS 17/17）· **G10 的本仓可做部分已闭**（Stage B''' · change `cep-hop-timing-capability-declaration` 已归档 · 验收 PASS 17/17）· **G9 按设计闭**（触发式扩容判据已在 ADR-CEP-21）· 剩余 = **G4**（待 C5 素材盘点）/ **G7**（architect 裁取值域）/ **G3 协议侧 + G8**（跨仓 ArchForge）/ **G5**（论文侧亦无 ⇒ 不可抄）· ⛔ 本仓另有**仓级止血**项（Stage B'''' · 并行 ctest 下变异型闸的还原竞态 ⇒ 冻结件残留）。
+> **状态更新（2026-11-24）**：**G1 / G2 / G6 已闭**（G2 = `ADR-CEP-22` 已签发 + change 已归档 · 验收 PASS 17/17）· **G10 的本仓可做部分已闭**（Stage B''' · change `cep-hop-timing-capability-declaration` 已归档 · 验收 PASS 17/17）· **G9 按设计闭**（触发式扩容判据已在 ADR-CEP-21）· **G4-a 已闭**（Stage B''''' · 派生声明面 change `cep-fence-consistency-effect-derivation` 已归档 · 验收 PASS 16/16）· 剩余 = **G4-b / G4-c**（写回 schema / 只登记进 ADR ⇒ 均属 architect 判权域）/ **G7**（architect 裁取值域）/ **G3 协议侧 + G8**（跨仓 ArchForge）/ **G5**（论文侧亦无 ⇒ 不可抄）· ⛔ 本仓另有**仓级止血**项（Stage B'''' · 并行 ctest 下变异型闸的还原竞态 ⇒ 冻结件残留）。
 
 ---
 
@@ -52,7 +52,7 @@
 | **G1** | 协议 FSM 承载能力（瞬态态 / 在飞事务 / 引擎存在性）**无机器可查的现状面** | 🔴 P0 | **本仓可做**（声明面 + 编译期反射） | planner → builder |
 | **G2** | 复合一致性公理**不可证伪**（边类语义 + 操作级模型缺失） | 🔴 P0 | 需独立立项 + 用户 ratify | **既有 backlog** `cep-memory-model-operational-trace`（本轮不动） |
 | **G3** | 分层协议组合 = 零（目录层已就位，协议层未建） | 🟡 P1 | 需 architect 追认层级语义 | architect |
-| **G4** | fence 无一致性标签（论文一致性接口第三元缺失） | 🟡 P1 · **素材已盘点**（2026-11-24） | **素材齐全**（论文 fence 效果表 + 一致性标签表已在仓内调研文档）⇒ 缺口是「**表达位置**」而非「缺料」；**存在零 schema 变更形态**（派生视图 + 闸）⇒ 见 §2.3.1 | ✅ **G4-a 已批准**（用户 2026-11-24 · 台账 Entry #544）· ⏭ G4-b / G4-c 留待 architect |
+| **G4** | fence 无一致性标签（论文一致性接口第三元缺失） | 🟡 P1 · **素材已盘点**（2026-11-24） | **素材齐全**（论文 fence 效果表 + 一致性标签表已在仓内调研文档）⇒ 缺口是「**表达位置**」而非「缺料」；**存在零 schema 变更形态**（派生视图 + 闸）⇒ 见 §2.3.1 | ✅ **G4-a 已闭**（用户 2026-11-24 批准 · change 已归档 · 验收 PASS 16/16 · 台账 Entry #544）· ⏭ G4-b / G4-c 留待 architect |
 | **G5** | 协议级死锁自由论证不存在 | 🟡 P1 | 论文侧亦未解决（§9.3.1）⇒ **抄不到** | backlog |
 | **G6** | 「litmus」命名与能力错配（实为通道图找环） | 🟡 P1 | **本仓可做**（低成本） | planner → builder |
 | **G7** | 「不完整目录知识」无表达（无 belief 模型） | 🟡 P1 | 需 architect 判取值域 | architect |
@@ -276,4 +276,10 @@ I1 的产出是**现状面**（把「哪一层被承载」变成事实），为 
 | G10 验收报告 | `.rddf/reviews/cep-hop-timing-capability-declaration-verify.md`（PASS 17/17） |
 | G10 台账（立项 + 收口 + 附带发现） | `.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #543** |
 | G10 improvement 草稿 | `.rddf/improvements/cep-hop-timing-capability-declaration.md` |
+| G4-a change（已归档） | `openspec/changes/archive/2026-11-24-cep-fence-consistency-effect-derivation/`（⛔ 归档目录按 `.gitignore` 不入库） |
+| G4-a 声明面（冻结面外） | `include/tlm/cep/fence_effects.hh`（枚举 + 推导函数 R1-R7 + 由函数生成的 8 行表 + 6 边界常量） |
+| G4-a main spec（冻结面） | `openspec/specs/cep-fence-consistency-effect-derivation/spec.md` |
+| G4-a 验收报告 | `.rddf/reviews/cep-fence-consistency-effect-derivation-verify.md`（PASS 16/16） |
+| G4-a 台账（立项 + 收口） | `.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #544** |
+| G4-a improvement 草稿 | `.rddf/improvements/cep-fence-consistency-effect-derivation.md` |
 | 仓级止血项（Stage B'''' · 并行变异闸竞态） | 台账 `.rddf/roadmap/objectives/obj-cep-platform.md` **Entry #543 ⑨** |
