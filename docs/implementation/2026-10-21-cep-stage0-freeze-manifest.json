@@ -52,7 +52,7 @@
     "openspec/specs/cep-cohif-network-adapter/spec.md": "3f6aeab6cfed7af458f4a1dc8f272742ee700491e0588ad249f42173a2840a07",
     "openspec/specs/cep-collective-plane-base/spec.md": "e5c1864fe98b98faafc7d9d3296c4d80fe187d3b8d4bb3680af8c026663578f7",
     "openspec/specs/cep-collective-plane-contract/spec.md": "8364e7a776a0a73aa59fbb503084bc0d5598dcc5d1ff62c5d28e54285ccc4f7a",
-    "openspec/specs/cep-compound-graph-falsification/spec.md": "3ea6c30ad046bfbb85dc62bfe1ff0de1b7ac87f5cf0de7eb92c8b65ab1945763",
+    "openspec/specs/cep-compound-graph-falsification/spec.md": "c66db335562a30288232b67cfc6c05d147fbc3f6523a7ff0625bf15e8f484fb9",
     "openspec/specs/cep-core-contracts/spec.md": "c9a71fd248f02f974a75e7d7c89a861cdee87cf2ae368fb2bbf94d1b3ba63403",
     "openspec/specs/cep-cxl-dcoh-symmetric-state-spec/spec.md": "92d83edc4769709d919aa0462c04f11cf631a27c8b5fdf9ffbfdaab46853ed39",
     "openspec/specs/cep-cxl-dcoh-symmetric/spec.md": "a7c9c40db428dda18ab8610b24dd5d87a27c1b4999b54fd7a43ecd942c3ab080",
@@ -94,10 +94,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #541",
+  "authorized_by": "Entry #542",
   "exclusions": [],
   "frozen_at": "2026-11-24",
-  "frozen_at_commit": "b7c987ff2f47395a41e3336bf0640c200ad9e637",
+  "frozen_at_commit": "4ac611ec61eeabce59f9f7ba3bd0b71070920b9f",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
