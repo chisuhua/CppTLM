@@ -42,7 +42,7 @@
 | `cep_freeze_check.sh` | M1 冻结面授权闸（成员数以清单为准）（`--update --authorized-by "Entry #N"` + 两步 commit） | ✅ 生效 |
 | `cep_archforge_alignment_check.sh` | 跨仓（ArchForge）对齐锚点守门，33 锚点 | ✅ 生效 |
 | `cep_decl_alignment_check.sh` | 协议实例声明 ↔ schema 双向映射（判据 C-4） | ✅ 生效 |
-| `cep_decl_reverse_verify.sh` | 上者的**反向验证**（防自证） | ✅ 生效 |
+| `cep_decl_reverse_verify.sh` | 上者的**反向验证**（防自证）—— **拷贝根形态**：改**副本**（本仓声明面 + 检查器脚本都在拷贝根内）⇒ **真实仓零写入**（2026-11-24 改造，per 台账 Entry #543 ⑨）⇒ 被 SIGKILL 打断也**零污染** | ✅ 生效（ctest 注册 · RUN_SERIAL） |
 | `cep_engine_capabilities_check.sh` | 协议引擎承载能力声明面（change `cep-protocol-engine-capability-declaration`）：实例集**双向零 orphan**（`kEngineCapabilities` ↔ `protocol_instances.json` 的 `id`）+ **引擎头文件集反向存在性**（出现新 `*_protocol_engine.hh` ⇒ 必红）+ 通用层零协议名/零 include 协议头 + 单真源（struct/init 区段禁 `transient`/`in_flight`）+ **probe TU 编译失败验证**（AC-3/AC-4，须命中实例 id 签名） | ✅ 生效（ctest 注册） |
 | `cep_hop_timing_capabilities_check.sh` | 协议语义层的 **hop / 时序**建模声明面闸（change `cep-hop-timing-capability-declaration` · gap **G10**）—— **12 条判据**：① 实例集**双向零 orphan**（`kHopTimingCapabilities` ↔ `protocol_instances.json` 的 `id`）② **现状锁**：协议语义层 hop / 时序**恒 `None`**（≠ `None` ⇒ 必红 ⇒ 须走决策 + 更新声明）③ **引擎层反向存在性**（`*_protocol_engine.hh` **去注释后**出现 hop / 时序 API ⇒ 必红 ⇒ 强制更新声明）④ **载体 / 器件层既有事实存在性**（flit 载体 hop 计数 · responder / 桩缓存核固定延迟 ⇒ 被删必红）⑤ 通用层零协议名 / 零 include 协议头 ⑥ 与 G1 正交（禁 `egress` / `in_flight`）⑦ 诚实边界**机器可读**（`tick()` ≠ 时序模型 · 仅对协议语义层成立）· **3 条反向 fixture**（`--selftest`：加声明行 / 引擎注入 hop API / 声明非 `None` ⇒ 各按**自己的**红因签名变红） | ✅ 生效（ctest 注册） |
 | `cep_compound_graph_falsification_check.sh` | 复合一致性公理的**操作级**证伪工装闸（per `ADR-CEP-22` · change `cep-memory-model-operational-trace`）—— **六条臂**：① 正控（金标准跨域违例迹 ⇒ `falsified` + 见证 · companion ⇒ `not_falsified` · 无「已证明」表述）② **取代臂**（旧语义「通道环 ⇒ `falsified`」⇒ **必须不**保留 ⇒ 通道语料 ⇒ `invalid` + `channel-edge-not-op-edge`）③ 派生边作为输入 ⇒ `derived-edge-as-input` ④ 未绑定域 ⇒ `unbound-domain` ⑤ 截断 ⇒ `undecided` + `search-truncated` ⑥ 开工门（schema 的 `combination_contract` 恰 1 处） | ✅ 生效（ctest 注册） |
@@ -71,7 +71,7 @@
 | `cep_prereg_drift_check.sh` | **预登记 out-of-scope 集合**的漂移闸(⛔ 不得事后自由扩张;真源 = `objective §9.1` ② 表) | ✅ 生效（ctest 注册） |
 | `cep_source_effect_check.sh` | **来源类型判据**的**决定性变异**取证(4 类影子副本:`dropped` / `downgraded` / `misclassified` / 影子探针 ⇒ 按固定签名变红)+ 真源 sha256 复原校验 | ✅ 生效（ctest 注册） |
 | `cep_cxl_dcoh_adapter_reverse_verify.sh` | 队列 #12 **实现层** adapter 的反向验证(6 条毒化 fixture:必红 **且** 归因 id 命中)+ 基线正控 | ✅ 生效（ctest 注册） |
-| `cep_freeze_reverse_verify.sh` | `cep_freeze_check.sh` 对**派生文件**(`include/tlm/cep/fabric.json`)有牙的反向验证(基线绿 → 破坏红(点名 `include/tlm/cep/fabric.json`)→ 还原绿) | ✅ 生效（ctest 注册） |
+| `cep_freeze_reverse_verify.sh` | `cep_freeze_check.sh` 对**派生文件**(`include/tlm/cep/fabric.json`)有牙的反向验证(基线绿 → 破坏红(点名 `include/tlm/cep/fabric.json`)→ 还原绿) —— **拷贝根形态**：冻结清单 + 93 份冻结产物 + 冻结闸脚本全部复制到拷贝根内验证 ⇒ **真实仓零写入**（2026-11-24 改造，per 台账 Entry #543 ⑨） | ✅ 生效（ctest 注册 · RUN_SERIAL） |
 | `cep_tilelink_engine_failclosed.sh` | TileLink-C 运行时引擎的 **fail-closed 消费面 + 决定性变异**取证(影子树机制 + 真源 sha256 复原校验) | ✅ 生效（ctest 注册） |
 | `cep_index_position_check.sh` | `07 号` 文末文档索引闸(**三合一**,2026-11-12 强化 per 台账 Entry #342):① 索引永久置于文末(其后零 `## `)② 实际 `## ` 数 == 自述一级节数 == 索引 A 行数 ③ 实际 Status Update 数 == 自述 SU 数 == 索引 B 行数 ④ **索引 A/B 的「行」列逐行 == 实测行号** + 标题集合相等(防遗漏 / 防重复) | ✅ 生效（ctest 注册） |
 | `cep_e2e_reconcile_check.sh` | **双向对账闸**(per 台账 Entry #295 裁定 2 = retention **丙**;Entry #303):台账条目 ↔ 仓内**已提交** run 产物 —— ① 零 orphan(双向)② `metrics_sha256` 相等 ③ 7 字段齐备 ④ verdict 三态词表(⛔ 不得二值绿/红) | ✅ 生效（ctest 注册） |

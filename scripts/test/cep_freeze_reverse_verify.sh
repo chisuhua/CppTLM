@@ -1,29 +1,20 @@
 #!/usr/bin/env bash
 # scripts/test/cep_freeze_reverse_verify.sh
-#   —— 证明 `cep_freeze_check.sh` 对**派生文件**(fabric.json)**有牙**的反向验证
+# —— CEP 冻结闸（派生文件 fabric.json）的反向验证
 #
-# 为什么需要(per 台账 Entry #56 B1' 条款 ④):
-#   `include/tlm/cep/fabric.json` 于 2026-10-25 纳入 M1 冻结集(31 成员)。
-#   但它是**派生副本**(`derived_from` = ArchForge `22-nsa §0.5.4.1` + `32 号 §6.0.2`),
-#   且 `scripts/test/cep_decl_reverse_verify.sh` 的破坏对象虽含它,**走的却是 decl check 路径**
-#   —— **两条路径的牙必须分别验**:decl check 验的是「声明 ↔ fabric 语义一致」,
-#   freeze check 验的是「fabric 的 hash 未被静默改写」。前者红不代表后者红。
+# ── 零污染形态（2026-11-24 重构 · per 台账 Entry #543 ⑨ 附带发现）──────────
+#   ⛔ **旧形态**：直接改写真实仓内 include/tlm/cep/fabric.json 再靠 trap 还原 ⇒
+#      ① **中断即污染**：被 SIGKILL(ctest timeout) 打断时 trap 不执行 ⇒ 冻结件被留成
+#         变异态 ⇒ 之后冻结闸 + 多个 CEP 闸**假红**淹没真信号（2026-11-24 实测命中：
+#         fabric.json 被清空 + protocol_instances.json 残留 -MUT 标记）；
+#      ② 与其它改写同一文件的闸存在**还原竞态**。
+#   ✅ **新形态**：把「冻结清单 + 全部冻结产物 + 冻结闸脚本」复制到**拷贝根**，在拷贝根里
+#      做变异与验证 ⇒ **真实仓零写入、零污染**（与仓内既有正确形态一致：test/CMakeLists.txt
+#      注释「只写自己的临时目录 ⇒ 可安全并行进 ctest」）⇒ 该闸的中断风险**归零**
+#      （无需还原 ⇒ 无需 trap ⇒ 无残留可能）。
 #
-# 闭环(与 decl_reverse_verify 同构):
-#   破坏 → freeze check 必须报红 → 还原 → freeze check 必须报绿
-#
-# ⚠️ **已注册进 ctest,但必须 `RUN_SERIAL`**(2026-11-19 订正):
-#    本脚本会**临时改写**本仓 `include/tlm/cep/fabric.json` 再还原 ⇒ 在 `ctest -j4`
-#    并行下,任何**读**该文件的测试(首当其冲 = `cep_freeze_check` 的逐产物 sha256)
-#    会读到**中间态** ⇒ 假红。⇒ `test/CMakeLists.txt` 已为该 test 设 `RUN_SERIAL TRUE`
-#    (与兄弟 `cep_decl_reverse_verify` 同修法:改写者独占运行 ⇒ 读者天然安全)。
-#    ⚠️ 本段原写「刻意不注册进 ctest」,与事实相反(该 test 早已注册)—— 2026-11-19 订正。
-#
-# 用法:
-#   bash scripts/test/cep_freeze_reverse_verify.sh
-#
-# 退出码:0 = 闭环成立(红→绿);1 = 有一步未达成(判据无牙)
-
+# 用法: bash scripts/test/cep_freeze_reverse_verify.sh
+# 退出码: 0 = 反向验证闭环成立 · 1 = 未成立
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -31,81 +22,104 @@ cd "$ROOT" || exit 2
 
 FREEZE="scripts/test/cep_freeze_check.sh"
 FABRIC="include/tlm/cep/fabric.json"
-_fb_base="${TMPDIR:-/tmp/opencode}"; mkdir -p "$_fb_base" 2>/dev/null || true
-BACKUP="$(mktemp "$_fb_base/fabric_backup.XXXXXX.json")"
+MANIFEST="docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json"
 
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
+GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[0;33m'; NC='\033[0m'
 FAILED=0
 
-cleanup() {
-    # 还原(fabric.json 是冻结产物 —— 必须字节级还原,否则污染工作区)
-    if [ -f "$BACKUP" ]; then
-        cp "$BACKUP" "$FABRIC"
-        rm -f "$BACKUP"
-        # ⚠️ 还原后**自证**(2026-11-19):被 SIGKILL(ctest timeout)打断时 trap 不执行
-        #    ⇒ 仓里会留下被改过的冻结件 ⇒ 后续所有 CEP 闸全红。故还原后立即比对 hash,
-        #    不一致即响亮报错(而不是静默留下污染)。
-        if [ -n "${ORIG_SHA:-}" ] && [ "$(sha256sum "$FABRIC" | cut -d' ' -f1)" != "$ORIG_SHA" ]; then
-            echo -e "${RED}✗ 还原失败:$FABRIC 与基线 hash 不一致 —— 须手动 git checkout -- $FABRIC${NC}"
-            exit 1
-        fi
+TMP="$(mktemp -d "${TMPDIR:-/tmp/opencode}/cep_freeze_rv.XXXXXX")" || exit 2
+trap 'rm -rf "$TMP"' EXIT
+CP_ROOT="$TMP/root"
+
+# ── 前置 1：依赖文件存在 ────────────────────────────────────────────────
+for f in "$FREEZE" "$MANIFEST" "$FABRIC"; do
+    if [ ! -f "$f" ]; then
+        echo -e "${RED}✗ 缺少 $f —— 无法验证${NC}"
+        exit 1
     fi
-}
-trap cleanup EXIT
+done
 
-if [ ! -f "$FABRIC" ]; then
-    echo -e "${RED}✗ 找不到 $FABRIC —— 无法验证${NC}"
-    exit 1
-fi
-
-# ⚠️ **工作区必须干净**(2026-11-19):若上次运行被 SIGKILL 打断(ctest timeout),
-#    仓里会留下被改过的 fabric.json ⇒ 此时「基线」不是真基线,验证结论无意义。
-#    ⇒ 发现脏文件即拒绝运行,并给出还原命令。
+# ⚠️ 仓内 fabric.json 若有未提交改动 ⇒ 基线不可信（上次运行可能被打断留下污染）
 if ! git diff --quiet -- "$FABRIC" 2>/dev/null; then
     echo -e "${RED}✗ $FABRIC 有未提交改动 —— 基线不可信(上次运行可能被 SIGKILL 打断)${NC}"
     echo "    · 先还原:git checkout -- $FABRIC"
     exit 1
 fi
 
-cp "$FABRIC" "$BACKUP"
-ORIG_SHA="$(sha256sum "$FABRIC" | cut -d' ' -f1)"
+echo -e "\033[1mCEP 冻结闸 —— 派生文件(fabric.json)反向验证（拷贝根 · 真实仓零写入）\033[0m"
 
-echo -e "\033[1mCEP 冻结闸 —— 派生文件(fabric.json)反向验证\033[0m"
+# ── 建拷贝根：冻结闸脚本 + 清单 + 全部冻结产物 ─────────────────────────
+mkdir -p "$CP_ROOT/scripts/test" "$CP_ROOT/docs/implementation"
+cp "$FREEZE" "$CP_ROOT/scripts/test/"
+if ! python3 - "$MANIFEST" "$ROOT" "$CP_ROOT" <<'PYEOF'
+import json, os, shutil, sys
+
+man_path, repo, dst = sys.argv[1], sys.argv[2], sys.argv[3]
+man = json.load(open(man_path, encoding="utf-8"))
+arts = man.get("artifacts", {})
+missing = []
+for rel in arts:
+    src = os.path.join(repo, rel)
+    if not os.path.isfile(src):
+        missing.append(rel)
+        continue
+    tgt = os.path.join(dst, rel)
+    os.makedirs(os.path.dirname(tgt), exist_ok=True)
+    shutil.copy2(src, tgt)
+if missing:
+    print("  · 缺失 " + str(len(missing)) + " 份冻结产物：" + ", ".join(missing[:5]))
+    sys.exit(1)
+# 拷贝根内无 git ⇒ provenance 子判定（比对 frozen_at_commit 的 git blob）无法评估
+# ⇒ 去掉该键，避免拷贝根基线被 provenance 判红（该子判定与本闸要验的「hash 漂移检测」正交）
+man.pop("frozen_at_commit", None)
+out = os.path.join(dst, "docs/implementation", os.path.basename(man_path))
+os.makedirs(os.path.dirname(out), exist_ok=True)
+with open(out, "w", encoding="utf-8") as fh:
+    json.dump(man, fh, ensure_ascii=False, indent=2)
+print("  · 已复制冻结产物 " + str(len(arts)) + " 份到拷贝根")
+PYEOF
+then
+    echo -e "  ${RED}✗${NC} 拷贝根构建失败"
+    exit 1
+fi
+
+CP_FABRIC="$CP_ROOT/$FABRIC"
+ORIG_SHA="$(sha256sum "$CP_FABRIC" | cut -d' ' -f1)"
 echo "  基线 sha256: ${ORIG_SHA:0:16}…"
+
+run_freeze() {  # <logfile> —— 在拷贝根内跑冻结闸
+    ( cd "$CP_ROOT" && bash scripts/test/cep_freeze_check.sh ) > "$1" 2>&1
+}
 
 # ── 基线:未破坏 → freeze check 必须报绿 ──────────────────────────────
 echo ""
 echo "═══ 基线:未破坏 → freeze check 必须 GREEN ═══"
-if bash "$FREEZE" > /tmp/cep_freeze_rv_base.log 2>&1; then
+if run_freeze "$TMP/freeze_base.log"; then
     echo -e "  ${GREEN}✓${NC} 基线绿(freeze check rc=0)"
 else
-    echo -e "  ${RED}✗${NC} 基线就红 —— freeze check 与工作区已不一致(先修基线)"
-    tail -5 /tmp/cep_freeze_rv_base.log | sed 's/^/      /'
+    echo -e "  ${RED}✗${NC} 基线就红 —— 拷贝根与冻结清单已不一致"
+    tail -5 "$TMP/freeze_base.log" | sed 's/^/      /'
     FAILED=1
 fi
 
 # ── 破坏:改 fabric.json 一个字节 → freeze check 必须报红 ───────────────
 echo ""
 echo "═══ 破坏:改 fabric.json 一字节 → freeze check 必须 RED ═══"
-# 用 python 做**字节级**改动(避免 sed 的换行/编码副作用)
-python3 - "$FABRIC" <<'PYEOF'
+python3 - "$CP_FABRIC" <<'PYEOF'
 import sys
+
 p = sys.argv[1]
 raw = open(p, "rb").read()
-# 在 networks 段后插入一个空格(语义不变 → decl check 不会红,但 hash 变)
+# 在 networks 段后插入一个空格(语义不变 ⇒ decl check 不会红,但 hash 变)
 if b'"networks"' in raw:
     raw = raw.replace(b'"networks"', b'"networks" ', 1)
 else:
     raw = raw + b" "
 open(p, "wb").write(raw)
-print(f"  · 已改写 {p}")
+print("  · 已改写(拷贝根)" + p)
 PYEOF
 
-NEW_SHA="$(sha256sum "$FABRIC" | cut -d' ' -f1)"
+NEW_SHA="$(sha256sum "$CP_FABRIC" | cut -d' ' -f1)"
 if [ "$NEW_SHA" = "$ORIG_SHA" ]; then
     echo -e "  ${RED}✗${NC} 破坏无效(hash 未变)—— 无法验证"
     FAILED=1
@@ -113,16 +127,16 @@ else
     echo "  · 破坏后 sha256: ${NEW_SHA:0:16}… (与基线不同 ✓)"
 fi
 
-if bash "$FREEZE" > /tmp/cep_freeze_rv_broken.log 2>&1; then
+if run_freeze "$TMP/freeze_broken.log"; then
     echo -e "  ${RED}✗${NC} 破坏后 freeze check 仍绿 —— **冻结闸对派生文件无牙**"
     FAILED=1
 else
-    if grep -q "fabric.json" /tmp/cep_freeze_rv_broken.log; then
+    if grep -q "fabric.json" "$TMP/freeze_broken.log"; then
         echo -e "  ${GREEN}✓${NC} 破坏后 freeze check 报红,且点名 fabric.json"
-        grep "fabric.json" /tmp/cep_freeze_rv_broken.log | head -2 | sed 's/^/      /'
+        grep "fabric.json" "$TMP/freeze_broken.log" | head -2 | sed 's/^/      /'
     else
         echo -e "  ${YELLOW}!${NC} 破坏后 freeze check 报红,但**未点名** fabric.json(红因可能是别的)"
-        tail -5 /tmp/cep_freeze_rv_broken.log | sed 's/^/      /'
+        tail -5 "$TMP/freeze_broken.log" | sed 's/^/      /'
         FAILED=1
     fi
 fi
@@ -130,8 +144,8 @@ fi
 # ── 还原:必须字节级还原 → freeze check 必须回绿 ──────────────────────
 echo ""
 echo "═══ 还原:字节级还原 → freeze check 必须 GREEN ═══"
-cp "$BACKUP" "$FABRIC"
-RESTORED_SHA="$(sha256sum "$FABRIC" | cut -d' ' -f1)"
+cp "$FABRIC" "$CP_FABRIC"
+RESTORED_SHA="$(sha256sum "$CP_FABRIC" | cut -d' ' -f1)"
 if [ "$RESTORED_SHA" != "$ORIG_SHA" ]; then
     echo -e "  ${RED}✗${NC} 还原后 sha256 与基线不同 —— 还原失败"
     FAILED=1
@@ -139,11 +153,20 @@ else
     echo -e "  ${GREEN}✓${NC} 字节级还原成功(sha256 一致)"
 fi
 
-if bash "$FREEZE" > /tmp/cep_freeze_rv_restored.log 2>&1; then
+if run_freeze "$TMP/freeze_restored.log"; then
     echo -e "  ${GREEN}✓${NC} 还原后 freeze check 回绿"
 else
     echo -e "  ${RED}✗${NC} 还原后 freeze check 仍红 —— 还原不彻底"
-    tail -5 /tmp/cep_freeze_rv_restored.log | sed 's/^/      /'
+    tail -5 "$TMP/freeze_restored.log" | sed 's/^/      /'
+    FAILED=1
+fi
+
+# ── 收尾：确认真实仓零写入 ────────────────────────────────────────────
+echo ""
+if git diff --quiet -- "$FABRIC" 2>/dev/null; then
+    echo -e "  ${GREEN}✓${NC} 真实仓零写入（$FABRIC 无改动）"
+else
+    echo -e "  ${RED}✗${NC} 真实仓 $FABRIC 被改动 —— 本闸不应写仓内文件"
     FAILED=1
 fi
 
@@ -151,8 +174,8 @@ echo ""
 if [ "$FAILED" -eq 0 ]; then
     echo -e "${GREEN}✅ 冻结闸对派生文件(fabric.json)的反向验证闭环成立${NC}"
     echo "  · 基线绿 → 破坏红(点名 fabric.json)→ 还原绿"
+    echo "  · 真实仓零写入（拷贝根内验证）"
     exit 0
-else
-    echo -e "${RED}❌ 反向验证未成立 —— 冻结闸对 fabric.json 可能无牙${NC}"
-    exit 1
 fi
+echo -e "${RED}❌ 反向验证未成立 —— 冻结闸对 fabric.json 可能无牙${NC}"
+exit 1

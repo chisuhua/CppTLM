@@ -693,8 +693,10 @@ set_tests_properties(cep_decl_alignment_check
 add_test(NAME cep_decl_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_decl_reverse_verify.sh)
 # ⚠️ **RUN_SERIAL 理由**(既存潜在竞态,per change `cpptlm-cep-flow-support-assertions` 实测):
-#    本脚本**临时改写**仓内 `include/tlm/cep/protocol_instances.json` 再还原
-#    (其文件头写「刻意不注册 ctest」,但它**实际已注册**)⇒ 在 `ctest -j4` 下与任何
+#    ⚠️ **2026-11-24 订正**(per 台账 Entry #543 ⑨):本脚本**已改为拷贝根形态**
+#    ⇒ **不再改写**仓内 `include/tlm/cep/protocol_instances.json` ⇒ 下面的「中间态」风险
+#    **已消除**;**RUN_SERIAL 保留**作为纵深防御(零成本,且防将来形态回退)。
+#    (其文件头原写「刻意不注册 ctest」,但它**实际已注册**)⇒ 在 `ctest -j4` 下与任何
 #    **读**该文件的测试并行时,读者会读到**中间态** ⇒ **假红**。实测受害者(2 个):
 #      · `cep_docs_sync_check`(内部调用 `cep_decl_alignment_check` ⇒ `⑥ 派生副本逐字段`)
 #        ⇒ `moesi_gpu.protocol_version 与 ArchForge 不符`
@@ -965,7 +967,10 @@ add_test(NAME cep_cxl_dcoh_adapter_reverse_verify
 add_test(NAME cep_freeze_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_freeze_reverse_verify.sh)
 # ⚠️ **RUN_SERIAL 理由**(与 `cep_decl_reverse_verify` 同类竞态,2026-11-19 补):
-#    本脚本**临时改写**仓内 `include/tlm/cep/fabric.json` 再还原 ⇒ 在 `ctest -j4` 下与
+#    ⚠️ **2026-11-24 订正**(per 台账 Entry #543 ⑨):本脚本**已改为拷贝根形态**
+#    ⇒ **不再改写**仓内 `include/tlm/cep/fabric.json` ⇒ 下面的「中间态」风险**已消除**;
+#    **RUN_SERIAL 保留**作为纵深防御(零成本,且防将来形态回退)。
+#    原描述:本脚本**临时改写**仓内 `include/tlm/cep/fabric.json` 再还原 ⇒ 在 `ctest -j4` 下与
 #    **读**该文件的测试并行时,读者会读到**中间态** ⇒ 假红。
 #    实测受害者 = `cep_freeze_check`(对 89 个冻结产物逐个 sha256,含 fabric.json)。
 #    ⇒ 修法同兄弟 `cep_decl_reverse_verify`:`RUN_SERIAL` 让改写者独占运行 ⇒

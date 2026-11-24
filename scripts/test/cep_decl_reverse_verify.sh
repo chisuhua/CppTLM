@@ -6,9 +6,11 @@
 #   —— 判据 C-4 长期标「✅ 可自动化」,而该检查器从未实现,中间态因此静默存在数周。
 #   故本脚本做**破坏 → 必须报红 → 恢复 → 必须报绿**的闭环,并把结果作为台账 entry 的证据。
 #
-# 破坏对象分两类:
-#   · 本仓 `include/tlm/cep/fabric.json`  → 临时改 + 还原(备份保护,字节级复验)
-#   · ArchForge 的声明文档                 → **改副本**(ARCHFORGE_DIR 指向临时副本),**真仓零改动**
+# 破坏对象分两类（2026-11-24 重构 · per 台账 Entry #543 ⑨ ⇒ **两侧都是副本 ⇒ 真实仓零写入**）:
+#   · 本仓声明面（fabric.json + protocol_instances.json + 2 份 schema + perm_upgrades）
+#     → 改**拷贝根**里的副本(检查器也在拷贝根内跑 ⇒ 它读到的就是副本)
+#   · ArchForge 的声明文档 → **改副本**(ARCHFORGE_DIR 指向临时副本)
+# ⇒ 本脚本**不再改写任何仓内文件** ⇒ 被 SIGKILL 打断也**零污染**(旧形态会留下变异态 ⇒ 后续 CEP 闸假红)
 #
 # 用法:
 #   bash scripts/test/cep_decl_reverse_verify.sh
@@ -22,15 +24,38 @@ CHECK="scripts/test/cep_decl_alignment_check.sh"
 FABRIC="include/tlm/cep/fabric.json"
 # 本仓派生副本 —— ⑥ 的 ①（逐字段）与 ③（边表逐边）都拿它比对 ArchForge 声明
 REPO_DECL="include/tlm/cep/protocol_instances.json"
-# ⚠️ **刻意不注册进 ctest**:本脚本会**临时改写**本仓 `include/tlm/cep/fabric.json`,
-#    在 `ctest -j4` 并行下会与其它测试读到中间态 → 必须**串行手动跑**。
+# ⚠️ **2026-11-24 订正**（per 台账 Entry #543 ⑨）：本脚本**已注册进 ctest**
+#    （其文件头原写「刻意不注册进 ctest」—— 与事实相反）。
+#    且**已改为拷贝根形态**（2026-11-24）⇒ 本脚本**不再改写任何仓内文件**
+#    ⇒ 「临时改写 ⇒ 读者读到中间态 ⇒ 假红」这一类风险**已消除**。
 TMP="${TMPDIR:-/tmp/opencode}/cep_decl_reverse_verify.$$"
 REAL_AF="${ARCHFORGE_DIR:-/workspace/main/ArchForge}"
 
+# ⚠️ 2026-11-24（per 台账 Entry #543 ⑨ 附带发现）：备份改用**内存**（base64）⇒
+#    不依赖临时目录存活 ⇒ 临时目录被清 / 进程被打断时**仍可还原** ⇒ 冻结件不再残留变异态。
+#    旧实现用 "[ -f <.bak> ] && cp" ⇒ 备份文件不在时**静默跳过** ⇒ 留下污染且无告警。
+FABRIC_B64=""
+REPO_DECL_B64=""
+FABRIC_SHA=""
+REPO_DECL_SHA=""
+
 cleanup() {
-    [ -f "$TMP/fabric.json.bak" ] && cp "$TMP/fabric.json.bak" "$FABRIC"
-    [ -f "$TMP/protocol_instances.json.bak" ] && cp "$TMP/protocol_instances.json.bak" "$REPO_DECL"
     rm -rf "$TMP"
+    # ⚠️ **零写入自证**：真实仓的两个声明面必须与运行前**逐字节一致**
+    #    （本闸只改拷贝根 ⇒ 正常路径必然一致；不一致 ⇒ 响亮报错而非静默）
+    if [ -n "$FABRIC_SHA" ]; then
+        _fs="$(sha256sum "$FABRIC" | cut -d' ' -f1)"
+        if [ "$_fs" != "$FABRIC_SHA" ]; then
+            echo "✗ 零写入自证失败:$FABRIC 与运行前 hash 不一致 —— 须手动 git checkout -- $FABRIC"
+        fi
+    fi
+    if [ -n "$REPO_DECL_SHA" ]; then
+        _ds="$(sha256sum "$REPO_DECL" | cut -d' ' -f1)"
+        if [ "$_ds" != "$REPO_DECL_SHA" ]; then
+            echo "✗ 零写入自证失败:$REPO_DECL 与运行前 hash 不一致 —— 须手动 git checkout -- $REPO_DECL"
+        fi
+    fi
+    return 0
 }
 trap cleanup EXIT
 
@@ -38,13 +63,32 @@ rm -rf "$TMP"; mkdir -p "$TMP/docs/architecture"
 cp "$REAL_AF/docs/architecture/32-cep-based-coherence-architecture.md" "$TMP/docs/architecture/"
 cp "$REAL_AF/docs/architecture/22-nsa-fabric-address-spec.md" "$TMP/docs/architecture/"
 DECL="$TMP/docs/architecture/32-cep-based-coherence-architecture.md"
-cp "$FABRIC" "$TMP/fabric.json.bak"
-cp "$REPO_DECL" "$TMP/protocol_instances.json.bak"
+# ── 拷贝根（本仓侧声明面 + 检查器脚本）⇒ **真实仓零写入** ─────────────────
+# ⚠️ 2026-11-24（per 台账 Entry #543 ⑨）：本闸原形态**改写真实仓内** fabric.json /
+#    protocol_instances.json 再靠 trap 还原 ⇒ ① 被 SIGKILL 打断 ⇒ 冻结件残留变异态
+#    ⇒ 之后冻结闸 + 多个 CEP 闸假红（2026-11-24 实测命中）；② 与其它改写同一文件的闸
+#    存在还原竞态。⇒ 新形态：**改副本**（检查器也在拷贝根内跑 ⇒ 它读到的就是副本）。
+CP_ROOT="$TMP/root"
+mkdir -p "$CP_ROOT/scripts/test" "$CP_ROOT/include/tlm/cep"
+cp "$CHECK" "$CP_ROOT/scripts/test/"
+for _f in include/tlm/cep/fabric.json \
+          include/tlm/cep/protocol_instances.json \
+          include/tlm/cep/protocol_instance.schema.json \
+          include/tlm/cep/fabric.schema.json \
+          include/tlm/cep/perm_upgrades.json \
+          include/tlm/cep/perm_upgrades.schema.json; do
+    cp "$_f" "$CP_ROOT/$_f"
+done
+CP_FABRIC="$CP_ROOT/include/tlm/cep/fabric.json"
+CP_REPO_DECL="$CP_ROOT/include/tlm/cep/protocol_instances.json"
+FABRIC_SHA="$(sha256sum "$FABRIC" | cut -d' ' -f1)"
+REPO_DECL_SHA="$(sha256sum "$REPO_DECL" | cut -d' ' -f1)"
 
 pass=0; fail=0
 run() {  # run <label> <expect: RED|GREEN> <archforge_dir>
     local out rc color
-    out="$(ARCHFORGE_DIR="$3" bash "$CHECK" 2>&1)"; rc=$?
+    # 在**拷贝根**内跑检查器（它按自身位置解析 ROOT ⇒ 读到的就是拷贝根里的副本）
+    out="$(cd "$CP_ROOT" && ARCHFORGE_DIR="$3" bash scripts/test/cep_decl_alignment_check.sh 2>&1)"; rc=$?
     if [ $rc -ne 0 ]; then color="RED"; else color="GREEN"; fi
     if { [ "$2" = "RED" ] && [ "$color" = "RED" ]; } ||
        { [ "$2" = "GREEN" ] && [ "$color" = "GREEN" ]; }; then
@@ -64,8 +108,9 @@ open(path, "w", encoding="utf-8").write(text)
 PYEOF
 }
 restore_decl() { cp "$REAL_AF/docs/architecture/32-cep-based-coherence-architecture.md" "$DECL"; }
-restore_fabric() { cp "$TMP/fabric.json.bak" "$FABRIC"; }
-restore_repo_decl() { cp "$TMP/protocol_instances.json.bak" "$REPO_DECL"; }
+# 还原：**从真实仓（始终只读）拷回拷贝根** ⇒ 真实仓无需还原（零写入）
+restore_fabric() { cp "$FABRIC" "$CP_FABRIC"; }
+restore_repo_decl() { cp "$REPO_DECL" "$CP_REPO_DECL"; }
 
 echo "═══ 反向验证基线 ═══"
 run "基线(未破坏)" GREEN "$REAL_AF"
@@ -74,7 +119,7 @@ echo ""
 echo "═══ 破坏 1:fabric.json 的 compute_noc.vc_count 4→2(槽位上界)═══"
 python3 -c "
 import json
-p='$FABRIC'; d=json.load(open(p))
+p='$CP_FABRIC'; d=json.load(open(p))
 d['networks']['compute_noc']['vc_count']=2
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "fabric vc_count 4→2" RED "$REAL_AF"
@@ -84,7 +129,7 @@ echo ""
 echo "═══ 破坏 2:fabric.json 增 ArchForge 清单外的网络 nsa_switch(反向比对)═══"
 python3 -c "
 import json
-p='$FABRIC'; d=json.load(open(p))
+p='$CP_FABRIC'; d=json.load(open(p))
 d['networks']['nsa_switch']={'vc_count':4}
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "fabric 增未锁定网络" RED "$REAL_AF"
@@ -153,7 +198,7 @@ echo "═══ 破坏 12:本仓副本 atomic.supported  false→0(嵌套 bool�
 # 若有人把 `strict_equal()` 改回 `!=`,本条会变 GREEN ⇒ 本 fixture 即回归保护。
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['instances'][0]['atomic']['supported']=0
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "副本 atomic.supported false→0" RED "$REAL_AF"
@@ -164,7 +209,7 @@ echo "═══ 破坏 13:本仓副本 compute_noc 边表多一条边 VC2→VC0(
 # 反向方向:本条证明「多边」也会报红,而非只有「缺边」。
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['channel_dependency_edges']['per_network']['compute_noc'].append([2,0])
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "副本侧多一条边" RED "$REAL_AF"
@@ -185,7 +230,7 @@ for key in id family adapter protocol_version flow_support perm atomic consisten
     python3 -c "
 import json, sys
 key = sys.argv[1]
-p = '$REPO_DECL'
+p = '$CP_REPO_DECL'
 d = json.load(open(p))
 inst = d['instances'][0]          # moesi_gpu
 
@@ -222,7 +267,7 @@ echo "═══ 破坏 15:本仓副本 status 改坏(**正控** —— ⑥ 跳�
 # 退化为「无牙」而无人察觉;若被误改成「跳过所有键」,破坏 14 会红 ⇒ 两端都被钉住。
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['instances'][0]['status']='excluded'
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "副本 status → excluded(status 是本仓权威字段 ⇒ 不参与镜像比对)" GREEN "$REAL_AF"
@@ -235,7 +280,7 @@ echo "═══ 破坏 16:本仓副本加一个**未登记**的额外实例(⑥ 
 # 「任何实例都可混入副本」⇒ 镜像守卫被架空)。
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['instances'].append(json.loads(json.dumps(d['instances'][0])))
 d['instances'][-1]['id']='unregistered_extra'
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
@@ -249,7 +294,7 @@ echo "═══ 破坏 17:本仓域实例违反 schema(① 扩面不得无牙)�
 # 消息类(越出 6 类词表)⇒ 必须报红(若扩面失效 ⇒ 本仓域实例成为「schema 盲区」)。
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 for inst in d['instances']:
     if inst.get('id')=='chi_rnf':
         inst['vc_binding']['compute_noc']['bogus_class']=0
@@ -262,7 +307,7 @@ echo '═══ 破坏 18:`repo_owned_instance_ids` 与 ArchForge 声明**撞名
 # 本仓**不得**接管 ArchForge 的实例(那是 ArchForge 侧撤回声明的动作)⇒ 撞名 ⇒ 报红。
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['repo_owned_instance_ids']=['moesi_gpu']
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "repo_owned_instance_ids 登记 ArchForge 已声明的 id(撞名)" RED "$REAL_AF"
@@ -274,7 +319,7 @@ echo '═══ 破坏 19:`repo_owned_instance_ids` 登记不存在的实例(登
 # 本条钉住「登记键本身」的完整性 ⇒ 不得指向不存在的实例)。
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['repo_owned_instance_ids']=['typo_nonexistent_id']
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "repo_owned_instance_ids 登记不存在的实例" RED "$REAL_AF"
@@ -285,7 +330,7 @@ echo '═══ 破坏 20:本仓域实例的 `status` 改坏(**正控** —— �
 # 与破坏 15 同款正控,但作用于**本仓域实例**(证明 ⑥ 的 status 豁免对两个域一致生效)。
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 for inst in d['instances']:
     if inst.get('id')=='chi_rnf':
         inst['status']='excluded'
@@ -298,7 +343,7 @@ echo '═══ 破坏 21:权威迁移的 `reason` 置空 ⇒ 迁移登记必红
 # 迁移**必须**写明理由 —— 否则「随手接管 ArchForge 的实例」无痕(跨仓义务被稀释)
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['authority_migrations']=[{'instance_id':'mesif','reason':'合成(毒化用)','ledger_entry':'Entry #SYNTH','archforge_snapshot':'ArchForge 32 号:529(合成)'}]
 d['authority_migrations'][0]['reason']=''
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
@@ -309,7 +354,7 @@ echo ""
 echo "═══ 破坏 22:权威迁移登记不存在的实例 id ⇒ 必红(判据 ①)═══"
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['authority_migrations']=[{'instance_id':'mesif','reason':'合成(毒化用)','ledger_entry':'Entry #SYNTH','archforge_snapshot':'ArchForge 32 号:529(合成)'}]
 d['authority_migrations'][0]['instance_id']='typo_nonexistent'
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
@@ -320,7 +365,7 @@ echo ""
 echo '═══ 破坏 23:同一 id 同时在 `repo_owned_instance_ids[]` 与 `authority_migrations[]` ⇒ 必红(判据 ⑤)═══'
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['authority_migrations']=[{'instance_id':'mesif','reason':'合成(毒化用)','ledger_entry':'Entry #SYNTH','archforge_snapshot':'ArchForge 32 号:529(合成)'}]
 d['repo_owned_instance_ids']=d.get('repo_owned_instance_ids',[])+['mesif']
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
@@ -331,7 +376,7 @@ echo ""
 echo '═══ 破坏 24:权威迁移缺 `ledger_entry` ⇒ 必红(判据 ③)═══'
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['authority_migrations']=[{'instance_id':'mesif','reason':'合成(毒化用)','ledger_entry':'Entry #SYNTH','archforge_snapshot':'ArchForge 32 号:529(合成)'}]
 d['authority_migrations'][0]['ledger_entry']=''
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
@@ -342,7 +387,7 @@ echo ""
 echo '═══ 破坏 25:未登记迁移的 `repo_owned` id 与 ArchForge 撞名 ⇒ 必红(权威迁移闸)═══'
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['repo_owned_instance_ids']=['mesif']   # 撞名且**未**登记迁移
 d['authority_migrations']=[]              # ⇒ 迁移名单为空 ⇒ 闸必须 fire
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
@@ -353,7 +398,7 @@ echo ""
 echo '═══ 破坏 26:权威迁移的 `archforge_snapshot` 置空 ⇒ 必红(判据 ④)═══'
 python3 -c "
 import json
-p='$REPO_DECL'; d=json.load(open(p))
+p='$CP_REPO_DECL'; d=json.load(open(p))
 d['authority_migrations']=[{'instance_id':'mesif','reason':'合成(毒化用)','ledger_entry':'Entry #SYNTH','archforge_snapshot':'ArchForge 32 号:529(合成)'}]
 d['authority_migrations'][0]['archforge_snapshot']=''
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"

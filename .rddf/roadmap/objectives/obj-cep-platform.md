@@ -28772,4 +28772,17 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 
 **候选修法（⛔ 本单元不实施 · 待裁决）**：**A** 把 `cep_freeze_reverse_verify.sh` 改为**拷贝根**形态（与 G10 闸同型 · 与仓内既有正确形态一致 · 中等代价）｜**B** 在 `test/CMakeLists.txt` 给两个变异闸加 `RESOURCE_LOCK` / `RUN_SERIAL`（最小改动 · 但闸外并发无保护）｜**C** 文件级 `flock` 互斥（覆盖闸外并发）。
 **影响**：污染对象是**冻结面** ⇒ 之后 `cep_freeze_check.sh` + `cep_docs_sync_check.sh` + 多个 `cep_*.sh` 全红 ⇒ **假红淹没真信号** ⇒ 与本 change 无关，但**任何** change 的全量回归都可能踩中。
-**⏭ 待办**：登记为 backlog 改进（建议名 `cep-mutation-gate-parallel-race`）⇒ 由 planner 立项 + 用户裁决修法（A / B / C）。
+**⏭ 待办（2026-11-24 更新）**：用户指令「按你的建议继续推进」⇒ **裁决 = 修法 A（拷贝根）** ⇒ 已在本 Entry 下直接实施（见 ⑩ 段）；⛔ **不另立 improvement 单元**（改动面 = 2 个闸脚本 + 1 处 CMake 注释 + 2 行 README ⇒ 零契约面变更 ⇒ 无冻结面影响 ⇒ 无需五步链）。
+
+**⑩ 仓级止血实施（2026-11-24 · builder · per 用户「按你的建议继续推进」⇒ 裁决 = 修法 A）**
+
+| # | 动作 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | **修法 A**：`cep_freeze_reverse_verify.sh` 改**拷贝根**形态 | ✅ | 冻结清单 + **93** 份冻结产物 + 冻结闸脚本全部复制到拷贝根 ⇒ 变异与验证全在拷贝根内 ⇒ **真实仓零写入**；闸尾新增「✓ 真实仓零写入」自证；⛔ 拷贝根内无 git ⇒ 去掉清单的 `frozen_at_commit` 键（provenance 子判定与本闸要验的「hash 漂移检测」正交） |
+| 2 | **修法 A**：`cep_decl_reverse_verify.sh` 改**拷贝根**形态 | ✅ | 本仓侧声明面（`fabric.json` + `protocol_instances.json` + 2 份 schema + `perm_upgrades`×2）+ 检查器脚本复制到拷贝根 ⇒ 检查器在拷贝根内跑（它按自身位置解析 ROOT）⇒ 读到的就是副本 ⇒ **真实仓零写入**；**40/40** 反向验证仍绿 |
+| 3 | **决定性证据** | ✅ | **并发 5 轮**（两个变异闸同时跑）⇒ 冻结件**零残留**；**SIGKILL 中断 5 轮**（decl 3 + freeze 2）⇒ **零残留**（旧形态下这两类都会留下变异态 ⇒ 之后冻结闸 + 多个 CEP 闸**假红**淹没真信号） |
+| 4 | **陈旧注释订正** | ✅ | `test/CMakeLists.txt`（2 处 RUN_SERIAL 理由块）· `scripts/README.md`（2 行守门表）· 2 个闸的文件头 ⇒ 全部改为「拷贝根 · 真实仓零写入」的事实表述（`RUN_SERIAL` **保留**作纵深防御，零成本且防形态回退） |
+| 5 | **冻结面影响** | ✅ **零** | 零 main spec / 零 ADR 正文 / 零 schema / 零 invariant 变更 ⇒ **无需五步链**（闸脚本 + CMake 注释 + README 均不在冻结集） |
+| 6 | **回归** | ✅ | 52 个 `cep_*.sh` **串行**全量 rc=0 · 全量 ctest（串行 `-j1`）**205/205** rc=0 · 非 `cep` 只读闸 9/9 · `cep_docs_sync_check.sh --strict` rc=0 · 冻结件**零残留** |
+
+**⛔ 残留风险边界（诚实边界）**：两个闸**不再写任何仓内文件** ⇒ 中断（SIGKILL / 临时目录被清）**不会**留下污染；但「闸读仓内冻结件」的**读者**读到的永远是**未被改写的真值** ⇒ 无需 `RUN_SERIAL` 保护（保留仅为纵深防御）。
