@@ -1370,7 +1370,7 @@ W1(独立)     B2(并行)     B1(A9 后,分批)
 | **DoD 12 条** | **11/12 达成**(14 change 全 archived · 66 invariant = 61 + 5 · 8 假设全有结论 · Kill 未触发);**唯一未达成 = `B3b-2` = `0/4` ⏭**(4 个受限族:规约真源仓外 / 受限 ⇒ 本仓不可推进,per 台账 Entry #264 口径 ② + #332 ⑨ 终局 Ⅱ) |
 | **Stage Go 节点** | Stage 0 ~ Stage 3 **全部 ✅**;**终态 DoD Go = ⏳ 挂起**(唯一未达成 = `B3b-2` = **0/4 ⏭**) |
 | **测试基线** | `ctest` **177/177** · `scripts/test/cep_*.sh` **42** 个闸全绿 · `docs_sync --strict` / `agents_md_lint` / `format --check` / `markdown_link_check` 全绿 · `openspec list` ⇒ **0 active** |
-| **ADR 签发** | **21 份决策 ADR**（结构闸分母,per `test/cep_adr_structural_deferrals.json` 的 `decision_adrs`;`ls docs/adr/ADR-CEP-*.md` = **24** 个文件 = 21 决策 + 3 excluded：宪章 / 锚点表 / 编号表）⇒ **18 已签发 + 2 永久豁免 + 1 Proposed**（`ADR-CEP-21` · 2026-11-14 双审通过转 Proposed;⚠️ 「已签发」为推导值）;`pending_signing` = **0**;id 归因债 = **19 笔分类登记**（per `invariant_attribution_dispositions`;⛔ 旧的「11 笔」计数已随 C3′(Entry #326)改名改语义而失效） |
+| **ADR 签发** | **22 份决策 ADR**（结构闸分母,per `test/cep_adr_structural_deferrals.json` 的 `decision_adrs`;`ls docs/adr/ADR-CEP-*.md` = **25** 个文件 = 22 决策 + 3 excluded：宪章 / 锚点表 / 编号表）⇒ **19 已签发 + 2 永久豁免 + 1 Proposed**（`ADR-CEP-21` · 2026-11-14 双审通过转 Proposed;⚠️ 「已签发」为推导值）;`pending_signing` = **0**;id 归因债 = **19 笔分类登记**（per `invariant_attribution_dispositions`;⛔ 旧的「11 笔」计数已随 C3′(Entry #326)改名改语义而失效） |
 | **KPI** | **0/3** |
 | **未 push** | **27 commit**(本地领先 `origin/main`;⚠️ **易变数字** —— 以 `git rev-list --count origin/main..HEAD` 实测为准;本轮 W7 push 后归 0) |
 | ⚠️ **排期 vs 实测** | `§4.6` 写「串行 **14 季度** / 2030-Q1 终态」;实测 14 个 change 从 **2026-10-23 到 2026-11-04(13 天)**全部归档 ⇒ **提前约 13 个季度** ⇒ 季度表述已成**历史叙事**,非现行口径 |

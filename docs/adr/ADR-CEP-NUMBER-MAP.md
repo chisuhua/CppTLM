@@ -71,6 +71,7 @@ A14 → 06 §15.4 P2.0-P5(per `ADR-CEP-00A §3.1` 实证 — **无 P6**)→ CEP-
 | **CEP-19** | ADR | **CohIf 载体形态**(业务 Bundle `CohIfBundle` + ProtocolEngine 的 ChStream 端口面 + `ProtocolBridge` 特化桥 + JSON 装配)| CEP-07, CEP-02, CEP-16 | ✅ 已起草 |
 | **CEP-20** | ADR | **拓扑级 IC3 证据的强度边界与能力阶梯**（证据档位阶梯 + 跨档聚合禁令）| CEP-06 | `ADR-CEP-20-topology-ic3-evidence-strength.md` |
 | **CEP-21** | ADR | **Sharer 位宽 —— responder bit 映射的扩容机制与触发判据**（两阶段：机制化 + 触发式扩容到 W）| CEP-04, CEP-12 | `ADR-CEP-21-sharer-bitmap-expansion.md` |
+| **CEP-22** | ADR | **每域模型来源与域间边构造规则**（操作级复合一致性公理 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 的可判定前置）| CEP-12, CEP-13 | `ADR-CEP-22-memory-model-source-and-cross-domain-edges.md` |
 
 **CEP-NUM(本 ADR)**:本表本身,作为"编号映射单一真源"
 

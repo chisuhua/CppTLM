@@ -14,11 +14,11 @@
 
 | 分组 | 份数 | 状态分布 |
 |------|------|---------|
-| **CEP 系列**（Coherence Exploration Platform） | 24 | ✅ 已签发 20 · 🟢 Proposed 1 · 🟡 起草中 3 |
+| **CEP 系列**（Coherence Exploration Platform） | 25 | ✅ 已签发 21 · 🟢 Proposed 1 · 🟡 起草中 3 |
 | **DGPU 系列**（dGPU 应用架构） | 15 | ✅ 已签发 2 · 🟢 Proposed 1 · 🟡 起草中 2 · 📋 提案 10 |
 | **X 系列**（框架基础：事务 / 错误 / 复位 / 参数 / 端口） | 18 | ✅ 已实施 8 · ✅ 已确认 2 · ✅ Accepted 3 · 🟢 Proposed 1 · 🟡 部分实施 1 · 📋 提案 1 · 📋 待确认 1 · 🟡 汇总（多阶段） 1 |
 | **其他**（INC / LIB / METRIC / NV / TEMPLATE） | 6 | ✅ 已实施 3 · ✅ 已确认 3 |
-| **合计** | **63** | — |
+| **合计** | **64** | — |
 
 > **口径说明**：`ADR-CEP-NUMBER-MAP.md` 是**编号预分配表**（非决策），计入 CEP 份数；
 > `ADR-P1-TEMPLATE.md` 是**模板**（非决策），计入其他份数。
@@ -57,6 +57,7 @@
 | [ADR-CEP-19-cohif-carrier-and-protocol-bridge.md](./ADR-CEP-19-cohif-carrier-and-protocol-bridge.md) | CohIf 载体(业务 Bundle + ChStream 端口面 + ProtocolBridge 特化) | ✅ 已签发 |
 | [ADR-CEP-20-topology-ic3-evidence-strength.md](./ADR-CEP-20-topology-ic3-evidence-strength.md) | 拓扑级 IC3 证据的强度边界与能力阶梯 | ✅ 已签发 |
 | [ADR-CEP-21-sharer-bitmap-expansion.md](./ADR-CEP-21-sharer-bitmap-expansion.md) | Sharer 位宽 —— responder bit 映射的**扩容机制**与触发判据 | 🟢 Proposed |
+| [ADR-CEP-22-memory-model-source-and-cross-domain-edges.md](./ADR-CEP-22-memory-model-source-and-cross-domain-edges.md) | 每域模型来源与域间边构造规则（操作级复合一致性判据的可判定前置） | ✅ 已签发 |
 | [ADR-CEP-NUMBER-MAP.md](./ADR-CEP-NUMBER-MAP.md) | Coherence Exploration Platform 编号预分配 | 🟡 起草中 |
 
 ---

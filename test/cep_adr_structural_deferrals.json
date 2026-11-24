@@ -29,7 +29,8 @@
     "ADR-CEP-18-protocol-generation-scope.md",
     "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md",
     "ADR-CEP-20-topology-ic3-evidence-strength.md",
-    "ADR-CEP-21-sharer-bitmap-expansion.md"
+    "ADR-CEP-21-sharer-bitmap-expansion.md",
+    "ADR-CEP-22-memory-model-source-and-cross-domain-edges.md"
   ],
   "excluded": [
     {
