@@ -28696,3 +28696,52 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 ② **立项期 KPI 窗口** —— 立项（active 1）到归档之间的窗口内，活口径若写 0/3 会与实测不一致（本轮已同步为 1/3，归档后回填 0/3）⇒ 与 Entry #540 ⑩ 同型，**已按纪律同步**（本轮**无**残留不一致）。
 
 **⑦ 关联**：Entry **#541**（`ADR-CEP-22` 落盘授权 · 用户 ratify）· Entry **#540**（I2 阶段 2 改名 · G2 的活代码面铺路）· Entry **#514**（I-6 声明面落地）· Entry **#513**（litmus harness 落地）· `ADR-CEP-22` · `ADR-CEP-13` 决策 1 / 2 / 5② · `ADR-CEP-12` 决策 3 / 4 + R-2e · `ADR-CEP-09` 决策 A（通道环判据归属）· backlog `.rddf/improvements/cep-memory-model-operational-trace.md` · 审稿报告 `.rddf/reviews/ADR-CEP-22-memory-model-source-and-cross-domain-edges-review.md`
+
+### Entry #543 — 2026-11-24 [planner](**G10 实施立项** —— change `cep-hop-timing-capability-declaration` · 「协议语义层 hop / 时序」承载能力声明面)
+
+**主题**：per 用户指令「**继续推进任务1**」⇒ 推进 gap 分析 **G10**（无网络 hop / 时序模型）的**本仓可做部分** = **让缺口可检出**（⛔ **不补** hop / 时序模型 —— 那属协议 FSM 语义设计，归 ArchForge）⇒ 本 Entry 授权立项 openspec change `cep-hop-timing-capability-declaration`。
+
+**① 立项理由 + 前置闭合**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|:--:|---|
+| 1 | **G10 的唯一前置 = G1**（协议 FSM 承载能力声明面） | ✅ | `openspec/changes/archive/2026-11-23-cep-protocol-engine-capability-declaration` · `include/tlm/cep/engine_capabilities.hh` · 闸 rc=0 |
+| 2 | **形态模板 = I1 的现成范式**（声明面 + 编译期反射 + 闸 + 反向 fixture）⇒ **零发明** | ✅ | `include/tlm/cep/engine_capabilities.hh` · `scripts/test/cep_engine_capabilities_check.sh` · `test/test_cep_engine_capabilities.cc` |
+| 3 | **零待决架构问题**（本单元只登记现状 + 让缺口可检出） | ✅ | ⛔ 零 schema 变更（`ADR-CEP-12` R-2e）· 零 ADR 正文变更 · 零 invariant 新增 |
+
+**② G10 的**精确语义**（必须逐字守住 —— 防止假绿）**
+
+| 层 | hop | 时序 | 说明 |
+|---|:--:|:--:|---|
+| **协议语义层**（8 实例的引擎） | ❌ **无** | ❌ **无** | 去注释后**零** hop / latency / travel-time / arrival-cycle 类 API（实测 `include/tlm/cep/*_protocol_engine.hh`） |
+| **步进钩子** | — | ⚠️ 有 `tick()` | `protocol_engine_base.hh:319` + `chi_rnf` / `mesif` 覆盖 ⇒ ⛔ **全局步进**，**不是**消息级时序模型（表述错误 = 假绿 ⇒ AC-9） |
+| **载体 / 器件层** | ✅ **有** | ✅ **有** | CohIf flit `hops`（router 递增 · `cohif_nic.hh:233`）· CohIf responder `completion_latency_cycles`（`:53`）· 桩缓存核 `snoop_latency_cycles`（`:158`）⇒ ⛔ **不得**表述为「全平台无 hop / 时序」（⇒ AC-10） |
+
+**③ 变更面（17 条 AC · 完整清单见 improvement）**
+
+| 面 | 变更 |
+|---|---|
+| **新增** | `include/tlm/cep/hop_timing_capabilities.hh`（协议中立 · 8 行声明表 + `basis` + SFINAE 探针模板 + 诚实边界）· `test/test_cep_hop_timing_capabilities.cc`（编译期否定断言 + 运行期复述）· `scripts/test/cep_hop_timing_capabilities_check.sh`（六判据臂 + 三条反向 fixture）· `openspec/specs/cep-hop-timing-capability-declaration/spec.md` |
+| **修改** | `test/CMakeLists.txt`（注册 ctest）· `scripts/README.md`（守门表）· 登记册 §0.1（闸族 52+14=66）· `include/tlm/cep/AGENTS.md`（文件索引，**并补登 I1 漏掉的 `engine_capabilities.hh`**）· 台账计数 |
+| **零改动（硬查）** | `protocol_instance.schema.json` / `protocol_instances.json` / `engine_capabilities.hh` / **`*_protocol_engine.hh`（零协议头改动 ⇒ 编译期探针以否定断言形态放测试里）** / 任何 ADR 正文 / `cep_invariant_assertion_map.json` |
+| **计数** | 闸 **51 → 52** · ctest **203 → 204** · `test_cep_*.cc` **78 → 79** · spec **139 → 140**（`cep-*` **48 → 49**） |
+
+**④ ⛔ 边界**
+
+⛔ **不补** hop / 时序模型（归 ArchForge）· ⛔ **零** schema / 实例声明变更（R-2e）· ⛔ **零**协议头改动 · ⛔ **零** ADR 正文变更 · ⛔ **零** invariant 新增 · ⛔ 不把 `tick()` 称作时序模型 · ⛔ 不把载体层已有概念说成「全平台无」· ⛔ 与 G1 的表**正交**（不重复 `egress` / `in_flight` 真源）。
+
+**⑤ 五步授权链（拍 0 = 本 Entry）**
+
+| 步 | 动作 | 状态 |
+|:--:|---|:--:|
+| 1 | 台账 Entry 先落（本 Entry） | ✅ |
+| 2 | 产物 commit（声明面 + 测试 + 闸 + main spec + 计数同步） | ⬜ |
+| 3 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #543"` ⇒ 期望「**新增 1 · 移出 0 · hash 变更 0**」（新建 main spec）· `artifact_count` **92 → 93** | ⬜ |
+| 4 | 冻结清单**单独** commit | ⬜ |
+| 5 | 无参复验 `cep_freeze_check.sh`（rc=0 · 93 产物 hash 一致） | ⬜ |
+
+**⑥ ⚠️ 回归口径纪律（per Entry #542 ⑪⑫ 的教训 —— 本单元**强制**）**
+
+**零回归证据 = 全量 ctest（⛔ 不按 `-R` 过滤）+ 全部 `cep_*.sh` + 非 `cep` 只读闸 + `docs_sync --strict`** ⇒ ⛔ 不得用 `-R <前缀>` 过滤后的子集冒充「零回归」（过滤会**按名字**排除判据面 —— 上轮即因此漏掉 3 个红闸）。
+
+**⑦ 关联**：gap 分析 **G10**（+ 依赖 **G1**）· I1 `cep-protocol-engine-capability-declaration`（形态模板）· `ADR-CEP-19`（CohIf 载体形态）· `ADR-CEP-13`（一致性公理）· `ADR-CEP-20`（能力阶梯）· Entry **#542**（G2 实施 + ⑪⑫ 口径教训）· Entry **#541**（`ADR-CEP-22` 落盘授权）· backlog `.rddf/improvements/cep-hop-timing-capability-declaration.md`
