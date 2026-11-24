@@ -28786,3 +28786,72 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | 6 | **回归** | ✅ | 52 个 `cep_*.sh` **串行**全量 rc=0 · 全量 ctest（串行 `-j1`）**205/205** rc=0 · 非 `cep` 只读闸 9/9 · `cep_docs_sync_check.sh --strict` rc=0 · 冻结件**零残留** |
 
 **⛔ 残留风险边界（诚实边界）**：两个闸**不再写任何仓内文件** ⇒ 中断（SIGKILL / 临时目录被清）**不会**留下污染；但「闸读仓内冻结件」的**读者**读到的永远是**未被改写的真值** ⇒ 无需 `RUN_SERIAL` 保护（保留仅为纵深防御）。
+
+### Entry #544 — 2026-11-24 [planner](**G4-a 实施立项** —— change `cep-fence-consistency-effect-derivation` · fence 一致性效果**派生声明面**)
+
+**主题**：per 用户「同意你的建议」⇒ 裁决 = **G4-a**（派生声明面 · 零 schema 变更）⇒ 把「由一致性标签 + barrier 支持推导的 fence 效果」变成**机器可检的现状面**。
+**元**：improvement `.rddf/improvements/cep-fence-consistency-effect-derivation.md`（16 条 AC · 形态照抄 G10）· **metis 1 轮**（P0×4 / P1×4 / P2×3 · 全部处置，见 ③）· 台账 = 本 Entry。
+
+**① 立项理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | **G4 素材已盘点**（2026-11-24 · 一次性只读调研）⇒ **素材齐全**（论文 fence 效果四行表 + 标签表已在仓内调研文档 §4.3.1/§4.3.2）⇒ 缺口是「**表达位置**」不是「缺料」 | ✅ | gap 文档 §2.3.1 |
+| 2 | **论文没有「fence 标签」** ⇒ fence 效果是「一致性模型 + 方向」的**组合效果** ⇒ 写回 schema 属语义误置（归 architect / G4-b） | ✅ | 调研文档 §4.3.1 · :961 |
+| 3 | **G4-a 存在零 schema 变更形态** ⇒ 不必等 architect 就能让缺口可检出 | ✅ | 本 Entry ② 规则表 + improvement 的「做」段 |
+| 4 | **零待决架构问题**（本单元只登记现状 + 让缺口可检出；⛔ 不实现 fence 协议语义） | ✅ | 边界见 ④ |
+
+**② 本单元的**决策面**：推导规则表（**随五步链 ratify** —— metis P1-5 ⇒ ⛔ **不**再声称「零决策变更」）
+
+| # | 规则 | 优先级 | 依据 |
+|:--:|---|:--:|---|
+| R1 | `has_barrier == false` ⇒ **None**（无 fence 通道） | **最高**（遮蔽模型规则） | 无 barrier 流 ⇒ fence 无处发生 |
+| R2 | read / write 标签**族不同** ⇒ **Invalid** | 次高（域外 ⇒ 必红） | 跨族组合不存在 |
+| R3 | 族 = **SC** ⇒ **None**（SC 已全序 ⇒ 与 barrier 存在与否**无关**） | 模型内 | 论文 SC 行 |
+| R4 | 族 = **TSO** ⇒ **FullBarrier** | 模型内 | 论文 TSO 行 |
+| R5 | 族 = **RC** ⇒ **按方向逐项**：write=RC-release ⇒ release ✓；read=RC-acquire ⇒ acquire ✓；皆无 ⇒ None | 模型内 | 论文 RC 行（**并集上界**；本单元取**子集** ⇒ 更严） |
+| R6 | 族 = **PLO** ⇒ **Partial**（只补 W→W 与 R→W） | 模型内 | 论文 PLO 行 |
+| R7 | 标签族 ∈ {SC, TSO, RC-*, PLO} 之外 ⇒ **Invalid** | 兜底 | schema 枚举外 |
+
+⚠️ **provisional（1 条 · 待 architect 追认）**：R5 中「read=RC-data ⇒ fence **不**提供 acquire」的解读 ⇒ `moesi_gpu` 派生为 **ReleaseOnly**（论文 RC 行是上界 ⇒ 本单元取子集）。
+⚠️ `nvlink_4`（SC + barrier=true）⇒ **None**（有通道但空操作）⇒ R3 显式写「与 barrier 存在与否无关」。
+⚠️ `ualink_4`（PLO + barrier=false）⇒ **None**（R1 遮蔽 R6）⇒ 未来开 barrier ⇒ 翻转为 Partial ⇒ **可检出**。
+
+**③ metis 1 轮 finding 处置（逐条 · P0 全闭）**
+
+| # | finding | 级别 | 处置 |
+|:--:|---|:--:|---|
+| 1 | AC-3「逐实例一致」**自相矛盾**（moesi_gpu 无合法落点）+ **无推导函数定义** | P0 | ✅ **枚举方向化**（None / ReleaseOnly / AcquireOnly / ReleaseAcquire / FullBarrier / Partial / Invalid）+ **推导规则表 R1–R7**（②）⇒ AC 改为「行效果 == derive(行输入)」由**编译期 static_assert** 保证 + 闸内**独立手写 oracle**（防自证） |
+| 2 | AC-7「标签/barrier 被改 ⇒ 派生值变化但不红」**不可判定** | P0 | ✅ **拆成两条单向判据**：JSON 改 / 副本未同步 ⇒ 红 `fence-input-copy-drift`；两侧一致 ⇒ 必须绿（删除「不误报为红」表述） |
+| 3 | AC-6 负控缺前提（何谓「越界」+ 机制） | P0 | ✅ 拆两条 fixture（域外标签组合 ⇒ `fence-derivation-out-of-domain`；改拷贝根 JSON ⇒ `fence-input-copy-drift`）⇒ 均跑 **mktemp 拷贝根**（唯一临时名）⇒ 零工作树污染（⛔ 不与两个变异闸共享工作树文件） |
+| 4 | 「零决策变更」是**虚假宣称**（推导规则是语义决策，且调研文档是**附属证据层**） | P0 | ✅ **决策随五步链走** ⇒ 规则表进新建 main spec 的 Requirements ⇒ 随链 ratify ⇒ improvement 的状态与 Impact 均已改为诚实表述 |
+| 5 | 漏引 **ADR-CEP-13 决策 1/2**（barrier_domain ≠ 一致性域；`INV-CEP-13-IC1`） | P1 | ✅ 架构依据 §2 补齐 + basis 须声明「**不区分 barrier 发生在哪个网络侧**」（AC-7）⇒ ⛔ 不声称跨域保证 |
+| 6 | **模型 = g(read, write)** 从未定义 | P1 | ✅ 规则表 R2/R5/R7 显式定义「族」与跨族非法 ⇒ 推导函数**总计**（无未定义路径） |
+| 7 | **TSO / PLO 死分支**（当前无实例 ⇒ 零验证） | P1 | ✅ AC-8：测试内**合成行**正控覆盖（不进实例表 ⇒ 不破坏双向零 orphan） |
+| 8 | **字面量计数**（93→94 / 52+）违反「不固化具体值」纪律 | P1 | ✅ AC-12/AC-13 改为「**命令实测** + `cep_registry_baseline_check.py` rc=0」 |
+| 9 | JSON **缺键**必须带签名必红（⛔ 不静默 SKIP） | 缺失 AC | ✅ AC-5 补入 |
+| 10 | 派生值措辞越界（像「引擎行为语义 / 跨域保证」） | P2 | ✅ AC-9 措辞收紧（声明效果 ⛔ 非引擎行为语义 ⛔ 非跨域保证） |
+| 11 | 「canonical 流 9」易误读 | P2 | ✅ 改为「canonical 流 **#9**（共 10 条）」 |
+| 12 | 枚举可能需扩张为按 read/write 分列 ⇒ 回落 G4-b 判权域 | P2 | ✅ 登记在 Impact 风险 ③ |
+
+**④ ⛔ 边界**
+
+⛔ 零 `protocol_instance.schema.json` 变更（冻结面）· ⛔ 零 `protocol_instances.json` 变更（冻结面）· ⛔ 零 ADR 正文变更 · ⛔ 零 invariant 新增 · ⛔ **零协议头改动** · ⛔ 不实现 fence **协议语义**（归 ArchForge）· ⛔ 不声称**跨一致性域**的 barrier 保证（per ADR-CEP-13 决策 1）· ⛔ 通用层**零协议名**（per `include/tlm/cep/AGENTS.md` 铁律 2）· ⛔ 规则表 R5 的 provisional 解读**未裁决**（architect follow-up）。
+
+**⑤ 五步授权链（拍 0 = 本 Entry）**
+
+| 步 | 动作 | 状态 |
+|:--:|---|---|
+| 1 | 台账 Entry 先落（本 Entry） | ✅ |
+| 2 | 产物 commit（声明面 + 测试 + 闸 + main spec + 计数同步） | ⬜ |
+| 3 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #544"` ⇒ 期望「**新增 1 · 移出 0 · hash 变更 0**」· 清单 `artifact_count` **+1**（命令实测，⛔ 不写死） | ⬜ |
+| 4 | 冻结清单**单独** commit | ⬜ |
+| 5 | 无参复验 `cep_freeze_check.sh`（rc=0 · 产物 hash 一致） | ⬜ |
+
+**⑥ 计数同步面（⛔ 不写死数字 · 以命令实测为准）**
+
+闸 +1 · ctest +2 · `test_cep_*.cc` +1 · 主 spec +1（`cep-*` +1）· `scripts/README.md` 守门表 +1 行 · 登记册 §0.1 四行 · `include/tlm/cep/AGENTS.md` 文件索引 +1（头文件数 +1）· KPI 活口径 **0/3 → 1/3**（立项期 7 处）· 归档期回填。
+
+**⑦ ⚠️ 回归口径（per Entry #542 ⑪⑫ + #543 ⑥）**：**零回归证据 = 全量 ctest（⛔ 不按 `-R` 过滤）+ 全部 `cep_*.sh` + 非 `cep` 只读闸 + `docs_sync --strict`** ⇒ ⛔ 过滤子集不得冒充「零回归」；**并附冻结件零残留核对**（per Stage B'''' 止血项教训）。
+
+**⑧ 关联**：gap **G4** + §2.3.1 盘点结论 · **G10** `cep-hop-timing-capability-declaration`（形态模板）· **G1**（正交参照）· `ADR-CEP-02` 决策 3 · `ADR-CEP-12` 决策 3 · `ADR-CEP-13` 决策 1/2 · 调研文档 §4.3.1/§4.3.2（附属证据层）· 台账 **Entry #543**（G10 收口 + Stage B'''' 止血）。
