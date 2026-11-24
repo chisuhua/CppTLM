@@ -77,6 +77,15 @@ add_test(NAME cep_hop_timing_capabilities
 add_test(NAME cep_hop_timing_capabilities_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_hop_timing_capabilities_check.sh)
 
+# change `cep-fence-consistency-effect-derivation`：fence 一致性效果的派生声明面
+#   编译期：逐行 effect == derive(行输入) + 独立 oracle(硬编码期望表) + 死分支合成行正控
+#   运行期：输入副本漂移(⇄ protocol_instances.json) + 双向零 orphan + 诚实边界常量
+add_test(NAME cep_fence_effects
+         COMMAND cpptlm_tests "[cep][fence_effects]" -r compact)
+# 同 change 的契约闸：独立 oracle + 输入副本漂移 + 域外必红 + JSON 缺键必红 + 2 条反向 fixture(拷贝根)
+add_test(NAME cep_fence_effects_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_fence_effects_check.sh)
+
 # board-soc-split T-bs-1: DGpuSoc 容器测试
 # (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/tasks.md §T-bs-1)
 add_test(NAME test_dgpu_soc_from_config COMMAND cpptlm_tests "[dgpu][json]" -r compact)
