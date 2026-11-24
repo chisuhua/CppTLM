@@ -19,7 +19,7 @@ phase_refs:
 > **写入权**: rdd-planner(per `rdd-planner/SKILL.md:156` + ADR-0028 + ADR-0054 D5 唯一写入方)
 > **schema**: `_lib/schemas/objective_schema.json` v1(9 必填字段齐;`kind` / `phase_refs` 为扩展字段)
 > **关联**: `.rddf/roadmap/phases/phase-10.md`(CEP 实施 phase)+ `.rddf/improvements/cpptlm-cep-umbrella.md`(5-segment 草稿)
-> **关联真源**: **24 份** `ADR-CEP-*.md`(其中**决策类 21 份**;per `ADR-CEP-NUMBER-MAP §2 Decision 1`;基座 00/00A/01~07 + NUMBER-MAP,实例/排序/版本/契约/演进 08/09/11~21/07A)
+> **关联真源**: **26 份** `ADR-CEP-*.md`(其中**决策类 23 份**;per `ADR-CEP-NUMBER-MAP §2 Decision 1`;基座 00/00A/01~07 + NUMBER-MAP,实例/排序/版本/契约/演进 08/09/11~23/07A)
 > **关联变更**: `cpptlm-cep-umbrella`(Stage 0)+ Stage 1~3 **13** 个串行 change(2026-Q4 ~ **2030-Q1**)
 
 ---
@@ -155,7 +155,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | 编号 + 真源锚点 | `ADR-CEP-NUMBER-MAP` §2 + §3 | CEP-08~16 预分配;INV-CEP-NUM-IC1~3 |
 | 真源章节映射 | `ADR-CEP-00A` §3 + §4 | 章节行号实证;14 条伪引清单 |
 
-> **完整 24 份 ADR 清单**(其中**决策类 21 份**): `docs/adr/ADR-CEP-*.md`(per `ADR-CEP-NUMBER-MAP §2 Decision 1`)。本表仅列**基座**决策依据;实例 / 排序 / 版本 / 契约 / 演进映射类(08/09/11~21/07A)见 `phase-10.md` §真源 3 与 `07 号 §4`。
+> **完整 26 份 ADR 清单**(其中**决策类 23 份**): `docs/adr/ADR-CEP-*.md`(per `ADR-CEP-NUMBER-MAP §2 Decision 1`)。本表仅列**基座**决策依据;实例 / 排序 / 版本 / 契约 / 演进映射类(08/09/11~23/07A)见 `phase-10.md` §真源 3 与 `07 号 §4`。
 
 ---
 
