@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 1/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
+`openspec/changes/` 当前 **0 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 0/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -28855,3 +28855,19 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 **⑦ ⚠️ 回归口径（per Entry #542 ⑪⑫ + #543 ⑥）**：**零回归证据 = 全量 ctest（⛔ 不按 `-R` 过滤）+ 全部 `cep_*.sh` + 非 `cep` 只读闸 + `docs_sync --strict`** ⇒ ⛔ 过滤子集不得冒充「零回归」；**并附冻结件零残留核对**（per Stage B'''' 止血项教训）。
 
 **⑧ 关联**：gap **G4** + §2.3.1 盘点结论 · **G10** `cep-hop-timing-capability-declaration`（形态模板）· **G1**（正交参照）· `ADR-CEP-02` 决策 3 · `ADR-CEP-12` 决策 3 · `ADR-CEP-13` 决策 1/2 · 调研文档 §4.3.1/§4.3.2（附属证据层）· 台账 **Entry #543**（G10 收口 + Stage B'''' 止血）。
+
+**⑨ 收口（2026-11-24 · builder 实施 + verifier 独立验收）**
+
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | **实施** | ✅ | 声明面 `include/tlm/cep/fence_effects.hh`（枚举 7 值方向化 + `derive_fence_effect()` constexpr + **由函数生成**的 8 行表 + 自洽谓词 + 6 边界常量）· 测试（**198 断言 / 6 用例** · 8 条编译期 static_assert + **独立 oracle** + 7 条死分支合成行正控 + 输入副本漂移运行期判据）· 闸（**15 条判据** + **2 条反向 fixture**）· main spec（含**规则表 R1-R7**）+ delta（提取生成） |
+| 2 | **独立验收** | ✅ **PASS 16/16** | verifier（角色内建 · 本地验收：`.rddf/state/iteration.json` 不存在 ⇒ P3 archive gate 不可检测 ⇒ 按契约走 1-5 步）· 报告 `.rddf/reviews/cep-fence-consistency-effect-derivation-verify.md`；⛔ 0 失败 · 非阻塞发现 **1 条 SHOULD_FIX**（per-row basis 未复述「实例粒度 · 不区分网络侧」⇒ **已修**：8 行 basis 追加该短缀） |
+| 3 | **零回归（全量口径）** | ✅ | 全量 ctest（⛔ 不按 `-R` 过滤）**207/207** rc=0 · `cep_*.sh` **53/53** rc=0 · 非 `cep` 只读闸 **9/9** rc=0 · `cep_docs_sync_check.sh --strict` rc=0 · `cep_freeze_check.sh` 无参 rc=0（**94** 产物 hash 一致）· **冻结件零残留** |
+| 4 | **计数 / KPI 回填** | ✅ | active **1 → 0** · KPI **1/3 → 0/3**（7 处活口径逐处回填）· 归档 **175 → 176**（CEP **59 → 60**）· 主 spec **141**（`cep-*` **50**）· 闸 **53** + **14** py · `test_cep_*.cc` **80** · ctest **207** · 冻结 **94** |
+| 5 | **冻结面** | ✅ **零 hash 变更** | 归档时主 spec 合并输出「**Specs already in sync; no files changed**」⇒ 冻结产物保持 **94** |
+| 6 | **零 schema / 零 instances / 零 ADR 正文 / 零 invariant** | ✅ | `git diff --name-only 4421df37..HEAD -- docs/adr/ include/tlm/cep/protocol_instance.schema.json include/tlm/cep/protocol_instances.json test/cep_invariant_assertion_map.json` ⇒ **空**；`cep_invariant_map_check.py` ⇒ 66/66（0 unmodelled / 0 pending） |
+
+**⛔ 边界（不变）**：本单元**只登记现状** · ⛔ **不补** fence 的**协议语义**（归 ArchForge）· ⛔ 零 schema / instances / ADR 正文 / invariant 变更 · ⛔ 零协议头改动 · ⛔ 与 G1 / G10 **正交** · ⛔ 派生值**不是**跨一致性域的 barrier 保证（per ADR-CEP-13 决策 1）· ⛔ 派生粒度 = **实例**。
+
+**⚠️ 待 architect 追认（1 条 · provisional）**：规则 R5 中「read=RC-data ⇒ fence **不**提供 acquire」的解读 ⇒ `moesi_gpu` 派生为 **ReleaseOnly**（论文 RC 行是**并集上界** ⇒ 本单元取**子集**）。
+**⏭ G4 后续（本仓外 / architect 判权域）**：**G4-b**（把 fence 效果写回 `consistency_labels` ⇒ schema 变更 = 冻结面 ⇒ 五步链）/ **G4-c**（只把推导规则登记进 ADR-CEP-13 正文 ⇒ 冻结面）⇒ 若裁决要按 read/write 分列多值 ⇒ 本单元枚举需扩张 ⇒ 回落 G4-b 判权域。
