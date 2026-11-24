@@ -1,5 +1,5 @@
 {
-  "artifact_count": 94,
+  "artifact_count": 95,
   "artifacts": {
     "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "a12f8d915c3575230984ff281e5c439b90fa256b1a19975c638e71647aaaee27",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4db673d7d582ac6231c6b3fa26ff78ef02dbea4483261b3cfcd7f4403201bd26",
@@ -15,7 +15,7 @@
     "docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md": "a4a06f49b3281d3e97a0904a583c534502a4491ce87cd2f84e7df14c2bc62695",
     "docs/adr/ADR-CEP-11-protocol-version-locking.md": "96f6343b78aa98f8920ffab5c08a890094a9ea2dafae0f79d32af68396362ef9",
     "docs/adr/ADR-CEP-12-protocol-engine-capability-map.md": "2383ca52d51a28011afedfacf712ecfec77dc1dd1974821c00d40e29f774a95e",
-    "docs/adr/ADR-CEP-13-coherence-domain-ownership.md": "4d47e227ed9826aedfc37ec29c45123600cf4dce9fae9143546609985b627ff9",
+    "docs/adr/ADR-CEP-13-coherence-domain-ownership.md": "b1313dba17e24f00d70ca904c239018f653d5c84eab4bc01e21bae385b2319d9",
     "docs/adr/ADR-CEP-14-stub-contract-tests.md": "a3cd014acba44e5cfe7b0a71f83a6d2f3811a73e568f08c6b464fb3afffe9d58",
     "docs/adr/ADR-CEP-15-cachetlm-alignment.md": "04ee73c690293b9328a0fc27180cd1cf67a3ce6cd166b2c56eafedce62bb81ee",
     "docs/adr/ADR-CEP-16-06-evolution-route-mapping.md": "193d801e79fc0e6a44607d2a5b827ff0365c316d206fa917f1306f8698fa5442",
@@ -25,6 +25,7 @@
     "docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md": "ff06fd027a16e7c46fb3c8b878ac0f76d07c7398e77adddeabd5e0ad8a878463",
     "docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md": "29b945d0eb191d9f14293d9ec2b48e2c8330e8c856d716772f5c1091a5255032",
     "docs/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md": "ebd1a5fdd06ea54d2f7fe278ddbbb9f7d3427ac7c373ccac8766a1589be54688",
+    "docs/adr/ADR-CEP-23-incomplete-directory-knowledge-boundary.md": "de3c24d03fd61c3f92c9c1e2c493116d452f226bb0ae3f20649b8c277c299f53",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "fe6dce18b2d107e9ddfeae13c65ed131ee0f26595cb5835e8a90c05c39aafc42",
     "docs/architecture/07-coherence-exploration-platform.md": "d644b21ff87faa7eef1caf2bbb81cb632f2ba34a5f3fa4e5e5edc65fa18e1b21",
     "docs/architecture/cep/coherence-interface.md": "6997124eb5f904a02dee90b38d5d8f4a536e94c7aeb3432c609aa10835f4f597",
@@ -61,7 +62,7 @@
     "openspec/specs/cep-dod-reading-consistency/spec.md": "6885a243748bc1825e023bbe4cd274a94b011544cee51ffc4e8bae223c35d84a",
     "openspec/specs/cep-evidence-tier-registry/spec.md": "af502d74ed0a0033734d1438b929f9f6819ff1d164d9dfbf5a99779e8ba7d104",
     "openspec/specs/cep-evidence-tier2-observation/spec.md": "5544c6f95b156c0ea9c46f2ead21324845de57bddc722a96973baaedac090968",
-    "openspec/specs/cep-fence-consistency-effect-derivation/spec.md": "92a113d082300df116cbe382756195e8a83819485b141ee00c7beb9f785eb893",
+    "openspec/specs/cep-fence-consistency-effect-derivation/spec.md": "cd8321a38f19d40f9dc92345b1d84d46ef7394f375c3dd06033d50d9c5c8471e",
     "openspec/specs/cep-full-green-run-evidence/spec.md": "4a6da8cf143453e80be2b68d4b4a1c6b1ada1a31581caeec3241b4607c27c1a5",
     "openspec/specs/cep-hierarchical-directory/spec.md": "729f8e7b9eda0a8a8d8e1f748857287824745526e427f67182dd870b1d2f222f",
     "openspec/specs/cep-hop-timing-capability-declaration/spec.md": "27d3b69be28b26e193cfed590f4d13c07401d1ae82cfc2627450b5bdaa12536d",
@@ -96,10 +97,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #544",
+  "authorized_by": "Entry #545",
   "exclusions": [],
   "frozen_at": "2026-11-24",
-  "frozen_at_commit": "f7576e64beb50a04bf4cae6f93a6dc18d56fff27",
+  "frozen_at_commit": "1ae4e54a2057ea7fda92b0e22b5cf783defdf0b9",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
