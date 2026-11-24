@@ -28545,3 +28545,65 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 **⑩ 过程瑕疵登记（诚实）**：本单元**立项期间**（commit `6d7a1e5e` → 归档）`openspec list --json` 的 active 数为 **1**，而活文档 KPI 口径仍为 **0/3** ⇒ 该窗口内 `cep_docs_sync_check.sh` 断言①（KPI 口径 == 实测）**会红**。⚠️ 与 I1 的处理差异（I1 立项时同步改了 7 处活口径为 1/3）⇒ 本单元**漏了**该同步。⇒ **最终态一致**（归档后 active=0 ⇒ 活口径 0/3 == 实测 ⇒ registry 与 docs_sync 均绿）⇒ 无残留不一致；但窗口期的不一致**登记在案**，供后续 change 立项时对照（立项 ⇒ 同步活口径 ⇒ 归档 ⇒ 回填）。
 
 **⑨ 关联**：裁定记录 `.rddf/reviews/cep-litmus-falsifier-rename-adjudication-2026-11-24.md` · I2 阶段 1 `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md` + 归档 `2026-11-23-cep-litmus-falsifier-naming-disambiguation` · 实施路径 `.rddf/roadmap/cep-gen-family-gap-closure.md` · change `openspec/changes/cep-litmus-falsifier-compound-graph-rename/` · `ADR-CEP-13`（决策 2 / 决策 5 ②）· `ADR-CEP-17 §2 Decision 4` · Entry #538（I2 阶段 1）/ #539（Stage C C1+C2）
+
+### Entry #541 — 2026-11-24 [planner](**ADR-CEP-22 落盘授权** —— 每域模型来源 + 域间边构造规则 · **用户 ratify = A**)
+
+**主题**：per 用户裁决「**A**」（ratify 本裁定）⇒ architect 的 `ADR-CEP-22`（**每域模型来源 + 域间边构造规则** —— `ADR-CEP-13` 决策 2 的操作级公理 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 在操作级的可判定来源与构造规则）**获用户 ratify** ⇒ 本 Entry 授权其**仓内落盘** + 登记三件套 + 计数同步（M1 冻结面**新增 1 件** + **既有冻结文件 hash 变更 1 件** ⇒ 五步链 1 次）。
+
+**① 决策摘要（9 条 · 裁定记录见 `.rddf/reviews/ADR-CEP-22-memory-model-source-and-cross-domain-edges-review.md`）**
+
+| # | 决策 |
+|:--:|---|
+| 1 | 域身份 = **迹侧域标识**（字符串 ⇒ 解析到协议实例 `id`）· ⛔ 不进 schema · ⚠️ 缺口②：域标识忠实代表 OP 作用域由**迹作者**承担 |
+| 2 | 每域模型来源 = **实例的 `consistency_labels`**（`read`/`write` 二元组 · 零新词表）· ⚠️ **能力面**，非运行期行为 |
+| 3 | `ppo_i` = 读侧/写侧授权表**并集**：SC = 全边 · RC-acquire = {从读} · RC-release = {入写} · **RC-data = ∅** · PLO = {入写}；**TSO 不登记**（0 实例 ⇒ `undecided`） |
+| 4 | `rfe`/`fr`/`ws` **全部派生**（⛔ 不得作输入）：`rfe` = 跨域读自 · `ws` = **逐地址** `co` · `fr` = **静态读→写**形态（⚠️ 约定依赖 ⇒ 实施 change 须以一手锚点复核并显式登记） |
+| 5 | 候选 = **同地址写序候选** + **静态图**判环 + **∃/∀ 聚合语义**（∃ 可行 ⇒ 未证伪；∀ 成环 ⇒ 证伪）+ 截断 ⇒ `undecided` |
+| 6 | **双图折衷**：公理面**不含**域内 `rf`；观测面**报告**域内 `rf` · ⚠️ 缺口①：域内一致性（值面/SWMR）**不由**本公理检查 |
+| 7 | 判定面**四态**（`falsified` / `not_falsified` / `undecided` / `invalid`）+ 原因码**闭集**（10 码） |
+| 8 | `ADR-CEP-13` 的 `V-13-4` 退场 = **(b) 显式 Out-of-Scope**（v1 无运行期载体 ⇒ 不得沉默） |
+| 9 | 登记三件套 + **显式回滚路径** + 落盘纪律（architect 阶段仓外起草 ⇒ builder 落盘） |
+
+**② 审查轨迹 + 用户 ratify**
+
+| 轮次 | 审查者 | 判定 | 处置 |
+|:--:|---|---|---|
+| 1 | **metis**（gap 分析） | 六节输出（材料） | 10 条建议全处置 |
+| 1 | **oracle**（审查域 = 其他审查） | **REJECT** | 8 项修订 ⇒ v0.2 |
+| 2 | **oracle**（**复审** · 只验闭合） | **APPROVE**（8/8 + 4/4 全闭 · 无新 BLOCKER） | ✅ |
+| 1 | **critic**（`review_profile: arch`） | **APPROVE_WITH_CONDITIONS**（`mergeable: yes` · **0 BLOCKER** · 3 SHOULD_FIX + 4 NITS） | 全部修 ⇒ v0.3 |
+| — | **用户 ratify** | **2026-11-24「A」** | 授权签发 + 落盘 + 后续立项 |
+
+⚠️ **双审抓到的 3 处实质缺陷（如实登记）**：① **oracle 首审** —— 我原称「TSO/PLO 本仓无实例」**是错的**（`ualink_4` = PLO/PLO · `status: implemented`）⇒ PLO 必须在 v1 登记；② **oracle 首审** —— 我原写的 `fr` 规则**是 vacuous 的**（两端皆写 ⇒ 被 `ws` 完全吸收 ⇒ 公理实际只跑三类边）⇒ 改静态读→写形态；③ **oracle 首审** —— `RC-data` 原写 `po_loc` 属**过严 ⇒ 假阳性** ⇒ 改 ∅。⚠️ 另有 **critic 抓出**我 v0.2 的 **v0.1 残留**（「`fr` 跨地址部分」在 `co` 逐地址下不存在 ⇒ 跨域性来自**域**不同而非地址不同）⇒ 已修。
+
+**③ 连带改动面（本 Entry 同批）**
+
+| 面 | 变更 |
+|---|---|
+| `docs/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md` | **新增**（282 行 · **已签发 v1.0**，含签发 SU）⇒ M1 冻结面**新增 1**（`FROZEN_GLOBS` = `docs/adr/ADR-CEP-*.md`） |
+| `docs/adr/ADR-CEP-NUMBER-MAP.md` | §2 决策 1 表**新增 `CEP-22` 行**（编号表 = 唯一真源，per `openspec/specs/cep-core-contracts/spec.md:184`）⇒ ⚠️ **既有冻结面文件 hash 变更** ⇒ **同链** |
+| `test/cep_adr_structural_deferrals.json` | `decision_adrs` **21 → 22**（结构闸「未登记即红」） |
+| `scripts/test/cep_docs_sync_check.sh` | `NO_INV` 加 `ADR-CEP-22-…`（**新增 invariant 数 = 0** ⇒ ⛔ 不进 `OWNERS`） |
+| `docs/adr/README.md` | 索引行 + §1 全量统计（`python3 scripts/docs/gen_adr_index.py --write`）⇒ CEP 份数 **24 → 25** |
+| `AGENTS.md` | ADR 计数 **63 → 64**（`:349` 第 2 层表） |
+| 台账 §10「ADR 签发」行 | **21 → 22** 份决策 ADR · 文件 **24 → 25**（22 决策 + 3 excluded）· 状态分布「18 + 2 + 1 Proposed」⇒「**19 已签发 + 2 永久豁免 + 1 Proposed**」 |
+
+**④ ⛔ 边界**
+
+⛔ **不改任何既有 ADR 正文**（`ADR-CEP-22` 是**新建**决策）· ⛔ **不改** `protocol_instance.schema.json` / `protocol_instances.json`（R-2e ⇒ 须重开 R-2 + 用户 ratify）· ⛔ **不改** `openspec/specs/**`（本 Entry 不动 main spec ⇒ **零** spec 冻结面变更）· ⛔ **零**代码 / 测试改动 · ⛔ **新增 invariant 数 = 0** · ⛔ 本 Entry **不**立项 G2 的实施（另立 change）· ⛔ **不改** `.rddf/improvements/cep-memory-model-operational-trace.md` 的 AC-7 / AC-8（**下一 change 立项时**由 planner 修订，见 §⑥）。
+
+**⑤ 五步授权链（拍 0 = 本 Entry）**
+
+| 步 | 动作 | 状态 |
+|:--:|---|:--:|
+| 1 | 台账 Entry 先落（本 Entry） | ✅ |
+| 2 | 产物 commit（ADR 落盘 + NUMBER-MAP 行 + 结构登记 + NO_INV + 索引 + `AGENTS.md` + 台账 §10） | ⬜ |
+| 3 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #541"` ⇒ 输出须为「**新增 1 · 移出 0 · hash 变更 1**」（ADR 新增 + NUMBER-MAP 变更）· `artifact_count` **91 → 92** | ⬜ |
+| 4 | 冻结清单**单独** commit | ⬜ |
+| 5 | 无参复验 `cep_freeze_check.sh`（rc=0 · 92 产物 hash 一致） | ⬜ |
+
+**⑥ 后续（不在本 Entry 范围）**
+
+① **G2 实施立项** —— `backlog: cep-memory-model-operational-trace` ⇒ openspec change（本 Entry 的 change 指针回填到 ADR 的「关联 change」）· **须同时修订 backlog 的 AC-7 / AC-8**（裁定 §5.1 的 **D-1**（AC-7 聚合语义）与 **D-2**（AC-8「精确等于枚举」字面不可满足）⇒ **planner 域**）· 实施期冻结面 = **1 处**（`openspec/specs/cep-compound-graph-falsification/spec.md` 的 hash 变更；⚠️ 原 backlog 估的「两处 ×2」已因本 ADR 先行落盘而收敛为 1 处 ×1）② **`TSO` 规则表** —— 待有实例时登记 ③ **运行期轨迹采集** —— 另立 backlog。
+
+**⑦ 关联**：裁定记录 `.rddf/reviews/ADR-CEP-22-memory-model-source-and-cross-domain-edges-review.md` · ADR 草案（仓外）`/tmp/opencode/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md` · Entry **#540**（I2 阶段 2 改名 · G2 的开工前置由此解锁）· Entry **#513**（litmus harness 落地）· Entry **#514**（I-6 声明面）· `ADR-CEP-13` 决策 1 / 2 / 5② · `ADR-CEP-12` 决策 3 / 4 · `ADR-CEP-08` 决策 1 · `ADR-CEP-20` 决策 6 · I-6 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §三 / §五（`R-2e`）
