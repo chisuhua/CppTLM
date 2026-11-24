@@ -28871,3 +28871,58 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 
 **⚠️ 待 architect 追认（1 条 · provisional）**：规则 R5 中「read=RC-data ⇒ fence **不**提供 acquire」的解读 ⇒ `moesi_gpu` 派生为 **ReleaseOnly**（论文 RC 行是**并集上界** ⇒ 本单元取**子集**）。
 **⏭ G4 后续（本仓外 / architect 判权域）**：**G4-b**（把 fence 效果写回 `consistency_labels` ⇒ schema 变更 = 冻结面 ⇒ 五步链）/ **G4-c**（只把推导规则登记进 ADR-CEP-13 正文 ⇒ 冻结面）⇒ 若裁决要按 read/write 分列多值 ⇒ 本单元枚举需扩张 ⇒ 回落 G4-b 判权域。
+
+
+### Entry #545 — 2026-11-24 [planner](**G7 / G4-b / G4-c 实施立项** —— ADR-CEP-23 签发后的实施面义务 · 本批次不新建 change)
+
+**主题**：architect 已签发 **ADR-CEP-23**（G7 取值域）+ 追加 **ADR-CEP-13 SU(2026-11-24)**（G4-c 登记 R1–R7 + R5 修正 · G4-b 裁决不增设 fence 子字段）⇒ 本 Entry 为其**实施面义务**立授权（五步授权链的 `--authorized-by` 载体 = 本 Entry）。
+**元**：architect commit `25880c14` · 审稿报告 `.rddf/reviews/adr-cep-23-and-adr13-su-arch-review.md`（oracle APPROVE + critic APPROVE_WITH_CONDITIONS · **0 BLOCKER**）· 台账 = 本 Entry。
+
+**① 立项理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | **决策已定型**（架构层四项裁决全部签发，⛔ 本批次不再重开语义讨论） | ✅ | ADR-CEP-23（已签发 v1.0）+ ADR-CEP-13 SU(2026-11-24) |
+| 2 | **双审完成**（oracle 6 项处置全落 + critic 2 SHOULD_FIX / 2 NIT 全落） | ✅ | 审稿报告 §1 / §2 |
+| 3 | **零新造 invariant** ⇒ ⛔ 不需要动 `07 §4` 总表（66 / 67 / 15 组全部不变） | ✅ | ADR-CEP-23 §5（复用 `INV-CEP-04-IC1` / `V-04-7`） |
+| 4 | **不新建 change 的理由**：本批次 = 已签批 ADR 的**实施跟随** + 冻结面**重冻**（⛔ 不是新能力）⇒ 不占 KPI slot | ✅ | 现行 KPI = 0/3（实测） |
+| 5 | **改动面已封闭**（4 项实施义务，见 ②；无第五项） | ✅ | ADR-CEP-13 SU ② 实施面清单 / ADR-CEP-23 决策 5 / §7 |
+
+**② 本批次的实施面清单（4 项 · 每项带判据）**
+
+| # | 事项 | 判据（可判定） | 执行者 |
+|:--:|---|---|---|
+| 1 | `scripts/test/cep_docs_sync_check.sh` 的 `NO_INV` 白名单加 `ADR-CEP-23-incomplete-directory-knowledge-boundary.md`（⛔ **不进** `OWNERS` —— 本 ADR 零新造 invariant） | `bash scripts/test/cep_docs_sync_check.sh --strict` rc=0（当前红因 = 该 ADR 既未纳入 OWNERS 也不在 NO_INV） | builder |
+| 2 | **R5 实施面 4 子项**：① `include/tlm/cep/fence_effects.hh` 的 RC 分支（⇒ 一律 `ReleaseAcquire`）② 测试独立 oracle 的 `moesi_gpu` 行改 `ReleaseAcquire` ③ main spec 规则表 R5 行 ④ main spec **Purpose 段 provisional 注记**改「已经 `ADR-CEP-13` SU(2026-11-24) 追认」 | ① `[cep][fence_effects]` 全绿 ② 闸 `cep_fence_effects_check.sh` rc=0 + `--selftest` 2/2 ③ `grep -c "provisional"` 于该 main spec == 0 ④ 8 行表 ⇄ 规则表 ⇄ spec 三方一致 | builder |
+| 3 | 死枚举处置：`ReleaseOnly` / `AcquireOnly` **保留** + 在 `fence_effects.hh` 标注「预留：单方向 fence 建模时启用」 | `grep` 命中该预留注记；⛔ **不得**出现「为二者造合成行正控」（会误导为可达） | builder |
+| 4 | `test/cep_adr_structural_deferrals.json` 的 `V-04-7` `next_action` 由「等待实现」改判为「按 ADR-CEP-23 决策 5 收敛」（改判登记，⛔ 不删条目） | 该条目 `next_action` 文本含 `ADR-CEP-23`；`cep_adr_deferral` 相关闸（若有）rc=0 | builder |
+
+**③ 五步授权链（本 Entry 是步 1）**
+
+| 步 | 动作 | 状态 |
+|:--:|---|---|
+| 1 | 台账 Entry 先落（本 Entry） | ✅ |
+| 2 | 产物 commit（② 的 4 项 + ADR 已在 `25880c14` 落库） | ⬜ |
+| 3 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #545"` ⇒ 期望「**新增 1 · 移出 0 · hash 变更 2**」（新增 = ADR-CEP-23；hash 变更 = ADR-CEP-13 + `openspec/specs/cep-fence-consistency-effect-derivation/spec.md`）· `artifact_count` **+1**（命令实测，⛔ 不写死） | ⬜ |
+| 4 | 冻结清单**单独** commit | ⬜ |
+| 5 | 无参复验 `cep_freeze_check.sh`（rc=0 · 产物 hash 一致） | ⬜ |
+
+⚠️ **授权范围声明**：本 Entry **只授权「新增 + hash 变更」**（= 上述两类）⇒ ⛔ 不授权任何产物**离开**冻结面（移除 / 排除）。本 Entry 正文**故意不写**任何移出 / 排除形态的声明行（形态见闸注释）—— 若出现，闸会按 fail-safe 判无效并告警。
+
+**④ 边界（本批次 ⛔ 不做）**
+
+- ⛔ 不改 `protocol_instance.schema.json` / `protocol_instances.json`（G4-b 裁决 = 不增设 fence 子字段；G7 决策 = 现状 schema 即合规）
+- ⛔ 不改任何 ADR 的**决策内容**（ADR-CEP-23 已签发；ADR-CEP-13 的改动形态仅限**已追加的 SU**）
+- ⛔ 不新增 / 不重编号 invariant（⇒ `07 §4` 总表、objective DoD 7、improvement A2、phase-10 **四处零改动**）
+- ⛔ 不扩张派生枚举（`ReleaseOnly` / `AcquireOnly` 保留为预留，不删不改序）
+- ⛔ 不把 fence 效果写回声明面（G4-b 重开条件未触发：无「read/write 分列多值」需求、无非 C++ 消费者）
+
+**⑤ 计数面（预期零变化 · 以命令实测为准）**
+
+| 面 | 预期 | 依据 |
+|---|---|---|
+| 主 spec 数 / `cep-*` 数 | 不变 | 本批次不新建 capability |
+| `cep_*.sh` 闸数 | 不变 | 只改 `NO_INV` 常量，不新增脚本 |
+| `test_cep_*.cc` / ctest 数 | 不变 | R5 修正改**既有**断言，不新建测试文件 |
+| 冻结产物 `artifact_count` | **+1** | 新增 ADR-CEP-23（ADR glob 命中） |
+| KPI Proposed 并发 | 不变（0/3） | 不新建 change |
