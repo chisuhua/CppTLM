@@ -69,6 +69,14 @@ add_test(NAME cep_engine_capabilities COMMAND cpptlm_tests "[cep][engine_capabil
 add_test(NAME cep_engine_capabilities_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_engine_capabilities_check.sh)
 
+# change `cep-hop-timing-capability-declaration`：协议语义层的 hop / 时序模型声明面
+#   J-5 编译期否定断言(引擎零 hop / 时序 API) / J-1 双向零 orphan / J-2 自洽 / J-3 现状锁
+add_test(NAME cep_hop_timing_capabilities
+         COMMAND cpptlm_tests "[cep][hop_timing]" -r compact)
+# 同 change 的契约闸：现状锁 + 引擎层反向存在性(去注释扫描) + 载体层事实存在性 + 3 条反向 fixture
+add_test(NAME cep_hop_timing_capabilities_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_hop_timing_capabilities_check.sh)
+
 # board-soc-split T-bs-1: DGpuSoc 容器测试
 # (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/tasks.md §T-bs-1)
 add_test(NAME test_dgpu_soc_from_config COMMAND cpptlm_tests "[dgpu][json]" -r compact)

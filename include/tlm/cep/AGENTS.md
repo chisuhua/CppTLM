@@ -1,7 +1,7 @@
 # include/tlm/cep/ — CEP 平台实现层
 
 **状态**: v1（2026-11-19 建档）· **最后更新**: 2026-11-19
-**域**: Coherence Exploration Platform 的 **header-only** 实现（45 个 `.hh` + 9 个 JSON/schema 声明源）
+**域**: Coherence Exploration Platform 的 **header-only** 实现（50 个 `.hh` + 9 个 JSON/schema 声明源）
 
 ## 职责
 
@@ -19,6 +19,8 @@
 | `sharer_tracker.hh` / `ordering_point_checker.hh` | 共享者跟踪 + 定序点检查 |
 | `stub_cache_core.hh` / `address_resolver.hh` | 桩缓存核 + 地址解析 |
 | `channel_dependency_graph.hh` | 通道依赖图 |
+| `engine_capabilities.hh` | 协议引擎承载能力声明面（G1 · 现状登记） |
+| `hop_timing_capabilities.hh` | 协议语义层的 hop / 时序建模声明面（G10 · 现状登记） |
 
 ### 协议适配（每协议一组：engine / adapter / state_spec）
 
