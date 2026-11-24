@@ -345,7 +345,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | 层 | 职责 | 路径 | 数量控制 | 修改门槛 |
 |----|------|------|---------|---------|
 | **第 1 层 长期维护架构文档** | 设计意图 + 现状真相 | `docs/architecture/` (真源 1) + `docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/` (真源 2) | **每主题 = 1 主纲 + N 子文档**（子文档**仅从主纲进入**;须服务**同一主纲的同一设计意图**;**子文档不计入篇数**。真源 1 的「唯一真源」是**目录级**约束,拆子文档不违反;先例 = `docs/designs/dgpu-soc/` 与 `docs/architecture/cep/`） | Oracle 评审 or ADR 触发 |
-| **第 2 层 架构决策记录** | 不可变决策 + Status Update | `docs/adr/ADR-*.md` (真源 3, 64 份) | 每个不可逆决策 1 篇 | 签发后不改，只追加 Status Update |
+| **第 2 层 架构决策记录** | 不可变决策 + Status Update | `docs/adr/ADR-*.md` (真源 3, 65 份) | 每个不可逆决策 1 篇 | 签发后不改，只追加 Status Update |
 | **第 3 层 OpenSpec change** | 实施变更提案 | `openspec/changes/<name>/{proposal,design,spec,tasks}.md` | 每个独立变更 1 个 | 标准 OpenSpec 工作流 |
 | **第 4 层 实施跟踪** | TDD 5 步 + 进度报告 | `docs/superpowers/plans/<name>.md` + `archive/` | 每个大 Phase 1 个 | 实施期短期，archive 后归档 |
 
