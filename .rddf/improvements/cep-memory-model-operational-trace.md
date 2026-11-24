@@ -8,7 +8,7 @@ type: feature
 依赖:
   - ADR-CEP-13
   - ADR-CEP-12
-状态: "🟢 **已登记·backlog**(2026-11-21 · planner 起草 · 架构裁决已落 = architect 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §三(登记册 §6.4 队列 2 的 **I-6 决策 2**)· 经 **metis 1 轮**(P0/P1/P2 逐条处置见 §审查轨迹)· ✅ **立项形态已拍板**(2026-11-21 · 裁决记录 §一 决策 2「登记 backlog，独立立项解决」)· ✅ **R-2a~R-2f 已 ratify** + I-6 已落地(归档 `2026-11-21-cpptlm-cep-invariant-modeling-batch2` · schema properties 14 / required 13) ⇒ **AC-16 开工门实测 = 1**(`grep -c '"combination_contract"' include/tlm/cep/protocol_instance.schema.json`) · ⏸ **待触发条件**:需要「复合一致性公理**可判**」时(per 裁决记录 §三)· ⏭ **开工前置链** = architect 裁 AC-1「每域模型来源 + 域间边构造规则」(新建 ADR) → 用户 ratify → planner 立 openspec change → builder 实施(含**两处冻结面**五步链 ×2)· ⛔ **不占 KPI slot**(未立项))"
+状态: "🟢 **已批准·待立项**(2026-11-24 · **架构裁定已 ratify** = `ADR-CEP-22`「每域模型来源与域间边构造规则」(✅ 已签发 v1.0 · 台账 Entry #541 · 用户 ratify「A」)⇒ **开工前置已闭合**;⛔ 原「⏸ 待触发条件:需要「复合一致性公理可判」时」已由该 ratify 满足;⚠️ **AC-7 / AC-8 / AC-12 已按裁定 §5.1 D-1/D-2 + 决策 6 修订**(见各条下的「修订依据」)· 原文为 2026-11-21 · planner 起草 · 架构裁决已落 = architect 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §三(登记册 §6.4 队列 2 的 **I-6 决策 2**)· 经 **metis 1 轮**(P0/P1/P2 逐条处置见 §审查轨迹)· ✅ **立项形态已拍板**(2026-11-21 · 裁决记录 §一 决策 2「登记 backlog，独立立项解决」)· ✅ **R-2a~R-2f 已 ratify** + I-6 已落地(归档 `2026-11-21-cpptlm-cep-invariant-modeling-batch2` · schema properties 14 / required 13) ⇒ **AC-16 开工门实测 = 1**(`grep -c '"combination_contract"' include/tlm/cep/protocol_instance.schema.json`) · ⏸ **待触发条件**:需要「复合一致性公理**可判**」时(per 裁决记录 §三)· ⏭ **开工前置链** = architect 裁 AC-1「每域模型来源 + 域间边构造规则」(新建 ADR) → 用户 ratify → planner 立 openspec change → builder 实施(含**两处冻结面**五步链 ×2)· ⛔ **不占 KPI slot**(未立项))"
 created: 2026-11-21
 ---
 
@@ -76,12 +76,15 @@ created: 2026-11-21
 - [ ] **AC-4(判据可判别 · 双迹)**:两个**具名** litmus 迹(来源写入迹文件的 `source_litmus` / `anchor_id` 字段)—— ① 一个**已知违例**迹 ⇒ 报 `falsified = true` 且给出见证 ② companion 迹(**唯一差异**)⇒ 报**未证伪**;⛔ 「无环迹 ⇒ 未证伪」**不是**判据(任何单线程迹都无环 ⇒ 恒绿)
 - [ ] **AC-5(锚点可审计 · 机检部分)**:每条迹含非空 `family` / `source_litmus` / `anchor_id`,且 `anchor_id` ∈ 预定义 allowlist;反 fixture:空锚点 ⇒ 红。⚠️ 「锚点是否**真的**对应该边类」属**人工评审**(并入 AC-1),⛔ 不写成 checkbox
 - [ ] **AC-6(域绑定不可判)**:迹里每个线程须解析到一个一致性域;反 fixture:线程未声明域 ⇒ 判定为 `invalid` + 原因码 `unbound-domain` 且 rc≠0(⛔ 不得静默降级为「未证伪」)
-- [ ] **AC-7(写序全量量化)**:写序非唯一时须对**所有候选写序**判定;三写迹 ⇒ `co1` 成环 / `co2` 不成环 ⇒ 判定分别为 `falsified=true`(见证含 `co_order == co1`)/ `falsified=false`(唯一差异纪律)
-- [ ] **AC-8(`rf` vs `rfe` 分类边界)**:同一份迹仅改 writer 所属域 ⇒ 同域 ⇒ 边类集合 == `{rf}` · 跨域 ⇒ == `{rfe}`;并断言跨域边类集合**精确等于** schema `edge_classes` 枚举(从 `protocol_instance.schema.json` 读,⛔ 不写死字面量)
+- [ ] **AC-7(写序候选的逐候选判定 + ∃/∀ 聚合)**:写序非唯一时须对**所有候选写序**判定;三写迹 ⇒ `co1` 成环 / `co2` 不成环 ⇒ **逐候选**判定分别为「成环」/「可行」,⛔ **同一条迹**的**聚合**判定 = `not_falsified`(`co2` 可行 ⇒ 模型允许该迹)⇒ `falsified` 须**全部**候选成环(见证含 `co_order == co1` 作**成环候选标识**);⚠️ 「某候选成环 ⇒ 证伪」是**假阳性**(模型其实允许另一候选)⇒ ⛔ 禁止
+  > **修订依据**:`ADR-CEP-22` 决策 5 ③（∃/∀ 聚合语义）· 裁定记录 §5.1 **D-1**（原字面与正确语义冲突）
+- [ ] **AC-8(`rf` vs `rfe` 分类边界)**:同一份迹仅改 writer 所属域 ⇒ 同域 ⇒ 边类集合 == `{rf}` · 跨域 ⇒ == `{rfe}`;并断言 ① 迹中出现的**每条边**的类型 ∈ schema `edge_classes` 枚举(从 `protocol_instance.schema.json` **运行时读**,⛔ 不写死字面量)② 跨域读自边的类型 == `rfe`、域内 == `rf`(观测面 per `ADR-CEP-22` 决策 6)
+  > **修订依据**:`ADR-CEP-22` 决策 6（公理面 / 观测面双型）· 裁定记录 §5.1 **D-2**（原字面「**精确等于**枚举」不可满足 —— 枚举是**全集**,任何具体迹的边类集合只能是**子集**)
 - [ ] **AC-9(判定三档 + 截断标记)**:判定产物含 `search_truncated: bool` ⇒ `true` 时判定字段**不得**为「未证伪」,须为 `undecided` + 原因码(⛔ 大迹不得静默变假阴性)
 - [ ] **AC-10(畸形输入必红)**:语料解析失败 / `rf` 指向不存在的写 / 重复 op id / 自反 `ppo` 边 ⇒ 各一份反 fixture,rc≠0 且原因码唯一;⚠️ 现状 `compound_graph_falsifier.hh` 对坏输入**静默跳过** ⇒ ⛔ 不得继承该行为
 - [ ] **AC-11(闸臂「替换」而非「删除」)**:既有闸的通道环臂(旧语义 = 通道环 ⇒ `falsified`)改写为新语义(通道环 ⇒ **必须不** `falsified`,原因码 `channel-edge-not-op-edge`),并在脚本注释写明「取代关系 + 取代理由」;旧→新语义映射**逐条列出**(⛔ 判据不得被静默删除)
-- [ ] **AC-12(主 spec 的 REMOVED requirement)**:delta spec 显式删除「顶点 SHALL 为 `(instance, network, vc)`」;归档后 `grep -c '(instance, network, vc)' openspec/specs/cep-compound-graph-falsification/spec.md` == 0 ∧ `openspec validate --changes --strict` rc=0
+- [ ] **AC-12(主 spec requirement 的**整条替换**)**:delta spec 以 **MODIFIED** 整条替换 `cep-compound-graph-falsification` requirement(新正文**不含**「顶点 SHALL 为 `(instance, network, vc)`」);归档后 `grep -c '(instance, network, vc)' openspec/specs/cep-compound-graph-falsification/spec.md` == 0 ∧ `openspec validate --changes --strict` rc=0
+  > **修订依据**:`ADR-CEP-22` 决策 4/6（工装的图由**通道依赖图**改为**操作图** ⇒ 同名 capability 的**判定对象**变更 ⇒ 语义正确形态是 **MODIFIED**;⛔ 非「改名」—— 工装名 `compound_graph_falsifier` **本就更贴合**（复合图 = `ppo_com ∪ rfe ∪ fr ∪ ws` 的操作级图）⇒ **零改名成本**）· 旧正文被**整条替换** ⇒ 判据（`grep == 0`）**逐字成立**
 - [ ] **AC-13(新 ADR 的登记与冻结 · bookkeeping 三件套)**:① 新 ADR 登记进 `test/cep_adr_structural_deferrals.json` 的 `decision_adrs` ⇒ `bash scripts/test/cep_adr_structural_check.sh` rc=0 ② 新 ADR 命中 `FROZEN_GLOBS` ⇒ 台账 Entry + `--update --authorized-by "Entry #N"` + **清单单独 commit** + 无参复验 rc=0 ③ `git diff --name-only HEAD~..HEAD -- docs/adr` 只出现 **1 个新增**路径(既有 `docs/adr/ADR-CEP-*.md` **零改动**)
 - [ ] **AC-14(不新增 invariant 编号)**:66 号集合逐字不变(`cep_invariant_map_check.py` rc=0);新 ADR 的 Verification 行**复用** `INV-CEP-13-IC1`(per `ADR-CEP-13` §Verification「归因 id 一律复用」)
 - [ ] **AC-15(V-13-4 的退场链路)**:二选一并写清 —— (a) 本单元提供运行期载体 ⇒ 追加 SU 声明 V-13-4 判读被取代(**正文不动**),且 `INV-CEP-13-IC1` 的 deferral 登记由 **I-6** 删除(本单元**不重复删**)· (b) 本单元**不**提供 ⇒ 显式 Out-of-Scope 并指向 I-6 后续单元;⚠️ 当前两者皆空 ⇒ 默认谁都以为对方做

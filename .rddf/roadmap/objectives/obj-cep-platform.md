@@ -28607,3 +28607,44 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 ① **G2 实施立项** —— `backlog: cep-memory-model-operational-trace` ⇒ openspec change（本 Entry 的 change 指针回填到 ADR 的「关联 change」）· **须同时修订 backlog 的 AC-7 / AC-8**（裁定 §5.1 的 **D-1**（AC-7 聚合语义）与 **D-2**（AC-8「精确等于枚举」字面不可满足）⇒ **planner 域**）· 实施期冻结面 = **1 处**（`openspec/specs/cep-compound-graph-falsification/spec.md` 的 hash 变更；⚠️ 原 backlog 估的「两处 ×2」已因本 ADR 先行落盘而收敛为 1 处 ×1）② **`TSO` 规则表** —— 待有实例时登记 ③ **运行期轨迹采集** —— 另立 backlog。
 
 **⑦ 关联**：裁定记录 `.rddf/reviews/ADR-CEP-22-memory-model-source-and-cross-domain-edges-review.md` · ADR 草案（仓外）`/tmp/opencode/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md` · Entry **#540**（I2 阶段 2 改名 · G2 的开工前置由此解锁）· Entry **#513**（litmus harness 落地）· Entry **#514**（I-6 声明面）· `ADR-CEP-13` 决策 1 / 2 / 5② · `ADR-CEP-12` 决策 3 / 4 · `ADR-CEP-08` 决策 1 · `ADR-CEP-20` 决策 6 · I-6 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §三 / §五（`R-2e`）
+
+### Entry #542 — 2026-11-24 [planner](**G2 实施立项** —— change `cep-memory-model-operational-trace` · 前置 `ADR-CEP-22` 已 ratify 闭合)
+
+**主题**：per `ADR-CEP-22`（✅ 已签发 v1.0 · Entry #541 · **用户 ratify「A」**）⇒ **开工前置已闭合** ⇒ 本 Entry 授权立项 openspec change `cep-memory-model-operational-trace`（**操作级轨迹模型 + 复合一致性公理的可判定落地**），并同时修订 backlog 的 3 条 AC。
+
+**① 立项理由**：`INV-CEP-13-IC1` 的「结构化声明项」已由 I-6 落地（声明**采用**该判据），但**判定**仍无载体 ⇒ 跨域组合的正确性维度对平台**永久不可用**；`ADR-CEP-22` 已把「每域模型来源 + 域间边构造规则」裁完并经用户 ratify ⇒ 剩余为纯实施 ⇒ **无待决架构问题**。
+
+**② 前置闭合链（本单元的开工门）**
+
+| # | 前置 | 状态 | 证据 |
+|:--:|---|:--:|---|
+| 1 | architect 裁定「每域模型来源 + 域间边构造规则」 | ✅ | `ADR-CEP-22`（9 条决策）· 审稿报告 `.rddf/reviews/ADR-CEP-22-memory-model-source-and-cross-domain-edges-review.md` |
+| 2 | oracle + critic 双审 | ✅ | oracle 首审 **REJECT** → v0.2 → **复审 APPROVE**（8/8 + 4/4 全闭）· critic **APPROVE_WITH_CONDITIONS**（0 BLOCKER）→ v0.3 |
+| 3 | **用户 ratify** | ✅ | 2026-11-24「**A**」⇒ Entry #541 |
+| 4 | ADR 签发 + 落盘 + 冻结链 | ✅ | Entry #541 五步链 1 次（`新增 1 · 移出 0 · hash 变更 1` · 91 → **92**）· 产物 `b7c987ff` · 清单 `a70f377c` |
+| 5 | **AC-16 开工门**（I-6 已落地） | ✅ | `grep -c '"combination_contract"' include/tlm/cep/protocol_instance.schema.json` = **1** |
+| 6 | **V-13-4 退场链路**（AC-15） | ✅ | `ADR-CEP-22` 决策 8 裁定 = **(b) 显式 Out-of-Scope**（v1 轨迹 = 手写 ⇒ 无运行期载体）⇒ 本单元沿用 (b)，⛔ 不得沉默 |
+
+**③ backlog 的 3 条 AC 修订（planner 域 · per `ADR-CEP-22` 裁定 §5.1）**
+
+| # | 修订 | 依据 |
+|:--:|---|---|
+| **AC-7** | 「写序全量量化」⇒「写序候选的**逐候选判定 + ∃/∀ 聚合**」：逐候选判定为「成环」/「可行」；⛔ **同一条迹**的聚合判定 = `not_falsified`（`co2` 可行 ⇒ 模型允许该迹）⇒ `falsified` 须**全部**候选成环 | 决策 5 ③ + 裁定 §5.1 **D-1**（原字面与正确语义**冲突** —— 「某候选成环 ⇒ 证伪」是**假阳性**） |
+| **AC-8** | 「边类集合**精确等于**枚举」⇒「① 每条边的类型 ∈ 枚举（运行时读 schema）② 跨域读自边 == `rfe`、域内 == `rf`（观测面）」 | 决策 6 + 裁定 §5.1 **D-2**（枚举是**全集**，具体迹的边类集合只能是**子集** ⇒ 原字面**不可满足**） |
+| **AC-12** | 「delta 显式 REMOVED」⇒「delta 以 **MODIFIED** **整条替换** requirement（新正文不含「顶点 SHALL 为 `(instance, network, vc)`」）」 | 决策 4/6 —— 工装**图类型**变更（通道图 ⇒ 操作图）⇒ 同名 capability 的**判定对象**变更 ⇒ 语义正确形态是 MODIFIED；⛔ **非改名**（工装名 `compound_graph_falsifier` 本就更贴合：复合图 = 操作级 `ppo_com ∪ rfe ∪ fr ∪ ws`）⇒ **零改名成本**；判据（`grep == 0` ∧ `validate --strict` rc=0）**逐字成立** |
+
+**④ 变更面（本 change）**：新增 `include/tlm/cep/memory_model_trace.hh` + `test/cep_memory_model_traces.json` · 改型 `include/tlm/cep/compound_graph_falsifier.hh` + `test/test_cep_compound_graph_falsification.cc` + 既有闸（**闸臂替换**，⛔ 不新增判据 ⇒ 闸计数不变）+ 命名消歧闸**臂④ 同步** + `scripts/README.md` + **主 spec 整条替换**（**冻结面 1 处**）。⛔ **零改动**：`protocol_instance.schema.json` / `protocol_instances.json` / `channel_dependency_graph.hh`（通道环的真判据归 `INV-CEP-09-IC1`）/ 任何 ADR 正文 / `cep_invariant_assertion_map.json` / `cep-core-contracts/spec.md`。
+
+**⑤ ⛔ 边界**：⛔ 零 invariant 新增（复用 `INV-CEP-13-IC1`）· ⛔ 不改 schema（R-2e）· ⛔ 轨迹来源 = 手写 litmus 迹（运行期采集另立 backlog）· ⛔ 不承诺「已证明」· ⛔ **不得**声称覆盖**域内一致性**（`ADR-CEP-22` §4.2 缺口①）· ⛔ `fr` 的**约定形态**（读→写 vs 写→写）须在实现中以**一手锚点**复核并**显式登记**（⚠️ 论文原文不在本仓 ⇒ 可复核性存疑 ⇒ 登记为限制）。
+
+**⑥ 五步授权链（拍 0 = 本 Entry）**
+
+| 步 | 动作 | 状态 |
+|:--:|---|:--:|
+| 1 | 台账 Entry 先落（本 Entry） | ✅ |
+| 2 | 产物 commit（模型 + 改型 + 闸 + 测试 + spec delta + `tasks.md` 勾选） | ⬜ |
+| 3 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #542"` ⇒ 期望「**新增 0 · 移出 0 · hash 变更 1**」（主 spec）· `artifact_count` **92 → 92** | ⬜ |
+| 4 | 冻结清单**单独** commit | ⬜ |
+| 5 | 无参复验 `cep_freeze_check.sh`（rc=0 · 92 产物 hash 一致） | ⬜ |
+
+**⑦ 关联**：Entry **#541**（`ADR-CEP-22` 落盘授权 · 用户 ratify）· Entry **#540**（I2 阶段 2 改名 · G2 的活代码面铺路）· Entry **#514**（I-6 声明面落地）· Entry **#513**（litmus harness 落地）· `ADR-CEP-22` · `ADR-CEP-13` 决策 1 / 2 / 5② · `ADR-CEP-12` 决策 3 / 4 + R-2e · `ADR-CEP-09` 决策 A（通道环判据归属）· backlog `.rddf/improvements/cep-memory-model-operational-trace.md` · 审稿报告 `.rddf/reviews/ADR-CEP-22-memory-model-source-and-cross-domain-edges-review.md`
