@@ -28554,6 +28554,17 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | ⑥ | **连带订正** | ⚠️ 本 Entry ⑩ 的「五件套」教训**只覆盖了「登记覆盖集」**，⛔ **未覆盖「判据锚点」**—— 后者是**第三类**落盘面（新 ADR / 状态行变更 ⇒ 可能打断**已登记 AC 的锚点**）⇒ 本次由 `rddf_stage_gate.sh`（P-3 锚点命中）抓出 ⇒ 记为**独立教训**，不并入五件套 |
 
 
+**⑫ 全量回归口径补齐后**又**抓到的 2 个红闸（2026-11-24 · 同一根因族：证据过滤 ⇒ 判据面被按名字排除）**
+
+| # | 红闸 | 根因 | 修法 |
+|:--:|---|---|---|
+| 1 | `agents_md_lint_all`（ctest #193）⇒ 「单行过长: L313 = 1035 字符 > 1000」 | **本线程 I2 阶段 1 起**（commit `93d5011c`）每次归档都往 `AGENTS.md` 的「实测基线」行追加 **slot 流水** ⇒ 该行由 752 → 1004 → 1035 字符 ⇒ **越界**（⛔ 该行在 `rddf_stage_gate.sh` 的 `KPI_LINE_MAX_FILES` **之外** ⇒ P-5 不查 ⇒ 只有 `agents_md_lint_all` 抓得到） | ① **实测基线行**只留**当前态** + 台账指针（1035 → 332 字符）② 删「**历史 slot 释放流水**」行（纯过程流水 ⇒ 真源 = 台账 Entries #320/#367/#375/#381/#386/#398/#405，**零信息损失**）③ 「**已归档 change 计数 = 162**」⇒ 改「⛔ 不固化具体值 + 实时取命令」（该陈旧值早已登记为 **F-8**，见 `.rddf/reviews/cpptlm-doorbell-contract-alignment-verify.md:51`；实测已 **174**）⇒ 符合本文件 DOC HYGIENE 纪律「过程日志一律落 ADR / openspec 归档」 |
+| 2 | `docs_adr_index_check_selftest`（ctest #190）⇒ 「变异 4(改合计 cell)应为红,实为绿 ⇒ 判据① 无牙」 | **变异自身失效**：变异 4 硬编码 `| **合计** | **63** |` ⇒ 本次 ADR 落盘把合计改成 **64** ⇒ `replace` **失配** ⇒ 变异退化为**空操作** ⇒ 文件未改 ⇒ 判据仍绿 ⛔ **不是判据无牙**（红因被误标） | 变异 4 改为「**读当前值并 +1**」（与实际份数无关）+「形态未命中 ⇒ **显式失败**」（⛔ 不得静默跳过 ⇒ 否则退化为「空变异必绿」）⇒ selftest 4/4 绿 |
+
+⚠️ **教训（与 ⑪ 同族，合并升级）**：**「回归证据的默认口径 = 全闸族 + 全量 ctest（不按 `-R` 过滤）」** —— 过滤会**按测试名**排除判据面（本次两例：`agents_md_lint_all` / `docs_adr_index_check_selftest` 的**名字都不含 `cep`** ⇒ 被 `-R cep` 选不中）。
+⚠️ **判据面自身的脆性**（第二类落盘面）：**判据里写死的计数会随产物增长而失效** ⇒ 变异退化为空操作 ⇒ **红因被误标成「判据无牙」** ⇒ 变异体必须**与实际份数解耦**（读当前值改写），且**形态未命中必须显式失败**。
+
+
 **⑩ 过程瑕疵登记（诚实）**：本单元**立项期间**（commit `6d7a1e5e` → 归档）`openspec list --json` 的 active 数为 **1**，而活文档 KPI 口径仍为 **0/3** ⇒ 该窗口内 `cep_docs_sync_check.sh` 断言①（KPI 口径 == 实测）**会红**。⚠️ 与 I1 的处理差异（I1 立项时同步改了 7 处活口径为 1/3）⇒ 本单元**漏了**该同步。⇒ **最终态一致**（归档后 active=0 ⇒ 活口径 0/3 == 实测 ⇒ registry 与 docs_sync 均绿）⇒ 无残留不一致；但窗口期的不一致**登记在案**，供后续 change 立项时对照（立项 ⇒ 同步活口径 ⇒ 归档 ⇒ 回填）。
 
 **⑨ 关联**：裁定记录 `.rddf/reviews/cep-litmus-falsifier-rename-adjudication-2026-11-24.md` · I2 阶段 1 `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md` + 归档 `2026-11-23-cep-litmus-falsifier-naming-disambiguation` · 实施路径 `.rddf/roadmap/cep-gen-family-gap-closure.md` · change `openspec/changes/cep-litmus-falsifier-compound-graph-rename/` · `ADR-CEP-13`（决策 2 / 决策 5 ②）· `ADR-CEP-17 §2 Decision 4` · Entry #538（I2 阶段 1）/ #539（Stage C C1+C2）

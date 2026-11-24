@@ -202,13 +202,26 @@ PY
         fail "变异 3(删索引行)应为红,实为绿 ⇒ 判据① 无牙"; exit 1
     else pass "变异 3:删 1 行索引 ⇒ 红"; fi
     # 变异 4:改合计 cell 不改表 ⇒ 判据① 红
+    # ⚠️ **不得写死合计数**（2026-11-24 实测事故：ADR 落盘把合计从 63 改成 64 ⇒
+    #    硬编码的 `replace` **失配** ⇒ 变异退化为**空操作** ⇒ 文件未被改 ⇒
+    #    判据仍绿 ⇒ selftest 报「变异 4 应为红,实为绿 ⇒ 判据① 无牙」——
+    #    ⛔ 这类「变异失效」会被误读成**判据无牙**，实为**变异自身失效**）。
+    # ⇒ 修法：**读当前值并 +1**（与实际份数无关）；且**形态未命中 ⇒ 显式失败**
+    #   （⛔ 不得静默跳过 ⇒ 否则退化为「空变异必绿」）。
     copy_root "$BASE/m4"
     python3 - "$BASE/m4/docs/adr/README.md" <<'PY'
-import sys
+import re, sys
 p = sys.argv[1]; t = open(p, encoding="utf-8").read()
-t = t.replace("| **合计** | **63** |", "| **合计** | **62** |", 1)
+m = re.search(r"^\|\s*\*\*合计\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|", t, flags=re.M)
+if not m:
+    print("变异 4 前置失败:未命中 README.md 的「合计」cell 形态 ⇒ 变异会退化为空操作", file=sys.stderr)
+    sys.exit(3)
+t = t[:m.start(1)] + str(int(m.group(1)) + 1) + t[m.end(1):]
 open(p, "w", encoding="utf-8").write(t)
 PY
+    if [ $? -ne 0 ]; then
+        fail "变异 4 前置失败:合计 cell 形态未命中 ⇒ 变异退化为空操作(⛔ 不得当作通过)"; exit 1
+    fi
     if ( cd "$BASE/m4" && bash "$REPO_ROOT/scripts/test/docs_adr_index_check.sh" --root "$BASE/m4" >/dev/null 2>&1 ); then
         fail "变异 4(改合计 cell)应为红,实为绿 ⇒ 判据① 无牙"; exit 1
     else pass "变异 4:改合计 cell 不改表 ⇒ 红"; fi

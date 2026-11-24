@@ -140,6 +140,8 @@
 |---|---|
 | 全部 `scripts/test/cep_*.sh` | ✅ **51 / 51**（PASS=51 · FAIL=0） |
 | `ctest --test-dir build -R cep -j2` | ✅ **111 / 111 Passed**（`ctest RC=0`） |
+| **非 `cep_*` 闸族**（9 个只读检查类：`archive_verify` / `config_type_registration` / `docs_adr_index` / `docs_index_consistency` / `docs_sync` / `markdown_link` / `openspec_version` / **`rddf_stage_gate`** / `test_sh_arg_parsing`） | ✅ 见 §4.1.1（⛔ **原先遗漏 `rddf_stage_gate`** ⇒ 见 §4.3） |
+| **全量 ctest**（`ctest --test-dir build`，⛔ **不按 `-R` 过滤**） | ✅ **203 / 203**（复审补测；⛔ 原先用 `-R cep` 选 111 项 ⇒ **过滤会按名字排除判据面** ⇒ 漏掉 `agents_md_lint_all` / `docs_adr_index_check_selftest` 两个红闸 ⇒ §4.3） |
 | `cep_docs_sync_check.sh`（无参） | ✅ rc=0 |
 | `cep_docs_sync_check.sh --strict` | ✅ rc=0 |
 | `cep_freeze_check.sh`（无参） | ✅ rc=0 · 92 产物 hash 一致 |
@@ -154,6 +156,20 @@
 | `python3 scripts/test/cep_registry_baseline_check.py` | ✅ rc=0（5/5） |
 | `archive_verify_check.sh` | ✅ rc=0 |
 
+### 4.1.1 非 `cep_*` 闸族（**9 个只读检查类** · 复审补测）
+
+| 闸 | rc |
+|---|:--:|
+| `archive_verify_check.sh` | ✅ 0 |
+| `config_type_registration_check.sh` | ✅ 0 |
+| `docs_adr_index_check.sh` | ✅ 0 |
+| `docs_index_consistency_check.sh` | ✅ 0 |
+| `docs_sync_check.sh` | ✅ 0 |
+| `markdown_link_check.sh` | ✅ 0 |
+| `openspec_version_check.sh` | ✅ 0 |
+| **`rddf_stage_gate.sh`**（⚠️ 复审时曾为红 ⇒ §4.3） | ✅ 0（修复后） |
+| `test_sh_arg_parsing.sh` | ✅ 0 |
+
 ### 4.2 ⚠️ 验收中抓到并修掉的 **3 个红闸**（根因**同族**：新 ADR 的登记覆盖集漏登）
 
 | # | 红闸 | 报错 | 修法 |
@@ -164,6 +180,27 @@
 
 ⇒ 三闸复绿；`cep_all` / `cep_docs_sync_check`（ctest 条目）随之转绿。
 ⇒ **教训（已写回台账 Entry #542 ⑩）**：新 ADR 落盘实为**五件套**，第 ⑤ 项「不变量覆盖集**两侧**」最容易漏。
+
+### 4.3 ⚠️ 验收**之后**（复审 + 全量回归补测）抓到的 **3 个红闸**（**回归口径缺陷** —— 连带订正 §4.1）
+
+| # | 项 | 内容 |
+|:--:|---|---|
+| ① | **现象** | `bash scripts/test/rddf_stage_gate.sh` ⇒ **rc=1**：`P-3 [G-18] 锚点未命中: .rddf/improvements/cep-memory-model-operational-trace.md ← '状态: "🟢 **已登记·backlog**'` |
+| ② | **根因** | 立项 commit `f18732ab` 改了 backlog 的**状态行首句**（`已登记·backlog` ⇒ `已批准·待立项`）⇒ `scripts/test/rddf_ac_carrier.tsv` 的 **G-18 载体锚点**失配 ⇒ 该 AC 的载体行不再命中 |
+| ③ | **为何当时没抓到** | 验收的「零回归」证据只取 **`cep_*.sh` 51 闸 + `ctest -R cep`（111 项）** ⇒ `rddf_stage_gate.sh` 既**不属于** `cep_*.sh` 家族、其 ctest 条目名又**不含** `cep` ⇒ **落在证据盲区** |
+| ④ | **修法** | 状态行改写为 `已登记·backlog`（✅ **已实施·已归档** …）—— **保留 G-18 锚点哨兵子串**（`grep -qF` 固定串）⇒ **判据面逐字不变**、**不改 TSV**；⇒ 闸复绿 rc=0（P-5 锚定 7 处全同步） |
+| ⑤ | **口径订正** | **回归证据的默认口径 = 全闸族 + 全量 ctest**，⛔ **不得**用 `-R <前缀>` 过滤后的子集冒充「零回归」（过滤会**按名字**排除判据面） |
+| ⑥ | **落盘** | 台账 Entry #542 **⑪**（含「判据锚点是**第三类**落盘面」的独立教训，不并入五件套）· 本报告 §4.1 已按新口径补全 |
+
+#### 4.3.1 追加的两个红闸（**全量 ctest 补测**才暴露 —— 两者**都不在** `cep_*.sh` 家族，且 ctest 名字**不含** `cep` ⇒ `-R cep` 选不中）
+
+| # | 红闸 | 根因 | 修法 |
+|:--:|---|---|---|
+| 7 | `agents_md_lint_all`（ctest #193）⇒ 「单行过长: L313 = 1035 字符 > 1000」 | 本线程 I2 阶段 1 起（commit `93d5011c`）每次归档都往 `AGENTS.md`「实测基线」行追加 **slot 流水** ⇒ 752 → 1004 → 1035 字符越界（该行在 `rddf_stage_gate.sh` 的 `KPI_LINE_MAX_FILES` **之外** ⇒ P-5 不查） | ① 该行只留**当前态** + 台账指针（1035 → 332 字符）② 删「历史 slot 释放流水」行（真源 = 台账 Entries，**零信息损失**）③ 「已归档 change 计数 = 162」⇒ 改「⛔ 不固化 + 实时取命令」（陈旧值早已登记为 **F-8**；实测 **174**）⇒ 符合 DOC HYGIENE 纪律 |
+| 8 | `docs_adr_index_check_selftest`（ctest #190）⇒ 「变异 4(改合计 cell)应为红,实为绿 ⇒ 判据① 无牙」 | **变异自身失效**（硬编码 `**63**` ⇒ 合计改成 64 后 `replace` 失配 ⇒ 变异退化为**空操作**）⇒ ⛔ 红因被**误标**为「判据无牙」 | 变异 4 改为「**读当前值 +1**」+「形态未命中 ⇒ **显式失败**」⇒ selftest 4/4 绿 |
+
+⇒ **三闸复绿**：`rddf_stage_gate.sh` rc=0 · `agents_md_lint_all` Passed · `docs_adr_index_check_selftest` Passed ⇒ **全量 ctest 203 / 203**。
+⇒ **教训（已写回台账 Entry #542 ⑪ / ⑫）**：**回归证据的默认口径 = 全闸族 + 全量 ctest**（⛔ `-R` 过滤会**按名字**排除判据面）；且**判据里写死的计数会随产物增长而失效** ⇒ 变异体须与实际份数**解耦**。
 
 ---
 
