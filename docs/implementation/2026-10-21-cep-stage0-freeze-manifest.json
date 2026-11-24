@@ -62,7 +62,7 @@
     "openspec/specs/cep-dod-reading-consistency/spec.md": "6885a243748bc1825e023bbe4cd274a94b011544cee51ffc4e8bae223c35d84a",
     "openspec/specs/cep-evidence-tier-registry/spec.md": "af502d74ed0a0033734d1438b929f9f6819ff1d164d9dfbf5a99779e8ba7d104",
     "openspec/specs/cep-evidence-tier2-observation/spec.md": "5544c6f95b156c0ea9c46f2ead21324845de57bddc722a96973baaedac090968",
-    "openspec/specs/cep-fence-consistency-effect-derivation/spec.md": "cd8321a38f19d40f9dc92345b1d84d46ef7394f375c3dd06033d50d9c5c8471e",
+    "openspec/specs/cep-fence-consistency-effect-derivation/spec.md": "f07fae85fee1454de1fde7d156fb7cf70c172a1f7ec2b559084e2a1cc17eeb01",
     "openspec/specs/cep-full-green-run-evidence/spec.md": "4a6da8cf143453e80be2b68d4b4a1c6b1ada1a31581caeec3241b4607c27c1a5",
     "openspec/specs/cep-hierarchical-directory/spec.md": "729f8e7b9eda0a8a8d8e1f748857287824745526e427f67182dd870b1d2f222f",
     "openspec/specs/cep-hop-timing-capability-declaration/spec.md": "27d3b69be28b26e193cfed590f4d13c07401d1ae82cfc2627450b5bdaa12536d",
@@ -100,7 +100,7 @@
   "authorized_by": "Entry #545",
   "exclusions": [],
   "frozen_at": "2026-11-24",
-  "frozen_at_commit": "1ae4e54a2057ea7fda92b0e22b5cf783defdf0b9",
+  "frozen_at_commit": "ef50fc26967f2d3dd91fd85747bed893b942340c",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",

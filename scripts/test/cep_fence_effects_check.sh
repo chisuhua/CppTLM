@@ -221,7 +221,7 @@ for line in sys.stdin.read().splitlines():
              kFenceEffectIsNotCrossDomainGuarantee \
              kBarrierAbsenceMeansNoFenceEffect \
              kScModelMeansNoExtraFenceEffect \
-             kRcEffectIsPaperUpperBoundSubset \
+             kRcEffectIsPaperModelBaseline \
              kFenceEffectGranularityIsPerInstance; do
         grep -qF "$c" "$HDR" || MISSING_CONST="$MISSING_CONST $c"
     done

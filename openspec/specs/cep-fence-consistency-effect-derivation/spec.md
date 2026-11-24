@@ -112,7 +112,7 @@ CEP SHALL 提供**协议语义层**的 fence 一致性效果**派生声明面**�
 - **WHEN** 扫描声明头
 - **THEN** SHALL 同时存在六个常量：`kFenceEffectIsDeclarationOnly` ·
 `kFenceEffectIsNotCrossDomainGuarantee` · `kBarrierAbsenceMeansNoFenceEffect` ·
-`kScModelMeansNoExtraFenceEffect` · `kRcEffectIsPaperUpperBoundSubset` ·
+`kScModelMeansNoExtraFenceEffect` · `kRcEffectIsPaperModelBaseline` ·
 `kFenceEffectGranularityIsPerInstance`
 - **AND** SHALL 含「**声明效果**」措辞（⛔ 非引擎行为语义）
 

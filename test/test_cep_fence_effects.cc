@@ -48,7 +48,7 @@ using tlm::cep::kFenceEffectCapabilityCount;
 using tlm::cep::kFenceEffectGranularityIsPerInstance;
 using tlm::cep::kFenceEffectIsDeclarationOnly;
 using tlm::cep::kFenceEffectIsNotCrossDomainGuarantee;
-using tlm::cep::kRcEffectIsPaperUpperBoundSubset;
+using tlm::cep::kRcEffectIsPaperModelBaseline;
 using tlm::cep::kScModelMeansNoExtraFenceEffect;
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -291,8 +291,8 @@ TEST_CASE("CEP fence_effects: 诚实边界常量（AC-9）", "[cep][fence_effect
                   "无 barrier 通道 ⇒ fence 无效果（R1）⇒ 该边界常量必须为 true");
     static_assert(kScModelMeansNoExtraFenceEffect,
                   "SC 已全序 ⇒ fence 无额外效果（R3）⇒ 该边界常量必须为 true");
-    static_assert(kRcEffectIsPaperUpperBoundSubset,
-                  "RC 族取论文并集上界的子集 ⇒ 该边界常量必须为 true");
+    static_assert(kRcEffectIsPaperModelBaseline,
+                  "RC 族取论文 RC 行的模型基线（两方向）⇒ 该边界常量必须为 true");
     static_assert(kFenceEffectGranularityIsPerInstance,
                   "派生粒度 = 实例 ⇒ 该边界常量必须为 true");
 

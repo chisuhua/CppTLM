@@ -42,7 +42,8 @@
 //
 // ── 判据骨架（判据本体在此，反向 fixture 在闸与测试）────────────────────
 //   J-1  实例集双向零 orphan（运行期 + 闸）
-//   J-2  派生正确性（闸级**独立 oracle**：闸内手写期望表 ⇄ 本头派生值 · ⛔ 不得自证）
+//   J-2  派生正确性（**测试内**独立 oracle：`test/test_cep_fence_effects.cc` 手写期望表
+//       ⇄ 本头派生值 · ⛔ 不得自证）；闸只做**oracle 存在性护栏**（⛔ 不重算派生值）
 //   J-3  输入副本漂移（运行期 + 闸）：本头副本 ⇄ protocol_instances.json 逐字段
 //   J-4  域外必红：任一行派生为 Invalid ⇒ 必红
 //   J-5  JSON 缺键必红（带签名 · ⛔ 不静默 SKIP）
@@ -262,8 +263,9 @@ namespace tlm::cep {
     /// SC 已全序 ⇒ fence 无额外效果（R3 · 与 barrier 存在与否无关）。
     inline constexpr bool kScModelMeansNoExtraFenceEffect = true;
 
-    /// RC 族：论文 RC 行是**并集上界**；本单元按方向取**子集**（更严）。
-    inline constexpr bool kRcEffectIsPaperUpperBoundSubset = true;
+    /// RC 族：取论文 RC 行的**模型基线**（release + acquire 两方向）⇒ 与论文该行**同口径**
+    /// （⛔ 不再「按访问标签逐项取子集」：那是把实例标签基线当成模型基线）。
+    inline constexpr bool kRcEffectIsPaperModelBaseline = true;
 
     /// 派生粒度 = **实例**（⛔ 不区分 barrier 发生在哪个网络侧）。
     inline constexpr bool kFenceEffectGranularityIsPerInstance = true;
