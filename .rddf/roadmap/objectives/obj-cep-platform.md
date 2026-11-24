@@ -28902,10 +28902,10 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | 步 | 动作 | 状态 |
 |:--:|---|---|
 | 1 | 台账 Entry 先落（本 Entry） | ✅ |
-| 2 | 产物 commit（② 的 4 项 + ADR 已在 `25880c14` 落库） | ⬜ |
-| 3 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #545"` ⇒ 期望「**新增 1 · 移出 0 · hash 变更 2**」（新增 = ADR-CEP-23；hash 变更 = ADR-CEP-13 + `openspec/specs/cep-fence-consistency-effect-derivation/spec.md`）· `artifact_count` **+1**（命令实测，⛔ 不写死） | ⬜ |
-| 4 | 冻结清单**单独** commit | ⬜ |
-| 5 | 无参复验 `cep_freeze_check.sh`（rc=0 · 产物 hash 一致） | ⬜ |
+| 2 | 产物 commit（② 的 4 项 + ADR 已在 `25880c14` 落库） | ✅ commit `1ae4e54a`（+ 收尾 `225b7db3` / `f5848b6f` —— 见 ⑥） |
+| 3 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #545"` ⇒ 期望「**新增 1 · 移出 0 · hash 变更 2**」（新增 = ADR-CEP-23；hash 变更 = ADR-CEP-13 + `openspec/specs/cep-fence-consistency-effect-derivation/spec.md`）· `artifact_count` **+1**（命令实测，⛔ 不写死） | ✅ **新增 1 · 移出 0 · hash 变更 2** · 94 → **95**（二次：hash 变更 1 · 95 不变） |
+| 4 | 冻结清单**单独** commit | ✅ commit `ef50fc26`（+ provenance 重钉 `238e4817`） |
+| 5 | 无参复验 `cep_freeze_check.sh`（rc=0 · 产物 hash 一致） | ✅ rc=0 · **95** 产物 hash 一致 · provenance 锚 `225b7db3` |
 
 ⚠️ **授权范围声明**：本 Entry **只授权「新增 + hash 变更」**（= 上述两类）⇒ ⛔ 不授权任何产物**离开**冻结面（移除 / 排除）。本 Entry 正文**故意不写**任何移出 / 排除形态的声明行（形态见闸注释）—— 若出现，闸会按 fail-safe 判无效并告警。
 
@@ -28926,3 +28926,19 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | `test_cep_*.cc` / ctest 数 | 不变 | R5 修正改**既有**断言，不新建测试文件 |
 | 冻结产物 `artifact_count` | **+1** | 新增 ADR-CEP-23（ADR glob 命中） |
 | KPI Proposed 并发 | 不变（0/3） | 不新建 change |
+
+**⑥ 实施结果（收口 · 2026-11-24 · builder）**
+
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | ② 的 4 项实施义务 | ✅ 全落 | commit `1ae4e54a`（产物）+ `ef50fc26`（清单） |
+| 2 | **实施中发现 · 新增义务 ①**：`test/cep_decision_block_snapshot.json` 未登记 ADR-CEP-23 ⇒ `cep_decision_block_check` + 其反向验证闸**双红** | ✅ 补 5 块 · count 25→26 · total 140→**145** | commit `225b7db3` · 闸 20/20 |
+| 3 | **实施中发现 · 新增义务 ②**：`kRcEffectIsPaperUpperBoundSubset` **名实不符**（旧名断言「取论文上界的**子集**」，与 R5 新口径相反） | ✅ 改名 `kRcEffectIsPaperModelBaseline`（同步声明头 / main spec / 闸 / 测试 4 处） | commit `225b7db3` |
+| 4 | **实施中发现 · 新增义务 ③**：`NO_INV` 的**第二副本**（`test/cep_adr_parser.hh` 的 `no_inv_adr_files()`）漏登记 ⇒ `cep_canonical_invariant` 红（连带 `[cep]` 聚合红） | ✅ 补登记 + 注释写明「本处即第二副本」 | commit `f5848b6f` · `[cep]` 13356 断言 / 574 用例全绿 |
+| 5 | 注释订正：`J-2` 原写「闸级独立 oracle：闸内手写期望表」⇒ 实为**测试内** oracle + 闸只做存在性护栏 | ✅ 订正 | commit `225b7db3` |
+| 6 | 冻结链 | ✅ 新增 1 · 移出 0 · hash 变更 2（94→**95**）· 二次 hash 变更 1（95 不变）· provenance 重钉后 rc=0 | `ef50fc26` / `238e4817` |
+| 7 | **零回归（全量口径 · ⛔ 无过滤）** | ✅ `cep_*.sh` **53/53** · ctest **207/207**（0 failed）· 冻结件**零残留** · `cep_docs_sync_check --strict` **绿** · `cep_adr_structural_check` 4/4 · `cep_adr_verification_carriers_reverse_verify` 8/8 · `cep_decision_block_check` 20/20 | 回归 #3（05:05:29）|
+
+**⚠️ 存量红（⛔ 非本批引入）**：`docs_sync_check.sh --strict` = 1 —— `scripts/README.md` 的 3 处裸引用 `protocol_instances.json` + `compound_graph_falsifier.hh`（HEAD 即红，本批未触碰该文件）。
+
+**⏭ 交后续（不在本批范围）**：G10 遗留 F-1（`hop_timing_capabilities.hh` 注释级补写）· 计数陈旧 3 处（`AGENTS.md` / `obj §` 完整 ADR 清单 / `CEP-DECISION-DIGEST`）· ADR-CEP-23 的 V-23-1/3/5 载体化（planner 立项）· `.rddf/state` 跟踪面与 `.lock` 残留（仓级卫生）。
