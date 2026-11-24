@@ -28669,7 +28669,7 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 
 **⑩ 过程瑕疵登记（诚实）**
 
-① **ADR 落盘批次漏登决策块快照** —— Entry #541 的批次只登记了 `decision_adrs`，**漏**了 `test/cep_decision_block_snapshot.json` ⇒ 被 `cep_decision_block_check.sh`（「有决策章但未登记决策块快照」）抓出 ⇒ 本次补登（`files` 24 → 25 · `total` 131 → 140 · `authorized_by` = Entry #541）。⇒ **教训**：新 ADR 落盘的三件套实为**四件套**（`decision_adrs` + 决策块快照 + 索引/编号表 + 冻结链）。
+① **ADR 落盘批次漏登决策块快照** —— Entry #541 的批次只登记了 `decision_adrs`，**漏**了 `test/cep_decision_block_snapshot.json` ⇒ 被 `cep_decision_block_check.sh`（「有决策章但未登记决策块快照」）抓出 ⇒ 本次补登（`files` 24 → 25 · `total` 131 → 140 · `authorized_by` = Entry #541）。⇒ **教训（两轮升级）**：新 ADR 落盘实为**五件套** —— ① `test/cep_adr_structural_deferrals.json` 的 `decision_adrs` ② `test/cep_decision_block_snapshot.json`（决策块快照）③ `docs/adr/README.md` 索引 + `ADR-CEP-NUMBER-MAP.md` 行 ④ M1 冻结链 ⑤ **不变量覆盖集两侧**（`scripts/test/cep_docs_sync_check.sh` 的 `ADR_LIST` **与** `test/cep_adr_parser.hh` 的 `no_inv_adr_files()` —— 两处规则重复，**必须同步**）。⚠️ 本轮只做了 ①③④ ⇒ **②⑤ 三个闸同时红**（`cep_decision_block_check` / `cep_docs_sync` / `[cep][canonical-invariant]`）⇒ 逐个补登后三闸复绿。⚠️ `cep_adr_parser.hh` 的 ADR-CEP-20 行**本就记着**同一教训（「只改了 shell 侧时 cep_canonical_invariant 必红」）⇒ 本次重蹈 ⇒ **该教训应升级为落盘清单的固定项，而非注释散记**。
 ② **立项期 KPI 窗口** —— 立项（active 1）到归档之间的窗口内，活口径若写 0/3 会与实测不一致（本轮已同步为 1/3，归档后回填 0/3）⇒ 与 Entry #540 ⑩ 同型，**已按纪律同步**（本轮**无**残留不一致）。
 
 **⑦ 关联**：Entry **#541**（`ADR-CEP-22` 落盘授权 · 用户 ratify）· Entry **#540**（I2 阶段 2 改名 · G2 的活代码面铺路）· Entry **#514**（I-6 声明面落地）· Entry **#513**（litmus harness 落地）· `ADR-CEP-22` · `ADR-CEP-13` 决策 1 / 2 / 5② · `ADR-CEP-12` 决策 3 / 4 + R-2e · `ADR-CEP-09` 决策 A（通道环判据归属）· backlog `.rddf/improvements/cep-memory-model-operational-trace.md` · 审稿报告 `.rddf/reviews/ADR-CEP-22-memory-model-source-and-cross-domain-edges-review.md`
