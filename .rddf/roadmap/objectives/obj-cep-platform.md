@@ -28542,6 +28542,18 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | 4 | 归档：`openspec archive … --yes` ⇒ `2026-11-24-cep-litmus-falsifier-compound-graph-rename` | ✅ 行为与探针 P-3 预测**完全一致**（REMOVED 被忽略 + `Totals: + 0, ~ 0, - 0` ⇒ **零 spec 改动** ⇒ 无需二次 `--update`）· 旧 capability **无残留空壳** · 新 spec Purpose **非占位**（0 处 TBD） |
 | 5 | 计数回填：归档 **172→173**（CEP **56→57**）· 闸 51 / 闸族 65 / `test_cep_*.cc` 78 / spec 总数 **139** / `cep-*` **48** **均不变** | ✅ registry 5/5 |
 
+**⑪ 验收期后的第 2 次漏检（回归口径缺陷 · 2026-11-24 复审发现）**
+
+| # | 项 | 内容 |
+|:--:|---|---|
+| ① | **现象** | `bash scripts/test/rddf_stage_gate.sh` ⇒ **rc=1**（`P-3 [G-18] 锚点未命中: .rddf/improvements/cep-memory-model-operational-trace.md ← '状态: "🟢 **已登记·backlog**'`）|
+| ② | **根因** | **本 Entry 的立项 commit `f18732ab`** 改了 backlog 的**状态行首句**（`已登记·backlog` ⇒ `已批准·待立项`）⇒ `scripts/test/rddf_ac_carrier.tsv` 的 **G-18 载体锚点**（`状态: "🟢 **已登记·backlog**`）**失配** ⇒ 该 AC 的载体行不再命中 |
+| ③ | **为何没被当时抓到** | 验收的「零回归」证据只取了 **`cep_*.sh` 51 个闸 + `ctest -R cep`（111 项）** ⇒ `rddf_stage_gate.sh`（ctest 条目名**不含** `cep` ⇒ `-R cep` 选不中）+ 该闸**不属于** `cep_*.sh` 家族 ⇒ **落在证据盲区** |
+| ④ | **修法** | 状态行改写为 **`已登记·backlog`（✅ 已实施·已归档 …）`** —— **保留 G-18 锚点哨兵子串**（`grep -qF` 固定串命中 ⇒ 判据面**逐字不变**）+ 补写真实态（已实施·已归档 · Entry #542 · 归档路径）⇒ **不改判据、不改 TSV** ⇒ `rddf_stage_gate.sh` 复绿（rc=0 · P-5 锚定 7 处全同步）|
+| ⑤ | **教训（口径级）** | **回归证据的默认口径必须是「全闸族 + 全量 ctest」**，⛔ **不得**用 `-R <前缀>` 过滤后的子集冒充「零回归」—— 过滤会**按名字**排除判据面（本次 = 非 `cep` 前缀的机关闸）。⇒ 本轮已把口径补全为 **72 个 `.sh` 闸 + 203 项 ctest**，并把该缺陷写进验收报告 §4.3（**先前的 §4.1「全部绿」表述已按此订正**）|
+| ⑥ | **连带订正** | ⚠️ 本 Entry ⑩ 的「五件套」教训**只覆盖了「登记覆盖集」**，⛔ **未覆盖「判据锚点」**—— 后者是**第三类**落盘面（新 ADR / 状态行变更 ⇒ 可能打断**已登记 AC 的锚点**）⇒ 本次由 `rddf_stage_gate.sh`（P-3 锚点命中）抓出 ⇒ 记为**独立教训**，不并入五件套 |
+
+
 **⑩ 过程瑕疵登记（诚实）**：本单元**立项期间**（commit `6d7a1e5e` → 归档）`openspec list --json` 的 active 数为 **1**，而活文档 KPI 口径仍为 **0/3** ⇒ 该窗口内 `cep_docs_sync_check.sh` 断言①（KPI 口径 == 实测）**会红**。⚠️ 与 I1 的处理差异（I1 立项时同步改了 7 处活口径为 1/3）⇒ 本单元**漏了**该同步。⇒ **最终态一致**（归档后 active=0 ⇒ 活口径 0/3 == 实测 ⇒ registry 与 docs_sync 均绿）⇒ 无残留不一致；但窗口期的不一致**登记在案**，供后续 change 立项时对照（立项 ⇒ 同步活口径 ⇒ 归档 ⇒ 回填）。
 
 **⑨ 关联**：裁定记录 `.rddf/reviews/cep-litmus-falsifier-rename-adjudication-2026-11-24.md` · I2 阶段 1 `.rddf/improvements/cep-litmus-falsifier-naming-disambiguation.md` + 归档 `2026-11-23-cep-litmus-falsifier-naming-disambiguation` · 实施路径 `.rddf/roadmap/cep-gen-family-gap-closure.md` · change `openspec/changes/cep-litmus-falsifier-compound-graph-rename/` · `ADR-CEP-13`（决策 2 / 决策 5 ②）· `ADR-CEP-17 §2 Decision 4` · Entry #538（I2 阶段 1）/ #539（Stage C C1+C2）
