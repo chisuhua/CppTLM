@@ -185,6 +185,10 @@ namespace cpptlm {
                 // (**新增 invariant 数 = 0**,per 其决策 1~9;归因 id 复用 INV-CEP-13-IC1)
                 // ⇒ 与 scripts/test/cep_docs_sync_check.sh 的 NO_INV 白名单**同步登记**。
                 "ADR-CEP-22-memory-model-source-and-cross-domain-edges.md",
+                // 2026-11-24(Entry #545):ADR-CEP-23 = 不完整目录知识的表达边界(Completeness 取值域)
+                // (**新增 invariant 数 = 0** —— 复用 ADR-CEP-04 的 INV-CEP-04-IC1 / V-04-7,见该 ADR §5)
+                // => 与 scripts/test/cep_docs_sync_check.sh 的 NO_INV 白名单**同步登记**(本处即第二副本:漏改必红)。
+                "ADR-CEP-23-incomplete-directory-knowledge-boundary.md",
             };
             return v;
         }
