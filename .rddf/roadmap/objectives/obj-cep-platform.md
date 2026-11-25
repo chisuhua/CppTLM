@@ -29231,3 +29231,55 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | 4 | **遗留清扫** | ✅ 无 TODO / TBD / FIXME / `#N` 占位；锚点 10 处逐一对源核验（`:135` / `:57` / `:194` / `:442` / `traces:2` / `:206` / `:287-311` / `:314-318` / upstream `:66` / `:11`） | 本轮实跑 |
 | 5 | **索引节校验** | ✅ 2026-11-23 节回到 **2 行**（计数不再腐化）· 新节 `## 2026-11-25 · ADR-CEP-22 SU ⑥ 的 L2 承接（1 份）` 存在 · 无重复行 | 本轮实跑 |
 | 6 | **SU ⑥ 三项连带终态** | **L1 ✅ #547**（载体回填 + 真实缺口补齐）· **L3 ✅ #548**（核实 + 零实施裁定）· **L2 ✅ 本条**（登记面闭环 · 实施另立） | — |
+
+### Entry #550 — 2026-11-25 [planner](**D5 指针回填授权** —— `ADR-CEP-22:135` 的「后续单元」**指名**为 `cep-memory-model-runtime-trace` · 追加 SU · 正文零改动)
+
+**主题**：把 `ADR-CEP-22` 决策 8（`:135`）的「指向 **I-6 后续单元**」**消歧**为指向运行期采集单元 `cep-memory-model-runtime-trace`（improvement 登记 2026-11-25 · 台账 Entry #549 · **未立项**）—— 依架构裁决 **D5**（`.rddf/reviews/cep-l2-runtime-trace-arch-ruling.md` §5）。
+**元**：裁决报告 `.rddf/reviews/cep-l2-runtime-trace-arch-ruling.md`（225 行 · commit `7399694a` · oracle→critic 双审）· improvement `.rddf/improvements/cep-memory-model-runtime-trace.md` · `ADR-CEP-22`（`:135` 决策 8 · 当前 521 行）
+
+**① 授权理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | **D5 是架构裁决的产出**（经 oracle 1 轮 NEEDS-REVISION 全闭 → critic `APPROVE_WITH_CONDITIONS` · `mergeable: yes` · **无 BLOCKER**） | ✅ | 报告 §8 审查状态表 |
+| 2 | **原指针有两种读法** ⇒ `ADR-CEP-22:135` 的「I-6 后续单元」可被读成「登记册队列 2 的 I-6」（`cep-invariant-modeling-batch2`，已完成）或字面的「I-6 之后的单元」 | ✅ | 报告 §5 的读法 a / b |
+| 3 | **读法 a 已被否证**：`ADR-CEP-13:314-318`（SU ③）把 I-6 载体定性为**声明面**，且上游单元 `:51-52` 明写「**为什么不能由 I-6 顺手做掉**」 | ✅ | 报告 §5（含 `ADR-CEP-13:45` 为空行的更正） |
+| 4 | **承接者已登记**（improvement + Entry #549）⇒ 回填是「指名」而非「新决策」 | ✅ | `.rddf/improvements/cep-memory-model-runtime-trace.md` |
+| 5 | ⛔ **不改 `ADR-CEP-22` 正文与既有 SU**：回填走**追加式 SU**（`ADR-CEP-00 §2 Decision 3` 形态） | ✅ | 本 Entry ② |
+
+**② 本批次改动面（1 项 · 封闭）**
+
+| # | 事项 | 判据（可判定） | 执行者 |
+|:--:|---|---|---|
+| 1 | `ADR-CEP-22` **文末追加** 1 段 SU（**正文零 diff**）：把决策 8 的「指向 I-6 后续单元」**消歧**为「指向 `cep-memory-model-runtime-trace`（improvement 2026-11-25 · Entry #549 · **未立项** · **立项门① 已闭**）」，并登记：① 读法 a 的否证依据 ② **⛔ 本段不构成对 `V-13-4` 判读的任何取代**（决策 8 的「不被本单元取代」逐字不变）③「后续单元」的**具体承接者**在此确定，⛔ 不改变决策 8 的 Out-of-Scope 定性 | `git diff --stat` 应显示**纯追加 / 0 删除**；`grep -c "cep-memory-model-runtime-trace" <ADR>` ≥ 1 且**仅**在新段 | architect |
+
+**③ 五步授权链（本 Entry 是步 1）**
+
+1. **本 Entry #550**（台账授权 · `--authorized-by` 的载体）
+2. architect commit：SU 段**落盘**（产物 commit）
+3. `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #550"`（**清单更新** · 预期：新增 0 · 移出 0 · hash 变更 **1**）
+4. **清单单独 commit**（⛔ 不得与产物同 commit）
+5. **无参复验**：`bash scripts/test/cep_freeze_check.sh` ⇒ rc=0
+
+**④ 计数面（预期零变化 · 以命令实测为准）**
+
+| 面 | 预期 | 依据 |
+|---|---|---|
+| 冻结产物 `artifact_count` | **95 → 95** | 仅 hash 变更 1 处（`ADR-CEP-22`） |
+| 决策块计数（`test/cep_decision_block_snapshot.json`） | **不变**（9） | SU 追加在 `## Status Update` 之后 ⇒ 不在 `## 2` 章内 |
+| `docs/adr/README.md` 索引 / `ADR-CEP-NUMBER-MAP.md` | **不变** | 不新增 ADR 编号（若索引闸报红则按生成器重生成） |
+| `cep_*.sh` / `test_cep_*.cc` / ctest | **不变**（55 / 80 / 209） | 不新增脚本与测试 |
+| 新增 `INV-CEP-*` / openspec change / KPI slot | **0 / 0 / 0** | 纯登记 |
+
+**⑤ 实施结果（收口 · 待 builder 回填）**
+
+> ⛔ 由 builder 在步 5 完成后回填（产物 commit · 清单 commit · 无参复验 rc=0 · 零回归 · 遗留清扫）。
+
+**⑥ 不做项**
+
+- ⛔ 不改 `ADR-CEP-22` **正文**（决策 1~9 结论零变更 · **RC 三表取值零变更** · 决策 8 的 Out-of-Scope 定性不变）
+- ⛔ **不声称** `V-13-4` 的判读被取代（`ADR-CEP-13:206` / SU ③ 的定性零变更）
+- ⛔ 不改 `ADR-CEP-13`（其 SU ③ 与本回填不冲突：声明面 vs 运行期判定面）
+- ⛔ 不改 schema / `protocol_instances.json` / 迹语料 / 实现 / 测试
+- ⛔ 不改 improvement 的状态（仍 `🟢 已登记·backlog` · **触发条件未满足，不开工**）
+- ⛔ 不在本批次处置 L2 的实施（须**另立 openspec change**；立项门① 的证据已在 `7399694a`）

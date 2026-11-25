@@ -8,7 +8,7 @@ type: feature
 依赖:
   - ADR-CEP-22
   - ADR-CEP-13
-状态: "🟢 **已登记·backlog**（2026-11-25 · per `ADR-CEP-22` SU(2026-11-25) ⑥ 的 **L2** 行 · ⛔ **未立项 ⇒ 不占 KPI slot** · ⛔ 本条目**只登记**，不实施）"
+状态: "🟢 **已登记·backlog**（2026-11-25 · per `ADR-CEP-22` SU(2026-11-25) ⑥ 的 **L2** 行 · ⛔ **未立项 ⇒ 不占 KPI slot** · ⛔ 本条目**只登记**，不实施 · **立项门① 已闭**（裁决报告 `.rddf/reviews/cep-l2-runtime-trace-arch-ruling.md` · commit `7399694a` · oracle→critic 双审）⇒ **触发条件未满足，不开工**）"
 created: 2026-11-25
 ---
 
@@ -98,6 +98,15 @@ created: 2026-11-25
      | **立项门②** | 若裁决结论为「采集须先动『不产 run』纪律」⇒ 本条目**阻塞于独立条目**（纪律存废），须先立该条目 | 台账 §11 存在该条目 |
      | **触发条件** | 「当某 change 需要判定**仿真产生**的操作迹时」（形态照抄上游先例 `cep-memory-model-operational-trace:11` 的「⏸ 待触发条件」） | 触发时可**指名**该 change |
      | **废弃条件** | ① 未来某 ADR SU 显式登记「运行期采集已完成」⇒ 本条目**整体废弃** ② architect 裁定 `V-13-4` 已由 I-6 **完整覆盖（声明 + 判定两面）** ⇒ **仅改写挂接段**，⛔ 不整体废弃（R-5 缺口独立成立） | 对应裁决 / SU 文本存在（可 `grep`） |
+
+     **立项门状态（2026-11-25 更新）**
+
+     | 项 | 状态 | 证据 |
+     |:--:|---|---|
+     | **立项门①** | ✅ **已闭** | `.rddf/reviews/cep-l2-runtime-trace-arch-ruling.md`（225 行 · commit `7399694a` · **oracle 1 轮 NEEDS-REVISION ⇒ 8 条全闭** → **critic 1 轮 `APPROVE_WITH_CONDITIONS` · `mergeable: yes` · 无 BLOCKER**） |
+     | **立项门②** | ⭕ **未触发**（无需先动纪律） | 裁决 **D4**：「不产 run」**不构成采集实施的阻断**，只限定产物身份（迹是**输入**不是证据）⇒ 无「须先立纪律存废条目」的阻塞 |
+     | **触发条件** | ⭕ **未满足**（故**不开工**） | 当前无任何 change 需要判定「仿真产生」的操作迹 |
+     | **⚠️ D5 的连带** | ⏳ **待落盘** | 裁决 **D5** 要求回填 `ADR-CEP-22:135` 的「后续单元」指针 → 本条目；授权载体 = 台账 **Entry #550**（planner）→ architect 追加 SU → builder 走冻结面五步链 |
 3. **单向指针**：本条目 → `ADR-CEP-22` SU ⑥ 的 L2 行（`:442`）→ `.rddf/improvements/cep-memory-model-operational-trace.md` 的 What Changes #7（`:66`）（⛔ **不回改已归档条目** ⇒ 不存在「上游回指」的那一向）。
 
 ## Acceptance
