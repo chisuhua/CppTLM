@@ -28991,12 +28991,16 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 - ⛔ 不新增 / 不重编号 invariant（⇒ `07 §4` 总表、objective DoD 7、improvement A2、phase-10 **四处零改动**）
 - ⛔ 不改任何**其他** ADR（`ADR-CEP-13` 的 SU(2026-11-24) 不动 · `ADR-CEP-23` 不动）
 - ⛔ 不在本批次处置 L1 / L2 / L3 三项连带（各归口，见 SU ⑥）
-- ⛔ 不改 `docs/adr/ADR-CEP-22` 的**签名**行（`> **状态**:`）—— 本段是追加式修订，**不**重新签发
+- ⛔ 不改 `docs/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md` 的**签名**行（`> **状态**:`）—— 本段是追加式修订，**不**重新签发
 
 **⑤ 实施结果（收口 · 2026-11-25 · builder）**
 
 | # | 事项 | 结果 | 证据 |
 |:--:|---|---|---|
-| 1 | ② 的 1 项改动面 | ⏳ | TBD |
-| 2 | 五步授权链 | ⏳ | TBD |
-| 3 | 零回归（全量口径 · ⛔ 无过滤） | ⏳ | TBD |
+| 1 | ② 的 1 项改动面（SU 追加） | ✅ 全落 —— `ADR-CEP-22` **155 行纯追加 · 0 删除**（正文零 diff · 决策块计数 9 不变） | commit `04476d99` |
+| 2 | **双审闭合**：oracle 2 轮（首审 REJECT 4 必修+3 建议+2 备注 → 复审 REJECT R1~R4）+ critic 1 轮（REJECT 1 BLOCKER + 4 SHOULD_FIX + 2 NITS）⇒ **全部逐条闭合** | ✅ 闭合 · 审稿报告 §1.2/§1.3/§2.1/§3.1 逐条含闭合证据 | `.rddf/reviews/adr-cep22-su-rc-family-arch-review.md` |
+| 3 | 五步授权链 | ✅ 步1 Entry #546 → 步2 产物 commit `04476d99` → 步3 `--update --authorized-by "Entry #546"`（**新增 0 · 移出 0 · hash 变更 1**）→ 步4 清单**单独** commit `c85ca253` → 步5 无参复验（**95 产物 hash 一致 · provenance 自检通过**） | `c85ca253` · 冻结闸无参 rc=0 |
+| 4 | **决策图同步** | ✅ `CEP-DECISION-DIGEST.md`：全量 11,871→**12,000 行** · SU 4,922→**5,247 行（43.7%）** · `22` 的 SU 7%→**38%** · 快照日期 → 2026-11-25 | commit 见下 |
+| 5 | **零回归（全量口径 · ⛔ 无过滤）** | ✅ `cep_*.sh` **54/54** · `ctest` **全量** · `cep_docs_sync_check --strict` 绿 · `docs_sync_check --strict` 绿 · `agents_md_lint --all --strict` 绿 · `cep_decision_block_check` 20/20 · `cep_oswald_provenance_check` P-1~P-7 全绿（**24/24** 锚点）+ `--selftest` 4/4 变异按预期红因变红 | 见回执 |
+| 6 | **实施中发现 · 新增义务 ①**：**文件系统 100% 满**（30G 用尽）⇒ 影子树机制无法创建拷贝根 ⇒ `cep_decision_block_check` 等多个闸**假红**（非判据失效）⇒ 回收 `build-asan`（**3.0G** · gitignored · 上次使用 **2026-10-24**）⇒ 闸恢复 20/20 绿 | ✅ 已回收 · 可用 4.4G | `df -h /` |
+| 7 | 实施中发现 · 新增义务 ②：论文侧锚点 claims **21 → 24**（新增 `H-C03` PLO 一手 / `H-C04` §II-B / `H-C05` 会议版 §V-B · 扩 `T-C12` 区间 `[6887,6890]`）⇒ **5 处文档计数**（父层 `docs/research/AGENTS.md` · `oswald/README.md` · `oswald/AGENTS.md` · `scripts/README.md` · 闸 P-4 下界）**同批同步** | ✅ 全落 | commit `04476d99` |

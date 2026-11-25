@@ -18,6 +18,7 @@
 
 | 路径 | 角色 | 体量 |
 |---|---|---|
+| [`AGENTS.md`](./AGENTS.md) | 本目录的**专属纪律**（6 条）+ 上位索引指针 |
 | [`source-manifest.json`](./source-manifest.json) | **机读溯源清单**（schema `cep-oswald-source-manifest/v1`）：4 份原文 PDF（sha256 / 字节 / 页数）+ 4 份抽取件（sha256 / 行数）+ **24 条承重论断的行级锚点**（行区间 + 区间 sha256 + 必含关键字） | 11.9 KB |
 | [`paper-claims-index.md`](./paper-claims-index.md) | **人读论断索引**：24 条论断 → 行区间 → 锚点 sha256 → 论断；§2 是**四条承重对照**（论文 vs 本仓 ADR） | 8.5 KB |
 | [`extracts/`](./extracts/) | **派生抽取件**（逐字节入 git）：论文全文 8542 行（含 `===== PAGE n =====` 页标记）+ 3 份会议论文抽取件 | 588 KB |
