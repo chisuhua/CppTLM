@@ -10,8 +10,8 @@
 | 文件 | 角色 |
 |---|---|
 | `README.md` | 人读入口：为什么有本目录 · 内容清单 · 怎么用 · 边界 |
-| `source-manifest.json` | 机读溯源清单（schema `cep-oswald-source-manifest/v1`）：4 原文 PDF + 4 抽取件 + **21 条承重论断的行级锚点** |
-| `paper-claims-index.md` | 人读论断索引（21 条 → 行区间 → 锚点 sha256）；§2 = **三条承重对照**（论文 vs 本仓 ADR） |
+| `source-manifest.json` | 机读溯源清单（schema `cep-oswald-source-manifest/v1`）：4 原文 PDF + 4 抽取件 + **24 条承重论断的行级锚点** |
+| `paper-claims-index.md` | 人读论断索引（24 条 → 行区间 → 锚点 sha256）；§2 = **四条承重对照**（论文 vs 本仓 ADR） |
 | `extracts/thesis-text-extract.md` | 论文全文抽取件（8542 行 · 含 `===== PAGE n =====` 页标记） |
 | `extracts/ProtoGen_ISCA2018-draft.md` | ISCA 2018 抽取件（逐字节复制，行号与既有引文对齐） |
 | `extracts/HieraGen_ISCA2020-draft.md` | ISCA 2020 抽取件（同上） |
@@ -26,7 +26,7 @@
 3. **引文必须给行区间**（不是单行）—— PDF 数学符号因字体编码**逐行分离**（`acyclic(` 与 `ppo_com` 分处多行）。
 4. **新增承重论断的流程**：在 `source-manifest.json` 的 `claims[]` 追加一条（`id` / `file` / `lines` / `must_contain` /
    `anchor_sha256` / `claim` / `layer`）⇒ 同步 `paper-claims-index.md` ⇒ 跑 `scripts/test/cep_oswald_provenance_check.sh`
-   （⛔ `claims` 条数下界 21 是**防删**护栏；删条目须同步改下界并说明理由）。
+   （⛔ `claims` 条数下界 24 是**防删**护栏；删条目须同步改下界并说明理由）。
 5. **新增抽取件** ⇒ 同步 `source-manifest.json` 的 `extracts[]`（sha256 / 字节 / 行数）与 `papers[]` 的对应关系。
 6. **⛔ 不写过程日志**（finding 编号 / 评审轮次 / 归档流水）—— 一律落 ADR `## Status Update` 段或 `.rddf/reviews/`。
 

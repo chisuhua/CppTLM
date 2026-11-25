@@ -18,8 +18,8 @@
 
 | 路径 | 角色 | 体量 |
 |---|---|---|
-| [`source-manifest.json`](./source-manifest.json) | **机读溯源清单**（schema `cep-oswald-source-manifest/v1`）：4 份原文 PDF（sha256 / 字节 / 页数）+ 4 份抽取件（sha256 / 行数）+ **21 条承重论断的行级锚点**（行区间 + 区间 sha256 + 必含关键字） | 11.9 KB |
-| [`paper-claims-index.md`](./paper-claims-index.md) | **人读论断索引**：21 条论断 → 行区间 → 锚点 sha256 → 论断；§2 是**三条承重对照**（论文 vs 本仓 ADR） | 7.3 KB |
+| [`source-manifest.json`](./source-manifest.json) | **机读溯源清单**（schema `cep-oswald-source-manifest/v1`）：4 份原文 PDF（sha256 / 字节 / 页数）+ 4 份抽取件（sha256 / 行数）+ **24 条承重论断的行级锚点**（行区间 + 区间 sha256 + 必含关键字） | 11.9 KB |
+| [`paper-claims-index.md`](./paper-claims-index.md) | **人读论断索引**：24 条论断 → 行区间 → 锚点 sha256 → 论断；§2 是**四条承重对照**（论文 vs 本仓 ADR） | 8.5 KB |
 | [`extracts/`](./extracts/) | **派生抽取件**（逐字节入 git）：论文全文 8542 行（含 `===== PAGE n =====` 页标记）+ 3 份会议论文抽取件 | 588 KB |
 | [`materialize_papers.sh`](./materialize_papers.sh) | **原文物化器**：从仓外源路径复制 PDF 到 `.papers/` 并按 sha256 校验 | 3.5 KB |
 | `.papers/` | 论文原文 PDF（**gitignored**，见 §3） | 17.4 MB |
@@ -42,7 +42,7 @@ per `docs/research/AGENTS.md` §5「**第三方原文不存放**（仅分析）�
 bash docs/research/oswald/materialize_papers.sh
 bash docs/research/oswald/materialize_papers.sh --list     # 只看清单
 
-# 2) 校验本目录的溯源完整性（抽取件 sha256 + 21 条锚点 + 索引对账）
+# 2) 校验本目录的溯源完整性（抽取件 sha256 + 24 条锚点 + 索引对账）
 bash scripts/test/cep_oswald_provenance_check.sh
 
 # 3) 验证闸有牙（3 条反向 fixture，跑在拷贝根 · 零工作树污染）
@@ -62,7 +62,7 @@ bash scripts/test/cep_oswald_provenance_check.sh --selftest
 |---|---|
 | B1 | **PDF 原文不在 git** ⇒ 全新 clone 需先跑 `materialize_papers.sh`；仓外源不可达时，P-5 判据为 **SKIP**（⛔ 不当绿） |
 | B2 | 抽取件是**派生工件**，**不是**原文；重新抽取可能因工具版本差异产生逐字不同的文本 ⇒ 以**仓内文件 + 其 sha256** 为准 |
-| B3 | 论文的**规约文本**（如 PPL 语法、SSP 形式化定义）以论文自身为准；本目录只保证**本仓引用的那 21 条**可复核 |
+| B3 | 论文的**规约文本**（如 PPL 语法、SSP 形式化定义）以论文自身为准；本目录只保证**本仓引用的那 24 条**可复核 |
 | B4 | 本目录**不含**本仓对论文的**结论**（结论在 `docs/adr/ADR-CEP-*.md` 与 `docs/research/cep-coherence-protocol-space-survey.md`） |
 | B5 | 抽取件中数学符号因 PDF 字体编码呈**逐行分离**（如 `acyclic(` 与 `ppo_com` 分处多行）⇒ 引用须给**行区间**，不给单行 |
 

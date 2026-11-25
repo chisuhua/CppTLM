@@ -232,11 +232,11 @@
    "file": "extracts/thesis-text-extract.md",
    "lines": [
     6887,
-    6887
+    6890
    ],
-   "must_contain": "release consistency",
-   "anchor_sha256": "d8df6ad2f7a7022b04d971eaa4eac510c09b20d6c9fe1914ced89166828ae5c2",
-   "claim": "RC 仅作**语义**刻画（release/acquire 操作）—— 论文**未给出** RC 的 ppo 关系",
+   "must_contain": "release-write-requests",
+   "anchor_sha256": "2916a21855f12a43762c8e8797ed7633f502b00d21e6c47350835e9cc823a72a",
+   "claim": "论文对 RC 的刻画 = **一致性接口请求类型四分**（release-write / data-write / acquire-read / data-read）—— **不含任何序语义** ⇒ RC 的 `po` 规则必为派生",
    "layer": "异构·NG1承重"
   },
   {
@@ -345,6 +345,42 @@
    "must_contain": "seven homogeneous protocols",
    "anchor_sha256": "90edbf2d030b8917f7c53bc7d87f2de2f3b05e920f24efe26a70c2d2092df7c3",
    "claim": "Table I 列的是**七个同构协议** ⇒ 该表是协议清单，**非**一致性模型序语义表",
+   "layer": "异构·NG1承重"
+  },
+  {
+   "id": "H-C03",
+   "file": "extracts/HeteroGen_HPCA2022-draft.md",
+   "lines": [
+    1254,
+    1257
+   ],
+   "must_contain": "enforces the W→W and the R→W",
+   "anchor_sha256": "6f3e47595c583a874021067424f8a51a4cf561973089fa123f3f878b824917ef",
+   "claim": "**PLO 的一手定义**：PLO-CC enforces partial-load-order「enforces the W→W and the R→W orderings but not the other two」⇒ ADR-CEP-22 决策 3 的 PLO 行（写侧 {R→W,W→W} + 读侧 ∅）**逐字吻合**",
+   "layer": "异构·承重"
+  },
+  {
+   "id": "H-C04",
+   "file": "extracts/HeteroGen_HPCA2022-draft.md",
+   "lines": [
+    297,
+    299
+   ],
+   "must_contain": "release-write-requests",
+   "anchor_sha256": "2ee39f15cacf8142d73d38eeb2b293ce75ba180e6cb7fe4e7bbeb1f6de1c2bb4",
+   "claim": "HeteroGen §II-B 的**同文平行段**（与 thesis §8.2 的四分 taxonomy 同源）⇒ RC 刻画的**机检锚点有两条**（T-C12 / H-C04）",
+   "layer": "异构·NG1承重"
+  },
+  {
+   "id": "H-C05",
+   "file": "extracts/HeteroGen_HPCA2022-draft.md",
+   "lines": [
+    584,
+    596
+   ],
+   "must_contain": "x86-TSO",
+   "anchor_sha256": "76c8d613a44a85429d5629a6c0cf1214aa36da34229b5743bc3a731d112e9a58",
+   "claim": "**会议版**（HPCA 2022 §V-B）的 `ppo` 形式化同样**只有 SC 与 x86-TSO 两个** ⇒ 论文侧**两个版本一致**地未给出 RC 的 `ppo` 关系（闭合「未核对会议版」的边界）",
    "layer": "异构·NG1承重"
   }
  ]

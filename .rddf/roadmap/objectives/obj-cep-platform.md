@@ -28942,3 +28942,61 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 **⚠️ 存量红（⛔ 非本批引入）**：`docs_sync_check.sh --strict` = 1 —— `scripts/README.md` 的 3 处裸引用 `protocol_instances.json` + `compound_graph_falsifier.hh`（HEAD 即红，本批未触碰该文件）。
 
 **⏭ 交后续（不在本批范围）**：G10 遗留 F-1（`hop_timing_capabilities.hh` 注释级补写）· 计数陈旧 3 处（`AGENTS.md` / `obj §` 完整 ADR 清单 / `CEP-DECISION-DIGEST`）· ADR-CEP-23 的 V-23-1/3/5 载体化（planner 立项）· `.rddf/state` 跟踪面与 `.lock` 残留（仓级卫生）。
+
+### Entry #546 — 2026-11-25 [planner](**ADR-CEP-22 SU 落盘授权** —— 决策 3 的 RC 家族 `po` 授权表**重新锚定 + 显式定性「本仓解释性建模」** + 决策 7 原因码计数更正 · **用户 ratify = 选项 C**)
+
+**主题**：把 `ADR-CEP-22` 决策 3 的 **RC 家族 `po` 授权表**从「锚点指向 HeteroGen 论文 Table I（协议清单表）」重新锚定为「论文对 RC 的语义刻画 +『论文未给出 RC 的 `ppo` 形式化』这一事实本身」，并显式定性该三表为**本仓解释性建模**（正确性归本仓）；同时把 **SC / PLO** 两行的锚点**升级为论文一手**；并更正决策 7 的原因码计数笔误（10 码 → 11 码）。
+**元**：architect commit `TBD` · 审稿报告 `.rddf/reviews/adr-cep22-su-rc-family-arch-review.md`（oracle `TBD` + critic `TBD`）· 裁决简报 `.rddf/reviews/cep-adr22-rc-family-adjudication-brief.md` · 论文侧锚点面 `docs/research/oswald/`（commit `d0acaedb`）· 台账 = 本 Entry。
+
+**① 授权理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | **用户已 ratify 选项 C**（重新锚定 + 显式定性） | ✅ | 本 Entry 触发指令 |
+| 2 | **裁决简报已交付**（3 选项 + 影响面量化 + SU 草案） | ✅ | `.rddf/reviews/cep-adr22-rc-family-adjudication-brief.md` |
+| 3 | **论文侧证据已入仓可机检**（24 条行级锚点 + 溯源闸） | ✅ | `docs/research/oswald/` · commit `d0acaedb` · `cep_oswald_provenance_check.sh` P-1~P-7 全绿 |
+| 4 | **双审完成**（oracle → critic，顺序不可颠倒） | ⏳ | 审稿报告 §1 / §2 |
+| 5 | **零新造 invariant** ⇒ ⛔ 不动 `07 §4` 总表（66 / 67 / 15 组全部不变） | ✅ | 本 SU 新增 invariant 数 = 0（复用 `INV-CEP-13-IC1`） |
+| 6 | **改动面已封闭**（1 份 ADR 的 1 段 SU；无第二项） | ✅ | 本 Entry ② |
+
+**② 本批次改动面（1 项 · 封闭）**
+
+| # | 事项 | 判据（可判定） | 执行者 |
+|:--:|---|---|---|
+| 1 | `ADR-CEP-22` 追加 `## Status Update(2026-11-25)` 段（**正文不动**）：① 事实更正（论文只给 SC / x86-TSO 的 `ppo`；RC 仅语义刻画；原锚点 = Table I 协议清单表）② RC 三表重新锚定 + 显式定性「本仓解释性建模」+ 措辞「仓内不可复核」→「论文未给出可援引的形式化」+ 规范性来源缺口保持打开 ③ 取值不变 + 影响面登记 ④ 决策 3「无锚点 ⇒ 不登记」的例外条款（5 条登记条件 · 例外清单 = `{RC-acquire, RC-release, RC-data}` · 条件⑤ 举证锚点须登记于 `source-manifest.json` 的 `claims[]` ⇒ 由 `cep_oswald_provenance_check.sh` P-3 守）⑤ 原因码计数 10 → **11**（仅计数笔误 · 码集合零变更）⑥ 连带登记 3 项（各归口 · 本段不处置） | ① `git diff` 证明 ADR-CEP-22 **仅尾部追加**（`## 2` 章行区间不变）② `cep_decision_block_check.sh` 决策块计数不变 ③ `cep_adr_structural_check.sh` rc=0 ④ `cep_freeze_check.sh --update --authorized-by "Entry #546"` 期望「**新增 0 · 移出 0 · hash 变更 1**」⑤ `cep_oswald_provenance_check.sh` rc=0（例外清单的举证锚点仍在 `claims[]` 内）⑥ `cep_*.sh` 全量 + `ctest` 全量 + `cep_docs_sync_check --strict` + `agents_md_lint --all --strict` 全绿 | builder |
+
+**③ 五步授权链（本 Entry 是步 1）**
+
+1. **本 Entry**（台账授权 · `--authorized-by` 的载体）
+2. architect commit：ADR-CEP-22 的 SU 段落盘（**产物 commit**）
+3. `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #546"`（**清单更新**）
+4. **清单单独 commit**（⛔ 不得与产物同 commit）
+5. **无参复验**：`bash scripts/test/cep_freeze_check.sh` ⇒ rc=0
+
+**④ 计数面（预期零变化 · 以命令实测为准）**
+
+| 面 | 预期 | 依据 |
+|---|---|---|
+| 主 spec 数 / `cep-*` 数 | 不变 | 本批次不新建 capability |
+| `cep_*.sh` 闸数 | 不变 | 本批次不新增脚本 |
+| `test_cep_*.cc` / ctest 数 | 不变 | 本批次不新建测试文件 |
+| 冻结产物 `artifact_count` | **不变** | 不新增 / 不移出冻结产物（仅 hash 变更） |
+| 决策块计数（`test/cep_decision_block_snapshot.json`） | **不变** | SU 追加在 `## Status Update` 之后 ⇒ 不在 `## 2` 章内 |
+| KPI Proposed 并发 | 不变（0/3） | 不新建 change |
+
+**⑥ 不做项**
+
+- ⛔ 不改 `ADR-CEP-22` **正文**（§2 决策 1~9 的结论零变更；RC 三表**取值零变更**）
+- ⛔ 不改 `protocol_instance.schema.json` / `protocol_instances.json` / `test/cep_invariant_assertion_map.json`
+- ⛔ 不新增 / 不重编号 invariant（⇒ `07 §4` 总表、objective DoD 7、improvement A2、phase-10 **四处零改动**）
+- ⛔ 不改任何**其他** ADR（`ADR-CEP-13` 的 SU(2026-11-24) 不动 · `ADR-CEP-23` 不动）
+- ⛔ 不在本批次处置 L1 / L2 / L3 三项连带（各归口，见 SU ⑥）
+- ⛔ 不改 `docs/adr/ADR-CEP-22` 的**签名**行（`> **状态**:`）—— 本段是追加式修订，**不**重新签发
+
+**⑤ 实施结果（收口 · 2026-11-25 · builder）**
+
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | ② 的 1 项改动面 | ⏳ | TBD |
+| 2 | 五步授权链 | ⏳ | TBD |
+| 3 | 零回归（全量口径 · ⛔ 无过滤） | ⏳ | TBD |

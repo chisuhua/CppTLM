@@ -33,7 +33,7 @@
 | 文件 | 角色 | 主要引用方 |
 |------|------|-----------|
 | `cep-coherence-protocol-space-survey.md` | **ADR-CEP-08/09/12/13/14 的判据定义真源** | `docs/adr/ADR-CEP-08/09/12/13/14`、`docs/architecture/07-coherence-exploration-platform.md` |
-| `oswald/` ★ | **论文侧证据锚点层**：Oswald 博士论文(*Gen 族*)的 4 份抽取件 + **21 条承重论断的行级锚点**(sha256 机检)—— 供 `ADR-CEP-08/13/17/22/23` 的论文引用**仓内可复核**;⛔ 原文 PDF 按本文件 §5 不入 git(`.papers/` gitignored + sha256 锚定) | `docs/adr/ADR-CEP-{08,13,17,22,23}` · `docs/research/cep-coherence-protocol-space-survey.md` · 闸 `scripts/test/cep_oswald_provenance_check.sh` |
+| `oswald/` ★ | **论文侧证据锚点层**：Oswald 博士论文(*Gen 族*)的 4 份抽取件 + **24 条承重论断的行级锚点**(sha256 机检)—— 供 `ADR-CEP-08/13/17/22/23` 的论文引用**仓内可复核**;⛔ 原文 PDF 按本文件 §5 不入 git(`.papers/` gitignored + sha256 锚定) | `docs/adr/ADR-CEP-{08,13,17,22,23}` · `docs/research/cep-coherence-protocol-space-survey.md` · 闸 `scripts/test/cep_oswald_provenance_check.sh` |
 | `cep-cohif-carrier-architecture-review-2026-10-26.md` | active change `cpptlm-cep-cohif-carrier` 的**架构依据** | 该 change 的 proposal/design/tasks + `.rddf/` |
 | `2026-11-01-cep-cxl-nonsymmetric-anchor-summary.md` | 队列 #10 的 **Task 0 公开来源锚点摘要**(CXL 2.0 非对称)—— ⛔ **全程禁读规范正文**(ECA §3 + AI AUP)⇒ basis 全来自**公开非规范来源** | 队列 #10 规约层 change + `openspec/specs/cep-cxl-nonsymmetric-state-spec/` + 台账 Entry #122 |
 | `2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` | 队列 #11 的 **Task 0 公开来源锚点摘要**(TileLink-C)—— ✅ 规范**开源可读** ⇒ basis **直接来自规范**(2 份 `pin=strong` + sha256);⚠️ **版本锁定缺口**(R-T1)未闭合 | 队列 #11 规约层 change(⚠️ **暂未建**)+ 台账 Entry #134 |

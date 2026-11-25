@@ -1,5 +1,21 @@
 # 裁决简报 · `ADR-CEP-22` 决策 3 的 RC 家族 `po` 授权表定性（NG1 + NG2）
 
+> ⚠️ **勘误（2026-11-25 · oracle 复审 R1）**：本简报 **F5（§2 事实基线）与 §0/§1 的「旧锚点」叙述有误** ——
+> 实测：`ADR-CEP-22:66-68` 的 RC 三行溯源列写的是「锚点 = `ADR-CEP-12` 决策 3（RC 分 release-write/data-write/
+> acquire-read/data-read，**per HeteroGen §II-B**）」，而 `ADR-CEP-12:99` 的依据正是 **HeteroGen p.3 §II-B**
+> ⇒ **旧锚点 = §II-B**（= 新登记的 `H-C04` **同一材料**），**不是** Table I。
+> **Table I 指针不在 RC 序断言的引用链上**（见于 `ADR-CEP-22:11`〔归 `ADR-CEP-17`〕· `protocol-engine.md:90` ·
+> `ADR-CEP-12:15`）⇒ Table I 只能作**旁证**（RC 族有哪些协议实例），**不能**作 RC 的 `po` 规则的语义来源。
+> ⇒ 本简报的**实质交付不变**（RC 三表 = 本仓解释性建模 · 论文两个版本均未给出 RC 的 `ppo` 形式化 · 需机检锚点化 + 补举证 + 定性），
+> **变的是历史叙述**：真实 delta 是「**转引链机检锚点化 + 补举证 + 定性更正**」，**不是**「替换错误锚点」。
+> **适用范围（本勘误注覆盖全文的「旧锚点」叙述）**：除 F5 外，另覆盖 **§3①**（「决策 3 的 RC 三表被溯源到 Table I」）、
+> **§5 选项 A**（「锚点仍指 Table I」）与 **§5 选项 C**（「锚点从 Table I 改为…」）⇒ 三处均为**同一误述**的重复，
+> 一律以本注为准（**§5 选项 C 的实质不变** —— 仍是「机检锚点化 + 补举证 + 显式定性」）；
+> **§6 的拟用 SU 段草案**为该误述的早期版本 ⇒ ⛔ **已被实际落盘的 SU 段取代**，以落盘文本为准。
+> 同批勘误已落 `docs/research/oswald/paper-claims-index.md` §2.1 / §2.2。
+> 另：本简报 **B3「未核对会议版」的保留已由仓内证据覆盖** —— 会议版 §V-B（`HeteroGen_HPCA2022-draft.md:584-596`，锚点 `H-C05`）
+> 同样只给 SC / x86-TSO 两个 `ppo` ⇒ **论文两版本一致**。
+
 > **交付对象**：**architect**（判权域）· 需**用户 ratify**方可落盘
 > **提出方**：build agent（2026-11-25 复审）· **证据全部仓内可机检**（`scripts/test/cep_oswald_provenance_check.sh` 全绿 · 21/21 锚点命中）
 > **性质**：**纯裁决输入** —— 本简报**不代改**已签批 ADR（`ADR-CEP-22` 正文不可变；修订只能走追加 `## Status Update` 段 + 冻结面五步链）
@@ -24,7 +40,7 @@
 | F2 | RC 在论文里是**语义**刻画（release/acquire 操作），**从未给出 RC 的 `ppo` 关系** | `T-C12` | 同文件 `:6887` |
 | F3 | ADR-CEP-22 决策 3 的 RC 三表标注「⚠️ RC 语义 · 锚点 = `ADR-CEP-12` 决策 3 … ⇒ **仓内不可复核**」 | `docs/adr/ADR-CEP-22-…md` 决策 3 | 直接读 |
 | F4 | ADR-CEP-22 决策 3 自定硬纪律：「⛔ **无锚点 ⇒ 不登记**（该标签的域一律 `undecided`）⇒ **不得编值**」 | 同上 | 直接读 |
-| F5 | ADR-CEP-22 决策 3 所引锚点 = **Table I**（七个**同构**协议清单：SC→MSI/MESI；TSO→TSO-CC；RC→RCC-O/RCC/GPU；PLO→PLO-CC） | `H-C01` / `H-C02` | `extracts/HeteroGen_HPCA2022-draft.md:1243` / `:1275-1276` |
+| F5 | ADR-CEP-22 决策 3 的 RC 三行溯源列 = `ADR-CEP-12` 决策 3 → HeteroGen **§II-B**（RC 四分 taxonomy）⇒ **与新锚点 `H-C04` 同一材料**；该刻画**不含序语义** ⇒ 原标注「仓内不可复核」的真实依据 = 论文不在仓 + **论文未给出 RC 的 `ppo` 形式化**；Table I（协议清单表）的指针**不在** RC 引用链上 ⇒ **旁证，非旧锚点**（⚠️ 已勘误，见文首） | `T-C12` / `H-C04` / `H-C01` / `H-C02` | `extracts/HeteroGen_HPCA2022-draft.md:1243` / `:1275-1276` |
 | F6 | 该抽取件全文 grep `ppo` / `preserved program order` = **0 命中** | — | `grep -c` |
 | F7 | **对照**：ADR-CEP-22 的 **PLO 行是对的**且有论文字面支撑 —— 论文原文「PLO-CC … enforce[s] … partial-load-order that **enforces the W→W and the R→W** orderings **but not the other two**」⇒ PLO 写侧 {R→W, W→W} + 读侧 ∅ **逐字吻合** | — | `extracts/HeteroGen_HPCA2022-draft.md:1253-1256` |
 | F8 | RC 的 **acquire/release 语义**（词面）在仓内可查：「Acquire = 后续内存引用必须能看到此前所有释放操作」·「Release = 此前的所有内存引用必须在释放前完成」 | — | mynotes 仓 `01_Wiki/concepts/memory-consistency-protocols.md:70-79`（**跨仓**） |
@@ -162,7 +178,7 @@
 |---|---|
 | B1 | 本简报的**论文侧事实**（F1/F2/F5/F7）已逐条落到**仓内可机检**的锚点（21/21 命中，`scripts/test/cep_oswald_provenance_check.sh` 全绿）；**RC 语义来源**（F8）引自**跨仓** mynotes 知识库，**不是**规范性来源 |
 | B2 | §5.1 的「与 RC 经典形态一致」是**工程自洽性论证**，非**规范引用** —— 若需规范级锚点，应引 RC/C11 的一手文献（本轮**未**获取） |
-| B3 | 「论文未给出 RC 的 `ppo` 形式化」是基于**博士论文**（178 页）的否定性推断；若 **HPCA 2022 会议版**另有 RC 序规则而博士论文未收录，本结论需修正 —— 本轮**未**逐字核对会议版 PDF |
+| B3 | 「论文未给出 RC 的 `ppo` 形式化」的否定性推断**已由仓内证据覆盖**：会议版 §V-B（`HeteroGen_HPCA2022-draft.md:584-596`，锚点 `H-C05`）同样只给 SC / x86-TSO 两个 `ppo` ⇒ **论文两版本一致** |
 | B4 | 本简报**未**运行任何测试/闸（闸的结论取自 2026-11-25 的实跑记录） |
 | B5 | 本简报**不构成**对 `ADR-CEP-22` 的取代 —— 落盘形式只能是追加 `## Status Update` 段 |
 

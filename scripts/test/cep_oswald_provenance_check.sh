@@ -6,7 +6,7 @@
 #   P-1  manifest schema 版本正确
 #   P-2  extracts[] 逐条 sha256 == 仓内实际文件 sha256
 #   P-3  claims[] 逐条：行区间存在 + must_contain 命中 + 锚点区间 sha256 匹配
-#   P-4  claims 条数下界（防删条目）
+#   P-4  claims 条数下界（防删条目 · 当前 24）
 #   P-5  papers[] 已物化时 sha256 必须匹配；未物化 ⇒ **SKIP**（⛔ 不当绿）
 #   P-6  paper-claims-index.md 的 claim id ↔ manifest **双向零 orphan**
 #   P-7  抽取件存在且非空
@@ -100,10 +100,10 @@ if bad == 0:
 
 # P-4 claims 条数下界
 claims = m.get("claims", [])
-if len(claims) >= 21:
-    print(f"  {GRN}[ OK ]{RST} P-4 claims 条数 {len(claims)} ≥ 21")
+if len(claims) >= 24:
+    print(f"  {GRN}[ OK ]{RST} P-4 claims 条数 {len(claims)} ≥ 24")
 else:
-    print(f"  {RED}[FAIL]{RST} P-4 claims 条数 {len(claims)} < 21（条目被删）  (red: oswald-claims-truncated)")
+    print(f"  {RED}[FAIL]{RST} P-4 claims 条数 {len(claims)} < 24（条目被删）  (red: oswald-claims-truncated)")
     bad = 1
 
 # P-3 锚点逐条
