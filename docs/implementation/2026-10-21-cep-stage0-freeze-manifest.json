@@ -24,7 +24,7 @@
     "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": "b58a4a53534159e371115250bebba83a5e36b7bfcd21fc32535c0fe4e1cdb805",
     "docs/adr/ADR-CEP-20-topology-ic3-evidence-strength.md": "ff06fd027a16e7c46fb3c8b878ac0f76d07c7398e77adddeabd5e0ad8a878463",
     "docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md": "29b945d0eb191d9f14293d9ec2b48e2c8330e8c856d716772f5c1091a5255032",
-    "docs/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md": "ebd1a5fdd06ea54d2f7fe278ddbbb9f7d3427ac7c373ccac8766a1589be54688",
+    "docs/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md": "71fd174f95297c9bee799f4a8bbb89eb7e8957fd9a4134bb1c72039aa4f7e989",
     "docs/adr/ADR-CEP-23-incomplete-directory-knowledge-boundary.md": "de3c24d03fd61c3f92c9c1e2c493116d452f226bb0ae3f20649b8c277c299f53",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "fe6dce18b2d107e9ddfeae13c65ed131ee0f26595cb5835e8a90c05c39aafc42",
     "docs/architecture/07-coherence-exploration-platform.md": "d644b21ff87faa7eef1caf2bbb81cb632f2ba34a5f3fa4e5e5edc65fa18e1b21",
@@ -97,10 +97,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #545",
+  "authorized_by": "Entry #546",
   "exclusions": [],
-  "frozen_at": "2026-11-24",
-  "frozen_at_commit": "225b7db32873b4cc97bcde566320c6928dc9c030",
+  "frozen_at": "2026-11-25",
+  "frozen_at_commit": "04476d99878fb292d85659b7ff811c9ba532d4aa",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
