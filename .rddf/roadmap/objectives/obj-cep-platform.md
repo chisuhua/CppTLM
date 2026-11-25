@@ -29080,3 +29080,67 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | 3 | **⛔ 遗留清扫**（本批次范围） | ✅ 无 TODO / FIXME / 半截实现 / 注释掉的代码块 / 被 skip 的测试 / 临时 fallback · 探针的 `stderr` 输出**仅**用于环境错误提示（对应 exit 2 纪律）· 所有写入均在 `mktemp -d` 影子树（`sha256sum` 前后比对 5 个仓内文件）· `run_trace` 既有签名**未变**（24 处调用全保留） | 同上 |
 | 4 | **⛔ 登记面核查**（`docs/ONBOARDING.md` §5.5） | ✅ **无需改动** —— 该表是**精选**（11 个 `cep_*.sh` vs 仓内 **55** 个）⇒ 近期新增闸（`cep_hop_timing_capabilities_check` / `cep_fence_effects_check` / `cep_oswald_provenance_check` / `cep_engine_capabilities_check` / `cep_compound_graph_falsification_check`）**均不在其中** ⇒ 现行做法 = 新闸的登记面是 `scripts/README.md` 守门表 + 反向 fixture 登记表（本批次已落） | 实测 grep + `scripts/README.md` |
 | 5 | **SU ⑥ 三项连带的状态** | **L1 ✅ 本 Entry 闭合** · **L2 ⭭ 未处置**（v1 迹为手写 ⇒ 判定与仿真无关 ⇒ 运行期采集**另立 backlog**）· **L3 ⭭ 未处置**（RC 规范性一级来源未获取 ⇒ ④ 条件⑤ 的登记载体另议 ⇒ **另立调研单元**） | `ADR-CEP-22` SU ⑥ |
+
+### Entry #548 — 2026-11-25 [planner](**ADR-CEP-22 SU ⑥ 之 L3 的落盘授权** —— RC 一级来源核实 + 「登记载体无须另议」裁定 · **裁决 = 方案 C-0（不引入外部来源 · 零实施）**)
+
+**主题**：把 `ADR-CEP-22` SU(2026-11-25) ⑥ 登记的连带项 **L3**（「RC 的**规范性**一级来源未获取 ⇒ ④ 条件⑤ 的登记载体须另议」）以**核实 + 裁定**闭合：经外部一手核查确认 —— RC **无规范文本**（经本次核查未发现 ISA / 标准组织文档 normative 地定义 RC）· RC 原始定义（ISCA'90）为**散文式 perform 条件**、**不含 `ppo` 形式化** · **无外部 `ppo` 序锚点可得** ⇒ ⇒ ④ 条件⑤ 末句的「若」**不触发** ⇒ **登记载体无须另议** ⇒ **零实施**。
+**元**：ADR `docs/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md`（SU ⑥ L3 行 `:443` · 诚实边界母句 `:379-381` · 决策 3 `:59-76` · 条件④ 例外条款 `:404` · 条件⑤ `:415-416`）· 调研 / 决策 / 双审报告 `.rddf/reviews/adr-cep22-l3-rc-ppo-source-review.md`（389 行）· 前序 Entry **#546**（SU 落盘授权）/ **#547**（L1 闭环）
+
+**① 授权理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | **L3 是 SU ⑥ 显式登记的连带项**（归口 planner：资产载体的处置决策）⇒ 本 Entry 承接 | ✅ | `ADR-CEP-22` SU ⑥ 的 L3 行（`:443`）· Entry #547 收口表第 5 项现记「L3 ⭭ 未处置」⇒ **由本 Entry 更新为已裁定** |
+| 2 | **双审已闭合**：oracle 1 轮 `NEEDS-REVISION`（方向 PASS）⇒ 3 MAJOR + 4 MINOR **全闭** · critic 第 1 轮 `REJECT`（1 BLOCKER + 2 NITS）⇒ **全闭** · critic 复审（第 2 轮 = 预算上限）**`APPROVE` · `mergeable: yes`** | ✅ | 报告 §4.1 / §4.2 / §4.3 / §4.4 |
+| 3 | **裁决 = 方案 C-0（不引入外部来源 · 零实施）**；枢轴 = ④ 条件⑤ 末句为**条件式**且「若」不触发；替代读法（条件① 指序规则来源）会使**例外清单恒为空** ⇒ ④ 自我否定 ⇒ 「**定义性刻画**」为唯一自洽读法 | ✅ | 报告 §3.3（含反证）· critic focus ② 判定「**澄清而非修改**」（既有例外清单本就登记 `T-C12`/`H-C04` 为条件① 锚点） |
+| 4 | **一手取文已补**（oracle F-4 指出的本地路径空缺）：*Adve* 博士论文 **Definition 2.4** + *Adve & Gharachorloo* Tutorial 1996 **§6.4.2**（RCsc `ppo` 约束表）⇒ **双来源互证** ⇒ RC 的 `po` 保留 = {R→R, R→W, W→W}（缺 W→R）与本仓 `mesif` 域（`memory_model_trace.hh:181-211`）实测**一致** ⇒ **未发现方向性反证**。⚠️ 两件**只取文不入仓** ⇒ **A2 仍为「一手来源 + 人工评审级 · 不可机检」** | ✅ | 报告 §2 的 F-RC-9 / F-RC-13（含 sha256 与定位） |
+| 5 | **新增 invariant 数 = 0** ⇒ ⛔ 不动 `07 §4` 总表（66 / 67 / 15 组不变）· ⛔ 不改 `protocol_instance.schema.json` / `protocol_instances.json` / `source-manifest.json` | ✅ | 报告 §5 草案头部声明 + 本 Entry ⑥ |
+| 6 | **改动面已封闭**（1 份 ADR 的文末 SU 追加 1 段；无第二项） | ✅ | 本 Entry ② |
+| 7 | ⛔ **本 change 的 critic 预算（2 轮）已用尽** ⇒ 落盘前若需再审须**用户明确批准** | ⚠️ | 报告 §4.4 末行 |
+
+**② 本批次改动面（1 项 · 封闭）**
+
+| # | 事项 | 判据（可判定） | 执行者 |
+|:--:|---|---|---|
+| 1 | `ADR-CEP-22` **文末追加** `## Status Update（2026-11-25，per 台账 Entry #548）` 段（**正文零 diff**）：① 核实结论 N1~N5 · ② 措辞更正（SU ⑥ L3 行「未获取」⇒「经本次核查未发现」）+ **②bis mini supersede 清单**（2 行：`:443` · `:379-381`）+ **母句处置**（缺口由「等待获取」关闭为「无此类来源可得」；⛔「完全闭合」不成立）· ③ 枢轴（条件⑤「若」不触发 + 替代读法反证）· ④ **对照登记**（A2 · 一手来源 + 人工评审级 · 不可机检 · RC 三表取值零变更）· ⑤ 拒绝升格的理由（A3 后续选项 ⇒ 另立）· ⑥ 未核查项点名登记 | 草案全文见报告 §5（**可粘贴**）；落盘后 `grep -n "经本次核查未发现" <ADR>` **仅**命中新段 | architect |
+
+**②bis 三项登记动作的落点**
+
+| 动作 | 落点 | 性质 |
+|---|---|---|
+| **A1** 措辞更正 | ②（SU ⑥ L3 行 + 母句处置） | 文档面 → 本批次落 |
+| **A2** 对照登记 | ④ | 文档面 → 本批次落（⚠️ 人工评审级 · 不可机检） |
+| **A3** 后续选项（升格为「仓内可机检」⇒ 扩 manifest + 抽取件入 git + `claims[]` 追加 + **P-4 下界 24 → 25**） | ⑤ + 登记项 | **⛔ 不在本批次** ⇒ 另立（方案 A） |
+
+**③ 五步授权链（本 Entry 是步 1）**
+
+1. **本 Entry #548**（台账授权 · `--authorized-by` 的载体）
+2. architect commit：`ADR-CEP-22` 的 SU 段**落盘**（产物 commit · 并回填报告草案中两处 `#N` → `#548`）
+3. `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #548"`（**清单更新** · 预期：新增 0 · 移出 0 · hash 变更 **1**）
+4. **清单单独 commit**（⛔ 不得与产物同 commit）
+5. **无参复验**：`bash scripts/test/cep_freeze_check.sh` ⇒ rc=0
+
+**④ 计数面（预期零变化 · 以命令实测为准）**
+
+| 面 | 预期 | 依据 |
+|---|---|---|
+| 主 spec 数 / `cep-*` 数 | 不变 | 不新建 capability |
+| `cep_*.sh` / `cep_*.py` 闸数 | 不变（55 / 14） | 不新增脚本 |
+| `test_cep_*.cc` / ctest 条数 | 不变（209） | 不新建测试 |
+| 冻结产物 `artifact_count` | **95 → 95**（不变） | 仅 hash 变更 1 处（`ADR-CEP-22`） |
+| 决策块计数（`test/cep_decision_block_snapshot.json`） | **不变**（9） | SU 追加在 `## Status Update` 之后 ⇒ 不在 `## 2` 章内 |
+| 新增 `INV-CEP-*` | **0** | 纯登记 |
+| KPI Proposed 并发 | 0/3 不变 | 不新建 change |
+
+**⑤ 实施结果（收口 · 待 builder 回填）**
+
+> ⛔ 由 builder 在步 5 完成后回填（产物 commit · 清单 commit · 无参复验 rc=0 · 零回归口径 · 遗留清扫）。
+
+**⑥ 不做项**
+
+- ⛔ 不改 `ADR-CEP-22` **正文**（决策 1~9 结论零变更 · **RC 三表取值零变更** · ④ 例外清单零变更 · 条件① 的读法为**澄清**而非修改）
+- ⛔ 不改 `protocol_instance.schema.json` / `protocol_instances.json` / `source-manifest.json` / `test/cep_memory_model_traces.json`
+- ⛔ **不新增** `INV-CEP-*` · **不新建** openspec change · **不动** manifest 的 `claims[]`（⇒ P-4 下界 24 不变）
+- ⛔ **不引入**任何外部抽取件入仓（第三方原文不存放 ⇒ 这是 C-0 的必然结果）
+- ⛔ **不处置** SU ⑥ 的 **L2**（v1 迹为手写 ⇒ 运行期采集 · 另立 backlog）
+- ⛔ **不声称**「证据强度缺口完全闭合」（A2 不可机检 ⇒ 上限仍在）
