@@ -459,3 +459,63 @@
 双审报告 `.rddf/reviews/adr-cep22-su-rc-family-arch-review.md`（**同批落盘**）·
 论文侧锚点面 `docs/research/oswald/`（`source-manifest.json` 的 `claims[]` · `paper-claims-index.md` §2）·
 闸 `scripts/test/cep_oswald_provenance_check.sh`。
+
+## Status Update（2026-11-25，per 台账 Entry **#548**）—— SU(2026-11-25) ⑥ 的 **L3** 闭环：RC 一级来源核实 + 「登记载体无须另议」的裁定
+
+> **本段处置**：SU(2026-11-25) ⑥ 登记的 **L3**（「RC 的**规范性**一级来源未获取 ⇒ ④ 条件⑤ 的登记载体须另议」）的**核实 + 裁定**。
+> ⛔ **决策 1~9 的结论零变更** · ⛔ **RC 三表取值零变更** · ⛔ **④ 例外清单零变更** · ⛔ **新增 invariant 数 = 0** ·
+> ⛔ 不改 `protocol_instance.schema.json` / `protocol_instances.json` / `source-manifest.json` · ⛔ 不改任何实现文件。
+
+### ① 核实结论（外部一手核查 · 2026-11-25）
+
+| # | 结论 | 强度 |
+|---|---|---|
+| **N1** | **经本次核查未发现**任何 ISA / 标准组织文档 normative 地定义 release consistency（对照：x86-TSO 有 Intel SDM）⇒ ⇒ 「**规范性**一级来源」这一措辞对 RC **不成立**；RC 的一切权威来源 = **同行评审一手文献** | 一手核查 + **否定断言**（受检索边界限制） |
+| **N2** | **RC 的原始定义** = Gharachorloo, Lenoski, Laudon, Gibbons, Gupta, Hennessy, "Memory Consistency and Event Ordering in Scalable Shared-Memory Multiprocessors", **ISCA 1990**, pp. 15–26（DOI `10.1145/325164.325102`；期刊化版 *SIGARCH CAN* 18(2SI):15–26）⇒ 该定义**不含 `ppo` 形式化**（散文式：访问分类 + 三条 perform 条件） | 一手（书目）/ 索引摘录（不含 ppo） |
+| **N3** | **经本次核查未发现**给出「RC（1990 意义下）之 `ppo` 形式化」的一手材料 ⇒ ⇒ **无外部 `ppo` 序锚点可得**（⛔ 否定断言受检索边界限制） | 一手核查 + 否定断言 |
+| **N4** | 存在含 `ppo` 的**规范性**文本，但语义对象**不同** = **RISC-V RVWMO v2.0 §16.1.3**（RCsc / RCpc **变体**的注释与 ppo 规则 5–8；Arm：Load-Acquire/Store-Release → RCsc、Load-AcquirePC → RCpc；LKMM / *Herding Cats* / Sarkar'11 为 RC **家族成员**的公理化）⇒ ⇒ **不可**作本仓三表（按**访问标签**四分）的序锚点 | 一手核查 |
+| **N5** | ⛔ **本仓无杜撰引文** —— 三处候选引文（「A Comprehensive Memory Model for Coherence」TOCS 2009 /「Trading Memory Barriers for Scalability」PPoPP 2017 /「Compositionality of Shared Memory」POPL 2019）经**多入口检索**（ACM DL / Springer / DBLP / Google Research / arXiv）**均未发现记录**，且**在本仓零引用**；`docs/research/cep-coherence-protocol-space-survey.md:419` 的「Sorin primer」指**真实专著**（*A Primer on Memory Consistency and Cache Coherence* · Open Access）⇒ **无需更正** | 一手核查 + 仓内 grep |
+
+### ② 措辞更正（更正 SU(2026-11-25) ⑥ 的 **L3 行**）
+
+> **原登记**：「L3 = RC 的**规范性**一级来源**未获取** ⇒ ④ 条件⑤ 的登记载体亦须随之另议」
+
+- ⛔ **更正为**：「**经本次核查未发现**任何 ISA / 标准组织文档 normative 地定义 release consistency（N1）⇒ 非『未获取』而是『**经核查未发现**该类来源』；其**原始定义**（N2）**不含 `ppo` 形式化**；**经核查未发现**给出 RC 之 `ppo` 形式化的一手材料（N3）⇒ ⇒ **无外部 `ppo` 序锚点可得** ⇒ ⇒ **④ 条件⑤ 末句的「若」不触发**（例外清单**未**新增任何非-Oswald 的语义来源）⇒ ⇒ **登记载体无须另议**」
+- **「未获取」→「经核查未发现」**：前者暗示「再找找就有」，后者是核查后的结论（N1 / N3）—— ⛔ **否定断言的措辞受检索边界限制**（⛔ 不得表述为「不存在」的绝对断言）。
+- ⚠️ **SU ② 的母句处置**（`ADR-CEP-22:379-381`「RC 的**规范性**一级来源…本仓**尚未获取**…⛔ 该证据强度缺口**保持打开**」）：经本段核实 ⇒ **经本次核查未发现**规范级背书来源（N1 / N3）⇒ ⇒ 该缺口由「**等待获取**」**关闭为「无此类来源可得」**；残余的强度限制由 ④ 的**对照登记**（**人工评审级** · ⛔ 不可机检）**部分缓解**，但 ⛔ **「缺口完全闭合」不成立**（对照不可机检 ⇒ 强度上限仍在）。
+
+### ②bis mini supersede 清单（本段更正的**逐处**列名 · 与 Entry #546 的 13 行体例一致）
+
+| # | 被更正的**位置** | 本段处置 |
+|:--:|---|---|
+| ① | SU(2026-11-25) ⑥ 的 **L3 行**（`:443`） | 本段 ② 的更正文本（**措辞更正**） |
+| ② | SU(2026-11-25) ② 的**诚实边界母句**（`:379-381`） | 本段 ② 的**母句处置行**（缺口由「等待获取」关闭为「无此类来源可得」；⛔ 「完全闭合」不成立） |
+
+⇒ ⛔ **本段不更正其余任何位置** ⇒ 决策 3 的正文（`:59-76`）与 SU(2026-11-25) **②~⑦** 的其余内容**逐字不动**（② 仅母句被更正 · ⑥ 仅 L3 行被更正）。
+
+### ③ ④ 条件⑤ 的「若」为何不触发（枢轴 · 本段的核心论证）
+
+- 条件① 的「**语义刻画来源**」指向 **定义性刻画**（一致性接口的**请求类型分类**），**不是**序规则来源 ⇒ 例外清单的语义刻画锚点 = **Oswald 论文的四分 taxonomy**（`T-C12` / `H-C04`，**已在** `source-manifest.json` 的 `claims[]` 内登记）。
+- 条件④ 的末句已明确：「**定义性刻画**（如请求类型分类）的锚点**不受本条限制** —— 惟其派生的序规则须按条件②**显式标注为本仓派生**」。
+- ⇒ 例外清单 `{RC-acquire, RC-release, RC-data}` 的现状**本就合规**（条件① ✓ · 条件④ ✓ · 条件⑤ 双方锚点已在 `claims[]` ✓）⇒ ⇒ **不需要**新增任何非-Oswald 的语义来源 ⇒ ⇒ **条件⑤ 末句的「若」不触发** ⇒ ⇒ **登记载体无须另议**。
+
+### ④ 对照登记（**一手来源** · ⚠️ **人工评审级 · ⛔ 不可机检** · ⛔ 三表取值零变更）
+
+- **RC 的经典刻画**（*Adve & Gharachorloo*, "Shared Memory Consistency Models: A Tutorial", *IEEE Computer* 29(12):66–76, 1996, §6.4.2；亦见 *Adve* 博士论文 Definition 2.4）的三条 perform 条件 ⇒ 推出 **RC 的 `po` 保留集合 = {R→R, R→W, W→W}**（**缺 W→R**）：条件 (1)「ordinary 访存 perform 前所有**先前 acquire** 必须 perform」⇒ 保留以 acquire 读为源的边；条件 (2)「release access perform 前所有**先前 ordinary** 必须 perform」⇒ 保留以 release 写为目标的边；条件 (3)「special accesses 之间 processor consistent」⇒ 不新增边。
+- ⇒ 与本仓 `mesif` 域（`RC-acquire` / `RC-release`）的**实测** `ppo` 边集合（**R→R · R→W · W→W**；实现锚点 = `include/tlm/cep/memory_model_trace.hh:181-211` 的 `allow_read` / `allow_write` / `domain_preserves_po`）**一致** ⇒ ⇒ **未发现方向性反证**（在上述双一手来源为真的前提下）⇒ ⇒ **§2 的自洽性对照「缺 W→R —— 恰是 RC 经典结构」成立** ⇒ ⇒ ⛔ **零变更处置成立**（否定性处置的举证负担 = 「无反证」而非「证明正确」）· ⛔ **RC 三表取值零变更**。
+- ⚠️ **证据强度**：条文来源已**一手逐字核对**（*Adve* 博士论文 **Definition 2.4** + *Adve & Gharachorloo* 1996 §6.4.2 的 RCsc `ppo` 约束表 —— **双来源互证**）⇒ 但 ⚠️ 两件**只取文核对、不入仓**（⛔ 第三方原文不存放）⇒ ⇒ **本项是「一手来源 + 人工评审级」**，**仍不可**成为**仓内可机检**锚点 ⇒ ⇒ **条件⑤ 的机检要求未因本段而满足**（登记载体仍无须另议 ⇒ 与 ③ 的结论一致）⇒ ⛔ **不得**当作鉴别力判据（与条件④ 的「人工评审」定位一致）。
+- ⚠️ **与 SU(2026-11-25) ② 的并存关系**：② 说「⛔ **论文未给出** RC 的 `ppo` 形式化 ⇒ 其正确性**由本仓负责**，**不以论文为据**」；本段说「与 **RC 本身**的经典刻画一致」⇒ ⇒ **两句并存且不矛盾**：前者是**关于论文**的事实，后者是**关于 RC**的对照 ⇒ ⇒ **正确性归属不变**（仍归本仓）—— ⛔ **不得**把本段读成「RC 三表已获外部背书 / 已机检」。
+
+### ⑤ 后续选项（登记 · 本段不处置）
+
+- 若要把 ④ 的对照**升格为可机检锚点** ⇒ 须引入外部文献的抽取件（逐字节入 git）+ **扩 manifest**（`schema: cep-oswald-source-manifest/v1` 的身份失真 ⇒ v2 改名或另立 manifest）+ `claims[]` 追加 + **P-4 下界 24 → 25** + index 同步 + P-6 双向对账 ⇒ ⇒ **另立**（⛔ 不在本段）。
+- ⚠️ 即便如此，**④ 所引的 perform 条件来源**（*Adve* 论文 Def 2.4 · Tutorial 1996 §6.4.2）**均不含 `ppo` 形式化**（N2；⛔ **非** N4 的 RVWMO 类**变体规范**——后者含 `ppo` 但语义对象不同，本就不可作锚点）⇒ 本仓的读侧 / 写侧分列授权表**仍须派生** ⇒ ⇒ 引入**不改变**「本仓解释性建模」这一定性 ⇒ ⇒ 升格的收益仅止于「对照可机检」。
+
+### ⑥ 本段的边界
+
+- ⛔ **零实施**：不改 manifest / schema / 实例声明面 / 实现 / 测试 ⇒ **零 spec 变更** · **零冻结面 hash 变更**（仅本 ADR 一处 hash 变更）· **新增 invariant 数 = 0**。
+- ⛔ **不构成对任何已签批 ADR 的替代**；⛔ 不改 `ADR-CEP-13` SU(2026-11-24)（其 ② R5 的族级结论不依赖本段）—— ⚠️ 若日后要把 ④ 的对照扩展到 `ADR-CEP-13`，须另立。
+- ⛔ **否定断言**（N1 / N3）受检索边界限制 ⇒ 日后若出现新的 RC `ppo` 形式化材料 ⇒ 以**取代流程**处理（⛔ **不得**直接改本段）。
+- ⚠️ **本次未核查项（点名登记 · 检索完备性的诚实边界）**：① **Primer 2nd ed. §5「Relaxed Memory Consistency」（pp. 55–89）是否含 `ppo_rcsc` 关系式** —— 本地取文尝试失败（作者镜像不可达）⇒ **未核实**；② **Arm ARM（DDI 0487）正文** —— 本次**未尝试** ⇒ **未核实**。⇒ 二者若日后核出含 RC 之 `ppo` 形式化 ⇒ 本段的「无外部 `ppo` 序锚点可得」结论**须以取代流程**修正。
+- ⚠️ **A3 的首个后续项**：若要把 ④ 的对照**升格为「仓内可机检」** ⇒ 须引入外部件的**抽取件逐字节入 git** + **扩 manifest**（`schema: cep-oswald-source-manifest/v1` 身份失真 ⇒ v2 改名或另立 manifest）+ `claims[]` 追加 + **P-4 下界 24 → 25** + index 同步 + P-6 双向对账 ⇒ ⇒ **另立**（⛔ 不在本段）。
+- **关联**：台账 Entry **#548** · 调研与决策报告 `.rddf/reviews/adr-cep22-l3-rc-ppo-source-review.md`（§1 仓内取证 · §2 外部事实 · §3 决策 · §5 SU 段草案 · §6 诚实边界）· 论文侧锚点面 `docs/research/oswald/source-manifest.json` · 闸 `scripts/test/cep_oswald_provenance_check.sh`。

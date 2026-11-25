@@ -318,13 +318,13 @@ SU(2026-11-25) ④ 的条件⑤ 末句（`ADR-CEP-22:424-425`）：
 
 ---
 
-## 5. **待落盘的 SU 段草案**（✅ **双审已闭合**（§4.4 · critic 复审 APPROVE）⇒ ⛔ **仅差 planner 台账 Entry 先行** 即可落盘）
+## 5. **SU 段草案 → 已落盘**（✅ 双审已闭合（§4.4）· ✅ 台账 Entry **#548** 已落（commit `c127ee82`）· ✅ **落盘于 ADR-CEP-22 文末**（`:463-521` · 60 行纯追加 / 0 删除））
 
 > **落点**：`docs/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md` **文末追加**（**追加式** · 正文零改动 · M1 冻结面 ⇒ 走五步链）。
 > **⛔ 措辞纪律**：① 否定断言用「**经本次核查未发现**」（非「不存在」）② A2 标「**人工评审级 · 不可机检**」③ ⛔ 不出现「已获外部背书 / 已机检 / 已证明」类措辞。
 
 ```markdown
-## Status Update（2026-11-25，per 台账 Entry **#N**）—— SU(2026-11-25) ⑥ 的 **L3** 闭环：RC 一级来源核实 + 「登记载体无须另议」的裁定
+## Status Update（2026-11-25，per 台账 Entry **#548**）—— SU(2026-11-25) ⑥ 的 **L3** 闭环：RC 一级来源核实 + 「登记载体无须另议」的裁定
 
 > **本段处置**：SU(2026-11-25) ⑥ 登记的 **L3**（「RC 的**规范性**一级来源未获取 ⇒ ④ 条件⑤ 的登记载体须另议」）的**核实 + 裁定**。
 > ⛔ **决策 1~9 的结论零变更** · ⛔ **RC 三表取值零变更** · ⛔ **④ 例外清单零变更** · ⛔ **新增 invariant 数 = 0** ·
@@ -382,7 +382,7 @@ SU(2026-11-25) ④ 的条件⑤ 末句（`ADR-CEP-22:424-425`）：
 - ⛔ **否定断言**（N1 / N3）受检索边界限制 ⇒ 日后若出现新的 RC `ppo` 形式化材料 ⇒ 以**取代流程**处理（⛔ **不得**直接改本段）。
 - ⚠️ **本次未核查项（点名登记 · 检索完备性的诚实边界）**：① **Primer 2nd ed. §5「Relaxed Memory Consistency」（pp. 55–89）是否含 `ppo_rcsc` 关系式** —— 本地取文尝试失败（作者镜像不可达）⇒ **未核实**；② **Arm ARM（DDI 0487）正文** —— 本次**未尝试** ⇒ **未核实**。⇒ 二者若日后核出含 RC 之 `ppo` 形式化 ⇒ 本段的「无外部 `ppo` 序锚点可得」结论**须以取代流程**修正。
 - ⚠️ **A3 的首个后续项**：若要把 ④ 的对照**升格为「仓内可机检」** ⇒ 须引入外部件的**抽取件逐字节入 git** + **扩 manifest**（`schema: cep-oswald-source-manifest/v1` 身份失真 ⇒ v2 改名或另立 manifest）+ `claims[]` 追加 + **P-4 下界 24 → 25** + index 同步 + P-6 双向对账 ⇒ ⇒ **另立**（⛔ 不在本段）。
-- **关联**：台账 Entry **#N** · 调研与决策报告 `.rddf/reviews/adr-cep22-l3-rc-ppo-source-review.md`（§1 仓内取证 · §2 外部事实 · §3 决策 · §5 SU 段草案 · §6 诚实边界）· 论文侧锚点面 `docs/research/oswald/source-manifest.json` · 闸 `scripts/test/cep_oswald_provenance_check.sh`。
+- **关联**：台账 Entry **#548** · 调研与决策报告 `.rddf/reviews/adr-cep22-l3-rc-ppo-source-review.md`（§1 仓内取证 · §2 外部事实 · §3 决策 · §5 SU 段草案 · §6 诚实边界）· 论文侧锚点面 `docs/research/oswald/source-manifest.json` · 闸 `scripts/test/cep_oswald_provenance_check.sh`。
 ```
 
 ---
