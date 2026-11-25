@@ -29070,3 +29070,13 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 - ⛔ **不新增** `INV-CEP-*`（编号位不变）· **不新建** openspec change · **不动**冻结清单（零变更）
 - ⛔ **不处置** SU ⑥ 的 **L2 / L3**（各自归口）
 - ⛔ **不声称**「六条判据的反向 fixture 与 ADR 字面完全一致」（见 ⑤ 第 7 项的诚实边界）
+
+### Entry #547 收口 — 2026-11-25 [builder]（**落盘 commit 指针** · 本 Entry 的最终回归回执）
+
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | **落盘 commit** | ✅ `b2c458e7` —— 7 文件（+567 / −3）：测试断言补齐 · 新闸 · ctest 注册 · `scripts/README.md` 守门表 + 反向 fixture 登记 · 基线登记册 §0.1 计数 · 台账本 Entry · 裁决简报编号对照注 | `git show --stat b2c458e7` |
+| 2 | **提交后终检**（工作区 == HEAD ⇒ 相关判据转绿） | ✅ `ctest` **209/209** · `cep_*.sh` **55/55** · 文档闸全绿（`docs_sync_check --strict` / `docs_adr_index_check` / `archive_verify_check --strict` / `markdown_link_check` / `agents_md_lint --all --strict`）· 冻结面无参复验 **95 产物一致** · 工作区干净 | 回执 |
+| 3 | **⛔ 遗留清扫**（本批次范围） | ✅ 无 TODO / FIXME / 半截实现 / 注释掉的代码块 / 被 skip 的测试 / 临时 fallback · 探针的 `stderr` 输出**仅**用于环境错误提示（对应 exit 2 纪律）· 所有写入均在 `mktemp -d` 影子树（`sha256sum` 前后比对 5 个仓内文件）· `run_trace` 既有签名**未变**（24 处调用全保留） | 同上 |
+| 4 | **⛔ 登记面核查**（`docs/ONBOARDING.md` §5.5） | ✅ **无需改动** —— 该表是**精选**（11 个 `cep_*.sh` vs 仓内 **55** 个）⇒ 近期新增闸（`cep_hop_timing_capabilities_check` / `cep_fence_effects_check` / `cep_oswald_provenance_check` / `cep_engine_capabilities_check` / `cep_compound_graph_falsification_check`）**均不在其中** ⇒ 现行做法 = 新闸的登记面是 `scripts/README.md` 守门表 + 反向 fixture 登记表（本批次已落） | 实测 grep + `scripts/README.md` |
+| 5 | **SU ⑥ 三项连带的状态** | **L1 ✅ 本 Entry 闭合** · **L2 ⭭ 未处置**（v1 迹为手写 ⇒ 判定与仿真无关 ⇒ 运行期采集**另立 backlog**）· **L3 ⭭ 未处置**（RC 规范性一级来源未获取 ⇒ ④ 条件⑤ 的登记载体另议 ⇒ **另立调研单元**） | `ADR-CEP-22` SU ⑥ |
