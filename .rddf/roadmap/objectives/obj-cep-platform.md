@@ -29134,9 +29134,17 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | 新增 `INV-CEP-*` | **0** | 纯登记 |
 | KPI Proposed 并发 | 0/3 不变 | 不新建 change |
 
-**⑤ 实施结果（收口 · 待 builder 回填）**
+**⑤ 实施结果（收口 · 2026-11-25 · builder）**
 
-> ⛔ 由 builder 在步 5 完成后回填（产物 commit · 清单 commit · 无参复验 rc=0 · 零回归口径 · 遗留清扫）。
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | ② 的 1 项改动面（SU 追加） | ✅ 全落 —— `ADR-CEP-22` **`:463-521`**（**60 行纯追加 / 0 删除** · `git diff -U0` 删除行 = 0 · 决策块计数合计 **145**（26 份）不变） | commit `cd33f7bf` |
+| 2 | **双审闭合** | ✅ oracle 1 轮 `NEEDS-REVISION`（方向 PASS）⇒ 3 MAJOR + 4 MINOR **全闭** · critic 第 1 轮 `REJECT`（1 BLOCKER + 2 NITS）⇒ **全闭** · 复审（第 2 轮 = 预算上限）**`APPROVE` · `mergeable: yes`** | 报告 §4.4 |
+| 3 | **五步授权链** | ✅ 步1 本 Entry `c127ee82` → 步2 产物 `cd33f7bf` → 步3 `--update --authorized-by "Entry #548"`（**新增 0 · 移出 0 · hash 变更 1** · 95 产物）→ 步4 清单**单独** commit `a012e8b8`（diff 精确 3 行）→ 步5 无参复验 **rc=0**（95 产物 hash 全一致） | 各 commit |
+| 4 | **零回归（全量口径 · ⛔ 无过滤）** | ✅ `ctest` **209/209** · `cep_*.sh` **55/55** · `docs_sync_check --strict` / `agents_md_lint --all --strict` / `docs_adr_index_check` / `archive_verify_check --strict` / `cep_freeze_check`（无参）全绿 | 本轮实跑 |
+| 5 | **遗留清扫** | ✅ 顺带修 **`cep_freeze_auth_selftest` 自测③ 常红** —— `### Entry #547 收口 — …` 被 `entry_ids_of()` 解析为 `Entry #547 收口`（非规范 id）；该行由上一轮 `fe7ed14a` 引入（收口记录写在全量回归**之后**）⇒ 标题改回规范形态 + 加形态订正说明（**正文零变更** · ⛔ 未放宽闸的判据口径） | commit `cc7df00b` |
+| 6 | **登记面核查** | ✅ 零新增闸 / 零新增测试 / 零新增 spec ⇒ 无计数登记项（`cep_*.sh` 55 · `cep_*.py` 14 · ctest 209 · 冻结产物 95 全部不变）；`docs/ONBOARDING.md` §5.5 是**精选表** ⇒ 无需改动 | 本表 ④ |
+| 7 | **诚实边界（⛔ 不夸大）** | ⛔ **A2 = 一手来源 + 人工评审级 · 不可机检** ⇒ 条件⑤ 的**机检要求未因本段而满足**（这是 C-0 的必然结果）· ⛔ **「缺口完全闭合」不成立** · 未核查项（Primer 2nd ed. §5 · Arm ARM DDI 0487）已在 SU ⑥ **点名登记** ⇒ 日后若核出含 RC 之 `ppo` 形式化 ⇒ **以取代流程**修正 | SU ⑥ |
 
 **⑥ 不做项**
 
