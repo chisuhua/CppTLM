@@ -47,11 +47,15 @@ SU(2026-11-25) ④ 的条件⑤ 末句（`ADR-CEP-22:424-425`）：
 
 ### 1.2 仓内 RC 授权表的**实际效果**（按 8 个实例的 `consistency_labels` 实测）
 
-| 实例 | `consistency_labels` | 该域的 `ppo` 边集合 |
+> **实测口径**：本表**非推导** —— 由只读探针按**仓内实现**（`memory_model_trace.hh` 的 `allow_read` / `allow_write` /
+> `domain_preserves_po`）逐实例计算得出（探针置于**仓外** `/tmp/opencode/l3probe/` ⇒ **仓内零写入**）· 判据标签取自
+> `include/tlm/cep/protocol_instances.json` 的 `consistency_labels`。
+
+| 实例 | `consistency_labels` | 该域的 `ppo` 边集合（**实测**） |
 |---|---|---|
 | `mesif` | read `RC-acquire` / write `RC-release` | **R→R · R→W · W→W**（**缺 W→R**） |
 | `moesi_gpu` | read `RC-data` / write `RC-release` | **R→W · W→W** |
-| `chi_rnf` · `cxl_2_0` · `cxl_3_0_symmetric` · `tilelink_c` · `nvlink_4` | SC / SC | 全部 po 边 |
+| `chi_rnf` · `cxl_2_0` · `cxl_3_0_symmetric` · `tilelink_c` · `nvlink_4` | SC / SC | 全部 po 边（R→R · R→W · W→R · W→W） |
 | `ualink_4` | PLO / PLO | R→W · W→W |
 
 ⇒ **ADR 自陈的自洽性对照**（`:76`）：「`mesif`（RC-acquire/RC-release）⇒ R→R · R→W · W→W（**缺** W→R —— **恰是 RC 经典结构**）」
