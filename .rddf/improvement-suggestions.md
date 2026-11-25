@@ -50,3 +50,13 @@
 |---|---|---|---|
 | [cep-protocol-engine-capability-declaration](improvements/cep-protocol-engine-capability-declaration.md) | P1 | gap 分析 G1（协议 FSM 承载能力无机器可查的现状面）；来源 = `.rddf/roadmap/cep-gen-family-gap-closure.md` §2.2 F1/F2/F3 + §2.3 G1；先例 = `MesifProtocolEngine::kEngineDecisions[]` | 2026-11-23 |
 | [cep-litmus-falsifier-naming-disambiguation](improvements/cep-litmus-falsifier-naming-disambiguation.md) | P2 | gap 分析 G6（「litmus」命名与能力错配）；来源 = 同文件 §2.3 G6；✅ **已实施阶段 1 并归档**（零冻结面 · 零 main spec delta · `skip_specs: true`；⏸ 阶段 2 另立） | 2026-11-23 |
+
+## 2026-11-25 · ADR-CEP-22 SU ⑥ 的 L2 承接（1 份）
+
+> **来源**：`ADR-CEP-22` SU(2026-11-25) ⑥ 的 **L2** 行（「v1 的迹为手写 ⇒ 判定与仿真无关 ⇒ **另立 backlog**」）。
+> **缺口实测**：该「另立」从未执行 —— `.rddf/improvements/`（建条目前 **73** 份）无此条 · 本索引无相关行 · 台账 §11 仅 4 处散文边界声明（`:28661` / `:29037` / `:29084` / `:29155`）。
+> **性质**：`🟢 已登记·backlog` · ⛔ **未立项 ⇒ 不占 KPI slot** · ⛔ **只登记，不实施**（开工前须先过架构裁决 —— 见条目 What Changes ⑥ 的立项门）。
+
+| Improvement | Priority | 来源 | 创建日期 |
+|---|---|---|---|
+| [cep-memory-model-runtime-trace](improvements/cep-memory-model-runtime-trace.md) | P2 | `ADR-CEP-22` SU(2026-11-25) ⑥ 的 **L2** 行 | 2026-11-25 |
