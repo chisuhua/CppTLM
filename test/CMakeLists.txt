@@ -390,6 +390,22 @@ add_test(NAME cep_adr_verification_carriers_reverse_verify
 set_tests_properties(cep_adr_verification_carriers_reverse_verify
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# `ADR-CEP-22` §Verification 的 **V-22-3 / V-22-5 / V-22-7 / V-22-10** 四条判据的
+# **反向 fixture**(per 台账 Entry #547 · SU ⑥ 的 **L1**):
+#   · **聚合毒化**(V-22-3):影子树改「**任一**候选成环即证伪」⇒ `co-two-candidates`
+#     (co1 成环 + co2 可行)判定应从 `not_falsified` **翻成** `falsified` ⇒ 探针必红;
+#   · **公理面毒化**(V-22-5):影子树让**域内** `rf` 也进公理面 ⇒ `:rf` 边出现 ⇒ 探针必红;
+#   · **派生毒化**(V-22-7):影子树**关掉** `rfe` 派生 ⇒ 跨域环断 ⇒ 判定翻成 `not_falsified`
+#     ⇒ 探针必红(⛔ 不可用「关掉 `fr`」作毒化 —— 该环**不依赖** `fr`,per V-22-7 明文);
+#   · **登记毒化**(V-22-10):影子树把本 ADR 移出 `decision_adrs` ⇒ 结构闸必红(未登记即红)。
+#    ⚠️ 本脚本**只写自己的 `mktemp -d`** ⇒ 仓内文件零改动 ⇒ **可安全并行进 ctest**。
+#    ⚠️ 探针**独立于** C++ 测试二进制 ⇒ 即便用例被删,本 fixture 仍红(删除韧性)。
+#    ⚠️ 探针**编译失败 ⇒ exit 2**(环境错误),⛔ 不得冒充判据失败。
+add_test(NAME cep_compound_graph_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_compound_graph_reverse_verify.sh)
+set_tests_properties(cep_compound_graph_reverse_verify
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # `cep-*` 契约面 `openspec validate --strict` 的**零容忍**守门闸(per change
 # `cpptlm-cep-spec-strict-compliance`):`validate <change>` **不查 `MODIFIED` 块长度**
 # (工具注释原文 `MODIFIED is left alone`)⇒ 超长只能在归档合并后成立,而此前**无闸覆盖**

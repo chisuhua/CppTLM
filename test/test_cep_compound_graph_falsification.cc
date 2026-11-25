@@ -110,7 +110,14 @@ namespace {
     }
 
     /// 跑一条迹（解析 + 判定）⇒ 产物（⛔ 解析失败 ⇒ `invalid` + 原因码）。
-    cep::CompoundGraphVerdict run_trace(const nlohmann::json& tj, std::size_t cap = 4096) {
+    ///
+    /// ⚠️ `labels` = **注入的**域标签面（默认 = 仓内声明面）。
+    ///    合成标签面是**必需**的：仓内声明面**无** `TSO` 实例（`ADR-CEP-22` 决策 3：
+    ///    TSO **v1 不登记** · 0 实例）⇒ `model-semantics-unavailable` 分支对
+    ///    **仓内语料不可达** ⇒ 若只靠仓内语料，该原因码**永远不会被断言**。
+    cep::CompoundGraphVerdict run_trace_with(const nlohmann::json& tj,
+                                             const mm::InstanceLabelMap& labels,
+                                             std::size_t cap = 4096) {
         mm::Trace t;
         mm::ParseError err;
         if (!mm::parse_trace(tj, t, err)) {
@@ -124,7 +131,12 @@ namespace {
                               "（per `ADR-CEP-13` 决策 5 ②「平台不提供无违例保证」）";
             return v;
         }
-        return cep::evaluate_compound_graph_falsification(t, instances(), cap);
+        return cep::evaluate_compound_graph_falsification(t, labels, cap);
+    }
+
+    /// 跑一条迹（**仓内**声明面）。
+    cep::CompoundGraphVerdict run_trace(const nlohmann::json& tj, std::size_t cap = 4096) {
+        return run_trace_with(tj, instances(), cap);
     }
 
     bool has_class(const std::vector<std::string>& v, const std::string& c) {
@@ -353,6 +365,61 @@ TEST_CASE("CEP composite-graph: 截断 ⇒ undecided + search-truncated（⛔ �
     CHECK(cut.verdict == cep::FalsifyVerdict::Undecided);
     CHECK(cut.reason == "search-truncated");
     CHECK(cut.search_truncated == true);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  [fixture] 域标签**未登记**（TSO / 未知）⇒ 不可判 + `model-semantics-unavailable`
+//  —— ADR-CEP-22 §Verification **V-22-4**「原因码闭集（**每码一条**）」的**第 11 码**
+//  —— ⚠️ 该码在**仓内语料下不可达**（0 个 TSO 实例）⇒ 必须**合成**标签面来断言
+// ══════════════════════════════════════════════════════════════════════════════
+TEST_CASE("CEP composite-graph: 域标签未登记 ⇒ undecided + model-semantics-unavailable（⛔ 不得静默当 SC）",
+          "[cep][compound-graph][falsification][fixture]") {
+    const auto traces = repo_traces();
+    REQUIRE(traces.count("xdomain-sb") == 1);
+
+    // ⚠️ 仓内声明面**无** `TSO` 实例（`ADR-CEP-22` 决策 3：TSO **v1 不登记** · 0 实例）
+    //    ⇒ 该分支对仓内语料**不可达** ⇒ 只能**合成**标签面断言
+    //    （⛔ 否则「每码一条」的第 11 码**永不被断言** ⇒ 「有登记、无牙齿」）。
+    auto synth = [](mm::Label read, mm::Label write) {
+        auto m = instances();
+        m.at("chi_rnf").read = read;   // ⛔ `at` ⇒ 实例不存在时**抛**（不静默造默认标签）
+        m.at("chi_rnf").write = write;
+        return m;
+    };
+
+    // ① 读侧标签 = `TSO` ⇒ 整域**不可判**
+    {
+        const auto v =
+            run_trace_with(traces.at("xdomain-sb"), synth(mm::Label::TSO, mm::Label::SC));
+        CHECK(v.verdict == cep::FalsifyVerdict::Undecided);
+        CHECK(v.reason == "model-semantics-unavailable");
+        CHECK(v.cycle.empty());                            // ⛔ 不可判 ⇒ ⛔ 不得给见证
+        CHECK(v.verdict != cep::FalsifyVerdict::NotFalsified);  // ⛔ 不得降级为「未证伪」
+        CHECK(v.verdict != cep::FalsifyVerdict::Falsified);      // ⛔ 不得判「已证伪」
+    }
+    // ② 写侧标签 = `Unknown` ⇒ 同样**不可判**
+    {
+        const auto v =
+            run_trace_with(traces.at("xdomain-sb"), synth(mm::Label::SC, mm::Label::Unknown));
+        CHECK(v.verdict == cep::FalsifyVerdict::Undecided);
+        CHECK(v.reason == "model-semantics-unavailable");
+    }
+    // ③ 授权表侧：`TSO` / `Unknown` ⇒ `allow_read` / `allow_write` **恒 false**
+    //    （⛔ 不得静默当 `SC` —— per `memory_model_trace.hh` §授权表的「TSO / Unknown ⇒ false」行）
+    for (auto k : {mm::PoEdgeKind::RR, mm::PoEdgeKind::RW, mm::PoEdgeKind::WW}) {
+        CHECK(mm::allow_read(mm::Label::TSO, k) == false);
+        CHECK(mm::allow_write(mm::Label::TSO, k) == false);
+        CHECK(mm::allow_read(mm::Label::Unknown, k) == false);
+        CHECK(mm::allow_write(mm::Label::Unknown, k) == false);
+    }
+    // ④ 域模型语义缺失 ⇒ **整域**不可判 ⇒ 环 / 见证 / 候选 / 公理面**全空**
+    {
+        const auto v =
+            run_trace_with(traces.at("xdomain-sb"), synth(mm::Label::TSO, mm::Label::SC));
+        CHECK(v.candidate_outcomes.empty());
+        CHECK(v.axiom_edges.empty());
+        CHECK(v.cycle.empty());
+    }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

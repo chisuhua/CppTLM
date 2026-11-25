@@ -57,6 +57,7 @@
 | `cep_mesif_adapter_reverse_verify.sh` | MESIF **实现层**判据（队列 #9 `cpptlm-cep-mesif-adapter` 的 MA-01 ~ MA-05 / MA-08 / HD-01 ~ HD-05）的反向验证。**每条 fixture 声明期望失败模式**（`compile-lock` 须命中指定 `static_assert` 文案 / `runtime-predicate` 须命中指定判据 id）⇒「因正确原因红」有机器判定；探针按 `[spec]` / `[impl]` / `[decl]` 三层打印失败 id | ✅ 生效（ctest 注册） |
 | `cep_flow_support_reverse_verify.sh` | `flow_support` 值层判据(6 个 `repo_owned` 实例 × 10 键 = 60 格)的**反向验证**(2 类毒化副本:声明源副本漂移 1 格 / 期望表副本漂移 1 格)—— **只写临时目录**(env 覆盖指向副本)⇒ 仓内零改动 | ✅ 生效（ctest 注册） |
 | `cep_adr_verification_carriers_reverse_verify.sh` | `ADR` Verification 判据载体(change `cpptlm-cep-adr-verification-carriers`)的**反向验证** —— ① **宽度毒化**(影子树改 `kResponderMappedBits` 4→8 ⇒ 编译最小探针 ⇒ 运行期退出码即判决;⛔ 编译失败 ⇒ exit 2 环境错误)② **覆盖毒化**(影子树删 `ADR-CEP-20` 一个 `### 决策 N` 段 ⇒ 决策块闸必红 + 归因含文件名)。⛔ **不毒化快照**(闸的 `load_snapshot()` 固定读真实仓根)⇒ 仓内零改动 ⇒ 可并行 | ✅ 生效（ctest 注册） |
+| `cep_compound_graph_reverse_verify.sh` | `ADR-CEP-22` §Verification 的 **V-22-3 / V-22-5 / V-22-7 / V-22-10** 四条判据的**反向验证**(per 台账 Entry #547 · SU ⑥ 的 **L1**)—— ① **聚合毒化**(影子树改「任一候选成环即证伪」⇒ `co-two-candidates` 判定应翻成 `falsified`)② **公理面毒化**(影子树让域内 `rf` 进公理面 ⇒ `:rf` 边出现)③ **派生毒化**(影子树关掉 `rfe` 派生 ⇒ 跨域环断;⛔ 不可用「关掉 `fr`」作毒化 —— 该环不依赖 `fr`)④ **登记毒化**(影子树把本 ADR 移出 `decision_adrs` ⇒ 结构闸必红)。探针为**自带最小 TU**(独立于 C++ 用例 ⇒ 删除韧性)· 运行期退出码即判决(⛔ 编译失败 ⇒ exit 2)⇒ 仓内零改动 ⇒ 可并行 | ✅ 生效（ctest 注册） |
 | `cep_spec_strict_check.sh` | `cep-*` 契约面 `openspec validate --strict` 的**零容忍**守门闸(change `cpptlm-cep-spec-strict-compliance`):① `--specs --strict --json` 过滤 `cep-` ⇒ **invalid == ∅**（⛔ 无基线豁免）② **覆盖对账**（items == specs 目录数 ∧ cep- 项 == cep-* 目录数，防工具静默跳过）③ 环境缺失（`openspec` / `python3`）⇒ **exit 2** ④ 打印工具版本（判据 owner 在仓外 ⇒ 本闸是变更检测器）⑤ **反向 fixture 两条毒化**（Purpose 占位 / Requirement >500 字符，经共享影子树 helper）⇒ invalid_ids 恰好 +1。⚠️ 它存在的理由：`validate <change>` **不查 `MODIFIED` 块长度** ⇒ 超长只能在归档后成立，此前无闸覆盖 | ✅ 生效（ctest 注册） |
 | `cep_cxl_dcoh_state_spec_reverse_verify.sh` | 队列 #12 规约载体（`CDS-01` ~ `CDS-07`）的反向验证（4 类毒化副本） | ✅ 生效（ctest 注册） |
 | `cep_tilelink_adapter_reverse_verify.sh` | 队列 #11 实现层 adapter（`TLA-01` ~ `TLA-13`）的反向验证 | ✅ 生效（ctest 注册） |
@@ -275,6 +276,21 @@
 | **CR-14** ① | 抑制 CompAck / 重复完成 ⇒ `comp_ack_sent` 不再是**恰好 1** | `[cep][chi-rnf][cr-14]` |
 | **subset 排除项** | 9 个排除 opcode 注入 ⇒ 全拒 + 三条后果（无通道事件 / 不占 TxnID / 不进发射队列） | `[cep][chi-rnf][subset-exclusions]` |
 | **消费方覆盖** | 从声明里摘掉 `chi_rnf` ⇒ 装配闸 `per_instance` 缺失该实例 | `[cep][chi-rnf][consumers]` |
+
+### 反向 fixture 登记（`ADR-CEP-22` —— 每域模型来源与域间边构造规则）
+
+> **纪律**：同上。本批的判据**分两类载体** ⇒ fixture 也分两类：**运行期语义判据**（聚合 / 公理面 / 派生）用
+> **影子树改实现 + 自带最小探针 TU**（⛔ 编译失败 ⇒ exit 2，**不得冒充判据失败**）；**登记类判据**用
+> **影子树改登记表**跑既有结构闸。⚠️ 探针**独立于** Catch2 用例 ⇒ 用例被删时 fixture 仍红（删除韧性）。
+
+| 判据 | 反向 fixture（形态） | 登记位置 |
+|------|----------------------|----------|
+| **V-22-3** | 影子树把聚合改成「**任一**候选成环即证伪」⇒ `co-two-candidates`（co1 成环 + co2 可行）判定从 `not_falsified` 翻成 `falsified` ⇒ 探针退出码 ≠ 0 | `cep_compound_graph_reverse_verify.sh`「毒化 ①」（ctest `cep_compound_graph_reverse_verify`）+ `[cep][compound-graph][falsification][fixture]`「∃/∀ 聚合」 |
+| **V-22-4** | 原因码闭集**每码一条**断言（**11 码**）⇒ ⛔ 第 11 码 `model-semantics-unavailable` 对仓内语料**不可达**（0 个 TSO 实例）⇒ 必须**合成**标签面断言 | `[cep][compound-graph][falsification][fixture]`「域标签未登记 ⇒ undecided + model-semantics-unavailable」 |
+| **V-22-5** | 影子树让**域内** `rf` 也进公理面 ⇒ `:rf` 边出现 ⇒ 探针退出码 ≠ 0 | `cep_compound_graph_reverse_verify.sh`「毒化 ②」+ `[cep][compound-graph][falsification][fixture]`「`rf` vs `rfe` 分类边界」 |
+| **V-22-6** | ① 线程无域字段 ⇒ `invalid` + `unbound-domain` ② 域标识写错 ⇒ `invalid` + `no-domain-instance` | `[cep][compound-graph][falsification][fixture]`「反 fixture —— 派生边 / 未绑定域 / 未知实例」 |
+| **V-22-7** | 影子树**关掉** `rfe` 派生 ⇒ 跨域环**断** ⇒ 判定从 `falsified` 翻成 `not_falsified`（⛔ **不可**用「关掉 `fr`」作毒化 —— 该环**不依赖** `fr`） | `cep_compound_graph_reverse_verify.sh`「毒化 ③」+ `[cep][compound-graph][falsification][repo-corpus]`「正控 —— 金标准违例迹」 |
+| **V-22-10** | 影子树把本 ADR 移出 `decision_adrs` ⇒ `cep_adr_structural_check.sh` 必红（**未登记即红**） | `cep_compound_graph_reverse_verify.sh`「毒化 ④」 |
 
 ## 路径引用注意
 

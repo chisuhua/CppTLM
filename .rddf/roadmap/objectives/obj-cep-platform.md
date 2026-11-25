@@ -29004,3 +29004,69 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | 5 | **零回归（全量口径 · ⛔ 无过滤）** | ✅ `cep_*.sh` **54/54** · `ctest` **全量** · `cep_docs_sync_check --strict` 绿 · `docs_sync_check --strict` 绿 · `agents_md_lint --all --strict` 绿 · `cep_decision_block_check` 20/20 · `cep_oswald_provenance_check` P-1~P-7 全绿（**24/24** 锚点）+ `--selftest` 4/4 变异按预期红因变红 | 见回执 |
 | 6 | **实施中发现 · 新增义务 ①**：**文件系统 100% 满**（30G 用尽）⇒ 影子树机制无法创建拷贝根 ⇒ `cep_decision_block_check` 等多个闸**假红**（非判据失效）⇒ 回收 `build-asan`（**3.0G** · gitignored · 上次使用 **2026-10-24**）⇒ 闸恢复 20/20 绿 | ✅ 已回收 · 可用 4.4G | `df -h /` |
 | 7 | 实施中发现 · 新增义务 ②：论文侧锚点 claims **21 → 24**（新增 `H-C03` PLO 一手 / `H-C04` §II-B / `H-C05` 会议版 §V-B · 扩 `T-C12` 区间 `[6887,6890]`）⇒ **5 处文档计数**（父层 `docs/research/AGENTS.md` · `oswald/README.md` · `oswald/AGENTS.md` · `scripts/README.md` · 闸 P-4 下界）**同批同步** | ✅ 全落 | commit `04476d99` |
+### Entry #547 — 2026-11-25 [builder](**SU ⑥ 的 L1 闭环** —— `ADR-CEP-22` §Verification 的 **V-22-3/4/5/6/7/10** 六条判据**载体回填** + 实测暴露的**真实缺口补齐**)
+
+**主题**：把 `ADR-CEP-22` SU(2026-11-25) ⑥ 登记的 **L1**（「六条判据仍标『⭭ 待落地』⇒ 判据载体回填」）从**文档回填**推进到**实测核对 + 真实缺口补齐** —— 逐条核对六条判据的 ADR 要求载体与仓内实际载体，发现 **1 条缺 1 码断言 + 4 条缺机制级反向 fixture** ⇒ 补齐（**零冻结面变更**）。
+**元**：判据定义 `docs/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md` §Verification（`:252-270`）· 实现面 `include/tlm/cep/compound_graph_falsifier.hh` + `include/tlm/cep/memory_model_trace.hh` · 契约面 `openspec/specs/cep-compound-graph-falsification/spec.md` · 新闸 `scripts/test/cep_compound_graph_reverse_verify.sh` · 台账 = 本 Entry（**canonical**，per `cep-registry-stale-cleanup` AC-11 裁决「canonical = 台账 §11」）。
+
+**① 授权理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | **L1 是 SU ⑥ 显式登记的连带项**（归口 planner）⇒ 本 Entry 承接 | ✅ | `ADR-CEP-22` SU ⑥ 的 L1 行 |
+| 2 | **canonical 落点 = 台账 §11**（append-only 决策流水）⇒ 载体回填**不另立真源** | ✅ | `cep-registry-stale-cleanup` AC-11 + `cep-gap-plan-adjudication-q1-q11-2026-11-20.md` Q-7 裁决 |
+| 3 | **⛔ 不改 `ADR-CEP-22` 正文**：§Verification 是**签发前置**的判据定义，其「⭭ 待落地」是**签发时刻（2026-11-24）的诚实状态**（实现 change 在其后才落地）⇒ **不是漂移**；改之即篡改历史状态 | ✅ | ADR 不可变纪律（根 `AGENTS.md` ADR 条目）+ 先例 `cpptlm-cep-adr-verification-carriers` M-6（「⛔ 不追加 SU ⇒ 以台账 Entry 为准」） |
+| 4 | **零冻结面变更** ⇒ **不走五步链**（`include/tlm/cep/*.hh` · `test/*` · `scripts/*` 均不在 M1 冻结 glob 内；ADR 与 `openspec/specs/cep-*` 不动） | ✅ | `cep_freeze_check.sh` 无参复验 **95 产物 hash 一致** |
+| 5 | **新增 invariant 数 = 0**（复用 `INV-CEP-13-IC1`）· 零 spec 变更（TSO 分支的 Requirement 已存在） | ✅ | 本 Entry ④ |
+
+**② 六条判据的逐条核对（ADR 要求 vs 实测 vs 处置）** —— ⛔ **本表是本 Entry 的核心产出**
+
+| 判据 | ADR §Verification 要求（载体 + 反向 fixture） | 实测（2026-11-25） | 判定 | 本批次处置 |
+|:--:|---|---|:--:|---|
+| **V-22-3** | 载体 = §2 决策 5③；反向 fixture = 「co1 成环 + co2 可行 ⇒ `not_falsified`」+ 毒化「改成任一成环即证伪 ⇒ 必红」 | 正向载体齐（迹 `co-two-candidates` + 用例「∃/∀ 聚合 —— 某候选成环 ⛔ 不等于 证伪」）；**机制级毒化载体缺**（仓内无针对复合图的反向 fixture 脚本） | 🟡 正向齐 · 毒化缺 | ✅ 毒化 ①：影子树改聚合为「任一成环即证伪」⇒ 判定从 `not_falsified` **翻成** `falsified` ⇒ 探针退出码 ≠ 0 |
+| **V-22-4** | 四态 + 原因码闭集（**每码一条**）；毒化「`undecided` ⇒ `not_falsified` ⇒ 必红」 | 四态枚举齐（`.hh:78-83`）· 码表 **11** 个（`.hh:87-100`）；**11 码中 10 码有测试断言**；**第 11 码 `model-semantics-unavailable` 零断言** —— 根因：仓内声明面 **0 个 `TSO` 实例**（`ADR-CEP-22` 决策 3：TSO **v1 不登记**）⇒ 该分支对**仓内语料不可达** | 🔴 **缺 1 码** | ✅ 合成标签面（`run_trace_with` 注入 `InstanceLabelMap`）⇒ 新增用例 4 组断言：读侧 `TSO` ⇒ `undecided` + 该码 + 不得降级为 `not_falsified` / 写侧 `Unknown` ⇒ 同 / 授权表 `TSO`·`Unknown` ⇒ `allow_read`·`allow_write` **恒 false** / 整域不可判 ⇒ 环·见证·候选·公理面**全空** |
+| **V-22-5** | 公理面边类 == `{ppo_com, rfe, fr, ws}`（⛔ 不含域内 `rf`）+ 观测面**报告**域内 `rf`；反向 fixture「往公理面塞一条域内 `rf` ⇒ 必红」 | 正向载体齐（用例「`rf` vs `rfe` 分类边界 + 派生边集合逐条核对」+ 观测面/公理面分离断言）；**机制级毒化缺** | 🟡 正向齐 · 毒化缺 | ✅ 毒化 ②：影子树让**域内** `rf` 进公理面 ⇒ 公理面出现 `:rf` 边 ⇒ 探针退出码 ≠ 0（⚠️ `:rf` 是 `:rfe` 的**前缀** ⇒ 须比对**结尾**） |
+| **V-22-6** | 域标签解析链可机判（域标识 → 实例 → `consistency_labels`）；反向 fixture ① 线程无域字段 ⇒ `invalid` + `unbound-domain` ② 域标识写错 ⇒ `invalid` + `no-domain-instance` | **两条反 fixture 齐备**（用例「反 fixture —— 派生边 / 未绑定域 / 未知实例 ⇒ 必拒收」）⇒ 六条中**唯一完全落地**的一条 | ✅ **全落地** | ⛔ 不改（本批次零改动） |
+| **V-22-7** | 金标准违例 case（跨域 `rfe` 拉环）⇒ `falsified` + 见证；反向 fixture = **关掉 `rfe` 派生** ⇒ 环断 ⇒ 判定**必须变** `not_falsified`（⛔ **不可**用「关掉 `fr`」作毒化 —— 该环**不依赖** `fr`） | 正控齐（迹 `xdomain-sb` ⇒ `falsified` + 见证 `w1→r1→w2→r2→w1` + 四类边）；companion 迹 = **换语料**（域绑定不同 ⇒ 读自为域内 `rf`）⇒ 效果等价但**非** ADR 要求的机制级毒化 | 🟡 正向齐 · 毒化形态不同 | ✅ 毒化 ③：影子树**关掉 `rfe` 派生** ⇒ 跨域环断 ⇒ 判定从 `falsified` 翻成 `not_falsified` ⇒ 探针退出码 ≠ 0（**按 ADR 明文**用「关 `rfe`」而非「关 `fr`」） |
+| **V-22-10** | 登记三件套（`decision_adrs` 含本 ADR · 冻结链跑通 · 索引/编号表含 `CEP-22`）；反向 fixture「把本 ADR 从 `decision_adrs` 移除 ⇒ 必红」 | 三件套**齐备**（`decision_adrs` **23** 项含 `ADR-CEP-22-*.md` · 冻结链无参复验 rc=0 · `docs/adr/README.md:60` + `ADR-CEP-NUMBER-MAP.md:74` 均命中）；结构闸有 **3 个决定性变异**（未归类 / 死行豁免 / 未登记即红）⇒ 判据本体有牙，但**「移除」方向的具体变异未做** | 🟡 三件套齐 · 变异形态不同 | ✅ 毒化 ④：影子树移除 ⇒ `cep_adr_structural_check.sh` 必红（归因「未归类的 ADR 文件 1 份」） |
+
+**③ 口径订正（对 SU ⑥ 的 L1 行）**
+
+- SU ⑥ 把 L1 写作「**判据载体回填**」⇒ **实测后订正**为「**回填 + 真实缺口补齐**」：六条中 **1 条全落地 / 4 条缺机制级反向 fixture / 1 条缺 1 码断言** ⇒ L1 的**内容**比原登记的「回填」多出**两个实施单元**。
+- ⚠️ **裁决简报的连带编号漂移**：`.rddf/reviews/cep-adr22-rc-family-adjudication-brief.md` 的 **L2** 指的正是本 Entry 的 **L1**（简报用「G2 实施面」编号）⇒ **以 `ADR-CEP-22` SU ⑥ 的编号为准**（已在简报加对照注）。
+- ⛔ **SU ⑥ 的 L2 / L3 不在本批次处置**（L2 = 手写迹 ⇒ 运行期采集，另立 backlog；L3 = RC 规范性一级来源未获取，另立调研）。
+
+**④ 计数面（实测为准）**
+
+| 面 | 变化 | 依据 |
+|---|---|---|
+| `cep_*.sh` 闸数 | 54 → **55**（+1：新闸） | `ls scripts/test/cep_*.sh` |
+| `cep_*.py` 闸数 | 14 → **14** | 同上 |
+| 闸族合计 | 68 → **69** | 基线登记册 §0.1（**同步已落**） |
+| `test_cep_*.cc` 文件数 | 80 → **80**（⛔ 未新建测试文件 —— 追加到既有文件） | `ls test/test_cep_*.cc` |
+| ctest 条目数 | 208 → **209**（+1） | `ctest -N` |
+| M1 冻结产物数 | **95 → 95**（零变更 ⇒ 无需五步链） | `cep_freeze_check.sh` 无参复验 |
+| 主 spec 数 / `cep-*` 数 | 不变（零 spec 变更） | 基线登记册 §0.1 |
+| 新增 `INV-CEP-*` | **0** | 本批次只加断言与 fixture |
+| KPI Proposed 并发 | 0/3 不变（零新建 change） | `openspec list` |
+
+**⑤ 实施结果（收口 · 2026-11-25）**
+
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | **② 逐条核对**（六条判据 × ADR 要求 / 实测 / 判定） | ✅ 全落 —— 1 条全落地 · 4 条缺机制级毒化 · 1 条缺 1 码断言 | 本 Entry ② |
+| 2 | **V-22-4 缺码补齐** | ✅ 新增用例「域标签未登记 ⇒ `undecided` + `model-semantics-unavailable`（⛔ 不得静默当 SC）」4 组断言 + `run_trace_with` 标签面注入 helper（⛔ 既有 `run_trace` 签名**不变**） | `test/test_cep_compound_graph_falsification.cc`（8 用例 / 225 断言绿） |
+| 3 | **V-22-3/5/7/10 机制级毒化补齐** | ✅ 新闸 4 条毒化全部**按正确原因红**：① 聚合翻 `falsified` ② 公理面出现 `:rf` ③ `rfe` 派生关掉 ⇒ 环断翻 `not_falsified` ④ 移出 `decision_adrs` ⇒「未归类的 ADR 文件 1 份」 | `scripts/test/cep_compound_graph_reverse_verify.sh`（**15 项全绿**） |
+| 4 | **新闸形态纪律** | ✅ 只写 `mktemp -d` ⇒ 仓内零改动（`sha256sum` 前后比对 5 个文件）· 探针**自带最小 TU**（独立于 Catch2 ⇒ 删除韧性）· **编译失败 ⇒ exit 2**（不冒充判据失败）· **运行期退出码即判决** | 同上 |
+| 5 | **ctest 注册 + 文档面同步** | ✅ `test/CMakeLists.txt` 注册 `cep_compound_graph_reverse_verify` · `scripts/README.md` 守门表 +1 行 + 「反向 fixture 登记」新小节（6 条判据 → fixture 映射）· 基线登记册 §0.1 计数 55/69 | 同上 |
+| 6 | **零回归（全量口径 · ⛔ 无过滤）** | ✅ `ctest` **209/209** · `cep_*.sh` **55/55** · `docs_sync_check --strict` / `docs_adr_index_check` / `archive_verify_check --strict` / `agents_md_lint --all --strict` / `cep_registry_baseline_check` 全绿 · 冻结面无参复验 **95 产物一致** | 回执 |
+| 7 | **诚实边界（⛔ 不夸大）** | ⛔ 本批次**未**改 `ADR-CEP-22` 正文 ⇒ 其「⭭ 待落地」标注**仍在**（**签发时刻的正确状态**，非漂移）· ⛔ `model-semantics-unavailable` 分支**对仓内语料仍不可达**（0 个 TSO 实例）⇒ 其断言**依赖合成标签面**，**不是**仓内语料的端到端证据 · ⛔ 毒化 fixture 证明的是「判据**有牙**」，**不**证明公理成立 · ⛔ 毒化**载体形态**为本仓既有 `*_reverse_verify.sh` 形态（与 ADR 的**语义要求**一致，**非** ADR 字面要求的「改动措辞」） | 本 Entry ② + ② 的处置列 |
+
+**⑥ 不做项**
+
+- ⛔ **不改 `ADR-CEP-22`**（正文与 SU 均零 diff）—— 载体现状以**本 Entry**（canonical）为准
+- ⛔ **不改** `openspec/specs/cep-compound-graph-falsification/spec.md`（TSO 分支的 Requirement 已存在 ⇒ 零 spec 变更）
+- ⛔ **不改** `include/tlm/cep/protocol_instance.schema.json` / `protocol_instances.json` / `test/cep_adr_structural_deferrals.json` / `test/cep_memory_model_traces.json`（**只读**；毒化全在影子树）
+- ⛔ **不新增** `INV-CEP-*`（编号位不变）· **不新建** openspec change · **不动**冻结清单（零变更）
+- ⛔ **不处置** SU ⑥ 的 **L2 / L3**（各自归口）
+- ⛔ **不声称**「六条判据的反向 fixture 与 ADR 字面完全一致」（见 ⑤ 第 7 项的诚实边界）
