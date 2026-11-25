@@ -29271,9 +29271,15 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | `cep_*.sh` / `test_cep_*.cc` / ctest | **不变**（55 / 80 / 209） | 不新增脚本与测试 |
 | 新增 `INV-CEP-*` / openspec change / KPI slot | **0 / 0 / 0** | 纯登记 |
 
-**⑤ 实施结果（收口 · 待 builder 回填）**
+**⑤ 实施结果（收口 · 2026-11-26 · builder）**
 
-> ⛔ 由 builder 在步 5 完成后回填（产物 commit · 清单 commit · 无参复验 rc=0 · 零回归 · 遗留清扫）。
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | ② 的 1 项改动面（SU 追加） | ✅ 全落 —— `ADR-CEP-22` **`:523-568`**（**47 行纯追加 / 0 删除** · 决策块计数 **145**（26 份）不变） | commit `99e60130` |
+| 2 | **五步授权链** | ✅ 步1 本 Entry `efdaa713` → 步2 产物 `99e60130` → 步3 `--update --authorized-by "Entry #550"`（**新增 0 · 移出 0 · hash 变更 1** · 95 产物）→ 步4 清单**单独** commit `67adeda1`（diff 精确 3 行）→ 步5 无参复验 **rc=0**（95 产物 hash 全一致） | 各 commit |
+| 3 | **零回归（全量口径 · ⛔ 无过滤）** | ✅ `ctest` **209/209** · `cep_*.sh` **55/55** · `docs_sync_check --strict` / `agents_md_lint --all --strict` / `docs_adr_index_check` / `cep_docs_sync_check` / `cep_freeze_check`（无参 rc=0）全绿 | 本轮实跑 |
+| 4 | **遗留清扫 + 材料一致性** | ✅ 无 TODO / 占位；`grep cep-memory-model-runtime-trace <ADR>` 仅命中 **`:523` / `:547` / `:564`**（全在新段内 ⇒ 未误改正文）；台账非规范 entry id = **0** | 本轮实跑 |
+| 5 | **边界核查（⛔ 逐条）** | ✅ ⛔ 未声称 `V-13-4` 判读被取代（新段 ④ 明文「仍未触发」）· ⛔ 决策 8 的 Out-of-Scope 定性不变 · ⛔ `ADR-CEP-13` **零改动** · ⛔ improvement 状态未动（仍 `🟢 已登记·backlog`） | 新段 ④ + `git status` |
 
 **⑥ 不做项**
 
