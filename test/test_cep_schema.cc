@@ -606,8 +606,9 @@ TEST_CASE(
     CHECK_FALSE(cpptlm::cep::protocol_version_allowed("mesif-9.9", table, ssp_ids));
     CHECK_FALSE(cpptlm::cep::protocol_version_allowed("", table, ssp_ids));
     // 反向 fixture:分支 ② 的两条判别力载体(红因各不相同)
-    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("user:no_such_ssp", table, ssp_ids)); // id 未登记
-    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("user:", table, ssp_ids));            // 空 id
+    CHECK_FALSE(
+        cpptlm::cep::protocol_version_allowed("user:no_such_ssp", table, ssp_ids)); // id 未登记
+    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("user:", table, ssp_ids));    // 空 id
     // 正控:表内取值 ⇒ 谓词为真(否则上面的反控可能因谓词恒假而恒绿)
     CHECK(cpptlm::cep::protocol_version_allowed("chi-r2", table, ssp_ids));
     CHECK(cpptlm::cep::protocol_version_allowed("mesif-1.0", table, ssp_ids));
@@ -876,8 +877,7 @@ TEST_CASE("[cep][schema] 07 号 §5.1 的 adapter 实例数与表格行数一致
 //   per ADR-CEP-12 SU(2026-11-26)· ADR-CEP-24 SU 第三则 §6 V-24-13(3 → 4)
 //   ⛔ 本单元**只扩取值域** —— 13 必含属性个数 / INV-CEP-12-IC1 立法意图零改动
 // ─────────────────────────────────────────────────────────────────────────
-TEST_CASE("[cep][schema] family 域必须含 4 值且 user-defined 可解析",
-          "[cep][schema][ic1]") {
+TEST_CASE("[cep][schema] family 域必须含 4 值且 user-defined 可解析", "[cep][schema][ic1]") {
     using namespace tlm::cep;
     REQUIRE(kProtocolFamilyCount == 4u);
 
@@ -912,8 +912,7 @@ TEST_CASE("[cep][schema] family 域必须含 4 值且 user-defined 可解析",
 //   per ADR-CEP-11 SU(2026-11-26)③ 第 2 面(protocol_version pattern 必改)
 //   ⛔ INV-CEP-12-IC1 的 13 必含个数零改动(只扩 enum / pattern 取值域)
 // ─────────────────────────────────────────────────────────────────────────
-TEST_CASE("[cep][schema] family enum 必须含 4 值且必含属性个数仍为 13",
-          "[cep][schema][ic1]") {
+TEST_CASE("[cep][schema] family enum 必须含 4 值且必含属性个数仍为 13", "[cep][schema][ic1]") {
     const json s = load_schema();
     const auto& fam = s.at("properties").at("family").at("enum");
     REQUIRE(fam.size() == 4u);
@@ -946,11 +945,11 @@ TEST_CASE("[cep][schema] protocol_version pattern 必须容纳 user:<ssp-id> 两
     CHECK(std::regex_match("user:a1", re));
 
     // ── 反向 fixture:pattern 必须拒(各自按**正确原因**红)──────────
-    CHECK_FALSE(std::regex_match("user:Mesif", re));   // 大写
-    CHECK_FALSE(std::regex_match("user:1abc", re));    // 数字开头
-    CHECK_FALSE(std::regex_match("user:a-b", re));     // 含 `-`(官方版本分隔符)
-    CHECK_FALSE(std::regex_match("user:a.b", re));     // 含 `.`
-    CHECK_FALSE(std::regex_match("user:", re));        // 空 id
+    CHECK_FALSE(std::regex_match("user:Mesif", re)); // 大写
+    CHECK_FALSE(std::regex_match("user:1abc", re));  // 数字开头
+    CHECK_FALSE(std::regex_match("user:a-b", re));   // 含 `-`(官方版本分隔符)
+    CHECK_FALSE(std::regex_match("user:a.b", re));   // 含 `.`
+    CHECK_FALSE(std::regex_match("user:", re));      // 空 id
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -981,8 +980,7 @@ TEST_CASE("[cep][schema] 两分支谓词必须接受 user:<已登记 ssp-id> 且
 }
 
 // Entry #109 G-2 的**机器化**:两分支谓词必须只有一份实现 —— ⛔ 无第二份拷贝
-TEST_CASE("[cep][schema] 两分支谓词只有唯一实现(禁第二份拷贝)",
-          "[cep][schema][ic1]") {
+TEST_CASE("[cep][schema] 两分支谓词只有唯一实现(禁第二份拷贝)", "[cep][schema][ic1]") {
     // ① helper 存在且可调用(单一真源)
     const std::set<std::string> table{"chi-r2"};
     const std::set<std::string> ids{"mesif_ssp"};
