@@ -29487,3 +29487,73 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 - ⛔ **既有 6 份 `*_state_spec.hh` 的迁移**（`ADR-CEP-24` §8 F3）
 - ⛔ **`CP-Q-1b`**（键子集 / `family` / `protocol_version`）⇒ 仍待裁
 - ⛔ 不改 `protocol_instance.schema.json`（实例面 14 属性不动 · `test_cep_schema.cc:443` 须仍绿）
+
+---
+
+### Entry #554 — 2026-11-26 [planner](**CP-Q-1b 落盘授权** —— 3 份 ADR SU **同批**（`-24` 决策 3.2 三项已裁 + V-24-13 4 值域 · `-11` 决策 3/IC1/决策 5 两分支 · `-12` family 4 值域）· **一次五步链**)
+
+**主题**：授权 `CP-Q-1b` 裁决（**已 ratify** 用户批准 R1~R4）落盘 —— 3 份**已签批 ADR** 各追加一段 Status Update（**纯追加**），使 `ADR-CEP-24` §8 **F5 全部闭合**，并为**批 2**（S1 的解释器 + 装配 + 掩码格 + 4 件套）提供契约依据。
+**元**：裁决 `.rddf/reviews/cep-CP-Q-1b-adjudication.md`（已 ratify · oracle 2 轮〔首审 `REJECT` → 8/8 闭合 → 复审 `APPROVE`〕· critic 1 轮 `APPROVE_WITH_CONDITIONS`〔**0 BLOCKER** · 1 SHOULD_FIX + 4 NIT 全落〕）· `ADR-CEP-24`（3 则 SU）· `ADR-CEP-11`（4 则 SU）· `ADR-CEP-12`（14 则 SU）
+
+**① 授权理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | **用户 ratify R1~R4**（先「批准R1~R3」→ §7.3 澄清「R1 的受限 6 已含 R4 内容」→ 选「甲：R4 一并批准」）| ✅ | 裁决 §7.1~§7.3 |
+| 2 | **oracle 2 轮**：首审 `REJECT`（8 finding，含 1 **架构性错误**：`combination_capabilities` 不能划「框架固定」）→ 修订 v2 → 复审（聚焦闭合）`APPROVE`（8/8 · 2/2 独立验证点未改坏）| ✅ | 裁决 §0 |
+| 3 | **critic 1 轮** `APPROVE_WITH_CONDITIONS`（`mergeable: yes` · `scope_exceeded: false` · **0 BLOCKER**）⇒ 1 SHOULD_FIX（**漏 `openspec/specs/cep-core-contracts/spec.md` 的 IC1 Scenario** ⇒ 已补入 `-11` SU ③ 成本表 #6）+ 4 NIT 全落 | ✅ | `-11` SU ③ #6/#7 · `-24` SU ②/NIT① · `-24` SU ③ NIT② · `-12` SU ④ NIT③ · `-12` SU ② NIT④ |
+| 4 | ⛔ **三份必须同批**（oracle 首审 finding 2 的承重约束）—— 拆批会造成「ADR 允许、spec 仍禁」的反向矛盾 | ✅ | `-11` SU ③ #7 的完备性口径 |
+| 5 | 三份 ADR **正文零改动**（实测：首个 SU 之前逐行与 HEAD 一致）| ✅ | `git show HEAD:<p>` vs 工作树的正文段 diff = 空 |
+| 6 | ⛔ **不落 contract**（schema / 头文件 / 测试 / spec 的实际改动属**批 2** 的 change）| ✅ | 本 Entry ⑥ |
+
+**② 本批次改动面（3 项 · 封闭 · 均纯追加 0 删除）**
+
+| # | 事项 | 判据（可判定） | diff |
+|:--:|---|---|---|
+| 1 | **`ADR-CEP-24` 第三则 SU**：决策 3.2 的 Q1/Q2/Q3 **三项已裁** + §6 的 **V-24-13 取值域 3→4**（以 SU 为准 · 正文不改）+ V-24-13「载体列」陈旧登记 + 决策 7 的 ⏳ 闭合 | `grep -c "^## Status Update"` == **3** · 正文（首个 SU 前）与 HEAD 逐行一致 | **+33 / -0** |
+| 2 | **`ADR-CEP-11` 新 SU**：**决策 3 + `INV-CEP-11-IC1` + 决策 5** 三处两分支化（`user:<ssp-id>` 合法）+ 可证不相交 + **完整成本 7 行**（含 critic 补的 `cep-core-contracts` spec）+ revisit trigger | 同上（SU 段数 4）· 正文一致 | **+48 / -0** |
+| 3 | **`ADR-CEP-12` 新 SU**：`family` **3→4 值**（加 `user-defined`）+ 13 键划分表（自由 5/受限 6/框架 1）+ 6 处改动面 + 4 处连带面（含 NIT③ 的「两批」澄清）+ `combination_contract` 的批 2 open item | 同上（SU 段数 14）· 正文一致 | **+60 / -0** |
+
+**③ 五步授权链（本 Entry 是步 1 · **一次**覆盖 3 份 ADR）**
+
+1. **本 Entry #554**（台账授权 · `--authorized-by` 的载体）
+2. builder commit：3 份 SU 段**落盘**（**一个**产物 commit —— ⛔ 不得拆成 3 个）
+3. `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #554"`（**清单更新** · 预期：新增 **0** · 移出 **0** · hash 变更 **3**）
+4. **清单单独 commit**（⛔ 不得与产物同 commit）
+5. **无参复验**：`bash scripts/test/cep_freeze_check.sh` ⇒ rc=0
+
+**④ 计数面（预期变化 · 以命令实测为准）**
+
+| 面 | 预期 | 依据 |
+|---|---|---|
+| 冻结产物 `artifact_count` | **97 → 97** | 仅 hash 变更 3 处 |
+| 决策块计数（`test/cep_decision_block_snapshot.json`） | **不变**（27 份 / 152 块）| SU 追加在 `## Status Update` 之后（先例 #550 / #552）· ⚠️ 实测已确认未翻转 |
+| `decision_adrs` | **不变**（24）| 不新增 ADR |
+| 根 `AGENTS.md` 计数 | **不变**（24）| 不新增 ADR |
+| 新增 `INV-CEP-*` / openspec change / KPI slot | **0 / 0 / 0** | 纯登记（IC1 号不变，只扩取值域）|
+
+**⑤ 实施结果（收口 · 待 builder 回填）**
+
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | ② 的 3 项改动面 | ⏳ | — |
+| 2 | 五步授权链 | ⏳ | — |
+| 3 | 零回归（全量口径）| ⏳ | — |
+| 4 | 遗留清扫 | ⏳ | — |
+
+**⑥ 不做项**
+
+- ⛔ **不改** 3 份 ADR 的**正文**（决策 1~7 / 决策 2~3 / 决策 1、8、9、10 的结论零变更）
+- ⛔ **不改** `INV-CEP-11-IC2`（唯一真源地位不变）
+- ⛔ **不改** `INV-CEP-12-IC1` 的 **13 必含个数**
+- ⛔ **不落 contract**：`protocol_instance.schema.json`（`family` enum + `protocol_version` pattern）· `protocol_family.hh`（6 处）· `test_cep_schema.cc`（IC1 通用闸两分支化 + pattern 用例）· **`openspec/specs/cep-core-contracts/spec.md` 的 IC1 Scenario** · 共享 helper —— **全部属批 2 的 change**（本 Entry 只登记其成本，⛔ 不实施）
+- ⛔ 不把任何用户自创版本**写入** `ADR-CEP-11` §3 的锁定表
+- ⛔ 不把「批 2 已就绪」表述为「S1 完整」—— 批 1 已归档但**不绑定实例**，批 2 才是「装配 + 实验」的交付
+
+**⑦ 连带闭合（同一批）**
+
+| 项 | 动作 | 归属 |
+|---|---|---|
+| objective `CP-Q-1b` | → ✅ **闭合**（裁决已 ratify + 3 份 SU 落盘后）| planner（本批）|
+| `ADR-CEP-24` §8 **F5** | → ✅ **全部闭合**（`CP-Q-1a` 事件字母表 + `CP-Q-1b` 三项）| — |
+| 批 2 立项目 | → **解除阻塞**（`CP-I-2` 的批 2 部分：解释器 + 装配 + 掩码格 + 4 件套）| planner（后续）|
