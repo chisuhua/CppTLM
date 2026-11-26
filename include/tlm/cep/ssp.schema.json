@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cpptlm.local/schemas/ssp.schema.json",
+  "title": "CEP SSP declaration (cep-ssp-declaration/v1)",
+  "description": "用户自定义稳定态协议（SSP）声明面。⛔ 不进 protocol_instance.schema.json（实例面 14 属性不动）。协议名只允许出现在本**数据**文件（第四类允许面 · ADR-CEP-07A SU 2026-11-26）。",
+  "type": "object",
+  "required": ["schema", "ssps"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": { "const": "cep-ssp-declaration/v1" },
+    "_note": { "type": "string" },
+    "ssps": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/ssp" }
+    }
+  },
+  "definitions": {
+    "event": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "anchor": {
+          "type": "string",
+          "description": "14 核心锚之一（event_alphabet.hh）。与 flow 二选一。",
+          "enum": [
+            "ReadShared", "ReadUnique", "Write", "WriteNoAlloc", "Upgrade",
+            "SnoopShared", "SnoopUnique", "SnoopInvalidate",
+            "EvictDirty", "EvictClean",
+            "Cap", "Grow", "Prune", "Report"
+          ]
+        },
+        "flow": {
+          "type": "string",
+          "description": "canonical 10 流之一。无 anchor 时必须；有 anchor 时可省略（由锚派生）。",
+          "enum": [
+            "request", "completion", "snoop", "snoop_resp", "writeback",
+            "forward_data", "back_invalidate", "address_resolve", "barrier", "snoop_completion_ack"
+          ]
+        },
+        "architect_approval": {
+          "type": "string",
+          "description": "无等价核心锚的私有事件 ⇒ 必须给出 architect 批准记录指针（CP-Q-1a 裁决 AC-3）。"
+        }
+      },
+      "allOf": [
+        {
+          "if": { "not": { "required": ["anchor"] } },
+          "then": { "required": ["flow", "architect_approval"] },
+          "description": "无 anchor ⇒ 须 flow + architect_approval（私有事件）"
+        }
+      ]
+    },
+    "basis_kind_row": {
+      "type": "array",
+      "items": { "enum": ["primary", "structural", "analogical", "derived"] }
+    },
+    "basis_pending_row": {
+      "type": "array",
+      "items": { "type": "boolean" }
+    },
+    "ssp": {
+      "type": "object",
+      "required": [
+        "id", "states", "events", "transition", "perm",
+        "basis_kind", "basis_pending",
+        "basis_projection_kind", "basis_projection_pending"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "全局唯一（装配期唯一性检查 · E2）"
+        },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/event" }
+        },
+        "transition": {
+          "type": "array",
+          "description": "states × events；单元 = 目标 state 名，或 null（空洞）。维度一致性由 loader 校验（E5）。",
+          "items": {
+            "type": "array",
+            "items": { "type": ["string", "null"] }
+          }
+        },
+        "perm": {
+          "type": "array",
+          "description": "states 长度；4 值锁（CEN-Ib11）。",
+          "items": { "enum": ["none", "read", "unique", "writeback"] }
+        },
+        "basis_kind": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/basis_kind_row" }
+        },
+        "basis_pending": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/basis_pending_row" }
+        },
+        "basis_projection_kind": {
+          "type": "array",
+          "items": { "enum": ["primary", "structural", "analogical", "derived"] }
+        },
+        "basis_projection_pending": {
+          "type": "array",
+          "items": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

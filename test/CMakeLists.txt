@@ -1110,3 +1110,12 @@ set_tests_properties(agents_md_lint_all PROPERTIES WORKING_DIRECTORY ${CMAKE_SOU
 add_test(NAME agents_md_lint_selftest
          COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/test/agents_md_lint.py --selftest)
 set_tests_properties(agents_md_lint_selftest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# ── 2026-11-26(per 台账 Entry #553 / change cep-ssp-declaration):**SSP 声明面（批 1）** ──
+# ★ V-24-2 killer：`ssps.json` 的 MESIF SSP 与 `mesif_state_spec.hh` 的 `kTable` 逐格相等
+#   （state/event 数 · transition 目标 · perm 投影 · 逐格 basis.kind/pending · 投影 basis）·
+#   **双向** + 反向见证（JSON 改一格 ⇒ 不等）+ loader fail-closed 红因签名 E1..E12 抽样
+#   + 14 核心锚封闭 / 逐字名 / flow 部分映射的诚实边界。
+add_test(NAME cep_ssp_declaration COMMAND cpptlm_tests "[cep][ssp]" -r compact)
+add_test(NAME cep_ssp_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_ssp_check.sh)

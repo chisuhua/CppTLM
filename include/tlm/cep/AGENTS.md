@@ -21,6 +21,8 @@
 | `channel_dependency_graph.hh` | 通道依赖图 |
 | `engine_capabilities.hh` | 协议引擎承载能力声明面（G1 · 现状登记） |
 | `hop_timing_capabilities.hh` | 协议语义层的 hop / 时序建模声明面（G10 · 现状登记） |
+| `event_alphabet.hh` | **SSP 事件字母表**（14 核心锚 · 封闭 · flow 部分映射 · `ADR-CEP-24` 决策 3.1） |
+| `ssp_loader.hh` | **SSP 声明面 loader**（fail-closed · 红因码 `E1`~`E12` · ⛔ 不承诺语义） |
 | `fence_effects.hh` | fence 一致性效果的**派生声明面**（G4 · 由标签 + barrier 推导） |
 
 ### 协议适配（每协议一组：engine / adapter / state_spec）
@@ -33,7 +35,7 @@
 
 ### 声明源（JSON + 同 schema 锁）
 
-`fabric.json` / `collective_planes.json` / `perm_upgrades.json` / `protocol_instances.json` —— 每个都有同名 `.schema.json`。
+`fabric.json` / `collective_planes.json` / `perm_upgrades.json` / `protocol_instances.json` / `ssps.json` —— 每个都有同名 `.schema.json`。
 
 ## 本目录铁律
 

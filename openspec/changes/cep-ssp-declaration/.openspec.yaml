@@ -1,0 +1,23 @@
+schema: spec-driven
+created: 2026-11-26
+x-phase: phase-10
+x-priority: P1
+x-status: in_progress
+goal: |
+  把「用户自定义稳定态协议」从「写 C++ 插件」降为「填 JSON 声明 + 写适配器」——
+  **批 1**（本 change）= 事件字母表契约 + SSP 声明面 + loader + **V-24-2 逐格对账**。
+  ⛔ **不含**通用解释器 / 装配集成 / 掩码格扩展 / 实验 4 件套（⇒ 批 2 另立）。
+  ⛔ 零实例面变更（`protocol_instance.schema.json` 14 属性不动）· ⛔ 零 ADR 正文变更 ·
+  ⛔ 零 invariant 新增（复用 INV-CEP-07A-IC2 / INV-CEP-12-IC1 / CEN-Ib1 / CEN-Ib11）·
+  ⛔ 与 `ADR-CEP-24` 决策 1.3 的五件排除物（DSL/解析器/IR/生成器/烘焙）零交集。
+affected_areas:
+  - include/tlm/cep/event_alphabet.hh
+  - include/tlm/cep/ssp.schema.json
+  - include/tlm/cep/ssps.json
+  - include/tlm/cep/ssp_loader.hh
+  - test/test_cep_ssp_declaration.cc
+  - scripts/test/cep_ssp_check.sh
+  - openspec/specs/cep-ssp-declaration/spec.md
+  - test/CMakeLists.txt
+  - scripts/README.md
+  - include/tlm/cep/AGENTS.md

@@ -1,0 +1,42 @@
+{
+  "schema": "cep-ssp-declaration/v1",
+  "_note": "SSP 声明面数据。⚠️ 'mesif_ssp' 是 `include/tlm/cep/mesif_state_spec.hh` 的 `kTable` 的**一次性手工转写**（转写时以 grep 辅助核对）⇒ 由 test_cep_ssp_declaration.cc 的 V-24-2 逐格 diff **持续守护**。⛔ 无 repeatable code→data 管线 ⇒ 不构成 ADR-CEP-24 决策 1.3 的「烘焙」。协议名只允许出现在本数据文件（第四类允许面 · ADR-CEP-07A SU 2026-11-26）。",
+  "ssps": [
+    {
+      "id": "mesif_ssp",
+      "states": ["I", "S", "E", "M", "F"],
+      "events": [
+        {"name": "Rd", "anchor": "ReadShared"},
+        {"name": "RdUnique", "anchor": "ReadUnique"},
+        {"name": "Wr", "anchor": "Write"},
+        {"name": "Upgrade", "anchor": "Upgrade"},
+        {"name": "SnpShared", "anchor": "SnoopShared"},
+        {"name": "SnpUnique", "anchor": "SnoopUnique"}
+      ],
+      "transition": [
+        ["S", "E", "I", "I", "I", "I"],
+        ["S", "E", "S", "E", "S", "I"],
+        ["E", "E", "M", "E", "F", "I"],
+        ["M", "M", "M", "M", "F", "I"],
+        ["F", "E", "F", "E", "F", "I"]
+      ],
+      "perm": ["none", "read", "unique", "writeback", "writeback"],
+      "basis_kind": [
+        ["primary", "primary", "primary", "primary", "primary", "primary"],
+        ["primary", "primary", "primary", "primary", "primary", "primary"],
+        ["primary", "primary", "primary", "primary", "primary", "primary"],
+        ["primary", "primary", "primary", "primary", "primary", "primary"],
+        ["primary", "primary", "primary", "primary", "primary", "primary"]
+      ],
+      "basis_pending": [
+        [false, false, false, false, false, false],
+        [false, false, false, false, false, false],
+        [false, false, false, false, false, false],
+        [false, false, false, false, false, false],
+        [false, false, false, false, false, false]
+      ],
+      "basis_projection_kind": ["primary", "primary", "primary", "primary", "primary"],
+      "basis_projection_pending": [false, false, false, false, false]
+    }
+  ]
+}
