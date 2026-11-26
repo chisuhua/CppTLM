@@ -448,3 +448,51 @@ RISC-V adoc 不存在 · `openspecification/tilespec` 仓库 404 · GitHub 搜�
 - [x] 新路径已存在于仓内(`docs/architecture/cep/parity-baseline.md`),并被 `cep_freeze_check.sh` 的 glob `docs/architecture/cep/*.md` 纳入(冻结产物 **77 → 78**)
 
 **关联**:台账 **Entry #341**(授权 + 范围 + 连带修正清单)· **#340**(下一阶段任务梳理与实施路径)· `docs/architecture/cep/parity-baseline.md`(H7 对拍基准规格)· `docs/architecture/07-coherence-exploration-platform.md`(总纲 —— §7 实验输出协议是**运行面**,对拍基准是**手段面**,两者互补不重叠)· 治理裁定表 §六(硬规则 ②)
+
+## Status Update（2026-11-26）—— **决策 3 / `INV-CEP-11-IC1` / 决策 5** 的**装配期校验两分支化**（用户自定义协议的 `user:<ssp-id>` 形态）
+
+> **性质**：末尾追加 SU（append-only）。⛔ **正文与既有 SU 逐字未变**；⛔ **新增 invariant 数 = 0**（IC1 号不变，只扩展其**取值域**）；⛔ **不改 `INV-CEP-11-IC2`**。
+> **上游**：`CP-Q-1b` 裁决 §5（**已 ratify** 2026-11-26 · 用户批准 R3）· `ADR-CEP-24` 决策 3.2 的 Q3 · oracle 2 轮（首审 `REJECT` 指出本文漏 IC1 → 复审 `APPROVE`）
+> **动因**：用户自定义协议**没有官方规范版本**（`protocol_version` 无表内取值）⇒ 原「必须在锁表内」的**单分支**判据使其**必然装配期 fail**。
+
+### ① 三处语义扩展（**正文不改** · 以本段为准）
+
+| # | 正文位置 | 原语义 | **自本 SU 起以本段为准** |
+|:--:|---|---|---|
+| **1** | **决策 3**（`:84-92`）| 「每个协议实例的 `protocol_version` **必须**落在决策 2 的锁定表内；否则**装配期 fail**」| 改为**两分支**：`protocol_version` **必须**满足 **① 在决策 2 的锁定表内** **或** **② 匹配 `^user:([a-z][a-z0-9_]*)$` 且捕获组 `<ssp-id>` ∈ `include/tlm/cep/ssps.json` 的已登记 `ssp.id`**；两者皆不满足 ⇒ **装配期 fail**（⛔ 不得静默降级）|
+| **2** | **`INV-CEP-11-IC1`**（`:156`）| 「每个协议实例的 `protocol_version` **必须**落在 §3 锁定表内；**表外取值 = 装配期 fail**（不得静默降级）」| 同上两分支；⚠️ **`user:` 形态是「表外但合法」** ⇒ 本 SU 扩展 IC1 的**取值域**，⛔ **不改 IC1 的立法意图**（仍禁「配置层错误静默降级」）|
+| **3** | **决策 5 排除行**（`:117`）| 「**不**允许 schema 出现锁定表之外的版本」| 收窄为「**除 `user:<ssp-id>` 形态外**，不允许 schema 出现锁定表之外的版本」|
+
+### ② ⭐ 为何「不变弱」（可证）
+
+**两分支可证不相交**：
+- 决策 2 锁定表内的**全部**官方版本**均含 `-` 或 `.`**（`chi-r2` / `tilelink-c-1.7.1` / `cxl-2.0` / `nvlink-4.0` / `ualink-2.0` / `moesi-gpu-1.0` / `mesif-1.0` / `cxl-3.0`）；
+- `ssp.id` 的词表 = `^[a-z][a-z0-9_]*$`（`include/tlm/cep/ssp_loader.hh` 的 **E2**）⇒ **排除** `-` 与 `.`；
+- ⇒ `user:<ssp-id>` **不可能**与任一官方版本字面相同 ⇒ **分支 ② 无法冒充分支 ①**；
+- 且**拼写错误的官方版本**（如 `chi-r3`）不匹配 `^user:` ⇒ **仍落分支 ① 且 fail** ⇒ **判据未变弱**。
+
+⚠️ **`<ssp-id>` 可寻址**：其唯一性由 `ssp_loader.hh` 的 **E2** 保证（`ids.insert(sid).second` 判重）⇒ `user:` 引用的 id 必定唯一。
+
+### ③ ⚠️ 落地的**完整成本**（⛔ 不得只改决策 3 —— 本表即 oracle 首审 finding 2 的闭合载体）
+
+| # | 面 | 改动 | 冻结面 |
+|:--:|---|---|:--:|
+| 1 | 本 SU（决策 3 / IC1 / 决策 5 三处）| ✅ 本次 | ✅ 五步链 |
+| 2 | `include/tlm/cep/protocol_instance.schema.json` 的 **`pattern`** | ⛔ **必改**：现 `^[a-z0-9]+(-[a-z0-9.]+)*$` **拒绝 `:`** ⇒ 须扩为含 `user:[a-z][a-z0-9_]*` 的两分支形态 | ✅ 五步链 |
+| 3 | **共享 helper** | 两分支谓词须落**单一** helper（`test_cep_schema.cc` 记 **Entry #109 G-2**「不得多处各抄一份」）；⚠️ `instance_assembly_gate.hh` **不查** `protocol_version`（现通用闸在**测试层** `test_cep_schema.cc:573`）⇒ ⛔ **禁**在 IAG 另写一份 | — |
+| 4 | `test/test_cep_schema.cc:573` 的 **IC1 通用闸** | 逐实例断言 ∈ 锁表 ⇒ 须**两分支化** + 反向 fixture（`user:不存在的id` ⇒ 红 · `user:` 但 id 未登记 ⇒ 红 · `chi-r3` ⇒ 红 · 表内正常 ⇒ 绿）| — |
+| 5 | `test/test_cep_schema.cc:512` 的 **pattern 容纳性用例** | 须纳入 `user:<ssp-id>` 形态 | — |
+| 6 | ⭐ **`openspec/specs/cep-core-contracts/spec.md:335-339` 的 IC1 Scenario**（critic SHOULD_FIX ① —— 本表原漏）| 其 `THEN` 逐字写「每个协议实例的 `protocol_version` **必须**落在锁定表内」+「表外取值 ⇒ **装配期 fail**」⇒ 须**两分支化**（与本文 SU ① 同口径）| ✅ **五步链**（该 spec 是 **M1 冻结面** —— manifest 4 命中）|
+| 7 | ⚠️ **本表的完备性口径** | 上表 1~6 **全部**须在**同一批**落地；⛔ 只改决策 3 而漏 IC1 / 决策 5 / spec Scenario / pattern / helper / 两处测试 ⇒ 会造成「ADR 允许、spec 仍禁」的**反向矛盾**（批 2 的 user 实例：按 spec 必红、按 SU 应绿）| — |
+
+### ④ revisit trigger
+
+现 `ssp.id` **无版本字段**（批 1 实测）⇒ `user:<ssp-id>` 的**单版本**语义当前成立。⚠️ **若未来 SSP 引入版本字段**（如 `ssp.version`），`user:` 的取值语义**须重裁**（可能需 `user:<ssp-id>@<ver>`）⇒ 登记为 revisit trigger，⛔ 不得默认沿用。
+
+### ⑤ 边界
+
+- ⛔ **不改 `INV-CEP-11-IC2`**（「§3 锁定表是规范版本的**唯一真源**；schema / 代码 / 文档只引用不复制」）—— 本 SU 不改该单一真源地位，只允许**表外一种可机判形态**；
+- ⛔ 不把任何用户自创版本**写入**决策 2 的锁定表（⛔ 不污染唯一真源）；
+- ⛔ 不豁免校验（分支 ② 仍须可机判且 fail-closed）。
+
+**关联**：`CP-Q-1b` 裁决 §5（已 ratify）· `ADR-CEP-24` 决策 3.2 的 Q3 + SU(2026-11-26 第三则) · 台账 Entry（同批授权）

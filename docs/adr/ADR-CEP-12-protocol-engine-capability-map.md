@@ -1174,3 +1174,63 @@ CXL / MOESI-GPU / MESIF 走**软件一致性 / 无 collective 能力** ⇒ 强�
 本段登记的是**声明面**(结构化声明项 + 逐实例声明 + 条件判据)**成立** ——
 ⛔ **不等于**复合一致性公理已被检验(其判定载体归 backlog `cep-memory-model-operational-trace`;
 公理的可判定性仍受限于「本仓无操作级模型」)⇒ ⛔ **不得**表述为「公理已成立 / 已被检验」。
+
+## Status Update（2026-11-26）—— `family` 域**加第 4 值 `user-defined`**（3 → 4）+ 13 必含键的**用户可写划分**
+
+> **性质**：末尾追加 SU（append-only）。⛔ **正文与既有 SU 逐字未变**；⛔ **新增 invariant 数 = 0**（IC1 号不变，只扩 `family` 的**取值域**；13 属性**个数不变**）。
+> **上游**：`CP-Q-1b` 裁决 §4（**已 ratify** 2026-11-26 · 用户批准 R2）· `ADR-CEP-24` 决策 3.2 的 Q2 · oracle 2 轮（首审 `REJECT` → 复审 `APPROVE`）
+> **动因**：用户自定义协议**不属于任何既有来源族**（`industrial` / `ruby-slicc` / `academic`）⇒ [IAG-03]「`family` 必须可解析」使其**必然装配期 fail**；而假填既有族 = **假分类**（违诚实原则）。
+
+### ① `family` 域扩展（**正文不改** · 以本段为准）
+
+| 正文位置 | 原文 | **自本 SU 起以本段为准** |
+|---|---|---|
+| `:49` 的 schema 片段 | `family: <industrial \| ruby-slicc \| academic>` | `family: <industrial \| ruby-slicc \| academic \| **user-defined**>`（**4 值**；⛔ 不得出现第 5 值）|
+
+⚠️ **`INV-CEP-12-IC1` 不变**：13 必含属性**个数**仍为 13（`family` 仍是其中之一，只扩其**取值域**）⇒ ⛔ **不是**「加一个键」。
+
+### ② ⭐ 13 必含键的**用户可写划分**（`CP-Q-1b` Q1 · 供批 2 参考）
+
+| 归属 | 键 |
+|---|---|
+| **自由用户可写（5）** | `id` · `adapter` · `perm` · `atomic` · `consistency_labels` |
+| **受限用户声明（6）** | `flow_support`（⊆ 14 核心锚 / 10 流）· `ordering_assumption`（`IC2` 逐 vc 解析）· `vc_binding`（vc 上界 + 消息类词表 + collective 不冲突）· `sharer_tracker`（⊆ `kTrackerTraits` 已登记实现）· `status`（`implemented` 须 adapter **存在性**，⛔ 非 conformance）· `combination_capabilities`（**用户声明能力画像** + CEP 校验一致性，⛔ 框架不生成）|
+| **框架固定（1）** | `family`（[IAG-03] 须可解析 ⇒ 须落 4 值域内）|
+| **见 `ADR-CEP-11` SU** | `protocol_version`（两分支）|
+
+⚠️ **第 14 可选键 `combination_contract`**（critic NIT ④）：Q1 的字面范围是「13 **必含**键」⇒ 本表**未**覆盖它；但**批 2** 会遇到「user 实例能否声明 `combination_contract`」的未定点 ⇒ ⚠️ **登记为批 2 的 open item**（倾向：**受限用户声明**，与 `combination_capabilities` 同型 —— 因其承载的是**组合契约**而非平台判定）。
+
+⚠️ **`combination_capabilities` 的定性**（oracle 🔴 修正）：它是**每实例声明输入**（`channel_dependency_graph.hh:241` 消费 `combination_capabilities.hierarchical`）⇒ ⛔ **框架无法生成**（`ADR-CEP-12:146` 明文不提供自动兼容性判定器）⇒ 只能是**受限用户声明**。
+
+### ③ `family` 加值的**完整改动面 = 6 处**（供批 2 的 change 预算）
+
+| # | 位置 | 改动 | 冻结面 |
+|:--:|---|---|:--:|
+| 1 | `include/tlm/cep/protocol_instance.schema.json` 的 `family` enum | 加 `user-defined` | ✅ 五步链 |
+| 2 | `include/tlm/cep/protocol_family.hh` 的 `enum class ProtocolFamily` | 加 `UserDefined = 4` | — |
+| 3 | 同文件 `kProtocolFamilyCount = 3` | → **4** | — |
+| 4 | 同文件 `static_assert(kProtocolFamilyCount == 3, ...)` | → 4 | — |
+| 5 | 同文件 `kProtocolFamilies[]` | 加条目 | — |
+| 6 | 同文件 `protocol_family_name` 的 `switch` | 加 `case UserDefined: return "user-defined";` | — |
+
+⚠️ **须新增**（同模式）：`static_assert(protocol_family_id(ProtocolFamily::UserDefined) == 4, ...)`（⛔ 不改既有的 `== 1/2/3` 三个）。
+⚠️ **自动生效、无需改**：`from_name` / `from_id` 迭代 `kProtocolFamilies[]`；`protocol_id_` 推导 = `module_factory.cc` 的 `protocol_family_id(fam)`（`static_cast`）⇒ 编号 4 自动；`kUnassignedProtocolFamilyId = 0` 语义不受影响；`test_cep_protocol_bridge_contracts.cc` **无族数硬断言**。
+
+### ④ 连带面（⚠️ critic NIT ③：「同批」= **两批**，逐行注明）
+
+> ⚠️ 下表 #1 已在**本批**（ADR SU）落；#2 / #3 只能随 **批 2**（`family` 加值的**落地 change**）⇒ ⛔ 不要把本表的「同批」读成「与本 SU 同批」。
+
+| # | 项 | 处置 |
+|:--:|---|---|
+| 1 | **`ADR-CEP-24` §6 的 V-24-13**「`family` ⊆ **3 值域**（⛔ 不得出现第 4 个族值）」| ⛔ **必红** ⇒ 已由 `ADR-CEP-24` SU(2026-11-26 第三则) 改为 **4 值域** |
+| 2 | `protocol_family.hh` 的注释「per `ADR-CEP-12` 的 `family` 域 —— **恰好 3 值**」| 改「恰好 4 值」 |
+| 3 | `07 号 §5.1` 的「**2 来源族 / 16 实例**」口径 | ⛔ 需一句话澄清：「**来源族分布 ≠ 枚举值数**」；⛔ 不得读成「来源族 3」|
+
+### ⑤ 边界
+
+- ⛔ 不改 `INV-CEP-12-IC1` 的 **13 属性个数**（只扩 `family` 取值域）；
+- ⛔ 不改 `combination_capabilities` 与 `family` 的**正交性**（`ADR-CEP-12:132-134`）；
+- ⛔ 不落 contract（schema / 头文件 / 测试的实际改动属**批 2** 的 change）；
+- ⚠️ 本裁决只在「批 2」生效（批 1 的 SSP 不绑定 `protocol_instance`）。
+
+**关联**：`CP-Q-1b` 裁决 §3/§4（已 ratify）· `ADR-CEP-24` 决策 3.2 的 Q1/Q2 + SU(2026-11-26 第三则) · `ADR-CEP-11` SU(2026-11-26) · 台账 Entry（同批授权）

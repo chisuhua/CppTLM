@@ -348,3 +348,36 @@ CEP **不能**让用户自定义一致性协议 —— 不是「没有协议引�
 - ⛔ **不改** §7 的签发前置清单（本 SU 不新增签发义务；C4/C5/C6/C9/C10 的落盘状态见各自行）。
 
 **关联**：`CP-Q-1a` 裁决记录（`.rddf/reviews/cep-CP-Q-1a-adjudication.md` · **已 ratify**）· 台账 Entry（冻结面授权，随本 SU 同批落）· objective `obj-cep-custom-protocol` 的 `CP-Q-1a`（闭合）/ `CP-Q-1b`（仍待裁）/ `CP-I-2`（解除阻塞）
+
+## Status Update（2026-11-26 · 第三则）—— 决策 3.2 的**三项已裁** + §6 **V-24-13 的取值域**更新（3 → 4）
+
+> **性质**：末尾追加 SU（append-only）。⛔ **§1 ~ §9 正文与前两则 SU 逐字未变**；⛔ **新增 invariant 数 = 0**；⛔ **不改 §2 决策 1~7 的任何结论**（决策 3.2 是「冻结未定义」⇒ 本 SU 是把该冻结**按裁定填上**，⛔ 不是改决策）。
+> **上游**：`CP-Q-1b` 裁决记录 `.rddf/reviews/cep-CP-Q-1b-adjudication.md`（**已 ratify** 2026-11-26 · 用户批准 R1~R4）· oracle 2 轮（首审 `REJECT` → 8/8 闭合 → 复审 `APPROVE`）· objective `obj-cep-custom-protocol` 的 `CP-Q-1b`
+
+### ① 决策 3.2 的三项 → **已裁**（`ADR-CEP-24` §8 **F5 全部闭合**）
+
+| 项 | 裁决 |
+|---|---|
+| **Q1 用户可写键子集** | **自由 5**（`id` / `adapter` / `perm` / `atomic` / `consistency_labels`）+ **受限 6**（`flow_support` / `ordering_assumption` / `vc_binding` / `sharer_tracker` / `status` / `combination_capabilities` —— 用户可写但各有**校验面**）+ **框架 1**（`family`）+ **待裁 0**（`protocol_version` 见 Q3）|
+| **Q2 `family`** | **加第 4 值 `user-defined`** —— 成本 **6 处**（`protocol_instance.schema.json` 的 enum〔**冻结面**〕+ `protocol_family.hh` 的 enum / `kProtocolFamilyCount`(3→4) / `static_assert`(=4) / `kProtocolFamilies[]` / `protocol_family_name` 的 `switch`）+ **新增** `static_assert(UserDefined == 4)` |
+| **Q3 `protocol_version`** | **`"user:<ssp-id>"` 前缀 + 两分支校验**（在锁表内 **或** `^user:[a-z][a-z0-9_]*$` 且 id ∈ `ssps.json`）—— 见 **`ADR-CEP-11` 的 SU(2026-11-26)** |
+
+### ② ⭐ §6 **V-24-13 的取值域**更新（**正文不改** · 以本段为准）
+
+§6 的 **V-24-13** 原文含「**`family` ⊆ 3 值域**（⛔ 不得出现第 4 个族值）」—— 加第 4 值后该判据**必红**。⇒ **自本 SU 起**，V-24-13 该半句以如下文本为准：
+
+> **`family` ⊆ 4 值域**（`industrial` / `ruby-slicc` / `academic` / **`user-defined`**）（⛔ 不得出现第 5 个族值）
+
+⚠️ 该改写**不在正文**（§6 逐字不变）⇒ **读 §6 者须并读本段**；⚠️ 判据的**其余半句**（「SSP 面事件集 ⊆ 已登记的事件词表来源」）**零变更**。
+
+⚠️ **V-24-13 的「载体」列亦随之陈旧**（critic NIT ①）：其原文引「既有对照面 = `protocol_family.hh:53`（`kProtocolFamilyCount = 3`）+ `:113`（`static_assert == 3`）」—— **批 2** 把该常量改 4 后，该「= 3」锚**仅作历史**；⛔ 读载体列者须并读本段（判据期望值 = 4 值域）。
+
+### ③ 边界
+
+- ⛔ **不改**决策 1~7（尤其决策 1.3 的五件排除物、决策 5 的 B1~B8、决策 7 的排除项）；
+- ✅ **决策 7 的 ⏳ 由此闭合**（critic NIT ②）：其排除行「新 `family` 值 ⇒ 已排除（⏳ 待决策 3.2）」中的 ⏳ **已由本 SU 闭合** ⇒ 「新 `family` 值」从「排除」转为「**已裁：加 `user-defined`**」（⛔ 该行原文不改，以本句为准）。
+- ⛔ **不落 contract**（键划分的 schema 化 / `family` 加值 / `user:` 前缀均属**批 2** 的 change）；
+- ⛔ **不改** §7 签发前置清单（本 SU 不新增签发义务）；
+- ⚠️ **本裁决只在「批 2」生效** —— 批 1（声明面）已归档且 SSP **不绑定 `protocol_instance`** ⇒ ⛔ 不要把本 SU 读成「批 1 有缺口」。
+
+**关联**：`CP-Q-1b` 裁决（已 ratify）· **`ADR-CEP-11` SU(2026-11-26)**（决策 3 + IC1 + 决策 5）· **`ADR-CEP-12` SU(2026-11-26)**（`family` 域）· 台账 Entry（冻结面授权，随本 SU 同批落）
