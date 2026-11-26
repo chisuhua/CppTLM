@@ -29609,3 +29609,75 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 - ⛔ **不勾选** 5 份「已立项 → 已实施」单元的 `- [ ]` AC 复选框 —— 逐条勾选属**验收动作**（verifier 域）且本轮未逐条复验 ⇒ 状态行已注明「AC 复选框为起草时的草稿面、**未逐条勾选**」
 - ⛔ **不改** 登记册散文中的「已落地」措辞（§6.4 队列 2 / §6.8 单元表等）—— §6.8 白名单仍含该词以兼容散文与历史命中 ⇒ 机器可读 token 面与散文面**分工不冲突**
 - ⛔ **不新建** `G-22+` 缺口 —— 本批为 G-21 的闭合项；`G-*` 编号空间仍开 = **0**
+
+### Entry #556 — 2026-11-26 [builder](**`cep-ssp-cp-q1b-landing` 立项 + 实施授权** —— contract 面：`family` 4 值域 + `protocol_version` 两分支 · **两处冻结面五步链**)
+
+**主题**：授权 change `cep-ssp-cp-q1b-landing` 实施（Entry #554 ⑥ 列为「不实施」的 5 个 contract 面，本 Entry 授权其落地）—— 让用户自定义协议**过得了装配期**：`family` 扩第 4 值 `user-defined` + `protocol_version` 增第二种合法形态 `user:<已登记 ssp-id>`（两分支化）。**只扩取值域、零新增能力面**。
+**元**：improvement `.rddf/improvements/cep-ssp-cp-q1b-landing.md`（✅ 已批准·待立项）· 裁决 `.rddf/reviews/cep-CP-Q-1b-adjudication.md`（已 ratify · oracle 2 轮 · critic 1 轮 0 BLOCKER）· 3 份 ADR SU（`ADR-CEP-24` 第三则 / `ADR-CEP-11` / `ADR-CEP-12`）· change 骨架 `openspec/changes/cep-ssp-cp-q1b-landing/`（proposal / design / tasks / MODIFIED delta · `openspec validate --strict` rc=0）
+
+**① 授权理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | **用户 ratify R1~R4**（CP-Q-1b 裁决）| ✅ | 裁决 §7.1~§7.3 · Entry #554 ①-1 |
+| 2 | **3 份 ADR SU 同批落盘**（Entry #554 的五步链已走完）| ✅ | Entry #554 ⑤ |
+| 3 | **`ADR-CEP-11` SU ③ 的 7 面成本表**全部落在本 change 的 In Scope 内（⛔ 同批落地，禁拆批）| ✅ | `-11` SU ③ ①~⑦ ↔ change proposal §What Changes 6 项 |
+| 4 | change 骨架齐备且校验通过 | ✅ | `openspec validate cep-ssp-cp-q1b-landing --strict` rc=0 |
+| 5 | ⛔ **不落实现外的任何面**（解释器 / 装配集成 / 掩码格 / 实验 4 件套 = 批 2）| ✅ | 本 Entry ⑥ |
+
+**② 本批次改动面（6 项 · 封闭）**
+
+| # | 事项 | 判据（可判定） | 冻结面 |
+|:--:|---|---|:--:|
+| 1 | **`include/tlm/cep/protocol_instance.schema.json`**：`family` enum 加 `user-defined` + `protocol_version` 的 `pattern` 改两分支（容纳 `user:[a-z][a-z0-9_]*`）| `family` enum **4** 值 · `pattern` 含 `user:` 分支 · ⛔ `required` **仍 13** 项 | ✅ **五步链** |
+| 2 | **`include/tlm/cep/protocol_family.hh`**：6 处 + 1 新增 `static_assert` + 注释 3 值→4 值 | `kProtocolFamilyCount == 4` · `protocol_family_id(UserDefined) == 4` | — |
+| 3 | **共享 helper**（落 `test/cep_adr_parser.hh` · 与既有锁表 helper 同处 · ⛔ 零新文件）| `protocol_version_allowed` + `parse_registered_ssp_ids` 存在 · ⛔ 无第二份拷贝 | — |
+| 4 | **`test/test_cep_schema.cc`**：IC1 通用闸两分支化（`:573`）+ pattern 容纳性用例（`:512`）+ 4 条反向 fixture（各自按**正确原因**红）| `[cep][schema][ic1]` 全绿 | — |
+| 5 | **`openspec/specs/cep-core-contracts/spec.md`**：IC1 Scenario 两分支化（**IC2 / IC3 逐字零改动**）| `grep -c "user:"` ≥ 1 · delta 与 main spec 的差异**恰为 IC1 的 THEN 段** | ✅ **五步链** |
+| 6 | **change delta**（`openspec/changes/cep-ssp-cp-q1b-landing/specs/cep-core-contracts/spec.md`）| MODIFIED · 3 Scenario 全保留 | — |
+
+**③ 五步授权链（本 Entry 是步 1 · **一次**覆盖 2 处冻结面）**
+
+1. **本 Entry #556**（台账授权 · `--authorized-by` 的载体）
+2. builder commit：2 处冻结面产物 + 4 处非冻结面**同批落盘**（⛔ 不得拆批 —— `-11` SU ③ ⑦ 的完备性口径）
+3. `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #556"`（**清单更新** · 预期：新增 **0** · 移出 **0** · hash 变更 **2**）
+4. **清单单独 commit**（⛔ 不得与产物同 commit）
+5. **无参复验**：`bash scripts/test/cep_freeze_check.sh` ⇒ rc=0
+
+**④ 计数面（预期变化 · 以命令实测为准）**
+
+| 面 | 预期 | 依据 |
+|---|---|---|
+| 冻结产物 `artifact_count` | **97 → 97** | 仅 hash 变更 2 处（`family` 域 4 值 + IC1 Scenario 两分支化）|
+| 新增 `INV-CEP-*` | **0** | IC1 号不变，只扩取值域 |
+| openspec change 数 | **0 → 1**（`cep-ssp-cp-q1b-landing`）| KPI slot 0/3 → 1/3 |
+| `ADR-CEP-11` §3 锁定表 | **零改动** | `INV-CEP-11-IC2` 保持 |
+| `INV-CEP-12-IC1` 的 13 必含个数 | **零改动** | 只扩 `family` 的 enum 取值域 |
+
+**⑤ 实施结果（收口 · 待 builder 回填）**
+
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | ② 的 6 项改动面 | ⏳ | — |
+| 2 | 五步授权链 | ⏳ | — |
+| 3 | 零回归（全量口径：全量 ctest + 全部 `cep_*.sh` + `docs_sync --strict`）| ⏳ | — |
+| 4 | 遗留清扫 | ⏳ | — |
+
+**⑥ 不做项**
+
+- ⛔ 解释器 / 装配集成 / 掩码格扩展 / 实验 4 件套（= `cep-ssp-batch2`）
+- ⛔ `combination_contract` 的用户可写性（留 `cep-ssp-batch2` 的 open item）
+- ⛔ **不改** `ADR-CEP-11` §3 锁定表（`INV-CEP-11-IC2` 保持）
+- ⛔ 任何 engine 行为 / 时序面
+- ⛔ `INV-CEP-12-IC1` 的 **13 必含个数**
+- ⛔ **不改** `instance_assembly_gate.hh`（IAG **不查** `protocol_version` ⇒ 零 diff 是正向结果，非遗漏）
+- ⛔ **不改** `INV-CEP-11-IC2`（唯一真源地位不变，只允许**表外一种可机判形态**）
+- ⛔ **不改** `openspec/specs/cep-core-contracts/spec.md` 的 **IC2 / IC3**（逐字零改动）
+- ⛔ 不把任何用户自创版本**写入** `ADR-CEP-11` §3 的锁定表
+- ⛔ **不宣称**「CEP 已支持用户自定义协议」—— 那只在 `cep-ssp-batch2` 验收后才成立
+
+**⑦ 连带（同一批）**
+
+| 项 | 动作 | 归属 |
+|---|---|---|
+| `cep-ssp-batch2` 的硬前置 | → **解除**（本 change 落地后批 2 的 ⑦⑧⑨⑩ 方可验证）| 后续 planner / builder |
