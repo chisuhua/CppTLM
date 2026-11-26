@@ -18,7 +18,7 @@
 | 层 | 判据 | 落点 |
 |---|---|---|
 | **必达 · S1** | 用户可在**不写 C++** 的前提下定义一份稳定态协议；该协议能**装配**、能**实验**（`ADR-CEP-06` 4 件套）；其数据面与既有手写 `*_state_spec.hh` **逐格对账相等**（**V-24-2 killer 判据**）| `ADR-CEP-24` §6 |
-| **必达 · S1** | **`ADR-CEP-24` §8 F5 的「事件字母表来源」已裁定**（`CP-Q-1a`）—— ⚠️ **仅此项**阻塞 S1；键子集 / `family` / `protocol_version`（`CP-Q-1b`）**不阻塞 S1 开工**（见 §4.0）| `ADR-CEP-24` §8 F5 |
+| **必达 · S1** | **`ADR-CEP-24` §8 F5 的「事件字母表来源」已裁定**（`CP-Q-1a`）—— ✅ **已达成 2026-11-26**（用户 ratify R1~R4 · 裁决 §6.1）；⚠️ 仅此项阻塞 S1；键子集 / `family` / `protocol_version`（`CP-Q-1b`）**不阻塞 S1 开工**（见 §4.0）| `ADR-CEP-24` §8 F5 · `.rddf/reviews/cep-CP-Q-1a-adjudication.md` · 台账 Entry #552 |
 | **条件达成 · S2** | 引擎 egress 消息**真实穿过** `CohIfNICTLM` + `RouterTLM`（`last_recv_hops ≥ 1`，**且须声明档位**）；协议语义层 hop / 时序**可声明**并被观测 | `ADR-CEP-25`（**待起草**）|
 | **条件达成 · S3** | `SSP → 插件`生成器可产出**带瞬态态 + 在飞事务**的 CEP 插件；且 **MSD 消息停滞检测**缺件已补 | `ADR-CEP-26`（**待起草**）|
 
@@ -27,6 +27,8 @@
 ### 0.2 ⛔ 本 objective 的**表述纪律**（硬）
 
 - ⛔ **`CP-Q-1a` 闭合前**：任何「CEP 已支持用户自定义协议」的表述**均不成立**（`ADR-CEP-24` §Status Update ① 第 8 条）。
+  > ✅ **解禁 YYYY-MM-DD 说明**：`CP-Q-1a` **裁定已达成**（2026-11-26）⇒ **本条禁令调整为「`CP-I-2` 交付前」**（形态已定 ≠ 能力已交付）⇒ ⛔ 仍不得在 `CP-I-2` 验收前宣称「已支持」。
+  > ✅ **解禁 2026-11-26（条件 = `CP-Q-1a` · 证据 = `.rddf/reviews/cep-CP-Q-1a-adjudication.md` §6.1 + 台账 Entry #552）** —— ⛔ 原禁令行保留（审计链），本行只追加。
 - ⛔ **S3 签发前**：任何「CEP 能自动生成瞬态态」的表述**均不成立**。
 - ⛔ **S2 签发前**：任何「协议语义已接真实物理链路」的表述**均不成立**（含「mesh 上跑出 flit 活性」这类**档 0 冒充档 2** 的形态，per `ADR-CEP-20` 决策 6）。
 
@@ -94,7 +96,7 @@
 
 | 段 | ADR | 状态 | 关键判据 |
 |---|---|---|---|
-| **S1** | `ADR-CEP-24` | ✅ **已签发**（2026-11-26 · metis 1 + oracle `APPROVE` + critic `APPROVE_WITH_CONDITIONS` · 0 BLOCKER）| V-24-2（往返等价 killer）· V-24-13（守护决策 3）· **F5 的 `CP-Q-1a` 未裁 ⇒ S1 不可实施** |
+| **S1** | `ADR-CEP-24` | ✅ **已签发**（2026-11-26 · metis 1 + oracle `APPROVE` + critic `APPROVE_WITH_CONDITIONS` · 0 BLOCKER）| V-24-2（往返等价 killer）· V-24-13（守护决策 3）· ✅ **F5 的 `CP-Q-1a` 已裁（2026-11-26）⇒ S1 可立项**；⚠️ `CP-Q-1b`（键子集/`family`）仍待裁但不阻塞 S1 |
 | **S2** | `ADR-CEP-25` | 🟡 **待起草**（编号已预留）| 须处理与 **Entry #543** 的冲突 + ⭐ **J-3/J-4 现状锁翻转**（见 §8 R2）· 须收敛到具体实例清单 · 证据档位声明 |
 | **S3** | `ADR-CEP-26` | 🟡 **待起草**（编号已预留）| 须以「新 ADR 收窄 + `ADR-CEP-18` 追加 SU **声明取代范围**」形态 amendment 决策 1/6；须 **supersede** T1~T4 复评；**T2 carve-out 原样继承**；前置层 **MSD 缺件** |
 
@@ -123,7 +125,7 @@
 
 | 序 | 立项 | 前置命中命令（**未达成 ⇒ 不命中**） | 完成判据（可机判） | 归属 |
 |:--:|---|---|---|---|
-| **CP-Q-1a** | ⭐ **事件字母表来源裁决**（**只此项阻塞 `CP-I-2`**）：**新建跨协议词表** vs **复用既有引擎事件集**（`mesif_protocol_engine.hh:189` 的 6 事件 / `cxl_state_spec.hh:69` 之一）—— 裁决须含**两案的表达力对比证据** | `ls .rddf/reviews/cep-CP-Q-1a-adjudication.md 2>/dev/null \| wc -l` == 0（**未产出 ⇒ 不命中**） | 裁决记录存在 + 含「来源 = 新建/复用 + 依据」+「词表表达力评估证据（谁产出、在哪）」 | **architect** |
+| **CP-Q-1a** | ⭐ **事件字母表来源裁决**（**只此项阻塞 `CP-I-2`**）：**新建跨协议词表** vs **复用既有引擎事件集** —— 裁决须含**两案的表达力对比证据** | `ls .rddf/reviews/cep-CP-Q-1a-adjudication.md 2>/dev/null \| wc -l` == 0（**未产出 ⇒ 不命中**）| 裁决记录存在 + 含「来源 = 新建/复用 + 依据」+「表达力证据（谁产出、在哪）」| **architect** | ✅ **已闭合 2026-11-26**（用户 ratify R1~R4 · 新建 + 14 核心锚 + 扩权方 = architect · oracle `APPROVE` · ADR SU + Entry #552）|
 | **CP-Q-1b** | **键子集 + `family` + `protocol_version` 裁决**（⚠️ **不阻塞 S1 开工** —— metis 指出四子项成本差一个数量级，打包会「最贵子项卡死全部」）：13 键划分 + `family` 是否加第 4 值（**三层同批**：schema enum + `protocol_family.hh:43-53` + `test_cep_protocol_bridge_contracts.cc`）+ `protocol_version` 与 `ADR-CEP-11` 的关系 | `ls .rddf/reviews/cep-CP-Q-1b-adjudication.md 2>/dev/null \| wc -l` == 0 | 裁决记录存在 + **若 `family` 不加值 ⇒ 须含「用户协议 `family` 填什么」的分支**（metis 边界点）+ 若加值 ⇒ 五步链成本已亮出 | **architect** |
 | **CP-Q-2** | **`ADR-CEP-25` 起草**（hop / 时序 + egress 接 fabric）| `ls docs/adr/ADR-CEP-25-*.md 2>/dev/null \| wc -l` == 0 | ADR 双审闭合（报告含 `判定: APPROVE` 或 `APPROVE_WITH_CONDITIONS` 原文）+ `grep -c "已签发" ADR-CEP-25` ≥ 1 · ⭐ **须显式处置 ① Entry #543 冲突（见下「两候选」）② J-3/J-4 现状锁翻转 ③ 收敛到具体实例清单 ④ 证据档位声明** | **architect** |
 | **CP-Q-3** | **`ADR-CEP-26` 起草**（SSP → 插件生成器）| `ls docs/adr/ADR-CEP-26-*.md 2>/dev/null \| wc -l` == 0 | 同上双审形态 + **须 amendment `ADR-CEP-18` 决策 1/6**（追加 SU 声明取代范围）+ **supersede** T1~T4 复评 + **MSD 缺件登记** | **architect** |
@@ -139,7 +141,7 @@
 | 序 | 立项 | 前置命中命令（**未达成 ⇒ 不命中**） | 完成判据（可机判） | openspec change |
 |:--:|---|---|---|---|
 | **CP-I-1** | **`ADR-CEP-24` 落盘三件 + 两处 `test/` 登记 + 载体文本同步**（五步链 2~5）| `grep -c "^### Entry #551" .rddf/roadmap/objectives/obj-cep-platform.md` == 1 ✅ | `cep_freeze_check.sh` 无参 **rc=0**（96 产物）· `cep_adr_structural_check.sh` **4/4** · `cep_decision_block_check.py` 无「覆盖缺失」红（**27 份 / 152 块**）· 根 `AGENTS.md` 计数 **24** · `agents_md_lint --all` + `docs_sync_check --strict` 双绿 | ⛔ 无需 change（纯登记 + 落盘 + 文本）|
-| **CP-I-2** | **S1 实施**：SSP 声明面（JSON + 同名 schema）+ **通用解释器** + loader + 闸（含 V-24-2 逐格 diff 闸）| **`CP-Q-1a` 已裁**（`.rddf/reviews/cep-CP-Q-1a-adjudication.md` 存在）| 必达 DoD §0.1 的两条 S1 判据全绿 | ✅ 需 change |
+| **CP-I-2** | **S1 实施**：SSP 声明面（JSON + 同名 schema）+ **通用解释器** + loader + 闸（含 V-24-2 逐格 diff 闸）| ✅ **`CP-Q-1a` 已裁 2026-11-26**（裁决 §6.1 + Entry #552）| 必达 DoD §0.1 的两条 S1 判据全绿 | ✅ 需 change |
 | **CP-I-3** | **S2 实施**（egress 接 fabric + 协议语义层 hop/时序 + **J-3/J-4 闸改写**）| **`CP-Q-2` 已签发**（`grep -c "已签发" docs/adr/ADR-CEP-25-*.md` ≥ 1）| `last_recv_hops ≥ 1` 端到端判据 + **档位声明落点 = 实验产物元数据（`ADR-CEP-20` 决策 6(i)）** + J-3/J-4 反向 fixture 重写后全绿 | ✅ 需 change |
 | **CP-I-4** | **S3 实施**（生成器）| **`CP-Q-3` 已签发** **且** `grep -c "MSD" docs/adr/ADR-CEP-26-*.md` ≥ 1 **且** MSD 缺件已补 | 生成插件 ↔ 手写插件一致性判据（`ADR-CEP-14` 体系）| ✅ 需 change |
 
@@ -256,8 +258,9 @@ S1（声明面）──► S3（生成器）──► S2（时序）的「仿真
 
 | 序 | 候选 | 前置 | 归属 | 可并行 |
 |:--:|---|---|---|---|
-| 1 | **CP-Q-1a**（事件字母表来源裁决）| 无 | architect | ✅ 与 #2 **可并行**（跨 role）|
-| 2 | **CP-I-1**（ADR-CEP-24 落盘五步链 2~5 + 两处 test 登记 + 载体文本 + deferrals 载体）| 台账 Entry #551 ✅ 已落 | builder | ✅ 与 #1 可并行 |
+| 1 | ~~**CP-Q-1a**（事件字母表来源裁决）~~ ✅ **已完成 2026-11-26** ⇒ **下一入口 = `CP-Q-1b`**（键子集 + `family` + `protocol_version`）| 无 | architect | ✅ 与 #2 可并行 |
+| 2 | **CP-I-1**（ADR-CEP-24 落盘五步链 2~5 + 两处 test 登记 + 载体文本）| 台账 Entry #551 ✅ 已落 | builder | ✅ 与 #1 可并行 |
+| 2b | **CP-I-2 立项**（S1 实施）| ✅ `CP-Q-1a` 已裁 | planner→builder | ⚠️ 受 openspec 并发 ≤ 1 |
 | 3 | **CP-W-1**（载体文本剩余 3 项）| 无 | builder | ⚠️ 同 role 与 #2 串行（每 role 唯一 claim）|
 
 ---

@@ -312,3 +312,39 @@ CEP **不能**让用户自定义一致性协议 —— 不是「没有协议引�
 | 本 ADR 的**实施**（SSP 声明面 + 通用解释器 + loader + 闸）| **builder**（经 planner 立项）| §8 F5 闭合后 |
 
 ---
+
+## Status Update（2026-11-26 · 第二则）—— §8 **F5 的「事件字母表」维度已裁**（决策 3.1 的一半闭合）+ **表达力范围的事实登记**
+
+> **性质**：末尾追加 SU（append-only）。⛔ **§1 ~ §9 正文与上一则 SU 逐字未变**；⛔ **新增 invariant 数 = 0**；⛔ **不改任何既有决策**。
+> **上游**：`CP-Q-1a` 裁决记录 `.rddf/reviews/cep-CP-Q-1a-adjudication.md`（**已 ratify** 2026-11-26 · 用户批准 R1~R4）· oracle 1 轮 `APPROVE`（3 must-fix 全落）· objective `obj-cep-custom-protocol` 的 `CP-Q-1a`
+
+### ① 决策 3.1 的「事件字母表来源」维度 → **已裁**（`ADR-CEP-24` 的 F5 现只剩「键子集 + `family` + `protocol_version`」）
+
+| 项 | 裁决 |
+|---|---|
+| **来源** | **新建**（⛔ 不复用任何既有事件集）—— 三份事件式 `*_state_spec.hh` 的词表**互不兼容**（MESIF **6** / TileLink **4** / CXL-2.0 **17** = `kLocalEventCount 14` + `kRemoteEventCount 3`，`cxl_state_spec.hh:115-118`），复用任一份都在表达力或 opcode 粒度可移植性上失败 |
+| **扩权方** | **architect**（核心锚新增 / 「无等价核心锚」的私有事件批准）+ **「已批准私有事件先例库」摊销**（已批准者入库，后续 SSP 复用免批）|
+| **形态** | **封闭核心锚（初版 14 个）+ 受控私有事件**（每个私有事件须：① 映射到 canonical 10 流 ② 指明等价核心锚或须 architect 批准 ③ 名字逐字断言 ④ **原子性**（⛔ 禁引用/组合其他私有事件）⑤ 「无等价」占比 > 半数 ⇒ 触发锚集复审）|
+
+> **14 个核心锚**：`ReadShared` `ReadUnique` `Write` `WriteNoAlloc` `Upgrade` `SnoopShared` `SnoopUnique` `SnoopInvalidate` `EvictDirty` `EvictClean` `Cap` `Grow` `Prune` `Report`（⛔ 新增须 architect 裁决；`CP-I-2` 时按实际协议补）
+
+### ② ⭐ **表达力范围的事实登记**（本条是 F5 裁决的**副产物**，§0.1 与 V-24-2 的表述边界据此收窄）
+
+| 层 | 事实 | 实测锚点 |
+|---|---|---|
+| **体裁**（有 `State × Event` 转移表）| **3 / 6** —— `mesif`（6 事件）· `tilelink_c`（4）· `cxl_2_0`（17）| 其余 3 份 `enum class Event` = **0 命中** 且 `transition\|Transition` = **0 命中** ⇒ `cxl_dcoh_state_spec`（三视图状态空间 `:72/76/79`）· `nvlink_sharp_state_spec`（聚合语义 `:223-329`）· `ualink_inc_state_spec`（网内计算绑定 `:103-582`）**不是转移表** |
+| **按 §2 决策 2 已声明的格形态**（`transition[state][event]` + `0xFF` 空洞 + 逐格 `Basis`）的**干净覆盖** | **2 / 6** —— `mesif`（`uint8_t` + `0xFF`，`mesif_state_spec.hh:132`）· `cxl_2_0`（同形）| ⚠️ **`tilelink_c` 的格是 `Transition{kind, target_mask, basis, pending, ref, note}`**（`tilelink_state_spec.hh:131-139`，`target_mask` = **3 位掩码**以承载 `Cap` 的「源不定」）⇒ 需「**掩码格**」扩展 |
+
+⚠️ **表述纪律（随本 ADR 的任何引用传播）**：
+- ⛔ **不得**把「表达力 ≥ 手写面」（V-24-2）读成「6/6」—— V-24-2 原文只承诺「表达**一个**既有协议（**建议 MESIF**）」（§6），本 SU 只是把**隐含范围写明**，⛔ **不新增收窄**；
+- ⛔ **不得**把「三份转移表**形状相同**」读成**格级同构**（格载荷不同，见上表第二行）；
+- ⇒ 后续 `CP-I-2` 的表达力表述**须**用「**3/6 体裁 / 2/6 干净覆盖**」；「掩码格扩展」（TileLink）属 **contract 面** ⇒ 归 `CP-I-2` 的 design/AC，⛔ 不在本 ADR 裁定。
+
+### ③ 边界（本 SU 不改的东西）
+
+- ⛔ **不改**决策 1 ~ 7 的任何结论（尤其决策 1.3 的五件排除物、决策 5 的 B1~B8、决策 7 的排除项）；
+- ⛔ **不裁**决策 3.2 的另一维（键子集 + `family` + `protocol_version` ⇒ 仍由 `CP-Q-1b` 待裁）；
+- ⛔ **不落 contract**（锚集常量 / 私有事件 schema / 掩码格 / `flow` 校验 ⇒ 均归 `CP-I-2`）；
+- ⛔ **不改** §7 的签发前置清单（本 SU 不新增签发义务；C4/C5/C6/C9/C10 的落盘状态见各自行）。
+
+**关联**：`CP-Q-1a` 裁决记录（`.rddf/reviews/cep-CP-Q-1a-adjudication.md` · **已 ratify**）· 台账 Entry（冻结面授权，随本 SU 同批落）· objective `obj-cep-custom-protocol` 的 `CP-Q-1a`（闭合）/ `CP-Q-1b`（仍待裁）/ `CP-I-2`（解除阻塞）
