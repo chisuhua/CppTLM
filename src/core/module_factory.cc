@@ -229,7 +229,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
         } else {
             const tlm::cep::InstanceAssemblyReport iag_report =
                 tlm::cep::run_instance_assembly_gate(final_config, iag_inputs.instances_doc,
-                                                     iag_inputs.planes_doc);
+                                                     iag_inputs.planes_doc, {},
+                                                     &iag_inputs.ssps_doc);
             // ⚠️ **errors 走 stdout**(与 Step 0.25 的 gate log 同一通道)⇒
             //    归因 tag(`[IAG-0x]`)可被测试按**签名**精确捕获(⛔ 不断言 rc≠0)。
             std::fputs(iag_report.log.c_str(), stdout);

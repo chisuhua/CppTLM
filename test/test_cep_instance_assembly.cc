@@ -197,3 +197,124 @@ TEST_CASE("IAG-08: 装配闭环与既有闸一致 —— channel 闸对 ualink_4
     }
     REQUIRE(saw_ualink_verdict);
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// IAG-09（批 2 `cep-ssp-batch2` · ⑧ 装配集成）—— **SSP 绑定维**
+//   用户自定义协议实例 ⇒ 实例 `id` + `adapter` + SSP 绑定**三方**解析到同一插件。
+//   ⚠️ 只覆盖**形态 + 引用闭环**（⛔ 不承诺语义）· ⚠️ `[IAG-08]` 已被占用 ⇒ 本维用 `[IAG-09]`。
+// ══════════════════════════════════════════════════════════════════════════
+
+TEST_CASE("IAG-09: 用户自定义协议的 SSP 绑定维 —— id + adapter + SSP 三方解析",
+          "[cep][assembly][iag]") {
+    const auto cfg = load_json(kConfigRel);
+    const auto instances = load_json(kInstancesRel);
+    const auto planes = load_json(kPlanesRel);
+    const auto ssps = load_json("include/tlm/cep/ssps.json");
+
+    // ── 正控:三方齐备 ⇒ PASS ──────────────────────────────────────────────
+    {
+        auto user_cfg = cfg;
+        auto user_inst = instances;
+        user_cfg["cep"]["bridges"][0]["protocol_instance"] = "user_demo";
+        nlohmann::json demo;
+        demo["id"] = "user_demo";
+        demo["family"] = "user-defined";
+        demo["adapter"] = "UserSspAdapter";
+        demo["protocol_version"] = "user:mesif_ssp";
+        user_inst["instances"].push_back(demo);
+
+        const auto rep = run_instance_assembly_gate(user_cfg, user_inst, planes, {}, &ssps);
+        INFO(rep.log);
+        REQUIRE(rep.verdict == InstanceAssemblyVerdict::PASS);
+        REQUIRE_FALSE(rep.has_error("[IAG-09]"));
+    }
+
+    // ── 反向 fixture ①:SSP **未登记** ⇒ `[IAG-09]` ────────────────────────
+    {
+        auto user_cfg = cfg;
+        auto user_inst = instances;
+        user_cfg["cep"]["bridges"][0]["protocol_instance"] = "user_demo";
+        nlohmann::json demo;
+        demo["id"] = "user_demo";
+        demo["family"] = "user-defined";
+        demo["adapter"] = "UserSspAdapter";
+        demo["protocol_version"] = "user:no_such_ssp";
+        user_inst["instances"].push_back(demo);
+
+        const auto rep = run_instance_assembly_gate(user_cfg, user_inst, planes, {}, &ssps);
+        INFO(rep.log);
+        REQUIRE(rep.verdict == InstanceAssemblyVerdict::FAIL);
+        REQUIRE(rep.has_error("[IAG-09]"));
+    }
+
+    // ── 反向 fixture ②:`family` 与 `protocol_version` 分支**不一致** ⇒ `[IAG-09]` ──
+    {
+        auto user_cfg = cfg;
+        auto user_inst = instances;
+        user_cfg["cep"]["bridges"][0]["protocol_instance"] = "user_demo";
+        nlohmann::json demo;
+        demo["id"] = "user_demo";
+        demo["family"] = "industrial";  // ⛔ 不是 user-defined
+        demo["adapter"] = "UserSspAdapter";
+        demo["protocol_version"] = "user:mesif_ssp";
+        user_inst["instances"].push_back(demo);
+
+        const auto rep = run_instance_assembly_gate(user_cfg, user_inst, planes, {}, &ssps);
+        INFO(rep.log);
+        REQUIRE(rep.verdict == InstanceAssemblyVerdict::FAIL);
+        REQUIRE(rep.has_error("[IAG-09]"));
+    }
+
+    // ── 反向 fixture ③:`user-defined` 但 `protocol_version` 非 `user:` 形态 ⇒ `[IAG-09]` ──
+    {
+        auto user_cfg = cfg;
+        auto user_inst = instances;
+        user_cfg["cep"]["bridges"][0]["protocol_instance"] = "user_demo";
+        nlohmann::json demo;
+        demo["id"] = "user_demo";
+        demo["family"] = "user-defined";
+        demo["adapter"] = "UserSspAdapter";
+        demo["protocol_version"] = "mesif-gpu-1.0";  // ⛔ 不是 user:<ssp-id> 形态
+        user_inst["instances"].push_back(demo);
+
+        const auto rep = run_instance_assembly_gate(user_cfg, user_inst, planes, {}, &ssps);
+        INFO(rep.log);
+        REQUIRE(rep.verdict == InstanceAssemblyVerdict::FAIL);
+        REQUIRE(rep.has_error("[IAG-09]"));
+    }
+
+    // ── 反向 fixture ④:`adapter` 缺失 ⇒ `[IAG-09]` ────────────────────────
+    {
+        auto user_cfg = cfg;
+        auto user_inst = instances;
+        user_cfg["cep"]["bridges"][0]["protocol_instance"] = "user_demo";
+        nlohmann::json demo;
+        demo["id"] = "user_demo";
+        demo["family"] = "user-defined";
+        demo["adapter"] = "";
+        demo["protocol_version"] = "user:mesif_ssp";
+        user_inst["instances"].push_back(demo);
+
+        const auto rep = run_instance_assembly_gate(user_cfg, user_inst, planes, {}, &ssps);
+        INFO(rep.log);
+        REQUIRE(rep.verdict == InstanceAssemblyVerdict::FAIL);
+        REQUIRE(rep.has_error("[IAG-09]"));
+    }
+
+    // ── 零行为变更见证:`ssps_doc == nullptr` ⇒ 本维**不判** ────────────────
+    {
+        auto user_cfg = cfg;
+        auto user_inst = instances;
+        user_cfg["cep"]["bridges"][0]["protocol_instance"] = "user_demo";
+        nlohmann::json demo;
+        demo["id"] = "user_demo";
+        demo["family"] = "user-defined";
+        demo["adapter"] = "UserSspAdapter";
+        demo["protocol_version"] = "user:mesif_ssp";
+        user_inst["instances"].push_back(demo);
+
+        const auto rep = run_instance_assembly_gate(user_cfg, user_inst, planes, {}, nullptr);
+        INFO(rep.log);
+        REQUIRE(rep.verdict == InstanceAssemblyVerdict::PASS);
+    }
+}

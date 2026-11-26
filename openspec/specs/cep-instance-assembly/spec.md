@@ -8,6 +8,8 @@
 ### Requirement: cep-instance-assembly
 
 CEP 的实例级装配闸 SHALL **在装配路径上执行**,且其**离线挂点** SHALL 与装配路径臂
+**共用同一份**判据实现与加载规则；其判据 SHALL 覆盖**用户自定义协议的 SSP 绑定**
+（`id` + `adapter` + SSP **三方**解析到**同一插件**）。
 **共用同一份**判据实现与加载规则。
 
 #### Scenario: IAG-01 —— 三层证据齐备 ⇒ 装配闭合
@@ -16,11 +18,14 @@ CEP 的实例级装配闸 SHALL **在装配路径上执行**,且其**离线挂�
 - **THEN** 每个被挂载的实例 SHALL 在声明层存在 · `family` SHALL **存在**且**可解析** · bridge 的 `modules` SHALL **非空**且逐个在拓扑中 · `bridge_id` SHALL **存在**且唯一
 - **AND** 若 `plane_binding` 含该实例键且绑定**非空** ⇒ SHALL 已在 plane 注册表登记
 - **AND** 若绑定为 **null / 空** ⇒ SHALL 视为「该实例不启用 collective」⇒ **不判红**;**仅当**该实例在 `required_plane_instances` 中 ⇒ SHALL 判 `[IAG-04]`
+- **AND** 若该实例声明了 **SSP 绑定** ⇒ SHALL 在声明面解析出其 `ssp.id` 且该 SSP **存在并通过声明面校验** ⇒ `id` + `adapter` + SSP **三方**解析到**同一插件**（⛔ 任一环缺失 ⇒ 判 `[IAG-09]`）
 
 #### Scenario: IAG-02 —— 负控:未声明 / 未绑定 / 未登记 / 模块缺失 / id 重复 ⇒ 必红
 
 - **WHEN** 分别构造:bridge 指向**未声明**实例 · 实例 `family` **缺失或不可解析** · bridge 的 `modules` **为空或引用不在拓扑**的模块 · `bridge_id` **缺失或重复** · `cep.bridges` 为空 · **required** 实例的 plane 绑定**为空或缺失** · plane 名**未登记**
+- **WHEN** 实例的 **SSP 绑定**指向**未登记 / 校验不过**的 `ssp.id`
 - **THEN** 装配闸 SHALL 判 FAIL,且错误信息 SHALL 命中对应归因 tag(`[IAG-01]` ~ `[IAG-07]` **与 `[BSS-01]`**)
+- **AND** SSP 绑定缺失 / 无效 ⇒ SHALL 判红且归因 tag 为 `[IAG-09]`（⛔ `[IAG-08]` 已被既有用例占用 ⇒ **不复用**）
 - **AND** **非 required** 实例的 plane 绑定为 null ⇒ SHALL **判 PASS**(「不启用 collective」是合法状态,⛔ 不得误判为装配失败)
 
 #### Scenario: BSS-01 —— 跨 entry 重叠(同一模块属多个 bridge entry)⇒ 必红
@@ -69,4 +74,5 @@ CEP 的实例级装配闸 SHALL **在装配路径上执行**,且其**离线挂�
 - **THEN** SHALL 显式记录:① IAG 族只覆盖**装配期结构**,不覆盖运行时一致性;
       ② 离线臂对**非 CEP config** = SKIP ⇒「离线闸全绿」不等于「所有 config 都过了 CEP 判据」;
       ③ 装配路径臂是**新增拦截点** ⇒ 可能拦住过去能装配(但结构违规)的 config
+       ④ SSP 绑定只覆盖**形态 + 引用闭环**（⛔ 不承诺其语义:活性 / 无死锁 / 一致性 / 兼容性）
 - **AND** ⛔ SHALL NOT 把「不可判 / 不空转」表述为「已覆盖 / 已证明」

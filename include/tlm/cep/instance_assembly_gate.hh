@@ -6,11 +6,16 @@
 //   ② **拓扑层**:实例出现在某配置的 `cep.bridges[].protocol_instance`(⇒ 被挂进可运行拓扑);
 //   ③ **平面层**:实例在 `collective_planes.json` 的 `plane_binding` 中的绑定**非空**且**已登记**
 //      (⇒ collective 能力有确定的承载实现)。
+//   ④ **SSP 绑定维**(批 2 · ⑧ 装配集成):用户自定义协议实例(`family` == `user-defined`)
+//      ⇒ `protocol_version` 必须是 `user:<ssp-id>` 形态且该 `<ssp-id>` **已登记**,
+//      且 `adapter` 非空 ⇒ 实例 `id` + `adapter` + SSP 绑定**三方**解析到同一插件。
+//      ⚠️ 只覆盖**形态 + 引用闭环**(⛔ 不承诺语义)。
 //
 // ⚠️ **本闸只判「装配完整性」,不判协议语义** —— 语义判据在 collective plane 契约面
 //    (CP-03 的 C-1′ / C-2 证书)与 channel dependency 闸。
 //
-// 归因 tag 形态:`[IAG-01]` ~ `[IAG-07]`(与既有 `[CP-03-…]` 风格一致 ⇒ 反向 fixture 可精确命中)。
+// 归因 tag 形态:`[IAG-01]` ~ `[IAG-07]`(与既有 `[CP-03-…]` 风格一致 ⇒ 反向 fixture 可精确命中);
+// ⚠️ `[IAG-08]` 已被既有用例占用 ⇒ **不复用**;SSP 绑定维的 tag = **`[IAG-09]`**。
 #ifndef CPPT_LM_CEP_INSTANCE_ASSEMBLY_GATE_HH
 #define CPPT_LM_CEP_INSTANCE_ASSEMBLY_GATE_HH
 
@@ -25,6 +30,7 @@
 #include "tlm/cep/collective_plane.hh"
 #include "tlm/cep/bridge_module_membership.hh"
 #include "tlm/cep/protocol_family.hh"
+#include "tlm/cep/ssp_loader.hh"
 
 namespace tlm::cep {
 
@@ -96,10 +102,14 @@ inline bool module_declared(const nlohmann::json& config, std::string_view name)
 /// @param config      拓扑配置(含 `cep.bridges[]`)
 /// @param instances_doc `protocol_instances.json` 解析结果
 /// @param planes_doc  `collective_planes.json` 解析结果
+/// @param required_plane_instances 显式要求 collective 绑定的实例
+/// @param ssps_doc    SSP 声明面(`ssps.json`)解析结果 —— ⚠️ **nullptr ⇒ SSP 绑定维不判**
+///                     (既有调用方零行为变更;两臂经 `instance_assembly_loader.hh` 传入同一份)
 inline InstanceAssemblyReport run_instance_assembly_gate(
     const nlohmann::json& config, const nlohmann::json& instances_doc,
     const nlohmann::json& planes_doc,
-    const std::vector<std::string>& required_plane_instances = {}) {
+    const std::vector<std::string>& required_plane_instances = {},
+    const nlohmann::json* ssps_doc = nullptr) {
     InstanceAssemblyReport rep;
 
     if (!config.contains("cep") || !config.at("cep").contains("bridges") ||
@@ -201,6 +211,35 @@ inline InstanceAssemblyReport run_instance_assembly_gate(
             }
         } else if (plane_required) {
             rep.errors.emplace_back("[IAG-04] plane binding missing: " + id);
+        }
+
+        // ⑦ **SSP 绑定维**(批 2 · ⑧ 装配集成):
+        //    用户自定义协议实例(`family` == `user-defined`)⇒ 其 `protocol_version` 必须是
+        //    `user:<ssp-id>` 形态、该 `<ssp-id>` **已登记**、且 `adapter` 非空
+        //    ⇒ 实例 `id` + `adapter` + SSP 绑定**三方**解析到同一插件。
+        //    ⚠️ 只覆盖**形态 + 引用闭环**(⛔ 不承诺语义:活性 / 无死锁 / 一致性 / 兼容性)。
+        //    ⚠️ `ssps_doc == nullptr` ⇒ 本维**不判**(既有调用方零行为变更)。
+        //    ⚠️ 归因 tag = `[IAG-09]`(⛔ 不复用 `[IAG-08]` —— 已被既有用例占用)。
+        if (ssps_doc != nullptr) {
+            const std::string family = decl->value("family", std::string{});
+            const std::string version = decl->value("protocol_version", std::string{});
+            const std::string ssp_id = ssp::user_protocol_version_target(version);
+            const bool user_family =
+                (family == protocol_family_name(ProtocolFamily::UserDefined));
+            if (user_family || !ssp_id.empty()) {
+                if (!user_family || ssp_id.empty()) {
+                    // ① `family` 与 `protocol_version` 的**分支**必须一致
+                    rep.errors.emplace_back("[IAG-09] ssp binding incomplete: " + id +
+                                            " (family=" + family +
+                                            " protocol_version=" + version + ")");
+                } else if (decl->value("adapter", std::string{}).empty()) {
+                    // ② `adapter` 必填(装配期三方解析的一环)
+                    rep.errors.emplace_back("[IAG-09] ssp instance has no adapter: " + id);
+                } else if (!ssp::ssp_id_registered(*ssps_doc, ssp_id)) {
+                    // ③ `<ssp-id>` 必须在 SSP 声明面**已登记**(唯一真源 = `ssps.json`)
+                    rep.errors.emplace_back("[IAG-09] ssp not declared: " + ssp_id + " (" + id + ")");
+                }
+            }
         }
 
         rep.mounted.push_back(id);

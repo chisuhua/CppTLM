@@ -998,7 +998,10 @@ TEST_CASE("[cep][schema] 两分支谓词只有唯一实现(禁第二份拷贝)",
             const std::string ext = e.path().extension().string();
             if (ext != ".hh" && ext != ".cc" && ext != ".h" && ext != ".hpp")
                 continue;
-            const std::string body = read_file(e.path().string());
+            // ⚠️ 先**剥注释** —— 判据是「**代码**里的 `user:` 判定」,
+            //    注释里的形态引用(`user:<ssp-id>` 说明文字)不构成第二份实现。
+            const std::string body =
+                cpptlm::cep::strip_comments(read_file(e.path().string()));
             if (body.find("user:") != std::string::npos) {
                 offenders.push_back(e.path().string());
             }
@@ -1007,6 +1010,16 @@ TEST_CASE("[cep][schema] 两分支谓词只有唯一实现(禁第二份拷贝)",
     for (const auto& o : offenders) {
         INFO("命中 user: 判定的文件(生产层): " << o);
     }
-    // 生产层**零** `user:` 判定 —— 判定只允许在测试层 helper(test/cep_adr_parser.hh)+ 本测试文件
-    CHECK(offenders.empty());
+    // 生产层**至多一处** `user:` 判定,且**必须**是 `ssp_loader.hh`(唯一实现)。
+    //
+    // ⚠️ 判据演进(批 2 `cep-ssp-batch2`):批 1 形态 = 「生产层**零** `user:`」
+    //    —— 当时的理由是「无生产代码消费它 ⇒ 放生产层即死代码」(批 1 design D-2)。
+    //    批 2 起**有**生产层消费者(`instance_assembly_gate.hh` 的 SSP 绑定维)
+    //    ⇒ 「零」不再成立,但 G-2 的**原意是禁第二份拷贝**、不是禁生产层
+    //    ⇒ 演进为「生产层**唯一实现**」—— 判别力不变(第二份拷贝仍必红)。
+    CHECK(offenders.size() <= 1u);
+    for (const auto& o : offenders) {
+        INFO("唯一实现应为 ssp_loader.hh,实际: " << o);
+        CHECK(o.find("ssp_loader.hh") != std::string::npos);
+    }
 }

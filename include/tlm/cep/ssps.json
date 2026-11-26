@@ -37,6 +37,34 @@
       ],
       "basis_projection_kind": ["primary", "primary", "primary", "primary", "primary"],
       "basis_projection_pending": [false, false, false, false, false]
+    },
+    {
+      "id": "tilelink_cap_ssp",
+      "states": ["Nothing", "Branch", "Tip"],
+      "events": [
+        {"name": "Cap", "anchor": "Cap"},
+        {"name": "Grow", "anchor": "Grow"},
+        {"name": "Prune", "anchor": "Prune"},
+        {"name": "Report", "anchor": "Report"}
+      ],
+      "transition": [
+        [{"target_mask": 7}, {"target_mask": 6}, {"target_mask": 0}, {"target_mask": 1}],
+        [{"target_mask": 7}, {"target_mask": 4}, {"target_mask": 1}, {"target_mask": 2}],
+        [{"target_mask": 7}, {"target_mask": 0}, {"target_mask": 3}, {"target_mask": 4}]
+      ],
+      "perm": ["none", "read", "writeback"],
+      "basis_kind": [
+        ["primary", "primary", "primary", "primary"],
+        ["primary", "primary", "primary", "primary"],
+        ["primary", "primary", "primary", "primary"]
+      ],
+      "basis_pending": [
+        [false, false, false, false],
+        [false, false, false, false],
+        [false, false, false, false]
+      ],
+      "basis_projection_kind": ["primary", "primary", "primary"],
+      "basis_projection_pending": [false, false, false]
     }
   ]
 }

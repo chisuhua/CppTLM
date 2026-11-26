@@ -78,7 +78,7 @@ def parse_scope(cell):
     return "registered", items
 
 truth = {}
-for m in re.finditer(r"^\|\s*\*\*(H[1-8])\*\*\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$", sec, re.M):
+for m in re.finditer(r"^\|\s*\*\*(H[1-9])\*\*\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$", sec, re.M):
     h, scope_cell, _reason = m.group(1), m.group(2), m.group(3)
     truth[h] = parse_scope(scope_cell)
 

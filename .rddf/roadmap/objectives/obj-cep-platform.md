@@ -744,6 +744,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **H7** | *(全部 13 项)* | 外部对拍,**不产生**本仓 `metrics.json` run |
 | **H8** | `avg_latency_cycles` · `p50_latency_cycles` · `p95_latency_cycles` · `p99_latency_cycles` · `max_latency_cycles` · `coherence_stalls` · `collective_stalls` · `directory_misses` · `deadlock_violations` · `memory_violations` | **(2026-11-05 pending → registered,Entry #224 Task C)** 本假设**不直接产 run** —— 证据载体 = 3 组 A/B 结论(per Entry #224 ⑤ H8-A/B-1/2:每组两侧 hypothesis_id 相同,绑**本组装置的行** h6/h4/h2 ⇒ 直接复用其预登记)⇒ 本集 = **3 组装置 out-of-scope 的并集(10 项)**,实测量并集 = `total_*`×3 —— 并集登记保证未来以 `CEP_EXP_VARIANT` 产的 H8 变体 run 的「实测集 ⊆ 本集」恒成立 |
 
+| **H9** | *(全部 13 项)* | 用户自定义协议(SSP)**档 0** 实验 —— 只覆盖「形态 + 引用闭环」(per `ADR-CEP-24` 决策 2.3);⛔ **零时序**(不含 hop / 消息级延迟 · 属 S2 `ADR-CEP-25`)⇒ 全部 13 项必纳 metric 均**不采**(per `ADR-CEP-20` 决策 6 的档 0 纪律;⛔ 禁写裸 0 冒充实测) |
 **②-2 机器投影与 drift 关系(per `ADR-CEP-06` **SU#2** ①~③ —— 载体裁决)**
 
 | 项 | 落点 |
@@ -29756,3 +29757,64 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | objective §11「下一入口」行 | 批 ① 落地 ⇒ 下一入口 = 批 ②（已由本 Entry 接住）| planner（本批）|
 | `ADR-CEP-24` 元数据「关联 change」指针 | ⏳ **仍为** `backlog: cep-user-defined-ssp-declaration` ⇒ 须按先例（`ADR-CEP-12:589` vs `:763`）在**后续 SU 段追加**实际 change 路径（批 ① 归档路径 + 批 ② path）· ⛔ **不回改**头部 backlog 行（append-only）| architect（后续）|
 | `cep-ssp-batch2` 的 handoff | ✅ 本轮更新 `.planner-handoff.json`（`awaiting_builder = [cep-ssp-batch2]` · `recommended_route = complex`）| planner（本批）|
+
+### Entry #558 — 2026-11-27 [builder](**`cep-ssp-batch2` P2 实施 + 冻结面授权** —— ⑦ 解释器 · ⑧ 装配 SSP 绑定维 · ⑨ 掩码格两形态 · ⑩ 档 0 实验 4 件套 · **4 处冻结面五步链**)
+
+**主题**：兑现 Entry #557 立项的批 ② 实施（P2）。**本 Entry 是五步链的步 1（授权）** —— 覆盖本次命中的 **4 处** 冻结面。
+
+**① 授权（五步链步 1 · `--authorized-by "Entry #558"` 的载体）**
+
+| # | 冻结面 | 变化 | 依据 |
+|:--:|---|---|---|
+| 1 | `experimental/preregistration.json` | 新增 `H9`（SSP 档 0 实验 · `out_of_scope` = 全部 13 项）| ⑩ 4 件套须绑定已登记假设；H1/H5/H7 的 reason 明写「**不产生** metrics.json run」⇒ 复用 = 语义不诚实 ⇒ 必须新立 H9 |
+| 2 | `openspec/specs/cep-instance-assembly/spec.md` | `cep-instance-assembly` requirement 扩 **SSP 绑定维**（`[IAG-09]`）| ⑧ 装配集成 |
+| 3 | `openspec/specs/cep-ssp-declaration/spec.md` | `cep-ssp-declaration` 扩**两形态** + `cep-ssp-loader` 红因码 `E1`~`E14` + 新 Scenario「掩码格的两形态」| ⑨ 掩码格扩展 |
+| 4 | `openspec/specs/cep-ssp-runtime/spec.md` | **新增 main spec**（⑦⑩ 运行时契约）| 批 ② 的 ⑦ / ⑩ 需正式契约面 ⇒ M1 glob 自动扩 |
+
+> ⚠️ **`include/tlm/cep/ssp.schema.json` / `ssps.json` 仍不在 M1 集**（批 ① 新建时未入）⇒ ⑨ 的 contract 面改动落在**未冻结件**上 ⇒ 是否纳入 = **architect 域待裁**（Entry #557 ⑥ · 本 Entry **不代裁**）。本批用**合同测试 + 逐位对账闸**兜底。
+
+**② 实施清单（P2 产物 · worktree `.rddf/wt/cep-ssp-batch2`）**
+
+| 面 | 产物 | 关键判据 |
+|---|---|---|
+| **⑦ 解释器** | `include/tlm/cep/ssp_interpreter.hh`（新头 · header-only）| 状态迁移 + perm 投影；**洞命中 ⇒ `violation_count` + `judgeable=false`**（⛔ 不静默跳过 / 不 panic）；**编译期零时序锁**（`sizeof(SspStep) == 3*sizeof(std::string)`）|
+| **⑨ contract** | `ssp.schema.json`（单元扩 `string｜null｜object{target_mask}`）+ `ssp_loader.hh`（E5/E6 放宽 + **新红因码 E14**）| 掩码位宽上限 = `states` 数（bit i ↔ states[i]）；E14 5 条反向 fixture 各自按**正确原因**红 |
+| **⑨ 数据面** | `ssps.json` 新增 `tilelink_cap_ssp`（3 态 × 4 事件 · 12 格掩码）| **V-24-2 两形态 killer**：与 `tilelink_state_spec.hh::kTransitions` **逐位**相等（转置对齐）+ 反向改一位必红 |
+| **⑧ 装配 seam** | `instance_assembly_gate.hh` 第 ⑦ 维（tag **`[IAG-09]`**，⛔ 不复用 `[IAG-08]`）+ `instance_assembly_loader.hh` 加载 `ssps.json` + 两臂（`module_factory.cc` / CLI）传参 + `ssp_loader.hh` 的「已登记 id」**唯一实现** | 三方解析：`family == user-defined` ∧ `protocol_version == user:<已登记 ssp-id>` ∧ `adapter` 非空；5 条 fixture（未登记 / 分支不一致 / 非 user: 形态 / adapter 缺 / `ssps_doc=nullptr` 零行为变更见证）|
+| **⑩ 4 件套** | `test/test_cep_ssp_experiment_emit.cc`（档 0 emit · 标签 `[cep][ssp][emit]`）+ `cep_experiment_run.sh --ssp`（复用既有 `emit_trace`/`render_report`，⛔ 零复制）+ 新闸 `scripts/test/cep_ssp_runtime_check.sh` | 4 件套齐备 + 13 项**全 `not-collected`** + `_measured` 空 + `simulation_mode=functional`（⛔ 非 timing）+ `hypothesis_id=H9` + 洞命中 fixture（拒绝产出）|
+| **契约面** | 3 份 main spec（见 ①）+ delta 同步（掩码位宽口径 / `E1~E14` / 新 Scenario）| main spec 与 delta **逐字一致**（脚本从 delta 提取 requirement 块替换）|
+
+**③ 实测发现与判据演进（4 项偏差 + 3 项闸演进 · 均为**证据驱动**，非臆造）**
+
+| # | 发现 | 处置 |
+|:--:|---|---|
+| 1 | **SSP 绑定不能新增字段** —— `protocol_instance.schema.json` 是 13 必含 + `additionalProperties:false`，且 main spec 明写「properties 仍 == 14」| 复用批 ① 已定的 `protocol_version = user:<ssp-id>` + `family = user-defined` ⇒ **少 1 处冻结面** |
+| 2 | **掩码位宽应随 `states` 数**（非固定 3）| 通用化；delta 表述同步（TileLink 形态下 == 3）|
+| 3 | **loader 红因码实际已是 `E1`~`E13`**（E13 是批 ① 引入的退化 SSP；main spec 仍写 `E1`~`E12`）| 本批一并对齐 **`E1`~`E14`**（同一 contract 面内自洽）|
+| 4 | **`H9` 必须新增**（H1/H5/H7 明写「不产生 metrics.json run」）| 双源同改（objective §9.1 ② 表 + `preregistration.json`）+ **drift 闸正则 `H[1-8]` → `H[1-9]`**（闸**能力扩展**，⛔ 不放松「集合相等」判据）|
+| 5 | `test_cep_schema.cc` 的 `[cep][schema][ic1]` 断言「生产层**零** `user:`」 | 批 ② 起生产层**有**合法消费者 ⇒ 按 **G-2 原意（禁第二份拷贝）** 演进为「生产层**唯一实现**」+ 扫描**先剥注释**（注释里的形态引用不算实现）⇒ 判别力不变 |
+| 6 | `cep_iag_gate_reconcile_check.sh` C4「判据本体零 diff」| **无需改闸**：C4 比较工作树 vs HEAD ⇒ commit 后自然绿（改为在本 Entry 记录「判据本体改动 = 本批合法范围」）|
+| 7 | SSP emit 用例标签与既有 `[cep][exp][emit]` 重叠 ⇒ h2 过滤器误匹配 | 标签改 `[cep][ssp][emit]`（隔离）|
+
+**④ 五步链（物理串行 · 一次覆盖 4 处命中）**
+
+1. **本 Entry #558**（授权 · 步 1）
+2. builder commit：批 ② 产物（代码 + 测试 + 3 份 main spec + preregistration H9 · **一个**产物 commit）
+3. `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #558"`（预期：**新增 1**（`cep-ssp-runtime`）· 移出 0 · **hash 变更 3**）
+4. **清单单独 commit**（⛔ 不得与产物同 commit）
+5. 无参复验 `bash scripts/test/cep_freeze_check.sh` ⇒ **rc=0**（硬门）
+
+**⑤ 实测（P2 收口 · 以命令输出为准）**
+
+- `./build/bin/cpptlm_tests "[cep]"` ⇒ **593 cases / 13847 assertions 全绿**（主仓基线 585/13719 ⇒ +8 cases / +128 assertions = 本批新增，**零回归**）
+- `scripts/test/cep_ssp_runtime_check.sh` ⇒ 6 项全绿（含洞命中反向 fixture）
+- `scripts/test/cep_prereg_drift_check.sh` ⇒ 9 个假设集合相等 · rc=0
+- `openspec validate cep-ssp-batch2 --strict` ⇒ valid · 3 份 main spec 单独 `--type spec --strict` 全绿
+- ⚠️ **worktree 环境坑**：`openspec/changes/archive/` 主仓 178 目录 vs worktree 77（归档件未入 git 跟踪 ⇒ 全新 worktree 缺件假红）⇒ 本批以「主仓基线 585/585 全绿」+「修复 worktree 环境后 593/593 全绿」双重对照排除假红
+
+**⑥ 未完成项（⛔ 不得宣称已达成）**
+
+| # | 项 | 现状 | 路由 |
+|:--:|---|---|---|
+| 1 | **AC-7：`ADR-CEP-14` C1~C10 在 SSP 协议上的实例化** | ⛔ **未实施** —— C1~C10 载体 `test_cep_canonical_invariants.cc` 测 **Stub 面**，「在 SSP 协议上实例化」需**SSP 驱动的 adapter + engine**（实现 `AdapterSchemaContracts` + `ProtocolEngineBase` 端口面，参照 `mesif_adapter.hh` 206 行 + `mesif_protocol_engine.hh` 859 行 ⇒ 约 500~800 行），plan Task 5 未覆盖 | 待用户裁决（补 A 路径 / 或 B 路径独立立项）|
+| 2 | ⛔ **表述纪律** | 本批落地后**仍不得**宣称「合同测试已覆盖 SSP 协议」（AC-7 未达）；实验结论**只**支撑「形态 + 引用闭环」档（⛔ 零时序 · 属 S2 `ADR-CEP-25`）| — |

@@ -27,11 +27,13 @@ cd "$REPO_ROOT"
 OUT="experimental/run-$(date +%Y%m%d-%H%M%S)-h2h3h4h6"
 SELFTEST=0
 TOPOLOGY=0
+SSP=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --out) OUT="$2"; shift 2 ;;
         --selftest) SELFTEST=1; shift ;;
         --topology) TOPOLOGY=1; shift ;;
+        --ssp) SSP=1; shift ;;
         -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
         *) echo "✗ 未知参数: $1" >&2; exit 2 ;;
     esac
@@ -162,6 +164,34 @@ if [[ "$TOPOLOGY" -eq 1 ]]; then
     check_four_artifacts "$OUT" || status=1
     if [[ $status -eq 0 ]]; then
         echo "✓ 拓扑级 run 产出完成: $OUT"
+    else
+        echo "✗ 存在失败项" >&2
+    fi
+    exit $status
+fi
+
+if [[ "$SSP" -eq 1 ]]; then
+    echo "── ssp ─────────────────────────────────────────────"
+    # ⚠️ 与 topology 段同形态:产物直接落 `$OUT`(顶层)⇒ 目录里只留 4 件套
+    mkdir -p "$OUT"
+    rm -f "$OUT/simulation_config.json" "$OUT/trace.h5" "$OUT/metrics.json" "$OUT/report.html"
+    # ⚠️ SSP 档 0 装置(批 2 `cep-ssp-batch2` · ⑩):⛔ **零时序** ⇒ 13 必纳 metric 全不采
+    CEP_EXP_DIR="$OUT" CEP_EXP_ID="ssp" "$BIN" "[cep][ssp][emit]" -r compact >/dev/null
+    if [[ ! -f "$OUT/metrics.json" ]]; then
+        echo "  ✗ SSP 装置未产出 metrics.json(洞命中 ⇒ 该次实验判「不可判」⇒ 拒绝产出)" >&2
+        exit 1
+    fi
+    emit_trace "$OUT" "ssp"
+    python3 tools/render_report.py "$OUT" >/dev/null
+    if python3 tools/render_report.py "$OUT" --check >/dev/null; then
+        echo "  ✓ 4 件套 + 契约校验通过: $OUT"
+    else
+        echo "  ✗ 契约校验失败: $OUT" >&2
+        status=1
+    fi
+    check_four_artifacts "$OUT" || status=1
+    if [[ $status -eq 0 ]]; then
+        echo "✓ SSP 档 0 run 产出完成: $OUT"
     else
         echo "✗ 存在失败项" >&2
     fi

@@ -149,6 +149,25 @@
         "p99_latency_cycles"
       ],
       "reason": "H8 = 实验 4 件套 + 13 必纳 metric 的工具链判定假设:本假设**不直接产 run**,证据载体 = 3 组 A/B 结论(工具输出 + validation 文档,per Entry #224 ⑤ H8-A/B-2)。out-of-scope 集 = 3 组装置(h6/h4/h2)各自 out-of-scope 的**并集**(10 项;实测量并集 = total_*×3)—— 若未来以 CEP_EXP_VARIANT 产标 H8 的变体 run,该并集保证「每侧实测集 ⊆ 本集」恒成立(per Entry #224 ⑤ H8-A/B-1:每组两侧 hypothesis_id 相同⇒共享该假设的预登记)。2026-11-05 由 pending→registered(Entry #224 Task C 预登记先于产出)。"
+    },
+    "H9": {
+      "status": "registered",
+      "out_of_scope": [
+        "total_cycles",
+        "total_transactions",
+        "transactions_per_cycle",
+        "avg_latency_cycles",
+        "p50_latency_cycles",
+        "p95_latency_cycles",
+        "p99_latency_cycles",
+        "max_latency_cycles",
+        "coherence_stalls",
+        "collective_stalls",
+        "directory_misses",
+        "deadlock_violations",
+        "memory_violations"
+      ],
+      "reason": "用户自定义协议(SSP)**档 0** 实验 —— 只覆盖「形态 + 引用闭环」(per `ADR-CEP-24` 决策 2.3);⛔ **零时序**(不含 hop / 消息级延迟 · 属 S2 `ADR-CEP-25`)⇒ 全部 13 项必纳 metric 均**不采**(per `ADR-CEP-20` 决策 6 的档 0 纪律;⛔ 禁写裸 0 冒充实测)"
     }
   }
 }

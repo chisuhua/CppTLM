@@ -16,8 +16,16 @@
 //   E11 basis_kind / basis_pending 维度 != states × events
 //   E12 basis_projection_* 维度 != states
 //   E13 transition **全为空洞**（退化 SSP · ADR-CEP-24 §4 边界 E1）
+//   E14 transition **掩码格**非法（缺 target_mask / 带多余键 / 非整数 / 越位宽）
 //
 // ⛔ 本头**不**含协议名（通用层 · 铁律 2）；协议名只允许出现在**数据**（`ssps.json`）。
+//
+// ⚠️ **transition 单元的两形态**（per `ADR-CEP-24` 决策 6.2 · 批 2 掩码格扩展）：
+//   ① `string` —— 目标 state 名（**单目标**形态）
+//   ② `null`   —— **空洞**（运行期事件落此 ⇒ 违例计数 + 该次实验判「不可判」）
+//   ③ `object` —— **掩码**形态 `{target_mask}`（目标为**集合** —— 源不定 ⇒ 目标非单值）
+//   ⚠️ 掩码的 bit i 对应 `states[i]`（**声明顺序**）；位宽上限 = states 数（E14 校验）。
+//   ⚠️ 掩码形**只表达目标集合** ⇒ ⛔ 不承载时序 / hop（属 S2 `ADR-CEP-25`）。
 //
 // 作者：CppTLM Team / 日期：2026-11-26
 #ifndef CPPTLM_TLM_CEP_SSP_LOADER_HH
@@ -150,7 +158,36 @@ namespace tlm::cep::ssp {
                 for (std::size_t j = 0; j < ne; ++j) {
                     const auto& cell = row[j];
                     if (cell.is_null()) continue; // 空洞
-                    if (!cell.is_string()) return detail::fail("E6", sid + ": 转移目标须为 state 名或 null");
+                    // ③ **掩码形态**（批 2 掩码格扩展 · `ADR-CEP-24` 决策 6.2）：
+                    //    `{target_mask}` —— 目标为**集合**（源不定 ⇒ 目标非单值）。
+                    if (cell.is_object()) {
+                        if (!cell.contains("target_mask"))
+                            return detail::fail("E14", sid + ": 掩码格缺 target_mask");
+                        if (cell.size() != 1)
+                            return detail::fail("E14", sid + ": 掩码格只允许 target_mask 一个键");
+                        const auto& tm = cell.at("target_mask");
+                        if (!tm.is_number_integer())
+                            return detail::fail("E14", sid + ": target_mask 须为整数");
+                        unsigned long long mask = 0;
+                        if (tm.is_number_unsigned()) {
+                            mask = tm.get<unsigned long long>();
+                        } else {
+                            const long long sv = tm.get<long long>();
+                            if (sv < 0)
+                                return detail::fail("E14", sid + ": target_mask 不得为负");
+                            mask = static_cast<unsigned long long>(sv);
+                        }
+                        // 位宽上限 = states 数（bit i ↔ states[i]，**声明顺序**）
+                        if (ns < 64) {
+                            const unsigned long long max_mask = (1ULL << ns) - 1ULL;
+                            if (mask > max_mask)
+                                return detail::fail("E14", sid + ": target_mask 越出 states 数的位宽");
+                        }
+                        ++non_hole;
+                        continue;
+                    }
+                    if (!cell.is_string())
+                        return detail::fail("E6", sid + ": 转移目标须为 state 名 / null / 掩码对象");
                     const std::string tgt = cell.get<std::string>();
                     if (states.count(tgt) == 0)
                         return detail::fail("E6", sid + ": 转移目标不是已声明 state: " + tgt);
@@ -205,6 +242,46 @@ namespace tlm::cep::ssp {
             }
         }
         return {true, "", ""};
+    }
+
+    // ── 「已登记 ssp.id」判定的**唯一实现**（per `ADR-CEP-11` SU(2026-11-26)① 分支 ②）──
+    //
+    // ⚠️ **单一实现纪律**（Entry #109 G-2）：本仓**只有这一处**判定「某 id 是否已登记」。
+    //    ⛔ 禁在别处（尤其装配闸 / 测试 helper）另抄一份 —— 两份谓词可能漂移，
+    //    且漂移的那份往往无反向 fixture ⇒ 静默假绿。
+    //    真源 = `ssps.json` 的 `ssps[].id`（⛔ 不是协议名白名单）。
+
+    /// 提取文档中**已登记**的 `ssp.id` 集合（⛔ 文档本身不合法时返回空集 ⇒ 调用方按「未登记」处理）。
+    inline std::set<std::string> registered_ssp_ids(const nlohmann::json& doc) {
+        std::set<std::string> out;
+        if (!doc.is_object() || !doc.contains("ssps") || !doc["ssps"].is_array()) return out;
+        for (const auto& ssp : doc["ssps"]) {
+            if (!ssp.is_object()) continue;
+            const std::string sid = ssp.value("id", std::string{});
+            if (!sid.empty()) out.insert(sid);
+        }
+        return out;
+    }
+
+    /// 某 `ssp.id` 是否**已登记**（唯一实现 · 见上）。
+    inline bool ssp_id_registered(const nlohmann::json& doc, const std::string& id) {
+        if (id.empty()) return false;
+        return registered_ssp_ids(doc).count(id) == 1;
+    }
+
+    // ── `protocol_version` 的 `user:<ssp-id>` 分支解析（**唯一实现**）──────────
+    //
+    // ⚠️ 口径与 `detail::id_ok`（E2 词表）**同源** ⇒ ⛔ 禁另抄一份词表。
+    // ⚠️ 本函数只做**形态**解析（「像不像 `user:<id>`」）⇒ 「是否已登记」由
+    //    `ssp_id_registered` 判定（⛔ 两者职责分离：形态 ≠ 引用闭环）。
+
+    /// 若 `version` 形如 `user:<ssp-id>` ⇒ 返回 `<ssp-id>`；否则返回**空串**。
+    inline std::string user_protocol_version_target(const std::string& version) {
+        const std::string prefix = "user:";
+        if (version.rfind(prefix, 0) != 0) return std::string{};
+        const std::string id = version.substr(prefix.size());
+        if (!detail::id_ok(id)) return std::string{};
+        return id;
     }
 
 } // namespace tlm::cep::ssp

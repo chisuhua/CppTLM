@@ -34,17 +34,22 @@ namespace tlm::cep {
 
 /// 平面层声明源缺省路径(相对仓库根;与 CLI 共用同一常量,避免两处各写一份)
 inline constexpr const char* kDefaultCollectivePlanesPath = "include/tlm/cep/collective_planes.json";
+/// SSP 声明面缺省路径(相对仓库根;同上,单一常量)
+inline constexpr const char* kDefaultSspsPath = "include/tlm/cep/ssps.json";
 
 /// 装配闸的输入三元组 + 加载诊断。
 struct InstanceAssemblyInputs {
     nlohmann::json instances_doc;  ///< 声明层(protocol_instances.json 或内联)
     nlohmann::json planes_doc;     ///< 平面层(collective_planes.json;不可读 ⇒ 空文档)
+    nlohmann::json ssps_doc;       ///< SSP 声明面(ssps.json;不可读 ⇒ 空文档)
     bool source_error = false;     ///< 显式声明源写错(不可读 / 畸形 / 0 实例)⇒ 判红
     std::string source_error_detail;
     bool skip = false;             ///< 外部条件(默认声明源不可读)⇒ 不阻断
     std::string skip_reason;
     bool planes_unavailable = false;  ///< 平面层不可读(⛔ 不阻断,只影响 04/05)
     std::string planes_unavailable_detail;
+    bool ssps_unavailable = false;    ///< SSP 声明面不可读(⛔ 不阻断其它判据)
+    std::string ssps_unavailable_detail;
 };
 
 namespace detail {
@@ -122,6 +127,20 @@ inline InstanceAssemblyInputs load_instance_assembly_inputs(const nlohmann::json
     if (!detail::read_json_file(kDefaultCollectivePlanesPath, in.planes_doc, err)) {
         in.planes_unavailable = true;
         in.planes_unavailable_detail = err + "(⛔ 只影响 [IAG-04]/[IAG-05],其余判据照判)";
+    }
+
+    // ── SSP 声明面(不可读 ⇒ 空文档)──────────────────────────────────────────
+    //   ⚠️ 与平面层的处置**故意不同**:平面层不可读 ⇒ 04/05 自然不判(绑定可选项);
+    //     SSP 声明面不可读 ⇒ **用户自定义协议实例判红**(`[IAG-09]`)——
+    //     因为「`user:<ssp-id>` 已登记」是**引用闭环**的必需证据,缺证据 ⇒ fail-closed。
+    //     ⛔ 非用户自定义实例(既有 8 实例)**不受影响**(该维只对 `family == user-defined` 生效)。
+    {
+        std::string ssps_err;
+        if (!detail::read_json_file(kDefaultSspsPath, in.ssps_doc, ssps_err)) {
+            in.ssps_unavailable = true;
+            in.ssps_unavailable_detail =
+                ssps_err + "(⛔ 只影响 [IAG-09];用户自定义协议实例 ⇒ fail-closed)";
+        }
     }
     return in;
 }

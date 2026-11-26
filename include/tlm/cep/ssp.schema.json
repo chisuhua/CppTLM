@@ -88,10 +88,21 @@
         },
         "transition": {
           "type": "array",
-          "description": "states × events；单元 = 目标 state 名，或 null（空洞）。维度一致性由 loader 校验（E5）。",
+          "description": "states × events；单元 = **两形态**之一 —— ① 目标 state 名（string）② null（空洞）③ 掩码对象 {target_mask}（目标为**集合**：源不定 ⇒ 目标非单值）。维度一致性由 loader 校验（E5）；掩码位宽上限由 loader 按 states 数校验（E14）。",
           "items": {
             "type": "array",
-            "items": { "type": ["string", "null"] }
+            "items": {
+              "type": ["string", "null", "object"],
+              "properties": {
+                "target_mask": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "目标状态**集合**的位掩码；bit i 对应 states[i]（声明顺序）。位宽上限 = states 数（由 loader 校验 · E14）。⛔ 不承载时序 / hop（属 S2 ADR-CEP-25）。"
+                }
+              },
+              "required": ["target_mask"],
+              "additionalProperties": false
+            }
           }
         },
         "perm": {

@@ -22,7 +22,8 @@
 | `engine_capabilities.hh` | 协议引擎承载能力声明面（G1 · 现状登记） |
 | `hop_timing_capabilities.hh` | 协议语义层的 hop / 时序建模声明面（G10 · 现状登记） |
 | `event_alphabet.hh` | **SSP 事件字母表**（14 核心锚 · 封闭 · flow 部分映射 · `ADR-CEP-24` 决策 3.1） |
-| `ssp_loader.hh` | **SSP 声明面 loader**（fail-closed · 红因码 `E1`~`E12` · ⛔ 不承诺语义） |
+| `ssp_loader.hh` | **SSP 声明面 loader**（fail-closed · 红因码 `E1`~`E14` · ⛔ 不承诺语义） |
+| `ssp_interpreter.hh` | **SSP functional-only 解释器**（状态迁移 + perm 投影 · ⛔ 零时序 · 洞命中 ⇒ 违例计数 + 不可判） |
 | `fence_effects.hh` | fence 一致性效果的**派生声明面**（G4 · 由标签 + barrier 推导） |
 
 ### 协议适配（每协议一组：engine / adapter / state_spec）

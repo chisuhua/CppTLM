@@ -96,7 +96,8 @@ int main(int argc, char* argv[]) {
 
     // ── 跑判据(与装配路径臂**同一份**实现)───────────────────────────────
     const tlm::cep::InstanceAssemblyReport rep =
-        tlm::cep::run_instance_assembly_gate(config, inputs.instances_doc, inputs.planes_doc);
+        tlm::cep::run_instance_assembly_gate(config, inputs.instances_doc, inputs.planes_doc, {},
+                                             &inputs.ssps_doc);
 
     std::fputs(rep.log.c_str(), stdout);
     for (const auto& e : rep.errors) {
