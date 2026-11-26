@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 0/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
+`openspec/changes/` 当前 **1 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 1/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -29421,3 +29421,69 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 |---|---|---|
 | objective `CP-Q-1a` | → ✅ **闭合**（裁决记录已 ratify + 本 SU 落盘后）| planner（本批）|
 | objective `CP-I-2` | → **解除阻塞**（`CP-Q-1a` 的开工门已解除；仍受 openspec 并发 ≤ 1 + 队列顺序约束）| planner（本批）|
+
+---
+
+### Entry #553 — 2026-11-26 [planner](**`CP-I-2` 立项** —— change `cep-ssp-declaration`（S1 批 1：声明面 + loader + V-24-2 逐格对账）· KPI 0/3 → 1/3)
+
+**主题**：立项 S1 的**批 1** = ① 事件字母表契约（14 核心锚）② SSP 声明面（JSON + 同名 schema）③ fail-closed loader ④ **V-24-2 killer 判据**（SSP 用数据面表达 MESIF 并与 `mesif_state_spec.hh` 的 `kTable` 逐格 diff）⑤ 闸（A-1~A-14）⑥ 主 spec。
+**元**：`ADR-CEP-24`（✅ 已签发）· `CP-Q-1a` 裁决（✅ 已 ratify · `.rddf/reviews/cep-CP-Q-1a-adjudication.md` §6.1）· objective `obj-cep-custom-protocol` 的 `CP-I-2` · improvement `.rddf/improvements/cep-ssp-declaration.md` · change `openspec/changes/cep-ssp-declaration/`
+
+**① 授权理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | **`ADR-CEP-24` 已签发**（双审 0 BLOCKER）| ✅ | commit `4134ed89` · 台账 Entry #551 |
+| 2 | ⭐ **`CP-Q-1a` 已 ratify**（用户批准 R1~R4 · 事件字母表 = 新建 + 14 锚 + 扩权方 architect）| ✅ | 裁决 §6.1 · 台账 Entry #552 |
+| 3 | **开工门已解除**（`CP-Q-1a` 闭合 ⇒ `CP-I-2` 可立项）| ✅ | objective §0.2 解禁行 |
+| 4 | **openspec slot 可用**（0/3）| ✅ | `ls openspec/changes/ \| grep -v archive` = 0 |
+| 5 | ⚠️ **`CP-Q-1b` 未裁但不阻塞本 change**（键子集 / `family` / `protocol_version` 是**实例面**的事，SSP 声明面不依赖它）| ✅ | `ADR-CEP-24` 决策 3.2 · 裁决 §4.1 |
+
+**② 本批次改动面（批 1 · 8 项）**
+
+| # | 事项 | 判据 | 执行者 |
+|:--:|---|---|---|
+| 1 | `include/tlm/cep/event_alphabet.hh`（14 核心锚 + `flow` 映射 + 封闭 + 逐字名表）| 锚数 == 14 · 每锚 `flow` ∈ 10 流 · 通用层零协议名 | builder |
+| 2 | `include/tlm/cep/ssp.schema.json` + `ssps.json`（MESIF 的 SSP）| 同名 schema 成对 · MESIF 数据与 `kTable` 逐格一致 | builder |
+| 3 | `include/tlm/cep/ssp_loader.hh`（fail-closed）| 5 类错误各带红因签名 | builder |
+| 4 | `test/test_cep_ssp_declaration.cc`（含 **V-24-2 逐格 diff · 双向**）| 任一侧改一格 ⇒ 必红 | builder |
+| 5 | `scripts/test/cep_ssp_check.sh`（A-1~A-14 + 反向 fixture）| 每条按正确原因红 | builder |
+| 6 | `openspec/specs/cep-ssp-declaration/spec.md`（主 spec）| 冻结面 96 → **97** | builder |
+| 7 | 计数同步（闸 55→56 · `test_cep_*.cc` 80→81 · spec `cep-*` 50→51 · `scripts/README.md` · 登记册 §0.1 · `include/tlm/cep/AGENTS.md`）| 各处逐条一致 | builder |
+| 8 | design.md + tasks.md + delta spec | `openspec validate --strict` 绿 | builder |
+
+**③ 五步授权链（本 Entry 是步 1）**
+
+1. **本 Entry #553**（立项 + 冻结面授权 · `--authorized-by` 的载体）
+2. builder commit：批 1 的产物（含**新主 spec**）
+3. `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #553"`（预期：新增 **1**（新 spec）· 移出 0 · hash 变更 0）
+4. **清单单独 commit**
+5. **无参复验** ⇒ rc=0
+
+**④ 计数面（预期 · 以命令实测为准）**
+
+| 面 | 预期 | 依据 |
+|---|---|---|
+| 冻结产物 | **96 → 97** | 新主 spec 1 份 |
+| openspec change | **0 → 1**（0/3 → **1/3**）| 本 change |
+| 闸族 | 55 → **56** | 新 `cep_ssp_check.sh` |
+| `test_cep_*.cc` | 80 → **81** | 新测试 |
+| spec `cep-*` | 50 → **51** | 新主 spec |
+| 新增 invariant | **0** | 复用 INV-CEP-07A-IC2 / INV-CEP-12-IC1 / CEN-Ib1 / CEN-Ib11 |
+| 决策块快照 / `decision_adrs` | **不变** | 非 ADR |
+
+**⑤ 实施结果（收口 · 待 builder 回填）**
+
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | ② 的 8 项 | ⏳ | — |
+| 2 | 五步授权链 | ⏳ | — |
+| 3 | 全量回归（ctest + 56 闸）| ⏳ | — |
+| 4 | 遗留清扫 | ⏳ | — |
+
+**⑥ 不做项（批 2 及其它）**
+
+- ⛔ **通用解释器**（`ssp_interpreter.hh`）· ⛔ **装配集成** · ⛔ **掩码格扩展**（TileLink `target_mask`）· ⛔ **实验 4 件套端到端** ⇒ **批 2 另立 change**（三条理由见 proposal §Why）
+- ⛔ **既有 6 份 `*_state_spec.hh` 的迁移**（`ADR-CEP-24` §8 F3）
+- ⛔ **`CP-Q-1b`**（键子集 / `family` / `protocol_version`）⇒ 仍待裁
+- ⛔ 不改 `protocol_instance.schema.json`（实例面 14 属性不动 · `test_cep_schema.cc:443` 须仍绿）
