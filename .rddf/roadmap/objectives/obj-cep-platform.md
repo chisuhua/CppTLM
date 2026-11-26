@@ -29355,3 +29355,69 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 - ⛔ **不迁移** 6 份 `*_state_spec.hh`（ADR-CEP-24 §8 F3）
 - ⛔ **不改** `protocol_instance.schema.json` / `protocol_instances.json` / `fabric.json`（M1 冻结面 · 本 ADR 明确「零实例面变更」）
 - ⛔ **不声称「CEP 已支持用户自定义协议」**（在 F5 闭合前该表述**均不成立** · per ADR §Status Update ① 第 8 条）
+
+---
+
+### Entry #552 — 2026-11-26 [planner](**ADR-CEP-24 第二则 SU 落盘授权** —— `CP-Q-1a` 事件字母表裁决已 ratify ⇒ 镜像登记「3/6 体裁 / 2/6 干净覆盖」+ 表达力表述边界 · **冻结面五步链第 1 步**)
+
+**主题**：授权 `ADR-CEP-24` **追加第二则 Status Update**（append-only），镜像登记 `CP-Q-1a` 裁决的**副产物事实**：SSP 声明面的表达力范围 = **3/6 体裁**（有三份事件式转移表）/ **2/6 干净覆盖**（按决策 2 已声明的 `0xFF` 单目标格形态；TileLink 需「掩码格」扩展，属 `CP-I-2` contract 面）。
+**元**：裁决记录 `.rddf/reviews/cep-CP-Q-1a-adjudication.md`（**已 ratify** 2026-11-26 · 用户批准 R1~R4 · oracle 1 轮 `APPROVE`）· `ADR-CEP-24`（追加后 351 行 / 正文 218 行 / 2 则 SU）· objective `obj-cep-custom-protocol` 的 `CP-Q-1a`
+
+**① 授权理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | **用户已 ratify R1~R4**（原话「批准你的裁决建议」）⇒ 裁决记录从 🟡 草案转 ✅ 已 ratify | ✅ | 裁决 §6.1（4 项逐条记录）|
+| 2 | **oracle 1 轮 `APPROVE`**（3 must-fix + 4 建议 + 2 可选 **全落**）| ✅ | 裁决的 6/4/17 实测 · `kChiOpcodeTable` 25 · 格载荷差异 |
+| 3 | **`ADR-CEP-24` 决策 3.1 要求「事件字母表来源须另行决策」** ⇒ 本 SU 是把该裁决的**副产物事实**镜像回 ADR（⛔ ADR 不可变 ⇒ SU 是唯一写路径）| ✅ | `ADR-CEP-24` 决策 3.1 + §8 F5 |
+| 4 | **§0.1 / V-24-2 的表述边界需据实收窄** —— V-24-2 原文只承诺「表达**一个**既有协议（建议 MESIF）」，从未承诺 6/6；不镜像则未来读者会误读 | ✅ | `ADR-CEP-24:217`（V-24-2 原文）|
+| 5 | ⛔ **不改任何既有决策**（决策 1~7 零变更 · 新增 invariant = 0 · 不落 contract）| ✅ | 本 Entry ⑥ |
+
+**② 本批次改动面（1 项 · 封闭）**
+
+| # | 事项 | 判据（可判定） | 执行者 |
+|:--:|---|---|---|
+| 1 | **`ADR-CEP-24` 文末追加第二则 SU**（**正文零 diff**）：① 决策 3.1 的「事件字母表来源」维度**已裁**（新建 + 14 核心锚 + 扩权方 = architect + 先例库摊销 + 5 条私有事件约束）② **表达力事实登记**（3/6 体裁 / 2/6 干净覆盖 / TileLink 掩码格留 `CP-I-2`）③ **表述纪律三条**（⛔ 不得读成 6/6 · ⛔ 不得读成格级同构 · `CP-I-2` 须用「3/6 / 2/6」）④ 边界（不改决策 1~7 / 不裁 `CP-Q-1b` / 不落 contract）| `git diff --stat` 应显示**纯追加 / 0 删除**；`grep -c "^## Status Update" ADR-CEP-24` == **2**；正文（§1 → 首个 SU 前）仍 **218 行** | architect ✅ 已落（待 commit）|
+
+**③ 五步授权链（本 Entry 是步 1）**
+
+1. **本 Entry #552**（台账授权 · `--authorized-by` 的载体）
+2. builder commit：`ADR-CEP-24` 的 SU 段**落盘**（产物 commit）
+3. `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #552"`（**清单更新** · 预期：新增 0 · 移出 0 · hash 变更 **1**）
+4. **清单单独 commit**（⛔ 不得与产物同 commit）
+5. **无参复验**：`bash scripts/test/cep_freeze_check.sh` ⇒ rc=0
+
+**④ 计数面（预期变化 · 以命令实测为准）**
+
+| 面 | 预期 | 依据 |
+|---|---|---|
+| 冻结产物 `artifact_count` | **96 → 96** | 仅 hash 变更 1 处（`ADR-CEP-24`）|
+| 决策块计数（`test/cep_decision_block_snapshot.json`） | **不变**（7 块 / 27 份 / 152 块）| SU 追加在 `## Status Update` 之后 ⇒ 不在 `## 2` 章内（先例 #550 同型）|
+| `decision_adrs` | **不变**（24）| 不新增 ADR |
+| 根 `AGENTS.md` 计数 | **不变**（24）| 不新增 ADR |
+| `docs/adr/README.md` 索引 | **不变** | 不新增 ADR（若索引闸报红 ⇒ 跑生成器 `--write`）|
+| 新增 `INV-CEP-*` / openspec change / KPI slot | **0 / 0 / 0** | 纯登记 |
+
+**⑤ 实施结果（收口 · 待 builder 回填）**
+
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | ② 的 1 项改动面（SU 追加）| ⏳ | — |
+| 2 | 五步授权链 | ⏳ | — |
+| 3 | 零回归（全量口径）| ⏳ | — |
+| 4 | 遗留清扫 | ⏳ | — |
+
+**⑥ 不做项**
+
+- ⛔ 不改 `ADR-CEP-24` **正文**（决策 1~7 结论零变更 · 新增 invariant 数 = 0）
+- ⛔ **不裁**决策 3.2 的另一维（键子集 + `family` + `protocol_version` ⇒ 仍由 `CP-Q-1b` 待裁）
+- ⛔ **不落 contract**（锚集常量 / 私有事件 schema / 掩码格 / `flow` 校验 ⇒ 归 `CP-I-2`）
+- ⛔ 不改 §7 签发前置清单（本 SU 不新增签发义务）
+- ⛔ 不把 V-24-2 的表述改成「6/6」（本 SU 只**收窄**表述边界，⛔ 不扩大承诺）
+
+**⑦ 连带闭合（同一批）**
+
+| 项 | 动作 | 归属 |
+|---|---|---|
+| objective `CP-Q-1a` | → ✅ **闭合**（裁决记录已 ratify + 本 SU 落盘后）| planner（本批）|
+| objective `CP-I-2` | → **解除阻塞**（`CP-Q-1a` 的开工门已解除；仍受 openspec 并发 ≤ 1 + 队列顺序约束）| planner（本批）|
