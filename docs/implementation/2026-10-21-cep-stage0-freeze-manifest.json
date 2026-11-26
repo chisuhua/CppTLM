@@ -1,5 +1,5 @@
 {
-  "artifact_count": 97,
+  "artifact_count": 98,
   "artifacts": {
     "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "a12f8d915c3575230984ff281e5c439b90fa256b1a19975c638e71647aaaee27",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4db673d7d582ac6231c6b3fa26ff78ef02dbea4483261b3cfcd7f4403201bd26",
@@ -39,7 +39,7 @@
     "docs/architecture/cep/simulation-and-experiment.md": "4c632d8fb7cdfdd5af762e04039ad7f8670c0c7a10d372411925311a942e8d90",
     "docs/architecture/cep/stub-cache-core.md": "e813772eef6b39487b60acc06de6f8478f248003af38f6ee5d742bb73c997861",
     "experimental/metrics.schema.json": "738329a9688c796920954ed9ee7657309626b2613f4a1dc25e9307123a144b6a",
-    "experimental/preregistration.json": "2fe018d8ff989c4d84edad2b21b4bce53247b88e4ca7b87fa8dc5cdcea7d467c",
+    "experimental/preregistration.json": "3de8697218170502c10b25c17f8ba9f5a995ee8731c0f0bf1e6ec3504db3372f",
     "include/tlm/cep/fabric.json": "296b8981c3a09e912ba6436f12dde9895935bec703ec046cd3e0e71040a7b364",
     "include/tlm/cep/fabric.schema.json": "226c79f5bf8de3480607f973a2375b28875b2886ea4395e5ed641119779a6316",
     "include/tlm/cep/protocol_instance.schema.json": "ddef11d86360ca05c51a61a847e6454c70e353b20dcd83eed0bd18e530fa4add",
@@ -67,7 +67,7 @@
     "openspec/specs/cep-full-green-run-evidence/spec.md": "4a6da8cf143453e80be2b68d4b4a1c6b1ada1a31581caeec3241b4607c27c1a5",
     "openspec/specs/cep-hierarchical-directory/spec.md": "729f8e7b9eda0a8a8d8e1f748857287824745526e427f67182dd870b1d2f222f",
     "openspec/specs/cep-hop-timing-capability-declaration/spec.md": "27d3b69be28b26e193cfed590f4d13c07401d1ae82cfc2627450b5bdaa12536d",
-    "openspec/specs/cep-instance-assembly/spec.md": "6d2b352f6b7ee6f56c2dd7ced2bb167f0852b5455b46245b18ca761842f64770",
+    "openspec/specs/cep-instance-assembly/spec.md": "39ead9710628347e97dc6cccc726a6dd2ea2976444de5edbf2c3a2686a7c534a",
     "openspec/specs/cep-instance-authority-partition/spec.md": "8fa4011df2ea90cb70f18a5f46a360f2b33c4b0823de10b55083c35dbcf171d6",
     "openspec/specs/cep-invariant-gate/spec.md": "7d6ae0c3597c8bf23da1c29f16605bb81dbed2d3a091274d881e532be135be97",
     "openspec/specs/cep-mesh-interconnect-submodule/spec.md": "c1ce04d23d4e821ea70a59721351cedcf788b28955af3ea3553ae7a27a4e6222",
@@ -85,7 +85,8 @@
     "openspec/specs/cep-refkind-coverage/spec.md": "e904c9fac0b497213b8465ca5af48f9c67c872c31eebd8c19b4cd9a326cd84cd",
     "openspec/specs/cep-sharer-tracker-base/spec.md": "7c6d19bb3a906d36b70a6360362927b12d395189389d8b176f20a450d793c677",
     "openspec/specs/cep-sparse-snoop-filter/spec.md": "21a44b7210f2f6eef33b3bdeddcb30455ecdf06ed52b3a0c3df09723e314d525",
-    "openspec/specs/cep-ssp-declaration/spec.md": "31ab3c11ee7abdda0b5e256fcdfd37c60fbb9b3bd6774aa41a6885403b283392",
+    "openspec/specs/cep-ssp-declaration/spec.md": "b1117d050f09b31608e4037a5b0585dbbef43f51d4daf37f84e7dad6542e6483",
+    "openspec/specs/cep-ssp-runtime/spec.md": "1876481193f9103d0bd7a7eea34c0293696d2722dcfabb343daa44bdcbb001c0",
     "openspec/specs/cep-stub-cache-chstream-surface/spec.md": "45b2797f335c6868a9c797a49ee91266f95fa20e41051cf8a9f99455a47bcee9",
     "openspec/specs/cep-stub-cache-core/spec.md": "46d034381a07e4e171dd1029382043a354e2bc3cc42fd95dfac617d579096046",
     "openspec/specs/cep-tilelink-runtime-engine/spec.md": "3ce492054c09e639e7d8fc042d8c3d53af953c43bd446682a0309bb1be9ace00",
@@ -99,10 +100,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #556",
+  "authorized_by": "Entry #558",
   "exclusions": [],
-  "frozen_at": "2026-11-26",
-  "frozen_at_commit": "b83c5531a2e7233ebbff4f53720a6800350fbb1c",
+  "frozen_at": "2026-11-27",
+  "frozen_at_commit": "d8cdb8a54c59d90f40f20a638bceab9772deff3f",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
