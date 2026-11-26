@@ -471,7 +471,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 1/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
+`openspec/changes/` 当前 **0 个 active**（实测,per `openspec list --json`；⇒ **当前 Proposed 并发 = 0/3**） —— ⛔ **本行不再承载逐次 KPI 变更的归档流水**（每次立项 / 归档 / slot 释放 / 暂存归档）：per 本节自述（`:476`）与**历史快照去向**（`:477`），那些流水**已由 §11 台账完整承载**（append-only）⇒ **删除不丢信息**（逐条可由台账 Entry 回查）
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -29427,7 +29427,7 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 ### Entry #553 — 2026-11-26 [planner](**`CP-I-2` 立项** —— change `cep-ssp-declaration`（S1 批 1：声明面 + loader + V-24-2 逐格对账）· KPI 0/3 → 1/3)
 
 **主题**：立项 S1 的**批 1** = ① 事件字母表契约（14 核心锚）② SSP 声明面（JSON + 同名 schema）③ fail-closed loader ④ **V-24-2 killer 判据**（SSP 用数据面表达 MESIF 并与 `mesif_state_spec.hh` 的 `kTable` 逐格 diff）⑤ 闸（A-1~A-14）⑥ 主 spec。
-**元**：`ADR-CEP-24`（✅ 已签发）· `CP-Q-1a` 裁决（✅ 已 ratify · `.rddf/reviews/cep-CP-Q-1a-adjudication.md` §6.1）· objective `obj-cep-custom-protocol` 的 `CP-I-2` · improvement `.rddf/improvements/cep-ssp-declaration.md` · change `openspec/changes/cep-ssp-declaration/`
+**元**：`ADR-CEP-24`（✅ 已签发）· `CP-Q-1a` 裁决（✅ 已 ratify · `.rddf/reviews/cep-CP-Q-1a-adjudication.md` §6.1）· objective `obj-cep-custom-protocol` 的 `CP-I-2` · improvement `.rddf/improvements/cep-ssp-declaration.md` · change `openspec/changes/archive/2026-11-26-cep-ssp-declaration/`（⚠️ **归档后路径** —— 该 change 已于 2026-11-26 归档（`openspec archive` · 「Specs already in sync」⇒ 主 spec 零 diff）· 验收 **PASS**（轮 2/3 · `.rddf/reviews/cep-ssp-declaration-verify.md`）· ⚠️ 归档件按 `.gitignore` **不入库**）
 
 **① 授权理由 + 前置**
 
