@@ -29613,7 +29613,7 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 ### Entry #556 — 2026-11-26 [builder](**`cep-ssp-cp-q1b-landing` 立项 + 实施授权** —— contract 面：`family` 4 值域 + `protocol_version` 两分支 · **两处冻结面五步链**)
 
 **主题**：授权 change `cep-ssp-cp-q1b-landing` 实施（Entry #554 ⑥ 列为「不实施」的 5 个 contract 面，本 Entry 授权其落地）—— 让用户自定义协议**过得了装配期**：`family` 扩第 4 值 `user-defined` + `protocol_version` 增第二种合法形态 `user:<已登记 ssp-id>`（两分支化）。**只扩取值域、零新增能力面**。
-**元**：improvement `.rddf/improvements/cep-ssp-cp-q1b-landing.md`（✅ 已批准·待立项）· 裁决 `.rddf/reviews/cep-CP-Q-1b-adjudication.md`（已 ratify · oracle 2 轮 · critic 1 轮 0 BLOCKER）· 3 份 ADR SU（`ADR-CEP-24` 第三则 / `ADR-CEP-11` / `ADR-CEP-12`）· change 骨架 `openspec/changes/cep-ssp-cp-q1b-landing/`（proposal / design / tasks / MODIFIED delta · `openspec validate --strict` rc=0）
+**元**：improvement `.rddf/improvements/cep-ssp-cp-q1b-landing.md`（✅ 已批准·待立项）· 裁决 `.rddf/reviews/cep-CP-Q-1b-adjudication.md`（已 ratify · oracle 2 轮 · critic 1 轮 0 BLOCKER）· 3 份 ADR SU（`ADR-CEP-24` 第三则 / `ADR-CEP-11` / `ADR-CEP-12`）· change 骨架（✅ **已归档** 2026-11-27）`openspec/changes/archive/2026-11-27-cep-ssp-cp-q1b-landing/`（proposal / design / tasks / MODIFIED delta · `openspec validate --strict` rc=0）
 
 **① 授权理由 + 前置**
 
@@ -29634,7 +29634,7 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | 3 | **共享 helper**（落 `test/cep_adr_parser.hh` · 与既有锁表 helper 同处 · ⛔ 零新文件）| `protocol_version_allowed` + `parse_registered_ssp_ids` 存在 · ⛔ 无第二份拷贝 | — |
 | 4 | **`test/test_cep_schema.cc`**：IC1 通用闸两分支化（`:573`）+ pattern 容纳性用例（`:512`）+ 4 条反向 fixture（各自按**正确原因**红）| `[cep][schema][ic1]` 全绿 | — |
 | 5 | **`openspec/specs/cep-core-contracts/spec.md`**：IC1 Scenario 两分支化（**IC2 / IC3 逐字零改动**）| `grep -c "user:"` ≥ 1 · delta 与 main spec 的差异**恰为 IC1 的 THEN 段** | ✅ **五步链** |
-| 6 | **change delta**（`openspec/changes/cep-ssp-cp-q1b-landing/specs/cep-core-contracts/spec.md`）| MODIFIED · 3 Scenario 全保留 | — |
+| 6 | **change delta**（`openspec/changes/archive/2026-11-27-cep-ssp-cp-q1b-landing/specs/cep-core-contracts/spec.md`）| MODIFIED · 3 Scenario 全保留 | — |
 
 **③ 五步授权链（本 Entry 是步 1 · **一次**覆盖 2 处冻结面）**
 
