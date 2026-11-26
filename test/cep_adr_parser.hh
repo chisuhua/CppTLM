@@ -648,6 +648,67 @@ namespace cpptlm {
             return table.count(version) == 1;
         }
 
+        // ── `user:<ssp-id>` 两分支化(per ADR-CEP-11 SU(2026-11-26)①)──────────
+        //
+        // ⚠️ **为什么放在这里**:决策 3 / `INV-CEP-11-IC1` 已**两分支化**
+        //    ⇒ "某取值是否合法"的判定不再只是"∈ 锁表",还含"user:<已登记 ssp-id>"。
+        //    本文件既有注释的 G-2 纪律(Entry #109)**同样适用**于新判定 ——
+        //    ⛔ 禁在别处(尤其 `instance_assembly_gate.hh`)另抄一份。
+
+        /// 从 `ssps.json` 文本提取**已登记**的 `ssp.id` 集合
+        /// (per ADR-CEP-11 SU(2026-11-26)① 分支 ② —— 「已登记」的唯一真源;
+        ///  词表 ^[a-z][a-z0-9_]*$ 由 ssp_loader.hh 的 E2 保证)
+        /// ⚠️ 纯文本扫描(本文件不引入 nlohmann/json)· 限定在 `ssps` 数组段内
+        inline std::set<std::string>
+        parse_registered_ssp_ids(const std::string& ssps_json_text) {
+            std::set<std::string> out;
+            // 限定扫描窗口 = `"ssps"` 之后的全文(避免误取顶层/未来嵌套 id 字段)
+            const std::string arr_key = "\"ssps\"";
+            std::size_t start = ssps_json_text.find(arr_key);
+            if (start == std::string::npos)
+                return out;
+            start += arr_key.size();
+
+            const std::string key = "\"id\"";
+            std::size_t pos = start;
+            while ((pos = ssps_json_text.find(key, pos)) != std::string::npos) {
+                std::size_t colon = ssps_json_text.find(':', pos + key.size());
+                if (colon == std::string::npos)
+                    break;
+                std::size_t q1 = ssps_json_text.find('"', colon + 1);
+                if (q1 == std::string::npos)
+                    break;
+                std::size_t q2 = ssps_json_text.find('"', q1 + 1);
+                if (q2 == std::string::npos)
+                    break;
+                out.insert(ssps_json_text.substr(q1 + 1, q2 - q1 - 1));
+                pos = q2 + 1;
+            }
+            return out;
+        }
+
+        /// 两分支谓词:`protocol_version` 是否**合法**
+        /// (per ADR-CEP-11 SU(2026-11-26)① —— 决策 3 / `INV-CEP-11-IC1` 两分支化)
+        ///   分支 ① —— 在 `ADR-CEP-11 §3` 锁表内
+        ///   分支 ② —— 匹配 `^user:([a-z][a-z0-9_]*)$` 且 `<ssp-id>` ∈ 已登记 `ssp.id`
+        /// ⛔ 两者皆不满足 ⇒ 装配期 fail(不得静默降级)
+        /// ⚠️ **单一实现**(Entry #109 G-2)—— ⛔ 禁在别处另抄一份
+        inline bool protocol_version_allowed(const std::string& version,
+                                             const std::set<std::string>& table,
+                                             const std::set<std::string>& ssp_ids) {
+            if (version.empty())
+                return false;
+            // 分支 ①:锁表内
+            if (table.count(version) == 1)
+                return true;
+            // 分支 ②:user:<已登记 ssp-id>
+            static const std::regex re(R"(^user:([a-z][a-z0-9_]*)$)");
+            std::smatch m;
+            if (!std::regex_match(version, m, re))
+                return false;
+            return ssp_ids.count(m[1].str()) == 1;
+        }
+
     } // namespace cep
 } // namespace cpptlm
 

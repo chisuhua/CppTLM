@@ -41,22 +41,24 @@ namespace tlm::cep {
 
 /// 协议**来源族**(per `ADR-CEP-12` 的 13 属性之一 `family`)。
 enum class ProtocolFamily : std::uint8_t {
-    Industrial = 1,  ///< 工业协议族(per `07 号 §5.1` 口径)
-    RubySlicc = 2,   ///< Ruby SLICC 族(per `07 号 §5.2` 口径)
-    Academic = 3,    ///< 学术协议族(per `07 号 §5.3` 口径)
+    Industrial = 1,   ///< 工业协议族(per `07 号 §5.1` 口径)
+    RubySlicc = 2,    ///< Ruby SLICC 族(per `07 号 §5.2` 口径)
+    Academic = 3,     ///< 学术协议族(per `07 号 §5.3` 口径)
+    UserDefined = 4,  ///< 用户自定义协议族(per `ADR-CEP-12` SU(2026-11-26) · `ADR-CEP-24` V-24-13)
 };
 
 /// 「未分配」编号 —— `0` 保留(见文件头「编号取值」段)
 inline constexpr std::uint8_t kUnassignedProtocolFamilyId = 0;
 
-/// 来源族总数(per `ADR-CEP-12` 的 `family` 域 —— 恰好 3 值)
-inline constexpr std::size_t kProtocolFamilyCount = 3;
+/// 来源族总数(per `ADR-CEP-12` 的 `family` 域 —— 恰好 4 值)
+inline constexpr std::size_t kProtocolFamilyCount = 4;
 
 /// 全部来源族(顺序 = 编号顺序)—— **唯一真源**
 inline constexpr ProtocolFamily kProtocolFamilies[kProtocolFamilyCount] = {
     ProtocolFamily::Industrial,
     ProtocolFamily::RubySlicc,
     ProtocolFamily::Academic,
+    ProtocolFamily::UserDefined,
 };
 
 /// 来源族 → 数字编号
@@ -84,6 +86,8 @@ constexpr const char* protocol_family_name(ProtocolFamily f) {
             return "ruby-slicc";
         case ProtocolFamily::Academic:
             return "academic";
+        case ProtocolFamily::UserDefined:
+            return "user-defined";
     }
     return "";  // 越界(防御性)
 }
@@ -109,8 +113,10 @@ static_assert(protocol_family_id(ProtocolFamily::RubySlicc) == 2,
               "ProtocolFamily 编号漂移:RubySlicc");
 static_assert(protocol_family_id(ProtocolFamily::Academic) == 3,
               "ProtocolFamily 编号漂移:Academic");
+static_assert(protocol_family_id(ProtocolFamily::UserDefined) == 4,
+              "ProtocolFamily 编号漂移:UserDefined");
 static_assert(kUnassignedProtocolFamilyId == 0, "「未分配」编号必须为 0");
-static_assert(kProtocolFamilyCount == 3, "来源族应为 3 值(per ADR-CEP-12 的 family 域)");
+static_assert(kProtocolFamilyCount == 4, "来源族应为 4 值(per ADR-CEP-12 的 family 域)");
 
 }  // namespace tlm::cep
 

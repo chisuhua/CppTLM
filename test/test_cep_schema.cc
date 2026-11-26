@@ -9,6 +9,7 @@
 #include "catch_amalgamated.hpp"
 
 #include "cep_adr_parser.hh"
+#include "tlm/cep/protocol_family.hh"
 
 #include <nlohmann/json.hpp>
 
@@ -578,6 +579,11 @@ TEST_CASE(
     const std::set<std::string> table = cpptlm::cep::parse_protocol_version_lock_table(lock);
     REQUIRE(table.size() == 8u); // 锁表 8 行(数量变了 ⇒ 本 case 先红)
 
+    // 分支 ② 的「已登记 ssp.id」集合(per ADR-CEP-11 SU(2026-11-26)①)
+    const std::set<std::string> ssp_ids = cpptlm::cep::parse_registered_ssp_ids(
+        read_file((repo_root() / "include" / "tlm" / "cep" / "ssps.json").string()));
+    REQUIRE(ssp_ids.count("mesif_ssp") == 1u);
+
     // ── 真实数据:逐实例判定 ──────────────────────────────────────────
     const auto inst_path = repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json";
     const json inst_doc = json::parse(read_file(inst_path.string()));
@@ -588,7 +594,7 @@ TEST_CASE(
         const std::string ver = inst.value("protocol_version", "");
         INFO("instance=" << id << " protocol_version=" << ver);
         REQUIRE(inst.contains("protocol_version"));
-        CHECK(cpptlm::cep::protocol_version_in_lock_table(ver, table));
+        CHECK(cpptlm::cep::protocol_version_allowed(ver, table, ssp_ids));
         ++checked;
     }
     CHECK(checked >= 3u); // 真实实例数(防止「删到只剩 0 个 ⇒ 断言空转」)
@@ -596,12 +602,17 @@ TEST_CASE(
     // ── 反向 fixture ①:合成**表外**取值 ⇒ 谓词必假(鉴别力证明)──────────
     //    ⚠️ 用「表外」而非「随便一个字符串」:表外值才是**真实会犯的错**
     //    (把 `chi-r2` 写成 `chi-r3`,或给新族编一个版本号)。
-    CHECK_FALSE(cpptlm::cep::protocol_version_in_lock_table("chi-r9", table));
-    CHECK_FALSE(cpptlm::cep::protocol_version_in_lock_table("mesif-9.9", table));
-    CHECK_FALSE(cpptlm::cep::protocol_version_in_lock_table("", table));
+    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("chi-r9", table, ssp_ids));
+    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("mesif-9.9", table, ssp_ids));
+    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("", table, ssp_ids));
+    // 反向 fixture:分支 ② 的两条判别力载体(红因各不相同)
+    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("user:no_such_ssp", table, ssp_ids)); // id 未登记
+    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("user:", table, ssp_ids));            // 空 id
     // 正控:表内取值 ⇒ 谓词为真(否则上面的反控可能因谓词恒假而恒绿)
-    CHECK(cpptlm::cep::protocol_version_in_lock_table("chi-r2", table));
-    CHECK(cpptlm::cep::protocol_version_in_lock_table("mesif-1.0", table));
+    CHECK(cpptlm::cep::protocol_version_allowed("chi-r2", table, ssp_ids));
+    CHECK(cpptlm::cep::protocol_version_allowed("mesif-1.0", table, ssp_ids));
+    // 正控:分支 ② 可达性(user:<已登记 id> ⇒ 真)
+    CHECK(cpptlm::cep::protocol_version_allowed("user:mesif_ssp", table, ssp_ids));
 
     // ── 反向 fixture ②:把**真实声明**改成表外值 ⇒ 通用闸必红 ────────────
     //    (对「判定函数」自证不够 —— 必须证明「声明 → 判定」这条**真实路径**会红)
@@ -617,8 +628,8 @@ TEST_CASE(
         REQUIRE(mutated_any);
         bool rejected = false;
         for (const auto& inst : mutated.at("instances")) {
-            if (!cpptlm::cep::protocol_version_in_lock_table(inst.value("protocol_version", ""),
-                                                             table))
+            if (!cpptlm::cep::protocol_version_allowed(inst.value("protocol_version", ""), table,
+                                                       ssp_ids))
                 rejected = true;
         }
         CHECK(rejected); // 通用闸抓到了表外取值
@@ -858,4 +869,146 @@ TEST_CASE("[cep][schema] 07 号 §5.1 的 adapter 实例数与表格行数一致
     INFO("07 号 §5.1.2 未把 MESI_Three_Level_HTM 标为明确排除");
     REQUIRE(truth.find("MESI_Three_Level_HTM") != std::string::npos);
     REQUIRE(truth.find("明确排除") != std::string::npos);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// INV-CEP-12-IC1:family 域 4 值
+//   per ADR-CEP-12 SU(2026-11-26)· ADR-CEP-24 SU 第三则 §6 V-24-13(3 → 4)
+//   ⛔ 本单元**只扩取值域** —— 13 必含属性个数 / INV-CEP-12-IC1 立法意图零改动
+// ─────────────────────────────────────────────────────────────────────────
+TEST_CASE("[cep][schema] family 域必须含 4 值且 user-defined 可解析",
+          "[cep][schema][ic1]") {
+    using namespace tlm::cep;
+    REQUIRE(kProtocolFamilyCount == 4u);
+
+    // 既有 3 值逐字不变(零回归)
+    ProtocolFamily f{};
+    CHECK(protocol_family_from_name("industrial", f));
+    CHECK(f == ProtocolFamily::Industrial);
+    CHECK(protocol_family_from_name("ruby-slicc", f));
+    CHECK(f == ProtocolFamily::RubySlicc);
+    CHECK(protocol_family_from_name("academic", f));
+    CHECK(f == ProtocolFamily::Academic);
+
+    // 新增第 4 值(per ADR-CEP-12 SU(2026-11-26))
+    CHECK(protocol_family_from_name("user-defined", f));
+    CHECK(f == ProtocolFamily::UserDefined);
+    CHECK(protocol_family_id(ProtocolFamily::UserDefined) == 4u);
+    CHECK(std::string(protocol_family_name(ProtocolFamily::UserDefined)) == "user-defined");
+
+    // 编号表逐字不变(既有 3 族的编号不得漂移)
+    CHECK(protocol_family_id(ProtocolFamily::Industrial) == 1u);
+    CHECK(protocol_family_id(ProtocolFamily::RubySlicc) == 2u);
+    CHECK(protocol_family_id(ProtocolFamily::Academic) == 3u);
+
+    // 未知字符串仍返回 false(不静默兜底到某个族)
+    CHECK_FALSE(protocol_family_from_name("no-such-family", f));
+    CHECK_FALSE(protocol_family_from_name("", f));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// family enum 4 值 + protocol_version pattern 两分支
+//   per ADR-CEP-12 SU(2026-11-26)(family 3 → 4 值)
+//   per ADR-CEP-11 SU(2026-11-26)③ 第 2 面(protocol_version pattern 必改)
+//   ⛔ INV-CEP-12-IC1 的 13 必含个数零改动(只扩 enum / pattern 取值域)
+// ─────────────────────────────────────────────────────────────────────────
+TEST_CASE("[cep][schema] family enum 必须含 4 值且必含属性个数仍为 13",
+          "[cep][schema][ic1]") {
+    const json s = load_schema();
+    const auto& fam = s.at("properties").at("family").at("enum");
+    REQUIRE(fam.size() == 4u);
+    const std::set<std::string> vals(fam.begin(), fam.end());
+    // 既有 3 值逐字不变(零回归)
+    CHECK(vals.count("industrial") == 1u);
+    CHECK(vals.count("ruby-slicc") == 1u);
+    CHECK(vals.count("academic") == 1u);
+    // 新增第 4 值
+    CHECK(vals.count("user-defined") == 1u);
+    // ⛔ INV-CEP-12-IC1:13 必含属性个数零改动(只扩 enum 取值域)
+    CHECK(s.at("required").size() == 13u);
+}
+
+TEST_CASE("[cep][schema] protocol_version pattern 必须容纳 user:<ssp-id> 两分支",
+          "[cep][schema][ic1]") {
+    const json s = load_schema();
+    const std::string pattern = s.at("properties").at("protocol_version").at("pattern");
+    INFO("schema 的 protocol_version pattern: " << pattern);
+    const std::regex re(pattern);
+
+    // ── 分支 ①:锁表内官方版本仍必须被容纳(零回归) ──────────────────
+    CHECK(std::regex_match("chi-r2", re));
+    CHECK(std::regex_match("mesif-1.0", re));
+    CHECK(std::regex_match("tilelink-c-1.7.1", re));
+
+    // ── 分支 ②:user:<ssp-id> 形态必须被容纳 ─────────────────────────
+    //   ⚠️ ssp.id 词表 = ^[a-z][a-z0-9_]*$(per ssp_loader.hh E2)
+    CHECK(std::regex_match("user:mesif_ssp", re));
+    CHECK(std::regex_match("user:a1", re));
+
+    // ── 反向 fixture:pattern 必须拒(各自按**正确原因**红)──────────
+    CHECK_FALSE(std::regex_match("user:Mesif", re));   // 大写
+    CHECK_FALSE(std::regex_match("user:1abc", re));    // 数字开头
+    CHECK_FALSE(std::regex_match("user:a-b", re));     // 含 `-`(官方版本分隔符)
+    CHECK_FALSE(std::regex_match("user:a.b", re));     // 含 `.`
+    CHECK_FALSE(std::regex_match("user:", re));        // 空 id
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 两分支谓词(per ADR-CEP-11 SU(2026-11-26)① · Entry #109 G-2 单一实现)
+// ─────────────────────────────────────────────────────────────────────────
+TEST_CASE("[cep][schema] 两分支谓词必须接受 user:<已登记 ssp-id> 且拒绝其余",
+          "[cep][schema][ic1]") {
+    const auto lock = read_file(
+        (repo_root() / "docs" / "adr" / "ADR-CEP-11-protocol-version-locking.md").string());
+    REQUIRE_FALSE(lock.empty());
+    const std::set<std::string> table = cpptlm::cep::parse_protocol_version_lock_table(lock);
+    REQUIRE(table.size() == 8u);
+
+    const std::set<std::string> ssp_ids = cpptlm::cep::parse_registered_ssp_ids(
+        read_file((repo_root() / "include" / "tlm" / "cep" / "ssps.json").string()));
+    REQUIRE(ssp_ids.count("mesif_ssp") == 1u);
+
+    // ── 分支 ①:锁表内 ⇒ 真 ─────────────────────────────────────────
+    CHECK(cpptlm::cep::protocol_version_allowed("chi-r2", table, ssp_ids));
+    CHECK(cpptlm::cep::protocol_version_allowed("mesif-1.0", table, ssp_ids));
+    // ── 分支 ②:user:<已登记 id> ⇒ 真 ────────────────────────────────
+    CHECK(cpptlm::cep::protocol_version_allowed("user:mesif_ssp", table, ssp_ids));
+    // ── 反向 fixture:4 条各自按**正确原因**红 ───────────────────────
+    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("user:no_such_ssp", table, ssp_ids));
+    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("chi-r3", table, ssp_ids));
+    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("user:", table, ssp_ids));
+    CHECK_FALSE(cpptlm::cep::protocol_version_allowed("", table, ssp_ids));
+}
+
+// Entry #109 G-2 的**机器化**:两分支谓词必须只有一份实现 —— ⛔ 无第二份拷贝
+TEST_CASE("[cep][schema] 两分支谓词只有唯一实现(禁第二份拷贝)",
+          "[cep][schema][ic1]") {
+    // ① helper 存在且可调用(单一真源)
+    const std::set<std::string> table{"chi-r2"};
+    const std::set<std::string> ids{"mesif_ssp"};
+    CHECK(cpptlm::cep::protocol_version_allowed("user:mesif_ssp", table, ids));
+
+    // ② ⛔ 仓内**不得**出现第二份「user:」两分支判定的字面拷贝
+    //    —— 扫描 CEP 实现面,凡出现 `user:` 形态的**另一处**即红
+    const std::filesystem::path root = repo_root();
+    const std::vector<std::string> scan_dirs = {"include/tlm/cep", "src"};
+    std::vector<std::string> offenders;
+    for (const auto& rel : scan_dirs) {
+        for (const auto& e : std::filesystem::recursive_directory_iterator(root / rel)) {
+            if (!e.is_regular_file())
+                continue;
+            const std::string ext = e.path().extension().string();
+            if (ext != ".hh" && ext != ".cc" && ext != ".h" && ext != ".hpp")
+                continue;
+            const std::string body = read_file(e.path().string());
+            if (body.find("user:") != std::string::npos) {
+                offenders.push_back(e.path().string());
+            }
+        }
+    }
+    for (const auto& o : offenders) {
+        INFO("命中 user: 判定的文件(生产层): " << o);
+    }
+    // 生产层**零** `user:` 判定 —— 判定只允许在测试层 helper(test/cep_adr_parser.hh)+ 本测试文件
+    CHECK(offenders.empty());
 }

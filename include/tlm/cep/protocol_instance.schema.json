@@ -28,11 +28,12 @@
       "pattern": "^[a-z0-9][a-z0-9_-]*$"
     },
     "family": {
-      "description": "来源族(per 07 号 §5.1 口径:族 = 来源集合)",
+      "description": "来源族(per 07 号 §5.1 口径:族 = 来源集合;per ADR-CEP-12 SU(2026-11-26) 扩第 4 值 user-defined)",
       "enum": [
         "industrial",
         "ruby-slicc",
-        "academic"
+        "academic",
+        "user-defined"
       ]
     },
     "adapter": {
@@ -49,9 +50,9 @@
       ]
     },
     "protocol_version": {
-      "description": "规范版本(per ADR-CEP-11 §3 锁定表);adapter 实现版本由 git 承载,不入本 schema",
+      "description": "规范版本(per ADR-CEP-11 §3 锁定表;adapter 实现版本由 git 承载,不入本 schema;per ADR-CEP-11 SU(2026-11-26) 增 user:<ssp-id> 形态)",
       "type": "string",
-      "pattern": "^[a-z0-9]+(-[a-z0-9.]+)*$"
+      "pattern": "^([a-z0-9]+(-[a-z0-9.]+)*|user:[a-z][a-z0-9_]*)$"
     },
     "flow_support": {
       "description": "canonical 10 流覆盖矩阵(per ADR-CEP-02 §2)",
