@@ -6,7 +6,7 @@ category: governance
 type: chore
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 依赖: []
-状态: "✅ **已落地**（I-9 · 2026-11-21 · `[SKIP]` + `SKIP_REGULAR_EXPRESSION`（**已落地** · 登记册该行**未记**归档 change 名 ⇒ 交付物 = 闸脚本本身） · per 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2）"
+状态: "✅ **已实施**（I-9 · 2026-11-21 · `[SKIP]` + `SKIP_REGULAR_EXPRESSION`（**已实施** · 登记册该行**未记**归档 change 名 ⇒ 交付物 = 闸脚本本身） · per 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2）"
 created: 2026-11-20
 ---
 

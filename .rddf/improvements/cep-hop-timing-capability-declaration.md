@@ -7,7 +7,7 @@ phase: phase-10
   - ADR-CEP-13
   - ADR-CEP-19
   - ADR-CEP-20
-状态: "🟢 **已批准·待立项**(2026-11-24 · per 用户指令「继续推进任务1」⇒ gap 分析 **G10** 的本仓可做部分 = **让缺口可检出**；⛔ **不补 hop / 时序模型**（属协议 FSM 语义设计，归 ArchForge）)"
+状态: "✅ **已归档**（2026-11-24 · change `cep-hop-timing-capability-declaration` → `openspec/changes/archive/2026-11-24-cep-hop-timing-capability-declaration/` · 台账 Entry #543 · gap 分析 **G10** 的本仓可做部分 = **让缺口可检出**（⛔ **不补** hop / 时序模型 —— 属协议 FSM 语义设计，归 ArchForge）· 状态行 2026-11-26 回填）"
 created: 2026-11-24
 ---
 

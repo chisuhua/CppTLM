@@ -7,7 +7,7 @@ type: chore
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 依赖:
   - ADR-CEP-20
-状态: "🟡 **已立项**(2026-11-22 · planner 起草 · 依 architect 裁决记录 `.rddf/reviews/cep-gap-plan-adjudication-q1-q11-2026-11-20.md` §5.2 + L-3「另立一个单元」· 关联登记册 `obj-cep-platform-remaining.md` §6.3 归属表 **G-8** / §6.4 工作流 **W3-a** · 走**冻结面五步链**)"
+状态: "✅ **已实施**（2026-11-22 · 实施单元 = 登记册 `obj-cep-platform-remaining.md` §6.4 工作流 **W3-a**（P-5 冻结面三处「引擎口径」指针 · 台账 Entry #520 授权 + **一次**冻结面五步链 · 清单差集恰 3 处 hash 变更）· 验收报告 `.rddf/reviews/cep-freeze-lexicon-pointers-verify.md` · 依 architect 裁决记录 `.rddf/reviews/cep-gap-plan-adjudication-q1-q11-2026-11-20.md` §5.2 + L-3「另立一个单元」· 关联登记册 §6.3 归属表 **G-8** · ⛔ 本单元的 AC 复选框为 2026-11-22 起草时的草稿面、**未逐条勾选** · 状态行 2026-11-26 回填）"
 created: 2026-11-22
 ---
 

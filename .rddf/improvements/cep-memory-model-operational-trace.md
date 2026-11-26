@@ -8,7 +8,8 @@ type: feature
 依赖:
   - ADR-CEP-13
   - ADR-CEP-12
-状态: "🟢 **已登记·backlog**（✅ **已实施·已归档** 2026-11-24 · per 台账 **Entry #542** · change `cep-memory-model-operational-trace` ⇒ 归档 `2026-11-24-cep-memory-model-operational-trace` · **开工前置已闭合** = 架构裁定已 ratify = `ADR-CEP-22`「每域模型来源与域间边构造规则」(✅ 已签发 v1.0 · 台账 Entry #541 · 用户 ratify「A」)⇒ 原「⏸ 待触发条件:需要「复合一致性公理可判」时」已由该 ratify 满足;⚠️ **AC-7 / AC-8 / AC-12 已按裁定 §5.1 D-1/D-2 + 决策 6 修订**(见各条下的「修订依据」) · 原文为 2026-11-21 · planner 起草 · 架构裁决已落 = architect 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §三(登记册 §6.4 队列 2 的 **I-6 决策 2**) · 经 **metis 1 轮**(P0/P1/P2 逐条处置见 §审查轨迹)· ✅ **立项形态已拍板**(2026-11-21 · 裁决记录 §一 决策 2「登记 backlog，独立立项解决」)· ✅ **R-2a~R-2f 已 ratify** + I-6 已落地(归档 `2026-11-21-cpptlm-cep-invariant-modeling-batch2` · schema properties 14 / required 13) ⇒ **AC-16 开工门实测 = 1**(`grep -c '"combination_contract"' include/tlm/cep/protocol_instance.schema.json`) · ⛔ **不占 KPI slot**(已释放))"
+状态: >-
+  ✅ **已归档**（2026-11-24 · per 台账 **Entry #542** · change `cep-memory-model-operational-trace` ⇒ 归档 `2026-11-24-cep-memory-model-operational-trace` · **开工前置已闭合** = 架构裁定已 ratify = `ADR-CEP-22`「每域模型来源与域间边构造规则」(✅ 已签发 v1.0 · 台账 Entry #541 · 用户 ratify「A」)⇒ 原「⏸ 待触发条件:需要「复合一致性公理可判」时」已由该 ratify 满足;⚠️ **AC-7 / AC-8 / AC-12 已按裁定 §5.1 D-1/D-2 + 决策 6 修订**(见各条下的「修订依据」) · 原文为 2026-11-21 · planner 起草 · 架构裁决已落 = architect 裁决记录 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §三(登记册 §6.4 队列 2 的 **I-6 决策 2**) · 经 **metis 1 轮**(P0/P1/P2 逐条处置见 §审查轨迹)· ✅ **立项形态已拍板**(2026-11-21 · 裁决记录 §一 决策 2「登记 backlog，独立立项解决」)· ✅ **R-2a~R-2f 已 ratify** + I-6 已落地(归档 `2026-11-21-cpptlm-cep-invariant-modeling-batch2` · schema properties 14 / required 13) ⇒ **AC-16 开工门实测 = 1**(`grep -c '"combination_contract"' include/tlm/cep/protocol_instance.schema.json`) · ⛔ **不占 KPI slot**(已释放)
 created: 2026-11-21
 ---
 

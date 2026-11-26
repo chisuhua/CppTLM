@@ -9,7 +9,7 @@ type: feature
   - ADR-CEP-20
   - ADR-CEP-06
   - ADR-CEP-12
-状态: "⏸ **已拆分 · ⛔ 不可开工**(2026-11-21 · architect 裁决 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §四 = I-7 拆 **I-7a** = `TreeManager::view_of` + **I-7b** = `.rddf/improvements/cep-tilelink-home-side-state-driver` · ⛔ 本文件规划的「**engine 侧**两处观测落点(对仗 mesif)」路径**与 `openspec/specs/cep-tilelink-runtime-engine/spec.md` 的边界行 + TLE-05 冲突**(引擎不持状态 / 不携带源态;「`Cap` 源不定」是 TileLink-C **规范事实**)⇒ 该路径作废 · ⚠️ 其「**硬前置 = `CEN-Ib8`(engine egress)**」的前提被本次裁决**否掉**(驱动不进引擎 ⇒ 无 egress 可依赖)⇒ ⛔ 本文件**不得**按原样开工 · 目标由 I-7a + I-7b 承接)"
+状态: "✅ **已作废**（2026-11-21 · architect 裁决 `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §四 = I-7 拆 **I-7a**（`TreeManager::view_of`）+ **I-7b**（`cep-tilelink-home-side-state-driver`）· ⛔ 本单元规划的「**engine 侧**两处观测落点(对仗 mesif)」路径**与 `openspec/specs/cep-tilelink-runtime-engine/spec.md` 的边界行 + TLE-05 冲突** ⇒ 该路径作废 · ⚠️ 其「**硬前置 = `CEN-Ib8`(engine egress)**」的前提被同一裁决**否掉**（驱动不进引擎 ⇒ 无 egress 可依赖）· **I-7a + I-7b 均于 2026-11-21 归档 ⇒ 本单元不再持有活义务** · 正文保留作历史留痕 · 状态行 2026-11-26 回填）"
 created: 2026-11-20
 ---
 

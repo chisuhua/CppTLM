@@ -178,8 +178,8 @@ G-15	doc	.rddf/reviews/cep-g15-decision-block-coverage-verify.md	| **D3 ①** |	
 # ── v5 · W4 工作流行（登记册 §6.4 的 W4-b / W4-c / W4-d / W4-f · 零授权批）────────────
 # ⚠️ W4-a / W4-e（同一行 obj:474）属**待授权批**，⏔ 不在本块。
 W-4b	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	伪缺口 / 已订正	done
-W-4c	doc	.rddf/improvements/cep-archforge-ci-failclosed.md	已落地	done
-W-4c	doc	.rddf/improvements/cep-tilelink-tree-manager-view-of.md	已落地	done
+W-4c	doc	.rddf/improvements/cep-archforge-ci-failclosed.md	状态: "✅ **已实施**（I-9	done
+W-4c	doc	.rddf/improvements/cep-tilelink-tree-manager-view-of.md	状态: "✅ **已归档**（I-7a	done
 W-4d	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	| `cep-memory-model-operational-trace` |	done
 W-4f	doc	AGENTS.md	cr_write()	done
 W-4f	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	git-history-proposal	done
@@ -209,7 +209,12 @@ W-4e	doc	.rddf/reviews/cep-g37-ledger-kpi-line-verify.md	G-7 超阈自解	done
 G-17	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**登记册自身状态面未随实施结果刷新**	done
 G-17	doc	.rddf/reviews/cep-g17-registry-status-sync-verify.md	**登记册内状态性标注 0 处与实测矛盾**	done
 # ── v5 · G-18 的载体行 ────────────────────────────────────────────────
-G-18	doc	.rddf/improvements/cep-memory-model-operational-trace.md	状态: "🟢 **已登记·backlog**	done
+# ⚠️ **2026-11-26 · 锚点换新（per TSV 头「换锚点 = 改判据 ⇒ 需同 commit 说明理由」）**
+#    —— 理由 = 本仓 improvement `状态:` 行的**机器可读 token 口径**变更（用户裁决「方案甲」）：
+#    token 由「已落地」迁移为「已实施」/「已归档」/「已作废」（工具终态词表不认「已落地」）。
+#    本行原锚点 = `状态: "🟢 **已登记·backlog**`（G-18 处置 token）—— 该单元已于 2026-11-24
+#    **实施并归档**（台账 Entry #542）⇒ G-18 的处置 token 已被实际交付**取代** ⇒ 锚点随之换新。
+G-18	doc	.rddf/improvements/cep-memory-model-operational-trace.md	✅ **已归档**（2026-11-24 · per 台账 **Entry #542**	done
 G-18	doc	.rddf/reviews/cep-b1-backlog-status-verify.md	G-18 逐条判定	done
 # ── v5 · G-19 的载体行 ────────────────────────────────────────────────
 G-19	doc	.rddf/reviews/cep-l1-format-recurrence-verify.md	## G-19 逐条判定	done
@@ -217,3 +222,11 @@ G-19	doc	.rddf/roadmap/objectives/obj-cep-platform.md	### Entry #533	done
 # ── v5 · G-20 的载体行 ────────────────────────────────────────────────
 G-20	doc	.rddf/roadmap/objectives/obj-cep-platform.md	### Entry #535	done
 G-20	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**DoD 读法的核心分母口径陈旧 + 登记册 §1 状态面陈旧**	done
+# ── v5 · G-21 的载体行（2026-11-26 · 状态面二次漂移 + token 词表口径分歧）─────
+#    缺口本体 = improvement `状态:` 行与实际交付状态脱节（17 份陈旧/破损单元）+ 本仓
+#    token「已落地」不在工具终态词表内 ⇒ `rddf status` / `rddf dashboard` 长期高估待办量
+#    （实测 19 → 6）。处置 = token 口径统一（用户裁决「方案甲」）+ 17 份状态行回填 +
+#    1 份 YAML 破损修复 + §6.8 口径刷新。⛔ 台账 Entry #555 承载换锚点理由。
+G-21	doc	.rddf/roadmap/objectives/obj-cep-platform-remaining.md	**状态面二次漂移 + token 词表口径分歧**	done
+G-21	doc	.rddf/improvements/cep-ssp-declaration.md	状态: "✅ **已归档**（2026-11-26	done
+G-21	doc	.rddf/roadmap/objectives/obj-cep-platform.md	### Entry #555	done

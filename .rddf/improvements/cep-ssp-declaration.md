@@ -8,7 +8,7 @@ phase: phase-10
   - ADR-CEP-02
   - ADR-CEP-05
   - ADR-CEP-12
-状态: "🟢 **已批准·待立项**(2026-11-26 · per 用户指令「继续 CP-I-2 立项 → 实施」· 前置 `CP-Q-1a` 已于同日 ratify ⟹ 裁决记录 `.rddf/reviews/cep-CP-Q-1a-adjudication.md` §6.1)"
+状态: "✅ **已归档**（2026-11-26 · change `cep-ssp-declaration` → `openspec/changes/archive/2026-11-26-cep-ssp-declaration/` · 台账 Entry #553 · 实施 commit `86a1b6ee` + 归档 commit `94113c3c` · 实施单元 = 登记册 `obj-cep-custom-protocol.md` §4.0 队列 2 **CP-I-2**（S1 批 1：事件字母表 14 锚 + loader + V-24-2 逐格对账 killer 闸 + 主 spec）· 前置 `CP-Q-1a` 裁决记录 `.rddf/reviews/cep-CP-Q-1a-adjudication.md` §6.1 · 状态行 2026-11-26 回填）"
 created: 2026-11-26
 ---
 

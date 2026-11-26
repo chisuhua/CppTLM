@@ -7,7 +7,7 @@ type: feature
 主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 依赖:
   - ADR-CEP-04
-状态: "✅ **已落地**（I-7a · 2026-11-21 · 归档 `2026-11-21-cpptlm-cep-tilelink-tree-manager-view-of` · per 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2）"
+状态: "✅ **已归档**（I-7a · 2026-11-21 · 归档 `2026-11-21-cpptlm-cep-tilelink-tree-manager-view-of` · per 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2）"
 created: 2026-11-21
 ---
 

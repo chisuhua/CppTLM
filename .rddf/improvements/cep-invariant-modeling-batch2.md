@@ -8,7 +8,7 @@ type: feature
 依赖:
   - ADR-CEP-13
   - ADR-CEP-12
-状态: "🟡 **已立项 · 裁决已落 · 已 ratify**(2026-11-21 · architect 裁决 = `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §二(**oracle APPROVE** + **critic APPROVE_WITH_CONDITIONS** · 无 BLOCKER)· **用户 ratify R-2a~R-2f**(2026-11-21)· 前置 ① 裁决落盘 ✅ ② **R-2 已 ratify** ✅ ③ **litmus change 已归档**(= I-6a)✅ · 经 **metis 1 轮**(重写轮 · P0×6/P1×8/P2×3 逐条处置见 §审查轨迹)· ⏳ **待立项**(openspec change)⇒ builder 实施)"
+状态: "✅ **已归档**（2026-11-21 · 实施单元 = 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2 **I-6** · 归档 `2026-11-21-cpptlm-cep-invariant-modeling-batch2`（`⭭-unmodelled` 2 → 0）· 前置 ① architect 裁决 = `.rddf/reviews/cep-invariant-batch2-adjudication-2026-11-21.md` §二（**oracle APPROVE** + **critic APPROVE_WITH_CONDITIONS** · 无 BLOCKER）② **用户 ratify R-2a~R-2f** ③ **litmus change 已归档**（= I-6a）· 经 **metis 1 轮**（重写轮 · P0×6/P1×8/P2×3 逐条处置见 §审查轨迹）· ⛔ 本单元的 AC 复选框为 2026-11-21 起草时的草稿面、**未逐条勾选** · 状态行 2026-11-26 回填）"
 created: 2026-11-20
 ---
 

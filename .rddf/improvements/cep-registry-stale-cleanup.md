@@ -8,7 +8,7 @@ type: chore
 依赖:
   - ADR-CEP-20
   - ADR-CEP-06
-状态: "🟡 **已立项**(2026-11-20 · planner 起草 · 经 metis 1 轮 + oracle 1 轮 + critic 3 轮审查(critic 第 3 轮 APPROVE_WITH_CONDITIONS)· 关联登记册 `obj-cep-platform-remaining.md` §6.3 归属表 P-1 / P-3 / I-1)"
+状态: "✅ **已实施**（2026-11-20 ~ 2026-11-22 · 实施单元 = 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2 **I-1**（口径 stale 集 a/c 清理）+ 队列 0 **P-1**（登记册基线刷新 + 台账订正 Entry #529）+ 缺口 **G-15**（决策块射程去形态化 · 台账 Entry #524 授权 + #525 回执 · 实施单元即本条）· 关联登记册 §6.3 归属表 P-1 / P-3 / I-1 · ⛔ 本单元的 AC 复选框为 2026-11-20 起草时的草稿面、**未逐条勾选** · 状态行 2026-11-26 回填）"
 created: 2026-11-20
 ---
 

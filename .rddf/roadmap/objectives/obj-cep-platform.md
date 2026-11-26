@@ -29557,3 +29557,55 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | objective `CP-Q-1b` | → ✅ **闭合**（裁决已 ratify + 3 份 SU 落盘后）| planner（本批）|
 | `ADR-CEP-24` §8 **F5** | → ✅ **全部闭合**（`CP-Q-1a` 事件字母表 + `CP-Q-1b` 三项）| — |
 | 批 2 立项目 | → **解除阻塞**（`CP-I-2` 的批 2 部分：解释器 + 装配 + 掩码格 + 4 件套）| planner（后续）|
+
+### Entry #555 — 2026-11-26 [planner](**G-21 状态面二次漂移 + token 词表口径分歧** —— improvement `状态:` 行 17 份回填 + 载体表 3 条锚点换新 + §6.8 口径刷新)
+
+**主题**：把 improvement 提案单元的**机器可读状态面**拉回与实际交付一致 —— 处置 G-17（2026-11-23）之后**二次发生**的状态行漂移（登记册 **G-21**），并消除**本仓 token 词表 vs 工具终态词表**的口径分歧。
+**元**：用户 2026-11-26 裁决「**方案甲**」（本仓改用 `已实施` / `已归档` / `已作废`）· 登记册 `obj-cep-platform-remaining.md` §6.2 **G-21** 行 + §6.3 归属表行 + §6.8 单元表 6 行 + §6.8 自查口径块 · 载体表 `scripts/test/rddf_ac_carrier.tsv` **3 条锚点换新 + 3 行新增**（`G-21` ×3）· ⛔ **零冻结面改动**（`.rddf/improvements/**` 不在 `cep_freeze_check.sh` 的 `FROZEN_GLOBS` 内）⇒ **不触五步链**。
+
+**① 缺口事实（可机判 · 处置前实测）**
+
+| # | 事实 | 实测 |
+|:--:|---|---|
+| 1 | **词表分歧**：本仓通用完成态 token「**已落地**」**不在**工具终态词表内（`已归档` / `已完成` / `已实施` / `已实施并验收` / `已作废` / `superseded` / `archived`）⇒ **13 份已交付单元对 `rddf status` 永久可见为 pending** | `rddf status` → `Total pending: 19`，而逐条对账后真活单元仅 **6** ⇒ 待办量高估约 **3.2 倍** |
+| 2 | **事实漂移 A**（7 份）：已落地（`I-5` / `I-7a` / `I-7b` / `I-8` / `I-9` / `I-10` / `I-11`）但 token =「已落地」| 逐条与登记册 §6.4 队列 2 + 归档目录对账 |
+| 3 | **事实漂移 B**（5 份）：标「已立项」，但实施早已由登记册 `I-0` / `I-1` / `I-4` / `I-6` / `W3-a` / `W4-c` / `W4-e` / `W4-f` / `P-1` / `G-15` 等单元完成 | 归档目录 + 验收报告 + 台账 Entry 逐条可查 |
+| 4 | **事实漂移 C**（1 份）：`cep-tier2-second-family-tilelink` 标「已拆分·不可开工」，而承接目标 I-7a / I-7b 均于 2026-11-21 归档 | 两个归档目录在盘 ⇒ 本单元已无活义务 |
+| 5 | **事实漂移 D**（4 份）：已归档却仍写「已批准·待立项」/「已登记·backlog」（`cep-ssp-declaration` · `cep-fence-consistency-effect-derivation` · `cep-hop-timing-capability-declaration` · `cep-memory-model-operational-trace`）| 被工具的归档名过滤 ⇒ **在 pending 表里完全隐身** ⇒ 陈旧行不可见 |
+| 6 | **YAML 破损**：`cep-memory-model-operational-trace` 的 front matter 用双引号标量却内嵌 `grep -c '"combination_contract"'` 的裸 `"` ⇒ `yaml.safe_load` 失败 | 实测抛 `expected <block end>, but found '<scalar>'` ⇒ `rddf status` 报「**1** improvement file(s) with metadata problems」且该单元 priority / phase / status **全丢** |
+
+**② 本批次改动面（17 份单元 × 1 行 + 1 张载体表 + 登记册 3 处 · 全部机械）**
+
+| # | 事项 | 判据（可机判） | 实测 |
+|:--:|---|---|---|
+| 1 | **token 口径统一**（方案甲）| 17 份单元的 leading token ∈ {`已实施`, `已归档`, `已作废`} | 17/17 ✓ · `yaml.safe_load` 全通 |
+| 2 | **YAML 破损修复** | `cep-memory-model-operational-trace` 的 front matter 可解析 | `yaml.safe_load` ✓（折叠块标量 `>-`，规避内嵌裸 `"`）|
+| 3 | **载体表 3 条锚点换新**（`W-4c` ×2 + `G-18` ×1）| `rddf_stage_gate.sh` rc=0 且 P-3 全绿 | 见 ③ |
+| 4 | **载体表 +3 行**（`G-21` ×3 · total **137 → 140**）| `G-21` 有登记册行 + 2 条非登记册载体 ⇒ 满足 P-3b 自指判据 | `P-3b 自指载体 22 个 AC，均有第二条非登记册载体` ✓ |
+| 5 | **登记册同步** | §6.2 加 G-21 行 + 口径追加行 · §6.3 加 G-21 行 · §6.8 单元表 6 条陈旧行刷新 + 自查口径块追加 2026-11-26 实测行 | 全部落盘 |
+
+**③ 换锚点理由（per 载体表头「⚠️ 换锚点 = 改判据 ⇒ 需同 commit 说明理由」）**
+
+| 载体行 | 原锚点 | 新锚点 | 理由 |
+|:--:|---|---|---|
+| `W-4c` → `cep-archforge-ci-failclosed.md` | `已落地` | `状态: "✅ **已实施**（I-9` | 该行断言「W4-c 把状态行回填为完成态 token」；token 口径 2026-11-26 迁移 ⇒ 锚点随之换新（**判别力不降**：新锚点更长且仍唯一命中该行）|
+| `W-4c` → `cep-tilelink-tree-manager-view-of.md` | `已落地` | `状态: "✅ **已归档**（I-7a` | 同上（该单元的归档 change 名在状态行内 ⇒ `已归档` 属实）|
+| `G-18` → `cep-memory-model-operational-trace.md` | `状态: "🟢 **已登记·backlog**` | `✅ **已归档**（2026-11-24 · per 台账 **Entry #542**` | G-18 的处置 token 已被**实际交付取代**（该单元 2026-11-24 实施并归档 · Entry #542）⇒ 锚点换为当前交付态 |
+
+⚠️ **三处换锚点均未改动 AC 编号 / 载体路径 / `state` 列** ⇒ 队列 2 的 I-* 行与「AC ↔ 载体」映射关系不变；⛔ 零 ADR / 零 spec / 零代码改动。
+
+**④ 实测（处置后）**
+
+| 项 | 处置前 | 处置后 |
+|---|---|---|
+| `rddf status` pending 数 | **19** | **6**（= 6 份真活单元：`cep-memory-model-runtime-trace` / `cep-ssp-batch2` / `cep-ssp-cp-q1b-landing` / `cpptlm-ep-key-surface-reconciliation` / `cpptlm-router-vc-count-param-inert` / `cpptlm-validate-params-dead-code`）|
+| `rddf status` 元数据错误 | **1** | **0** |
+| 登记册 §6.8 自查命令输出 | **6** | **2**（= `cep-ssp-batch2` + `cep-ssp-cp-q1b-landing` · **两份均为真活**）|
+| `bash scripts/test/rddf_stage_gate.sh` | rc=0 | rc=0（3 条锚点换新后复验 · P-3 / P-3b / P-5 全绿）|
+
+**⑤ 不做项 + 附带残余（范围外 · 只登记不清理）**
+
+- ⛔ **不清理** 5 份**非 CEP** 域旧 token 单元（`cpptlm-spec-purpose-batch1` / `-batch3` / `cpptlm-spec-scenario-level-fix` / `cpptlm-cep-mesh-e2e-carrier` / `cpptlm-module-param-read-declares`）—— 其 change **均已归档** ⇒ 被工具归档名过滤 ⇒ **不影响 pending 视图** ⇒ 归下一轮候选（⛔ 本轮不趁机清理范围外历史遗留）
+- ⛔ **不勾选** 5 份「已立项 → 已实施」单元的 `- [ ]` AC 复选框 —— 逐条勾选属**验收动作**（verifier 域）且本轮未逐条复验 ⇒ 状态行已注明「AC 复选框为起草时的草稿面、**未逐条勾选**」
+- ⛔ **不改** 登记册散文中的「已落地」措辞（§6.4 队列 2 / §6.8 单元表等）—— §6.8 白名单仍含该词以兼容散文与历史命中 ⇒ 机器可读 token 面与散文面**分工不冲突**
+- ⛔ **不新建** `G-22+` 缺口 —— 本批为 G-21 的闭合项；`G-*` 编号空间仍开 = **0**

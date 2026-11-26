@@ -9,7 +9,7 @@ type: feature
   - ADR-CEP-20
   - ADR-CEP-04
   - ADR-CEP-12
-状态: "✅ **已落地**（I-7b · 2026-11-21 · 归档 `2026-11-21-cpptlm-cep-tilelink-home-state-driver` · per 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2）"
+状态: "✅ **已归档**（I-7b · 2026-11-21 · 归档 `2026-11-21-cpptlm-cep-tilelink-home-state-driver` · per 登记册 `obj-cep-platform-remaining.md` §6.4 队列 2）"
 created: 2026-11-21
 ---
 

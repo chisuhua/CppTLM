@@ -7,7 +7,7 @@ phase: phase-10
   - ADR-CEP-02
   - ADR-CEP-12
   - ADR-CEP-13
-状态: "🟢 **已批准·待立项**(2026-11-24 · per 用户「同意你的建议」⇒ 裁决 = **G4-a**；metis 1 轮 P0/P1/P2 已逐条处置，见台账 Entry #544)"
+状态: "✅ **已归档**（2026-11-24 · change `cep-fence-consistency-effect-derivation` → `openspec/changes/archive/2026-11-24-cep-fence-consistency-effect-derivation/` · 台账 Entry #544 · 裁决 = **G4-a**（per 用户「同意你的建议」· metis 1 轮 P0/P1/P2 已逐条处置）· 状态行 2026-11-26 回填）"
 created: 2026-11-24
 ---
 
