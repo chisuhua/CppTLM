@@ -26,7 +26,7 @@
     "docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md": "29b945d0eb191d9f14293d9ec2b48e2c8330e8c856d716772f5c1091a5255032",
     "docs/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md": "b5dd9ecd1351de229843cd9d9f85fb7ada4445fe4a9ba7732a83d0dea559a9ba",
     "docs/adr/ADR-CEP-23-incomplete-directory-knowledge-boundary.md": "de3c24d03fd61c3f92c9c1e2c493116d452f226bb0ae3f20649b8c277c299f53",
-    "docs/adr/ADR-CEP-24-user-defined-ssp-declaration.md": "00bb88f494fe8d4699536dee70992cac5d2fbe09ed0b4eb901dcdbbcc3a43bcf",
+    "docs/adr/ADR-CEP-24-user-defined-ssp-declaration.md": "68422d19aa3a9f30c53d2b9e24bb75fb8186d63b48c415d3a33519e51f45ff0d",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "816820baf253d8e44a932f7cc039d1d6e75d8ca34c17ac8c3ab7e2d96dd078dd",
     "docs/architecture/07-coherence-exploration-platform.md": "d644b21ff87faa7eef1caf2bbb81cb632f2ba34a5f3fa4e5e5edc65fa18e1b21",
     "docs/architecture/cep/coherence-interface.md": "6997124eb5f904a02dee90b38d5d8f4a536e94c7aeb3432c609aa10835f4f597",
@@ -98,10 +98,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #551",
+  "authorized_by": "Entry #552",
   "exclusions": [],
   "frozen_at": "2026-11-26",
-  "frozen_at_commit": "4134ed89e549f3a67c3fd1679e712a99c4215ec2",
+  "frozen_at_commit": "41e92f1be43b96c08c857ba53fa0b489d8cf28d5",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
