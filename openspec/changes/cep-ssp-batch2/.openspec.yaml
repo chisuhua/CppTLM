@@ -1,0 +1,28 @@
+schema: spec-driven
+created: 2026-11-27
+x-phase: phase-10
+x-priority: P1
+x-status: proposed
+goal: |
+  把「声明面」变成「**可运行、可实验**的协议」——⑦ functional-only 解释器（声明表 → 状态迁移 + perm 投影 ·
+  零时序）⑧ 装配集成（`id` + `adapter` + **SSP 绑定**三方解析到同一插件）⑨ 掩码格扩展（`ssp.schema.json` 的
+  格形状支持 `target_mask`）⑩ `ADR-CEP-06` 的实验 4 件套端到端 + `ADR-CEP-14` C1~C10 合同测试实例化。
+  ⛔ 零时序 / hop（属 S2 `ADR-CEP-25`）· ⛔ 零瞬态态生成器（属 S3 `ADR-CEP-26`）。
+affected_areas:
+  - include/tlm/cep/ssp_interpreter.hh
+  - include/tlm/cep/ssp.schema.json
+  - include/tlm/cep/instance_assembly_gate.hh
+  - include/tlm/cep/adapter_contracts_loader.hh
+  - include/tlm/cep/ssp_loader.hh
+  - test/test_cep_ssp_runtime.cc
+  - scripts/test/cep_ssp_runtime_check.sh
+  - openspec/specs/cep-ssp-declaration/spec.md
+  - openspec/specs/cep-instance-assembly/spec.md
+  - openspec/specs/cep-ssp-runtime/spec.md
+x-ledger: |
+  objective obj-cep-custom-protocol · CP-I-2 批 ② · 台账 Entry #557（立项 + 硬前置已解除）。
+  硬前置 cep-ssp-cp-q1b-landing 已归档（Entry #556 · AC 7/7）。
+  ⚠️ 五步链：命中冻结面即走（protocol_instance.schema.json / preregistration.json / tools×3 /
+  metrics.schema.json / simulation-and-experiment.md / openspec/specs/cep-* glob）⇒ 一次五步链 · 见 Entry #557 ③④。
+  ⚠️ ⑨ 的 `ssp.schema.json` **未入 M1 冻结集**（批①新建时未入）⇒ 掩码格 contract 面可被静默改写
+  ⇒ 是否同批纳入 M1 = **architect 域裁决**（Entry #557 ⑥ 待裁 · 本 change 不代裁）。
