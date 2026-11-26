@@ -2,15 +2,19 @@
   "schema": "planner-handoff-v1",
   "version": 1,
   "owner": "rdd-planner",
-  "planner_complete_at": "2026-11-26T04:55:00.000000+00:00",
+  "planner_complete_at": "2026-11-26T11:20:00.000000+00:00",
   "current_sprint": "sprint-2026-11",
-  "proposals_ready": [],
-  "proposals_approved_count": 0,
+  "proposals_ready": [
+    "cep-ssp-cp-q1b-landing"
+  ],
+  "proposals_approved_count": 2,
   "features_active": [],
-  "awaiting_builder": [],
+  "awaiting_builder": [
+    "cep-ssp-cp-q1b-landing"
+  ],
   "recommended_route": "simple",
   "active_objectives": [
     "obj-cep-custom-protocol"
   ],
-  "note": "2026-11-26：清 stale awaiting_builder —— 原值 cep-litmus-falsifier-naming-disambiguation 实际状态为「✅ 已实施·已归档（2026-11-23）」，非待办。新 objective obj-cep-custom-protocol 已建（关联 ADR-CEP-24 已签发）。builder 的下一项 = 该 objective §4.0 队列 2 的 I-1（ADR-CEP-24 落盘五步链 2~5），前置台账 Entry #551 已落；I-1 不是 proposal ⇒ 不占本字段。"
+  "note": "2026-11-26（第二轮）：CP-Q-1b 已 ratify（用户批准 R1~R4，R4 经澄清选「甲」）并落盘 —— 3 份 ADR SU 同批（ADR-CEP-24 第三则 / ADR-CEP-11 / ADR-CEP-12）+ 一次五步链（Entry #554 · 冻结 97 产物 · 无参 rc=0）。⇒ ADR-CEP-24 §8 F5 **全部闭合**（CP-Q-1a + CP-Q-1b）。本轮按 tu 用户批准拆两个 change（B + 甲）：① cep-ssp-cp-q1b-landing（contract 面 · 硬前置）② cep-ssp-batch2（功能面 ⑦ functional-only 解释器 + ⑧ 装配 + ⑨ 掩码格 + ⑩ 4 件套，依赖 ①）。proposals_approved_count=2 但 awaiting_builder 只放 ① —— ② 必须等 ① 的 contract 落地（拆批会让 ② 的装配第一步就红）。"
 }

@@ -60,3 +60,5 @@
 | Improvement | Priority | 来源 | 创建日期 |
 |---|---|---|---|
 | [cep-memory-model-runtime-trace](improvements/cep-memory-model-runtime-trace.md) | P2 | `ADR-CEP-22` SU(2026-11-25) ⑥ 的 **L2** 行 | 2026-11-25 |
+| [cep-ssp-cp-q1b-landing](improvements/cep-ssp-cp-q1b-landing.md) | P1 | `CP-Q-1b` 裁决（已 ratify R1~R4）+ 3 份 ADR SU | 2026-11-26 |
+| [cep-ssp-batch2](improvements/cep-ssp-batch2.md) | P1 | 批 1 的 `cep-ssp-declaration.md:57`（⑦⑧⑨⑩）+ `ADR-CEP-24` 决策 6 | 2026-11-26 |
