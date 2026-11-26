@@ -14,11 +14,11 @@
 
 | 分组 | 份数 | 状态分布 |
 |------|------|---------|
-| **CEP 系列**（Coherence Exploration Platform） | 26 | ✅ 已签发 22 · 🟢 Proposed 1 · 🟡 起草中 3 |
+| **CEP 系列**（Coherence Exploration Platform） | 27 | ✅ 已签发 23 · 🟢 Proposed 1 · 🟡 起草中 3 |
 | **DGPU 系列**（dGPU 应用架构） | 15 | ✅ 已签发 2 · 🟢 Proposed 1 · 🟡 起草中 2 · 📋 提案 10 |
 | **X 系列**（框架基础：事务 / 错误 / 复位 / 参数 / 端口） | 18 | ✅ 已实施 8 · ✅ 已确认 2 · ✅ Accepted 3 · 🟢 Proposed 1 · 🟡 部分实施 1 · 📋 提案 1 · 📋 待确认 1 · 🟡 汇总（多阶段） 1 |
 | **其他**（INC / LIB / METRIC / NV / TEMPLATE） | 6 | ✅ 已实施 3 · ✅ 已确认 3 |
-| **合计** | **65** | — |
+| **合计** | **66** | — |
 
 > **口径说明**：`ADR-CEP-NUMBER-MAP.md` 是**编号预分配表**（非决策），计入 CEP 份数；
 > `ADR-P1-TEMPLATE.md` 是**模板**（非决策），计入其他份数。
@@ -59,6 +59,7 @@
 | [ADR-CEP-21-sharer-bitmap-expansion.md](./ADR-CEP-21-sharer-bitmap-expansion.md) | Sharer 位宽 —— responder bit 映射的**扩容机制**与触发判据 | 🟢 Proposed |
 | [ADR-CEP-22-memory-model-source-and-cross-domain-edges.md](./ADR-CEP-22-memory-model-source-and-cross-domain-edges.md) | 每域模型来源与域间边构造规则（操作级复合一致性判据的可判定前置） | ✅ 已签发 |
 | [ADR-CEP-23-incomplete-directory-knowledge-boundary.md](./ADR-CEP-23-incomplete-directory-knowledge-boundary.md) | 不完整目录知识的表达边界（Completeness 取值域） | ✅ 已签发 |
+| [ADR-CEP-24-user-defined-ssp-declaration.md](./ADR-CEP-24-user-defined-ssp-declaration.md) | 用户自定义稳定态协议（SSP）声明面与自定义接入路径 | ✅ 已签发 |
 | [ADR-CEP-NUMBER-MAP.md](./ADR-CEP-NUMBER-MAP.md) | Coherence Exploration Platform 编号预分配 | 🟡 起草中 |
 
 ---
