@@ -81,6 +81,10 @@ ADR_LIST=(
   #    (本轮实测:ADR 落盘批次漏了本项 + 决策块快照 + no_inv 两处 ⇒ 三闸同时红)。
   "ADR-CEP-22-memory-model-source-and-cross-domain-edges.md"
   "ADR-CEP-23-incomplete-directory-knowledge-boundary.md"
+  # 2026-11-26(Entry #551):补 **-24**。
+  # ⚠️ 本清单是「存在 + 含不变量/决策节」两项检查的**覆盖集**;漏登记 = 新 ADR **静默脱检**
+  #    (本轮实测:ADR 落盘批次漏了本项 + 决策块快照 + no_inv + ADR_LIST 四处 ⇒ 多闸同时红)。
+  "ADR-CEP-24-user-defined-ssp-declaration.md"
   "ADR-CEP-NUMBER-MAP.md"
 )
 MISSING=0
