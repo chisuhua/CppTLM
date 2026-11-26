@@ -29289,3 +29289,69 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 - ⛔ 不改 schema / `protocol_instances.json` / 迹语料 / 实现 / 测试
 - ⛔ 不改 improvement 的状态（仍 `🟢 已登记·backlog` · **触发条件未满足，不开工**）
 - ⛔ 不在本批次处置 L2 的实施（须**另立 openspec change**；立项门① 的证据已在 `7399694a`）
+
+---
+
+### Entry #551 — 2026-11-26 [planner](**ADR-CEP-24 落盘授权** —— 用户自定义稳定态协议（SSP）声明面与自定义接入路径 · **冻结面五步链第 1 步** · 双审 0 BLOCKER)
+
+**主题**：授权 `ADR-CEP-24`（**新建**）落盘 + 其**同批**的 2 份 M1 冻结成员修订（`ADR-CEP-NUMBER-MAP` 增 4 行 + SU · `ADR-CEP-07A` 追加 SU 留痕）—— 依**用户指令**「自主推进：先做第 0 步，再切 architect 做第 1 步，最后切 planner 做第 2 步，最后切 builder 实施」+ **metis 1 轮 + oracle 1 轮 `APPROVE` + critic 1 轮 `APPROVE_WITH_CONDITIONS`（0 BLOCKER）双审闭合**。
+**元**：ADR `docs/adr/ADR-CEP-24-user-defined-ssp-declaration.md`（**新建** · 315 行 / 正文 218 行 / 7 决策块 / 13 判据 / 10 签发前置）· 审稿报告 `.rddf/reviews/ADR-CEP-24-user-defined-ssp-declaration-review.md`（metis §1 + oracle §2 + critic §3 + 收口清单 §4）· 台账本 Entry。
+
+**① 授权理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | **用户明确指令**「切 architect 做第 1 步」⇒ ADR 起草 + 双审 + 落盘在本批授权范围内 | ✅ | 用户 2026-11-26 指令 |
+| 2 | **metis 1 轮**（意图检查点：意图已定但存在 ≥2 种可枚举歧义 ⇒ 先单独调 metis，**不与 oracle 并行**）⇒ 18 条 findings 逐条处置 | ✅ | 审稿报告 §1.2 |
+| 3 | **oracle 1 轮**（审查域 = **其他审查**）⇒ 判定 `APPROVE` + 3 项 must-fix | ✅ | 报告 §2（判定行原文）|
+| 4 | **critic 1 轮**（`review_profile: arch`）⇒ `APPROVE_WITH_CONDITIONS` · `mergeable: yes` · `scope_exceeded: false` · **0 BLOCKER** · 2 SHOULD_FIX + 4 NIT | ✅ | 报告 §3 |
+| 5 | **ADR 完成的标志 5 条**（四要素 / 双审完成且 BLOCKER 全闭 / Status 已转已决 / 关联 change 已登记 / 审稿报告已落 + 指针）| ✅ | ADR §Status Update ①（8 条签发凭据）|
+| 6 | **归口判权成立**：机制归 CppTLM / 语义内容归 ArchForge（`ADR-CEP-00` 决策 1/4 + `ADR-CEP-20:88` 单向门 + 三条反向先例已处理）| ✅ | ADR 决策 1.1 + critic 冲突面 ①（无冲突）|
+| 7 | ⛔ **不触碰 `ADR-CEP-18` 决策 1/6**：五件排除物（DSL / 解析器 / IR / **生成器** / **烘焙**）逐条声明不触及 ⇒ **不需 amendment** | ✅ | ADR 决策 1.3 + critic 冲突面 ②（无冲突、无需 amendment）|
+| 8 | ⭐ **签发 ≠ 可实施**：决策 3 两维度（事件字母表来源 / 用户可写键子集 + `family` + `protocol_version`）**仍未定义** ⇒ S1 待 F5 补齐 | ✅ | ADR §Status Update ① 第 8 条 + 决策 3 + V-24-13 守护 |
+
+**② 本批次改动面（3 项 · 封闭）**
+
+| # | 事项 | 判据（可判定） | 执行者 |
+|:--:|---|---|---|
+| 1 | **`ADR-CEP-24` 新建**（含文末 `## Status Update` 签发段 · 8 条签发凭据 + 「签发 ≠ 可实施」）| 文件存在 · `grep -c "## Status Update"` == 1 · 正文（§1 起 → SU 前）≤ 250 行 · `### 决策 N` 块 == **7** | architect ✅ 已落 |
+| 2 | **`ADR-CEP-NUMBER-MAP` 增 4 行**（`CEP-23` **补登记**（其签发 commit 未带）+ `CEP-24` + `CEP-25`/`CEP-26` 预留 `🟡 待起草`）+ 文末 SU 2026-11-26（含「KPI 预算块 **⭕ 不变**」的说明）| 表行 **29** · 重号 **0** · `CEP-23/24/25/26` 齐 · **§1~§7 正文除 §2 决策 1 表行外零 diff** | architect ✅ 已落 |
+| 3 | **`ADR-CEP-07A` 追加 SU**（critic SHOULD_FIX ①）：`INV-CEP-07A-IC2` **例外集扩展**留痕（三类 → **四类**：新增 SSP 声明面数据文件）· 形态 = `ADR-CEP-05:164` **补落三段式**（来源 + 一手依据 + 落位说明）| `git diff --stat` **纯追加 / 0 删除** · 例外集完整表述含「③ SSP 声明面数据文件（本条新增）」 | architect ✅ 已落 |
+
+**③ 五步授权链（本 Entry 是步 1）**
+
+1. **本 Entry #551**（台账授权 · `--authorized-by` 的载体）
+2. builder commit：3 项改动面**落盘**（产物 commit）+ 其后的 `test/` 两处登记（R-d 快照 + `decision_adrs`，**非冻结面但同批**）
+3. `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #551"`（**清单更新** · 预期：新增 **1**（ADR-CEP-24）· 移出 0 · hash 变更 **2**（NUMBER-MAP + 07A））
+4. **清单单独 commit**（⛔ 不得与产物同 commit）
+5. **无参复验**：`bash scripts/test/cep_freeze_check.sh` ⇒ rc=0
+
+**④ 计数面（预期变化 · 以命令实测为准）**
+
+| 面 | 预期 | 依据 |
+|---|---|---|
+| 冻结产物 `artifact_count` | **95 → 96** | 新增 ADR-CEP-24 1 份 + hash 变更 2 处 |
+| 决策块计数（`test/cep_decision_block_snapshot.json`） | **26 份 / 145 块 → 27 份 / 152 块** | +1 份（ADR-CEP-24）+ 7 块；⚠️ `authorized_by` 须复用**本 Entry** |
+| `decision_adrs`（`test/cep_adr_structural_deferrals.json`） | **23 → 24** | 未登记即红（`cep_adr_structural_check.sh`）|
+| 根 `AGENTS.md:7` 的「23 份决策 ADR」 | **23 → 24** | ADR-CEP-24 §7 C10 ③（⛔ 同批更新）|
+| 新增 `INV-CEP-*` | **0** | ADR §5「零新造」· `cep_adr_structural_check.sh` ④b-c 实测「88 行 V 行全覆盖」|
+| openspec change / KPI slot | **0 / 0** | ADR 是**决策记录**，不占 change slot（NUMBER-MAP 的 KPI 预算块 **10/14/14 不变**）|
+| `cep_*.sh` / `test_cep_*.cc` | **55 / 80 不变** | 本批不新增脚本与测试（SSP 声明面属 **S1 实施期**，被 F5 闸住）|
+
+**⑤ 实施结果（收口 · 待 builder 回填）**
+
+| # | 事项 | 结果 | 证据 |
+|:--:|---|---|---|
+| 1 | ② 的 3 项改动面 | ⏳ | — |
+| 2 | 五步授权链 | ⏳ | — |
+| 3 | 零回归（全量口径）| ⏳ | — |
+| 4 | 遗留清扫 + 材料一致性 | ⏳ | — |
+
+**⑥ 不做项**
+
+- ⛔ **不改 `ADR-CEP-18` 决策 1/4/5/6**（生成器路线另立 **ADR-CEP-26**；T1~T4 复评结论须由 ADR-CEP-26 **显式 supersede**）
+- ⛔ **不启动作 SSP 声明面的实施**（被 §8 F5 闸住：事件字母表来源 + 用户可写键子集未裁定）
+- ⛔ **不触碰 hop / 时序 + 引擎 egress 接 fabric**（另立 **ADR-CEP-25**；与 Entry #543 归档裁决的冲突留待该 ADR 显式处理）
+- ⛔ **不迁移** 6 份 `*_state_spec.hh`（ADR-CEP-24 §8 F3）
+- ⛔ **不改** `protocol_instance.schema.json` / `protocol_instances.json` / `fabric.json`（M1 冻结面 · 本 ADR 明确「零实例面变更」）
+- ⛔ **不声称「CEP 已支持用户自定义协议」**（在 F5 闭合前该表述**均不成立** · per ADR §Status Update ① 第 8 条）
