@@ -60,7 +60,14 @@
 
 ### Task 8: 全量验证 + 五步链
 
-- [ ] 全量 ctest（⛔ 无过滤）
-- [ ] 全部 `cep_*.sh`（56 个）
-- [ ] `docs_sync --strict` / `agents_md_lint --all` / `cep_docs_sync_check` / `docs_adr_index_check`
-- [ ] 五步链：产物 commit → `--update --authorized-by "Entry #553"`（预期：新增 1（新 spec）· 移出 0 · hash 变更 0）→ 清单单独 commit → 无参复验 rc=0
+- [x] 全量 ctest（⛔ 无过滤）—— **211/211**
+- [x] 全部 `cep_*.sh`（56 个）—— **56/56**
+- [x] `docs_sync --strict` / `agents_md_lint --all` / `cep_docs_sync_check` / `docs_adr_index_check` —— 全 ✅
+- [x] 五步链：产物 commit → `--update --authorized-by "Entry #553"`（预期：新增 1（新 spec）· 移出 0 · hash 变更 0）→ 清单单独 commit → 无参复验 rc=0
+
+### Task 9: verifier 轮 1 FAIL 的修复（`implementation_gap`）
+
+- [x] **F-1**：`ssp_loader.hh` 增 **`E13`**（`transition` 全为空洞 ⇒ fail-closed · `ADR-CEP-24` §4 E1）
+- [x] **F-2**：补 SECTION「E2 空 ssps 数组（退化）」
+- [x] **F-3**：补 SECTION「E3 空 states 数组（退化）」
+- [x] 回归：`[cep][ssp]` **244 assertions** / 5 cases · 56/56 闸 · 211/211 ctest · 验收报告轮 2 **PASS**（`.rddf/reviews/cep-ssp-declaration-verify.md`）

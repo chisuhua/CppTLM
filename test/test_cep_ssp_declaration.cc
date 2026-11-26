@@ -205,8 +205,14 @@ TEST_CASE("[cep][ssp] loader fail-closed —— 红因签名 E1..E12（抽样正
     SECTION("E2 id 形态非法") {
         auto d = base; d["ssps"][0]["id"] = "Bad-Id"; expect_code(d, "E2");
     }
+    SECTION("E2 空 ssps 数组（退化）") {
+        auto d = base; d["ssps"] = nlohmann::json::array(); expect_code(d, "E2");
+    }
     SECTION("E3 state 重名") {
         auto d = base; d["ssps"][0]["states"][1] = "I"; expect_code(d, "E3");
+    }
+    SECTION("E3 空 states 数组（退化）") {
+        auto d = base; d["ssps"][0]["states"] = nlohmann::json::array(); expect_code(d, "E3");
     }
     SECTION("E4 event 重名") {
         auto d = base; d["ssps"][0]["events"][1]["name"] = "Rd"; expect_code(d, "E4");
@@ -244,5 +250,12 @@ TEST_CASE("[cep][ssp] loader fail-closed —— 红因签名 E1..E12（抽样正
         auto d = base;
         d["ssps"][0]["events"][0] = {{"name", "Rd"}, {"flow", "request"}};
         expect_code(d, "E7");
+    }
+    SECTION("E13 transition 全为空洞（退化 SSP）") {
+        auto d = base;
+        for (auto& row : d["ssps"][0]["transition"])
+            for (auto& cell : row)
+                cell = nullptr;
+        expect_code(d, "E13");
     }
 }

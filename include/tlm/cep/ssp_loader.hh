@@ -15,6 +15,7 @@
 //   E10 basis_kind ∉ {primary,structural,analogical,derived}
 //   E11 basis_kind / basis_pending 维度 != states × events
 //   E12 basis_projection_* 维度 != states
+//   E13 transition **全为空洞**（退化 SSP · ADR-CEP-24 §4 边界 E1）
 //
 // ⛔ 本头**不**含协议名（通用层 · 铁律 2）；协议名只允许出现在**数据**（`ssps.json`）。
 //
@@ -141,6 +142,7 @@ namespace tlm::cep::ssp {
             if (!ssp.contains("transition") || !ssp["transition"].is_array() ||
                 ssp["transition"].size() != ns)
                 return detail::fail("E5", sid + ": transition 行数 != states");
+            std::size_t non_hole = 0;
             for (std::size_t i = 0; i < ns; ++i) {
                 const auto& row = ssp["transition"][i];
                 if (!row.is_array() || row.size() != ne)
@@ -152,8 +154,14 @@ namespace tlm::cep::ssp {
                     const std::string tgt = cell.get<std::string>();
                     if (states.count(tgt) == 0)
                         return detail::fail("E6", sid + ": 转移目标不是已声明 state: " + tgt);
+                    ++non_hole;
                 }
             }
+            // E13 —— 退化 SSP：transition **全为空洞** ⇒ fail-closed
+            //   per `ADR-CEP-24` §4 边界 E1「空 / 退化 SSP（全 0xFF 洞表）⇒ loader fail-closed；
+            //   ⛔ 不得静默通过」。⛔ 局部空洞合法（协议常有不合法转移），**全洞**才是退化。
+            if (non_hole == 0)
+                return detail::fail("E13", sid + ": transition 全为空洞（退化 SSP ⇒ 无任何合法转移）");
 
             // E9 perm
             if (!ssp.contains("perm") || !ssp["perm"].is_array() || ssp["perm"].size() != ns)
