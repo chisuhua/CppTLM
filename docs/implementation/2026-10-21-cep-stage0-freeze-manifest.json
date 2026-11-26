@@ -1,5 +1,5 @@
 {
-  "artifact_count": 96,
+  "artifact_count": 97,
   "artifacts": {
     "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "a12f8d915c3575230984ff281e5c439b90fa256b1a19975c638e71647aaaee27",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4db673d7d582ac6231c6b3fa26ff78ef02dbea4483261b3cfcd7f4403201bd26",
@@ -85,6 +85,7 @@
     "openspec/specs/cep-refkind-coverage/spec.md": "e904c9fac0b497213b8465ca5af48f9c67c872c31eebd8c19b4cd9a326cd84cd",
     "openspec/specs/cep-sharer-tracker-base/spec.md": "7c6d19bb3a906d36b70a6360362927b12d395189389d8b176f20a450d793c677",
     "openspec/specs/cep-sparse-snoop-filter/spec.md": "21a44b7210f2f6eef33b3bdeddcb30455ecdf06ed52b3a0c3df09723e314d525",
+    "openspec/specs/cep-ssp-declaration/spec.md": "31ab3c11ee7abdda0b5e256fcdfd37c60fbb9b3bd6774aa41a6885403b283392",
     "openspec/specs/cep-stub-cache-chstream-surface/spec.md": "45b2797f335c6868a9c797a49ee91266f95fa20e41051cf8a9f99455a47bcee9",
     "openspec/specs/cep-stub-cache-core/spec.md": "46d034381a07e4e171dd1029382043a354e2bc3cc42fd95dfac617d579096046",
     "openspec/specs/cep-tilelink-runtime-engine/spec.md": "3ce492054c09e639e7d8fc042d8c3d53af953c43bd446682a0309bb1be9ace00",
@@ -98,10 +99,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #552",
+  "authorized_by": "Entry #553",
   "exclusions": [],
   "frozen_at": "2026-11-26",
-  "frozen_at_commit": "41e92f1be43b96c08c857ba53fa0b489d8cf28d5",
+  "frozen_at_commit": "86a1b6eecaecaf357956193791cfc0ade1301574",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
