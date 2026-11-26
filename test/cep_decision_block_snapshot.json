@@ -1,8 +1,8 @@
 {
   "schema": "cep-decision-block-snapshot-v2",
-  "authorized_by": "Entry #545",
-  "count": 26,
-  "total": 145,
+  "authorized_by": "Entry #551",
+  "count": 27,
+  "total": 152,
   "files": {
     "ADR-CEP-00-platform-charter-and-governance.md": 4,
     "ADR-CEP-00A-real-source-anchor-map.md": 3,
@@ -29,6 +29,7 @@
     "ADR-CEP-21-sharer-bitmap-expansion.md": 0,
     "ADR-CEP-22-memory-model-source-and-cross-domain-edges.md": 9,
     "ADR-CEP-23-incomplete-directory-knowledge-boundary.md": 5,
+    "ADR-CEP-24-user-defined-ssp-declaration.md": 7,
     "ADR-CEP-NUMBER-MAP.md": 4
   },
   "notes": "口径说明（v2 新增注释位 · per G-15 · architect 追加裁决 §11.1 D3③ · 台账 Entry #524）：\n① 「决策块」= 决策章内 `### 决策 N` 形态标题的计数（⛔ 块形定义 `DECISION_RE` 未改）。\n② `ADR-CEP-21-sharer-bitmap-expansion.md` 的决策章为**无编号形态** `## 决策`，其范围内**无** `### 决策 N` 子标题 ⇒ 块数 = **0**。\n   ⚠️ 这是**口径产物**（该 ADR 的决策内容按「阶段 / 触发判据 / 选项对比」组织，与「决策块」概念不同型），⛔ **不是**「决策块计数适用于它」；登记它是为了兑现**覆盖义务**（该 ADR 不被静默遗漏）。\n③ 决策章的**两种标题形态**（`## 2 …` 与 `## 决策`）自本版起**都在射程内** ⇒ 「`## 决策` 形态不适用」的旧例外已取消。\n④ `count` = files 份数；`total` = 各份块数之和（`ADR-CEP-21` 贡献 0 ⇒ total 不变）。"

@@ -31,7 +31,8 @@
     "ADR-CEP-20-topology-ic3-evidence-strength.md",
     "ADR-CEP-21-sharer-bitmap-expansion.md",
     "ADR-CEP-22-memory-model-source-and-cross-domain-edges.md",
-    "ADR-CEP-23-incomplete-directory-knowledge-boundary.md"
+    "ADR-CEP-23-incomplete-directory-knowledge-boundary.md",
+    "ADR-CEP-24-user-defined-ssp-declaration.md"
   ],
   "excluded": [
     {

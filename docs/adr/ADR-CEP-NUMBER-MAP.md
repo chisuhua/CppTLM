@@ -72,6 +72,10 @@ A14 → 06 §15.4 P2.0-P5(per `ADR-CEP-00A §3.1` 实证 — **无 P6**)→ CEP-
 | **CEP-20** | ADR | **拓扑级 IC3 证据的强度边界与能力阶梯**（证据档位阶梯 + 跨档聚合禁令）| CEP-06 | `ADR-CEP-20-topology-ic3-evidence-strength.md` |
 | **CEP-21** | ADR | **Sharer 位宽 —— responder bit 映射的扩容机制与触发判据**（两阶段：机制化 + 触发式扩容到 W）| CEP-04, CEP-12 | `ADR-CEP-21-sharer-bitmap-expansion.md` |
 | **CEP-22** | ADR | **每域模型来源与域间边构造规则**（操作级复合一致性公理 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` 的可判定前置）| CEP-12, CEP-13 | `ADR-CEP-22-memory-model-source-and-cross-domain-edges.md` |
+| **CEP-23** | ADR | **不完整目录知识的表达边界**（`Completeness` 可声明取值域 = {`EXACT`,`CONSERVATIVE`} · `PARTIAL` 降为合成值 · ⛔ 声明面不承载 belief 模型）| CEP-04, CEP-12 | `ADR-CEP-23-incomplete-directory-knowledge-boundary.md` |
+| **CEP-24** | ADR | **用户自定义稳定态协议（SSP）声明面与自定义接入路径**（独立声明面 + 通用解释器 · 归口「机制归 CppTLM / 语义内容归 ArchForge」· 新增 `RefKind::UserDefined` 第 4 档 · ⛔ 签发 ≠ 可实施：事件字母表来源 / 用户可写键子集待 F5 补齐）| CEP-00, CEP-02, CEP-05, CEP-07A, CEP-12, CEP-17, CEP-18, CEP-20, CEP-23 | `ADR-CEP-24-user-defined-ssp-declaration.md` |
+| **CEP-25** | ADR | **协议语义层 hop / 时序 + 引擎 egress 接 fabric**（待起草 · 撞 `hop_timing_capabilities.hh` J-3/J-4 现状锁 + 台账 Entry #543 归档裁决「补模型归 ArchForge」⇒ 须显式处理该冲突）| CEP-09, CEP-19, CEP-20 | 🟡 待起草 |
+| **CEP-26** | ADR | **SSP → 插件生成器**（瞬态态 + 在飞事务 · 待起草 · 须以「新 ADR 收窄 + `ADR-CEP-18` 追加 SU 声明取代范围」形态 amendment 决策 1/6）| CEP-17, CEP-18 | 🟡 待起草 |
 
 **CEP-NUM(本 ADR)**:本表本身,作为"编号映射单一真源"
 
@@ -232,6 +236,34 @@ A14 → 06 §15.4 P2.0-P5(per `ADR-CEP-00A §3.1` 实证 — **无 P6**)→ CEP-
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #321 / #322**(裁决 + 形态修订 + 冻结面授权)
 > **冻结面**: 本文件属 M1 冻结面,本次修订已走授权闸(见 Entry #321 / #322)。
 
+
+## Status Update 2026-11-26 —— §2 决策 1 表**新增 4 行**（`CEP-23` 补登记 + `CEP-24` + `CEP-25` / `CEP-26` 预留）
+
+> **性质**：追加式(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**;唯一例外是 **§2 决策 1 的表内行**(活口径,per Entry #71 / #74 同款先例:随表机械变化 ⇒ 原地更正 + 标注增补块 + 台账 entry)。**历史论据引述不改**。
+
+### ① 登记(逐行)
+
+| 编号 | 动作 | 依据 |
+|---|---|---|
+| **`CEP-23`** | **补登记** —— 文件 `ADR-CEP-23-incomplete-directory-knowledge-boundary.md` **已存在且已签发**(2026-11-24),但**其签发 commit 未带本表行** ⇒ 违反 `INV-CEP-NUM-IC1`(本表 = 编号单一真源)且**无人拦截**(⚠️ 现有闸 `test_cep_contracts_crosscheck.cc` 只判「无重号」,**不判「覆盖」** ⇒ 该漂移可静默复发) | 补正登记 · 议题/依赖取自 ADR-CEP-23 自身(父决策 = `ADR-CEP-04` 决策 2/3) |
+| **`CEP-24`** | **新增** —— **用户自定义稳定态协议(SSP)声明面与自定义接入路径**(独立声明面 + 通用解释器 · 归口「机制归 CppTLM / 语义内容归 ArchForge」· 新增 `RefKind::UserDefined` 第 4 档 · ⛔ 签发 ≠ 可实施:事件字母表来源 / 用户可写键子集待 F5 补齐) | ADR-CEP-24 签发(2026-11-26 · metis 1 轮 + oracle `APPROVE` + critic `APPROVE_WITH_CONDITIONS` · 0 BLOCKER) |
+| **`CEP-25`** | **预留**(🟡 待起草)—— **协议语义层 hop / 时序 + 引擎 egress 接 fabric**(撞 `hop_timing_capabilities.hh` J-3/J-4 现状锁 + 台账 Entry #543 归档裁决「补模型归 ArchForge」⇒ 须显式处理该冲突) | ADR-CEP-24 §8 F1 |
+| **`CEP-26`** | **预留**(🟡 待起草)—— **SSP → 插件生成器**(瞬态态 + 在飞事务 · 须以「新 ADR 收窄 + `ADR-CEP-18` 追加 SU 声明取代范围」形态 amendment 决策 1/6) | ADR-CEP-24 §8 F2 |
+
+### ② KPI 预算块:**⭕ 不变**(本轮无需同步)
+
+`ADR-CEP-00 §2 决策 3` 的 **10 / 14 / 14** 计的是 **OpenSpec change 数**(Stage 1 = 10 个串行 / 总 14 个 change / 14 季度)⇒ **新增 ADR 不占 change slot** ⇒ 该块**机械不变** ⇒ ⛔ 本次**不**改 KPI 预算块(与 Entry #71 / #74「随表机械变化才同步」的纪律一致)。
+
+### ③ 边界
+
+⛔ **不改** `openspec/specs/cep-core-contracts/spec.md`(其 Scenario「编号表是唯一真源」要求的「`CEP-00` ~ `CEP-18` 每个编号恰好一条表项」**不因新增 `CEP-19` 之后的编号而失效** —— 该条款的区间上界是**历史口径**,⛔ 本轮**不**扩写它 ⇒ 冻结主契约**零 diff**)· ⛔ **不改** `07 号` · ⛔ 不新建 invariant id · ⛔ 不建判红闸 · ⛔ `B3b-2` 维持 0/4。
+
+### ④ 关联
+
+- **ADR-CEP-24** 签发(2026-11-26)· 审稿报告 `.rddf/reviews/ADR-CEP-24-user-defined-ssp-declaration-review.md`
+- **冻结面授权**: 本文件属 M1 冻结面,本次修订随 ADR-CEP-24 的**产物 commit 同批**落 ⇒ 冻结面授权 **Entry 待落**(属 **planner** 域,per `docs/guide/cep-usage.md §12.6` 五步链第 1 步)⇒ ⚠️ **本次 SU 的授权指针在 Entry 落盘后回填**
+
+---
 
 ## 7. v0.1 修订记录(本 ADR 初版)
 

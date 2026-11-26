@@ -38,7 +38,7 @@
 ## 本目录铁律
 
 1. **header-only**：新增实现一律 .hh；⛔ 不要在此加 .cc（构建显式列源，加了也不会被编译）。
-2. **协议中立**：通用层（集合通信 / 跟踪器 / 地址解析 / 依赖图）**不得**出现具体协议名；协议差异只允许出现在 `*_adapter.hh` / `*_state_spec.hh` / `*_protocol_engine.hh` 三类文件里。
+2. **协议中立**：通用层（集合通信 / 跟踪器 / 地址解析 / 依赖图）**不得**出现具体协议名；协议差异只允许出现在 `*_adapter.hh` / `*_state_spec.hh` / `*_protocol_engine.hh` 三类文件 + **SSP 声明面数据文件**（**第四类**，per `ADR-CEP-24` 决策 2.1 + `ADR-CEP-07A` SU 2026-11-26 的例外集扩展）里。
 3. **JSON 与 schema 成对**：新增声明源必须同批提交同名 `.schema.json`，否则装配闸抓不到。
 4. **契约闸先跑**：改任何契约面（引擎接口 / 声明源 / schema）后必跑 `scripts/test/cep_*.sh`（数量以 `ls scripts/test/cep_*.sh | wc -l` 为准）。
 5. **章节锚点**：引用 CEP 章节前必查 `docs/adr/ADR-CEP-00A-real-source-anchor-map.md`，禁凭记忆写节号。

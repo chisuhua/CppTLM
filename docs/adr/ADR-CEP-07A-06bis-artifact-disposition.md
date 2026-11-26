@@ -238,3 +238,19 @@ per `ADR-CEP-00 §3` 的处置语义:**采用 / 改名 / 废弃** 三选一,每�
 - 📌 **本 ADR 自此不可变**:此后任何修改**只**能以追加 `## Status Update` 段的形式进行,且走冻结面授权链。
 
 **关联**:台账 **Entry #315**(授权 + 双审处置)· **#314**(第 1 批 04/05/06/07)· **#307**(4 项裁决)· **#313**(T3 登记表)· `test/cep_invariant_deferrals.json`(⏭ 真源)· `test/cep_adr_structural_deferrals.json`(id 债务)· `scripts/test/cep_adr_structural_check.sh`
+
+---
+
+## Status Update(2026-11-26)—— `INV-CEP-07A-IC2` 的**例外集扩展**留痕(per `ADR-CEP-24` 决策 2.1)
+
+> **性质**:末尾追加 SU(append-only)。⛔ **既有正文与既有 Status Update 段逐字未变**;⛔ **本条不修改 `INV-CEP-07A-IC2` 的语义本身**,⛔ 只**登记其例外集已被扩展**。⛔ **新增 invariant 数 = 0**。
+> **来源**:`ADR-CEP-24` 决策 2.1(用户自定义 SSP 声明面 = 协议名的**第四类允许面**)。
+> **一手依据**:SSP 声明面数据文件**必然携带协议名**(每协议一份声明,其 `id` 即协议标识)⇒ 若不加例外,则该面与铁律 2「通用层禁协议标识符」的扫描面冲突。
+> **落位说明**:本条为**例外集扩展**,**非新增 invariant**、**非放宽**「通用层禁协议标识符」本身 —— 扩展的只是「**允许出现协议标识符的文件类型清单**」,由「三类」增为「四类」(新增 SSP 声明面数据文件);通用层**仍然**禁协议标识符。⚠️ 读取本 owner ADR 者据此可知例外已扩,⛔ 免得只读本 ADR 而不知变更。
+> **形态先例**:`INV-CEP-05-IC1` 的**补落**三段式(来源 + 一手依据 + 落位说明,per `ADR-CEP-05:164-167`)。
+
+**扩展后的例外集(完整表述)**:协议标识符**仅**允许出现在 —— ① ProtocolEngine 插件内部 · ② capability schema 的数据值 · ③ **SSP 声明面数据文件(本条新增)**;**通用层一律禁止**。
+
+**配套判据**:守护载体 = `ADR-CEP-24` 的 **V-24-3**（字面清单扫描,⛔ 非开放集表述)· 载体自足白名单同步 = `ADR-CEP-24` §7 **C10** ②(`include/tlm/cep/AGENTS.md:41` 铁律 2 文本)。
+
+**关联**:`ADR-CEP-24` 决策 2.1 + §5 映射表 + §7 C9 · 审稿报告 `.rddf/reviews/ADR-CEP-24-user-defined-ssp-declaration-review.md` · 冻结面授权 **Entry 待落**(属 **planner** 域,per `docs/guide/cep-usage.md §12.6` 五步链第 1 步;随 `ADR-CEP-24` 产物 commit 同批落)

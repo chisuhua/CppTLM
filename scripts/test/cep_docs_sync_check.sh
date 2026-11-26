@@ -139,6 +139,7 @@ NO_INV = {
     "ADR-CEP-21-sharer-bitmap-expansion.md",             # 位宽扩容机制与触发判据(**新增 invariant 数 = 0**,per 决策「两阶段」+ X-3)
     "ADR-CEP-22-memory-model-source-and-cross-domain-edges.md", # 每域模型来源与域间边构造规则(**新增 invariant 数 = 0**,per 决策 1~9;归因 id 复用 INV-CEP-13-IC1)
     "ADR-CEP-23-incomplete-directory-knowledge-boundary.md", # 不完整目录知识表达边界(**新增 invariant 数 = 0** —— 复用 INV-CEP-04-IC1 / V-04-7,见该 ADR §5)
+    "ADR-CEP-24-user-defined-ssp-declaration.md",     # 用户自定义 SSP 声明面(**新增 invariant 数 = 0** —— 复用 INV-CEP-07A-IC2 / INV-CEP-12-IC1 / CEN-Ib1 / CEN-Ib11 / INV-CEP-05-IC1 / INV-CEP-09-IC1,见该 ADR §5)
 }
 
 CAND = r"(?:CEN-Ib\d+|INV-SC\d+|INV-CEP-(?:\d+[A-Z]?|07A|NUM)-IC\d+)"

@@ -2,16 +2,15 @@
   "schema": "planner-handoff-v1",
   "version": 1,
   "owner": "rdd-planner",
-  "planner_complete_at": "2026-11-23T09:39:34.646619+00:00",
+  "planner_complete_at": "2026-11-26T04:55:00.000000+00:00",
   "current_sprint": "sprint-2026-11",
-  "proposals_ready": [
-    "cep-litmus-falsifier-naming-disambiguation"
-  ],
+  "proposals_ready": [],
   "proposals_approved_count": 0,
   "features_active": [],
-  "awaiting_builder": [
-    "cep-litmus-falsifier-naming-disambiguation"
-  ],
+  "awaiting_builder": [],
   "recommended_route": "simple",
-  "active_objectives": []
+  "active_objectives": [
+    "obj-cep-custom-protocol"
+  ],
+  "note": "2026-11-26：清 stale awaiting_builder —— 原值 cep-litmus-falsifier-naming-disambiguation 实际状态为「✅ 已实施·已归档（2026-11-23）」，非待办。新 objective obj-cep-custom-protocol 已建（关联 ADR-CEP-24 已签发）。builder 的下一项 = 该 objective §4.0 队列 2 的 I-1（ADR-CEP-24 落盘五步链 2~5），前置台账 Entry #551 已落；I-1 不是 proposal ⇒ 不占本字段。"
 }

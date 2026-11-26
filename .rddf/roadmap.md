@@ -43,6 +43,7 @@
 
 ### Objectives
 
+> **2026-11-26 新增（第二个跨 sprint 目标；per 用户指令「实现自定义一致性协议 + 生成瞬态态 + 真实物理链路仿真」）**: [`obj-cep-custom-protocol`](roadmap/objectives/obj-cep-custom-protocol.md) —— **CEP 用户自定义协议能力**（SSP 声明面 → 瞬态态生成 → 真实物理链路）。架构锚点 = `ADR-CEP-24`（**S1 · ✅ 已签发 2026-11-26**）+ `ADR-CEP-25`（S2 · 🟡 待起草）+ `ADR-CEP-26`（S3 · 🟡 待起草）。**唯一入口 = Q-1（F5 两维度裁决）**；⛔ `F5` 闭合前 S1 不可实施、⛔ 任何「CEP 已支持用户自定义协议」的表述均不成立。台账指针 = `obj-cep-platform.md` §11 **Entry #551**。
 > **2026-10-26 更新**: 排队扩至 **13** change / **13** 季度(`moesi_gpu` / `mesif` 排入 Stage 1,per 台账 Entry #71)—— 季度跨度**见 `obj §4.6`**。
 > **2026-10-27 更新**: 排队扩至 **14** change / **14** 季度(新增队列 #7 `cpptlm-cep-cohif-carrier` —— CohIf 载体,per 台账 Entry #74)—— 季度跨度**见 `obj §4.6`**。
 > **2026-11-11 更新(治理收口)**: CEP 架构文档治理批 1~6 + 收口批已完成 —— 07 号 **2763 → 648 行**,15 则 Status Update **全为归宿指针**;**决策**在 `docs/adr/ADR-CEP-*.md` · **蓝图**在 `docs/architecture/`(1 主纲 + 8 子文档)· **实施状态**在本台账;**下一步 = §13 的 4 个候选 change**(⛔ 不是继续治理文档);梳理报告见 `.rddf/reviews/cep-governance-goal-scope-review.md`。

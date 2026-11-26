@@ -189,6 +189,11 @@ namespace cpptlm {
                 // (**新增 invariant 数 = 0** —— 复用 ADR-CEP-04 的 INV-CEP-04-IC1 / V-04-7,见该 ADR §5)
                 // => 与 scripts/test/cep_docs_sync_check.sh 的 NO_INV 白名单**同步登记**(本处即第二副本:漏改必红)。
                 "ADR-CEP-23-incomplete-directory-knowledge-boundary.md",
+                // 2026-11-26(Entry #551):ADR-CEP-24 = 用户自定义稳定态协议(SSP)声明面与自定义接入路径
+                // (**新增 invariant 数 = 0** —— 复用 ADR-CEP-07A-IC2 / INV-CEP-12-IC1 / CEN-Ib1 / CEN-Ib11
+                //  / INV-CEP-05-IC1 / INV-CEP-09-IC1,见该 ADR §5「零新造」)
+                // => 与 scripts/test/cep_docs_sync_check.sh 的 NO_INV 白名单**同步登记**(本处即第二副本:漏改必红)。
+                "ADR-CEP-24-user-defined-ssp-declaration.md",
             };
             return v;
         }
