@@ -29685,3 +29685,74 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | 项 | 动作 | 归属 |
 |---|---|---|
 | `cep-ssp-batch2` 的硬前置 | → **解除**（本 change 落地后批 2 的 ⑦⑧⑨⑩ 方可验证）| 后续 planner / builder |
+
+### Entry #557 — 2026-11-27 [planner](**`CP-I-2` 批 ② 立项** —— change `cep-ssp-batch2`（S1 批 2：⑦ 解释器 + ⑧ 装配 + ⑨ 掩码格 + ⑩ 实验 4 件套）· **硬前置已解除**)
+
+**主题**：立项 S1 的**批 ②** = ⑦ functional-only 解释器 ⑧ 装配集成（SSP → engine 的 seam）⑨ 掩码格扩展（contract 面）⑩ 实验 4 件套端到端 + SSP 协议过 `ADR-CEP-14` C1~C10。批 ② 落地后 objective `obj-cep-custom-protocol` 的**必达 DoD（S1 必达-1：数据面 + 装配 + 实验 + V-24-2 逐格对账）全部达成**。
+**元**：improvement `.rddf/improvements/cep-ssp-batch2.md`（✅ 已批准·待立项 · 用户批准 5 段设计 · ⑦ 取 functional-only）· objective `obj-cep-custom-protocol` 的 `CP-I-2`（批 ② 部分）· 批 ① `openspec/changes/archive/2026-11-26-cep-ssp-declaration/`（✅ 已归档）· 硬前置 `openspec/changes/archive/2026-11-27-cep-ssp-cp-q1b-landing/`（✅ 已归档 · AC-1~AC-7 7/7 · 两处冻结面五步链完成 · 验收报告 `.rddf/reviews/cep-ssp-cp-q1b-landing-verify.md`）
+
+**① 授权理由 + 前置**
+
+| # | 前置 / 理由 | 状态 | 证据 |
+|:--:|---|---|---|
+| 1 | ⭐ **硬前置已解除** —— 批 ① `cep-ssp-cp-q1b-landing` 已实施 + 验收 + 归档（`family` 4 值域 · `protocol_version` 两分支）| ✅ | 归档 commit `b88bec7d` · 验收 AC 7/7 · 台账 Entry #556 ⑦「硬前置 → 解除」|
+| 2 | **批 ① 已交付**（声明面 + loader + V-24-2 逐格对账）⇒ 批 ② 的输入是「一张通过校验的表」| ✅ | `openspec/changes/archive/2026-11-26-cep-ssp-declaration/` |
+| 3 | **openspec slot 可用**（0/3 · active = 0）| ✅ | `openspec list --json` ⇒ `changes: []` |
+| 4 | **CEP 内部并发 ≤ 1**（`obj §5.4`）| ✅ | active = 0 |
+| 5 | ⛔ **`combination_contract`（第 14 可选键）用户可写性未定** = 批 ② 的 **open item**（`CP-Q-1b` NIT④）⇒ 落 ⑧ 装配集成内**裁**（倾向「受限用户声明」+ CEP 校验，与 `combination_capabilities` 同型）| ⏳ 待裁 | improvement §In Scope「+ open item」|
+
+**② 本批次改动面（批 ② · 5 项 · 冻结面候选见 ③）**
+
+| # | 事项 | 判据 | 执行者 |
+|:--:|---|---|---|
+| 1 | **⑦ 解释器** `include/tlm/cep/ssp_interpreter.hh`（新头 · header-only）| SSP 声明表 → 状态迁移 + perm 投影；**零时序**（⛔ 不含 hop / 消息级延迟）；洞命中 ⇒ 违例计数 + 该次实验判「**不可判**」（决策 6.1）| builder |
+| 2 | **⑧ 装配集成**（SSP ↔ `protocol_instance` ↔ adapter/engine 三方绑定）| 用户实例的 `id` + `adapter` + **SSP 绑定**解析到同一插件；含 `combination_contract` 处置落定 | builder |
+| 3 | **⑨ 掩码格扩展** `include/tlm/cep/ssp.schema.json` 的格形状支持 `target_mask`（对齐 `tilelink_state_spec.hh:131-139` 既有实现）| `Transition{kind, target_mask, basis, pending, ref, note}` 形态；**contract 面扩展 ⇒ 独立评审** | builder |
+| 4 | **⑩ 实验 4 件套端到端** | `ADR-CEP-06` 的 `simulation_config.json` + `trace.h5` + `metrics.json` + `report.html` 在 SSP 协议上跑通 | builder |
+| 5 | **合同测试**（`ADR-CEP-14` C1~C10 在 SSP 协议上的实例化）| 逐条通过 + 反向 fixture | builder |
+
+**③ 冻结面候选（⚠️ **以 P1 实测为准** —— 命中即走五步链）**
+
+| 候选件 | M1 状态 | 触发条件 |
+|---|---|---|
+| `include/tlm/cep/protocol_instance.schema.json` | ✅ **在集** | ⑧ 装配集成若扩其声明面 ⇒ 五步链 |
+| `experimental/preregistration.json` | ✅ **在集** | ⑩ 4 件套若扩预登记面 ⇒ 五步链 |
+| `tools/render_report.py` / `run_sweep.py` / `ab_compare.py` | ✅ **在集** | ⑩ runner 集成若改这三个 ⇒ 五步链 |
+| `experimental/metrics.schema.json` / `docs/architecture/cep/simulation-and-experiment.md` | ✅ **在集** | ⑩ 若触及 ⇒ 五步链 |
+| `openspec/specs/cep-*/spec.md`（glob）| ✅ 全量在集 | 批 ②若新增 main spec ⇒ 冻结集**自动扩** ⇒ 五步链 |
+| `include/tlm/cep/ssp.schema.json` / `ssps.json` | ⚠️ **不在集**（批 ① 新建时未入 M1）| ⑨ 的**contract 面**改动落在**未冻结**件上 ⇒ 见 ⑥ 待裁 |
+
+**④ 五步授权链（本 Entry 是步 1 · **一次**覆盖全部命中冻结面）**
+
+1. **本 Entry #557**（立项 + 冻结面授权 · `--authorized-by` 的载体）
+2. builder commit：批 ② 产物（**一个** commit · ⛔ 不得把「改冻结面」与「改清单」混进同一个 commit）
+3. `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #557"`（预期：新增 **0~1**（若新增 main spec）· 移出 0 · hash 变更 = ③ 表实际命中数）
+4. **清单单独 commit**
+5. **无参复验** `bash scripts/test/cep_freeze_check.sh` ⇒ rc=0（硬门）
+
+**⑤ 计数面（预期变化 · 以命令实测为准）**
+
+| 面 | 预期 | 依据 |
+|---|---|---|
+| 冻结产物 `artifact_count` | **97 → 97~98** | 取决于 ③ 实际命中数 + 是否新增 main spec |
+| openspec change 数 | **0 → 1**（`cep-ssp-batch2`）| KPI slot 0/3 → 1/3 |
+| 新增 `INV-CEP-*` | **0**（⛔ 批 ②不新增 invariant）| 契约面扩展不改 invariant 编号 |
+| `ADR-CEP-24` §8 F5 | **不变**（已全闭合）| CP-Q-1a + CP-Q-1b |
+
+**⑥ 待裁 / 不做项（⛔ 本 Entry 不预判）**
+
+- ⛔ **待裁（architect 域）**：批 ② 的 ⑨ 声称 `ssp.schema.json` 是「冻结面」，但**实测 M1 清单无此件**（批 ① 新建的 `ssp.schema.json` / `ssps.json` **均未入集**）⇒ 掩码格形状（contract 面）可被静默改写 ⇒ **是否同批纳入 M1 冻结集** = architect 裁决（另立 Entry + 五步链）· ⛔ 本 Entry **不代裁**、不擅自扩冻结集
+- ⛔ **时序 / hop / 消息级延迟** ⇒ S2（`ADR-CEP-25` 待起草 · 撞台账 Entry #543 + J-3/J-4 翻转）
+- ⛔ **瞬态态生成 / 生成器** ⇒ S3（`ADR-CEP-26` 待起草 · 须 amendment `ADR-CEP-18` + 补 MSD 缺件）
+- ⛔ **6 份手写 `*_state_spec.hh` 的迁移**（`ADR-CEP-24` §8 F3）
+- ⛔ **档 2 证据扩面**（F4）
+- ⛔ `family` / `protocol_version` 的 contract 面（= 已落地的批 ①）
+
+**⑦ 连带（同一批）**
+
+| 项 | 动作 | 归属 |
+|---|---|---|
+| objective `CP-I-2` | → **批 ②立项**（本 Entry）⇒ 批 ② 落地后 S1 必达-1 全达成 | planner（本批）|
+| objective §11「下一入口」行 | 批 ① 落地 ⇒ 下一入口 = 批 ②（已由本 Entry 接住）| planner（本批）|
+| `ADR-CEP-24` 元数据「关联 change」指针 | ⏳ **仍为** `backlog: cep-user-defined-ssp-declaration` ⇒ 须按先例（`ADR-CEP-12:589` vs `:763`）在**后续 SU 段追加**实际 change 路径（批 ① 归档路径 + 批 ② path）· ⛔ **不回改**头部 backlog 行（append-only）| architect（后续）|
+| `cep-ssp-batch2` 的 handoff | ✅ 本轮更新 `.planner-handoff.json`（`awaiting_builder = [cep-ssp-batch2]` · `recommended_route = complex`）| planner（本批）|

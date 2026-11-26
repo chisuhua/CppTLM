@@ -2,19 +2,19 @@
   "schema": "planner-handoff-v1",
   "version": 1,
   "owner": "rdd-planner",
-  "planner_complete_at": "2026-11-26T11:20:00.000000+00:00",
+  "planner_complete_at": "2026-11-26T21:16:12.414790+00:00",
   "current_sprint": "sprint-2026-11",
   "proposals_ready": [
-    "cep-ssp-cp-q1b-landing"
+    "cep-ssp-batch2"
   ],
   "proposals_approved_count": 2,
   "features_active": [],
   "awaiting_builder": [
-    "cep-ssp-cp-q1b-landing"
+    "cep-ssp-batch2"
   ],
-  "recommended_route": "simple",
+  "recommended_route": "complex",
   "active_objectives": [
     "obj-cep-custom-protocol"
   ],
-  "note": "2026-11-26（第二轮）：CP-Q-1b 已 ratify（用户批准 R1~R4，R4 经澄清选「甲」）并落盘 —— 3 份 ADR SU 同批（ADR-CEP-24 第三则 / ADR-CEP-11 / ADR-CEP-12）+ 一次五步链（Entry #554 · 冻结 97 产物 · 无参 rc=0）。⇒ ADR-CEP-24 §8 F5 **全部闭合**（CP-Q-1a + CP-Q-1b）。本轮按 tu 用户批准拆两个 change（B + 甲）：① cep-ssp-cp-q1b-landing（contract 面 · 硬前置）② cep-ssp-batch2（功能面 ⑦ functional-only 解释器 + ⑧ 装配 + ⑨ 掩码格 + ⑩ 4 件套，依赖 ①）。proposals_approved_count=2 但 awaiting_builder 只放 ① —— ② 必须等 ① 的 contract 落地（拆批会让 ② 的装配第一步就红）。"
+  "note": "2026-11-27（第三轮）：批 ① `cep-ssp-cp-q1b-landing` 已实施 + 验收 + 归档（AC-1~AC-7 7/7 · 两处冻结面五步链完成 · commit 550d1d74）⇒ 批 ② `cep-ssp-batch2` 的**硬前置已解除**（improvement 自述：「不落它，本 change 的 ⑧ 装配集成在第一步就红」）⇒ 本轮起批 ②。\nrecommended_route=**complex**（⛔ 禁 dispatch-quick：批 ② 含 ⑨ 掩码格 **contract 面扩展** + ⑩ 实验 4 件套 runner 集成 + 可能的冻结面改动 ⇒ 必走完整 P0-P3）。\n⛔ **待裁（登记在台账 Entry #557 ⑥）**：批 ② 的 ⑨ 声称 `ssp.schema.json` 是「冻结面」，但实测 M1 清单**无**此件（批 ① 新建的 `ssp.schema.json` / `ssps.json` 均未入集）⇒ 掩码格形状可被静默改写 ⇒ 是否同批纳入 M1 冻结集 = architect 域裁决（另立 Entry + 五步链）。"
 }
