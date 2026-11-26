@@ -29654,14 +29654,18 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 | `ADR-CEP-11` §3 锁定表 | **零改动** | `INV-CEP-11-IC2` 保持 |
 | `INV-CEP-12-IC1` 的 13 必含个数 | **零改动** | 只扩 `family` 的 enum 取值域 |
 
-**⑤ 实施结果（收口 · 待 builder 回填）**
+**⑤ 实施结果（收口 · 2026-11-27 回填）**
 
 | # | 事项 | 结果 | 证据 |
 |:--:|---|---|---|
-| 1 | ② 的 6 项改动面 | ⏳ | — |
-| 2 | 五步授权链 | ⏳ | — |
-| 3 | 零回归（全量口径：全量 ctest + 全部 `cep_*.sh` + `docs_sync --strict`）| ⏳ | — |
-| 4 | 遗留清扫 | ⏳ | — |
+| 1 | ② 的 6 项改动面 | ✅ **6/6 落地**（2 处冻结面 + 4 处非冻结面，**同批** commit `b83c5531` ⛔ 未拆批）| `family` enum +`user-defined` · `pattern` 两分支 · `protocol_family.hh` 6 处 + 1 断言 · 共享 helper（`test/cep_adr_parser.hh` · 零新文件）· IC1 通用闸两分支化 · main spec IC1 Scenario 两分支化 |
+| 2 | 五步授权链 | ✅ **5/5 步完成** | 步1 本 Entry（`06f82d30`）· 步2 产物 commit（`b83c5531`）· 步3 `--update --authorized-by "Entry #556"`（差分 **新增 0 · 移出 0 · hash 变更 2**）· 步4 清单**单独** commit（`6743e7c3`）· 步5 无参复验 **rc=0**（97 产物 hash 全一致）|
+| 3 | 零回归（全量口径）| ✅ **绿** | `ctest` **211/211 通过** · `[cep]` **585 cases / 13719 assertions** · `[cep][schema][ic1]` 6 cases / 77 assertions · `cep_*.sh` **56/56 rc=0** · `docs_sync --strict` rc=0 · `agents_md_lint` rc=0 · `stage_gate` rc=0 · `cep_registry_baseline` rc=0 · `archive_verify` 扫面 43 = 基线 43 = git 跟踪 43 |
+| 4 | 遗留清扫 | ✅ **零残留** | TODO/FIXME/XXX 零命中 · 临时调试日志零命中 · 注释掉的代码 0 · 被 skip 的测试 0（新增）· `.cc.disabled` 新增 0 · 半截实现 0 |
+| 5 | 验收判定 | ✅ **AC-1 ~ AC-7 7/7 通过** | 报告 `.rddf/reviews/cep-ssp-cp-q1b-landing-verify.md`（逐条工具取证 · confidence 1.0）|
+| 6 | 归档 | ✅ **已归档** | `openspec archive` ⇒ `2026-11-27-cep-ssp-cp-q1b-landing`；delta 合并为 **no-op**（main spec 已提前同步 ⇒ early-sync 幂等，`openspec/specs/cep-core-contracts/spec.md` **零变化**）|
+| 7 | KPI slot | ✅ **已释放** | active **1 → 0**（KPI 1/3 → 0/3）· 归档目录数 177 → **178**（CEP 61 → **62**）· 活口径 8 处回填（AGENTS.md / roadmap.md / phase-10.md / obj-cep-platform.md:474 / cpptlm-cep-umbrella.md / cpptlm-cep-nvlink-sharp.md / obj-cep-platform-remaining.md §0.1）|
+| 8 | ⛔ 未闭合项 | **1 项（存量 · 非本次引入）** | `tasks.md` T7.6 `format.sh --check` rc=0 —— 5 个**非本次**文件在 clang-format-22 下需重排（本次改动的 `test_cep_schema.cc` 已清）· ⛔ 不顺手重排存量 ⇒ 登记待独立批次 |
 
 **⑥ 不做项**
 
