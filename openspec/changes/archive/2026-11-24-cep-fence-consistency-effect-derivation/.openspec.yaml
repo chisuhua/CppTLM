@@ -1,0 +1,21 @@
+schema: spec-driven
+created: 2026-11-24
+x-phase: phase-10
+x-priority: P1
+x-status: in_progress
+goal: |
+  把「协议语义层上 fence（barrier）带来什么一致性效果」从**散文**变成**可机检的现状面**
+  （gap 分析 **G4** 的本仓可做形态 = **G4-a 派生声明面**）。
+  ⛔ **只登记现状**、⛔ **不补** fence 的**协议语义**（归 ArchForge）· ⛔ 零 schema 变更 ·
+  ⛔ 零 instances 变更 · ⛔ 零 ADR 正文变更 · ⛔ 零 invariant 新增 · ⛔ 零协议头改动 ·
+  ⛔ 与 G1 / G10 **正交**（不重复 egress / in_flight / hop / timing 真源）·
+  ⚠️ **推导规则表 R1-R7 是本单元的决策面** ⇒ 随新建 main spec 的**五步链 ratify**
+  （⛔ 不声称「零决策变更」）。
+affected_areas:
+  - include/tlm/cep/fence_effects.hh
+  - test/test_cep_fence_effects.cc
+  - scripts/test/cep_fence_effects_check.sh
+  - test/CMakeLists.txt
+  - openspec/specs/cep-fence-consistency-effect-derivation/spec.md
+  - scripts/README.md
+  - include/tlm/cep/AGENTS.md

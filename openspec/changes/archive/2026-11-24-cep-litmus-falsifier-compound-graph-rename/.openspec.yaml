@@ -1,0 +1,23 @@
+schema: spec-driven
+created: 2026-11-24
+x-phase: phase-10
+x-priority: P2
+x-status: in_progress
+goal: |
+  把 CEP 的「litmus 证伪工装」改名为「**复合图证伪工装**」—— 本仓工装检验**装配期通道依赖图**上的
+  **环存在性**，与论文侧（Oswald §8.7.2 / HeteroGen §VII）的 `herd7` **memory-model litmus**
+  （检验**执行迹的允许结果**）**同名不同物** ⇒ 消除据文件名/符号名的**能力高估**。
+  ⛔ 零决策变更 · 零判据语义变更 · 零 invariant 编号变更 · 零行为变更。
+affected_areas:
+  - include/tlm/cep/compound_graph_falsifier.hh
+  - test/test_cep_compound_graph_falsification.cc
+  - test/cep_compound_graph_corpus.json
+  - scripts/test/cep_compound_graph_falsification_check.sh
+  - scripts/test/cep_litmus_naming_check.sh
+  - openspec/specs/cep-compound-graph-falsification/spec.md
+# ⛔ **旧 capability 退役**（`cep-litmus-falsification` ⇒ `cep-compound-graph-falsification`）：
+#    实施期已 `git mv` 主 spec ⇒ 归档时旧路径**不存在** ⇒ REMOVED 段由 openspec 忽略（警告，无害）
+#    ⇒ 归档后主 spec 内容 = 实施期改写结果（含**真实 Purpose**，⛔ 非占位）。
+#    ⚠️ `retire_capabilities: true` 允许「最后一个 requirement 被 REMOVED」的 capability 被退役
+#       （openspec 的硬要求，per 探针实测：缺此键则归档**中止**且「No files were changed」）。
+retire_capabilities: true
