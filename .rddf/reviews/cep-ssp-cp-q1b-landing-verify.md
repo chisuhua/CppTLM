@@ -129,16 +129,35 @@
 |:--:|---|---|---|---|
 | 1 | **T7.6** `format.sh --check` rc=0 **未达** | **存量**（非本次引入）| 5 个**非本次**文件在 clang-format-22 下需重排（`test_cep_compound_graph_falsification.cc` / `test_cep_engine_capabilities.cc` / `test_cep_fence_effects.cc` / `test_cep_hop_timing_capabilities.cc` / `test_cep_ssp_declaration.cc`）；**本次**改动的 `test_cep_schema.cc` 已清（`06419682`）| ⛔ 不顺手重排存量（避免海量无关 diff）· tasks.md T7.6 保留未勾并注明 · 登记待独立批次 |
 | 2 | worktree 缺 gitignored 件导致若干测试假红 | **环境缺口**（非本次引入）| `.gitignore:64` 忽略 `openspec/changes/archive/`（worktree 69 vs 主仓 178）+ `experimental/`（7 vs 1441）| **主仓基线对照**确认同一用例主仓全绿 ⇒ 排除本次引入；本地补齐后复验全绿（补齐件 gitignored ⇒ 不入提交）|
-| 3 | `.rddf/state/iteration.json` 不存在 | **工具面缺口** | P0/P1 登记均为 non-blocking 跳过；`rddf rdd-verify --dry-run` 返 `No eligible changes to verify` | ⇒ `rdd-verifier` skill canonical 路径不可用 ⇒ 走**本地验收**（本报告）+ 写 verdict cache 作为归档门输入 |
+| 3 | `.rddf/state/iteration.json` 不存在 | **工具面缺口** | P0/P1 登记均为 non-blocking 跳过；`rddf rdd-verify --dry-run` 返 `No eligible changes to verify` | ⇒ `rdd-verifier` skill canonical 路径不可用 ⇒ 走**本地验收**（本报告）+ 写 verdict cache（`.rddf/state/verifier/.ac-verdict-<change>.json` · `codebase_commit = 4ef6f68f`）作为归档门输入 |
 | 4 | 表述纪律 | — | 本次全部 commit 与本报告**未**宣称「CEP 已支持用户自定义协议」；该能力仍在 `cep-ssp-batch2` 范围 | ✅ 遵守（D-8）|
+
+### 归档后新增的发现（**归档流程暴露 · 已在同一 change 内闭合**）
+
+| # | 发现 | 证据 | 处置 |
+|:--:|---|---|---|
+| A-1 | **台账指针漂移**：归档后 `openspec/changes/<name>/` 迁移 ⇒ Entry #556 两处引用失效（`cep_doc_ref_check` 判红）| 判红信息「引用不存在的文件 `openspec/changes/cep-ssp-cp-q1b-landing/`」| ✅ 已修（`2734b23a`）：两处路径同步为 `openspec/changes/archive/2026-11-27-cep-ssp-cp-q1b-landing/` ⇒ 闸复验 rc=0 |
+| A-2 | **归档件不入库 ⇒ CI 扫不到**：`.gitignore:64` 排除 `openspec/changes/archive/` ⇒ `archive_verify_check` 报「扫面 43 > 基线 35 ⇒ 须更新基线并 force-add」| 闸告警原文（扫面 43 · 基线 35 · git 跟踪 35）| ✅ 已闭合：force-add **8** 个扫面目录（本次 1 + 存量 7）· 基线 35 → **43** ⇒ 复验「扫面 43 · 基线 43 · git 跟踪 43 · 三检 + provenance 一致性」 |
+| A-3 | **worktree 删除失败** ⇒ `docs_sync_check` 扫到残留 worktree 内的 AGENTS.md（32 项假红）| 闸报「`.rddf/wt/…/AGENTS.md` 存在但未登记进根文件 ARCHIVES & HISTORY」等 32 项 | ✅ 已闭合：`git worktree remove --force` + prune ⇒ `docs_sync --strict` rc=0 |
+
+### ⛔ 归档后一度红的 1 项（**本地产物暂态 · 已转绿 · 与本次改动零关联**）
+
+| # | 项 | 性质 | 判定证据（**非推断**） | 处置 |
+|:--:|---|---|---|---|
+| R-1 | `ctest` 的 `cep_parity_trace_e2e` 一度 P-1/P-1b 红（cpptlm=20000 vs gem5=100000）| **本地 `build/parity/` 产物状态不一致的暂态**（gitignored 本地产物）| ① `git diff e20e2ae8..HEAD -- scripts/cep/ test/test_cep_parity_cpptlm_side.cc` ⇒ **空**（parity 链本次**零触及**）② `test/test_cep_parity_cpptlm_side.cc` **不读** schema / `family` / `protocol_version`（grep 零命中）③ 归因（脚本自带）：「两侧没消费同一条 trace … ⇒ 不是模型问题」④ **复跑转绿**：按**默认参数**（`NUM_ACCESSES=100000` / `WORKING_SET=65536`）重跑 ⇒ `P-1 cpptlm=100000 gem5=100000.0` ✅ · `P-1b r=79971,w=20029` 两侧逐条一致 ✅ ⇒ **结论 PASS（rc=0）** ⑤ 终态 `ctest` **211/211 通过**（含该闸）| ✅ 已闭合（重跑即绿 · 无需改动）· ⛔ **本次未改 parity 链任何文件**（parity 链零 diff）|
+
+> ⚠️ 该闸**只在装了 gem5 的机器上真跑**（gem5 缺席 ⇒ skip 77）⇒ CI 常规路径不受影响。
 
 ---
 
 ## 结论
 
-**实施验收：PASS**（AC-1 ~ AC-7 **7/7** 通过 · 全量回归 11 项绿 · 遗留清扫零残留 · ADR SU ③ 落地清单 7/7 覆盖）
+**实施验收：PASS**（AC-1 ~ AC-7 **7/7** 通过 · 全量回归绿 · 遗留清扫零残留 · ADR SU ③ 落地清单 7/7 覆盖）
 
-- ⛔ **唯一未闭合项**为 T7.6（**存量** format 问题，非本次引入，已登记）
+- **归档**：✅ 已归档 `openspec/changes/archive/2026-11-27-cep-ssp-cp-q1b-landing/`（delta 合并 **no-op** ⇒ `openspec/specs/cep-core-contracts/spec.md` **零变化**）
+- **KPI slot**：✅ 已释放（active **1 → 0** · KPI 1/3 → 0/3 · 归档目录数 177 → 178（CEP 61 → 62））
+- **终态全量**：`ctest` **211/211 通过** · `[cep]` **585 cases / 13719 assertions** · `cep_*.sh` **56/56 rc=0** · `freeze` / `docs_sync --strict` / `archive_verify` / `stage_gate` / `registry` / `doc_ref` / `agents_md_lint` **全 rc=0**
+- **未闭合项**：**0 项本次引入**；**1 项存量**（T7.6 format · 5 个非本次文件在 clang-format-22 下需重排 · 已登记待独立批次）
 - **范围纪律**：未碰 `ADR-CEP-11` §3 锁表 · 未碰 `INV-CEP-12-IC1` 的 13 必含个数 · `instance_assembly_gate.hh` 零 diff · IC2/IC3 逐字零改动 · 零新文件 · 零新增 invariant
 
-**路由**：AC 归档门输入 = 本报告 + `.rddf/state/verifier/.ac-verdict-cep-ssp-cp-q1b-landing.json`（`codebase_commit = 4ef6f68f` = 实现分支 tip）⇒ 准予进入 **P3 归档**（P2.5 评审 = merge · 用户已批准）。
+**交付链**：台账 **Entry #556**（步1 授权）→ 产物 `b83c5531`（步2）→ `--update`（步3 · 新增 0 · 移出 0 · hash 变更 2）→ 清单 `6743e7c3`（步4 单独 commit）→ 无参复验 rc=0（步5）→ **归档** `b88bec7d` → 台账回填 `3f4a4cec`。
