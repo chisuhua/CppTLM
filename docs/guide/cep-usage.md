@@ -143,7 +143,7 @@
 
 ## 12.6 冻结面五步授权链
 
-**M1 冻结集**:**89 个产物**,清单载体 = `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(显式 89 条 sha256 与 `globs` **23** 条展开的 89 个文件**完全重合** + `exclusions` **0** 条)。
+**M1 冻结集**:产物数 = 清单的 `artifact_count`(⛔ 本行**不固化数字** —— 冻结面随入集演进,数字会静默腐化;实时取值:`python3 -c "import json;print(json.load(open('docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json'))['artifact_count'])"`)。清单载体 = `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(逐条 sha256 与 `globs` 展开的文件**完全重合** + `exclusions` **0** 条;重合性即 `artifact_count == len(artifacts)`)。
 
 > **范围口径(per 台账 Entry #324 C-2′)**:冻结面 = **glob 全量 + 显式排除表(当前为空)** ⇒ **新文件自动入集** ⇒ ⛔ **不需要**逐条登记「未冻结」(原枚举式登记表 `test/cep_freeze_scope_registry.json` **已于 2026-11-10 退役**)。
 

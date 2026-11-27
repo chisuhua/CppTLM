@@ -63,6 +63,18 @@ FROZEN_GLOBS=(
   #   ⚠️ 它是**派生刷新型**成员:上游 ArchForge 更新时须走 `--update --authorized-by`
   #   走同一授权流程(上游刷新协议见 `obj §11` Entry #56)。
   "include/tlm/cep/fabric.json"
+  # 2026-11-27(台账 Entry #560;per `ADR-CEP-24` SU 第五则):**SSP 声明面的两个载体**入集。
+  #   · `ssps.json` —— 用户协议绑定与解释的**唯一登记真源**(`kDefaultSspsPath` 编译期常量),
+  #     被 `[IAG-09]` 登记谓词 / 解释器按事件名匹配 / `cep_ssp_check.sh` 的 D-2·D-3·A-9 内容级消费;
+  #     ⚠️ V-24-2 逐格对账**只覆盖有手写孪生件的 2 个内置 SSP**(`mesif_ssp` / `tilelink_cap_ssp`)
+  #     ⇒ 第三个及以后的 SSP **零对照面**;且 MESIF 形态**不比对事件名** ⇒ 冻结 = 这类 SSP 的**唯一**守护。
+  #   · `ssp.schema.json` —— 用户读得到的契约形状;⚠️ 它**无任何语义消费者**
+  #     (loader 的 E1~E14 是手写校验、不读 schema;`cep_ssp_check.sh` 只判成对存在)
+  #     ⇒ 与 loader 的一致性**无闸** ⇒ 单方面改写 = 契约面双向不诚实 ⇒ 只能由授权闸兜住。
+  #   ⚠️ 两件**必须是逐条枚举**(⛔ 不加 `include/tlm/cep/*.json` 开放 glob —— 会把未裁决的件一并拖入)。
+  #   ⚠️ 未覆盖项(见 SU 第五则 ③):`schema ↔ loader E1~E14` 一致性闸 · 实例面四个装配件的 membership。
+  "include/tlm/cep/ssp.schema.json"
+  "include/tlm/cep/ssps.json"
   # 2026-10-25(Entry #64):队列 #4 归档 → 3 份 main spec 进入 M1 冻结集(34 → 37)。
   #   ⚠️ **只**匹配 main spec 路径(归档后的权威形态);归档件里的 delta 副本**不**入集 ——
   #   否则同一能力会有两份"冻结产物",语义重复且漂移面翻倍。
@@ -140,7 +152,13 @@ entry_ids_of() {  # $1 = 台账路径
 }
 
 is_authorized_entry() {  # $1 = 台账路径, $2 = 候选 id
-  entry_ids_of "$1" | grep -qxF "$2"
+  # ⚠️ 2026-11-27(Entry #560):原写法 `entry_ids_of "$1" | grep -qxF "$2"` 在 `set -o pipefail`
+  #    (本脚本 line 36)下对**非末位** entry id **假失败** —— `grep -q` 命中即退出 ⇒ 上游
+  #    `sed` 收 SIGPIPE(141) ⇒ 整条 pipeline 返回 141 ⇒ 判「台账中没有该 entry」。
+  #    实测:`--authorized-by "Entry #1"`(首位)失败、`"Entry #560"`(末位)通过
+  #    ⇒ 授权闸事实上只对**最后一条** entry 生效(早于本修复的闭环可能依赖该巧合)。
+  #    ⇒ 先用 here-string 把 id 列表**落成实参**,消除上游 SIGPIPE。判据本身**零放宽**。
+  grep -qxF "$2" <<< "$(entry_ids_of "$1")"
 }
 
 # 反向自测(只验绿 = 没验):闸必须拒绝「冒充 / 静默缩小 / 纸面排除」
@@ -166,7 +184,22 @@ STEOF
 STEOF
   _st_rc=0
 
-  # ── ① 真 entry id 被接受 ───────────────────────────────────────────
+  # ── ① 真 entry id 被接受(含**非末位**面)───────────────────────────
+  #   ⚠️ 2026-11-27(Entry #560):`ledger_a.md` 只有一条 entry ⇒ 原断言**不可能**发现
+  #    「`pipefail` + `grep -q` ⇒ SIGPIPE ⇒ 只有末位 id 可用」这个缺陷(实测:`Entry #1` 失败)。
+  #    ⇒ 再造一份**两条 entry** 的台账,断言**非末位**(#7)与**末位**(#8)**都**被接受。
+  cat > "$_st_dir/ledger_ids.md" <<'STEOF'
+## 台账
+### Entry #7 — 第一条(非末位 · 必须被接受)
+正文
+### Entry #8 — 第二条(末位)
+正文
+STEOF
+  if ! is_authorized_entry "$_st_dir/ledger_ids.md" "Entry #7"; then
+    echo "  ✗ 自测失败①:**非末位** entry id 'Entry #7' 未被接受(pipefail/SIGPIPE 缺陷复发)"; _st_rc=1
+  elif ! is_authorized_entry "$_st_dir/ledger_ids.md" "Entry #8"; then
+    echo "  ✗ 自测失败①:末位 entry id 'Entry #8' 未被接受(闸误伤)"; _st_rc=1
+  fi
   if is_authorized_entry "$_st_dir/ledger_a.md" "Entry #1"; then
     echo "  ✓ 自测①:真 entry id 'Entry #1' 被接受"
   else
@@ -254,10 +287,31 @@ STEOF
     tail -4 "$_st_dir/r5.log" | sed 's/^/      /'
   fi
 
+  # ── ⑥⑦⑧ 的**夹具基线**:清单副本先与「脚本数组 + 工作树」对齐 ────────────
+  #   ⚠️ 此前 ⑥⑦⑧ 直接复制**真清单** ⇒ 与「真清单是否已 --update」耦合:
+  #      脚本**合法新增**冻结范围、或冻结产物被合法修改时,artifact 级判据会**抢先**报红
+  #      ⇒ 各自要验的判据被遮蔽,自测假红(实测:2026-11-27 Entry #560 加两件后 ⑦/⑧ 双红)。
+  #   ⇒ 副本先 `--update` 同步一次(移出才需授权声明行;本仓当前无移出)。
+  #      ⚠️ 同步失败 = `--update` 本身坏了 ⇒ **显式**失败(fail-closed),⛔ 不得静默降级。
+  _st_base_man="$_st_dir/base.json"
+  _st_sync_ok=0
+  if [ -f "$MANIFEST" ]; then
+    cp "$MANIFEST" "$_st_base_man"
+    _st_auth="$(entry_ids_of "$LEDGER" 2>/dev/null | head -1)"
+    if [ -n "$_st_auth" ] && CEP_FREEZE_MANIFEST="$_st_base_man" CEP_FREEZE_LEDGER="$LEDGER" \
+         bash "$0" --update --authorized-by "$_st_auth" > "$_st_dir/base_sync.log" 2>&1; then
+      _st_sync_ok=1
+      echo "  ✓ 自测基线:清单副本已与脚本+工作树同步(基线 ⑥⑦⑧ 共用)"
+    else
+      echo "  ✗ 自测失败:夹具基线同步失败(--update 不可用 ⇒ ⑥⑦⑧ 判据无法取证)"; _st_rc=1
+      tail -4 "$_st_dir/base_sync.log" 2>/dev/null | sed 's/^/      /'
+    fi
+  fi
+
   # ── ⑥ C-1a:清单的 globs ≠ 脚本的 globs ⇒ 红(缩小范围须显式可见)────
   if [ -f "$MANIFEST" ]; then
     _st_man6="$_st_dir/man6.json"
-    python3 - "$MANIFEST" "$_st_man6" <<'STEOF'
+    python3 - "$_st_base_man" "$_st_man6" <<'STEOF'
 import json, sys
 m = json.load(open(sys.argv[1]))
 m["globs"] = list(m.get("globs", []))[:-1]   # 少一条 ⇒ 与脚本当前数组不一致
@@ -274,14 +328,17 @@ STEOF
   fi
 
   # ── ⑦ D-1a:排除项**仍在冻结集里** ⇒ 红(纸面排除不算排除)──────────
+  #   ⚠️ 夹具须先把 `globs` 与**脚本当前数组**对齐(2026-11-27 · Entry #560):此前直接复制真清单,
+  #      一旦脚本**合法新增**冻结范围(本次 +2 条),glob 一致性判据会**先**报红 ⇒ 本判据被遮蔽
+  #      ⇒ 自测假红(实测:加两件后 ⑦/⑧ 双红)。⇒ 从脚本自身解析 globs(⛔ 不靠真清单恰好同步)。
   if [ -f "$MANIFEST" ]; then
     _st_man7="$_st_dir/man7.json"
-    python3 - "$MANIFEST" "$_st_dir/ledger_a.md" "$_st_man7" <<'STEOF'
+    python3 - "$_st_base_man" "$_st_man7" <<'STEOF'
 import json, sys
 m = json.load(open(sys.argv[1]))
 p = sorted(m.get("artifacts", {}))[0]
 m["exclusions"] = [{"path": p, "reason": "反向自测用", "ledger_entry": "Entry #1"}]
-json.dump(m, open(sys.argv[3], "w"), indent=2)
+json.dump(m, open(sys.argv[2], "w"), indent=2)
 STEOF
     if CEP_FREEZE_MANIFEST="$_st_man7" CEP_FREEZE_LEDGER="$_st_dir/ledger_a.md" \
          bash "$0" > "$_st_dir/r7.log" 2>&1; then
@@ -299,7 +356,7 @@ STEOF
   #   ⇒ 必须验「授权 Entry 正文里确有该路径的排除声明行」。
   if [ -f "$MANIFEST" ]; then
     _st_man8="$_st_dir/man8.json"
-    python3 - "$MANIFEST" "$_st_man8" <<'STEOF'
+    python3 - "$_st_base_man" "$_st_man8" <<'STEOF'
 import json, sys
 m = json.load(open(sys.argv[1]))
 # 挑一份真实存在、且在 glob 范围内的 cep-* spec

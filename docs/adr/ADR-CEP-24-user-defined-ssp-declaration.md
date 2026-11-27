@@ -381,3 +381,139 @@ CEP **不能**让用户自定义一致性协议 —— 不是「没有协议引�
 - ⚠️ **本裁决只在「批 2」生效** —— 批 1（声明面）已归档且 SSP **不绑定 `protocol_instance`** ⇒ ⛔ 不要把本 SU 读成「批 1 有缺口」。
 
 **关联**：`CP-Q-1b` 裁决（已 ratify）· **`ADR-CEP-11` SU(2026-11-26)**（决策 3 + IC1 + 决策 5）· **`ADR-CEP-12` SU(2026-11-26)**（`family` 域）· 台账 Entry（冻结面授权，随本 SU 同批落）
+
+---
+
+## Status Update（2026-11-27 · 第四则）—— 元数据「关联 change」**指针回填**（append-only，⛔ 无决策变更）
+
+> **性质**：纯**指针回填**（per `ADR-CEP-12:749-753` 的「`backlog:` 占位回填」先例）。⛔ 不 reopen 任何决策 · ⛔ 不改 §1~§9 与前 3 则 SU · ⛔ 不新增 invariant 编号。
+> **原占位**（本文头部）：`关联 change: backlog: cep-user-defined-ssp-declaration`（**尚未立项** ⇒ 立项后回填）。
+> **⛔ 不回改头部该行**（append-only）—— 头部 `backlog:` 行**逐字保留**，实际指针以下表为准。
+
+| # | change | 归档路径 | 承接本 ADR 的哪部分 |
+|:--:|---|---|---|
+| 1 | `cep-ssp-declaration` | `openspec/changes/archive/2026-11-26-cep-ssp-declaration/` | 决策 2（独立声明面 · `ssp.schema.json` + `ssps.json`）+ 决策 2.3（loader 形态/引用闭环）+ 决策 4（`RefKind::UserDefined`）+ V-24-2 逐格对账 |
+| 2 | `cep-ssp-cp-q1b-landing` | `openspec/changes/archive/2026-11-27-cep-ssp-cp-q1b-landing/` | 决策 3.2 的**契约落点**（`family` 加第 4 值 `user-defined` + `protocol_version` 的 `user:<ssp-id>` 两分支）+ 决策 5 B2/B7 |
+| 3 | `cep-ssp-batch2` | `openspec/changes/archive/2026-11-27-cep-ssp-batch2/` | 决策 6 交付终点（SSP → 装配 → 实验 4 件套）+ 决策 6.1（洞命中失败语义）+ 决策 6.2（掩码格两形态 · V-24-2 TileLink 形态）|
+
+**边界**：本则只是把头部占位替换为可追踪指针。**决策 6 交付终点**的达成度与**表述纪律**（⛔ 不得说「协议语义已真实链路验证」· 零时序 ⇒ S2/`ADR-CEP-25`）以各 change 的验收报告与台账为准，⛔ 不由本则断言。
+
+---
+
+## Status Update（2026-11-27 · 第五则）—— SSP 声明面的**两个载体纳入 M1 冻结集**（决策）
+
+> **性质**：末尾追加 SU（append-only）。⛔ 不改 §1~§9 与前四则 · ⛔ 新增 invariant 编号 = **0** · ⛔ 不改决策 1~7 的任何结论（本则**扩的是保护面**，不是能力边界）。
+> **触发**：台账 **Entry #557 ⑥** 的 architect 域待裁项 —— 批 2 的 ⑨ 扩展了 `ssp.schema.json` 的掩码格形状，但实测该件与 `ssps.json` **均不在 M1 冻结集** ⇒ 声明面的契约形状可被**静默改写**。
+> **审查**：`.rddf/reviews/cep-ssp-freeze-scope-ruling.md`（oracle → critic，顺序不可颠倒）。
+
+### ① 事实底稿（实测 · 逐 `file:line` 核实）
+
+| # | 事实 | 锚点 |
+|:--:|---|---|
+| 1 | 两件**均不在**冻结集：`FROZEN_GLOBS` 逐条枚举了 `protocol_instance.schema.json` / `fabric.schema.json` / `fabric.json`，**无** `ssp.schema.json` / `ssps.json` | `scripts/test/cep_freeze_check.sh:56` / `:57` / `:65`；manifest `artifact_count = 98`（`--update` 口径）|
+| 2 | `ssps.json` **被多条闸内容级消费**（⛔ 不止「存在性」）：① 装配闸的 SSP 绑定维（`<ssp-id>` 必须在声明面**已登记** · 唯一真源）② 解释器按**事件名**匹配 ③ V-24-2 逐格对账 ④ 数据面判据组（anchor ⊆ 14 锚 / 原子性 / 「无等价」占比）| `include/tlm/cep/instance_assembly_gate.hh:238-240` · `include/tlm/cep/ssp_interpreter.hh:61` · `scripts/test/cep_ssp_check.sh:89-104`（D-2 / D-3 / A-9）|
+| 3 | `ssps.json` 的路径是**编译期常量**（⛔ 不可配置）⇒ 用户自定义协议只有一个登记面 | `include/tlm/cep/instance_assembly_loader.hh:38`（`kDefaultSspsPath`）|
+| 4 | ⭐ **`ssp.schema.json` 的语义消费者 = 0**：loader 的 E1~E14 是**手写校验**，⛔ 不读 schema；`cep_ssp_check.sh` 的 D-1 只判「JSON 与 schema **成对存在**」，不校验两者一致 | `include/tlm/cep/ssp_loader.hh:5-20`（E1~E14 逐条）· `scripts/test/cep_ssp_check.sh:87` |
+| 5 | ⭐ **V-24-2 的覆盖 = 2 个内置 SSP**（`mesif_ssp` ↔ `kTable` · `tilelink_cap_ssp` ↔ `kTransitions`）；**第三个及以后的 SSP 无手写孪生件 ⇒ 无逐格对照面** | `test/test_cep_ssp_declaration.cc:3` / `:87` · `test/test_cep_ssp_runtime.cc:111` |
+| 6 | ⭐ **既有对照面存在「事件名」盲区（范围已收窄）**：V-24-2 的 **TileLink 形态比对事件名**（`test/test_cep_ssp_runtime.cc:126-129`），**MESIF 形态不比对**（`test/test_cep_ssp_declaration.cc:98` 只断 `events.size()`，其后按索引逐格比内容）⇒ 对 `mesif_ssp` 把某事件**静默改名**，现有**全部**闸仍绿，而解释器按名匹配 ⇒ 行为静默漂移。`cep_ssp_check.sh` 的 A-6 只钉 14 个**锚名**、不钉逐协议事件名。⇒ **盲区 = 索引形态孪生件（MESIF）+ 全部无孪生件 SSP**（⛔ 不是「全部孪生件」）| `test/test_cep_ssp_runtime.cc:126-129`（比事件名）· `test/test_cep_ssp_declaration.cc:98` / `:111-135` · `scripts/test/cep_ssp_check.sh:10`（A-6 仅锚名）· `include/tlm/cep/ssp_interpreter.hh:61`（按名）|
+
+⚠️ **事实 4 / 5 / 6 决定本裁决的形态**：两件的**防护缺口不同型** —— `ssps.json` 是「有闸内容级消费、但闸只对照**有孪生件**的协议、**且事件名比对只覆盖 TileLink 形态**」；`ssp.schema.json` 是「**零语义消费**、漂移完全不可见」。因此裁决须**逐件给理由**，⛔ 不得用一句「两件都属声明面」打包。
+
+### ② 裁决
+
+**纳入两者**（逐条枚举，与 `protocol_instance.schema.json` / `fabric.schema.json` / `fabric.json` 同型）。⛔ **不加**开放 glob（如 `include/tlm/cep/*.json`）—— 那会把**未裁决**的件一并拖入冻结面。
+
+| 件 | 裁决 | 理由（对应 ① 的哪条事实）|
+|---|---|---|
+| `include/tlm/cep/ssps.json` | **纳入 M1** | 事实 2/3/5/6：它是用户协议绑定与解释的**唯一登记真源**；对「无手写孪生件」的 SSP，**冻结面是其唯一机器守护**（V-24-2 结构上不可能覆盖它们）；即便对**有**孪生件的协议，事件名重命名也在**部分形态**的盲区内（MESIF 形态不比对事件名 · 事实 6）⇒ 冻结补的正是这块 |
+| `include/tlm/cep/ssp.schema.json` | **纳入 M1** | 事实 4：它是**用户读得到的契约声明**（决策 2 明文「JSON + 同名 `.schema.json`」），而它与 loader E1~E14 的一致性**无任何闸** ⇒ 单方面改写它 = 对用户宣告一个 loader 不执行的形状（或反之）⇒ 契约面的**双向不诚实**，只能由授权闸兜住 |
+
+**⛔ 本则不做的三件**（⛔ 不得读成「已排除永久」）：
+
+1. **不把 6 份 `*_state_spec.hh` 纳入冻结** —— 那是 §8 **F3**（迁移议题）的判权，冻结 6 份 ~900 行手写表会把授权链成本乘 6 而不改善守护（它们本身不是 verdict 的对照真源，只是被对照方）。
+2. **不新增 `schema ↔ loader E1~E14` 的一致性闸** —— 事实 4 的**根因**（两套手写定义）需要新闸才能闭合；本则只把「改它要授权」机器化，⛔ **不宣称**「一致性已被保证」。该闸登记为后续项（见 ③ 后续项清单 ①）。
+3. **不改 `artifact_count` 与冻结清单本身** —— 本则只裁「纳入」；实际入集是一次**独立五步链**（见 ⑤ 落点）。
+
+### ③ 选项对比
+
+| 案 | 结论 | 理由 / 代价 |
+|---|---|---|
+| **A. 两者都纳入**（本则）| ✅ **采纳** | 覆盖事实 5 的结构性盲区（无孪生件 SSP）+ 事实 4 的零消费面。代价 = 新增 SSP 与声明面演进各走一次授权（成本可计量：1 台账 Entry + 1 `--update` + 2 commit + 1 复验）|
+| B. 只纳入 `ssps.json` | ❌ 否决 | 数据被冻结而**形状**自由 ⇒ 可把 `ssp.schema.json` 改成与 loader 不符的形状，用户按 schema 写声明在 loader 侧必红（或反向：schema 收窄而 loader 仍接受旧形态）⇒ 契约面的**引用闭环**被破坏，且无闸可见 |
+| C. 两者都不纳入（靠 V-24-2 + 合同测试）| ❌ 否决 | V-24-2 的覆盖面由**手写孪生件数量**决定（事实 5）⇒ 新增 SSP 天然零覆盖；合同测试确会读 `ssps.json`（`test_cep_ssp_contract.cc:45-52`），但 C1 只断言**属性级**不变量（逐事件 `flow` ∈ 10 流 / `anchor` 可解析 · `:62-85`），⛔ 不断言**内容同一性** ⇒ 保持 flow/anchor 合法的事件改名照样绿；且它⛔ 不读 `ssp.schema.json` ⇒ 「有测试」不等于「有守护」|
+| D. 纳入 + 同批加 schema↔loader 一致性闸 | ⚠️ **部分采纳** | 方向正确，但闸的判据形态（E1~E14 逐条 ↔ schema 逐键的映射、红因码对齐）本身是一个需要独立设计与反向 fixture 的决策 ⇒ ⛔ 不塞进本裁决（避免「裁决 + 实现」混在一篇），登记为后续项；映射输入底表见 **附录 A** |
+
+**登记为后续项（⛔ 本则不实施、也不预设结论）**：① `schema ↔ loader E1~E14` 一致性闸（案 D 的闸，判据输入 = 附录 A）；② 同目录四个**实例面装配件**（`protocol_instances.json` / `collective_planes.json` / `perm_upgrades.json` / `sources.json` + 两份 schema）的冻结集 membership（判据口径见 ④ ⓪ 边际条款）；③ 事件名对照面（事实 6 的盲区）是否值得加闸。三项若立项，走 §8 F 表追加，⛔ 不在本则暗设。
+
+### ④ 后果 / 代价
+
+**正面**
+
+- 无手写孪生件的 SSP 首次获得**机器守护**（冻结面是结构上唯一可行的手段）。
+- 声明面形状的演进进入**可审计通道**：谁改、为什么改、授权在哪，都有 provenance。
+
+**负面**
+
+- 新增一个 SSP 需要一次五步链（`--update --authorized-by`）⇒ 协议扩面的**边际成本上升**。⚠️ 这是**有意**的：若新增协议不需要任何审阅，则「声明面是契约」这句话不成立。
+- **非对称**：`mesif_ssp` 是 `mesif_state_spec.hh` 的手工转写，而 `.hh` **不在**冻结集 ⇒ 一次「`.hh` 改表 + 数据跟随」会变成「`.hh` 自由改 + 数据走授权」的混合形态。**接受**该非对称：方向是安全的（贵的是被保护的 verdict 对照面，不是 `.hh`）；若反过来冻结 `.hh` 则属 F3。
+- **摩擦的具体形态（⛔ 提前写明，免得被当缺陷报）**：`cep_freeze_check.sh` 已注册 ctest（`test/CMakeLists.txt` 的 CEP 闸族）⇒ SSP 设计**迭代中途**本地跑全量 ctest 会红。⇒ 开发节奏 = **分支内自由迭代、收口时一次性授权**（与既有冻结件同型，⛔ 不是本则引入的新负担）；判据与注册点：`test/CMakeLists.txt:884-886`。
+
+**⓪ 边际条款（本则不无限推广）**
+
+本则的判词是「**协议面登记件**（罕见、语义扩展、且是无孪生件 SSP 的唯一守护）⇒ 纳入」。⛔ **不**推广到「**实例面装配件**」—— 同目录下 `protocol_instances.json` / `collective_planes.json` / `perm_upgrades.json` / `sources.json`（及其 schema）虽同样被装配闸内容级消费，但它们是**例行实验操作**的数据（每加一个实验就改），冻结它们会给每次实验加授权闸，对**例行操作**的收益不抵成本。⇒ 二者按**变更频率 + 语义扩展性**区分，⛔ 不按「是否被闸消费」区分。该四个件是否入集 = **独立后续裁决项**（与 ③ 的一致性闸同列，见该段后续项清单 ②）。
+
+**风险**
+
+- ① **一致性仍无闸**（事实 4）：冻结只保证「改动需授权」，⛔ **不保证**「改动后 schema 与 loader 相符」。⇒ 授权签批时须**人工核对** —— 核对表见 **附录 A**（E1~E14 逐条 ↔ schema 锚点 ↔ 覆盖/未覆盖）；长期解 = 新增一致性闸（本则 ③ 案 D）。
+- ② 冻结后 `artifact_count` 由 98 → **100** ⇒ 若清单未同步 `--update`，无参复验**必红**（这是预期的失败态，⛔ 不是缺陷）。
+- ③ **冻结保护的是文件，不是「唯一登记面」这个角色**：`ssps.json` 的路径住在**未冻结**的 `include/tlm/cep/instance_assembly_loader.hh:38`（`kDefaultSspsPath` 编译期常量）⇒ 若把它改写指向另一个文件，被冻的 `ssps.json` 成死件，而 V-24-2 硬编码读旧路径（`test/test_cep_ssp_declaration.cc:29`）**照样绿**。⚠️ 该绕行通道**先于本裁决存在**，且冻结面机制在原理上管不到代码侧（`fabric.json` 同构）⇒ 本则**不宣称**「声明面唯一真源性质已受保护」，只宣称「静默数据漂移的成本提高」。
+
+### ⑤ Verification（前瞻判据 · 可勾选 —— ⛔ 不是已跑完的实测日志）
+
+- [ ] **V-24-14** `cep_freeze_check.sh` 的 `FROZEN_GLOBS` 含 `include/tlm/cep/ssp.schema.json` 与 `include/tlm/cep/ssps.json` **两条逐字枚举**，且无参复验 `rc=0`。载体：`bash scripts/test/cep_freeze_check.sh`。
+- [ ] **V-24-15** manifest 的 `artifact_count == len(artifacts)` 且两件在 `artifacts` 字典中各有一个 `"<path>": "<hex>"` 条目（该字典是 path→hex 映射，⛔ 无 `sha256` 键名）。载体：`python3 -c "import json;d=json.load(open('docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json'));print(d['artifact_count']==len(d['artifacts']), 'include/tlm/cep/ssp.schema.json' in d['artifacts'], 'include/tlm/cep/ssps.json' in d['artifacts'])"`（三项皆 True）。
+- [ ] **V-24-16（反向 / 判别力）** 两件任一被改一字节而**未**走 `--update` ⇒ 无参复验**红**（⛔ 不得只靠正向存在性）。
+- [ ] **V-24-17** 冻结清单未引入开放 glob（`include/tlm/cep/*.json` 一类）⇒ `FROZEN_GLOBS` 中该目录下**只有**逐条枚举的三件（`protocol_instance.schema.json` / `fabric.schema.json` / `fabric.json`）**加上**本则的两件（共 **5** 条，且均不含 glob 元字符）。载体：`grep -n "include/tlm/cep/" scripts/test/cep_freeze_check.sh`（命中集 = 5 条纯文件名）。
+
+**实施落点（⛔ 本则不实施）**：一次独立五步链 —— ① 台账 Entry（授权，planner 写）② 产物 commit（`cep_freeze_check.sh` 加两行枚举）③ `--update --authorized-by "Entry #N"` ④ 清单单独 commit ⑤ 无参复验 `rc=0`（per `docs/guide/cep-usage.md` §12.6）。
+
+### ⑥ 边界
+
+- ⛔ **不改**决策 1~7（尤其决策 2 的「独立面」定性、决策 2.2 的三项性质、决策 6.2 的过渡期真源定位）；
+- ⛔ **不改** §6 既有 V-24-1 ~ V-24-13（本则只**新增** V-24-14~17）；
+- ⛔ **不宣称**「SSP 声明面已受 M1 保护」—— 本则只是裁决，**未实施**；在该五步链完成前，⑨ 的 contract 面**仍**可被静默改写（表述纪律同「⛔ 不把"已裁"说成"已落地"」）。
+- ⛔ **不宣称**「唯一真源性质已受保护」—— 冻结管文件不管代码侧指向（④ 风险③）。
+- ✅ 本则使 §8 **不新增 F 项**（F1~F5 不变）；③ 的三项后续项若立项，应走 §8 F 表追加，⛔ 不在本则暗设。
+
+### 附录 A —— `E1`~`E14` ↔ `ssp.schema.json` 覆盖表（授权签批核对用 · 一致性闸的**输入**底表）
+
+> **读法**：✅ = schema 已表达该子规则；❌ = **loader-only**（schema 未表达 ⇒ 只改 schema 无法使该规则失效，但**也**无法使它与 loader 对齐）。⚠️ 一行可含多个子规则，逐子规则判。锚点 = `include/tlm/cep/ssp.schema.json`（132 行）。
+> ⚠️ **本表是核对手册，⛔ 不是判据** —— 它**不**取代一致性闸；它存在的理由是「冻结后授权签批必须人工核对」（④ 风险①）。
+
+| 红因码 | 子规则 | schema | 锚点 |
+|:--:|---|:--:|---|
+| `E1` | `schema` 字面量 == `cep-ssp-declaration/v1` | ✅ | `:10`（`const`）|
+| `E2` | `ssp.id` 形态 `^[a-z][a-z0-9_]*$` | ✅ | `:75`（`pattern`）|
+| `E2` | `ssp.id` **重复** | ❌ | 无 `uniqueItems`（仅 `states` 有）|
+| `E3` | `states` 空 | ✅ | `:80`（`minItems: 1`）|
+| `E3` | `states` 重名 | ✅ | `:81`（`uniqueItems`）|
+| `E4` | `events` 空 | ✅ | `:86`（`minItems: 1`）|
+| `E4` | `events` 重名 | ❌ | 无 `uniqueItems` |
+| `E5` | `transition` 维度 == `states × events` | ❌ | 仅 `type` 约束（`:89-96`），维度靠 loader |
+| `E6` | 目标 ∉ `states` 且 ≠ `null` | ❌ | 仅 `type: [string, null, object]` |
+| `E7` | `anchor` ∉ **14 核心锚** | ✅ | `:28-33`（`enum`）|
+| `E7` | 无 `anchor` ⇒ 须 `flow` + `architect_approval` 同时在场 | ✅ | `:50-51`（`if/then` + `required`）|
+| `E7` | `architect_approval` **非空** | ❌ | 仅 `required`，无 `minLength` |
+| `E8` | `flow` ∉ canonical **10 流** | ✅ | `:38-41`（`enum`）|
+| `E9` | `perm` ∉ `{none,read,unique,writeback}` | ✅ | `:111`（`enum`）|
+| `E10` | `basis_kind` ∉ 4 值 | ✅ | `:58`（`enum`）|
+| `E10` | `basis_projection_kind` ∉ 4 值 | ✅ | `:123`（`enum`）|
+| `E11` | `basis_kind` / `basis_pending` 维度 == `states × events` | ❌ | 仅 `type: array` |
+| `E12` | `basis_projection_*` 维度 == `states` | ❌ | 仅 `type: array` |
+| `E13` | `transition` **全为空洞**（退化 SSP）| ❌ | 无（结构性判据，schema 不可表达）|
+| `E14` | 掩码格**形状**（缺 `target_mask` / 多余键 / 非整数 / 负）| ✅ | `:95-105`（`required` + `additionalProperties:false` + `minimum: 0`）|
+| `E14` | 掩码**位宽** > `states` 数 | ❌ | 依赖 `states` 长度（跨字段，draft-07 不可直表）|
+
+**汇总**：21 条子规则中 **12 条** schema 已表达（✅）· **9 条** loader-only（❌）⇒ ⛔ **不得**把 `ssp.schema.json` 读作 loader 的等价物（本表即为「不」的证据）。
+
+**关联**：台账 **Entry #557 ⑥**（待裁项）· 实施五步链的 Entry（**待 planner 落**）· `docs/guide/cep-usage.md` §12.6（五步授权链）· 先例 `Entry #56 B1'`（`fabric.json` 入集：**被闸消费 ⇒ 静默改它翻转 verdict**）· `Entry #324 C-2′`（glob 全量 + 显式排除表口径）
