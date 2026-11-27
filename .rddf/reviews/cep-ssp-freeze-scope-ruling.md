@@ -79,3 +79,57 @@
 ## §4 一句话结论
 
 **裁决成立（`mergeable: yes` · 0 BLOCKER）**，两处事实性表述已按 critic 修正；**未实施** —— 冻结集的实际变更待五步链，⛔ 在此之前不得表述为「SSP 声明面已受 M1 保护」。
+
+---
+
+## §5 实施闭合记录（builder · 2026-11-27 · Entry #560 五步链）
+
+> **角色**：builder（实施）。本节**不参与审稿判定** —— oracle/critic 的结论在 §1/§2，⛔ 本节不得被读成「审查者追加了意见」。
+
+### ① commit 链
+
+| 步 | commit | 内容 |
+|:--:|---|---|
+| 1 | `46173a33` | 台账 **Entry #560**（授权载体）|
+| 2 | `c1efa1bf` | 产物：`ADR-CEP-24` 两则 SU + `cep-usage.md` §12.6 + `cep_freeze_check.sh` + 本报告 |
+| 3 | —（工作区）| `--update --authorized-by "Entry #560"` ⇒ 差集 **新增 2 · 移出 0 · hash 变更 1** |
+| 4 | `c8e71001` | 冻结清单单独 commit ⇒ `artifact_count` **98 → 100** · `globs` 23 → 25 · `exclusions` 0 |
+| 5 | —（复验）| 无参 `cep_freeze_check.sh` **rc=0** · provenance 一致（`100 个产物 hash 与 commit c1efa1bf6a2f 的内容一致`）|
+
+### ② V-24-14 ~ V-24-17 取证
+
+| 判据 | 证据 | 结果 |
+|---|---|---|
+| V-24-14 | `bash scripts/test/cep_freeze_check.sh`（无参）| **rc=0** · 「100 个产物 hash 全部一致（冻结于 2026-11-27, commit c1efa1bf6a2f）」|
+| V-24-15 | `python3 -c` 读 manifest | `artifact_count == len(artifacts)` == **100** · 两件均在 `artifacts` 字典内 |
+| V-24-16（反向）| 两件各追加 1 字节、**不跑** `--update` ⇒ 复验**红**（「冻结产物已被修改 … 0 缺失 / 2 被改」）；`git checkout --` 恢复 ⇒ **绿** | **判别力成立** |
+| V-24-17 | `grep -n "include/tlm/cep/" scripts/test/cep_freeze_check.sh` | 命中集 = **5** 条纯文件名（`:56` `:57` `:65` `:76` `:77`），**无 glob 元字符** |
+
+### ③ ⚠️ 实施中发现的两个**闸自身**缺陷（变红后暴露 · 非本批引入 · 已修）
+
+1. **授权闸只对「末位」entry 生效**（真实缺陷）：`is_authorized_entry` 原为
+   `entry_ids_of | grep -qxF`，而脚本 `set -uo pipefail` ⇒ `grep -q` 命中即退 ⇒ 上游 `sed`
+   收 SIGPIPE(141) ⇒ 判「台账中没有该 entry」。实测 `--authorized-by "Entry #1"`（首位）**失败**、
+   `"Entry #560"`（末位）**通过**。⇒ 改用 here-string（判据**零放宽**）；自测① 补「非末位 id
+   必须被接受」反向面（原夹具只有单条 entry ⇒ **结构上不可能**发现该缺陷）。
+2. **自测 ⑥⑦⑧ 与「真清单是否已 `--update`」耦合**：夹具直接复制真清单 ⇒ 脚本**合法新增**冻结
+   范围时 artifact 级判据**抢先**报红 ⇒ 各自判据被遮蔽、自测假红（实测：加两件后 ⑦/⑧ 双红）。
+   ⇒ 三条夹具共用一份**先 `--update` 同步过**的基线副本；同步失败 ⇒ **显式**失败（fail-closed）。
+
+### ④ 全量回归
+
+- `scripts/test/cep_*.sh` ⇒ **57/57 rc=0**
+- `cep_freeze_check.sh --self-test` ⇒ 13 条 + 授权闸反向自测 **全绿**
+- `ctest --test-dir build -j4` ⇒ **211/211 passed**
+- `cep_docs_sync_check.sh` / `cep_gate_selftest.sh` / `cep_adr_structural_check.py` /
+  `cep_decision_block_check.py` / `cep_registry_baseline_check.py` ⇒ 全 rc=0
+
+### ⑤ 遗留（SU 第五则 ③ 登记的后续项 · ⛔ 本批不做）
+
+1. `schema ↔ loader E1~E14` 一致性闸（判据输入 = ADR 附录 A）；
+2. 同目录四个**实例面装配件**（`protocol_instances.json` / `collective_planes.json` /
+   `perm_upgrades.json` / `sources.json` + 两份 schema）的冻结集 membership；
+3. 事件名对照面（MESIF 形态不比对事件名）是否加闸。
+
+⚠️ **ADR 的 V-24-14~17 复选框保持 `[ ]`** —— `ADR-CEP-24` **在冻结集内**（hash 已冻结于
+`c1efa1bf`）⇒ 去打勾 = 再改冻结件 = 又一次五步链。判据证据以本节 + commit message 为准。

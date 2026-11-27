@@ -294,13 +294,11 @@ STEOF
   #   ⇒ 副本先 `--update` 同步一次(移出才需授权声明行;本仓当前无移出)。
   #      ⚠️ 同步失败 = `--update` 本身坏了 ⇒ **显式**失败(fail-closed),⛔ 不得静默降级。
   _st_base_man="$_st_dir/base.json"
-  _st_sync_ok=0
   if [ -f "$MANIFEST" ]; then
     cp "$MANIFEST" "$_st_base_man"
     _st_auth="$(entry_ids_of "$LEDGER" 2>/dev/null | head -1)"
     if [ -n "$_st_auth" ] && CEP_FREEZE_MANIFEST="$_st_base_man" CEP_FREEZE_LEDGER="$LEDGER" \
          bash "$0" --update --authorized-by "$_st_auth" > "$_st_dir/base_sync.log" 2>&1; then
-      _st_sync_ok=1
       echo "  ✓ 自测基线:清单副本已与脚本+工作树同步(基线 ⑥⑦⑧ 共用)"
     else
       echo "  ✗ 自测失败:夹具基线同步失败(--update 不可用 ⇒ ⑥⑦⑧ 判据无法取证)"; _st_rc=1
