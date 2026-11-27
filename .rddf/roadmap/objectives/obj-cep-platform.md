@@ -29854,3 +29854,72 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 - ✅ AC-7 **已达成**（C1~C10 逐条有结论）
 - ⛔ **不得**宣称「C1~C10 **全部** PASS」—— C4~C8 / C10 判 **SKIP**（Stub / 组合器侧，SSP 无此面）· ⛔ SKIP 不得记为 PASS
 - ⛔ 仍**不得**宣称「CEP 已支持用户自定义协议」的**语义**层面（零时序 · 只覆盖「形态 + 引用闭环」档）
+
+
+### Entry #560 — 2026-11-27 [architect](`ADR-CEP-24` 两则 SU —— 关联 change 指针回填 + **SSP 声明面两载体纳入 M1 冻结集** · 五步链授权)
+
+**① 主题**：闭合台账 **Entry #557 ⑥** 的 architect 域待裁项 —— `include/tlm/cep/ssp.schema.json` 与 `include/tlm/cep/ssps.json`（SSP 声明面的 schema + 数据两个载体）**均不在** M1 冻结集 ⇒ 声明面的契约形状可被**静默改写**且无授权痕迹。**裁决 = 两者均纳入 M1**。同批追加第三则纯指针回填 SU（`ADR-CEP-24` 头部 `backlog:` 占位 → 三份已归档 change 的可追踪指针）。
+
+| # | 落点 | 性质 | 动作 |
+|:--:|---|---|---|
+| **SU-4** | `docs/adr/ADR-CEP-24-user-defined-ssp-declaration.md` **文末** | 已签发 ADR ⇒ 正文不可变，只能追加 SU | 追加「关联 change **指针回填**」SU（append-only · 头部 `backlog:` 行**逐字保留**）|
+| **SU-5** | 同上（同批、紧随其后） | 同上 | 追加「两载体**纳入 M1 冻结集**」SU（① 事实底稿 6 条 · ② 逐件裁决 · ③ 选项对比 4 案 · ④ 后果/代价 + 边际条款 + 3 条风险 · ⑤ V-24-14~17 · ⑥ 边界 · 附录 A）|
+| **附带** | `docs/guide/cep-usage.md` §12.6 | **非冻结面** | 「M1 冻结集：**89 个产物**」已腐化（实测 `artifact_count = 98`）⇒ 改为**命令派生**表述（⛔ 不固化数字）|
+
+**② 审查轨迹**：**oracle 1 轮**（审查域 = 其他审查 · 判定 **`APPROVE`**）→ **critic 1 轮**（`review_profile = arch` · 判定 **`APPROVE_WITH_CONDITIONS`** · `mergeable: yes` · `scope_exceeded: false` · **0 BLOCKER** · 2 SHOULD_FIX + 4 NIT）。**2 条 SHOULD_FIX 已全闭合**（均为 architect SU 文本的事实性错误：①「V-24-2 从不比对事件名」对 TileLink 形态不成立 —— `test_cep_ssp_runtime.cc:126-129` 逐字比对 `kEventNames` ⇒ 盲区收窄为「索引形态孪生件（MESIF）+ 全部无孪生件 SSP」；②「合同测试不读这两个文件」对 `ssps.json` 不成立 —— `test_cep_ssp_contract.cc:45-52` 加载它，但只断言**属性级**不变量、⛔ 不断言内容同一性）；4 条 NIT 全处理。审稿报告 = `.rddf/reviews/cep-ssp-freeze-scope-ruling.md`（oracle §1 / critic §2 / 收口 §3）。
+
+**③ 裁决要点（两件**逐件**给理由 —— 防护缺口不同型）**
+
+| 件 | 缺口（实测）| 裁决 |
+|---|---|---|
+| `ssps.json` | 被多条闸**内容级**消费（`instance_assembly_gate.hh:238-240` 的 `[IAG-09]` 登记谓词 · `ssp_interpreter.hh:61` 按事件名匹配 · `cep_ssp_check.sh:89-104` 的 D-2/D-3/A-9）；但 V-24-2 只对照**有手写孪生件**的 2 个内置 SSP（`mesif_ssp` ↔ `kTable` · `tilelink_cap_ssp` ↔ `kTransitions`）⇒ **第三个及以后的 SSP 零对照面**；且 MESIF 形态**不比对事件名**（`test_cep_ssp_declaration.cc:98` 只断 `events.size()`）| **纳入** —— 冻结是这类 SSP **结构上唯一可行**的守护 |
+| `ssp.schema.json` | **语义消费者 = 0**：loader 的 E1~E14 是**手写**校验、⛔ 不读 schema；`cep_ssp_check.sh:87` 只判「JSON 与 schema **成对存在**」 | **纳入** —— 它是用户读得到的契约声明，与 loader 的一致性**无闸** ⇒ 单方面改写 = 契约面双向不诚实 |
+
+**明确不做（⛔ 不得读成「已永久排除」）**：① 6 份 `*_state_spec.hh` 入集（属 `ADR-CEP-24` §8 **F3** 迁移议题）；② `schema ↔ loader E1~E14` **一致性闸**（登记为后续项，判据输入 = `ADR-CEP-24` 附录 A）；③ 同目录四个**实例面装配件**（`protocol_instances.json` / `collective_planes.json` / `perm_upgrades.json` / `sources.json` + 两份 schema）的 membership —— 已按「**变更频率 + 语义扩展性**」与「协议面登记」区分（④ ⓪ 边际条款），⛔ 按「是否被闸消费」区分。
+
+**④ 表述纪律（⛔ 随引用传播）**
+
+- ⛔ **本 Entry 落盘 ≠ 已实施**：在五步链闭合前，**不得**表述为「SSP 声明面已受 M1 保护」，也不得据此把 ⑨ 的 contract 面当作已受保护。
+- ⛔ **不得**表述为「声明面唯一真源性质已受保护」 —— 冻结管**文件**不管**代码侧指向**（`kDefaultSspsPath` 住在未冻结的 `instance_assembly_loader.hh:38`；④ 风险③ 已明写该绕行先于本裁决存在）。
+- ✅ 可表述：**两载体已「裁定纳入」**；实际入集以 ⑤ 的复验 rc=0 为准。
+- ⛔ **`obj-cep-platform-remaining.md` §0.2 的「`artifact_count` **86**」不得改** —— 该处在 **§0.2 历史（2026-11-16 实测 · 保留供口径追溯）**，是**历史快照**（append-only），不属于活口径；§0.1 活表**无**冻结面行。
+
+**⑤ 冻结面与五步链（本 Entry = 步 1 的授权载体）**
+
+- **命中冻结面 = 1 个 hash 变更**（`docs/adr/ADR-CEP-24-*.md`，`ADR-CEP-*.md` glob）+ **2 个新增**（本批两件逐条枚举入集）
+- `docs/guide/cep-usage.md` **不在** `FROZEN_GLOBS`（已核脚本 46~117 行全表）⇒ 其改动**不**计入清单差集
+- `artifact_count` **98 → 100** · `globs` **23 → 25**
+- 链条（⛔ **不得合并提交**，per `docs/guide/cep-usage.md` §12.6）：
+
+```
+1. 本 Entry #560 落盘（授权记录 · 本条）                      ← planner（本 Entry）
+2. 产物 commit（ADR 两则 SU + guide 一句 + cep_freeze_check.sh 两行枚举）  ← builder
+3. bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #560"
+4. 清单单独 commit                                          ← builder
+5. 无参复验 bash scripts/test/cep_freeze_check.sh ⇒ rc=0 且 provenance 一致
+```
+
+- ⚠️ **SU-4 / SU-5 已由 architect 落在工作树**（未提交）⇒ builder 的「产物 commit」即把它们与脚本改动一并提交；⛔ 不得在 `--update` 之后再改这两个文件（否则 provenance 不成立）。
+
+**⑥ 变更形态**
+
+- ⛔ **不开 openspec change**：冻结集 membership 变更属**治理面配置**，沿 `Entry #56 B1'`（`fabric.json` 入集）/ `Entry #520`（三处口径指针同批入集）先例走 M1 五步链。
+- ⛔ **不占 OpenSpec Proposed KPI slot**：0 新 capability / 0 函数签名 / 0 构建改动（脚本改动 = `FROZEN_GLOBS` **+2 条枚举**，是保护面配置而非能力面）；⇒ 活口径维持 **active 0 / KPI 0/3**。
+- 判据来源：本 Entry + `ADR-CEP-24` SU-5 的 V-24-14~17 + `docs/guide/cep-usage.md` §12.6。
+
+**⑦ 验收判据**
+
+| # | 判据 | 载体 |
+|:--:|---|---|
+| 机检 ① | `FROZEN_GLOBS` 含两件**逐字枚举**（脚本内 `include/tlm/cep/` 命中集 = **5** 条纯文件名、无 glob 元字符）| `grep -n "include/tlm/cep/" scripts/test/cep_freeze_check.sh` |
+| 机检 ② | manifest `artifact_count == len(artifacts)` == **100**，两件各有一个 `<path>: <hex>` 条目 | `python3 -c` 读 manifest |
+| 机检 ③ | **反向判别力**：两件任一改一字节而**未** `--update` ⇒ 无参复验**红**；恢复后复绿 | 临时改 + `cep_freeze_check.sh` + 恢复 |
+| 机检 ④ | 无参复验 `rc=0` 且 provenance 一致（`frozen_at_commit` 落后 HEAD 一个 commit 是**常态**、仅告警）| `bash scripts/test/cep_freeze_check.sh` |
+| 机检 ⑤ | 文档闸全绿：`cep_docs_sync_check.sh` / `cep_gate_selftest.sh` / `cep_adr_structural_check.py` / `cep_decision_block_check.py` / `cep_registry_baseline_check.py` | 逐个跑 |
+| 机检 ⑥ | `ADR-CEP-24` 的 **diff 形状 = 纯追加**（`git diff --numstat` 的删除列 = **0**）⇒ 正文与既有 3 则 SU 逐字未变 | `git diff --numstat` |
+| 人工 ① | 两则 SU 的「⛔ 不宣称…」三条在场（未实施 / 唯一真源 / 附录 A 非判据）| 阅读 |
+| 人工 ② | §0.2 的历史快照 `86` **未被改动** | `git diff .rddf/roadmap/objectives/obj-cep-platform-remaining.md` ⇒ 空 |
+
+**⑧ 关联**
+
+`Entry #557 ⑥`（本条的待裁来源）· `Entry #56 B1'` / `Entry #520`（冻结集 membership 变更的先例形态）· `Entry #324 C-2′`（glob 全量 + 显式排除表口径）· `.rddf/reviews/cep-ssp-freeze-scope-ruling.md`（审稿报告）· `ADR-CEP-24` 决策 2 / 2.2 / 2.3 / 6.2（本裁决只扩**保护面**，⛔ 不改这四条）· `docs/guide/cep-usage.md` §12.6（五步授权链）
