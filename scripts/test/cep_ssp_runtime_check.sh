@@ -14,9 +14,9 @@
 #   A-5  预登记绑定:`hypothesis_id` == `H9` 且在 `experimental/preregistration.json`
 #        **已登记**（`status` ≠ `pending`）⇒ 顺序锁成立（预登记先于产出）
 #
-# ⚠️ **本闸不覆盖** `ADR-CEP-14` C1~C10 在 SSP 协议上的实例化（需 SSP 驱动的
-#   adapter / engine ⇒ 属批 ② 的 ⑧「装配 seam」后续项）—— ⛔ 本闸**不得**被表述为
-#   「合同测试已在 SSP 协议上实例化」。
+#   A-6  `ADR-CEP-14` **C1~C10 在 SSP 协议上的实例化**（逐条结论可 grep）：
+#        C1 接口完备性 / C2 折叠映射 / C3 权限值域 / C9 协议信息不泄漏 => **PASS**
+#        C4~C8（Stub 行为纪律）/ C10（组合接缝）=> **SKIP**（⛔ SKIP 不得记为 PASS）
 #
 # 判据纪律:⛔ 「rc≠0」不构成红因;fixture 必须断言**红因签名命中**。
 #
@@ -107,6 +107,13 @@ then
     ok "A-2 档位声明 + A-3 档 0 禁冒充满档 + A-5 预登记绑定(H9)"
 else
     bad "A-2/A-3/A-5 判据未过(见上方红因)"
+fi
+
+echo "── A-6:ADR-CEP-14 C1~C10 在 SSP 协议上的实例化 ──────────────"
+if "$BIN" "[cep][ssp][contract]" -r compact >/dev/null 2>&1; then
+    ok "C1~C10 逐条实例化（C1/C2/C3/C9 PASS · C4~C8/C10 SKIP，⛔ SKIP 不记 PASS）"
+else
+    bad "C1~C10 实例化用例未通过"
 fi
 
 if [[ "$SELFTEST" -eq 1 ]]; then

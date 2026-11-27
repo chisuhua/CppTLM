@@ -29818,3 +29818,39 @@ num, body = max(hits, key=lambda h: int(h[0]))   # hits = 同时含本批 id 的
 |:--:|---|---|---|
 | 1 | **AC-7：`ADR-CEP-14` C1~C10 在 SSP 协议上的实例化** | ⛔ **未实施** —— C1~C10 载体 `test_cep_canonical_invariants.cc` 测 **Stub 面**，「在 SSP 协议上实例化」需**SSP 驱动的 adapter + engine**（实现 `AdapterSchemaContracts` + `ProtocolEngineBase` 端口面，参照 `mesif_adapter.hh` 206 行 + `mesif_protocol_engine.hh` 859 行 ⇒ 约 500~800 行），plan Task 5 未覆盖 | 待用户裁决（补 A 路径 / 或 B 路径独立立项）|
 | 2 | ⛔ **表述纪律** | 本批落地后**仍不得**宣称「合同测试已覆盖 SSP 协议」（AC-7 未达）；实验结论**只**支撑「形态 + 引用闭环」档（⛔ 零时序 · 属 S2 `ADR-CEP-25`）| — |
+
+### Entry #559 — 2026-11-27 [builder](**`cep-ssp-batch2` AC-7 补齐 + 技术误判纠正** —— C1~C10 是 **Stub 投影契约**，非 adapter/engine 需求)
+
+**主题**：Entry #558 ⑥ 第 1 项（AC-7 未实施）已**实施**；同时**纠正 #558 的技术误判**（#558 ⑥ 该行被本条取代）。
+
+**① 技术误判纠正（关键）**
+
+| | #558 原判断 | 实测（本条纠正）|
+|---|---|---|
+| C1~C10 是什么 | 以 `test_cep_canonical_invariants.cc` 载体推断「测 **Stub 面** ⇒ 需 SSP adapter + engine」| **`ADR-CEP-14` 决策 1 逐字**：「合同测试断言的是『Stub 对 Coherence Interface 的**投影行为**是否符合契约』，**不**断言『Stub 作为一个缓存是否行为正确』」；载体自身头注释亦写「本文件断言的是『**契约存在且自洽**』，**不**断言『实现满足契约』」|
+| 实现代价 | 约 500~800 行（参照 `mesif_adapter.hh` 206 + `mesif_protocol_engine.hh` 859）| **~150 行测试** —— 「在 SSP 上实例化」= 对 SSP **声明面**逐条给出 C1~C10 的结论（PASS / SKIP + 理由）|
+
+**② 实施（AC-7）**
+
+新增 `test/test_cep_ssp_contract.cc`（标签 `[cep][ssp][contract]` · 6 cases / 76 assertions）：
+
+| # | C1~C10 | SSP 上的结论 | 可执行判据 |
+|:--:|---|---|---|
+| C1 | 接口完备性（net-side 5 + core-side 1）| **PASS（声明层）** | SSP 的**非空** `flow`（自带 **或** 由 `anchor` 派生）全在 canonical 10 流内 + 反 vacuous（`checked > 0`）|
+| C2 | 折叠映射（5 隐藏流 → stub 原语）| **PASS（声明层）** | `Cap`/`Grow`/`Prune`/`Report` 的 flow 为空（本地权限转移 ⇒ 部分映射）+ 计数 == 4（非 vacuous）|
+| C3 | 权限状态值域 | **PASS** | SSP `perm` ⊆ 4 值锁 `{none,read,unique,writeback}`，⛔ 不含瞬态 / token / 七态 |
+| C4 | outstanding 纪律 | **SKIP**（Stub 侧）| SSP 声明面⛔ **无** `outstanding` 字段（不冒充）|
+| C5 | snoop 延迟参数化 | **SKIP**（Stub 侧）| ⛔ 无 `latency` 字段 |
+| C6 | completion 配对 + `txn_id` | **SKIP**（Stub 侧）| ⛔ 无 `txn_id` 字段 |
+| C7 | writeback 载荷规则 | **SKIP**（Stub 侧）| ⛔ 无 `writeback_data` 字段 |
+| C8 | hit 路径零网络流量 | **SKIP**（Stub 侧）| 同上（Stub 内部路径，SSP 无此面）|
+| C9 | **协议信息不泄漏**（负向）| **PASS** | `ssp_loader.hh` / `ssp_interpreter.hh` 零协议名 + 解释器每步目标态**必为声明面稳定态**（零瞬态）|
+| C10 | 组合接缝检查项 | **SKIP**（组合器侧）| SSP 声明面⛔ 无 `combination_capabilities` / `combination_contract` |
+
+⇒ 闸 `scripts/test/cep_ssp_runtime_check.sh` 增 **A-6**（断言该用例组全绿）⇒ 现 **7 项**全绿。
+
+**③ 表述纪律（更新）**
+
+- ✅ AC-7 **已达成**（C1~C10 逐条有结论）
+- ⛔ **不得**宣称「C1~C10 **全部** PASS」—— C4~C8 / C10 判 **SKIP**（Stub / 组合器侧，SSP 无此面）· ⛔ SKIP 不得记为 PASS
+- ⛔ 仍**不得**宣称「CEP 已支持用户自定义协议」的**语义**层面（零时序 · 只覆盖「形态 + 引用闭环」档）

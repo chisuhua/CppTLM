@@ -23,7 +23,7 @@
 | ├ 非 CEP Purpose 占位 | **45** | 同上（WARNING 类去重） |
 | └ 非 CEP Requirement 正文 >500 | **26**（与 Purpose 重叠 16） | 同上（按红 spec 去重计数） |
 | 闸族 | **57** 个 `cep_*.sh` **+ 14** 个 `cep_*.py` = **71** | `ls scripts/test/cep_*.sh \| wc -l` · `ls scripts/test/cep_*.py \| wc -l` |
-| CEP 测试 | **83** 个 `test_cep_*.cc` | `ls test/test_cep_*.cc \| wc -l` |
+| CEP 测试 | **84** 个 `test_cep_*.cc` | `ls test/test_cep_*.cc \| wc -l` |
 | OpenSpec | active **1** · 归档 **change 目录数** **178**（CEP **62**）· KPI **1/3** | `ls openspec/changes/ \| grep -v archive \| wc -l` |
 | CEP 归档 change 缺独立验收报告 | **0** —— I-10 落地后的现行口径 = 机关闸 `scripts/test/archive_verify_check.sh` 实测「**扫面 35 份 · 基线 35 · git 跟踪 35**」，三检 + provenance 一致性全绿（⛔ 旧「31」「40」等**逐份对账口径已作废**，现行口径**以闸为准**，⛔ 不得再用份数做判据 —— 份数会随每次归档漂移） | `bash scripts/test/archive_verify_check.sh` |
 | KPI 活口径同步面 | **7 处** —— 权威清单 = 既有闸 `scripts/test/rddf_stage_gate.sh` 的 `LIVE_FILES`；P-5 实测输出 = 「✓ P-5 **0 处**活口径全部同步（**锚定 7 处**，逐处取值 == 实测）」⇒ 取值全部 == `1/3` | `bash scripts/test/rddf_stage_gate.sh` |
