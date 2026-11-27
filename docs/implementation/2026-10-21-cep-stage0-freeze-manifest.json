@@ -1,5 +1,5 @@
 {
-  "artifact_count": 98,
+  "artifact_count": 100,
   "artifacts": {
     "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "a12f8d915c3575230984ff281e5c439b90fa256b1a19975c638e71647aaaee27",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4db673d7d582ac6231c6b3fa26ff78ef02dbea4483261b3cfcd7f4403201bd26",
@@ -26,7 +26,7 @@
     "docs/adr/ADR-CEP-21-sharer-bitmap-expansion.md": "29b945d0eb191d9f14293d9ec2b48e2c8330e8c856d716772f5c1091a5255032",
     "docs/adr/ADR-CEP-22-memory-model-source-and-cross-domain-edges.md": "b5dd9ecd1351de229843cd9d9f85fb7ada4445fe4a9ba7732a83d0dea559a9ba",
     "docs/adr/ADR-CEP-23-incomplete-directory-knowledge-boundary.md": "de3c24d03fd61c3f92c9c1e2c493116d452f226bb0ae3f20649b8c277c299f53",
-    "docs/adr/ADR-CEP-24-user-defined-ssp-declaration.md": "7881fd92a1db638ae7197199cdd4385d0e464587bc46a1c3bbc4b9b3998499ab",
+    "docs/adr/ADR-CEP-24-user-defined-ssp-declaration.md": "7d0bb7b0845d8bbee693cd8129a75205069848176aab1dc4a6ff6538e6e3ac32",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "816820baf253d8e44a932f7cc039d1d6e75d8ca34c17ac8c3ab7e2d96dd078dd",
     "docs/architecture/07-coherence-exploration-platform.md": "d644b21ff87faa7eef1caf2bbb81cb632f2ba34a5f3fa4e5e5edc65fa18e1b21",
     "docs/architecture/cep/coherence-interface.md": "6997124eb5f904a02dee90b38d5d8f4a536e94c7aeb3432c609aa10835f4f597",
@@ -43,6 +43,8 @@
     "include/tlm/cep/fabric.json": "296b8981c3a09e912ba6436f12dde9895935bec703ec046cd3e0e71040a7b364",
     "include/tlm/cep/fabric.schema.json": "226c79f5bf8de3480607f973a2375b28875b2886ea4395e5ed641119779a6316",
     "include/tlm/cep/protocol_instance.schema.json": "ddef11d86360ca05c51a61a847e6454c70e353b20dcd83eed0bd18e530fa4add",
+    "include/tlm/cep/ssp.schema.json": "895752915fada2c853377f8801fb0f2d37ef0e1e257c59fcb32e1740dcb83923",
+    "include/tlm/cep/ssps.json": "414caabdb0063f23f5101f4572b30d3861f8c1d9ed4ddb10f4155d87f94957a7",
     "openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md": "da03d46603e6a54807cbf2d1ff3f043b59214e6512e264fd65af5e5f44e35c18",
     "openspec/specs/cep-adapter-schema-contracts/spec.md": "4cf5c4ca9e4ac15951439073eddc133d7ed8b1366daed3d610e3473372f1a344",
     "openspec/specs/cep-b3b2-archive-form/spec.md": "ce05a3a794cca691a6799b10f147fc142dc3d8225704d6f49a4e7a2af1e5bea8",
@@ -100,10 +102,10 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #558",
+  "authorized_by": "Entry #560",
   "exclusions": [],
   "frozen_at": "2026-11-27",
-  "frozen_at_commit": "d8cdb8a54c59d90f40f20a638bceab9772deff3f",
+  "frozen_at_commit": "c1efa1bf6a2f610e7ef9f1dc729cb78b57b1eb00",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
@@ -111,6 +113,8 @@
     "include/tlm/cep/protocol_instance.schema.json",
     "include/tlm/cep/fabric.schema.json",
     "include/tlm/cep/fabric.json",
+    "include/tlm/cep/ssp.schema.json",
+    "include/tlm/cep/ssps.json",
     "openspec/specs/cep-sharer-tracker-base/spec.md",
     "openspec/specs/cep-ordering-point-checker/spec.md",
     "openspec/specs/cep-channel-dependency-gate/spec.md",
